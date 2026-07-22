@@ -176,10 +176,10 @@ app.post('/buy',function(req,res){
 })
 app.post('/play',function(request, respond){
   let sendData = {
-    key:request.cookies.obstarkey || 0,
+    key:request.cookies.obstarkey || basicKey,
     gm:request.body.gm || 'ffa',
     name:request.body.name || 'unnamed',
-    pet:request.body.pet
+    pet:request.body.pet || -1
   }
   let pref = {
       name: (sendData.name == 'unamed') ? '' : sendData.name,
