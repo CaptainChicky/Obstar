@@ -1,12 +1,4 @@
-
-const fs = require("fs");
-const util = require("util");
-var log_file_err=fs.createWriteStream(__dirname + '/web_error.log',{flags:'a'});
-
-process.on('uncaughtException', function(err) {
-  console.log('Caught exception: ' + err.stack);
-  log_file_err.write(util.format('Caught exception: '+err) + '\n');
-});
+require('./lib/crash.js').install('web_error.log');
 
 var http         = require('http');
 var express      = require('express');
@@ -15,8 +7,8 @@ var cookieParser = require('cookie-parser');
 var Vec          = require('victor');
 
 var app          = express();
-var c = require('./lib/config.js').config;
-var USERS = c.MYSQL ? require('mysql').createPool(require('./lib/webMysql.js').info) : 0;
+var config       = require('./lib/config.js').config;
+var USERS = config.MYSQL ? require('mysql').createPool(require('./lib/webMysql.js').info) : 0;
 ///
 var LEADERBOARD = [];
 var SHOP = {HIDE:1};
@@ -27,7 +19,7 @@ if(USERS){
     if (err) throw err;
     console.log("connect database");
   });
-  if(c.DB.LB){
+  if(config.DB.LB){
     let updateLB = ()=>{
       USERS.query('SELECT score, name, tank, gm, DATE_FORMAT(date, "%d-%m-%Y") AS date FROM wrs ORDER BY score DESC',function(err,leader){
         if (err) throw(err);
@@ -37,7 +29,7 @@ if(USERS){
     updateLB();
     setInterval(updateLB,120000);
   }
-  if(c.DB.SHOP){
+  if(config.DB.SHOP){
     let updateShop = ()=>{
       USERS.query('SELECT class, id, label, price FROM shop',function(err,shop){
         if (err) throw(err);
@@ -76,7 +68,7 @@ app.get('*', function(request, respond){
     let id = parseInt(Math.random()*1000);
     var KEY = request.cookies.obstarkey || 1;
     /// get the acc///
-    if(USERS && c.DB.AC){
+    if(USERS && config.DB.ACC){
       USERS.query('SELECT * FROM acc WHERE userKey LIKE ?',[KEY],function(err,result,fields){
         if(result && result.length && result[0]){ ///   THERE IS AN ACC  ///
           USERS.query("UPDATE acc SET lastConnection = NOW() WHERE userKey = ?",[KEY],function(err){if(err){throw(err)}});
@@ -115,7 +107,7 @@ app.get('*', function(request, respond){
     }
 });
 app.post('/userData', function(req,res){
-  if(USERS && c.DB.ACC){
+  if(USERS && config.DB.ACC){
     USERS.query('SELECT userData, coins FROM acc WHERE userKey = ?',[req.body.userKey],function(err,result,fields){
       if(result.length){
         let data = JSON.parse(result[0].userData);
@@ -130,7 +122,7 @@ app.post('/userData', function(req,res){
   }
 });
 app.post('/buy',function(req,res){
-  if(!USERS || !c.DB.ACC || !c.DB.SHOP){
+  if(!USERS || !config.DB.ACC || !config.DB.SHOP){
     res.status(200).send('no obj');
     return;
   }

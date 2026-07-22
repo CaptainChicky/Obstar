@@ -1,6 +1,13 @@
 {
     "name": "obstar-server-test",
     "version": "0.1.0",
+    "scripts": {
+        "start": "node scripts/dev.js",
+        "start:game": "node Alex.js",
+        "start:web": "node obstarWeb.js",
+        "dev": "node scripts/dev.js",
+        "test": "node test/smoke.js"
+    },
     "dependencies": {
         "cookie-parser": "~1.4.4",
         "victor":"~1.1",
