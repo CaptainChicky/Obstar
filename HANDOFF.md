@@ -3,20 +3,24 @@
 Written for a fresh agent session tasked with refactoring this repo. It describes the code
 **as it actually is today**, including the parts that are wrong. Nothing here is aspirational.
 
-> **Status — updated 2026-07-22, after refactor chunks 1–7.**
-> Items 1–7 of the refactor order in §8 are **done and verified**, except item 6 (the wire
-> protocol), which is deliberately still open and is now the next thing to do.
+> **Status — updated 2026-07-22, after refactor chunks 1–8.**
+> Items 1–7 **and item 6, the wire protocol**, are done and verified. The next open item is
+> §8.8, the fixed-timestep loop.
 > The 3918-line `Alex.js` monolith is gone; so are both of its names. There is now **one
 > entry point, [server.js](server.js), running one process on one port** — the two-servers
 > -you-must-both-remember-to-start arrangement is over (§1). `constructor.name` type dispatch
 > is gone (§5.9, [lib/kinds.js](lib/kinds.js)). Files whose names meant nothing outside the
-> original author's head were renamed (§2.2).
+> original author's head were renamed (§2.2). The protocol is one declarative schema that
+> drives both the encoder and the decoder, it sizes its own packets, and — for the first time
+> in the repo's history — it validates its input (§4).
 > Sections below are marked ✅ DONE / ⬜ TODO throughout, and descriptions have been rewritten
 > to match the current tree — where a bug is fixed, the text says where the fix lives rather
 > than describing the old breakage.
 >
-> Verification: `npm test` → **88 passed, 0 failed** (51 room + 29 protocol/live-server +
-> 8 single-entry-point/web). Chunks 1–4 are committed; 5–7 are not.
+> Verification: `npm test` → **145 passed, 0 failed** (57 protocol + 51 room + 29
+> live-server + 8 single-entry-point/web). The protocol rewrite was additionally checked
+> **byte for byte** against the implementation it replaced: 82 encode/decode comparisons over
+> every message type, zero differences (§4). Chunks 1–4 are committed; 5–8 are not.
 
 Obstar is an open-source clone of diep.io: a 2D multiplayer arena shooter. Players are tanks
 that shoot bullets, farm polygon "objects" for XP, level up, pick stat upgrades, and evolve
@@ -120,8 +124,8 @@ added by the refactor.
 | [web/app.js](web/app.js) | 199 | `createApp()` — the Express site. Menu, cookies, shop purchase, leaderboard reads. Opens no port. |
 | [lib/boot.js](lib/boot.js) | 57 | Fills the `lib/runtime.js` registry in dependency order. Idempotent, opens no port. |
 | [net/gameSocket.js](net/gameSocket.js) | 258 | `attach(httpServer)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
-| [lib/Controller.js](lib/Controller.js) | 581 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
-| [rooms/Room.js](rooms/Room.js) | 855 | **The simulation, once.** Tick, quadtree, collision, spawning, per-player views. |
+| [lib/Controller.js](lib/Controller.js) | 586 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
+| [rooms/Room.js](rooms/Room.js) | 845 | **The simulation, once.** Tick, quadtree, collision, spawning, per-player views. |
 | [rooms/Ffa.js](rooms/Ffa.js) | 30 | Free-for-all: a block of tunables. `Room`'s defaults *are* ffa's behaviour. |
 | [rooms/TwoTeam.js](rooms/TwoTeam.js) | 164 | 2-team: teams, bases, guard drones, the boss, team colours. |
 | [entities/Player.js](entities/Player.js) | 467 | Tank entity: motion, shooting, upgrades, class changes, collision. |
@@ -137,13 +141,14 @@ added by the refactor.
 | [lib/terminal.js](lib/terminal.js) | 32 | Terminal colour codes (`cc`). |
 | [lib/constants.js](lib/constants.js) | 4 | `FRICTION`. |
 | [lib/dbConfig.js](lib/dbConfig.js) | 18 | DB credentials, env-overridable. |
+| [test/proto.js](test/proto.js) | 304 | Wire protocol, 57 assertions: golden bytes, self-sizing, round trips, input validation. |
 | [test/smoke.js](test/smoke.js) | 234 | End-to-end smoke test, 29 assertions. Real socket, real protocol. |
 | [test/rooms.js](test/rooms.js) | 215 | Gamemode assertions, 51 of them. No socket — builds rooms via `boot()`. |
 | [test/web.js](test/web.js) | 167 | 8 assertions on the merged entry point: one port serves site + socket; split mode works. |
 | [test/clientProto.js](test/clientProto.js) | 27 | Loads `SocketSchema.js` in *client* mode inside Node, via `vm`. |
 | [lib/botNames.js](lib/botNames.js) | ~100 | Bot name list. |
 | [public/new2Init.js](public/new2Init.js) | 3241 | **The whole game client.** Rendering, input, UI, netcode. |
-| [public/SHARE/SocketSchema.js](public/SHARE/SocketSchema.js) | 1158 | Binary wire protocol. Dual-mode: runs on client *and* server. |
+| [public/SHARE/SocketSchema.js](public/SHARE/SocketSchema.js) | 881 | Binary wire protocol, declarative (§4). Dual-mode: runs on client *and* server. |
 | [public/SHARE/TanksConfig.js](public/SHARE/TanksConfig.js) | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. |
 | [public/SHARE/PetsConfig.js](public/SHARE/PetsConfig.js) | 132 | Cosmetic pet definitions. |
 | [public/SHARE/ws_link.js](public/SHARE/ws_link.js) | 18 | Game server URL: `POST.ws`, else the page's own origin. |
@@ -266,9 +271,9 @@ under any minifier — see §5.9.
 
 ---
 
-## 4. The wire protocol (`SocketSchema.js`)
+## 4. The wire protocol (`SocketSchema.js`) — ✅ REWRITTEN (§8.6)
 
-Hand-rolled binary over WebSocket, using `DataView`/`Buffer`. One file implements both
+Binary over WebSocket, using `DataView`/`Buffer`. One file implements both
 directions and both runtimes, selected at load time by the footer:
 
 ```js
@@ -287,34 +292,90 @@ int16/uint16/int32/uint32/float32`.
 Example — the `init` handshake the client sends on connect:
 `[type=0][uint8 keyLen=25][25 key bytes][uint8 gamemode][uint8 nameLen][name as uint16 chars][int8 pet]`
 
-The server validates with `checkLength(data.byteLength, min, max)` and returns
-`{error: 'ERR_PACKET_LENGTH'}` on mismatch, which causes a `kick()`. This length validation is
-the *only* real input hardening in the protocol — and it does not work:
+### 4.1 How a message is described
 
-> ⚠️ **`checkLength` is a no-op.** [SocketSchema.js:600](public/SHARE/SocketSchema.js#L600) is
-> `return(min<=data<=max)`. JavaScript has no chained comparison, so this parses as
-> `(min<=data)<=max` → a boolean is coerced to `0`/`1` and compared against `max`, which is
-> always true for any `max >= 1`. **Every length check in the protocol passes unconditionally.**
-> Confirmed empirically: a 3-character `key` is accepted where it should trigger
-> `ERR_BROKEN_KEY`.
->
-> Found during the chunk 1–4 refactor; not in the original handoff. **Deliberately not fixed** —
-> turning the only input validation on for the first time will reject packets that currently
-> get through, and deciding what to reject belongs with the protocol work in §8.6. Do it there,
-> and expect fallout.
+The file is now five tables and two loops. Reading top to bottom:
 
-So in practice the protocol has *no* input validation. Assume any byte sequence reaches the
-decoders.
+| Table | Maps | Example |
+|---|---|---|
+| `TYPE` | field name → primitive | `'x'` is a `float32` |
+| `SCHEMA` | message → ordered field list | a `Players` record is `states, class, color, x, …` |
+| `CODEC` | **record** → per-field value transform | `dir` is a radian in memory, an `int16` on the wire |
+| `LIMITS` | message → legal packet size; field → longest string the encoder emits | `chat` is 2–202 bytes |
+| `MSG` / `PARSE` | message → the framing around those fields | `UiUpdate`'s three length-prefixed arrays |
 
-**Everything is positional and duplicated between the encode and decode halves.** Adding one
-field to one message means editing the TYPE table, the SCHEMA table, the client encoder, the
-server decoder, and the byte-size arithmetic in `ENC.init(n)` — five places, no shared source
-of truth, no tests. Get the size wrong and you get silent truncation, not an error. **This is
-the highest-value refactor target in the repo.**
+`writeFields()` and `readFields()` walk `SCHEMA` against `TYPE` and `CODEC`; every
+schema-driven message goes through them. **Adding a field is two edits** (`TYPE`, `SCHEMA`)
+plus a `CODEC` entry if it is not stored raw — not the five hand-synchronised edits the old
+encoder/decoder pairs needed.
+
+Two details worth knowing before you edit it:
+
+- **`CODEC` is keyed by record, not by field name, and that is load-bearing.** `xp` means a
+  raw `uint32` in the `GameUpdate` head and a packed 3-significant-digits-plus-exponent value
+  in a `Players` record. A single global field→codec table would silently corrupt the head.
+- **The viewer's own tank is `SCHEMA.GameUpdate.User`**, which is the `Players` list minus
+  `xp` (the head already carries it exactly). That used to be a `case 'xp': break;` sitting in
+  the middle of the shared `Players` loop — written once in the encoder and once in the
+  decoder, i.e. the same fact stated twice in two files' worth of `switch` arms.
+
+**Packet sizes are no longer anyone's job.** The `Encoder` grows itself and reports the exact
+number of bytes written. Callers used to pass a size they computed by hand
+(`ENC.init(37+name.length*2+canDir.length*2)` in [rooms/Room.js](rooms/Room.js), and four
+more like it); too small truncated the packet silently, and too large appended zero bytes
+that the client's read-instances-until-the-buffer-ends loop decoded as phantom entities at
+id 0. Those expressions are all deleted.
+
+### 4.2 Input validation — now real
+
+> ✅ **`checkLength` was a no-op and now works.** It read `return(min<=data<=max)`. JavaScript
+> has no chained comparison, so that parses as `(min<=data)<=max` → a boolean coerced to `0`/`1`
+> and compared against `max`, true for any `max >= 1`. **Every length check in the protocol
+> passed unconditionally** for the entire life of the codebase. It is now
+> `min <= value && value <= max`, and [test/proto.js](test/proto.js) is the first thing in the
+> repo's history to assert that a malformed packet is refused.
+
+Turning it on required deciding what to reject. What changed, and why:
+
+| | Was | Is | Why |
+|---|---|---|---|
+| `key` | `checkLength(result.data.key, 25, 25)` | `…key.length, 25, 25` | `key` is a *string*. Comparing it to `25` is NaN-false, so switching on the fixed check verbatim would have rejected **every** connection with `ERR_BROKEN_KEY`. |
+| `chat` | `[202, 202]` | `[2, 202]` | An exact bound, so only a chat message of exactly 100 characters would have been accepted. Clearly meant as a maximum. |
+| `com` | `[52, 52]` | `[2, 52]` | Same. |
+| unknown type byte | fell through, returned an empty result, no kick | `ERR_PACKET_TYPE` | That reason has been in the kick enum since the beginning and was never once produced. |
+| truncated payload | `Buffer.readUInt8` threw a `RangeError` | `ERR_PACKET_LENGTH` | A length prefix that overruns its packet is a rejected packet. Since [lib/crash.js](lib/crash.js) now fails fast, an uncaught throw on the network path is a one-packet denial of service. The `Decoder` bounds-checks every read. |
+
+The client encoder also **clamps** `name` (16), `chat` (100) and `com` (50) to the bounds the
+server enforces, so a player typing a long message gets it truncated instead of being kicked
+mid-sentence, and a long name can no longer oversize an `init` packet. The same chained
+comparison appeared a second time in [lib/Controller.js](lib/Controller.js) guarding
+`maxPseudoLength`; it is fixed there too (§5.13).
+
+Still absent: **enum-range validation**. A `keydown` with key byte 200 decodes to `undefined`
+and falls through the router harmlessly, but `upClass` with an out-of-range class byte reaches
+`Player.upClass(undefined)`. Nothing escapes the length checks any more, but the *values*
+inside a well-sized packet are still trusted.
 
 Kick reasons are an enum of strings: `ERR_GAMEMODE`, `ERR_DOUBLE_IP`, `ERR_BROKEN_KEY`,
 `ERR_SERVER_FULL`, `ERR_SERVER_OFF`, `ERR_REQUESTS_DELAY`, `ERR_PACKET_LENGTH`,
 `ERR_HEARTBEATS_LOST`, `ERR_DOUBLE_ACC`, `ERR_PACKET_TYPE`.
+
+### 4.3 How the rewrite was verified
+
+Byte-for-byte against the implementation it replaced. Both versions were loaded side by side
+(each twice — client half and server half, selected by the `exports` sniff, via `vm`) and fed
+a fixed corpus: every client message type, every server message type, all three entity
+records, ten `xp` magnitudes across the exponent boundaries, all ten kick reasons, and a
+`GameUpdate` carrying one of each entity. **82 comparisons, zero byte differences**, plus
+decoded-structure equality in both directions.
+
+The one intentional difference: the old decoder set `error: 0` on a valid packet and the new
+one leaves the field absent. The only reader is `if(data.error)` in
+[net/gameSocket.js](net/gameSocket.js), where both are equally falsy.
+
+Those golden bytes are now pinned in [test/proto.js](test/proto.js), so the wire cannot drift
+without a test saying so — which matters because the other end is a 3241-line client file
+nobody wants to re-verify by hand.
 
 Anti-abuse, such as it is: `socket.main.request++` per packet, kicked at ≥50/sec
 (`ERR_REQUESTS_DELAY`); missing 10 heartbeats → `ERR_HEARTBEATS_LOST`; `config.MAX_IP` (2)
@@ -406,20 +467,31 @@ the original handoff so older references still resolve.
    change plus those three literals.
 
 10. ⚠️ **PARTLY FIXED.** `package.json` now has a `scripts` block (`start`, `start:game`,
-    `start:web`, `test`, `test:rooms`, `test:smoke`, `test:web`) and the three suites give 88
-    assertions.
+    `start:web`, `test`, `test:proto`, `test:rooms`, `test:smoke`, `test:web`) and the four
+    suites give 145 assertions.
     **Still missing: a lockfile and a linter.** Dependencies remain pinned with `~` to ~2019
     versions (`express ~4.17`, `ws ~7.2`, `ejs ~2.7`, `mysql ~2.17`); `npm install` reports 10
     vulnerabilities (1 critical). They install and run on Node 24, but `ejs@2` and `mysql@2`
     are unmaintained. See §8.10.
 
-11. ⬜ **TODO — no input sanitation on chat/names beyond length**, and per §4 the length checks
-    themselves do nothing. `Main.maxPseudoLength` is 16 and chat goes through a `/`-command
-    parser (`/join`, `/name`, `/quit`, `/color`); rendering is canvas-based so XSS risk is low,
-    but nothing is escaped anywhere.
+11. ⚠️ **PARTLY FIXED — input sanitation on chat/names.** The *length* checks now work and are
+    enforced at both ends (§4.2): `Main.maxPseudoLength` is 16 and the client clamps to it,
+    chat is capped at 100 characters, commands at 50. **Content is still unsanitised** — chat
+    goes through a `/`-command parser (`/join`, `/name`, `/quit`, `/color`) and nothing is
+    escaped anywhere. Rendering is canvas-based so XSS risk stays low, but names and messages
+    reach the leaderboard and the DB (when it is on) exactly as typed.
 
-12. ⬜ **TODO — `checkLength` is a no-op** (`min<=data<=max` chained comparison). New finding;
-    full detail in §4. The protocol has no working input validation.
+12. ✅ **FIXED — `checkLength` was a no-op** (`min<=data<=max` chained comparison), so the
+    protocol had no working input validation at all. Fixed in §8.6 along with the four call
+    sites that were wrong in ways the broken check had hidden; full detail in §4.2.
+
+13. ✅ **FIXED — the same chained comparison in `Controller.js`.** `askConnection` guarded the
+    player name with `if(!(0 <= data.name.length <= RT.Controller.maxPseudoLength))`, which
+    parses as `(0 <= len) <= 16` — always true, so `!` made it always false and the branch
+    never ran. Any name length got through. It is now `> maxPseudoLength`, and the client's
+    `init` encoder clamps to the same limit, so this only fires for a client that did not.
+    Worth grepping for: `min <= x <= max` is a shape this codebase reaches for, and both
+    instances of it were dead.
 
 ---
 
@@ -471,8 +543,8 @@ two-tone tank fills.
 
 ## 8. Suggested refactor order
 
-Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–5, 7 and 11 are done;
-6 is next.**
+Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–7 and 11 are done;
+8 is next.**
 
 1. ✅ **DONE — Make failure visible.** [lib/crash.js](lib/crash.js) replaces both
    `uncaughtException` handlers with fail-fast + stderr logging (`OBSTAR_SWALLOW_CRASHES=1`
@@ -491,6 +563,11 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–5, 7 a
    suite that touches the Express side: 8 assertions that one `node server.js` really does
    serve the menu, `/play`, the static files and the game socket on a single port, and that
    `--web-only` + `WS_LINK` still produces a page pointed at a remote game server.
+   [test/proto.js](test/proto.js) was added with §8.6 and runs first because it is the
+   fastest and the most load-bearing: 57 assertions covering golden wire bytes captured from
+   the pre-refactor encoder, packet sizes derived from the schema independently of the
+   encoder, round trips through every value transform, and the input validation that had
+   never run before.
 3. ✅ **DONE — `c` shadowing (§5.2) and the dead `CONFIG` (§5.1).** Verified by negative
    control; see §5.2 for the measurement.
 4. ✅ **DONE — Split `Alex.js`** into `net/`, `rooms/`, `entities/`, `lib/`. See §2's file map
@@ -498,17 +575,20 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–5, 7 a
 5. ✅ **DONE — Unified `Sffa` and `S2team`** (now `Ffa` / `TwoTeam`, §2.2) into [rooms/Room.js](rooms/Room.js) plus one
    subclass per mode. Twelve behaviours had to be reconciled to do it; they are itemised in
    §5.8, along with the differential check against the pre-refactor tree.
-6. ⬜ **NEXT — Replace the hand-rolled protocol** with a single declarative schema that generates both
-   encoder and decoder, or adopt an existing binary format. Keep the wire format
-   byte-compatible during the transition so client and server can be migrated separately.
-   **Fix `checkLength` (§4/§5.12) here** — it is the only input validation and it currently
-   does nothing, so enabling it will start rejecting traffic that works today.
-   This is now the largest remaining structural problem in the repo.
+6. ✅ **DONE — Replaced the hand-rolled protocol** with `TYPE` / `SCHEMA` / `CODEC` / `LIMITS`
+   tables driving one `writeFields` and one `readFields`, so the four hand-written copies of
+   the per-field `switch` (two in the encoder, two in the decoder) are one table. The
+   `Encoder` sizes itself, which deleted every byte-arithmetic expression at every call site.
+   `checkLength` is fixed, along with the four call sites that were wrong in ways the broken
+   check had hidden. **The wire format did not move** — verified byte for byte against the
+   old implementation, 82 comparisons, and pinned by [test/proto.js](test/proto.js) (57
+   assertions). Full detail in §4; the fallout and what is still unvalidated are in §4.2.
 7. ✅ **DONE — Replaced `constructor.name` dispatch** with `obj.kind` and the constants in
    [lib/kinds.js](lib/kinds.js). Details and the one remaining coupling (TanksConfig's
    hardcoded `DETEC.type` lists) are in §5.9.
-8. ⬜ **Fix the fixed-timestep problem.** Replace the drifting `setTimeout(20)` chain with an
-   accumulator-based fixed-step loop that decouples simulation rate from send rate.
+8. ⬜ **NEXT — Fix the fixed-timestep problem.** Replace the drifting `setTimeout(20)` chain
+   with an accumulator-based fixed-step loop that decouples simulation rate from send rate.
+   See §3, "Loops and timing", for the five independent timer chains involved.
 9. ⬜ **Modernize the client last.** It's the largest single file but the least dangerous —
    nothing else depends on its internals. Introduce a bundler and split by the existing
    `General.*` namespaces.
@@ -563,19 +643,25 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–5, 7 a
   subclass, or un-`deactivate` those menu buttons, until someone says the modes are wanted.
   Removing them instead means deleting two keys from `Main.server` and two buttons from
   `index.ejs`.
+  Whoever *does* enable `4team` should know it is broken on the wire before it starts:
+  `toBUFFER.gamemode['4team']` is **3**, but `toSTRING.gamemode` only has three entries, so
+  index 3 decodes to `undefined` and the mode arrives at `askConnection` as no gamemode at
+  all → `ERR_GAMEMODE`. Pre-existing, untouched by §8.6 (the byte-compat check confirms both
+  the old and the new code do this), and a one-character fix once someone decides the mode
+  is real.
 
 ---
 
 ## 11. State of the working tree
 
-Chunks 1–4 are committed (`561ba88`, `f03cc37`). **Chunks 5, 7 and the entry-point merge
-(§8.11) are not committed.** `git status` shows the §2.2 renames (done with `git mv`, so
-history follows), the new `lib/kinds.js`, `rooms/Room.js`, `lib/boot.js`, `test/rooms.js`
-and `test/web.js`, and the deletions of `scripts/dev.js` and `lib/webMysql.js`.
+Chunks 1–7 are committed (through `cadf192`). **Chunk 8, the protocol rewrite (§8.6), is
+not committed.** `git status` shows `public/SHARE/SocketSchema.js` rewritten, the deleted
+size arithmetic in `rooms/Room.js`, the name-length fix in `lib/Controller.js`, the new
+`test/proto.js`, and its `test`/`test:proto` entries in `package.json`.
 
 ### What was verified, and what was not
 
-Verified: `npm test` → **88 passed / 0 failed** (51 room + 29 protocol/live-server + 8
+Verified: `npm test` → **145 passed / 0 failed** (57 protocol + 51 room + 29 live-server + 8
 single-entry-point/web). Every file checked with `node --check`. The room unification was
 checked differentially against the pre-refactor tree in a scratch `git worktree`: repeated
 20-second in-process runs of both modes agree on live player count, polygon population and
@@ -583,7 +669,11 @@ map dimensions, and repeated socket runs agree on the colour palette reaching th
 §5.2 fix from the first pass is still asserted by `smoke.js` (no non-finite `x`/`y`/`size`
 reaches the wire). The `kind` swap (§5.9) was made against a green suite and re-run against
 it; the room and smoke suites exercise every one of the dispatch sites it touched, since
-they are the collision and buffer paths.
+they are the collision and buffer paths. The protocol rewrite (§8.6) was checked byte for
+byte against the code it replaced — 82 comparisons, zero differences (§4.3) — and the same
+vectors are now golden values in `test/proto.js`; `smoke.js` independently proves the new
+self-sizing encoder against a live server, since it decodes every `GameUpdate` a real room
+produces.
 
 **Not verified — treat as unknown:**
 
@@ -600,3 +690,8 @@ they are the collision and buffer paths.
 - **MySQL paths.** Still off. §5.3–5.5 are fixed by inspection, not by execution.
 - **Admin commands, chat, the shop, and the death/leaderboard flow** are still uncovered.
   `mapResize` in particular now does something in 2team that it never did before (§5.8.7).
+- **The newly-live packet validation against a real browser.** `test/proto.js` proves the
+  bounds accept what the client encoder produces and reject what it does not, but no browser
+  has yet sent a real `chat` or `com` packet through the working `checkLength`. Those two are
+  where the bounds changed most (§4.2) and where a mistake shows up as a kicked player rather
+  than a crash. Chat and commands were on the uncovered list before this pass and still are.

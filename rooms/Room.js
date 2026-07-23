@@ -619,7 +619,6 @@ class Room {
       return;
     }
     let buff = {
-      len: 56+(RAW.main.name.length*2)+(RAW.main.canDir.length*2),
       instances:[]
     };
     buff.head = {
@@ -674,7 +673,6 @@ class Room {
         let raw;
         switch(obj.kind){
           case KIND.PLAYER:{
-            obj.BUFF.len = 37+(obj.name.length*2)+(obj.canDir.length*2);
             raw = {
               construc: 'Players',
               id: obj.id.oId,
@@ -700,7 +698,6 @@ class Room {
             break;
           };
           case KIND.OBJECTS:{
-            obj.BUFF.len = 19;
             raw = {
               construc: 'Objects',
               id: obj.id.oId,
@@ -718,7 +715,6 @@ class Room {
             if(this.rules.viewerBullets && obj.origine.oId == RAW.main.id.oId){
               break;
             }
-            obj.BUFF.len = 21;
             raw = {
               construc: 'Bullets',
               id:     obj.id.oId,
@@ -735,7 +731,6 @@ class Room {
           };
         }
         if(raw){
-          raw.len = obj.BUFF.len;
           obj.BUFF.data = new Int8Array(RT.Controller.encodeInst('Instance',raw));
           obj.BUFF.timestamp = this.timestamp;
         }
@@ -754,7 +749,6 @@ class Room {
         case KIND.BULLET:{
           if(this.rules.viewerBullets && obj.origine.oId == RAW.main.id.oId){
             let raw = new Int8Array(RT.Controller.encodeInst('Instance',{
-              len: 21,
               construc: 'Bullets',
               id: obj.id.oId,
               states: [!!obj.pet*1,0,0,0,0,0,0],
@@ -766,14 +760,12 @@ class Room {
               alpha:  obj.alpha,
               dir:    obj.showDir
             }));
-            buff.len+=raw.length;
             buff.instances.push(raw);
             continue;
           }
           break;
         }
       }
-      buff.len+=obj.BUFF.data.length;
       buff.instances.push(obj.BUFF.data);
     };
     return buff;
@@ -797,13 +789,11 @@ class Room {
   }
   getUi(id){
     let buff = {
-      len:3,
       leader:[],
       map:[],
       mess:[]
     };
     for(let i of this.leader){
-      buff.len+= 7+i.name.length*2;
       buff.leader.push({
         xp:i.xp,
         name:i.name,
@@ -812,7 +802,6 @@ class Room {
       })
     };
     for(let i of this.INSTANCE.players[id].mess){
-      buff.len+= 1+i.length*2;
       buff.mess.push(i);
     };
     this.INSTANCE.players[id].mess = [];

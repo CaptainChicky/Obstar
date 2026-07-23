@@ -1,181 +1,134 @@
+/*
+  The binary wire protocol, for both ends.
+
+  This file runs unchanged in the browser and in Node. The footer at the bottom picks a half
+  by sniffing `typeof(exports)`: undefined means browser (`window.PROTO`), defined means
+  server. `platform` is the only thing that varies, and it varies in exactly three places -
+  the primitive read table (DataView vs Buffer), the class-name list (global `TanksConfig` vs
+  `require`), and which of `exports.encode` / `exports.decode` is the "send" half.
+
+  How a message is described, top to bottom:
+
+    TYPE     field name -> primitive type            ('x' is a float32)
+    SCHEMA   message    -> ordered list of fields    (a Players record is states, class, ...)
+    CODEC    record     -> per-field value transform (an angle goes over the wire as an int16)
+    LIMITS   message    -> legal packet size, and the string bounds the encoder enforces
+    MSG      message    -> the framing around those fields, when it is not just [type][fields]
+
+  Adding a field is therefore two edits (TYPE and SCHEMA) plus a CODEC entry if it is not
+  stored raw - not the five hand-synchronised edits the old encoder/decoder pairs needed. The
+  byte arithmetic is gone entirely: the Encoder grows itself and reports its own length, so
+  there is no size expression to get wrong and no silent truncation when you do.
+
+  The wire format is unchanged, byte for byte, from the hand-rolled version this replaced.
+*/
 (function(exports, platform){
-  var decode =  (platform == 'client') ?
+  ///////////////////////////////////////////////////////////////////// primitives
+  /* Byte width of every fixed-size primitive. `str`/`str8`/`arr` are length-prefixed and
+     computed from the value instead - see sizeOf() and Decoder.read(). */
+  var WIDTH = {
+    'int8':    1,
+    'uint8':   1,
+    'int16':   2,
+    'uint16':  2,
+    'int32':   4,
+    'uint32':  4,
+    'float32': 4
+  };
+  /* Reading is the one genuinely platform-dependent thing here: the browser gets an
+     ArrayBuffer it wraps in a DataView, Node gets a Buffer. Both are big-endian. */
+  var decode = (platform == 'client') ?
   {
-    "str":     (() => {
-      return( dv, offset = 0 ) => {
-        let length = dv.getUint8(offset)*2;
-        let str = '';
-        for( let i = offset+1; i<length+offset+1; i+=2){
-          str += String.fromCharCode(dv.getUint16(i));
-        }
-        return str;
+    "str":     ( dv, offset = 0 ) => {
+      let length = dv.getUint8(offset)*2;
+      let str = '';
+      for( let i = offset+1; i<length+offset+1; i+=2){
+        str += String.fromCharCode(dv.getUint16(i));
       }
-    })(),
-    "str8":    (() => {
-      return( dv, offset = 0 ) => {
-        let length = dv.getUint8(offset);
-        let str = '';
-        for( let i = offset+1; i<length+offset+1; i++){
-          str += String.fromCharCode(dv.getUint8(i));
-        }
-        return str;
+      return str;
+    },
+    "str8":    ( dv, offset = 0 ) => {
+      let length = dv.getUint8(offset);
+      let str = '';
+      for( let i = offset+1; i<length+offset+1; i++){
+        str += String.fromCharCode(dv.getUint8(i));
       }
-    })(),
-    "int8":    (() => {
-      return ( dv, offset = 0 ) => {
-        return dv.getInt8( offset );
-      }
-    })(),
-    "uint8":   (() => {
-      return ( dv, offset = 0 ) => {
-        return dv.getUint8( offset );
-      }
-    })(),
-    "int16":   (() => {
-      return ( dv, offset = 0 ) => {
-        return dv.getInt16( offset );
-      }
-    })(),
-    "uint16":  (() => {
-      return ( dv, offset = 0 ) => {
-        return dv.getUint16( offset );
-      }
-    })(),
-    "int32":   (() => {
-      return ( dv, offset = 0 ) => {
-        return dv.getInt32( offset );
-      }
-    })(),
-    "uint32":  (() => {
-      return ( dv, offset = 0 ) => {
-        return dv.getUint32( offset );
-      }
-    })(),
-    "float32": (() => {
-      return ( dv, offset = 0 ) => {
-        return dv.getFloat32( offset );
-      }
-    })()
+      return str;
+    },
+    "int8":    ( dv, offset = 0 ) => dv.getInt8( offset ),
+    "uint8":   ( dv, offset = 0 ) => dv.getUint8( offset ),
+    "int16":   ( dv, offset = 0 ) => dv.getInt16( offset ),
+    "uint16":  ( dv, offset = 0 ) => dv.getUint16( offset ),
+    "int32":   ( dv, offset = 0 ) => dv.getInt32( offset ),
+    "uint32":  ( dv, offset = 0 ) => dv.getUint32( offset ),
+    "float32": ( dv, offset = 0 ) => dv.getFloat32( offset )
   }:
   {
-    "str":     (() => {
-      return( buff, offset = 0 ) => {
-        let length = buff.readUInt8(offset)*2;
-        let str = '';
-        for( let i = offset+1; i<length+offset+1; i+=2){
-          str += String.fromCharCode(buff.readUInt16BE(i));
-        }
-        return str;
+    "str":     ( buff, offset = 0 ) => {
+      let length = buff.readUInt8(offset)*2;
+      let str = '';
+      for( let i = offset+1; i<length+offset+1; i+=2){
+        str += String.fromCharCode(buff.readUInt16BE(i));
       }
-    })(),
-    "str8":    (() => {
-      return( buff, offset = 0 ) => {
-        let length = buff.readUInt8(offset);
-        let str = '';
-        for( let i = offset+1; i<length+offset+1; i++){
-          str += String.fromCharCode(buff.readUInt8(i));
-        }
-        return str;
+      return str;
+    },
+    "str8":    ( buff, offset = 0 ) => {
+      let length = buff.readUInt8(offset);
+      let str = '';
+      for( let i = offset+1; i<length+offset+1; i++){
+        str += String.fromCharCode(buff.readUInt8(i));
       }
-    })(),
-    "int8":    (() => {
-      return ( buff, offset = 0 ) => {
-        return buff.readInt8( offset );
-      }
-    })(),
-    "uint8":   (() => {
-      return ( buff, offset = 0 ) => {
-        return buff.readUInt8( offset );
-      }
-    })(),
-    "int16":   (() => {
-      return ( buff, offset = 0 ) => {
-        return buff.readInt16BE( offset );
-      }
-    })(),
-    "uint16":  (() => {
-      return ( buff, offset = 0 ) => {
-        return buff.readUInt16BE( offset );
-      }
-    })(),
-    "int32":   (() => {
-      return ( buff, offset = 0 ) => {
-        return buff.readInt32BE( offset );
-      }
-    })(),
-    "uint32":  (() => {
-      return ( buff, offset = 0 ) => {
-        return buff.readUInt32BE( offset );
-      }
-    })(),
-    "float32": (() => {
-      return ( buff, offset = 0 ) => {
-        return buff.readFloatBE( offset );
-      }
-    })()
+      return str;
+    },
+    "int8":    ( buff, offset = 0 ) => buff.readInt8( offset ),
+    "uint8":   ( buff, offset = 0 ) => buff.readUInt8( offset ),
+    "int16":   ( buff, offset = 0 ) => buff.readInt16BE( offset ),
+    "uint16":  ( buff, offset = 0 ) => buff.readUInt16BE( offset ),
+    "int32":   ( buff, offset = 0 ) => buff.readInt32BE( offset ),
+    "uint32":  ( buff, offset = 0 ) => buff.readUInt32BE( offset ),
+    "float32": ( buff, offset = 0 ) => buff.readFloatBE( offset )
   };
+  /* Writing is always into a DataView, on both platforms. */
   var encode = {
-    "str":     (() => {
-      return( dv, data, offset = 0 ) => {
-        let length = data.length;
-        dv.setUint8( offset, length );
-        for( let i = 0; i<length; i++){
-          dv.setUint16( 1+offset+(i*2), data.charCodeAt(i) );
-        }
+    "str":     ( dv, data, offset = 0 ) => {
+      let length = data.length;
+      dv.setUint8( offset, length );
+      for( let i = 0; i<length; i++){
+        dv.setUint16( 1+offset+(i*2), data.charCodeAt(i) );
       }
-    })(),
-    "str8":     (() => {
-      return( dv, data, offset = 0 ) => {
-        let length = data.length;
-        dv.setUint8( offset, length );
-        for( let i = 0; i<length; i++){
-          dv.setUint8( 1+offset+i, data.charCodeAt(i) );
-        }
+    },
+    "str8":    ( dv, data, offset = 0 ) => {
+      let length = data.length;
+      dv.setUint8( offset, length );
+      for( let i = 0; i<length; i++){
+        dv.setUint8( 1+offset+i, data.charCodeAt(i) );
       }
-    })(),
-    "int8":    (() => {
-      return ( dv, data, offset = 0 ) => {
-        dv.setInt8( offset, data );
+    },
+    "int8":    ( dv, data, offset = 0 ) => { dv.setInt8( offset, data ); },
+    "uint8":   ( dv, data, offset = 0 ) => { dv.setUint8( offset, data ); },
+    "int16":   ( dv, data, offset = 0 ) => { dv.setInt16( offset, data ); },
+    "uint16":  ( dv, data, offset = 0 ) => { dv.setUint16( offset, data ); },
+    "int32":   ( dv, data, offset = 0 ) => { dv.setInt32( offset, data ); },
+    "uint32":  ( dv, data, offset = 0 ) => { dv.setUint32( offset, data ); },
+    "float32": ( dv, data, offset = 0 ) => { dv.setFloat32( offset, data ); },
+    /* An already-encoded record (see the 'Instance' message) spliced in as-is. */
+    "arr":     ( dv, data, offset = 0 ) => {
+      for(let i in data){
+        dv.setInt8( offset+parseInt(i), data[i] );
       }
-    })(),
-    "uint8":   (() => {
-      return ( dv, data, offset = 0 ) => {
-        dv.setUint8( offset, data);
-      }
-    })(),
-    "int16":   (() => {
-      return ( dv, data, offset = 0 ) => {
-        dv.setInt16( offset, data );
-      }
-    })(),
-    "uint16":  (() => {
-      return ( dv, data, offset = 0 ) => {
-        dv.setUint16( offset, data );
-      }
-    })(),
-    "int32":   (() => {
-      return ( dv, data, offset = 0 ) => {
-        dv.setInt32( offset, data );
-      }
-    })(),
-    "uint32":  (() => {
-      return ( dv, data, offset = 0 ) => {
-        return dv.setUint32( offset, data );
-      }
-    })(),
-    "float32": (() => {
-      return ( dv, data, offset = 0 ) => {
-        dv.setFloat32( offset, data );
-      }
-    })(),
-    "arr":  (() => {
-      return ( dv, data, offset = 0 ) => {
-        for(let i in data){
-          dv.setInt8( offset+parseInt(i), data[i] );
-        }
-      }
-    })()
+    }
+  };
+  /* Bytes `data` will occupy when written as `type`. */
+  function sizeOf(data, type){
+    switch(type){
+      case 'str':  return 1 + data.length*2;
+      case 'str8': return 1 + data.length;
+      case 'arr':  return data.length;
+      default:     return WIDTH[type];
+    }
   }
+
+  ///////////////////////////////////////////////////////////////////// field types
   var TYPE = {
     'message':'uint8',
     'gm':     'uint8',
@@ -242,7 +195,7 @@
         'name':     'str',
         'nameC':    'uint8',
         'recoil':   'uint16',
-        'canDir':     'str'
+        'canDir':   'str'
       },
       'Objects':{
         'states': 'uint8',
@@ -277,6 +230,14 @@
       'ups': 'uint8'
     }
   };
+  /* The viewer's own tank rides in every GameUpdate ahead of the other entities. It carries
+     the same fields as any other Players record except `xp`, which the head already holds
+     exactly - so it is the Players list minus that one field, and always has been: the old
+     encoder and decoder both spelled it as a `case 'xp': break;` in the middle of the shared
+     Players loop, once each, which is the same thing said twice and easy to desynchronise. */
+  TYPE.GameUpdate.User = TYPE.GameUpdate.Players;
+
+  ///////////////////////////////////////////////////////////////////// field order
   var SCHEMA = {
     /// basic
     'init':[
@@ -361,6 +322,9 @@
       ]
     },
   };
+  SCHEMA.GameUpdate.User = SCHEMA.GameUpdate.Players.filter(n => n != 'xp');
+
+  ///////////////////////////////////////////////////////////////////// enums
   var toSTRING = {
     'construc':[
       'Players',
@@ -515,644 +479,403 @@
   for(let i in toSTRING.class){
     toBUFFER.class[toSTRING.class[i]] = i;
   }
-  ///
+
+  ///////////////////////////////////////////////////////////////////// value transforms
+  /*
+    A field whose in-memory value is not the value that goes on the wire declares a codec:
+    `enc` runs on the way out, `dec` on the way back, and `as` renames the field on decode.
+    These are the bodies of what used to be a `switch(n)` repeated four times - twice in the
+    encoder (own tank / other entities) and twice in the decoder - where a case present in
+    one copy and missing from another was a silent desync.
+  */
+  var CODECS = {
+    /* A bit array. The leading 1 keeps toString(2) from eating leading zeroes. */
+    bits:   {enc: (v) => parseInt('1'+v.join(''),2),
+             dec: (v) => v.toString(2).substr(1).split('').map(x=>parseInt(x))},
+    klass:  {enc: (v) => toBUFFER.class[v],  dec: (v) => toSTRING.class[v]},
+    color:  {enc: (v) => v,                  dec: (v) => toSTRING.color[v]},
+    /* 0..2pi in an int16. */
+    angle:  {enc: (v) => parseInt( (v/(Math.PI*2))*65535 ),
+             dec: (v) => (v/65535)*Math.PI*2},
+    /* A 0..1 ratio in a byte. */
+    unit:   {enc: (v) => Math.max(Math.min(parseInt( v*255 ),255),0),
+             dec: (v) => v/255},
+    /* Polygon shape. Decodes under a different name than it encodes. */
+    shape:  {enc: (v) => toBUFFER.shapes[v], dec: (v) => toSTRING.shapes[v], as: 'type'},
+    /* Scoreboard xp as 3 significant digits + a power-of-1000 exponent; comes back as a
+       display string ("12 k"), which is why the head's raw uint32 `xp` must not use this. */
+    xpMag:  {enc: (v) => { let exp = v ? parseInt(Math.log10(v)/3) : 0;
+                           return parseInt((v)/(Math.pow(1000,exp)))*10 + exp; },
+             dec: (v) => parseInt(v/10) + toSTRING.xpExt[(v-(parseInt(v/10)*10))]},
+    /* Per-barrel aim angles, packed as UTF-16 code units in a `str`. */
+    angles: {enc: (v) => v.map(x => String.fromCharCode(parseInt((x+Math.PI)/(Math.PI*2)*65535))).join(''),
+             dec: (v) => v.length ? v.split('').map(x=>((x.charCodeAt(0)/65535)*(Math.PI*2))-Math.PI) : []}
+  };
+  /* Codecs are per record, not per field name: `xp` means a raw uint32 in the GameUpdate
+     head and a packed magnitude in a Players record, and the two must not be confused. */
+  var CODEC = {
+    'head':    {},
+    'Players': {states: CODECS.bits,  class: CODECS.klass, color: CODECS.color,
+                dir:    CODECS.angle, hp:    CODECS.unit,  alpha: CODECS.unit,
+                xp:     CODECS.xpMag, recoil: CODECS.bits, canDir: CODECS.angles},
+    'Objects': {states: CODECS.bits,  shape: CODECS.shape, hp: CODECS.unit, alpha: CODECS.unit},
+    'Bullets': {states: CODECS.bits,  dir:   CODECS.angle, color: CODECS.color, alpha: CODECS.unit},
+    'leader':  {team:   CODECS.color}
+  };
+  CODEC.User = CODEC.Players;
+
+  ///////////////////////////////////////////////////////////////////// limits
+  /*
+    Every size bound the protocol enforces, in one table.
+
+    `packet` is [min,max] bytes for an inbound message; anything outside is ERR_PACKET_LENGTH.
+    `str` is the longest string the *encoder* will emit for a field, so a well-behaved client
+    cannot build a packet its own server would then reject.
+  */
+  var LIMITS = {
+    packet: {
+      'init':      [25, 65],
+      'ping':      [1, 1],
+      'keydown':   [2, 2],
+      'keyup':     [2, 2],
+      'mousemove': [9, 9],
+      'upgrade':   [2, 2],
+      'upClass':   [2, 2],
+      'chat':      [2, 202],
+      'com':       [2, 52]
+    },
+    str: {
+      'name': 16,   // Controller.maxPseudoLength; 16 chars -> a 62 byte init packet
+      'chat': 100,  // -> 202 bytes
+      'com':  50    // -> 52 bytes
+    },
+    key: 25         // the account key is exactly this long
+  };
+  /*
+    Is `value` within [min,max]?
+
+    This used to read `return(min<=data<=max)`, which JavaScript parses as `(min<=data)<=max`:
+    a boolean coerced to 0/1 and compared against max, true for every max >= 1. Every length
+    check in the protocol passed unconditionally, so nothing was ever validated. See HANDOFF §4.
+  */
+  function checkLength(value, min, max){
+    return (min <= value && value <= max);
+  }
+  function clamp(str, max){
+    return (str.length > max) ? str.substr(0, max) : str;
+  }
+
+  ///////////////////////////////////////////////////////////////////// cursors
+  /* Thrown when a packet claims more bytes than it has. Caught by the server's decode(). */
+  function PacketError(){}
+
   class Decoder{
-    constructor(buffer){
-      this.buffer = buffer;
-      this.dv = new DataView(buffer);
+    constructor(data){
+      this.data   = data;
+      this.view   = (platform == 'client') ? new DataView(data) : data;
       this.cursor = 0;
-      this.end = this.buffer.byteLength;
+      this.end    = (platform == 'client') ? data.byteLength : data.length;
+    }
+    /* Unlike the old cursors, this one refuses to read off the end of the packet rather
+       than letting DataView/Buffer throw something the caller cannot classify. */
+    need(n){
+      if(this.cursor + n > this.end){ throw new PacketError(); }
     }
     read(type){
-      let c = 1;
-      switch(type){
-        case "int16":
-        case "uint16": c = 2;break;
-        case "int32":
-        case "uint32":
-        case "float32": c = 4;break;
-        case 'str': c = this.dv.getUint8( this.cursor )*2+1;break;
-        case 'str8': c = this.dv.getUint8( this.cursor )+1;break;
+      let c = WIDTH[type];
+      if(c === undefined){
+        this.need(1);
+        let n = decode['uint8']( this.view, this.cursor );
+        c = (type == 'str') ? 1+n*2 : 1+n;
       }
+      this.need(c);
       this.cursor += c;
-      return decode[type]( this.dv, this.cursor-c )
-    };
+      return decode[type]( this.view, this.cursor-c );
+    }
     isEnd(){
       return this.end == this.cursor;
     }
-  };
-  class DecoderBuff{
-    constructor(buffer){
-      this.buffer = buffer;
-      this.cursor = 0;
-      this.end = this.buffer.length;
-    }
-    read(type){
-      let c = 1;
-      switch(type){
-        case "int16":
-        case "uint16": c = 2;break;
-        case "int32":
-        case "uint32":
-        case "float32": c = 4;break;
-        case 'str': c = 1+this.buffer.readUInt8( this.cursor )*2;break;
-        case 'str8': c = this.buffer.readUInt8( this.cursor )+1;break;
-      }
-      this.cursor += c;
-      return decode[type]( this.buffer, this.cursor-c )
-    };
-    end(){
-      return this.end == this.this.cursor;
-    }
-  };
-  class Encoder{
-    constructor(size = 0){
-      if(size){
-        this.buffer = new ArrayBuffer(size);
-        this.dv = new DataView(this.buffer);
-      }
-      this.cursor = 0;
-    };
-    init(size){
-      this.buffer = new ArrayBuffer(size);
-      this.dv = new DataView(this.buffer);
-      this.cursor = 0;
-    }
-    write(data, type){
-      let c = 1;
-      switch(type){
-        case "int16":
-        case "uint16": c = 2;break;
-        case "int32":
-        case "uint32":
-        case "float32": c = 4;break;
-        case "str8": c = 1+data.length;break;
-        case 'str': c = 1+data.length*2;break;
-        case 'arr': c = data.length;break;
-      }
-      encode[type](this.dv,data,this.cursor);
-      this.cursor += c;
-    };
-    getBuffer(){
-      return this.buffer;
-    }
-  };
-  function checkLength(data,min,max){
-    return(min<=data<=max)
   }
 
-  exports.encode = (() => {
-    if(platform == 'server'){
-      return (type, data)=>{
-        let ENC = new Encoder();
-        switch(type){
-          /////
-          case 'ping':{
-            ENC.init(1)
-            ENC.write(toBUFFER.type['ping'], TYPE['message']);
-            return ENC.getBuffer();
-          }
-          case 'kick':{
-            ENC.init(2)
-            ENC.write(toBUFFER.type['kick'], TYPE['message']);
-            ENC.write(toBUFFER.reason[data], TYPE.kick.reason)
-            return ENC.getBuffer();
-          }
-          /////
-          case 'Instance':{
-            ENC.init(data.len);
-            let INST = data;
-            let construc = INST.construc;
-            let id = INST.id;
-            ENC.write( toBUFFER['construc'][construc], TYPE.GameUpdate.CONSTRUCTOR);
-            ENC.write( id, TYPE.GameUpdate.ID);
-            for(let n of SCHEMA['GameUpdate'][construc]){
-                let inset = INST[n];
-                let Type = TYPE.GameUpdate[construc][n];
-                switch(n){
-                  case 'states': {
-                    ENC.write( parseInt('1'+inset.join(''),2), Type );
-                    break;
-                  };
-                  case 'class':  {
-                    ENC.write( toBUFFER.class[inset], Type );
-                    break;
-                  };
-                  case 'dir':    {
-                    ENC.write( parseInt( (inset/(Math.PI*2))*65535 ), Type );
-                    break;
-                  };
-                  case 'hp':
-                  case 'alpha':  {
-                    ENC.write( Math.max(Math.min(parseInt( inset*255 ),255),0), Type );
-                    break;
-                  };
-                  case 'shape':  {
-                    ENC.write( toBUFFER.shapes[inset], Type );
-                    break;
-                  };
-                  case 'recoil': {
-                    ENC.write( parseInt('1'+inset.join(''),2), Type );
-                    break;
-                  };
-                  case 'xp':     {
-                    let exp = inset ? parseInt(Math.log10(inset)/3) : 0;
-                    ENC.write( parseInt((inset)/(Math.pow(1000,exp)))*10 + exp, Type );
-                    break;
-                  };
-                  case 'canDir': {
-                    let len = inset.length;
-                    ENC.write( inset.map(x =>String.fromCharCode(((x+Math.PI)/(Math.PI*2))*65535)).join(''), Type);
-                    break;
-                  };
-                  default: ENC.write( inset, Type );break;
-                }
-              };
-            return new Int8Array(ENC.getBuffer());
-            break;
-          };
-          /////
-          case 'GameUpdate':{
-              ENC.init(data.len+1);
-              ENC.write(toBUFFER['type']['GameUpdate'], TYPE['message']);
-              ///HEAD///
-              for(let n of SCHEMA.GameUpdate.head){
-                let inset = data.head[n];
-                let Type = TYPE.GameUpdate.head[n];
-                switch(n){
-                  default: ENC.write( inset , Type ); break;
-                }
-              };
-              ///MAIN///
-              for(let n of SCHEMA.GameUpdate.Players){
-                let inset = data.main[n];
-                let Type = TYPE.GameUpdate.Players[n];
-                switch(n){
-                  case 'states': {
-                    ENC.write( parseInt('1'+inset.join(''),2), Type );
-                    break;
-                  };
-                  case 'class':  {
-                    ENC.write( toBUFFER.class[inset], Type );
-                    break;
-                  };
-                  case 'dir':    {
-                    ENC.write( parseInt( (inset/(Math.PI*2))*65535 ), Type );
-                    break;
-                  };
-                  case 'hp':
-                  case 'alpha':  {
-                    ENC.write( Math.max(Math.min(parseInt( inset*255 ),255),0), Type );
-                    break;
-                  };
-                  case 'xp':{break;};
-                  case 'recoil': {
-                    ENC.write( parseInt('1'+inset.join(''),2), Type );
-                    break;
-                  };
-                  case 'canDir': {
-                    let len = inset.length;
-                    ENC.write( inset.map(x =>String.fromCharCode(parseInt((x+Math.PI)/(Math.PI*2)*65535))).join(''), Type);
-                    break;
-                  };
-                  default: ENC.write( inset, Type );break;
-                }
-              };
-              ///REST///
-              for(let INST of data.instances){
-                ENC.write( INST, 'arr' )
-              }
-              /*
-              for(let INST of data.instances){
-                let construc = INST.construc;
-                let id = INST.id;
-                ENC.write( toBUFFER['construc'][construc], TYPE.GameUpdate.CONSTRUCTOR);
-                ENC.write( id, TYPE.GameUpdate.ID);
-                for(let n of SCHEMA['GameUpdate'][construc]){
-                  let inset = INST[n];
-                  let Type = TYPE.GameUpdate[construc][n];
-                  switch(n){
-                    case 'states': {
-                      ENC.write( parseInt('1'+inset.join(''),2), Type );
-                      break;
-                    };
-                    case 'class':  {
-                      ENC.write( toBUFFER.class[inset], Type );
-                      break;
-                    };
-                    case 'dir':    {
-                      ENC.write( parseInt( (inset/(Math.PI*2))*65535 ), Type );
-                      break;
-                    };
-                    case 'hp':
-                    case 'alpha':  {
-                      ENC.write( Math.max(Math.min(parseInt( inset*255 ),255),0), Type );
-                      break;
-                    };
-                    case 'shape':  {
-                      ENC.write( toBUFFER.shapes[inset], Type );
-                      break;
-                    };
-                    case 'recoil': {
-                      ENC.write( parseInt('1'+inset.join(''),2), Type );
-                      break;
-                    };
-                    case 'xp':     {
-                      let exp = inset ? parseInt(Math.log10(inset)/3) : 0;
-                      ENC.write( parseInt((inset)/(Math.pow(1000,exp)))*10 + exp, Type );
-                      break;
-                    };
-                    case 'canDir': {
-                      let len = inset.length;
-                      ENC.write( inset.map(x =>String.fromCharCode(((x+Math.PI)/(Math.PI*2))*65535)).join(''), Type);
-                      break;
-                    };
-                    default: ENC.write( inset, Type );break;
-                  }
-                };
-              }
-              */
-              return ENC.getBuffer();
-              break;
-            };
-          case 'UiUpdate':  {
-            ENC.init(data.len+1);
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(data.leader.length, TYPE[type]['array']);
-            for(let d of data.leader){
-              for(let n of SCHEMA[type].leader){
-                let inset = d[n];
-                let Type = TYPE.UiUpdate.leader[n];
-                switch(n){
-                  default: ENC.write( inset, Type );break;
-                }
-              }
-            }
-            ENC.write(data.map.length, TYPE[type]['array']);
-            ENC.write(data.mess.length, TYPE[type]['array']);
-            for(let m of data.mess){
-              ENC.write(m,'str');
-            }
-            return ENC.getBuffer();
-            break;
-          };
-          case 'UpdateUp':   {
-            ENC.init(2+data.length);
-            ENC.write(toBUFFER.type['UpdateUp'], TYPE['message']);
-            ENC.write(data.length, TYPE[type]['ups'])
-            for(let i of data){
-              ENC.write(i, TYPE[type]['ups'])
-            }
-            return ENC.getBuffer();
-          }
-          /////
-          case 'chatUpdate':{
-            data = new Array(data.length*2).fill(0).map((x,i)=>data[parseInt(i/2)][i%2]);
-            ENC.init(data.join('').length*2+2+data.length);
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(data.length, 'uint8');
-            for(let i of data){
-              ENC.write(i,'str');
-            }
-            return ENC.getBuffer();
-            break;
-          };
-          case 'comResponse':{
-            if(!Array.isArray(data)){
-              data = [data];
-            }
-            ENC.init(data.join('').length+2+data.length);
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(data.length, 'uint8');
-            for(let i of data){
-              ENC.write(i,'str8');
-            }
-            return ENC.getBuffer();
-            break;
-          };
-        }
-      };
-    } else {////////CLIENT
-      return (type, data)=>{
-        let ENC = new Encoder();
-        switch(type){
-          /////
-          case 'init':{
-              ENC.init(5+data.key.length+data.name.length*2);
-              ENC.write(toBUFFER['type'][type], TYPE['message']);
-              ///
-              ENC.write(data.key, TYPE['key']);
-              ENC.write(toBUFFER['gamemode'][data.gm], TYPE['gm']);
-              ENC.write(data.name, TYPE['name']);
-              ENC.write(parseInt(data.pet), TYPE['pet']);
-              return ENC.getBuffer();
-              break;
-            };
-          case 'ping':{
-            ENC.init(1);
-            ENC.write(toBUFFER.type['ping'], TYPE['message']);
-            return ENC.getBuffer();
-            break;
-          };
-          /////
-          case 'keydown':{
-            ENC.init(2);
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(toBUFFER['key'][data], TYPE[type]['key']);
-            return ENC.getBuffer();
-            break;
-          };
-          case 'keyup':{
-            ENC.init(2);
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(toBUFFER['key'][data], TYPE[type]['key']);
-            return ENC.getBuffer();
-            break;
-          };
-          case 'mousemove':{
-            ENC.init(9)
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(parseInt(data.x*65535), TYPE[type].x);
-            ENC.write(parseInt(data.y*65535), TYPE[type].y);
-            ENC.write(data.dir, TYPE[type].dir);
-            return ENC.getBuffer();
-            break;
-          };
-          /////
-          case 'upgrade':{
-            ENC.init(2);
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(data, TYPE[type]['up']);
-            return ENC.getBuffer();
-            break;
-          };
-          case 'upClass':{
-            ENC.init(2);
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(toBUFFER['class'][data], TYPE[type]['class']);
-            return ENC.getBuffer();
-            break;
-          };
-          /////
-          case 'chat':{
-            ENC.init(2+data.length*2);
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(data, TYPE[type]);
-            return ENC.getBuffer();
-            break;
-          };
-          case 'com':{
-            ENC.init(2+data.length);
-            ENC.write(toBUFFER['type'][type], TYPE['message']);
-            ENC.write(data, TYPE[type]);
-            return ENC.getBuffer();
-            break;
-          };
-        }
-      };
+  /*
+    Grows to fit whatever is written into it, so no caller computes a packet size any more.
+    The old Encoder took the size up front from arithmetic spelled out at each call site
+    (`ENC.init(37+name.length*2+canDir.length*2)` and friends); getting it wrong truncated
+    the packet silently, and getting it too large appended zero bytes that the client's
+    "read instances until the buffer ends" loop then decoded as garbage entities.
+  */
+  class Encoder{
+    constructor(size = 256){
+      this.init(size);
     }
-  })();
-  exports.decode = (() => {
-    if(platform == 'server'){
-      return (data)=>{
-        if(!data.byteLength){
-          return {error: 'ERR_PACKET_LENGTH'};
-        }
-        let DEC = new DecoderBuff(data);
-        let j = DEC.read(TYPE['message']);
-        let type = toSTRING['type'][j];//toSTRING['type'][DEC.read(TYPE['message'])];
-        let result = {type:type, data: {}};
-        switch(type){
-          ///
-          case 'init':{
-            result.error = (checkLength(data.byteLength,25,65)) ? 0 : 'ERR_PACKET_LENGTH';
-            if(result.error){ break; }
-            result.data.key = DEC.read(TYPE['key']);
-            result.data.gm  = toSTRING['gamemode'][DEC.read(TYPE['gm'])];
-            result.data.name = DEC.read(TYPE['name']);
-            result.data.pet = DEC.read(TYPE['pet']);
-            result.error = (checkLength(result.data.key,25,25)) ? 0 : 'ERR_BROKEN_KEY';
-            break;
-          };
-          case 'ping':{
-            result.error = (checkLength(data.byteLength,1,1)) ? 0 : 'ERR_PACKET_LENGTH';
-            break;
-          }
-          ///
-          case 'keydown':
-          case 'keyup':{
-            result.error = (checkLength(data.byteLength,2,2)) ? 0 : 'ERR_PACKET_LENGTH';
-            if(result.error){ break; }
-            result.data.key = toSTRING['key'][DEC.read(TYPE[type]['key'])];
-            break;
-          };
-          case 'mousemove':{
-            result.error = (checkLength(data.byteLength,9,9)) ? 0 : 'ERR_PACKET_LENGTH';
-            if(result.error){ break; }
-            result.data.x = DEC.read(TYPE[type].x)/65535;
-            result.data.y = DEC.read(TYPE[type].y)/65535;
-            result.data.dir = DEC.read(TYPE[type].dir);
-            break;
-          };
-          ///
-          case 'upgrade':{
-            result.error = (checkLength(data.byteLength,2,2)) ? 0 : 'ERR_PACKET_LENGTH';
-            if(result.error){ break; }
-            result.data.up = DEC.read(TYPE[type]['up']);
-            break;
-          };
-          case 'upClass':{
-            result.error = (checkLength(data.byteLength,2,2)) ? 0 : 'ERR_PACKET_LENGTH';
-            if(result.error){ break; }
-            result.data.up = toSTRING['class'][DEC.read(TYPE[type]['class'])];
-            break;
-          };
-          ///
-          case 'chat':{
-            result.error = (checkLength(data.byteLength,202,202)) ? 0 : 'ERR_PACKET_LENGTH';
-            if(result.error){ break; }
-            result.data = DEC.read(TYPE[type]);
-            break;
-          }
-          case 'com':{
-            result.error = (checkLength(data.byteLength,52,52)) ? 0 : 'ERR_PACKET_LENGTH';
-            if(result.error){ break; }
-            result.data = DEC.read(TYPE[type]);
-            break;
-          }
-        }
-        return result;
-      };
-    } else {////////CLIENT
-      return (data)=>{
-        let DEC = new Decoder(data);
-        let type = toSTRING['type'][DEC.read(TYPE['message'])];
-        let result = {type:type, data: {}};
-        switch(type){
-          ///
-          case 'ping':{
-            break;
-          };
-          case 'kick':{
-            result.reason = toSTRING['reason'][DEC.read(TYPE.kick.reason)];
-            break;
-          }
-          ///
-          case 'GameUpdate':{
-            result.data.head = {};
-            for(let n of SCHEMA.GameUpdate.head){
-              let Type = TYPE.GameUpdate.head[n];
-              result.data.head[n] = DEC.read(Type);
-            }
-            ///
-            result.data.User = {};
-            for(let n of SCHEMA.GameUpdate.Players){
-              let Type = TYPE.GameUpdate.Players[n];
-              switch(n){
-                case 'states': {
-                  result.data.User[n] = DEC.read(Type).toString(2).substr(1).split('').map(x=>parseInt(x));
-                  break;
-                };
-                case 'class':  {
-                  result.data.User[n] = toSTRING.class[DEC.read(Type)];
-                  break;
-                };
-                case 'dir':    {
-                  result.data.User[n] = (DEC.read(Type)/65535)*Math.PI*2;
-                  break;
-                };
-                case 'hp':
-                case 'alpha':  {
-                  result.data.User[n] = DEC.read(Type)/255;
-                  break;
-                };
-                case 'xp':     {break;};
-                case 'color':  {
-                  result.data.User[n] = toSTRING.color[DEC.read(Type)];
-                  break;
-                };
-                case 'recoil': {
-                  result.data.User[n] = DEC.read(Type).toString(2).substr(1).split('').map(x=>parseInt(x));
-                  break;
-                };
-                case 'canDir': {
-                  let deco = DEC.read(Type);
-                  result.data.User[n] = deco.length ? deco.split('').map(x=>((x.charCodeAt(0)/65535)*(Math.PI*2))-Math.PI) : [];
-                  break;
-                };
-                default: result.data.User[n] = DEC.read(Type);break;
-              }
-            }
-            ///
-            result.data.Instances = {Objects:[],Players:[],Bullets:[]};
-            while(true){
-              if(DEC.isEnd()){break;}
-              let rawConstruc = DEC.read(TYPE.GameUpdate.CONSTRUCTOR)
-              let construc = toSTRING['construc'][rawConstruc];
-              let id = DEC.read(TYPE.GameUpdate.ID);
-              result.data.Instances[construc][id] = {};
-              let obj = result.data.Instances[construc][id];
-              for(let n of SCHEMA['GameUpdate'][construc]){
-                let Type = TYPE.GameUpdate[construc][n];
-                switch(n){
-                  case 'states': {
-                    obj[n] = DEC.read(Type).toString(2).substr(1).split('').map(x=>parseInt(x));
-                    break;
-                  };
-                  case 'class':  {
-                    obj[n] = toSTRING.class[DEC.read(Type)];
-                    break;
-                  };
-                  case 'dir':    {
-                    obj[n] = (DEC.read(Type)/65535)*Math.PI*2;
-                    break;
-                  };
-                  case 'shape':  {
-                    obj.type = toSTRING.shapes[DEC.read(Type)];
-                    break;
-                  };
-                  case 'hp':
-                  case 'alpha':  {
-                    obj[n] = DEC.read(Type)/255;
-                    break;
-                  };
-                  case 'xp':     {
-                    let raw = DEC.read(Type);
-                    obj[n] = parseInt(raw/10) + toSTRING.xpExt[(raw-(parseInt(raw/10)*10))];
-                    break;
-                  };
-                  case 'color':  {
-                    obj[n] = toSTRING.color[DEC.read(Type)];
-                    break;
-                  };
-                  case 'recoil': {
-                    obj[n] = DEC.read(Type).toString(2).substr(1).split('').map(x=>parseInt(x));
-                    break;
-                  };
-                  case 'canDir': {
-                    let deco = DEC.read(Type);
-                    obj[n] = deco.length ? deco.split('').map(x=>((x.charCodeAt(0)/65535)*(Math.PI*2))-Math.PI) : [];
-                    break;
-                  };
-                  default: obj[n] = DEC.read(Type);break;
-                }
-              };
-            }
-            ///
-            break;
-          };
-          case 'UiUpdate':{
-            result.data.leader = new Array(DEC.read(TYPE[type]['array']));
-            for(let i = 0; i<result.data.leader.length; i++){
-              let player = {};
-              for(let n of SCHEMA[type].leader){
-                let Type = TYPE.UiUpdate.leader[n];
-                switch(n){
-                  case 'team':{
-                    player[n] = toSTRING.color[DEC.read(Type)];
-                    break;
-                  }
-                  default: player[n] = DEC.read(Type);break;
-                }
-              }
-              result.data.leader[i] = player;
-            }
-            result.data.map = new Array(DEC.read(TYPE[type]['array']));
-            result.data.mess = new Array(DEC.read(TYPE[type]['array']));
-            for(let i = 0; i<result.data.mess.length; i++){
-              result.data.mess[i] = DEC.read('str');
-            }
-            break;
-          };
-          case 'UpdateUp':  {
-            result.data.ups = new Array(DEC.read(TYPE[type]['ups']));
-            for(let i = 0; i<result.data.ups.length; i++){
-              result.data.ups[i] = DEC.read(TYPE[type]['ups']);
-            }
-            break;
-          };
-          ///
-          case 'chatUpdate':{
-            result.data.res = [];
-            let len = DEC.read('uint8');
-            for(let i = 0; i<len/2; i+=2){
-              result.data.res.push([DEC.read('str'),DEC.read('str')]);
-            }
-            break;
-          };
-          case 'comResponse':{
-            result.data.res = [];
-            let len = DEC.read('uint8');
-            for(let i = 0; i<len; i++){
-              result.data.res.push(DEC.read('str8'));
-            }
-            break;
-          };
-        }
-        return result;
-      };
+    init(size){
+      this.buffer = new ArrayBuffer(size);
+      this.dv     = new DataView(this.buffer);
+      this.cursor = 0;
     }
-  })();
+    room(n){
+      if(this.cursor + n <= this.buffer.byteLength){ return; }
+      let size = this.buffer.byteLength || 1;
+      while(size < this.cursor + n){ size *= 2; }
+      let grown = new ArrayBuffer(size);
+      new Uint8Array(grown).set(new Uint8Array(this.buffer));
+      this.buffer = grown;
+      this.dv     = new DataView(grown);
+    }
+    write(data, type){
+      let c = sizeOf(data, type);
+      this.room(c);
+      encode[type](this.dv, data, this.cursor);
+      this.cursor += c;
+    }
+    /* Exactly the bytes written, nothing after them. */
+    getBuffer(){
+      return this.buffer.slice(0, this.cursor);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////// schema drivers
+  /* Write one record: every field of `SCHEMA[...]` in order, through `CODEC[record]`. */
+  function writeFields(ENC, fields, types, codecs, src){
+    for(let n of fields){
+      let codec = codecs[n];
+      ENC.write( codec ? codec.enc(src[n]) : src[n], types[n] );
+    }
+  }
+  /* Read one record back into `dst`, honouring any `as` rename. */
+  function readFields(DEC, fields, types, codecs, dst){
+    for(let n of fields){
+      let codec = codecs[n];
+      let raw   = DEC.read(types[n]);
+      dst[(codec && codec.as) ? codec.as : n] = codec ? codec.dec(raw) : raw;
+    }
+    return dst;
+  }
+  /* Shorthand for the GameUpdate records, whose three tables are all keyed the same way. */
+  function writeRecord(ENC, record, src){
+    writeFields(ENC, SCHEMA.GameUpdate[record], TYPE.GameUpdate[record], CODEC[record], src);
+  }
+  function readRecord(DEC, record, dst){
+    return readFields(DEC, SCHEMA.GameUpdate[record], TYPE.GameUpdate[record], CODEC[record], dst);
+  }
+
+  ///////////////////////////////////////////////////////////////////// outbound messages
+  /*
+    Framing only. Each entry writes its payload after the leading message-type byte, which
+    send() has already written; a `null` entry is a bare header (`ping`). 'Instance' is the
+    one exception and is handled in send() - it is a fragment spliced into a GameUpdate, so
+    it carries no type byte and comes back as an Int8Array.
+  */
+  var MSG = (platform == 'server') ? {
+    'ping': null,
+    'kick': (ENC, reason) => {
+      ENC.write(toBUFFER.reason[reason], TYPE.kick.reason);
+    },
+    'GameUpdate': (ENC, data) => {
+      writeRecord(ENC, 'head', data.head);
+      writeRecord(ENC, 'User', data.main);
+      for(let INST of data.instances){
+        ENC.write(INST, 'arr');
+      }
+    },
+    'UiUpdate': (ENC, data) => {
+      ENC.write(data.leader.length, TYPE.UiUpdate.array);
+      for(let d of data.leader){
+        writeFields(ENC, SCHEMA.UiUpdate.leader, TYPE.UiUpdate.leader, CODEC.leader, d);
+      }
+      ENC.write(data.map.length,  TYPE.UiUpdate.array);
+      ENC.write(data.mess.length, TYPE.UiUpdate.array);
+      for(let m of data.mess){
+        ENC.write(m, 'str');
+      }
+    },
+    'UpdateUp': (ENC, data) => {
+      ENC.write(data.length, TYPE.UpdateUp.ups);
+      for(let i of data){
+        ENC.write(i, TYPE.UpdateUp.ups);
+      }
+    },
+    'chatUpdate': (ENC, data) => {
+      // [author, text] pairs, flattened; the count is of strings, not of pairs.
+      data = new Array(data.length*2).fill(0).map((x,i)=>data[parseInt(i/2)][i%2]);
+      ENC.write(data.length, 'uint8');
+      for(let i of data){
+        ENC.write(i, 'str');
+      }
+    },
+    'comResponse': (ENC, data) => {
+      if(!Array.isArray(data)){
+        data = [data];
+      }
+      ENC.write(data.length, 'uint8');
+      for(let i of data){
+        ENC.write(i, 'str8');
+      }
+    }
+  } : {
+    'init': (ENC, data) => {
+      ENC.write(data.key, TYPE.key);
+      ENC.write(toBUFFER.gamemode[data.gm], TYPE.gm);
+      ENC.write(clamp(data.name, LIMITS.str.name), TYPE.name);
+      ENC.write(parseInt(data.pet), TYPE.pet);
+    },
+    'ping': null,
+    'keydown': (ENC, data) => { ENC.write(toBUFFER.key[data], TYPE.keydown.key); },
+    'keyup':   (ENC, data) => { ENC.write(toBUFFER.key[data], TYPE.keyup.key); },
+    'mousemove': (ENC, data) => {
+      ENC.write(parseInt(data.x*65535), TYPE.mousemove.x);
+      ENC.write(parseInt(data.y*65535), TYPE.mousemove.y);
+      ENC.write(data.dir, TYPE.mousemove.dir);
+    },
+    'upgrade': (ENC, data) => { ENC.write(data, TYPE.upgrade.up); },
+    'upClass': (ENC, data) => { ENC.write(toBUFFER.class[data], TYPE.upClass.class); },
+    'chat':    (ENC, data) => { ENC.write(clamp(data, LIMITS.str.chat), TYPE.chat); },
+    'com':     (ENC, data) => { ENC.write(clamp(data, LIMITS.str.com),  TYPE.com); }
+  };
+
+  ///////////////////////////////////////////////////////////////////// inbound messages
+  /*
+    Decoders for everything this platform receives. Each reads the payload after the type
+    byte; length validation happens in decode() from LIMITS.packet, uniformly, before any
+    of these run.
+  */
+  var PARSE = (platform == 'server') ? {
+    'init': (DEC, result) => {
+      result.data.key  = DEC.read(TYPE.key);
+      result.data.gm   = toSTRING.gamemode[DEC.read(TYPE.gm)];
+      result.data.name = DEC.read(TYPE.name);
+      result.data.pet  = DEC.read(TYPE.pet);
+      // `key` is a string here, so this has to measure it - the old code compared the string
+      // itself against 25, which is NaN-false for every real key once checkLength works.
+      if(!checkLength(result.data.key.length, LIMITS.key, LIMITS.key)){
+        result.error = 'ERR_BROKEN_KEY';
+      }
+    },
+    'ping': null,
+    'keydown': (DEC, result) => { result.data.key = toSTRING.key[DEC.read(TYPE.keydown.key)]; },
+    'keyup':   (DEC, result) => { result.data.key = toSTRING.key[DEC.read(TYPE.keyup.key)]; },
+    'mousemove': (DEC, result) => {
+      result.data.x   = DEC.read(TYPE.mousemove.x)/65535;
+      result.data.y   = DEC.read(TYPE.mousemove.y)/65535;
+      result.data.dir = DEC.read(TYPE.mousemove.dir);
+    },
+    'upgrade': (DEC, result) => { result.data.up = DEC.read(TYPE.upgrade.up); },
+    'upClass': (DEC, result) => { result.data.up = toSTRING.class[DEC.read(TYPE.upClass.class)]; },
+    'chat': (DEC, result) => { result.data = DEC.read(TYPE.chat); },
+    'com':  (DEC, result) => { result.data = DEC.read(TYPE.com); }
+  } : {
+    'ping': null,
+    'kick': (DEC, result) => { result.reason = toSTRING.reason[DEC.read(TYPE.kick.reason)]; },
+    'GameUpdate': (DEC, result) => {
+      result.data.head = readRecord(DEC, 'head', {});
+      result.data.User = readRecord(DEC, 'User', {});
+      result.data.Instances = {Objects:[], Players:[], Bullets:[]};
+      while(!DEC.isEnd()){
+        let construc = toSTRING.construc[DEC.read(TYPE.GameUpdate.CONSTRUCTOR)];
+        let id       = DEC.read(TYPE.GameUpdate.ID);
+        result.data.Instances[construc][id] = readRecord(DEC, construc, {});
+      }
+    },
+    'UiUpdate': (DEC, result) => {
+      result.data.leader = new Array(DEC.read(TYPE.UiUpdate.array));
+      for(let i = 0; i<result.data.leader.length; i++){
+        result.data.leader[i] = readFields(DEC, SCHEMA.UiUpdate.leader, TYPE.UiUpdate.leader, CODEC.leader, {});
+      }
+      result.data.map  = new Array(DEC.read(TYPE.UiUpdate.array));
+      result.data.mess = new Array(DEC.read(TYPE.UiUpdate.array));
+      for(let i = 0; i<result.data.mess.length; i++){
+        result.data.mess[i] = DEC.read('str');
+      }
+    },
+    'UpdateUp': (DEC, result) => {
+      result.data.ups = new Array(DEC.read(TYPE.UpdateUp.ups));
+      for(let i = 0; i<result.data.ups.length; i++){
+        result.data.ups[i] = DEC.read(TYPE.UpdateUp.ups);
+      }
+    },
+    'chatUpdate': (DEC, result) => {
+      result.data.res = [];
+      let len = DEC.read('uint8');
+      for(let i = 0; i<len/2; i+=2){
+        result.data.res.push([DEC.read('str'), DEC.read('str')]);
+      }
+    },
+    'comResponse': (DEC, result) => {
+      result.data.res = [];
+      let len = DEC.read('uint8');
+      for(let i = 0; i<len; i++){
+        result.data.res.push(DEC.read('str8'));
+      }
+    }
+  };
+
+  /////////////////////////////////////////////////////////////////////
+  exports.encode = (type, data) => {
+    let ENC = new Encoder();
+    /* A single entity, encoded once per tick and spliced into every viewer's GameUpdate. */
+    if(type == 'Instance'){
+      ENC.write(toBUFFER.construc[data.construc], TYPE.GameUpdate.CONSTRUCTOR);
+      ENC.write(data.id, TYPE.GameUpdate.ID);
+      writeRecord(ENC, data.construc, data);
+      return new Int8Array(ENC.getBuffer());
+    }
+    if(!(type in MSG)){
+      return;
+    }
+    ENC.write(toBUFFER.type[type], TYPE.message);
+    if(MSG[type]){
+      MSG[type](ENC, data);
+    }
+    return ENC.getBuffer();
+  };
+
+  exports.decode = (data) => {
+    let length = (platform == 'client') ? data.byteLength : data.length;
+    if(!length){
+      return {error: 'ERR_PACKET_LENGTH'};
+    }
+    let DEC    = new Decoder(data);
+    let type   = toSTRING.type[DEC.read(TYPE.message)];
+    let result = {type: type, data: {}};
+    if(!(type in PARSE)){
+      // An unknown or wrong-direction type byte. ERR_PACKET_TYPE has been in the kick enum
+      // since the beginning and was never once produced; the switch simply fell through and
+      // handed the caller an empty result.
+      if(platform == 'server'){ result.error = 'ERR_PACKET_TYPE'; }
+      return result;
+    }
+    let bounds = LIMITS.packet[type];
+    if(bounds && !checkLength(length, bounds[0], bounds[1])){
+      result.error = 'ERR_PACKET_LENGTH';
+      return result;
+    }
+    if(!PARSE[type]){
+      return result;
+    }
+    if(platform == 'client'){
+      PARSE[type](DEC, result);
+      return result;
+    }
+    // Server side, a truncated payload is a rejected packet, not a thrown exception: this
+    // runs on data from the network, and an uncaught throw here now takes the process down
+    // (lib/crash.js fails fast).
+    try {
+      PARSE[type](DEC, result);
+    } catch(e) {
+      if(!(e instanceof PacketError)){ throw e; }
+      result.error = 'ERR_PACKET_LENGTH';
+    }
+    return result;
+  };
+
+  /* Exposed for tests and for anything that needs to agree with the wire without re-deriving
+     it (see test/proto.js). Not used by the game itself. */
+  exports.TYPE     = TYPE;
+  exports.SCHEMA   = SCHEMA;
+  exports.CODEC    = CODEC;
+  exports.LIMITS   = LIMITS;
+  exports.toBUFFER = toBUFFER;
+  exports.toSTRING = toSTRING;
 
 })(typeof(exports) === 'undefined' ? function(){this['PROTO'] = {}; return this['PROTO']}() : exports,
    typeof(exports) === 'undefined' ? 'client' : 'server')
