@@ -4,6 +4,7 @@
   monolith ran them too.
 */
 (function(CLIENT){
+  'use strict';
   var General = CLIENT.General;
   General['DEV'] = (() => {
     var dev = {
@@ -86,7 +87,7 @@
     input.maxLength = '100';
     let div = document.createElement('DIV');
     div.id = 'chat';
-    mess = document.createElement('DIV');
+    let mess = document.createElement('DIV');
     mess.id = 'mess';
     mess.innerHTML =
     "<div style='line-height: 115%'>"+
@@ -130,10 +131,10 @@
       for(let data of arr){
         let log = document.createElement('DIV');
         let splited = data[0].split(' ');
-        name = splited.slice(1).join(' ');
+        let name = splited.slice(1).join(' ');
         log.innerHTML =  data[0].length ? `<span style="color: #${splited[0]}">`+escapeHtml(name)+' : </span>' : '<span style="color:#ccc;font-weight:500">server : </span>'
         log.innerHTML += escapeHtml(data[1]);
-        doScroll = (mess.scrollTop+mess.clientHeight>=mess.scrollHeight-5);
+        let doScroll = (mess.scrollTop+mess.clientHeight>=mess.scrollHeight-5);
         mess.appendChild(log,input);
         if(doScroll){
           mess.scrollTo(0,mess.scrollHeight);

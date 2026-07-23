@@ -18,7 +18,7 @@
     (ctx, param, CONST, C) => {
       ///
       ctx.rotate((Date.now()/3000)%Math.PI*2);
-      $1 = (12*param.size/CONST.SIZE)/20
+      let $1 = (12*param.size/CONST.SIZE)/20
       ctx.beginPath();
       ctx.rect(-20*$1,-20*$1,40*$1,40*$1);
       ctx.closePath();
@@ -34,7 +34,7 @@
       ///
       let r = (Date.now()/3200)%Math.PI*2;
       ctx.rotate(r);
-      $1 = (12*param.size/CONST.SIZE)/18
+      let $1 = (12*param.size/CONST.SIZE)/18
       ctx.beginPath();
         ctx.moveTo(32*$1,0)
         ctx.lineTo(-16*$1,27.7*$1)
@@ -52,7 +52,7 @@
       ///
       let r = (Date.now()/3600)%Math.PI*2;
       ctx.rotate(r);
-      $1 = (20*param.size/CONST.SIZE)/42
+      let $1 = (20*param.size/CONST.SIZE)/42
       ctx.beginPath();
         ctx.moveTo(52*$1,0);
         ctx.lineTo(16.1*$1,49.5*$1);

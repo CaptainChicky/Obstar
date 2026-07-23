@@ -152,7 +152,7 @@ class Player {
         this.DETEC.x = this.x;
         this.DETEC.y = this.y;
       }
-    } else if(false){
+    } else if(false){   // CLEANUP(HANDOFF §12): dead branch, intentionally disabled toggle. Delete the else-if.
       this.DETEC = 0;
     }
     ////

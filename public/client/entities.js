@@ -375,6 +375,8 @@
       } else {
         this.hpAlpha = Math.max(0,this.hpAlpha-0.01);
       }
+      // CLEANUP(HANDOFF §12): dead commented-out particle-system block, carried across the
+      // split verbatim. ParticuleSys exists nowhere in the tree; delete this whole /* */.
       /*
       if(this.draw.alpha < 1 && !this.e){
         this.e = 1;

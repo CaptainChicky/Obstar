@@ -2420,7 +2420,7 @@
     ///dev
     'Gunner':new function(){
       this.screen = 1408;
-      c = [];
+      let c = [];
       c = c.concat(new Array(4).fill(null).map(()=>({
         reload :      33,
         offTime :     0,

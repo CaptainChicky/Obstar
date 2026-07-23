@@ -113,13 +113,13 @@
           offy = lw+34+lw
         }
         ///
-        barc = '#fbe048 ';
-        bardkc = General['color'].shade(barc,.5);
-        barMarge = 9;
-        barW = 42;
-        barH = 16;
-        barRad = 9;
-        barlw = 6;
+        let barc = '#fbe048 ';
+        let bardkc = General['color'].shade(barc,.5);
+        let barMarge = 9;
+        let barW = 42;
+        let barH = 16;
+        let barRad = 9;
+        let barlw = 6;
         /// level ///
         function level(tank,score,lvl){
           ctx.clearRect(0,offy,can.width,can.height+offy);
@@ -773,7 +773,7 @@
           ctx.restore();
           ///
           ctx.font = '700 '+parseInt(20*R)+'px Catamaran';
-          m = ctx.measureText(tank).width;
+          let m = ctx.measureText(tank).width;
           ctx.textBaseline = 'middle';
           ctx.lineJoin = 'round';
           ctx.lineWidth = 4;

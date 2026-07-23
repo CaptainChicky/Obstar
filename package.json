@@ -12,16 +12,21 @@
         "test:rooms": "node test/rooms.js",
         "test:client": "node test/client.js",
         "test:smoke": "node test/smoke.js",
-        "test:web": "node test/web.js"
+        "test:web": "node test/web.js",
+        "lint": "eslint ."
     },
     "dependencies": {
         "cookie-parser": "~1.4.4",
-        "victor":"~1.1",
-        "util":"~0.12.1",
-        "ws":"~7.2.3",
-        "mysql":"~2.17",
-        "express":"~4.17.1",
-        "ejs":"~2.7.1",
-        "body-parser":"~1.19"
+        "ejs": "^3.1.10",
+        "express": "^5.1.0",
+        "mysql2": "^3.11.0",
+        "util": "~0.12.1",
+        "victor": "~1.1",
+        "ws": "^8.18.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.7.0",
+        "globals": "^17.7.0"
     }
 }

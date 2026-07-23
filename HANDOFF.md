@@ -3,57 +3,36 @@
 Written for a fresh agent session tasked with refactoring this repo. It describes the code
 **as it actually is today**, including the parts that are wrong. Nothing here is aspirational.
 
-> **Status — updated 2026-07-23, after refactor chunks 1–9 and the client split.**
-> **Items 1–9 and 11 are done.** Open: §8.10 (dependencies and DB) and §8.12 (client idiom
-> and hot-path cleanup — what the §8.9 split deliberately did not touch; see §6.2).
-> The 3918-line `Alex.js` monolith is gone; so are both of its names. There is now **one
-> entry point, [server.js](server.js), running one process on one port** — the two-servers
-> -you-must-both-remember-to-start arrangement is over (§1). `constructor.name` type dispatch
-> is gone (§5.9, [lib/kinds.js](lib/kinds.js)). Files whose names meant nothing outside the
-> original author's head were renamed (§2.2). The protocol is one declarative schema that
-> drives both the encoder and the decoder, it sizes its own packets, and — for the first time
-> in the repo's history — it validates its input (§4).
+> **Status — updated 2026-07-23. Refactor items 1–11 done, plus §8.12.1–8.12.2.** The only
+> work left is the deferred cleanup backlog in **§12** — dead code, bulk idiom, one hot-path
+> item — none of it a bug. Sections below are marked ✅ DONE / ⬜ TODO; where a bug is fixed the
+> text says where the fix lives, not how the old breakage looked.
 >
-> **New in this pass**, driven by a session where the game was finally opened in a browser:
-> - **The simulation runs on a fixed timestep** (§8.8, [lib/clock.js](lib/clock.js)). The
->   self-re-arming `setTimeout(20)` chain is gone; every room shares one accumulator-driven
->   clock, so the tick rate no longer sags under load and a stall is dropped rather than
->   repaid as a burst.
-> - **The game's speed is now a number in one place, and that number is 33 ms, not 20**
->   (`config.TICK_MS`, §3.1). This is the most consequential finding of the pass: the old
->   chain never achieved the 50 Hz it nominally asked for — measured, it ran at **28–30 Hz** —
->   so every speed and reload constant in the game was tuned by feel against ~29 Hz. An
->   honest 20 ms clock therefore made the whole game run **1.7× too fast**, which is exactly
->   what a player reported. Read §3.1 before changing it.
-> - **The client's motion was rewritten** ([public/motion.js](public/motion.js), §6.1). Both
->   of the things a player reported — bullets that crawl for half a second after you fire,
->   and a camera that slides off your tank while you move — were one bug: exponential
->   smoothing towards a moving target. Positions are snapshot-interpolated now and the camera
->   is pinned to the tank.
-> - **`4team` and `boss` are real gamemodes** ([rooms/FourTeam.js](rooms/FourTeam.js),
->   [rooms/BossMode.js](rooms/BossMode.js)), and the gamemode enum that made `4team`
->   unjoinable for the life of the codebase is fixed (§5.14). §10's open question is answered.
-> - **The client is executed by the test suite** ([test/client.js](test/client.js)) — the
->   first time in this repo's history that the rendering code has run outside a browser.
-> - **The client monolith is split** (§6, §8.9). `public/new2Init.js` became ten files in
->   [public/client/](public/client/), with **no bundler and no build step**. Equivalence was
->   proved the same way the protocol rewrite was: a canvas-call differential over 125 real
->   packets, **180298 operations, zero differences**, with negative controls.
+> What a new reader most needs to know about the current tree:
+> - **One entry point.** [server.js](server.js) runs the game + menu in one process on one port;
+>   the two-servers-you-had-to-both-start arrangement is gone (§1). Split deployment survives
+>   behind `--game-only` / `--web-only`.
+> - **The simulation step is 33 ms, and that is not the obvious value.** The old
+>   `setTimeout(20)` chain never hit 50 Hz — it ran at ~29 Hz, and every gameplay constant was
+>   tuned by feel against that. An honest 20 ms clock runs the game 1.7× too fast. **Read §3.1
+>   before touching `TICK_MS`.**
+> - **The protocol is one declarative schema** that sizes its own packets and, for the first
+>   time in the repo's history, validates its input (§4). `constructor.name` dispatch is gone
+>   (§5.9); several meaningless filenames were renamed (§2.2).
+> - **The client is ten files, no bundler, no build step** (§6) — `public/new2Init.js` is gone.
+>   Its motion was rewritten to snapshot interpolation (§6.1). The test suite now executes the
+>   client in Node ([test/client.js](test/client.js)), a first for this repo.
+> - **All four gamemodes are real and joinable** (§5.14). The dependencies are current
+>   (`express` 5 / `ws` 8 / `ejs` 3, `mysql2`), a linter is in place, and `npm audit` is clean
+>   (§8.10).
 >
-> Sections below are marked ✅ DONE / ⬜ TODO throughout, and descriptions have been rewritten
-> to match the current tree — where a bug is fixed, the text says where the fix lives rather
-> than describing the old breakage.
->
-> Verification: `npm test` → **300 passed, 0 failed** (79 protocol/names + 22 client motion +
-> 16 clock + 99 room + 23 client render + 49 live-server + 12 single-entry-point/web). Two
-> rewrites were additionally checked against the implementation they replaced, output for
-> output: the protocol **byte for byte** (82 encode/decode comparisons, zero differences, §4)
-> and the client split **canvas call for canvas call** (180298 operations, zero differences, §6).
-> Three fixes in this pass were checked by **negative control** — reinstating the old smoother
-> makes `test/client.js` fail with the camera 184 units off the tank and a bullet still
-> accelerating thirteen packets after it spawned (§6.1); removing the duplicate-frame skip
-> makes `test/smoke.js` fail with up to 12 of 175 packets carrying a repeated world (§5.19).
-> Chunks 1–4 are committed; 5–9 are not.
+> **How the risky changes were proven** (the methods matter more than the numbers, because you
+> will reuse them): `npm test` is 300 assertions across 7 suites. The two rewrites that could
+> have silently changed behaviour were checked against the code they replaced *output for
+> output* — the protocol **byte for byte** (§4.3) and the client split **canvas call for canvas
+> call**, 180298 operations with zero differences (§6). Behaviour-changing fixes were checked by
+> **negative control**: reinstate the bug, confirm a test goes red, restore (§5.2, §5.19, §6.1).
+> Full verification state, including what is *not* covered, is in §11.
 
 Obstar is an open-source clone of diep.io: a 2D multiplayer arena shooter. Players are tanks
 that shoot bullets, farm polygon "objects" for XP, level up, pick stat upgrades, and evolve
@@ -842,7 +821,7 @@ See also §5.16 — fixing the packet handler to build complete entities is what
 latent `drawTank` crash, and §5.19 for the duplicate-frame problem, which is the same
 "interpolator reads two identical positions as stopped" failure arriving from the server side.
 
-### 6.2 What the split did *not* fix — ⬜ TODO (§8.12)
+### 6.2 What the split did *not* fix — 🟡 bugs fixed (§8.12.1–2), hot-path/idiom deferred (§8.12.3–4)
 
 The §8.9 split was equivalence-preserving on purpose, and the differential proves it: 180298
 identical canvas operations means **nothing about the client's runtime behaviour changed**,
@@ -854,27 +833,37 @@ prove a rewrite is safe if the same commit also changed behaviour on purpose.
 So the following is all still true of [public/client/](public/client/), counted after the
 split. Numbers are across the nine non-`runtime` files.
 
-**Latent bugs, not style.** There is **no `'use strict'` anywhere** (0 occurrences), which is
-the only reason these work at all:
+**Latent bugs, not style — ✅ FIXED (§8.12.1).** This subsection was the reason the split
+did not fix; it now records what was done. When written, there was **no `'use strict'`
+anywhere**, which was the only reason the following worked at all:
 
-- [public/client/overlay.js](public/client/overlay.js) assigns three **undeclared** variables:
-  `mess` (`:89`), `name` (`:133`), `doScroll` (`:136`). Each becomes a property of `window`.
-  `name` is the dangerous one — `window.name` is a real browser property that survives
-  navigation and is visible to whatever the tab loads next; the chat code overwrites it with
-  whatever precedes the message text.
-- [public/client/game.js:379](public/client/game.js#L379) and
-  [public/client/boot.js:83](public/client/boot.js#L83) do
+- [public/client/overlay.js](public/client/overlay.js) assigned three **undeclared** variables:
+  `mess` (`:89`), `name` (`:133`), `doScroll` (`:136`). Each became a property of `window`.
+  `name` was the dangerous one — `window.name` is a real browser property that survives
+  navigation and is visible to whatever the tab loads next; the chat code overwrote it with
+  whatever preceded the message text. **Fixed:** all three are now `let`-declared and the IIFE
+  opens with `'use strict'` — done in one commit, as the ordering note below required.
+- [public/client/game.js](public/client/game.js) and
+  [public/client/boot.js](public/client/boot.js) did
   `for(let i in General['Interact']){ window[i] = General['Interact'][i]; }` — the whole input
-  surface (`onresize`, `onkeydown`, `onmousemove`, …) is sprayed onto `window` by name. It
-  works, and it is how the original bound its handlers, but nothing namespaces it and nothing
-  stops a later `window.onkeydown =` anywhere else from silently winning.
+  surface (`onresize`, `onkeydown`, `onmousemove`, …) sprayed onto `window` by name, where a
+  later `window.onkeydown =` anywhere else could silently win. **Fixed (§8.12.2):** each
+  `window.on*` slot is now assigned explicitly by name.
 
-**Order matters here:** adding `'use strict'` turns all three implicit globals into a
-`ReferenceError` at runtime, not at parse time — and `General.CHAT` is only reached once a
-message arrives, so the breakage will not show up at page load. Declare `mess`/`name`/
-`doScroll` with `let` inside the IIFE in the *same* commit; that alone stops the
-`window.name` clobber, since a local binding shadows the global. Renaming `name` on top of
-that is worth it for the next reader. Do not add `'use strict'` file-by-file as a tidy-up.
+**Why the ordering mattered (kept for the record):** adding `'use strict'` turns implicit
+globals into a `ReferenceError` at runtime, not at parse time — and `General.CHAT` is only
+reached once a message arrives, so the breakage would not have shown up at page load. So the
+`let` declarations for `mess`/`name`/`doScroll` had to land in the *same* commit as the
+pragma, which is how it was done. Adding `'use strict'` file-by-file as a tidy-up was avoided
+for exactly that reason.
+
+The linter added in §8.10 then found the **same implicit-global bug class in eight more
+places** outside these files — `gameAI` (`other`/`dis`/`dir`), `PetsConfig`/`drawings`/`ui`
+(`$1`, `bar*`, `m`), `TanksConfig` (`c`), `util` (the missing `stroke` parameter) — all now
+declared at their assignment site and verified behaviour-identical (client via the §6
+differential, server via `npm test`). The itemised list is in item 12.1 of §8. The only
+implicit global left is the `offcan` in the dead `Drawings.obj.bull` closure, which is
+unreachable and sits under a scoped `eslint-disable` until the item-4 dead-code sweep.
 
 **The one real hot-path cost.** `Instances` is walked with nested `for...in` **three times per
 animation frame** — 60–144 times a second: twice in `Draw`
@@ -894,10 +883,10 @@ the baseline for this one rather than expecting zero differences.
 **Nobody has measured what this costs.** The frame loop has never been profiled in a browser.
 Do not assume it is the bottleneck just because it is the ugliest thing in the render path.
 
-**Cosmetic, untouched, safe to do in bulk once a linter exists (§8.10):** 84 `var`
-declarations, 51 loose `==`/`!=`, 31 `for...in` in total, and several dead commented-out
-blocks — the `ParticuleSys` one in [public/client/entities.js](public/client/entities.js) sits
-inside a `/* */` and is unreachable; it moved across in the split because everything did.
+**Cosmetic, untouched, still deferred:** the bulk idiom (84 `var`, 51 loose `==`, 31
+`for...in`) and the dead commented-out blocks are the backlog in **§12** — the linter is tuned
+to allow all of it so `no-undef`/`no-global-assign` stay readable, and every site is tagged
+`// CLEANUP(HANDOFF §12)`.
 
 ---
 
@@ -924,8 +913,8 @@ inside a `/* */` and is unreachable; it moved across in the split because everyt
 
 ## 8. Suggested refactor order
 
-Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 11 are done;
-9 is next.**
+Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–11 are done, plus
+§8.12.1 and §8.12.2; only §8.12.3 and §8.12.4 remain (deferred, not bugs).**
 
 1. ✅ **DONE — Make failure visible.** [lib/crash.js](lib/crash.js) replaces both
    `uncaughtException` handlers with fail-fast + stderr logging (`OBSTAR_SWALLOW_CRASHES=1`
@@ -1008,10 +997,28 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 
    negative controls confirmed the check would have caught the seams going wrong. Full account
    in §6. **This item split the client; it did not modernize its idioms or its hot path, and
    deliberately so — see §6.2 and item 12 below for what is still open.**
-10. ⬜ **NEXT — Dependencies and DB.** Add a linter, upgrade `express`/`ws`/`ejs`, replace
-    `mysql` with `mysql2`. (The lockfile this item used to ask for is committed — see §5.10.)
-    §5.3–5.5 are now fixed, but do not turn `MYSQL: true` on without testing those paths —
-    they have never run in this tree.
+10. ✅ **DONE — Dependencies and DB.**
+    - **Linter.** [eslint.config.js](eslint.config.js), flat config, `npm run lint`, passes
+      clean. It keeps `no-undef` and `no-global-assign` as errors everywhere — the two rules
+      that catch "a name that is not there", the exact bug this tree keeps shipping — and
+      turns the stylistic and deliberate-legacy rules off (each with a documented reason).
+      Three file environments: Node CJS, the browser menu page, and the dual-mode game page.
+      Running it the first time found **nine more implicit-global bugs of the §8.12.1 class**
+      beyond the three that item documented; all are fixed (see §8.12 below).
+    - **Majors.** `express` ~4.17 → ^5.1, `ws` ~7.2 → ^8.18, `ejs` ~2.7 → ^3.1. Three
+      breaking changes had to be handled for Express 5: `app.get('*')` became `app.get(/.*/)`
+      (path-to-regexp v8 rejects the bare `*` string), and `body-parser` was dropped for the
+      folded-in `express.json()` / `express.urlencoded()`. `ws` 8 needed **no** code change —
+      binary frames still arrive as a `Buffer`, and `WebSocket.Server` is still exported — and
+      `ejs` 3 is API-compatible through `res.render`. Verified by the full suite: [test/web.js](test/web.js)
+      boots the real Express 5 app and renders through ejs 3, [test/smoke.js](test/smoke.js)
+      boots the ws 8 server.
+    - **DB.** `mysql` ~2.17 → `mysql2` ^3.11, swapped at both sites
+      ([lib/Controller.js](lib/Controller.js), [web/app.js](web/app.js)). The callback API is
+      compatible, so it was a two-word change; **still dormant** — `MYSQL` stays `false` and
+      these paths have never run in this tree, so this was fixed by inspection, not execution.
+      Do not turn `MYSQL: true` on without testing them.
+    - **Audit.** `npm audit` went from 10 vulnerabilities to **0**. The lockfile is committed.
 11. ✅ **DONE — One entry point.** `Alex.js` + `obstarWeb.js` + `scripts/dev.js` are now
     [server.js](server.js), which mounts [web/app.js](web/app.js) and attaches
     [net/gameSocket.js](net/gameSocket.js) to the same http server. The two halves never
@@ -1021,28 +1028,38 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 
     page's own origin instead of hardcoding `ws://localhost:8080`, which also fixes the
     mixed-content problem behind TLS. Pinned by [test/web.js](test/web.js). (This item was
     not in the original list; it was requested during the chunk 6–7 pass.)
-12. ⬜ **Client idiom and hot-path cleanup — the part §8.9 deliberately left alone.** Full
-    detail and the reasoning in **§6.2**. Summary, in the order they should be done:
+12. 🟡 **Client idiom and hot-path cleanup — the part §8.9 deliberately left alone.** The two
+    bug-fix items (1, 2) are **DONE**; the two cleanup items (3, 4) are deliberately deferred.
+    Full detail and the reasoning in **§6.2**. In the order they were done:
 
-    1. **`'use strict'` + the three implicit globals** in
+    1. ✅ **DONE — `'use strict'` + the three implicit globals** in
        [public/client/overlay.js](public/client/overlay.js) (`mess`, `name`, `doScroll` —
-       `name` currently clobbers `window.name`). One commit, not file-by-file: strict mode
-       turns them into runtime `ReferenceError`s, so the declarations have to land together.
-       This is the only item on this list that fixes an actual bug.
-    2. **Namespace the input handlers** instead of `window[i] = General['Interact'][i]`
-       ([game.js:379](public/client/game.js#L379),
-       [boot.js:83](public/client/boot.js#L83)).
-    3. **`Instances` as a dense structure**, so `Draw`/`Loop` stop running four nested
-       `for...in` per frame. Needs `delete Instances[C][I]` in `SetPacket` replaced with
-       swap-and-pop or a `Map`. **Profile first — nobody has.** This one legitimately changes
-       iteration order, so rebuild the differential baseline rather than expecting zero
-       differences from it.
-    4. **Bulk idiom** (`var` → `let`/`const`, `==` → `===`, dead comment blocks). Cheapest
-       after §8.10 lands a linter, which will find all of it for you.
-
-    Do these one category per commit with the §6 canvas-call differential re-run each time.
-    The harness is the point: it is what makes it safe to touch a 3000-line render path that
-    no test asserts pixels for.
+       `name` was clobbering `window.name`), all in one commit with the strict-mode pragma.
+       **The linter then found the same bug class in eight more places, all now fixed:**
+       `other`/`dis`/`dir` in [lib/gameAI.js](lib/gameAI.js), `$1` in
+       [public/SHARE/PetsConfig.js](public/SHARE/PetsConfig.js) and
+       [public/client/drawings.js](public/client/drawings.js) (three drawing closures each
+       leaking a regex-placeholder global), `c` in the `Gunner` builder in
+       [public/SHARE/TanksConfig.js](public/SHARE/TanksConfig.js), the `bar*`/`m` block and
+       the missing `stroke` parameter in [public/client/util.js](public/client/util.js) /
+       [public/client/ui.js](public/client/ui.js). Every one was `var`/`let`-declared at its
+       assignment site — a scope change only, verified behaviour-identical by the §6 canvas
+       differential (still **180298 ops, zero diff**) for the client files and by `npm test`
+       for `gameAI`. The dead `Drawings.obj.bull` closure references an `offcan` that is
+       defined nowhere (here or in the pre-split monolith); it is unreachable — bullets are
+       intercepted in [entities.js](public/client/entities.js) and drawn via `drawBullet`
+       before that table is indexed — so it is left verbatim under a scoped `eslint-disable`,
+       to be removed with the rest of the dead code (§12).
+    2. ✅ **DONE — Namespaced the input handlers** instead of `window[i] = General['Interact'][i]`
+       ([game.js](public/client/game.js), [boot.js](public/client/boot.js)): the six (game) /
+       two (boot) `window.on*` slots are now assigned by name, so the linter can see them and
+       a typo cannot silently land on `window`. Behaviour-identical — the trace harness
+       dispatches through those same slots, and the differential stayed at 180298 ops.
+    3. ⬜ **`Instances` as a dense structure** (hot path) and
+    4. ⬜ **Bulk idiom** (`var`/`==`/dead code) — both **deferred**, both now tracked in the
+       consolidated backlog in **§12** (which also lists the dead-code sites and the linter
+       rules kept off for them). Do each as its own commit with the §6 differential re-run;
+       item 3 changes iteration order, so it rebuilds the baseline rather than matching it.
 
 ---
 
@@ -1102,20 +1119,27 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 
 
 ## 11. State of the working tree
 
-Chunks 1–8 are committed, through `257e967`. In particular `21f3412` carries everything this
-pass added: the clock, the two new gamemodes, the client motion rewrite and the four new test
-suites.
+Chunks 1–9 and 11 are committed, through `e9c381d`; the tick-rate retune and the client split
+landed in earlier commits.
 
-**Uncommitted** — `git status` shows only the tick-rate retune and its consequences:
+**Uncommitted** — `git status` shows the §8.10 dependency/linter pass and the §8.12.1–2 bug
+fixes:
 
 | File | What changed |
 |---|---|
-| `lib/config.js` | `TICK_MS` / `SEND_MS` added, with §3.1's reasoning inline |
-| `lib/clock.js` | default step reads `config.TICK_MS` instead of a literal 20 |
-| `net/gameSocket.js` | `SEND_MS` from config; duplicate-frame skip (§5.19) |
-| `public/motion.js` | interval-EMA seed 30 → 33, to match `SEND_MS` |
-| `test/interp.js` | packet spacing read from config instead of restated |
-| `test/smoke.js` | the duplicate-frame assertion |
+| `eslint.config.js` *(new)* | §8.10 flat config; `no-undef`/`no-global-assign` as errors, stylistic/legacy rules off |
+| `package.json` | `lint` script; `express`→^5.1, `ws`→^8.18, `ejs`→^3.1, `mysql`→`mysql2`^3.11, `body-parser` dropped |
+| `package-lock.json` | regenerated for the above (npm audit: 10 → 0) |
+| `web/app.js` | Express 5: `app.get('*')`→`app.get(/.*/)`, `body-parser`→`express.json`/`urlencoded`; `mysql`→`mysql2` |
+| `lib/Controller.js` | `mysql`→`mysql2` (dormant) |
+| `lib/gameAI.js` | §8.12.1: `let` for `other`/`dis`/`dir` |
+| `public/SHARE/PetsConfig.js` | §8.12.1: `let $1` in three drawing closures |
+| `public/SHARE/TanksConfig.js` | §8.12.1: `let c` in the `Gunner` builder |
+| `public/client/drawings.js` | §8.12.1: `let $1` in two closures; scoped `eslint-disable` on the dead `bull`/`offcan` |
+| `public/client/ui.js` | §8.12.1: `let` for the `bar*` block and `m` |
+| `public/client/util.js` | §8.12.1: `roundRect` gains its missing `stroke` parameter |
+| `public/client/overlay.js` | §8.12.1: `'use strict'` + `let mess`/`name`/`doScroll` |
+| `public/client/game.js`, `boot.js` | §8.12.2: explicit `window.on*` handler assignment |
 | `HANDOFF.md` | this |
 
 ### What was verified, and what was not
@@ -1124,27 +1148,29 @@ Verified: `npm test` → **300 passed / 0 failed** (79 protocol/names + 22 clien
 clock + 99 room + 23 client render + 49 live-server + 12 single-entry-point/web). Every file
 checked with `node --check`.
 
+For the §8.10/§8.12 pass specifically: the 300 tests pass on the upgraded stack (Express 5 /
+ws 8 / ejs 3 — `test/web.js` boots the real Express 5 app and renders through ejs 3,
+`test/smoke.js` boots the ws 8 server); `npm run lint` is clean; `npm audit` reports **0**
+vulnerabilities (was 10); and the §6 canvas differential still produces **180298 operations
+with zero differences** after every client-file edit, which is what proves the implicit-global
+declarations and the input-handler namespacing changed scope but not behaviour. The `mysql2`
+swap is dormant (`MYSQL: false`) and was verified by inspection only — no database exists in
+this environment to execute it.
+
 Carried over from earlier passes: the room unification was checked differentially against the
 pre-refactor tree in a scratch `git worktree` (same live player counts, polygon population,
 map dimensions and colour palette across repeated 20-second runs); the protocol rewrite was
 checked byte for byte, 82 comparisons, zero differences (§4.3), and those vectors are golden
 values in `test/proto.js`; the §5.2 fix is still asserted by `smoke.js`.
 
-New in this pass, and how far each was actually pushed:
+Two method traps worth reusing (both cost real time here):
 
-- **The game was opened in a browser.** This is what generated the whole pass. It runs; the
-  two motion complaints it produced are §6.1 and are fixed.
-- **Three fixes were checked by negative control** — reintroduce the bug, confirm the test
-  goes red, then restore. The old smoother: camera **184 units** off the tank, bullet drawn
-  at 7.9 → 12.0 → 14.8 → 15.9 → 16.3 against a true 18.0. The duplicate-frame skip: **12 of
-  175** packets carrying a repeated world. A negative control that *passes* is worthless, and
-  one of these did at first — the patch script was writing `\n` against a CRLF file and
-  silently changing nothing. Check that the control actually failed before believing it.
-- **The tick rate was measured, not assumed** (§3.1), one room per process. The first attempt
-  ran the old chain and the new clock in the *same* process, where they starved each other
-  and reported a meaningless 3.48× ratio. Separate processes or the number is fiction.
-- **All four gamemodes** are covered by `test/rooms.js` (99 assertions) and `test/smoke.js`
-  (49, over a real socket), and all four were rate-benchmarked.
+- **A negative control that passes is worthless.** When checking a fix by reintroducing the
+  bug, confirm the test actually goes red before believing it — one of these silently didn't,
+  because the patch script wrote `\n` against a CRLF file and changed nothing.
+- **Measure one room per process.** Benchmarking the old chain and the new clock in the *same*
+  process had them starve each other and report a meaningless 3.48× ratio (§3.1). Separate
+  processes, or the number is fiction.
 
 **Not verified — treat as unknown:**
 
@@ -1172,3 +1198,69 @@ New in this pass, and how far each was actually pushed:
 - **Load.** Every measurement in §3.1 is one room alone on the box. Nothing has run several
   busy rooms at once, which is the case the shared clock was built for and the case where
   `tps` reporting dropped steps would actually mean something.
+
+---
+
+## 12. Deferred cleanup — the backlog
+
+Everything the refactor has **deliberately not done**: work that is allowed to stay as-is for
+now but that a future "make it nice" pass should clear. None of it is a bug — the bugs are
+fixed (§5, §8.12.1). This is the single list; the linter is tuned to allow all of it
+([eslint.config.js](eslint.config.js)), and each discrete site carries a
+`// CLEANUP(HANDOFF §12)` comment, so **`grep -rn "CLEANUP(HANDOFF" --include=*.js` finds the
+lot**.
+
+**The rule for all of it:** client-file edits must re-run the §6 canvas-call differential and
+stay at 180298 ops / zero diff; anything that changes *iteration order* (item 3) cannot stay at
+zero diff and needs its baseline rebuilt instead. Server edits are covered by `npm test`. Do
+one category per commit.
+
+### 12.1 Dead code to delete (marked in-tree)
+
+| Where | What | Note |
+|---|---|---|
+| [public/client/entities.js](public/client/entities.js) | a `/* */`-commented `ParticuleSys` block | `ParticuleSys` exists nowhere; delete the whole block. |
+| [public/client/drawings.js](public/client/drawings.js) | the `Drawings.obj.bull` closure (+ its `eslint-disable`) | Unreachable — bullets are intercepted in `entities.js` and drawn via `drawBullet`. References an `offcan` defined nowhere. Delete the `bull:` entry. |
+| [lib/gameAI.js](lib/gameAI.js) | a `dir`-randomisation block after an unconditional `return` | Unreachable. Decide whether the `return` or the block is wrong before touching — do not just move the return. |
+| [entities/Player.js](entities/Player.js) | an `else if(false){ … }` toggle | Intentionally-disabled branch; delete the else-if. |
+| `return x; break;` in switch cases | across [entities/Bullet.js](entities/Bullet.js), [entities/Player.js](entities/Player.js), [lib/Controller.js](lib/Controller.js) | Dead `break` after `return`; harmless, pervasive. `no-unreachable` is off precisely for these — grep them when doing this. |
+| [views/redirec.ejs](views/redirec.ejs) | a hardcoded redirect to `http://korexk.io/` | Vestigial; confirm nothing serves it, then delete. |
+
+### 12.2 Bulk idiom (§8.12.4) — a mechanical find-and-replace
+
+Counted across [public/client/](public/client/) after the split, and similar density
+server-side: **84 `var`** → `let`/`const`, **51 loose `==`/`!=`** → `===`/`!==` (check each —
+a few may lean on coercion), **31 `for...in`** where a plain loop or `for...of` fits. These are
+left off in the linter (`no-var`/`eqeqeq` are **not** enabled) on purpose: turning them on
+would bury `no-undef`/`no-global-assign` — the two rules that actually catch bugs here — under
+~200 warnings. When you do this, enable the rules with `--fix` in the *same* commit that clears
+the tree, so the linter goes from silent to enforcing in one step rather than printing noise.
+
+Two idioms in §9 are **not** cleanup and must survive: `parseInt(Math.random()*n)` is load-
+bearing (`radix` is off for it), and the misspelled `Assasin` class name is on the wire and in
+the DB — renaming it is a protocol change, not a tidy-up.
+
+### 12.3 The one hot-path item (§8.12.3) — `Instances` as a dense structure
+
+`Instances` is walked with nested `for...in` three times per animation frame (six traversals),
+because `SetPacket` deletes entities with `delete Instances[C][I]`, leaving sparse arrays a
+plain indexed loop would iterate as holes. Fixing it means a `Map` or swap-and-pop so the
+arrays stay dense — which **changes iteration order**, so the differential will (correctly)
+diverge; rebuild the baseline for this one. **Profile first: nobody has ever profiled the frame
+loop in a browser.** Do not assume this is the bottleneck just because it is the ugliest thing
+in the render path. Full reasoning in §6.2.
+
+### 12.4 Larger follow-ups (design calls, not mechanical)
+
+- **Break the circular module graph properly.** `lib/runtime.js` / `public/client/runtime.js`
+  (§2.1) are deliberate stopgaps that reproduce the old single-scope semantics. Real dependency
+  injection or an event bus between `Controller` and the entities would remove the "never cache
+  an `RT` value" footgun. Big change; only worth it once the tree is otherwise clean.
+- **The `TanksConfig` ↔ `lib/kinds.js` coupling** (§5.9): three hardcoded
+  `DETEC:{type:['Player','Objects']}` literals can't `require()` the kind constants because
+  `TanksConfig` also loads in the browser. Turning kinds into ints is a one-file change *plus*
+  those three literals — noted so they aren't missed.
+- **CSS lives in four places** (§6): `public/style.css`, `LeaderBoard.css`, `fontStyle.css`,
+  and a large inline `<style>` in `play.ejs`. Consolidating is cosmetic but real debt.
+- The open **design** questions (MySQL's future, next gamemodes, `TICK_MS` 33-vs-50) are in
+  §10, not here — those need a human decision, not a cleanup pass.

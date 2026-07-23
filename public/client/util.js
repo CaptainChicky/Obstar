@@ -64,7 +64,7 @@
     }
     ctx.closePath();
   }
-  function roundRect(ctx, x, y, width, height, radius) {
+  function roundRect(ctx, x, y, width, height, radius, stroke) {
     if (typeof stroke === 'undefined') {
       stroke = true;
     }

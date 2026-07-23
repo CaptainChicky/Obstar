@@ -8,7 +8,6 @@
   original code, unchanged apart from the indentation and `ws` being handed to play.ejs.
 */
 var express      = require('express');
-var bodyParser   = require('body-parser');
 var cookieParser = require('cookie-parser');
 
 var config       = require('../lib/config.js').config;
@@ -20,7 +19,7 @@ var WS_LINK      = process.env.WS_LINK || '';
 
 module.exports = function createApp(){
 var app          = express();
-var USERS = config.MYSQL ? require('mysql').createPool(require('../lib/dbConfig.js').info) : 0;
+var USERS = config.MYSQL ? require('mysql2').createPool(require('../lib/dbConfig.js').info) : 0;
 ///
 var LEADERBOARD = [];
 var SHOP = {HIDE:1};
@@ -71,13 +70,17 @@ var basicKey = '0'.repeat(25);
 ///
 app.set('views', __dirname + '/../views');
 app.use( express.static(__dirname+'/../public'));
-app.use( bodyParser.json() );
-app.use( bodyParser.urlencoded({ extended: true }) );
+// Express 5 folds body-parser into the framework: express.json / express.urlencoded are
+// the same middleware body-parser exported, so the separate dependency is gone (HANDOFF 8.10).
+app.use( express.json() );
+app.use( express.urlencoded({ extended: true }) );
 app.use( cookieParser() );
 
 
 app.get('/favicon.ico', async function(req,res){res.status(404).end()});
-app.get('*', function(request, respond){
+// Express 5 upgraded to path-to-regexp v8, which rejects a bare '*' string path; a RegExp
+// catch-all is the direct, syntax-independent equivalent of the old app.get('*') (HANDOFF 8.10).
+app.get(/.*/, function(request, respond){
     let id = parseInt(Math.random()*1000);
     var KEY = request.cookies.obstarkey || 1;
     /// get the acc///

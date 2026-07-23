@@ -79,9 +79,10 @@
       }
     };
     General.Interact.onresize();
-    for(let i in General['Interact']){
-      window[i] = General['Interact'][i];
-    };
+    // Spelled out rather than `for(let i in General['Interact']){ window[i] = ... }`; see the
+    // matching note in public/client/game.js (HANDOFF 8.12.2). boot.js only wires these two.
+    window.onresize  = General['Interact'].onresize;
+    window.onkeydown = General['Interact'].onkeydown;
     //////////
     function Draw(){
       ctx.setTransform(1, 0, 0, 1, 0, 0);

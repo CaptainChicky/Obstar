@@ -375,9 +375,17 @@
       },
     };
     General.Interact.onresize();
-    for(let i in General['Interact']){
-      window[i] = General['Interact'][i];
-    };
+    // Register each handler on its window.on* slot by name. The old form was
+    // `for(let i in General['Interact']){ window[i] = General['Interact'][i] }` - a dynamic
+    // write to arbitrary global names, exactly the pattern the linter cannot check and that
+    // put `states[7]`-class typos on window unnoticed (HANDOFF 8.12.2). These are the same
+    // six assignments, spelled out.
+    window.onresize    = General['Interact'].onresize;
+    window.onmousemove = General['Interact'].onmousemove;
+    window.onmousedown = General['Interact'].onmousedown;
+    window.onmouseup   = General['Interact'].onmouseup;
+    window.onkeydown   = General['Interact'].onkeydown;
+    window.onkeyup     = General['Interact'].onkeyup;
     ///
     function getFps(){
       Global.fps.push(1000/(-Global.oldfps+Global.newfps));
