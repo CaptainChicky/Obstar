@@ -187,7 +187,6 @@ added by the refactor.
 | [public/font.js](public/font.js) | 655 | Animated canvas background on the menu. |
 | [views/index.ejs](views/index.ejs) | 153 | Menu page. |
 | [views/play.ejs](views/play.ejs) | 131 | Game page (canvas + inline CSS). **The `<script>` order is the client's dependency graph** — §6. |
-| [views/redirec.ejs](views/redirec.ejs) | 6 | Hardcoded redirect to `http://korexk.io/`. Vestigial. |
 
 `public/SHARE/` is the client/server shared boundary and the most important architectural idea
 in the repo. Files there are loaded by `<script>` in the browser **and** by `require()` in
@@ -1215,16 +1214,49 @@ stay at 180298 ops / zero diff; anything that changes *iteration order* (item 3)
 zero diff and needs its baseline rebuilt instead. Server edits are covered by `npm test`. Do
 one category per commit.
 
-### 12.1 Dead code to delete (marked in-tree)
+### 12.1 Dead code to delete (marked in-tree) — ✅ DONE
+
+All six items below were deleted in one commit. `npm test` (300 assertions) and `npm run lint`
+stay green; the deletions are all of provably-dead code, so no canvas-op differential was
+needed — [test/client.js](test/client.js) confirms the client still runs. The one latent
+question is called out below the table.
 
 | Where | What | Note |
 |---|---|---|
-| [public/client/entities.js](public/client/entities.js) | a `/* */`-commented `ParticuleSys` block | `ParticuleSys` exists nowhere; delete the whole block. |
-| [public/client/drawings.js](public/client/drawings.js) | the `Drawings.obj.bull` closure (+ its `eslint-disable`) | Unreachable — bullets are intercepted in `entities.js` and drawn via `drawBullet`. References an `offcan` defined nowhere. Delete the `bull:` entry. |
-| [lib/gameAI.js](lib/gameAI.js) | a `dir`-randomisation block after an unconditional `return` | Unreachable. Decide whether the `return` or the block is wrong before touching — do not just move the return. |
-| [entities/Player.js](entities/Player.js) | an `else if(false){ … }` toggle | Intentionally-disabled branch; delete the else-if. |
-| `return x; break;` in switch cases | across [entities/Bullet.js](entities/Bullet.js), [entities/Player.js](entities/Player.js), [lib/Controller.js](lib/Controller.js) | Dead `break` after `return`; harmless, pervasive. `no-unreachable` is off precisely for these — grep them when doing this. |
-| [views/redirec.ejs](views/redirec.ejs) | a hardcoded redirect to `http://korexk.io/` | Vestigial; confirm nothing serves it, then delete. |
+| [public/client/entities.js](public/client/entities.js) | a `/* */`-commented `ParticuleSys` block | `ParticuleSys` existed nowhere; the whole block is gone. |
+| [public/client/drawings.js](public/client/drawings.js) | the `Drawings.obj.bull` closure (+ its `eslint-disable`) | Unreachable — bullets are intercepted in `entities.js` and drawn via `drawBullet`; it referenced an `offcan` defined nowhere. The `bull:` entry and its `eslint-disable`/`enable` are gone. |
+| [lib/gameAI.js](lib/gameAI.js) | a `dir`-randomisation block after an unconditional `return` | Removed behaviour-preservingly (the `return` was kept, the dead block deleted). **See the latent question below — this may be a real bug, not just dead code.** |
+| [entities/Player.js](entities/Player.js) | an `else if(false){ … }` toggle | Intentionally-disabled branch; the else-if is gone. |
+| `return x; break;` in switch cases | across [entities/Bullet.js](entities/Bullet.js) (1), [entities/Player.js](entities/Player.js) (1), [lib/Controller.js](lib/Controller.js) (7) | Dead `break` after `return`; all nine removed. |
+| ~~[views/redirec.ejs](views/redirec.ejs)~~ | a hardcoded redirect to `http://korexk.io/` | Confirmed nothing rendered it (grep found only doc references); file deleted. |
+
+**Broken / disabled features removed with the dead code — read before assuming a capability
+still exists.** Three of the six deletions were not just inert text; they were *features that
+never worked* or were *deliberately switched off*. Deleting them changed no runtime behaviour
+(that is why they qualified as dead code), but each represents an intended capability the game
+does **not** currently have, and a future pass may want to revive rather than forget:
+
+- **Object death particles (`ParticuleSys`, [public/client/entities.js](public/client/entities.js)).**
+  The commented block was a particle-burst effect fired when a polygon's alpha dropped — coloured
+  shards per shape type (`C.dksquare`/`dkbull`/`dktrian`/`dkpenta`). `ParticuleSys` was never
+  defined anywhere in the tree or the pre-split monolith, so the effect has **never** rendered.
+  Reviving it means writing a `ParticuleSys` first; the call sites are gone but git history
+  (`git show 9c9587e~1:public/client/entities.js`) has the intended arguments.
+- **Shielded-bot facing randomisation ([lib/gameAI.js](lib/gameAI.js)) — possible real bug.**
+  The block randomised a shielded bot's heading (`if(!this.dir){ this.dir = Math.random()*Math.PI*2 }`)
+  but sat *after* the `return`, so it never ran. Deleting it preserves today's behaviour exactly.
+  If a freshly-shielded bot was *meant* to pick a random heading, the fix is to move that block
+  *above* the `return` — a behaviour change, not a cleanup, which is why it was left for a human.
+  **Flagged, not resolved.**
+- **Detector reset on a class with no DETEC ([entities/Player.js](entities/Player.js)).** The
+  `else if(false){ this.DETEC = 0 }` toggle would have cleared a player's `DETEC` (the auto-aim
+  vision cone) when they evolved into a class that has no `DETEC` config. Disabled via `if(false)`,
+  so today a player who evolves *out* of an auto-aim class keeps a **stale** `DETEC` object. Whether
+  that is a leak worth fixing (re-enable the reset) or intentional (harmless, never read for such a
+  class) is a gameplay call; the toggle is gone, the question isn't.
+
+The other three deletions (`Drawings.obj.bull` superseded by `drawBullet`, the nine dead
+`break;`-after-`return;`, `views/redirec.ejs`) removed no capability — pure cruft.
 
 ### 12.2 Bulk idiom (§8.12.4) — a mechanical find-and-replace
 

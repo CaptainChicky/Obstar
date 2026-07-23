@@ -20,25 +20,46 @@ const vm   = require('vm');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
+/*
+  Canonical serialization of one argument or property value written to a 2D context, for the
+  op-stream differential (test/clientDiff.js). Numbers full-precision so a real change shows;
+  canvases carry their dimensions because the client sizes off-screen caches by hand.
+*/
+function fmtArg(v){
+  if(typeof v === 'number'){ return Number.isFinite(v) ? String(v) : (v !== v ? 'NaN' : (v>0 ? 'Inf' : '-Inf')); }
+  if(typeof v === 'string'){ return JSON.stringify(v); }
+  if(v && typeof v === 'object'){
+    if(v.tagName === 'CANVAS' || ('width' in v && 'height' in v && v.getContext)){ return '<canvas ' + v.width + 'x' + v.height + '>'; }
+    if(typeof v.addColorStop === 'function'){ return '<gradient>'; }
+    return '<obj>';
+  }
+  return String(v);
+}
+
 /* Every 2D context call is a no-op; the few with return values are named. Recorded
-   transforms are exposed so a test can assert that nothing non-finite reached the canvas. */
+   transforms are exposed so a test can assert that nothing non-finite reached the canvas.
+   When `record.ops` is present, every call and property write is appended to it in order -
+   that ordered stream is the canvas-call differential rebuilt (HANDOFF §6 / §12.2). */
 function makeCtx(record){
+  function logCall(name, args){
+    if(record.ops){ record.ops.push('c:' + name + '(' + Array.prototype.map.call(args, fmtArg).join(',') + ')'); }
+  }
   const real = {
-    measureText:          function(){ return {width: 10}; },
-    createLinearGradient: function(){ return {addColorStop: function(){}}; },
-    createRadialGradient: function(){ return {addColorStop: function(){}}; },
-    createPattern:        function(){ return null; },
-    getImageData:         function(){ return {data: new Uint8ClampedArray(4)}; },
-    setTransform: function(a,b,c,d,e,f){ record.transform(a,b,c,d,e,f); },
-    translate:    function(x,y){ record.translate(x,y); },
-    drawImage:    function(){ record.draws++; }
+    measureText:          function(){ logCall('measureText', arguments); return {width: 10}; },
+    createLinearGradient: function(){ logCall('createLinearGradient', arguments); return {addColorStop: function(){}}; },
+    createRadialGradient: function(){ logCall('createRadialGradient', arguments); return {addColorStop: function(){}}; },
+    createPattern:        function(){ logCall('createPattern', arguments); return null; },
+    getImageData:         function(){ logCall('getImageData', arguments); return {data: new Uint8ClampedArray(4)}; },
+    setTransform: function(a,b,c,d,e,f){ record.transform(a,b,c,d,e,f); logCall('setTransform', arguments); },
+    translate:    function(x,y){ record.translate(x,y); logCall('translate', arguments); },
+    drawImage:    function(){ record.draws++; logCall('drawImage', arguments); }
   };
   return new Proxy(real, {
     get: function(t,k){
       if(k in t){ return t[k]; }
-      return function(){ return undefined; };
+      return function(){ logCall(k, arguments); return undefined; };
     },
-    set: function(t,k,v){ t[k] = v; return true; }
+    set: function(t,k,v){ if(record.ops){ record.ops.push('s:' + k + '=' + fmtArg(v)); } t[k] = v; return true; }
   });
 }
 
@@ -65,12 +86,14 @@ function makeElement(record, tag){
   Boot the client. Returns handles for driving it: `frame()` runs one animation frame,
   `deliver(bytes)` hands the socket a packet, `record` accumulates what reached the canvas.
 */
-function boot(POST){
+function boot(POST, opts){
+  opts = opts || {};
   const record = {
     draws: 0,
     badTransform: 0,
     badTranslate: 0,
     lastCamera: null,
+    ops: opts.recordOps ? [] : null,
     transform: function(a,b,c,d,e,f){
       if(![a,b,c,d,e,f].every(Number.isFinite)){ this.badTransform++; }
       else { this.lastCamera = {sx: e, sy: f, scale: a}; }

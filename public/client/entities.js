@@ -375,33 +375,6 @@
       } else {
         this.hpAlpha = Math.max(0,this.hpAlpha-0.01);
       }
-      // CLEANUP(HANDOFF §12): dead commented-out particle-system block, carried across the
-      // split verbatim. ParticuleSys exists nowhere in the tree; delete this whole /* */.
-      /*
-      if(this.draw.alpha < 1 && !this.e){
-        this.e = 1;
-        let e = ParticuleSys.add(0,0,this.size*2,this.size*2,dOBJECTS);
-        let c = 0;
-        switch(this.type){
-          case 'sqr':
-          case 'Bsqr':
-            c = C.dksquare;
-            break;
-          case 'bull':
-            c = C.dkbull;
-            break;
-          case 'tri':
-          case 'Btri':
-            c = C.dktrian;
-            break;
-          case 'pnt':
-          case 'Bpnt':
-            c = C.dkpenta;
-            break;
-        }
-        ParticuleSys.part(e,[0,Math.PI*2],[1.1,2.4],1.01,[10,30],c,[5,9],0.98)
-        ParticuleSys.burst(e,parseInt((this.size/7.5)+Math.random()*6),this.dx-this.size,this.dy-this.size);
-        */
       }
     async hit(){
       if(!this.hitted){

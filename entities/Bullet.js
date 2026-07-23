@@ -51,7 +51,6 @@ class Bullet {
           }
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.speed*2+1,this.speed*2+1)));
           return;
-          break;
       }
     }
     if(option.base){

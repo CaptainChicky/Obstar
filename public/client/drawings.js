@@ -296,34 +296,7 @@
           ctx.lineJoin = 'round';
           ctx.fill();
           ctx.stroke();
-        },
-        // CLEANUP(HANDOFF §12): dead. entities.js intercepts type=='bull' and draws via
-        // General['drawBullet'], returning before this table is indexed - so `offcan` (defined
-        // nowhere, here or in the pre-split monolith) is never dereferenced. Kept verbatim from
-        // new2Init.js; delete this whole `bull:` entry in the dead-code sweep, not as a bug fix.
-        /* eslint-disable no-undef */
-        bull: (ctx,$0,$1,$2) => {
-          offcan.can.height = offcan.can.width = $1*2*Global.RATIO*CONST.OFFCAN+2;
-          offcan.ctx.translate(offcan.can.width/2,offcan.can.height/2);
-          offcan.ctx.scale(Global.RATIO*CONST.OFFCAN,Global.RATIO*CONST.OFFCAN);
-          ///
-          offcan.ctx.blendMode = 'source-over';
-          offcan.ctx.beginPath();
-          offcan.ctx.arc(0,0,$1,0,Math.PI*2,0);
-          offcan.ctx.fillStyle = $0[1];
-          offcan.ctx.fill();
-          ///
-          offcan.ctx.beginPath();
-          offcan.ctx.arc(0,0,$1-CONST.LINEWIDTH,0,Math.PI*2,0);
-          offcan.ctx.fillStyle = $0[0];
-          offcan.ctx.fill();
-
-          ctx.save();
-            ctx.scale(1/CONST.OFFCAN/Global.RATIO,1/CONST.OFFCAN/Global.RATIO);
-            ctx.drawImage(offcan.can,-offcan.can.width/2,-offcan.can.height/2);
-          ctx.restore();
         }
-        /* eslint-enable no-undef */
       },
       pet:PetsConfig.pets
   };

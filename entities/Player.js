@@ -152,8 +152,6 @@ class Player {
         this.DETEC.x = this.x;
         this.DETEC.y = this.y;
       }
-    } else if(false){   // CLEANUP(HANDOFF §12): dead branch, intentionally disabled toggle. Delete the else-if.
-      this.DETEC = 0;
     }
     ////
     if(this.state.disconnect){
@@ -300,7 +298,6 @@ class Player {
         case 'god':
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(0.6,0.6)));
           return;
-          break;
       }
     }
     if(option.base){
