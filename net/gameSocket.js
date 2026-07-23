@@ -147,8 +147,27 @@ function attach(httpServer){
     }
   };
 
-  const SEND_MS = 30;    // target spacing between GameUpdate packets
+  // Target spacing between GameUpdate packets. Must stay >= the simulation step, or
+  // consecutive packets carry an identical world and the client's interpolation stutters -
+  // see the note on SEND_MS in lib/config.js.
+  const SEND_MS = Math.max(config.SEND_MS, config.TICK_MS);
   const IDLE_MS = 200;   // ...while the client has nothing to look at yet
+  /*
+    >= is necessary but not sufficient. The send loop and the simulation clock are separate
+    timers with separate jitter, so even at exactly equal periods they drift against each
+    other and every so often two sends fall inside one simulation step. That pair carries a
+    byte-identical world, and public/motion.js reads a pair of identical positions as "this
+    entity stopped" - one visible hitch per drift cycle.
+
+    So don't send it. head.timestamp is the room's step counter, so "the world has not moved"
+    is exactly "the timestamp has not changed", and the check is one integer compare.
+
+    Waiting a whole SEND_MS after a skip would be worse than the duplicate - the client would
+    get a 66ms hole. Instead retry at a quarter step and reset the deadline, which lands the
+    next send just after the step that was pending and re-anchors the loop to the step
+    boundary it drifted off.
+  */
+  const RETRY_MS = Math.max(4, Math.round(config.TICK_MS/4));
   /*
     Next firing time for a self-re-arming loop, as a delay in ms. `due` is carried on the
     loop object and advanced by exactly `period` each time, so the average rate is the period
@@ -173,6 +192,7 @@ function attach(httpServer){
     this.chat = 0;
     this.sendDue = 0;
     this.slowDue = 0;
+    this.sentStamp = -1;   // room step counter of the last GameUpdate actually sent
     this.gameloop = function(){
       if(!this.run){return;}
       if(this.chat){
@@ -202,10 +222,14 @@ function attach(httpServer){
         }
         default:{
           let buff = RT.Controller.getBuffer(socket.id);
-          if(buff){
-            talk(this.socket,'GameUpdate',buff);
-          } else {
+          if(!buff){
             ms = IDLE_MS;
+          } else if(typeof buff === 'object' && buff.head.timestamp === this.sentStamp){
+            ms = RETRY_MS;          // world has not stepped since the last packet; see above
+            this.sendDue = 0;       // ...and re-anchor rather than keep the drifted phase
+          } else {
+            if(typeof buff === 'object'){ this.sentStamp = buff.head.timestamp; }
+            talk(this.socket,'GameUpdate',buff);
           }
           let mess = RT.Controller.chat.get(socket.id);
           if(mess){

@@ -88,6 +88,19 @@ function checkGameUpdates(buffers){
         head && isFinite(head.width) && isFinite(head.height),
         head && (head.width + 'x' + head.height));
 
+  /*
+    head.timestamp is the room's step counter, so two packets carrying the same one mean the
+    client was handed the same world twice. Its interpolator (public/motion.js) reads a pair
+    of identical positions as "this entity stopped", so a duplicate is a visible hitch. The
+    send loop and the simulation clock are independent timers at the same period, which is
+    exactly the arrangement that drifts into occasional duplicates - net/gameSocket.js skips
+    those sends, and this is the assertion that says it still does.
+  */
+  let stamps = decoded.map((u)=>u.data && u.data.head && u.data.head.timestamp);
+  let dupes = stamps.filter((t,i)=>i>0 && t === stamps[i-1]).length;
+  check('no two GameUpdates carry the same world', dupes === 0,
+        dupes + ' duplicate of ' + stamps.length + ' packets');
+
   // The getPlace mechanic only fires when a big polygon spawns, so a single frame proves
   // nothing. Sample the whole window and require that we actually saw objects at all,
   // otherwise a green result would just mean an empty map.

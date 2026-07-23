@@ -29,8 +29,12 @@ function check(name, ok, detail){
 }
 function near(a,b,tol){ return Math.abs(a-b) <= tol; }
 
-const TICK  = 30;    // ms between server packets, what net/gameSocket.js aims for
-const FRAME = 1000/60;
+// Read the packet spacing from config rather than restating it, so retuning the server's
+// send rate cannot leave this harness quietly measuring a rate nobody runs.
+const TICK  = Math.max(require('../lib/config.js').config.SEND_MS,
+                       require('../lib/config.js').config.TICK_MS);
+const FPP   = 2;            // animation frames per packet - a whole number keeps the
+const FRAME = TICK/FPP;     // ...per-frame arithmetic below exact
 const SPEED = 12;    // world units per packet - a middling bullet
 
 /*

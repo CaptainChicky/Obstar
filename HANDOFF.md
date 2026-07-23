@@ -3,7 +3,7 @@
 Written for a fresh agent session tasked with refactoring this repo. It describes the code
 **as it actually is today**, including the parts that are wrong. Nothing here is aspirational.
 
-> **Status — updated 2026-07-22, after refactor chunks 1–9.**
+> **Status — updated 2026-07-23, after refactor chunks 1–9.**
 > **Items 1–8 and 11 are done.** The remaining open items are §8.9 (modernize the client)
 > and §8.10 (dependencies and DB).
 > The 3918-line `Alex.js` monolith is gone; so are both of its names. There is now **one
@@ -19,6 +19,12 @@ Written for a fresh agent session tasked with refactoring this repo. It describe
 >   self-re-arming `setTimeout(20)` chain is gone; every room shares one accumulator-driven
 >   clock, so the tick rate no longer sags under load and a stall is dropped rather than
 >   repaid as a burst.
+> - **The game's speed is now a number in one place, and that number is 33 ms, not 20**
+>   (`config.TICK_MS`, §3.1). This is the most consequential finding of the pass: the old
+>   chain never achieved the 50 Hz it nominally asked for — measured, it ran at **28–30 Hz** —
+>   so every speed and reload constant in the game was tuned by feel against ~29 Hz. An
+>   honest 20 ms clock therefore made the whole game run **1.7× too fast**, which is exactly
+>   what a player reported. Read §3.1 before changing it.
 > - **The client's motion was rewritten** ([public/motion.js](public/motion.js), §6.1). Both
 >   of the things a player reported — bullets that crawl for half a second after you fire,
 >   and a camera that slides off your tank while you move — were one bug: exponential
@@ -34,14 +40,15 @@ Written for a fresh agent session tasked with refactoring this repo. It describe
 > to match the current tree — where a bug is fixed, the text says where the fix lives rather
 > than describing the old breakage.
 >
-> Verification: `npm test` → **292 passed, 0 failed** (79 protocol/names + 22 client motion +
-> 16 clock + 99 room + 23 client render + 45 live-server + 8 single-entry-point/web). The
+> Verification: `npm test` → **296 passed, 0 failed** (79 protocol/names + 22 client motion +
+> 16 clock + 99 room + 23 client render + 49 live-server + 8 single-entry-point/web). The
 > protocol rewrite was additionally checked **byte for byte** against the implementation it
-> replaced: 82 encode/decode comparisons over every message type, zero differences (§4). The
-> two client fixes were checked by **negative control** — reinstating the old smoother makes
-> `test/client.js` fail with the camera 184 units off the tank and a bullet still
-> accelerating thirteen packets after it spawned (§6.1). Chunks 1–4 are committed; 5–9 are
-> not.
+> replaced: 82 encode/decode comparisons over every message type, zero differences (§4).
+> Three fixes in this pass were checked by **negative control** — reinstating the old smoother
+> makes `test/client.js` fail with the camera 184 units off the tank and a bullet still
+> accelerating thirteen packets after it spawned (§6.1); removing the duplicate-frame skip
+> makes `test/smoke.js` fail with up to 12 of 175 packets carrying a repeated world (§5.19).
+> Chunks 1–4 are committed; 5–9 are not.
 
 Obstar is an open-source clone of diep.io: a 2D multiplayer arena shooter. Players are tanks
 that shoot bullets, farm polygon "objects" for XP, level up, pick stat upgrades, and evolve
@@ -144,9 +151,9 @@ added by the refactor.
 | [server.js](server.js) | 69 | **The only entry point.** Crash handler, flags, `boot()`, one http server, listens. |
 | [web/app.js](web/app.js) | 202 | `createApp()` — the Express site. Menu, cookies, shop purchase, leaderboard reads. Opens no port. |
 | [lib/boot.js](lib/boot.js) | 59 | Fills the `lib/runtime.js` registry in dependency order. **`RT.ROOMS` here is the one list of gamemodes.** Idempotent, opens no port. |
-| [net/gameSocket.js](net/gameSocket.js) | 287 | `attach(httpServer)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. Deadline-corrected send timers. |
+| [net/gameSocket.js](net/gameSocket.js) | 311 | `attach(httpServer)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. Deadline-corrected send timers; skips duplicate frames. |
 | [lib/Controller.js](lib/Controller.js) | 618 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
-| [lib/clock.js](lib/clock.js) | 157 | **The fixed-timestep clock** (§8.8). One accumulator-driven timer drives every room's `step()`. |
+| [lib/clock.js](lib/clock.js) | 160 | **The fixed-timestep clock** (§8.8). One accumulator-driven timer drives every room's `step()`. |
 | [rooms/Room.js](rooms/Room.js) | 949 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, per-player views. |
 | [rooms/Ffa.js](rooms/Ffa.js) | 30 | Free-for-all: a block of tunables. `Room`'s defaults *are* ffa's behaviour. |
 | [rooms/TwoTeam.js](rooms/TwoTeam.js) | 108 | 2-team: two base strips, guard drones, team colours. |
@@ -160,23 +167,23 @@ added by the refactor.
 | [lib/quadTree.js](lib/quadTree.js) | 75 | Spatial index for broad-phase collision. |
 | [lib/runtime.js](lib/runtime.js) | 18 | **Late-bound registry.** Stands in for the old shared scope; read §2.1 before using it. |
 | [lib/crash.js](lib/crash.js) | 47 | Fail-fast crash handler. |
-| [lib/config.js](lib/config.js) | 27 | Live tunables/flags only. The dead `CONFIG` block is gone (§5.1). |
+| [lib/config.js](lib/config.js) | 68 | Live tunables/flags only. The dead `CONFIG` block is gone (§5.1). **`TICK_MS` — the game's speed knob; read §3.1 before touching it.** |
 | [lib/kinds.js](lib/kinds.js) | 33 | Entity type tags. Replaced `constructor.name` dispatch (§5.9). |
 | [lib/terminal.js](lib/terminal.js) | 34 | Terminal colour codes (`cc`). |
 | [lib/constants.js](lib/constants.js) | 4 | `FRICTION`. |
 | [lib/dbConfig.js](lib/dbConfig.js) | 18 | DB credentials, env-overridable. |
 | [test/proto.js](test/proto.js) | 382 | Wire protocol + names, 79 assertions: golden bytes, self-sizing, round trips, input validation, Unicode. |
-| [test/interp.js](test/interp.js) | 218 | Client motion arithmetic, 22 assertions, compared against the smoother it replaced. |
+| [test/interp.js](test/interp.js) | 222 | Client motion arithmetic, 22 assertions, compared against the smoother it replaced. |
 | [test/clock.js](test/clock.js) | 158 | Fixed-timestep clock, 16 assertions: drift, catch-up, stalls, self-removal. |
 | [test/rooms.js](test/rooms.js) | 379 | Gamemode assertions, 99 of them, over all four modes. No socket — builds rooms via `boot()`. |
 | [test/client.js](test/client.js) | 251 | **Runs the client.** 23 assertions: camera, bullet speed, entity completeness, no NaN to canvas. |
 | [test/clientDom.js](test/clientDom.js) | 193 | The stub DOM `test/client.js` boots `new2Init.js` against. Not a suite. |
-| [test/smoke.js](test/smoke.js) | 236 | End-to-end smoke test, 45 assertions, all four modes. Real socket, real protocol. |
+| [test/smoke.js](test/smoke.js) | 249 | End-to-end smoke test, 49 assertions, all four modes. Real socket, real protocol. |
 | [test/web.js](test/web.js) | 167 | 8 assertions on the merged entry point: one port serves site + socket; split mode works. |
 | [test/clientProto.js](test/clientProto.js) | 31 | Loads `SocketSchema.js` in *client* mode inside Node, via `vm`. |
 | [lib/botNames.js](lib/botNames.js) | ~100 | Bot name list. Non-ASCII, deliberately — see §5.11. |
 | [public/new2Init.js](public/new2Init.js) | 3352 | **The whole game client.** Rendering, input, UI, netcode. |
-| [public/motion.js](public/motion.js) | 158 | **Client motion primitives** (§6.1): snapshot interpolation and frame-rate-independent smoothing. Loaded by `play.ejs`, `require()`d by the tests. |
+| [public/motion.js](public/motion.js) | 161 | **Client motion primitives** (§6.1): snapshot interpolation and frame-rate-independent smoothing. Loaded by `play.ejs`, `require()`d by the tests. |
 | [public/SHARE/SocketSchema.js](public/SHARE/SocketSchema.js) | 905 | Binary wire protocol, declarative (§4). Dual-mode: runs on client *and* server. |
 | [public/SHARE/TanksConfig.js](public/SHARE/TanksConfig.js) | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. |
 | [public/SHARE/PetsConfig.js](public/SHARE/PetsConfig.js) | 132 | Cosmetic pet definitions. |
@@ -263,15 +270,16 @@ should be grepped for corrupted literals before it runs.
 ### Loops and timing — ✅ REWRITTEN (§8.8)
 
 - **Room simulation**: **one** fixed-timestep clock, [lib/clock.js](lib/clock.js), calls
-  every room's `step()` at exactly 20 ms of wall clock on average. Rooms no longer schedule
-  themselves.
-- **Per-socket send loop** (`loop.gameloop`): ~33 Hz per client, deliberately independent of
-  the simulation tick — a send is a snapshot of whatever the simulation had reached, and
-  neither rate has to divide the other. Falls back to 200 ms when idle/waiting.
+  every room's `step()` every `config.TICK_MS` (**33 ms**, 30.3 Hz) of wall clock on average.
+  Rooms no longer schedule themselves.
+- **Per-socket send loop** (`loop.gameloop`): `config.SEND_MS` (33 ms), deliberately
+  independent of the simulation tick — a send is a snapshot of whatever the simulation had
+  reached. Falls back to 200 ms when idle/waiting. Skips a send when the world has not
+  stepped since the last one (§5.19).
 - **Per-socket slow loop** (`loop.longloop`): 1 s. Heartbeats, AFK kick, rate-limit reset, UI
   updates.
-- **Object respawn**: `generate()` is a simulation event now, run every 20 steps from
-  `step()`, not a separate 400 ms chain.
+- **Object respawn**: `generate()` is a simulation event now, run every `400/TICK_MS` steps
+  from `step()`, not a separate 400 ms chain.
 - **Leaderboard/shop refresh** (web server): `setInterval(..., 120000)`.
 
 What changed and why: each room used to end its own `update()` with
@@ -282,12 +290,66 @@ independently, so two players in different rooms ran at different speeds. The ac
 `lib/clock.js` measures elapsed wall clock and pays it out in whole fixed steps: overrun is
 repaid, and a stall beyond the catch-up budget (5 steps) is **dropped and logged** rather
 than repaid as a burst that causes the next stall. Entity code is untouched — its constants
-were always "per tick" and a tick is now a reliable 20 ms.
+were always "per tick", and a tick is now a reliable, uniform length.
 
 Diagnostics: the `tps` admin command reports target rate, measured rate, steps and drops;
 a stall also prints a throttled `[clock]` line to stderr. Both exist because a simulation
 running slow used to be indistinguishable from a bad network from every angle anyone could
 see, which is why "the game feels laggy with many entities" stayed a guess for so long.
+
+### 3.1 Why the step is 33 ms — read this before changing `TICK_MS`
+
+**The old loop never ran at 50 Hz, and the game is balanced for the rate it actually ran at.**
+This is not a footnote; it is the single most surprising fact in the repo, and the obvious
+value for `TICK_MS` is the wrong one.
+
+`setTimeout(update, 20)` reads as 50 Hz. It is not. Each tick paid 20 ms of timer, plus
+however long the tick's own work took, plus OS timer granularity, and none of it was repaid.
+Measured on this tree — one room alone in its own process, eight-second runs, no other load:
+
+| mode | entities | old `setTimeout(20)` chain | work per step |
+|---|---|---|---|
+| ffa | 680 | **28.11 Hz** | 8.28 ms |
+| 2team | 383 | **29.60 Hz** | 5.21 ms |
+
+So the game as anyone has ever played it — including whoever tuned it — ran at about 29 Hz.
+Every speed, reload, friction and acceleration constant in `entities/` and
+`public/SHARE/TanksConfig.js` was set by feel against that number, not against the 50 Hz the
+code claimed.
+
+Which means putting the simulation on an honest clock and leaving the step at 20 ms made the
+entire game run **~1.7× too fast**. That was reported as "the game feels like it's on 2×
+speed", and it was not a clock bug: it was the clock telling the truth for the first time.
+`TICK_MS = 33` restores the speed the game was actually tuned for, and is also what diep.io
+itself runs.
+
+Everything the fixed clock was for still holds at that rate — the tick no longer sags under
+load, rooms no longer drift apart from one another, and a stall is reported instead of
+silently slowing the world down. Measured after the change, one room per process, 8 s each:
+
+| mode | entities | rate | work per step | CPU | dropped steps |
+|---|---|---|---|---|---|
+| ffa | 713 | 30.36 Hz | 8.20 ms | 24.9% | 0 |
+| 2team | 393 | 30.22 Hz | 4.52 ms | 13.7% | 0 |
+| 4team | 594 | 30.33 Hz | 6.56 ms | 19.9% | 0 |
+| boss | 490 | 30.35 Hz | 5.41 ms | 16.4% | 0 |
+
+**Dropped steps are not normal.** Zero is the expected reading, and the table above is what a
+healthy box looks like. If `tps` reports drops, the process is genuinely failing to keep up —
+that is the diagnostic doing its job, not noise. (One earlier run did print a stall line; the
+cause was the benchmark harness itself blocking the event loop for 1.1 s, which is exactly
+the kind of thing the warning exists to expose.)
+
+Two things follow for anyone tempted to lower it:
+
+- **20 ms is a balance project, not a config change.** It would make the game 1.65× faster
+  than it has ever been, and every gameplay constant would need retuning to compensate.
+- **It costs about twice the CPU.** At 20 ms one ffa room is 41% of a core against 25% at
+  33 ms — so 2–3 busy rooms saturate a core rather than 4–5.
+
+`SEND_MS` must stay `>=` `TICK_MS`. Sending faster than the simulation steps means
+consecutive packets carry an identical world, which the client's interpolator reads as
+"stopped" (§5.19).
 
 Room lifecycle: `Main.askConnection()` places a client in an existing room or calls
 `newServer()`. A room self-destructs inside its own `step()` when zero human players remain
@@ -421,7 +483,7 @@ one leaves the field absent. The only reader is `if(data.error)` in
 [net/gameSocket.js](net/gameSocket.js), where both are equally falsy.
 
 Those golden bytes are now pinned in [test/proto.js](test/proto.js), so the wire cannot drift
-without a test saying so — which matters because the other end is a 3241-line client file
+without a test saying so — which matters because the other end is a 3352-line client file
 nobody wants to re-verify by hand.
 
 Anti-abuse, such as it is: `socket.main.request++` per packet, kicked at ≥50/sec
@@ -475,9 +537,11 @@ the original handoff so older references still resolve.
    now lives once in [rooms/Room.js](rooms/Room.js); a gamemode is a subclass that passes a
    block of tunables to `super()` and overrides a handful of named hooks (the table at the
    top of `Room.js` lists all twelve). `Ffa` is 30 lines because `Room`'s defaults *are*
-   free-for-all's behaviour; `TwoTeam` is 164 and carries everything that makes it a team
-   mode. `4team` and `boss` still have no class — see §10, that is a product question, not a
-   code one — but writing one is now a subclass, not a 780-line copy.
+   free-for-all's behaviour; `TwoTeam` is 108 and carries everything that makes it a team
+   mode. `4team` and `boss` were still classless when this item was written; they now exist
+   ([rooms/FourTeam.js](rooms/FourTeam.js) 134 lines, [rooms/BossMode.js](rooms/BossMode.js)
+   39), and the fact that a whole new mode costs 134 lines instead of a 780-line copy is the
+   payoff for this item.
 
    Collapsing the copies meant deciding, per difference, which copy was right. **Twelve
    behaviours changed**; all of them are one copy adopting the other's, except the first:
@@ -514,19 +578,49 @@ the original handoff so older references still resolve.
    change plus those three literals.
 
 10. ⚠️ **PARTLY FIXED.** `package.json` now has a `scripts` block (`start`, `start:game`,
-    `start:web`, `test`, `test:proto`, `test:rooms`, `test:smoke`, `test:web`) and the four
-    suites give 145 assertions.
+    `start:web`, plus `test` and a `test:*` entry per suite) and the seven suites give 296
+    assertions.
     **Still missing: a lockfile and a linter.** Dependencies remain pinned with `~` to ~2019
     versions (`express ~4.17`, `ws ~7.2`, `ejs ~2.7`, `mysql ~2.17`); `npm install` reports 10
     vulnerabilities (1 critical). They install and run on Node 24, but `ejs@2` and `mysql@2`
     are unmaintained. See §8.10.
 
-11. ⚠️ **PARTLY FIXED — input sanitation on chat/names.** The *length* checks now work and are
-    enforced at both ends (§4.2): `Main.maxPseudoLength` is 16 and the client clamps to it,
-    chat is capped at 100 characters, commands at 50. **Content is still unsanitised** — chat
-    goes through a `/`-command parser (`/join`, `/name`, `/quit`, `/color`) and nothing is
-    escaped anywhere. Rendering is canvas-based so XSS risk stays low, but names and messages
-    reach the leaderboard and the DB (when it is on) exactly as typed.
+11. ✅ **RESOLVED — input sanitation on chat/names is length-only, by design.** The length
+    checks work and are enforced at both ends (§4.2): `Main.maxPseudoLength` is 16 and the
+    client clamps to it, chat is capped at 100 characters, commands at 50.
+
+    **Content is deliberately not filtered, and that is the decision, not an omission.**
+    Names are Unicode and stay Unicode — the bot roster in
+    [lib/botNames.js](lib/botNames.js) is itself non-ASCII (§5.11 was always about this), so
+    any character filter would have made human players second-class next to the bots. What
+    the codebase had instead was a filter that *nobody had noticed was destroying names*:
+    `lib/Controller.js` logged joins through `name.replace(/([^a-z0-9]+)/gi,'-')`, which
+    turns any non-Latin name into a row of hyphens. That is gone.
+
+    The one thing still stripped is C0/C1 control characters, and only on the path to the
+    operator's **terminal**:
+
+    ```js
+    function consoleSafe(name){
+      return String(name).replace(/[\u0000-\u001f\u007f-\u009f]/g, "\uFFFD");
+    }
+    ```
+
+    That is not sanitation of the name — the name reaches the game, the wire and the DB
+    exactly as typed. It is escaping at the point of output, because a terminal executes
+    `ESC[` sequences, so a player called `<ESC>[2J` could otherwise clear the operator's
+    screen (or rewrite lines above it) just by joining. Escape at output, not at input; if
+    you add another sink for names, escape for *that* sink.
+
+    Surrogate pairs are handled: the wire length is in UTF-16 code units, and the client's
+    `clamp()` in [public/SHARE/SocketSchema.js](public/SHARE/SocketSchema.js) backs off by
+    one when the cut would land between a high and a low surrogate, so an emoji name is
+    truncated to a shorter name rather than to a broken one. Asserted by the Unicode section
+    of [test/proto.js](test/proto.js).
+
+    Still true, and still fine: nothing is HTML-escaped anywhere. Rendering is canvas-based,
+    so there is no HTML sink to escape *for* — but that stops being true the moment a name is
+    ever put into a DOM node or an EJS template.
 
 12. ✅ **FIXED — `checkLength` was a no-op** (`min<=data<=max` chained comparison), so the
     protocol had no working input validation at all. Fixed in §8.6 along with the four call
@@ -540,14 +634,74 @@ the original handoff so older references still resolve.
     Worth grepping for: `min <= x <= max` is a shape this codebase reaches for, and both
     instances of it were dead.
 
+14. ✅ **FIXED — the gamemode enum was inconsistent, and `4team` was unjoinable for the entire
+    life of the codebase.** `toBUFFER.gamemode` encoded `'4team'` as **3**, but
+    `toSTRING.gamemode` was a three-element array, so index 3 decoded to `undefined`. The mode
+    then arrived at `askConnection` as no gamemode at all → `ERR_GAMEMODE`, every time, for
+    everyone. `'boss'` was in neither table. Both tables now list all four modes in the same
+    order, and [test/rooms.js](test/rooms.js) cross-checks them against each other and against
+    `RT.ROOMS` so the two halves cannot drift again.
+
+    This was pre-existing and survived the §8.6 protocol rewrite untouched — the byte-for-byte
+    check (§4.3) confirmed old and new code produced the identical wrong bytes, which is the
+    check working as intended: it pins *compatibility*, not correctness.
+
+15. ✅ **FIXED — a `boss`-mode room would have ticked forever.** A room self-destructs when it
+    has zero human players, and the count excluded bots. It did not exclude **bosses**, which
+    are `Player` instances. In `ffa`/`2team` a boss is rare enough that nobody noticed; in
+    `boss` mode, where three of them are alive by design, the last human could leave and the
+    room would simulate an empty map at 30 Hz until the process died. The count now excludes
+    `i.boss` as well as `i.bot`.
+
+16. ✅ **FIXED — `SetPacket` iterated the packet three times and built incomplete entities.**
+    The client's packet handler ran its head / `User` / `Instances` work inside one loop that
+    it entered three times, and — the part that actually broke — an entity seen for the first
+    time was constructed from four arguments and then **skipped the block that applies the
+    rest of the packet's fields**. So a brand-new tank held its placeholder class for a whole
+    packet interval. `drawTank` looks the class up in `TanksConfig` and returned `undefined`
+    for it, and the next line read `.can` off that: an intermittent
+    `Cannot read properties of undefined (reading 'can')` crash on spawn, of exactly the kind
+    that is impossible to reproduce on demand.
+
+    Fixed three ways, deliberately belt-and-braces because this is the render path: the
+    packet's fields are now applied after construction as well as during it; the default class
+    is a real class (`'Basic'`) rather than the placeholder `'Doble'`; and `Tank.draw` reads
+    `let can = o && o.can;` instead of assuming the lookup succeeded. Found by
+    [test/client.js](test/client.js), which is the first thing in this repo ever to execute
+    the renderer.
+
+17. ✅ **FIXED — `states[7]` read past the end of a six-element array.** The client tested
+    `states[7]` for the bot flag; the array the server encodes has indices 0–5. Always
+    `undefined`, always falsy, so the bot marker never rendered. Now `states[6]`.
+
+18. ✅ **FIXED — `'unamed'`.** The default player name was misspelled. Cosmetic, but it is on
+    the wire and in the DB, so it is worth knowing it changed.
+
+19. ✅ **FIXED — the client was sent the same world twice, several times a second.** The
+    per-socket send loop and the simulation clock are independent timers. Even at identical
+    periods they drift against each other, and every so often two sends land inside one
+    simulation step. That pair carries a byte-identical world, and the snapshot interpolator
+    (§6.1) reads two identical positions as "this entity has stopped" — one visible hitch per
+    drift cycle, which looks exactly like packet loss and is not.
+
+    `head.timestamp` is the room's step counter, so "the world has not moved" is one integer
+    compare. [net/gameSocket.js](net/gameSocket.js) now skips those sends and retries a
+    quarter-step later rather than waiting a full period — waiting would turn a duplicate into
+    a 66 ms hole, which is worse. The retry also re-anchors the send deadline to the step
+    boundary it had drifted off.
+
+    Measured by negative control: with the skip disabled, `test/smoke.js` reports up to **12
+    duplicates in 175 packets** (7% of frames) in a single mode. With it, zero, and
+    `test/smoke.js` asserts that per mode.
+
 ---
 
 ## 6. The client (`public/new2Init.js`)
 
-One 3241-line IIFE, `(function(window){ … })(window)`. No modules, no build step, no bundler —
-`play.ejs` loads five globals via `<script>` in a required order:
+One 3352-line IIFE, `(function(window){ … })(window)`. No modules, no build step, no bundler —
+`play.ejs` loads six globals via `<script>` in a required order:
 `ws_link.js` → `POST` (server-injected JSON) → `TanksConfig.js` → `PetsConfig.js` →
-`SocketSchema.js` → `new2Init.js`.
+`SocketSchema.js` → `motion.js` → `new2Init.js`.
 
 Everything is canvas 2D. Key internal namespaces, all attached to a `General` object:
 
@@ -558,14 +712,74 @@ Everything is canvas 2D. Key internal namespaces, all attached to a `General` ob
   display order). `TNK` — the class-evolution picker. `LB` — leaderboard. `END` — death screen.
 - `Loop()` / `Draw()` — the render loop and the socket wiring (`socket.onopen` at ~line 1062
   sends `PROTO.encode('init', POST)`).
-- `CONST.SMOOTH` (0.15) — the interpolation factor used to lerp entity positions between
-  server updates. Server sends ~33 Hz; the client renders at rAF speed and smooths.
+- `Interp` / `NET` — entity motion, from [public/motion.js](public/motion.js). See §6.1;
+  `CONST.SMOOTH` no longer decides where anything is drawn.
 
 The colour system is a global `window.colorPattern` map of `[light, dark]` pairs used for the
 two-tone tank fills.
 
 `views/play.ejs` carries a large block of inline `<style>` — CSS lives in three places
 (`public/style.css`, `LeaderBoard.css`, `fontStyle.css`, plus inline).
+
+### 6.1 Motion — ✅ REWRITTEN ([public/motion.js](public/motion.js))
+
+Two complaints from the first browser session turned out to be one bug:
+
+> *"every time a bullet shoots, it seems to lag for a bit before proceeding forwards normally"*
+> *"the game does go off center as well when moving, it's like the camera is lagging behind"*
+
+Both came from this line, applied every animation frame to every entity:
+
+```js
+d += (target-d)*CONST.SMOOTH;      // SMOOTH = 0.15
+```
+
+That is an exponential filter chasing a **moving** target, and it has two failure modes, one
+per complaint:
+
+- **A startup transient.** A new entity starts at rest and needs ~30 frames to wind up to the
+  target's speed. A bullet lives for about a second, so a noticeable fraction of its life is
+  drawn slower than it is actually travelling — it appears to hesitate, then catch up.
+  Measured against the old filter: a bullet whose true speed is 6.67 units/frame is drawn at
+  **1.4, 2.9, 4.0, 4.8, 5.4…** — it is still accelerating thirteen packets after it spawned.
+- **Steady-state lag proportional to speed.** The filter always trails a constantly-moving
+  target by a fixed fraction of its per-frame distance. Applied to the camera, that means the
+  faster you move the further off-centre your own tank sits. Measured: **184 units** off at
+  full speed.
+
+Neither is fixable by tuning `SMOOTH` — raising it trades lag for jitter, and the transient
+stays.
+
+What replaces it:
+
+- **Snapshot interpolation.** Each entity keeps its last two server positions with the times
+  they arrived, and `sample(now)` draws the point *between* them. There is no filter state,
+  so no wind-up: an entity is drawn at its true speed from the second packet onward. `NET`
+  keeps an EMA of the real gap between packets, so the client interpolates against the rate
+  it is actually receiving rather than the rate the server intends.
+- **A teleport threshold** (400 units). A respawn or a map wrap is not motion, and
+  interpolating across it would draw a tank streaking over the map. Beyond the threshold the
+  entity is snapped.
+- **A capped extrapolation** (2 packet intervals). If packets stop arriving, entities coast
+  briefly and then hold, instead of either freezing instantly or flying off.
+- **The camera is pinned to the drawn tank**, not smoothed towards it independently — the two
+  cannot disagree if there is only one of them. Aim is measured from the screen centre for
+  the same reason.
+- **Frame-rate independence.** Where exponential smoothing survives (UI, not entity
+  position), `lerpK(k, dtFrames)` = `1-(1-k)^dtFrames`, so a 144 Hz monitor and a 30 Hz one
+  agree. The raw `d += (t-d)*k` form is frame-rate dependent by construction and was silently
+  giving different players different behaviour.
+
+`motion.js` uses the same `typeof(exports)` sniff as `public/SHARE/`, so
+[test/interp.js](test/interp.js) exercises the real arithmetic in Node — 22 assertions, each
+comparing against the old smoother over the same packet schedule, so the tests state the
+difference rather than just asserting the new numbers. Its packet spacing is read from
+`lib/config.js` rather than restated, so retuning the send rate cannot leave the harness
+measuring a rate nobody runs.
+
+See also §5.16 — fixing the packet handler to build complete entities is what exposed the
+latent `drawTank` crash, and §5.19 for the duplicate-frame problem, which is the same
+"interpolator reads two identical positions as stopped" failure arriving from the server side.
 
 ---
 
@@ -579,42 +793,59 @@ two-tone tank fills.
 4. `new2Init.js` opens `WS_LINK` and sends the binary `init` packet.
 5. `net/gameSocket.js` `income()` → `Controller.askConnection()` → assigned to a room →
    `new loop(socket)` starts the two per-socket timers.
-6. Room `update()` simulates at ~50 Hz; each socket's `gameloop` pulls a per-player view via
-   `Controller.getBuffer(id)` → `room.getBuffer(id)` (which culls to the player's screen) and
-   sends `GameUpdate`. `longloop` sends `UiUpdate` + `ping` at 1 Hz.
-7. Client decodes, lerps, draws. Inputs go back as `keydown`/`keyup`/`mousemove`/`upgrade`/
-   `upClass` packets.
+6. [lib/clock.js](lib/clock.js) calls `room.step()` at 30.3 Hz (§3.1); each socket's
+   `gameloop` pulls a per-player view via `Controller.getBuffer(id)` → `room.getBuffer(id)`
+   (which culls to the player's screen) and sends `GameUpdate`, skipping the send if the world
+   has not stepped since the last one. `longloop` sends `UiUpdate` + `ping` at 1 Hz.
+7. Client decodes, **interpolates between the last two snapshots** (§6.1), draws. Inputs go
+   back as `keydown`/`keyup`/`mousemove`/`upgrade`/`upClass` packets.
 8. On death with DB on, `Main.insertLB()` writes to the `wrs` table.
 
 ---
 
 ## 8. Suggested refactor order
 
-Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–7 and 11 are done;
-8 is next.**
+Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 11 are done;
+9 is next.**
 
 1. ✅ **DONE — Make failure visible.** [lib/crash.js](lib/crash.js) replaces both
    `uncaughtException` handlers with fail-fast + stderr logging (`OBSTAR_SWALLOW_CRASHES=1`
    restores the old behaviour), and `package.json` has a `scripts` block.
    **Still outstanding from this item: commit a lockfile.**
-2. ✅ **DONE — Test harness.** [test/smoke.js](test/smoke.js), 29 assertions: protocol
-   round-trips, plus a live server booted per gamemode (`ffa` and `2team` run sequentially,
-   because `config.MAX_IP` caps connections per IP at 2), sampled for 6 s.
+2. ✅ **DONE — Test harness.** Seven suites, 296 assertions, run in dependency order by
+   `npm test`: `proto` → `interp` → `clock` → `rooms` → `client` → `smoke` → `web`, cheapest
+   and most load-bearing first.
+
+   [test/smoke.js](test/smoke.js), 49 assertions: protocol round-trips, plus a live server
+   booted per gamemode (the four run sequentially, because `config.MAX_IP` caps connections
+   per IP at 2), sampled over a few seconds each.
    The enabling trick is [test/clientProto.js](test/clientProto.js): `SocketSchema.js` picks
    its half by sniffing `typeof(exports)`, so loading it in a `vm` context with no `exports`
    (but with `Buffer` and `TanksConfig` injected as globals) yields the **browser** encoder
    inside Node. The test therefore sends exactly the bytes a real client sends.
    [test/rooms.js](test/rooms.js) was added with §8.5 and covers what a socket cannot see:
-   51 assertions on teams, bases, bot rosters, colours and respawn xp, built straight off
-   `boot()` with no server. [test/web.js](test/web.js) was added with §8.11 and is the only
-   suite that touches the Express side: 8 assertions that one `node server.js` really does
-   serve the menu, `/play`, the static files and the game socket on a single port, and that
-   `--web-only` + `WS_LINK` still produces a page pointed at a remote game server.
-   [test/proto.js](test/proto.js) was added with §8.6 and runs first because it is the
-   fastest and the most load-bearing: 57 assertions covering golden wire bytes captured from
-   the pre-refactor encoder, packet sizes derived from the schema independently of the
-   encoder, round trips through every value transform, and the input validation that had
-   never run before.
+   99 assertions on teams, bases, bot rosters, colours and respawn xp, over all four modes,
+   built straight off `boot()` with no server. [test/web.js](test/web.js) was added with
+   §8.11 and is the only suite that touches the Express side: 8 assertions that one
+   `node server.js` really does serve the menu, `/play`, the static files and the game socket
+   on a single port, and that `--web-only` + `WS_LINK` still produces a page pointed at a
+   remote game server.
+   [test/proto.js](test/proto.js) was added with §8.6 and runs first: 79 assertions covering
+   golden wire bytes captured from the pre-refactor encoder, packet sizes derived from the
+   schema independently of the encoder, round trips through every value transform, the input
+   validation that had never run before, and Unicode names (§5.11).
+   [test/clock.js](test/clock.js) and [test/interp.js](test/interp.js) came with §8.8 and
+   §6.1; both drive the real implementation against a scripted clock rather than
+   reimplementing its arithmetic in the test, which is the only version of such a test worth
+   having.
+
+   The one that changes what is possible here is [test/client.js](test/client.js) (23
+   assertions) with [test/clientDom.js](test/clientDom.js): a stub DOM — canvas context,
+   `requestAnimationFrame`, a fake WebSocket — under which `new2Init.js` actually executes in
+   Node. **The rendering code had never run outside a browser in this repo's history**, and it
+   found a real intermittent crash the first time it did (§5.16). It reaches in through a
+   `window.__test` hook installed inside `Run()`; note that `Run()` only starts on the frame
+   after the first `GameUpdate`, so the harness has to drive that handover explicitly.
 3. ✅ **DONE — `c` shadowing (§5.2) and the dead `CONFIG` (§5.1).** Verified by negative
    control; see §5.2 for the measurement.
 4. ✅ **DONE — Split `Alex.js`** into `net/`, `rooms/`, `entities/`, `lib/`. See §2's file map
@@ -633,12 +864,23 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–7 and 
 7. ✅ **DONE — Replaced `constructor.name` dispatch** with `obj.kind` and the constants in
    [lib/kinds.js](lib/kinds.js). Details and the one remaining coupling (TanksConfig's
    hardcoded `DETEC.type` lists) are in §5.9.
-8. ⬜ **NEXT — Fix the fixed-timestep problem.** Replace the drifting `setTimeout(20)` chain
-   with an accumulator-based fixed-step loop that decouples simulation rate from send rate.
-   See §3, "Loops and timing", for the five independent timer chains involved.
-9. ⬜ **Modernize the client last.** It's the largest single file but the least dangerous —
+8. ✅ **DONE — Fixed timestep.** [lib/clock.js](lib/clock.js) replaces the drifting
+   `setTimeout(20)` chain with one shared accumulator-driven clock; simulation rate and send
+   rate are now independent numbers in [lib/config.js](lib/config.js). 16 assertions in
+   [test/clock.js](test/clock.js) cover drift, catch-up, stall dropping and self-removal,
+   driving the real `wake()` against a scripted clock rather than reimplementing its
+   arithmetic.
+
+   **The surprise is in §3.1 and it is worth reading before anything else in this document:**
+   the old chain never ran at 50 Hz, the game is balanced for the ~29 Hz it did run at, and
+   so the step is 33 ms. Doing this item honestly at 20 ms made the game 1.7× too fast.
+9. ⬜ **NEXT — Modernize the client.** It's the largest single file but the least dangerous —
    nothing else depends on its internals. Introduce a bundler and split by the existing
-   `General.*` namespaces.
+   `General.*` namespaces. [public/motion.js](public/motion.js) (§6.1) is the first piece
+   carved out and is the template: a `typeof(exports)` footer makes it `require()`-able, which
+   is what let the motion arithmetic be tested. [test/client.js](test/client.js) +
+   [test/clientDom.js](test/clientDom.js) can execute the whole client under a stub DOM, so
+   this item no longer has to be done blind.
 10. ⬜ **Dependencies and DB.** Commit a lockfile, add a linter, upgrade `express`/`ws`/`ejs`,
     replace `mysql` with `mysql2`. §5.3–5.5 are now fixed, but do not turn `MYSQL: true` on
     without testing those paths — they have never run in this tree.
@@ -679,66 +921,104 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–7 and 
 - ~~Target deployment: single box, or the split topology?~~ **Single box by default**
   (`node server.js`), with the split still available behind `--game-only` / `--web-only`
   (§8.11). Nobody has to choose at install time any more.
+- ~~Are `4team` and `boss` meant to be finished, or removed from the menu?~~ **Finished.**
+  Both are implemented ([rooms/FourTeam.js](rooms/FourTeam.js),
+  [rooms/BossMode.js](rooms/BossMode.js)), joinable, in `RT.ROOMS`, and covered by
+  [test/rooms.js](test/rooms.js) and [test/smoke.js](test/smoke.js) alongside the other two.
+  The gamemode enum that made `4team` unreachable is fixed (§5.14).
+
+  Adding another diep gamemode is now a subclass plus one line in
+  [lib/boot.js](lib/boot.js)'s `RT.ROOMS` — `Controller`'s whitelist, its `server` map and
+  the tests all derive from that one object, so there is no second list to remember. The
+  wire enum in [public/SHARE/SocketSchema.js](public/SHARE/SocketSchema.js) is the one thing
+  that does **not** derive from it (the client cannot `require()` `boot.js`), so add the key
+  to both `toBUFFER.gamemode` and `toSTRING.gamemode` in the same order —
+  `test/rooms.js` cross-checks the three lists against each other and will fail if you don't.
 
 **Still open:**
 
 - Should MySQL come back, or should accounts/shop/leaderboard move to something else (SQLite,
   Postgres, or drop persistence entirely)?
-- **Are `4team` and `boss` modes meant to be finished, or removed from the menu?** This no
-  longer gates §8.5 — `Room` was built with the team count as a rule (`rules.teams`) and
-  bases as a hook, so four teams is a subclass either way. But nobody should write that
-  subclass, or un-`deactivate` those menu buttons, until someone says the modes are wanted.
-  Removing them instead means deleting two keys from `Main.server` and two buttons from
-  `index.ejs`.
-  Whoever *does* enable `4team` should know it is broken on the wire before it starts:
-  `toBUFFER.gamemode['4team']` is **3**, but `toSTRING.gamemode` only has three entries, so
-  index 3 decodes to `undefined` and the mode arrives at `askConnection` as no gamemode at
-  all → `ERR_GAMEMODE`. Pre-existing, untouched by §8.6 (the byte-compat check confirms both
-  the old and the new code do this), and a one-character fix once someone decides the mode
-  is real.
+- **Which diep gamemodes come next, and do they need mechanics `Room` does not have yet?**
+  The four that exist needed only rules and hooks. Domination and Maze want *map features* —
+  neutral capturable structures, static walls — which is a new kind of entity rather than a
+  new set of tunables, and `Room` has no concept of either today.
+- **Should `TICK_MS` stay at 33, or should the gameplay constants be retuned for 50 Hz?**
+  §3.1 has the measurements. 33 preserves the game as it has always actually played; 20 is
+  what the code always claimed and would need a balance pass plus roughly double the CPU per
+  room. This is a design call, not a bug.
 
 ---
 
 ## 11. State of the working tree
 
-Chunks 1–7 are committed (through `cadf192`). **Chunk 8, the protocol rewrite (§8.6), is
-not committed.** `git status` shows `public/SHARE/SocketSchema.js` rewritten, the deleted
-size arithmetic in `rooms/Room.js`, the name-length fix in `lib/Controller.js`, the new
-`test/proto.js`, and its `test`/`test:proto` entries in `package.json`.
+Chunks 1–8 are committed, through `257e967`. In particular `21f3412` carries everything this
+pass added: the clock, the two new gamemodes, the client motion rewrite and the four new test
+suites.
+
+**Uncommitted** — `git status` shows only the tick-rate retune and its consequences:
+
+| File | What changed |
+|---|---|
+| `lib/config.js` | `TICK_MS` / `SEND_MS` added, with §3.1's reasoning inline |
+| `lib/clock.js` | default step reads `config.TICK_MS` instead of a literal 20 |
+| `net/gameSocket.js` | `SEND_MS` from config; duplicate-frame skip (§5.19) |
+| `public/motion.js` | interval-EMA seed 30 → 33, to match `SEND_MS` |
+| `test/interp.js` | packet spacing read from config instead of restated |
+| `test/smoke.js` | the duplicate-frame assertion |
+| `HANDOFF.md` | this |
 
 ### What was verified, and what was not
 
-Verified: `npm test` → **145 passed / 0 failed** (57 protocol + 51 room + 29 live-server + 8
-single-entry-point/web). Every file checked with `node --check`. The room unification was
-checked differentially against the pre-refactor tree in a scratch `git worktree`: repeated
-20-second in-process runs of both modes agree on live player count, polygon population and
-map dimensions, and repeated socket runs agree on the colour palette reaching the wire. The
-§5.2 fix from the first pass is still asserted by `smoke.js` (no non-finite `x`/`y`/`size`
-reaches the wire). The `kind` swap (§5.9) was made against a green suite and re-run against
-it; the room and smoke suites exercise every one of the dispatch sites it touched, since
-they are the collision and buffer paths. The protocol rewrite (§8.6) was checked byte for
-byte against the code it replaced — 82 comparisons, zero differences (§4.3) — and the same
-vectors are now golden values in `test/proto.js`; `smoke.js` independently proves the new
-self-sizing encoder against a live server, since it decodes every `GameUpdate` a real room
-produces.
+Verified: `npm test` → **296 passed / 0 failed** (79 protocol/names + 22 client motion + 16
+clock + 99 room + 23 client render + 49 live-server + 8 single-entry-point/web). Every file
+checked with `node --check`.
+
+Carried over from earlier passes: the room unification was checked differentially against the
+pre-refactor tree in a scratch `git worktree` (same live player counts, polygon population,
+map dimensions and colour palette across repeated 20-second runs); the protocol rewrite was
+checked byte for byte, 82 comparisons, zero differences (§4.3), and those vectors are golden
+values in `test/proto.js`; the §5.2 fix is still asserted by `smoke.js`.
+
+New in this pass, and how far each was actually pushed:
+
+- **The game was opened in a browser.** This is what generated the whole pass. It runs; the
+  two motion complaints it produced are §6.1 and are fixed.
+- **Three fixes were checked by negative control** — reintroduce the bug, confirm the test
+  goes red, then restore. The old smoother: camera **184 units** off the tank, bullet drawn
+  at 7.9 → 12.0 → 14.8 → 15.9 → 16.3 against a true 18.0. The duplicate-frame skip: **12 of
+  175** packets carrying a repeated world. A negative control that *passes* is worthless, and
+  one of these did at first — the patch script was writing `\n` against a CRLF file and
+  silently changing nothing. Check that the control actually failed before believing it.
+- **The tick rate was measured, not assumed** (§3.1), one room per process. The first attempt
+  ran the old chain and the new clock in the *same* process, where they starved each other
+  and reported a meaningless 3.48× ratio. Separate processes or the number is fiction.
+- **All four gamemodes** are covered by `test/rooms.js` (99 assertions) and `test/smoke.js`
+  (49, over a real socket), and all four were rate-benchmarked.
 
 **Not verified — treat as unknown:**
 
-- **The game has never been opened in a browser since the refactor.** `test/web.js` now
-  drives the real pages over HTTP and asserts the socket answers on the same port, but
-  nothing has exercised actual rendering. This is still the first thing to check, and it
-  matters more after §8.5 than it did before: colour assignment is where the two room copies
-  disagreed most, and only the client can show you that a 2-team match still looks like two
-  teams. Two things to look at specifically: the reordered `<script>` tags in `play.ejs`
-  (POST before `ws_link.js`), and that `WS_LINK` resolves to the page's own origin.
-- **The boss.** `createBoss` is asserted directly by `test/rooms.js`, but its AI has never
-  been run — `bossRng` is 0.9999, so a natural spawn is rare. Use the `summonRandBoss` admin
-  command (needs `DB.DEV`, so MySQL) or lower `bossRng` in `rooms/TwoTeam.js` to exercise it.
+- **Everything past the first minute of play.** The browser session was short and
+  single-player. Nothing has exercised a full match: levelling to the class tree, the death
+  screen, respawn, or two humans in one room. `MAX_IP` is 2, so a second browser tab is the
+  cheapest way to test the last one.
+- **The boss AI.** `createBoss` is asserted directly by `test/rooms.js` and `boss` mode
+  spawns three of them at `bossRng: 0.9`, so they are *created* under test — but nothing
+  watches them behave. The AI itself has still never been observed.
+- **The client under a real browser's timing.** `test/client.js` drives `new2Init.js` under a
+  stub DOM at a scripted 2 frames per packet. That is enough to pin the motion arithmetic and
+  it caught a real crash (§5.16), but it is not a browser: no compositor, no rAF jitter, no
+  tab throttling. `Global.dtFrames` is clamped to [0.2, 4] specifically because a
+  backgrounded tab produces frame gaps the interpolator would otherwise take literally.
 - **MySQL paths.** Still off. §5.3–5.5 are fixed by inspection, not by execution.
 - **Admin commands, chat, the shop, and the death/leaderboard flow** are still uncovered.
-  `mapResize` in particular now does something in 2team that it never did before (§5.8.7).
+  `mapResize` in particular now does something in 2team that it never did before (§5.8.7),
+  and `tps` is new.
 - **The newly-live packet validation against a real browser.** `test/proto.js` proves the
   bounds accept what the client encoder produces and reject what it does not, but no browser
   has yet sent a real `chat` or `com` packet through the working `checkLength`. Those two are
   where the bounds changed most (§4.2) and where a mistake shows up as a kicked player rather
-  than a crash. Chat and commands were on the uncovered list before this pass and still are.
+  than a crash.
+- **Load.** Every measurement in §3.1 is one room alone on the box. Nothing has run several
+  busy rooms at once, which is the case the shared clock was built for and the case where
+  `tps` reporting dropped steps would actually mean something.

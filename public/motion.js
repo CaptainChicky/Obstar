@@ -54,7 +54,10 @@
   same typeof(exports) sniff as public/SHARE/SocketSchema.js.
 */
 (function(exp){
-  const NET_TICK = 30;    // what net/gameSocket.js aims for between GameUpdate packets
+  // Only the seed for the interval EMA - mark() measures the real spacing within a few
+  // packets, so this value decides how long the first moments after connecting look wrong,
+  // not the steady state. Keep it equal to config.SEND_MS (33) so that transient is nil.
+  const NET_TICK = 33;    // what net/gameSocket.js aims for between GameUpdate packets
   const TELEPORT = 400;   // a jump this big is not motion; see push()
   const MAX_EXTRAP = 2;   // how far past the newest snapshot sample() will coast
 
