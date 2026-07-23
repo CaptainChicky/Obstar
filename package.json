@@ -6,7 +6,9 @@
         "start:game": "node Alex.js",
         "start:web": "node obstarWeb.js",
         "dev": "node scripts/dev.js",
-        "test": "node test/smoke.js"
+        "test": "node test/rooms.js && node test/smoke.js",
+        "test:rooms": "node test/rooms.js",
+        "test:smoke": "node test/smoke.js"
     },
     "dependencies": {
         "cookie-parser": "~1.4.4",

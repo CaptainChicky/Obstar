@@ -3,15 +3,16 @@
 Written for a fresh agent session tasked with refactoring this repo. It describes the code
 **as it actually is today**, including the parts that are wrong. Nothing here is aspirational.
 
-> **Status — updated 2026-07-22, after refactor chunks 1–4.**
-> Items 1–4 of the refactor order in §8 are **done and verified**; `Alex.js` is now a 52-line
-> bootstrap instead of a 3918-line monolith. Sections below are marked ✅ DONE / ⬜ TODO
-> throughout, and descriptions have been rewritten to match the current tree — where a bug is
-> fixed, the text now says where the fix lives rather than describing the old breakage.
-> §8 items 5–10 are untouched and remain the roadmap.
+> **Status — updated 2026-07-22, after refactor chunks 1–5.**
+> Items 1–5 of the refactor order in §8 are **done and verified**. `Alex.js` is a 25-line
+> entry point instead of a 3918-line monolith, and the two ~750-line copy-paste room classes
+> are one 855-line [rooms/Room.js](rooms/Room.js) plus a 30-line and a 164-line subclass.
+> Sections below are marked ✅ DONE / ⬜ TODO throughout, and descriptions have been rewritten
+> to match the current tree — where a bug is fixed, the text says where the fix lives rather
+> than describing the old breakage. §8 items 6–10 are untouched and remain the roadmap.
 >
-> Verification: `npm test` → **29 passed, 0 failed** (binary protocol round-trips plus a live
-> server run per gamemode). Nothing has been committed yet.
+> Verification: `npm test` → **80 passed, 0 failed** (51 room assertions + 29 protocol and
+> live-server assertions). Chunks 1–4 are committed; chunk 5 is not.
 
 Obstar is an open-source clone of diep.io: a 2D multiplayer arena shooter. Players are tanks
 that shoot bullets, farm polygon "objects" for XP, level up, pick stat upgrades, and evolve
@@ -95,17 +96,19 @@ authentication between client and game server beyond a 25-char `userKey` cookie.
 
 ### File map
 
-Updated after the §8.4 split. Every file below `Alex.js` down to `scripts/dev.js` was carved
-out of the old monolith or added by the refactor.
+Updated after the §8.4 split and the §8.5 room unification. Every file below `Alex.js` down
+to `scripts/dev.js` was carved out of the old monolith or added by the refactor.
 
 | File | Lines | Role |
 |---|---|---|
-| [Alex.js](Alex.js) | 52 | Game server **boot sequence only**. Wires modules in dependency order, then listens. |
+| [Alex.js](Alex.js) | 25 | Game server entry point. Installs the crash handler, calls `boot()`, listens. |
 | [obstarWeb.js](obstarWeb.js) | 182 | Express web server. Menu, cookies, shop purchase, leaderboard reads. |
+| [lib/boot.js](lib/boot.js) | 57 | Fills the `lib/runtime.js` registry in dependency order. Idempotent, opens no port. |
 | [net/server.js](net/server.js) | 256 | The http shell + the ws IIFE: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
-| [lib/Controller.js](lib/Controller.js) | 568 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
-| [rooms/Sffa.js](rooms/Sffa.js) | 710 | Free-for-all room. |
-| [rooms/S2team.js](rooms/S2team.js) | 787 | 2-team room. **Still ~90% copy-paste of `Sffa` — see §5.8.** |
+| [lib/Controller.js](lib/Controller.js) | 581 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
+| [rooms/Room.js](rooms/Room.js) | 855 | **The simulation, once.** Tick, quadtree, collision, spawning, per-player views. |
+| [rooms/Sffa.js](rooms/Sffa.js) | 30 | Free-for-all: a block of tunables. `Room`'s defaults *are* ffa's behaviour. |
+| [rooms/S2team.js](rooms/S2team.js) | 164 | 2-team: teams, bases, guard drones, the boss, team colours. |
 | [entities/Player.js](entities/Player.js) | 456 | Tank entity: motion, shooting, upgrades, class changes, collision. |
 | [entities/Bullet.js](entities/Bullet.js) | 464 | Projectiles, including drone/trap/necro behaviour. |
 | [entities/Objects.js](entities/Objects.js) | 204 | Farmable polygons. |
@@ -118,7 +121,8 @@ out of the old monolith or added by the refactor.
 | [lib/terminal.js](lib/terminal.js) | 32 | Terminal colour codes (`cc`). |
 | [lib/constants.js](lib/constants.js) | 4 | `FRICTION`. |
 | [lib/AlexMysql.js](lib/AlexMysql.js) / [lib/webMysql.js](lib/webMysql.js) | 7 each | DB credentials. |
-| [test/smoke.js](test/smoke.js) | 199 | End-to-end smoke test, 29 assertions. `npm test`. |
+| [test/smoke.js](test/smoke.js) | 232 | End-to-end smoke test, 29 assertions. Real socket, real protocol. |
+| [test/rooms.js](test/rooms.js) | 215 | Gamemode assertions, 51 of them. No socket — builds rooms via `boot()`. |
 | [test/clientProto.js](test/clientProto.js) | 27 | Loads `SocketSchema.js` in *client* mode inside Node, via `vm`. |
 | [scripts/dev.js](scripts/dev.js) | 31 | Forks both servers; kills both if either exits. |
 | [name.js](name.js) | ~100 | Bot name list. |
@@ -146,8 +150,11 @@ construct entities, `Main` constructs rooms, and the AI closes over `Detector`. 
 `require()` between those modules hands back a half-initialised `exports` object.
 
 `lib/runtime.js` is the explicit stand-in for that shared scope — an empty object (`RT`) that
-[Alex.js](Alex.js) fills in a documented five-step order: entities → rooms → AI → `Controller`
-→ `listen`. Modules reach each other as `RT.Player`, `RT.Controller`, and so on.
+[lib/boot.js](lib/boot.js) fills in a documented order: entities → rooms → AI → `Controller`.
+[Alex.js](Alex.js) calls `boot()` and then listens, which is the fifth step and deliberately
+not part of `boot()` — that is what lets [test/rooms.js](test/rooms.js) stand the whole game
+up without opening a port. Modules reach each other as `RT.Player`, `RT.Controller`, and so
+on; gamemodes are looked up in `RT.ROOMS`, keyed by the gamemode string.
 
 **The rule, repeated in the file itself: never destructure off `RT` at module load time, and
 never cache an `RT` value in a module-level `const`. Read through `RT` at the point of use.**
@@ -313,18 +320,43 @@ the original handoff so older references still resolve.
 7. ✅ **FIXED — crash handlers kept a corrupted process alive.** See §1.4 and
    [lib/crash.js](lib/crash.js).
 
-8. ⬜ **TODO — `Sffa` and `S2team` are ~90% duplicated** (710 / 787 lines). Splitting them into
-   separate files made the duplication easier to see but did not reduce it: every gameplay
-   change must still be made twice, and they have already drifted. `4team` and `boss` room
-   slots exist in `Main.server` with no implementing class — the menu's 2-team/4-team buttons
-   are `deactivated` in `index.ejs` for this reason. **This is §8.5, the next chunk.**
+8. ✅ **FIXED — `Sffa` and `S2team` were ~90% duplicated** (710 / 787 lines). The simulation
+   now lives once in [rooms/Room.js](rooms/Room.js); a gamemode is a subclass that passes a
+   block of tunables to `super()` and overrides a handful of named hooks (the table at the
+   top of `Room.js` lists all twelve). `Sffa` is 30 lines because `Room`'s defaults *are*
+   free-for-all's behaviour; `S2team` is 164 and carries everything that makes it a team
+   mode. `4team` and `boss` still have no class — see §10, that is a product question, not a
+   code one — but writing one is now a subclass, not a 780-line copy.
+
+   Collapsing the copies meant deciding, per difference, which copy was right. **Twelve
+   behaviours changed**; all of them are one copy adopting the other's, except the first:
+
+   | # | Change | Why |
+   |---|---|---|
+   | 1 | 2team respawns now clamp xp to what you had | The curve *pays* below ~1000 xp: dying with 100 returned 187. ffa clamped with `Math.min`, 2team did not. Pinned by `test/rooms.js` ("a death never pays"). |
+   | 2 | ffa tombstones dead polygon slots (`KEEP_PLACE`) | 2team already did, and both already did for bullets. Delays entity-id reuse. Costs ~7% more array slots in ffa; measured no change to population. |
+   | 3 | 2team awards `coins` for kills | ffa did. Straight drift — `coins` is the shop currency. |
+   | 4 | 2team reports `cLvl: 0` while dead | ffa did. |
+   | 5 | 2team clamps `Objects` hp at 0 on the wire | ffa did. |
+   | 6 | 2team guards the encode with `if(raw)` | ffa did. Without it, any entity that is not a Player/Objects/Bullet entering a viewer's box throws. Latent, not reachable today. |
+   | 7 | Both modes run the map lerp | 2team did not, so `newMap` was dead there and the `mapResize` admin command silently did nothing. Its `newMap` also held a typo'd `height: 76000`. Both modes now start `newMap == map`, so the lerp is a no-op until someone resizes. |
+   | 8 | `summonRandBoss` no longer throws in ffa | `Room.createBoss()` is a no-op base method. |
+   | 9 | `Controller.newServer` no longer names undefined classes | It switched on `S4team` / `Sboss`, which do not exist — a `ReferenceError` if ever reached. It reads `RT.ROOMS` now and returns `undefined` for an unknown mode, which `askConnection` turns into `ERR_GAMEMODE`. |
+   | 10 | ffa's leaderboard skips bosses; ffa skips `Detector`-vs-`Detector` | Both no-ops in ffa today. |
+   | 11 | Dropped dead state | The room-level `this.team` tally (written, never read), `bufTimer`, `print`, and ffa's `tank.x/y` write in `respawn` to an object thrown away one line later. |
+   | 12 | 2team's join balance generalises to N teams | Same result for two teams: join the thinner side, coin-toss when level. |
+
+   Verified differentially against the pre-refactor code in a scratch worktree: same live
+   player counts (11 in ffa, 4 in 2team), same polygon population, identical map dimensions,
+   same colour palette on the wire, across repeated 20-second runs of both modes.
 
 9. ⬜ **TODO — `constructor.name` string dispatch everywhere.** Still blocks minification and
    bundling, still slow in hot collision paths, and see the warning in §3 about mechanical
    renames.
 
 10. ⚠️ **PARTLY FIXED.** `package.json` now has a `scripts` block (`start`, `start:game`,
-    `start:web`, `dev`, `test`) and `test/smoke.js` gives 29 end-to-end assertions.
+    `start:web`, `dev`, `test`, `test:rooms`, `test:smoke`) and the two suites give 80
+    assertions.
     **Still missing: a lockfile and a linter.** Dependencies remain pinned with `~` to ~2019
     versions (`express ~4.17`, `ws ~7.2`, `ejs ~2.7`, `mysql ~2.17`); `npm install` reports 10
     vulnerabilities (1 critical). They install and run on Node 24, but `ejs@2` and `mysql@2`
@@ -394,23 +426,24 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–4 are 
    `uncaughtException` handlers with fail-fast + stderr logging (`OBSTAR_SWALLOW_CRASHES=1`
    restores the old behaviour), and `package.json` has a `scripts` block.
    **Still outstanding from this item: commit a lockfile.**
-2. ✅ **DONE — Smoke test harness.** [test/smoke.js](test/smoke.js), 29 assertions: protocol
+2. ✅ **DONE — Test harness.** [test/smoke.js](test/smoke.js), 29 assertions: protocol
    round-trips, plus a live server booted per gamemode (`ffa` and `2team` run sequentially,
    because `config.MAX_IP` caps connections per IP at 2), sampled for 6 s.
    The enabling trick is [test/clientProto.js](test/clientProto.js): `SocketSchema.js` picks
    its half by sniffing `typeof(exports)`, so loading it in a `vm` context with no `exports`
    (but with `Buffer` and `TanksConfig` injected as globals) yields the **browser** encoder
    inside Node. The test therefore sends exactly the bytes a real client sends.
+   [test/rooms.js](test/rooms.js) was added with §8.5 and covers what a socket cannot see:
+   51 assertions on teams, bases, bot rosters, colours and respawn xp, built straight off
+   `boot()` with no server.
 3. ✅ **DONE — `c` shadowing (§5.2) and the dead `CONFIG` (§5.1).** Verified by negative
    control; see §5.2 for the measurement.
 4. ✅ **DONE — Split `Alex.js`** into `net/`, `rooms/`, `entities/`, `lib/`. See §2's file map
    and §2.1 for the late-bound registry that made the circular graph work.
-5. ⬜ **NEXT — Unify `Sffa` and `S2team`** into one `Room` base with a gamemode strategy (team
-   assignment, spawn rules, win conditions). This is where the duplicated-bug risk lives, and
-   it's what unblocks the never-finished `4team` and `boss` modes. `npm test` already covers
-   both modes, which is the safety net this step needs — it was sequenced after the split
-   for exactly that reason.
-6. ⬜ **Replace the hand-rolled protocol** with a single declarative schema that generates both
+5. ✅ **DONE — Unified `Sffa` and `S2team`** into [rooms/Room.js](rooms/Room.js) plus one
+   subclass per mode. Twelve behaviours had to be reconciled to do it; they are itemised in
+   §5.8, along with the differential check against the pre-refactor tree.
+6. ⬜ **NEXT — Replace the hand-rolled protocol** with a single declarative schema that generates both
    encoder and decoder, or adopt an existing binary format. Keep the wire format
    byte-compatible during the transition so client and server can be migrated separately.
    **Fix `checkLength` (§4/§5.12) here** — it is the only input validation and it currently
@@ -448,39 +481,48 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–4 are 
 
 - ~~Faithful refactor or allowed to change balance?~~ **Fix the bugs.** The §5.2 rename was
   applied and the intended behaviour now takes effect, accepting the gameplay change.
-- ~~How far to go in one pass?~~ **Chunks 1–4**, stopping deliberately before §8.5.
+- ~~How far to go in one pass?~~ **Chunks 1–4**, then **chunk 5** in a second pass.
 
 **Still open:**
 
 - Should MySQL come back, or should accounts/shop/leaderboard move to something else (SQLite,
   Postgres, or drop persistence entirely)?
-- Are `4team` and `boss` modes meant to be finished, or removed from the menu? This gates how
-  §8.5 is designed — a `Room` base built for four teams looks different from one built to
-  serve exactly the two modes that exist.
+- **Are `4team` and `boss` modes meant to be finished, or removed from the menu?** This no
+  longer gates §8.5 — `Room` was built with the team count as a rule (`rules.teams`) and
+  bases as a hook, so four teams is a subclass either way. But nobody should write that
+  subclass, or un-`deactivate` those menu buttons, until someone says the modes are wanted.
+  Removing them instead means deleting two keys from `Main.server` and two buttons from
+  `index.ejs`.
 - Target deployment: single box, or the split web/game/db topology the original supported?
 
 ---
 
 ## 11. State of the working tree
 
-Chunks 1–4 are complete and verified, but **nothing is committed.** `git status` shows
-`Alex.js`, `lib/config.js`, `obstarWeb.js`, `package.json` and `views/index.ejs` modified, plus
-untracked `entities/`, `net/`, `rooms/`, `scripts/`, `test/` and seven new `lib/` files.
-
-The four chunks are cleanly separable into four commits if a bisectable history is wanted.
+Chunks 1–4 are committed (`561ba88`, `f03cc37`). **Chunk 5 is not committed.** `git status`
+shows `Alex.js`, `lib/Controller.js`, `lib/runtime.js`, `package.json`, `rooms/Sffa.js` and
+`rooms/S2team.js` modified, plus untracked `lib/boot.js`, `rooms/Room.js` and
+`test/rooms.js`.
 
 ### What was verified, and what was not
 
-Verified: `npm test` → 29 passed / 0 failed. Both servers under `npm start` → `GET /` 200,
-`ws` connects, 108 `GameUpdate` packets received, rooms created and joined. Every extraction
-checked with `node --check` plus a grep for corrupted string literals. The §5.2 fix confirmed
-by negative control (336 → 0 NaN entities).
+Verified: `npm test` → **80 passed / 0 failed** (51 room + 29 protocol/live-server). Every
+file checked with `node --check`. The room unification checked differentially against the
+pre-refactor tree in a scratch `git worktree`: repeated 20-second in-process runs of both
+modes agree on live player count, polygon population and map dimensions, and repeated
+socket runs agree on the colour palette reaching the wire. The §5.2 fix from the previous
+pass is still asserted by `smoke.js` (no non-finite `x`/`y`/`size` reaches the wire).
 
 **Not verified — treat as unknown:**
 
 - **The game has never been opened in a browser since the refactor.** The client is untouched
   and the protocol round-trips, but nothing has exercised actual rendering. This is the first
-  thing to check.
+  thing to check, and it matters more after §8.5 than it did before: colour assignment is
+  where the two room copies disagreed most, and only the client can show you that a 2-team
+  match still looks like two teams.
+- **The boss.** `createBoss` is asserted directly by `test/rooms.js`, but its AI has never
+  been run — `bossRng` is 0.9999, so a natural spawn is rare. Use the `summonRandBoss` admin
+  command (needs `DB.DEV`, so MySQL) or lower `bossRng` in `rooms/S2team.js` to exercise it.
 - **MySQL paths.** Still off. §5.3–5.5 are fixed by inspection, not by execution.
-- **Admin commands, chat, the shop, and the death/leaderboard flow** are not covered by
-  `smoke.js`, which asserts only that the socket → room → encoder → socket pipe is intact.
+- **Admin commands, chat, the shop, and the death/leaderboard flow** are still uncovered.
+  `mapResize` in particular now does something in 2team that it never did before (§5.8.7).
