@@ -111,6 +111,21 @@
     <script type='text/javascript' src='./motion.js'></script>
   </head>
   <body>
-    <script src='/new2Init.js' ></script>
+    <!--
+      The client, in load order. There is no bundler: each file fills in part of the shared
+      CLIENT registry created by runtime.js, and every one of them assumes the ones above it
+      have already run. boot.js is last because it is the only one with a side effect -
+      window.onload. Read public/client/runtime.js before reordering these.
+    -->
+    <script src='/client/runtime.js' ></script>
+    <script src='/client/config.js'  ></script>
+    <script src='/client/util.js'    ></script>
+    <script src='/client/drawings.js'></script>
+    <script src='/client/entities.js'></script>
+    <script src='/client/render.js'  ></script>
+    <script src='/client/ui.js'      ></script>
+    <script src='/client/game.js'    ></script>
+    <script src='/client/overlay.js' ></script>
+    <script src='/client/boot.js'    ></script>
   </body>
 </html>

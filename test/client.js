@@ -1,7 +1,7 @@
 /*
   The client, actually running.
 
-  Every other suite here stops at the socket. This one boots public/new2Init.js against the
+  Every other suite here stops at the socket. This one boots public/client/ against the
   stub DOM in test/clientDom.js, hands it real GameUpdate packets encoded from a real room,
   and runs its render loop - so for the first time in this repo the drawing code is executed
   by something other than a person with a browser open.
@@ -81,7 +81,7 @@ console.log('boot:');
 let app;
 {
   app = boot({key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: ''});
-  check('new2Init.js boots and starts a render loop', app.pending() > 0, app.pending());
+  check('the client boots and starts a render loop', app.pending() > 0, app.pending());
   check('it opened a socket', !!app.socket());
   check('and installed a packet handler', typeof app.socket().onmessage === 'function');
   for(let i = 0; i < 10; i++){ app.frame(); }

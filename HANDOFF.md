@@ -3,9 +3,8 @@
 Written for a fresh agent session tasked with refactoring this repo. It describes the code
 **as it actually is today**, including the parts that are wrong. Nothing here is aspirational.
 
-> **Status — updated 2026-07-23, after refactor chunks 1–9.**
-> **Items 1–8 and 11 are done.** The remaining open items are §8.9 (modernize the client)
-> and §8.10 (dependencies and DB).
+> **Status — updated 2026-07-23, after refactor chunks 1–9 and the client split.**
+> **Items 1–9 and 11 are done.** The only remaining open item is §8.10 (dependencies and DB).
 > The 3918-line `Alex.js` monolith is gone; so are both of its names. There is now **one
 > entry point, [server.js](server.js), running one process on one port** — the two-servers
 > -you-must-both-remember-to-start arrangement is over (§1). `constructor.name` type dispatch
@@ -35,15 +34,20 @@ Written for a fresh agent session tasked with refactoring this repo. It describe
 >   unjoinable for the life of the codebase is fixed (§5.14). §10's open question is answered.
 > - **The client is executed by the test suite** ([test/client.js](test/client.js)) — the
 >   first time in this repo's history that the rendering code has run outside a browser.
+> - **The client monolith is split** (§6, §8.9). `public/new2Init.js` became ten files in
+>   [public/client/](public/client/), with **no bundler and no build step**. Equivalence was
+>   proved the same way the protocol rewrite was: a canvas-call differential over 125 real
+>   packets, **180298 operations, zero differences**, with negative controls.
 >
 > Sections below are marked ✅ DONE / ⬜ TODO throughout, and descriptions have been rewritten
 > to match the current tree — where a bug is fixed, the text says where the fix lives rather
 > than describing the old breakage.
 >
-> Verification: `npm test` → **296 passed, 0 failed** (79 protocol/names + 22 client motion +
-> 16 clock + 99 room + 23 client render + 49 live-server + 8 single-entry-point/web). The
-> protocol rewrite was additionally checked **byte for byte** against the implementation it
-> replaced: 82 encode/decode comparisons over every message type, zero differences (§4).
+> Verification: `npm test` → **300 passed, 0 failed** (79 protocol/names + 22 client motion +
+> 16 clock + 99 room + 23 client render + 49 live-server + 12 single-entry-point/web). Two
+> rewrites were additionally checked against the implementation they replaced, output for
+> output: the protocol **byte for byte** (82 encode/decode comparisons, zero differences, §4)
+> and the client split **canvas call for canvas call** (180298 operations, zero differences, §6).
 > Three fixes in this pass were checked by **negative control** — reinstating the old smoother
 > makes `test/client.js` fail with the camera 184 units off the tank and a bullet still
 > accelerating thirteen packets after it spawned (§6.1); removing the duplicate-frame skip
@@ -91,8 +95,9 @@ files, **and** a live game socket, all on one port; a raw WebSocket client sends
 ### Why it appeared "not running at all"
 Historically, one of these — the second is now impossible by construction:
 
-1. **`npm install` was never run.** There is no `node_modules` in the repo and no lockfile.
-   Every `require` fails instantly.
+1. **`npm install` was never run.** There is no `node_modules` in the repo. Every `require`
+   fails instantly. (There is now a committed `package-lock.json`, so the install is at least
+   reproducible.)
 2. ~~**Only one server was started.**~~ ✅ **FIXED (§8.11).** There used to be two entry
    points. Running just `obstarWeb.js` gave you a menu page that hung forever on Play,
    because nothing was listening on `:8080`; running just `Alex.js` gave you no web page at
@@ -177,12 +182,21 @@ added by the refactor.
 | [test/clock.js](test/clock.js) | 158 | Fixed-timestep clock, 16 assertions: drift, catch-up, stalls, self-removal. |
 | [test/rooms.js](test/rooms.js) | 379 | Gamemode assertions, 99 of them, over all four modes. No socket — builds rooms via `boot()`. |
 | [test/client.js](test/client.js) | 251 | **Runs the client.** 23 assertions: camera, bullet speed, entity completeness, no NaN to canvas. |
-| [test/clientDom.js](test/clientDom.js) | 193 | The stub DOM `test/client.js` boots `new2Init.js` against. Not a suite. |
+| [test/clientDom.js](test/clientDom.js) | 196 | The stub DOM `test/client.js` boots `public/client/` against. Not a suite. |
 | [test/smoke.js](test/smoke.js) | 249 | End-to-end smoke test, 49 assertions, all four modes. Real socket, real protocol. |
-| [test/web.js](test/web.js) | 167 | 8 assertions on the merged entry point: one port serves site + socket; split mode works. |
+| [test/web.js](test/web.js) | 180 | 12 assertions on the merged entry point: one port serves site + socket; the client's `<script>` order; split mode works. |
 | [test/clientProto.js](test/clientProto.js) | 31 | Loads `SocketSchema.js` in *client* mode inside Node, via `vm`. |
 | [lib/botNames.js](lib/botNames.js) | ~100 | Bot name list. Non-ASCII, deliberately — see §5.11. |
-| [public/new2Init.js](public/new2Init.js) | 3352 | **The whole game client.** Rendering, input, UI, netcode. |
+| [public/client/runtime.js](public/client/runtime.js) | 38 | **Late-bound client registry** (`CLIENT`). The browser twin of `lib/runtime.js`; read it before touching load order. |
+| [public/client/config.js](public/client/config.js) | 125 | `CONST`, palette `C`, `CLASS`/`CLASS_TREE`, and the two mutable bags `Global` (incl. `RATIO`/`UIRATIO`) and `Game`. |
+| [public/client/util.js](public/client/util.js) | 148 | `roundedPoly`, `roundRect`, `sleep`, the `General` namespace itself, and `NET`/`Interp` from `motion.js`. |
+| [public/client/drawings.js](public/client/drawings.js) | 328 | The shape table: one function per body, barrel, turret, bullet, pet. All take `ctx` as an argument. |
+| [public/client/entities.js](public/client/entities.js) | 481 | `Tank`, `Obj`, `Bullet` — everything the server can put in the world. |
+| [public/client/render.js](public/client/render.js) | 216 | `initRender()` (the off-screen tank/bullet/pet caches) and `initBackground()` (grid + team zones). |
+| [public/client/ui.js](public/client/ui.js) | 1211 | `initUi()`: minimap, stats, upgrades, class picker, leaderboard, messages, death screen, doors. |
+| [public/client/game.js](public/client/game.js) | 726 | `CLIENT.Run()`: world state, camera, input, frame loop, `SetPacket`, `onmessage`. |
+| [public/client/overlay.js](public/client/overlay.js) | 149 | `General.DEV` and `General.CHAT` — the two DOM-rendered widgets. |
+| [public/client/boot.js](public/client/boot.js) | 145 | `preRun()`: connecting screen, socket handshake, handover to `CLIENT.Run()`. Sets `window.onload`. |
 | [public/motion.js](public/motion.js) | 161 | **Client motion primitives** (§6.1): snapshot interpolation and frame-rate-independent smoothing. Loaded by `play.ejs`, `require()`d by the tests. |
 | [public/SHARE/SocketSchema.js](public/SHARE/SocketSchema.js) | 905 | Binary wire protocol, declarative (§4). Dual-mode: runs on client *and* server. |
 | [public/SHARE/TanksConfig.js](public/SHARE/TanksConfig.js) | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. |
@@ -192,12 +206,14 @@ added by the refactor.
 | [public/shop.js](public/shop.js) | 344 | Menu page: pet shop carousel + purchase calls. |
 | [public/font.js](public/font.js) | 655 | Animated canvas background on the menu. |
 | [views/index.ejs](views/index.ejs) | 153 | Menu page. |
-| [views/play.ejs](views/play.ejs) | 114 | Game page (canvas + inline CSS). |
+| [views/play.ejs](views/play.ejs) | 131 | Game page (canvas + inline CSS). **The `<script>` order is the client's dependency graph** — §6. |
 | [views/redirec.ejs](views/redirec.ejs) | 6 | Hardcoded redirect to `http://korexk.io/`. Vestigial. |
 
 `public/SHARE/` is the client/server shared boundary and the most important architectural idea
 in the repo. Files there are loaded by `<script>` in the browser **and** by `require()` in
-Node, using a UMD-ish footer that sniffs `typeof(exports)`.
+Node, using a UMD-ish footer that sniffs `typeof(exports)`. `public/motion.js` and every file
+in `public/client/` carry the same footer, which is why the test suite can run the client
+(§6, §8.9) without a bundler existing anywhere in this repo.
 
 ### 2.1 `lib/runtime.js` — read this before adding a `require`
 
@@ -221,6 +237,12 @@ This is a deliberate stopgap, not a design to build on. It reproduces the origin
 exactly, which is what made the split safely verifiable. Breaking the cycles properly
 (dependency injection, or an event bus between `Controller` and the entities) is a reasonable
 follow-up once §8.5 lands.
+
+The client has its own copy of this idea for its own copy of the problem — one IIFE became ten
+files, so the names have to travel somehow. See
+[public/client/runtime.js](public/client/runtime.js) and §6. The rule there is slightly
+looser and the file says why: `<script>` order is strictly linear, so a name defined by an
+*earlier* file may be aliased at load; only what `CLIENT.Run()` creates must be read late.
 
 ### 2.2 Renames — what used to be called what
 
@@ -578,9 +600,10 @@ the original handoff so older references still resolve.
    change plus those three literals.
 
 10. ⚠️ **PARTLY FIXED.** `package.json` now has a `scripts` block (`start`, `start:game`,
-    `start:web`, plus `test` and a `test:*` entry per suite) and the seven suites give 296
+    `start:web`, plus `test` and a `test:*` entry per suite) and the seven suites give 300
     assertions.
-    **Still missing: a lockfile and a linter.** Dependencies remain pinned with `~` to ~2019
+    `package-lock.json` is committed (lockfileVersion 3, 98 packages).
+    **Still missing: a linter.** Dependencies remain pinned with `~` to ~2019
     versions (`express ~4.17`, `ws ~7.2`, `ejs ~2.7`, `mysql ~2.17`); `npm install` reports 10
     vulnerabilities (1 critical). They install and run on Node 24, but `ejs@2` and `mysql@2`
     are unmaintained. See §8.10.
@@ -696,22 +719,59 @@ the original handoff so older references still resolve.
 
 ---
 
-## 6. The client (`public/new2Init.js`)
+## 6. The client (`public/client/`) — ✅ SPLIT
 
-One 3352-line IIFE, `(function(window){ … })(window)`. No modules, no build step, no bundler —
-`play.ejs` loads six globals via `<script>` in a required order:
+Until this pass the client was one 3352-line IIFE, `public/new2Init.js`. It is now ten files in
+[public/client/](public/client/), split along the `General.*` namespaces that were already
+there. There is still **no bundler and no build step** — the files are ordinary `<script>` tags
+and the source you edit is the source the browser runs. `play.ejs` loads:
+
 `ws_link.js` → `POST` (server-injected JSON) → `TanksConfig.js` → `PetsConfig.js` →
-`SocketSchema.js` → `motion.js` → `new2Init.js`.
+`SocketSchema.js` → `motion.js` → then the client, in this order:
+
+```
+runtime  config  util  drawings  entities  render  ui  game  overlay  boot
+```
+
+`test/clientDom.js` repeats that list and `test/web.js` asserts `play.ejs` has all ten in that
+relative order — a reordered tag is a `ReferenceError` at page load and nothing else catches it.
+
+**The shared-scope rule** (same as §2.1, for the same reason): a file may alias a name off
+`CLIENT` at load time only if an earlier file already put it there. Anything born inside
+`CLIENT.Run()` — `User`, `Instances`, the 2D context — must be read through `CLIENT` at the
+point of use. Three things needed real seams rather than a straight cut:
+
+- **`RATIO` / `UIRATIO`** were `var`s that `General.updateRatio()` reassigns on every resize, so
+  no other file can alias them. They moved onto `Global`, which every reader already touched.
+- **`ctx`** is a `Run()` local, but inside `Tank`/`Obj`/`Bullet` and the whole of `drawings.js`
+  it is a *parameter* with the same name. So there was no blanket rename: the two places that
+  really close over `Run()`'s context (`initBackground()`, `initUi()`) re-read
+  `General['ctx']` on entry, and everything else was left alone.
+- **`User`** is a `Run()` local that the HUD reads. `Run()` publishes `CLIENT.User` and
+  `CLIENT.Instances` the moment they exist, before it builds anything that reads them.
+
+**How the split was proved** — the client analogue of the byte-for-byte protocol check in §4.3.
+A recording stub DOM logged every 2D-context call and property write (`Math.random`, `Date.now`
+and `performance.now` driven off a counter so two runs agree), and 125 real packets captured
+from live `ffa` and `2team` rooms — plus hand-built `UiUpdate`, `chatUpdate`, `comResponse`,
+`UpdateUp` and `ping` packets, mouse moves and key presses — were replayed through the old
+monolith and the new files. Result: **180298 canvas operations, zero differences.** Three
+negative controls confirmed the check has teeth — freezing `User` at load time, giving
+`updateRatio()` back a local `RATIO`, and dropping the `ctx` re-read in `initBackground()` each
+either threw or diverged (177725 differing operations for the `RATIO` one).
 
 Everything is canvas 2D. Key internal namespaces, all attached to a `General` object:
 
 - `General.drawTank` / `drawBullet` / `drawPet` — entity rendering, with off-screen canvas
   caching (`this.off = (()=>{…})()`) so each tank shape is rasterized once and blitted.
+  ([render.js](public/client/render.js))
 - `General.background`, `MAP` — grid and minimap.
+  ([render.js](public/client/render.js), [ui.js](public/client/ui.js))
 - `ST` — score/level bar. `UP` — the 8 stat-upgrade buttons (`CONST.UP_ORDER` remaps their
   display order). `TNK` — the class-evolution picker. `LB` — leaderboard. `END` — death screen.
-- `Loop()` / `Draw()` — the render loop and the socket wiring (`socket.onopen` at ~line 1062
-  sends `PROTO.encode('init', POST)`).
+  (all [ui.js](public/client/ui.js))
+- `Loop()` / `Draw()` — the render loop ([game.js](public/client/game.js)) and the socket wiring
+  (`socket.onopen` in [boot.js](public/client/boot.js) sends `PROTO.encode('init', POST)`).
 - `Interp` / `NET` — entity motion, from [public/motion.js](public/motion.js). See §6.1;
   `CONST.SMOOTH` no longer decides where anything is drawn.
 
@@ -790,7 +850,8 @@ latent `drawTank` crash, and §5.19 for the duplicate-frame problem, which is th
 2. Player picks a gamemode/name/pet (`queue.js`, `shop.js`) and submits a form.
 3. `POST /play` → sets a `preference` cookie → renders `play.ejs` with
    `POST = {key, gm, name, pet, ws}`.
-4. `new2Init.js` opens `WS_LINK` and sends the binary `init` packet.
+4. [public/client/boot.js](public/client/boot.js) opens `WS_LINK` and sends the binary `init`
+   packet.
 5. `net/gameSocket.js` `income()` → `Controller.askConnection()` → assigned to a room →
    `new loop(socket)` starts the two per-socket timers.
 6. [lib/clock.js](lib/clock.js) calls `room.step()` at 30.3 Hz (§3.1); each socket's
@@ -810,9 +871,9 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 
 
 1. ✅ **DONE — Make failure visible.** [lib/crash.js](lib/crash.js) replaces both
    `uncaughtException` handlers with fail-fast + stderr logging (`OBSTAR_SWALLOW_CRASHES=1`
-   restores the old behaviour), and `package.json` has a `scripts` block.
-   **Still outstanding from this item: commit a lockfile.**
-2. ✅ **DONE — Test harness.** Seven suites, 296 assertions, run in dependency order by
+   restores the old behaviour), `package.json` has a `scripts` block, and `package-lock.json`
+   is committed.
+2. ✅ **DONE — Test harness.** Seven suites, 300 assertions, run in dependency order by
    `npm test`: `proto` → `interp` → `clock` → `rooms` → `client` → `smoke` → `web`, cheapest
    and most load-bearing first.
 
@@ -826,10 +887,11 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 
    [test/rooms.js](test/rooms.js) was added with §8.5 and covers what a socket cannot see:
    99 assertions on teams, bases, bot rosters, colours and respawn xp, over all four modes,
    built straight off `boot()` with no server. [test/web.js](test/web.js) was added with
-   §8.11 and is the only suite that touches the Express side: 8 assertions that one
+   §8.11 and is the only suite that touches the Express side: 12 assertions that one
    `node server.js` really does serve the menu, `/play`, the static files and the game socket
-   on a single port, and that `--web-only` + `WS_LINK` still produces a page pointed at a
-   remote game server.
+   on a single port, that `play.ejs` lists all ten `public/client/` files in dependency order
+   (§6 — there is no bundler, so the page *is* the dependency graph), and that `--web-only` +
+   `WS_LINK` still produces a page pointed at a remote game server.
    [test/proto.js](test/proto.js) was added with §8.6 and runs first: 79 assertions covering
    golden wire bytes captured from the pre-refactor encoder, packet sizes derived from the
    schema independently of the encoder, round trips through every value transform, the input
@@ -841,7 +903,7 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 
 
    The one that changes what is possible here is [test/client.js](test/client.js) (23
    assertions) with [test/clientDom.js](test/clientDom.js): a stub DOM — canvas context,
-   `requestAnimationFrame`, a fake WebSocket — under which `new2Init.js` actually executes in
+   `requestAnimationFrame`, a fake WebSocket — under which the client actually executes in
    Node. **The rendering code had never run outside a browser in this repo's history**, and it
    found a real intermittent crash the first time it did (§5.16). It reaches in through a
    `window.__test` hook installed inside `Run()`; note that `Run()` only starts on the frame
@@ -874,16 +936,23 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 
    **The surprise is in §3.1 and it is worth reading before anything else in this document:**
    the old chain never ran at 50 Hz, the game is balanced for the ~29 Hz it did run at, and
    so the step is 33 ms. Doing this item honestly at 20 ms made the game 1.7× too fast.
-9. ⬜ **NEXT — Modernize the client.** It's the largest single file but the least dangerous —
-   nothing else depends on its internals. Introduce a bundler and split by the existing
-   `General.*` namespaces. [public/motion.js](public/motion.js) (§6.1) is the first piece
-   carved out and is the template: a `typeof(exports)` footer makes it `require()`-able, which
-   is what let the motion arithmetic be tested. [test/client.js](test/client.js) +
-   [test/clientDom.js](test/clientDom.js) can execute the whole client under a stub DOM, so
-   this item no longer has to be done blind.
-10. ⬜ **Dependencies and DB.** Commit a lockfile, add a linter, upgrade `express`/`ws`/`ejs`,
-    replace `mysql` with `mysql2`. §5.3–5.5 are now fixed, but do not turn `MYSQL: true` on
-    without testing those paths — they have never run in this tree.
+9. ✅ **DONE — Modernize the client.** `public/new2Init.js` is gone; the client is ten files in
+   [public/client/](public/client/), split along the `General.*` namespaces that were already
+   there. **Deliberately no bundler** — each file carries the same `typeof(exports)` footer as
+   [public/motion.js](public/motion.js) (§6.1), so there is no build step, no generated
+   artifact, and the source you edit is the source the browser runs. The shared scope moved to
+   a `CLIENT` registry ([public/client/runtime.js](public/client/runtime.js)) obeying the same
+   late-binding rule as §2.1.
+
+   Proved by canvas-call differential, the client analogue of §4.3's byte-for-byte protocol
+   check: 125 real packets replayed through the old monolith and the new files against a
+   recording stub DOM gave **180298 canvas operations with zero differences**, and three
+   negative controls confirmed the check would have caught the seams going wrong. Full account
+   in §6.
+10. ⬜ **NEXT — Dependencies and DB.** Add a linter, upgrade `express`/`ws`/`ejs`, replace
+    `mysql` with `mysql2`. (The lockfile this item used to ask for is committed — see §5.10.)
+    §5.3–5.5 are now fixed, but do not turn `MYSQL: true` on without testing those paths —
+    they have never run in this tree.
 11. ✅ **DONE — One entry point.** `Alex.js` + `obstarWeb.js` + `scripts/dev.js` are now
     [server.js](server.js), which mounts [web/app.js](web/app.js) and attaches
     [net/gameSocket.js](net/gameSocket.js) to the same http server. The two halves never
@@ -970,8 +1039,8 @@ suites.
 
 ### What was verified, and what was not
 
-Verified: `npm test` → **296 passed / 0 failed** (79 protocol/names + 22 client motion + 16
-clock + 99 room + 23 client render + 49 live-server + 8 single-entry-point/web). Every file
+Verified: `npm test` → **300 passed / 0 failed** (79 protocol/names + 22 client motion + 16
+clock + 99 room + 23 client render + 49 live-server + 12 single-entry-point/web). Every file
 checked with `node --check`.
 
 Carried over from earlier passes: the room unification was checked differentially against the
@@ -1005,7 +1074,7 @@ New in this pass, and how far each was actually pushed:
 - **The boss AI.** `createBoss` is asserted directly by `test/rooms.js` and `boss` mode
   spawns three of them at `bossRng: 0.9`, so they are *created* under test — but nothing
   watches them behave. The AI itself has still never been observed.
-- **The client under a real browser's timing.** `test/client.js` drives `new2Init.js` under a
+- **The client under a real browser's timing.** `test/client.js` drives `public/client/` under a
   stub DOM at a scripted 2 frames per packet. That is enough to pin the motion arithmetic and
   it caught a real crash (§5.16), but it is not a browser: no compositor, no rAF jitter, no
   tab throttling. `Global.dtFrames` is clamped to [0.2, 4] specifically because a

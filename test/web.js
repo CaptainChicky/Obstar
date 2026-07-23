@@ -97,13 +97,26 @@ async function combinedTests(){
   check('GET / renders the menu', index.status === 200 && index.body.includes('var POST'), 'status ' + index.status);
 
   let play = await request(PORT, 'POST', '/play', 'gm=ffa&name=smoke&pet=-1');
-  check('POST /play renders the game page', play.status === 200 && play.body.includes('new2Init.js'), 'status ' + play.status);
+  check('POST /play renders the game page', play.status === 200 && play.body.includes('/client/game.js'), 'status ' + play.status);
   check('play.ejs defines POST before loading ws_link.js',
         play.body.indexOf('var POST =') < play.body.indexOf("'./SHARE/ws_link.js'"));
   check('combined mode leaves POST.ws empty (same origin)', /"ws":""/.test(play.body));
 
+  // The client has no bundler, so the page IS the dependency graph. Each file assumes the
+  // ones before it have run; a reordered tag is a runtime error nothing else would catch.
+  let order = ['runtime','config','util','drawings','entities','render','ui','game','overlay','boot'];
+  let at = order.map(function(f){ return play.body.indexOf('/client/' + f + '.js'); });
+  check('play.ejs loads every client file', at.every(function(i){ return i >= 0; }),
+        order.filter(function(f, i){ return at[i] < 0; }).join(', ') + ' missing');
+  check('play.ejs loads them in dependency order',
+        at.every(function(i, n){ return n === 0 || i > at[n-1]; }), at.join(','));
+  check('the client loads after motion.js', play.body.indexOf('/client/runtime.js') > play.body.indexOf('./motion.js'));
+
   let shared = await request(PORT, 'GET', '/SHARE/ws_link.js');
   check('static client files are served', shared.status === 200 && shared.body.includes('WS_LINK'), 'status ' + shared.status);
+
+  let client = await request(PORT, 'GET', '/client/runtime.js');
+  check('/client/ is served', client.status === 200 && client.body.includes('CLIENT'), 'status ' + client.status);
 
   await new Promise(function(resolve){
     let socket = new WebSocket('ws://localhost:' + PORT);

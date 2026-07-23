@@ -6,7 +6,7 @@
   you the server half, which is useless for a test that needs to speak as a client.
 
   Running the same source inside a vm context with no `exports` binding gives us the browser
-  half instead, so a test can encode exactly the bytes new2Init.js would send.
+  half instead, so a test can encode exactly the bytes the client would send.
 */
 const fs = require('fs');
 const vm = require('vm');

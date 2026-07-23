@@ -12,7 +12,7 @@
   constant speed, from the first frame it can be, with a bounded and *constant* lag.
 
   Half of these are written as a direct comparison against the code that was replaced -
-  `oldSmooth()` below is the exact line that used to be in new2Init.js - because "is this
+  `oldSmooth()` below is the exact line that used to be in the client - because "is this
   better" is the actual question and a bare threshold would not answer it.
 
   motion.js is loaded with a plain require(): it ends with the same typeof(exports) sniff as
@@ -201,7 +201,7 @@ console.log('\ninterval estimate:');
 
 console.log('\nframe-rate independence:');
 {
-  // Every `d += (target-d)*k` in new2Init.js was tuned at 60Hz. lerpK converts k for the
+  // Every `d += (target-d)*k` in the client was tuned at 60Hz. lerpK converts k for the
   // frame we actually got, so 144Hz does not smooth 2.4x faster.
   check('unchanged at 60fps', MOTION.lerpK(0.3,1) === 0.3, MOTION.lerpK(0.3,1));
   let d60 = 0, d144 = 0;

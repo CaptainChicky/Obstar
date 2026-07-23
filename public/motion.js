@@ -5,7 +5,7 @@
   ///////////////////////////////////////////////////////////////////////////////////////
   What this replaces.
 
-  Every moving thing in public/new2Init.js used to be smoothed with one line per axis, run
+  Every moving thing in the client used to be smoothed with one line per axis, run
   once per animation frame:
 
       this.dx += (this.x-this.dx)*CONST.SMOOTH;      // CONST.SMOOTH is 0.15
@@ -50,7 +50,7 @@
   not a guarantee, and what matters here is the spacing the packets actually arrive with.
 
   ///////////////////////////////////////////////////////////////////////////////////////
-  Loaded by views/play.ejs before new2Init.js, and required directly by test/interp.js -
+  Loaded by views/play.ejs before public/client/, and required directly by test/interp.js -
   same typeof(exports) sniff as public/SHARE/SocketSchema.js.
 */
 (function(exp){
@@ -146,7 +146,7 @@
     Rescale a per-frame smoothing factor for the frame we actually got.
 
     `d += (target-d)*k` once per frame is a time constant only if the frame rate is fixed.
-    Every k in new2Init.js was tuned on a 60Hz monitor; on 144Hz the same code smoothed 2.4x
+    Every k in the client was tuned on a 60Hz monitor; on 144Hz the same code smoothed 2.4x
     faster, and during a hitch it barely moved at all. The equivalent factor for a frame of
     length dtFrames (measured in 60Hz frames) is 1-(1-k)^dtFrames.
   */

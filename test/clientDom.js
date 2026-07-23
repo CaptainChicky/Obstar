@@ -1,7 +1,7 @@
 /*
-  The smallest DOM public/new2Init.js will boot against.
+  The smallest DOM public/client/ will boot against.
 
-  new2Init.js is 3200 lines of canvas 2D and has never been executed by anything but a
+  The client is 3200 lines of canvas 2D and had never been executed by anything but a
   browser, which is why "the game has never been opened since the refactor" sat at the top of
   HANDOFF's not-verified list for so long: no test could reach it. It does not actually need
   a DOM, though - it needs about sixty methods that return plausible nothings. This is them.
@@ -142,7 +142,10 @@ function boot(POST){
   load('public/SHARE/PetsConfig.js');
   load('public/SHARE/SocketSchema.js');
   load('public/motion.js');
-  load('public/new2Init.js');
+  // The client, in the same order views/play.ejs lists it. Keep the two in step.
+  for(const f of ['runtime','config','util','drawings','entities','render','ui','game','overlay','boot']){
+    load('public/client/' + f + '.js');
+  }
 
   window.onload();                       // preRun(): canvas, socket, first Loop()
   if(socket && socket.onopen){ socket.onopen(); }
