@@ -46,7 +46,7 @@ class Bullet {
     if(option.type){
       switch (option.type) {
         case 'god':
-          if(this.origine.oId == other.id.oId){
+          if(this.origine.oId === other.id.oId){
             return;
           }
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.speed*2+1,this.speed*2+1)));
@@ -60,7 +60,7 @@ class Bullet {
       switch(other.kind){
         case KIND.PLAYER:
            if(option.noDam){break;}
-          if(this.origine.oId == other.id.oId){
+          if(this.origine.oId === other.id.oId){
             return;
           }
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.weight,this.weight)));
@@ -69,7 +69,7 @@ class Bullet {
           break;
         case KIND.OBJECTS:
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.weight,this.weight)));
-          if(this.necro && other.type == 'sqr'){
+          if(this.necro && other.type === 'sqr'){
             const play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE.players[this.origine.oId];
             if(play.droneCount<CLASS[play.class].maxDrone+play.upNb[1]){
               play.droneCount++;
@@ -90,20 +90,20 @@ class Bullet {
           if(this.pene <= 0){this.destroy = config.DES}
           break;
         case KIND.BULLET:
-          if(other.origine.oId == this.origine.oId){
-            if((parseInt(this.type) == 1 || parseInt(this.type) == 3) && this.type == other.type){
+          if(other.origine.oId === this.origine.oId){
+            if((parseInt(this.type) === 1 || parseInt(this.type) === 3) && this.type === other.type){
               this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.weight,this.weight)));
             }
             return;
           } else  {
           }
-          if(option.noDam || this.type == 1.4){break;}
+          if(option.noDam || this.type === 1.4){break;}
           this.pene-=option.pene;
           if(this.pene <= 0){this.destroy = config.DES;}
           break;
       }
     }
-    if(this.destroy && this.life == -1){
+    if(this.destroy && this.life === -1){
       const play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE["players"][this.origine.oId];
       if(play){
         play.droneCount--;
@@ -127,7 +127,7 @@ class Bullet {
         this.destroy = config.DES;
         return;
       } else {
-        if(play.destroy > 1 || play.dead || play.state.disconnect || play.class != this.class){
+        if(play.destroy > 1 || play.dead || play.state.disconnect || play.class !== this.class){
           this.destroy = config.DES;
           return;
         }
@@ -196,7 +196,7 @@ class Bullet {
           this.comingDir = 0;
         }
         this.speed = this.maxspeed;
-        if(play.droneCount == -1){
+        if(play.droneCount === -1){
           this.destroy =config.DES;
         }
         ///
@@ -438,7 +438,7 @@ class Bullet {
     this.x+=this.vec.x;
     this.y+=this.vec.y;
     ///
-    if(this.life == -1){
+    if(this.life === -1){
       if(this.x<-this.map.width/2){
         this.x = -this.map.width/2;
         this.vec.x = 0;
@@ -457,7 +457,7 @@ class Bullet {
       };
       return;
     };
-    if(this.life==0){
+    if(this.life===0){
         this.destroy = config.DES;
     } else {
         this.life -= 1;

@@ -1,6 +1,6 @@
 (function(exports, platform){
 
-  exports.class = (platform == 'client') ?
+  exports.class = (platform === 'client') ?
   ///CLIENTS///
   {
     "Basic":{

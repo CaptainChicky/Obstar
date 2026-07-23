@@ -39,12 +39,12 @@ class Detector {
     const kind = other.kind;
     if(this.all){
       if(this.type.includes(kind) && other.alpha && !other.shield){
-        if(kind == KIND.BULLET){
-          if(this.id.oId != other.origine.oId){
+        if(kind === KIND.BULLET){
+          if(this.id.oId !== other.origine.oId){
             this.selectAll[kind].push(other);
           }
-        } else if(kind == KIND.PLAYER){
-          if(this.id.oId != other.id.oId){
+        } else if(kind === KIND.PLAYER){
+          if(this.id.oId !== other.id.oId){
             this.selectAll[kind].push(other);
           }
         } else {
@@ -54,12 +54,12 @@ class Detector {
     }
     ////
     if(!this.self){
-      if(kind == this.from.kind && other.id.oId == this.from.id.oId){
+      if(kind === this.from.kind && other.id.oId === this.from.id.oId){
         return;
       }
     }
     if(this.type.includes(kind) && other.alpha && !other.shield){
-      if(kind == KIND.BULLET && this.id.oId == other.origine.oId){
+      if(kind === KIND.BULLET && this.id.oId === other.origine.oId){
         return;
       }
       const index = this.type.indexOf(kind);
@@ -67,7 +67,7 @@ class Detector {
         this.dis = option.dis
         this.select = other;
         this.construc = index;
-      } else if(index==this.construc){
+      } else if(index===this.construc){
         if(this.dis>option.dis){
           this.dis = option.dis;
           this.select = other;

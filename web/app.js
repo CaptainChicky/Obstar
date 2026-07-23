@@ -194,7 +194,7 @@ app.post('/play',function(request, respond){
       // Was `== 'unamed'`, one 'n' short of the placeholder set two lines up, so the
       // placeholder was remembered as if it were a chosen name and came back pre-filled in
       // the menu next visit.
-      name: (sendData.name == 'unnamed') ? '' : sendData.name,
+      name: (sendData.name === 'unnamed') ? '' : sendData.name,
       pet:  sendData.pet || -1
     }
   respond.cookie('preference',pref,{expires: new Date(253402300000000), sameSite:'Strict'});

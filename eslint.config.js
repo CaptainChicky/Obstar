@@ -12,10 +12,14 @@
 
   It is tuned to pass clean on the current tree. If you are adding a rule that flags
   existing code, either fix the code in the same commit or leave the rule out - a lint run
-  that always prints 200 warnings is a lint run nobody reads. The bulk-idiom debt the tree
-  still carries (84 `var`, 51 loose `==`, 31 `for...in`, several dead blocks - HANDOFF 6.2)
-  is deliberately NOT enforced here: enabling no-var/eqeqeq would bury the two rules above
-  in noise. That cleanup is tracked in HANDOFF, not gated by this file.
+  that always prints 200 warnings is a lint run nobody reads.
+
+  Two of the bulk-idiom rules HANDOFF 6.2 tracked as debt are now ON, because the tree was
+  swept clean of what they flag (HANDOFF 12.2): `no-var` (was 84 `var`, now let/const
+  throughout) and `eqeqeq` (was 51 loose `==`, now strict - the one intentional null/undefined
+  test was rewritten as `=== undefined`). They stay on to keep the idiom from creeping back.
+  `for...in` is left un-enforced: the remaining loops over Instances are the hot-path work in
+  HANDOFF 12.3, not a mechanical fix.
 
   Three environments, because three kinds of file live here:
     - Node CommonJS: server.js, lib/, net/, rooms/, entities/, web/, test/
@@ -102,7 +106,11 @@ const LEGACY = {
   'no-irregular-whitespace': 'off',
 
   // `parseInt(Math.random()*n)` (HANDOFF 9) passes a number to parseInt on purpose.
-  'radix': 'off'
+  'radix': 'off',
+
+  // Swept clean in HANDOFF 12.2 and kept on so the idiom cannot creep back. See the header.
+  'no-var': 'error',
+  'eqeqeq': 'error'
 };
 
 module.exports = [

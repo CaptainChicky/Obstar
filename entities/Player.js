@@ -186,14 +186,14 @@ class Player {
       };
       ///
       if((this.inputs.e || this.inputs.mouseL || can.auto)
-      &&((maxD && can.life == -1) ? this.droneCount<maxD : true)
+      &&((maxD && can.life === -1) ? this.droneCount<maxD : true)
       &&((can.autoShoot) ? shoot : true)){
         ///
         if(this.shield){
           this.shield = 0;
         }
         ///
-        if(reload == Math.floor(can.offTime*reloadMax)){
+        if(reload === Math.floor(can.offTime*reloadMax)){
           ///
           if(this.alpha<1 && !this.dev.invisible){
             this.alpha+=Math.min(1,CLASS[this.class].alpha*30);
@@ -217,7 +217,7 @@ class Player {
               Bull.weight = can.weight;
           RT.Controller.server[this.id.GM][this.id.sId].createBullet(Bull,this)
           this.vec.add(new Vec(can.back,0).rotate(dir-Math.PI));
-          if(maxD && can.life  == -1){
+          if(maxD && can.life  === -1){
             this.droneCount++;
           }
           ///
@@ -225,7 +225,7 @@ class Player {
           setTimeout((x,r) => {x.recoil[r] = 0},33,this,parseInt(r))
         }
         ///
-        if(this.shootTimer[r] == 0){
+        if(this.shootTimer[r] === 0){
           this.shootTimer[r]+=1;
           continue;
         }
@@ -258,7 +258,7 @@ class Player {
         const re = 0;
         for(const i in this.up){
           nb++;
-          if(nb != data){continue;}
+          if(nb !== data){continue;}
           switch(i){
             case "HpRegan":this.up[i] += 0.28;break;
             case "Reload": this.up[i] -= 0.092;break;
@@ -327,7 +327,7 @@ class Player {
       case KIND.OBJECTS:
         const len = (this.vec.length()<0.5) ? 2 : .5;
         this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(len,len)));
-        if(this.necro && other.type == 'sqr' && this.droneCount<CLASS[this.class].maxDrone+this.upNb[1]){
+        if(this.necro && other.type === 'sqr' && this.droneCount<CLASS[this.class].maxDrone+this.upNb[1]){
           this.droneCount++;
           const Bull = new RT.Bullet(this.id,other.x,other.y,Math.random()*Math.PI*2,this.up.BSpeed*this.necro.speed,0);
               Bull.type = this.necro.type;
@@ -348,7 +348,7 @@ class Player {
         break;
       case KIND.BULLET:
         if(option.noDam){break;}
-        if(other.origine.oId == this.id.oId){
+        if(other.origine.oId === this.id.oId){
           return;
         }
         if(this.bot){
@@ -410,7 +410,7 @@ class Player {
     this.shoot();
     ///
     if(this.xp>=this.XPLVL[this.level]){
-      if(this.level == 18 || this.level == 27){
+      if(this.level === 18 || this.level === 27){
         this.stillLvl++;
       }
       this.hp+=3;
@@ -428,9 +428,9 @@ class Player {
     }
     this.size = 28+this.dev.size+Math.floor(this.level/2.8);
     this.screen = this.extraView+CLASS[this.class].screen+this.level*22;
-    if(this.xp != this.oldXp){
+    if(this.xp !== this.oldXp){
       this.oldXp = this.xp;
-      if(this.xp == 666666 && !this.mess_cursed_score && !this.bot){
+      if(this.xp === 666666 && !this.mess_cursed_score && !this.bot){
         this.mess_cursed_score = 1;
         this.mess.push('/img mc_cursed_score.png');
       }
@@ -440,7 +440,7 @@ class Player {
         this.prize = parseInt(this.XPLVL[this.XPLVL.length-3]+(this.xp-this.XPLVL[this.XPLVL.length-3])/10);
       }
     }
-    if(this.class == 'Rocket' && !this.mess_im_speed && this.upNb[0] == 6 && this.upNb[1] == 6){
+    if(this.class === 'Rocket' && !this.mess_im_speed && this.upNb[0] === 6 && this.upNb[1] === 6){
       this.mess_im_speed = 1;
       this.mess.push('/img mc_im_speed.png');
     }

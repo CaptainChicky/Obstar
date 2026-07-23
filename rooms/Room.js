@@ -86,7 +86,7 @@ class Room {
     const POW = 2.5;
     const MXLVL = this.rules.maxXp;
     this.XPLVL = new Array(30).fill(0).map((x,i)=>{
-      if(i == 0){
+      if(i === 0){
         return 0;
       }
       const a = 30/Math.pow(MXLVL,1/POW)
@@ -212,7 +212,7 @@ class Room {
         break;
       }
     }
-    if(type == 'bull'){ppp = 'bull';}
+    if(type === 'bull'){ppp = 'bull';}
     for(let i=0; i<=this.INSTANCE.objs.length; i++){
       if(!this.INSTANCE.objs[i]){
         this.INSTANCE.objs[i] = (new RT.Objects(type,ppp,{"GM":this.gm,"sId":this.id,"oId":i},this.map));
@@ -374,7 +374,7 @@ class Room {
     if(botNeeded){
       for(const b of this.bots){
         const bot = this.INSTANCE.players[b];
-        if(bot && bot.dead == 1 && botNeeded){
+        if(bot && bot.dead === 1 && botNeeded){
           this.respawn(b,0,1);
           botNeeded --;
         }
@@ -382,7 +382,7 @@ class Room {
     }
     ///BOSS///
     for(let b = this.bosses.length-1; b>=0; b--){
-      if(this.bosses[b].destroy == 1){
+      if(this.bosses[b].destroy === 1){
         this.bosses[b].state.disconnect = 1;
         this.bosses.splice(b,1);
       }
@@ -412,7 +412,7 @@ class Room {
                     this.leader.splice(l,0,i);
                     break;
                   }
-                } else if(l == this.leader.length-1){
+                } else if(l === this.leader.length-1){
                   this.leader.push(i);
                   break;
                 }
@@ -427,8 +427,8 @@ class Room {
             this.leader.push(i);
           }
         }
-        if(i.destroy == 1){
-          if(kind == "players"){
+        if(i.destroy === 1){
+          if(kind === "players"){
             if(i.state.disconnect){
               this.INSTANCE[kind][j].delete();
             } else {
@@ -438,11 +438,11 @@ class Room {
           // objs and bullets leave a numeric tombstone rather than a hole, so the slot -
           // and with it the entity id the client is tracking - is not handed to a new
           // entity on the next frame.
-          if(kind == "objs"){this.INSTANCE[kind][j].delete();this.INSTANCE[kind][j] = config.KEEP_PLACE; continue;}
-          if(kind == 'bullets'){this.INSTANCE[kind][j] = config.KEEP_PLACE; continue;}
+          if(kind === "objs"){this.INSTANCE[kind][j].delete();this.INSTANCE[kind][j] = config.KEEP_PLACE; continue;}
+          if(kind === 'bullets'){this.INSTANCE[kind][j] = config.KEEP_PLACE; continue;}
           delete this.INSTANCE[kind][j];
         } else {
-          if(i.getPlace == 1){
+          if(i.getPlace === 1){
             i.size+=config.SIZE_GET_POS;
           }
           qt.insert(i.x,i.y,i.size,i);
@@ -453,11 +453,11 @@ class Room {
     for(const kind in this.INSTANCE){
       for(const obj of this.INSTANCE[kind]){
         if(typeof obj === "undefined" || !isNaN(obj)){continue;}
-        if(obj.getPlace == 0){
+        if(obj.getPlace === 0){
           continue;
         }
         if(obj.destroy>=1){continue;}
-        if((kind == 'players' || kind == 'bullets') && this.inEnemyBase(obj)){
+        if((kind === 'players' || kind === 'bullets') && this.inEnemyBase(obj)){
           obj.collision(0,{base:1});
           continue;
         }
@@ -477,17 +477,17 @@ class Room {
         },{'x':obj.x,'y':obj.y,'r':(obj.DETEC && obj.DETEC.enabled ? obj.DETEC.size : obj.size)*2})
         for(const i in collide){
           const other = collide[i].data;
-          if(other.getPlace == 0 || obj.getPlace == 0){
+          if(other.getPlace === 0 || obj.getPlace === 0){
             continue;
           }
           const otherKind = other.kind;
           const objKind = obj.kind;
           ///
           if(other.destroy>=1){continue;}
-          if(objKind == KIND.DETECTOR && otherKind == KIND.DETECTOR){continue;}
-          if(obj.id.oId == other.id.oId && objKind == otherKind){continue;}
+          if(objKind === KIND.DETECTOR && otherKind === KIND.DETECTOR){continue;}
+          if(obj.id.oId === other.id.oId && objKind === otherKind){continue;}
           const dis = Math.sqrt(Math.pow(other.x-obj.x,2)+Math.pow(other.y-obj.y,2));
-          if((isNaN(other.getPlace) || isNaN(obj.getPlace)) && (!this.rules.teamPlay || other.team != obj.team)){
+          if((isNaN(other.getPlace) || isNaN(obj.getPlace)) && (!this.rules.teamPlay || other.team !== obj.team)){
             if(obj.DETEC && obj.DETEC.enabled){
               if(dis <= obj.DETEC.size+other.size){
                 obj.DETEC.collision(other,{dis:dis})
@@ -502,50 +502,50 @@ class Room {
             if(obj.size > other.size || obj.x+obj.y >= other.x+other.y){
               ///
               if(other.getPlace || obj.getPlace){
-                if(other.getPlace && objKind == KIND.PLAYER){
+                if(other.getPlace && objKind === KIND.PLAYER){
                   other.getPlace = 0;
                 }
-                if(obj.getPlace && otherKind == KIND.PLAYER){
+                if(obj.getPlace && otherKind === KIND.PLAYER){
                   obj.getPlace = 0;
                 }
                 continue;
               }
-              if(obj.x == other.x && obj.y == other.y){
+              if(obj.x === other.x && obj.y === other.y){
                 obj.x+=Math.random()-.5;
                 obj.y+=Math.random()-.5;
               }
               ///
               const objOption = {};
               const otherOption = {};
-              if(this.rules.teamPlay && objKind != KIND.OBJECTS && otherKind != KIND.OBJECTS && obj.team == other.team){
+              if(this.rules.teamPlay && objKind !== KIND.OBJECTS && otherKind !== KIND.OBJECTS && obj.team === other.team){
                 objOption.noDam = 1;
                 otherOption.noDam = 1;
               }
-              if(objKind == KIND.BULLET){
+              if(objKind === KIND.BULLET){
                 otherOption.pene = obj.pene;
               }
-              if(otherKind == KIND.BULLET){
+              if(otherKind === KIND.BULLET){
                 objOption.pene = other.pene;
               }
               other.collision(obj,otherOption);
               obj.collision(other,objOption);
-              if(objKind == KIND.BULLET){
+              if(objKind === KIND.BULLET){
                 if(other.destroy && other.prize){
                   if(this.INSTANCE.players[obj.origine.oId]){
                     this.INSTANCE.players[obj.origine.oId].xp+=other.prize;
                     this.INSTANCE.players[obj.origine.oId].coins+= other.coinReward || 0;
-                    if(otherKind == KIND.PLAYER && !this.INSTANCE.players[obj.origine.oId].bot){
+                    if(otherKind === KIND.PLAYER && !this.INSTANCE.players[obj.origine.oId].bot){
                       this.INSTANCE.players[obj.origine.oId].mess.push('You killed '+ other.name);
                     }
                   }
                 }
               }
-              if(otherKind == KIND.BULLET && obj.prize){
+              if(otherKind === KIND.BULLET && obj.prize){
                 if(obj.destroy){
                   if(this.INSTANCE.players[other.origine.oId]){
                     this.INSTANCE.players[other.origine.oId].xp+=obj.prize;
                     this.INSTANCE.players[other.origine.oId].coins+=obj.coinReward || 0;
-                    if(objKind == KIND.PLAYER && !this.INSTANCE.players[other.origine.oId].bot){
+                    if(objKind === KIND.PLAYER && !this.INSTANCE.players[other.origine.oId].bot){
                       this.INSTANCE.players[other.origine.oId].mess.push('You killed '+ obj.name);
                     }
                   }
@@ -599,12 +599,12 @@ class Room {
       for(const o in this.INSTANCE[kind]){
         const obj = this.INSTANCE[kind][o];
         if(typeof obj === "undefined" || !isNaN(obj)){continue;}
-        if(obj.destroy == 1){
-          if(kind == "players"){
+        if(obj.destroy === 1){
+          if(kind === "players"){
             if(obj.dead>1){
               obj.dead--;
             }
-            if(obj.murder == -1){
+            if(obj.murder === -1){
               continue;
             }
             const murder = this.INSTANCE[obj.murder[0]][obj.murder[1].oId];
@@ -617,10 +617,10 @@ class Room {
           }
           continue;
         }
-        if(obj.getPlace == 1){
+        if(obj.getPlace === 1){
           delete obj.getPlace;
           obj.size -= config.SIZE_GET_POS;
-        } else if(obj.getPlace == 0){
+        } else if(obj.getPlace === 0){
           obj.delete();
           delete this.INSTANCE[kind][o];
           continue;
@@ -743,7 +743,7 @@ class Room {
     };
     for(const i of RAW.rest){
       const obj = i.data;
-      if(obj.getPlace == 0){
+      if(obj.getPlace === 0){
         continue;
       }
       if(
@@ -799,7 +799,7 @@ class Room {
             break;
           };
           case KIND.BULLET:{
-            if(this.rules.viewerBullets && obj.origine.oId == RAW.main.id.oId){
+            if(this.rules.viewerBullets && obj.origine.oId === RAW.main.id.oId){
               break;
             }
             raw = {
@@ -828,13 +828,13 @@ class Room {
           if(!obj.alpha){
             continue;
           }
-          if(RAW.main.id.oId == obj.id.oId){
+          if(RAW.main.id.oId === obj.id.oId){
             continue;
           }
           break;
         };
         case KIND.BULLET:{
-          if(this.rules.viewerBullets && obj.origine.oId == RAW.main.id.oId){
+          if(this.rules.viewerBullets && obj.origine.oId === RAW.main.id.oId){
             const raw = new Int8Array(RT.Controller.encodeInst('Instance',{
               construc: 'Bullets',
               id: obj.id.oId,
@@ -868,13 +868,13 @@ class Room {
     return 0;
   }
   bulletColor(bullet){
-    return (bullet.type == 3) ? 9 : bullet.team;
+    return (bullet.type === 3) ? 9 : bullet.team;
   }
   ownBulletColor(bullet,main){
-    return (bullet.type == 3) ? 9 : main.dev.color ? main.dev.color-1 : 0;
+    return (bullet.type === 3) ? 9 : main.dev.color ? main.dev.color-1 : 0;
   }
   leaderColor(player,viewerId){
-    return (player.id.oId == viewerId) ? 0 : player.team;
+    return (player.id.oId === viewerId) ? 0 : player.team;
   }
   getUi(id){
     const buff = {

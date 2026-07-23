@@ -51,7 +51,7 @@
     window.toggleConsole = toggle;
     ////
     function send(){
-      if(input.value == 'clear'){
+      if(input.value === 'clear'){
         div.innerHTML = '';
         div.appendChild(input);
         input.focus();

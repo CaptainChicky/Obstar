@@ -109,8 +109,8 @@
         can.height = (height+lw*2+4)*R
 
         function drawHp(hp,size,color){
-          if(size != Size || hp != Hp){
-            if(size != Size){
+          if(size !== Size || hp !== Hp){
+            if(size !== Size){
               can.width = (size+lw*2+4+height)*R;
               Size = size;
             } else {
@@ -158,12 +158,12 @@
       }
     };
     update(){
-      if(this.name != this.off.name || this.bot != this.off.bot){
+      if(this.name !== this.off.name || this.bot !== this.off.bot){
         this.off.name = this.name;
         this.off.bot = this.bot;
         this.off.drawName(this.name,this.xp,this.bot);
       }
-      if(this.xp != this.off.xp){
+      if(this.xp !== this.off.xp){
         this.off.xp = this.xp;
         this.off.drawXp(this.xp);
       }
@@ -175,7 +175,7 @@
         Math.sin(this.ddir)+(Math.sin(this.dir)-Math.sin(this.ddir))*k,
         Math.cos(this.ddir)+(Math.cos(this.dir)-Math.cos(this.ddir))*k
       );
-      if(this.canDir.length == this.canDdir.length){
+      if(this.canDir.length === this.canDdir.length){
         for(const i in this.canDir){
           this.canDdir[i] = Math.atan2(
             Math.sin(this.canDdir[i])+(Math.sin(this.canDir[i])-Math.sin(this.canDdir[i]))*k,
@@ -188,13 +188,13 @@
       ///
       if(this.shield){
         this.SH.lapse += 1;
-        if(this.SH.lapse == 6){
+        if(this.SH.lapse === 6){
           this.SH.body = [General.color.shade(C[this.color][0],1.1),C[this.color][1]];
           this.SH.canons = [General.color.shade(C.gray[0],1.1),C.gray[1]];
-        } else if(this.SH.lapse == 0){
+        } else if(this.SH.lapse === 0){
           this.SH.body = C[this.color];
           this.SH.canons = C.gray;
-        } else if(this.SH.lapse == 12){
+        } else if(this.SH.lapse === 12){
           this.SH.lapse = -1;
         }
       }
@@ -291,8 +291,8 @@
         can.height = (height+lw*2+4)*R
 
         function drawHp(hp,size,color){
-          if(size != Size || hp != Hp){
-            if(size != Size){
+          if(size !== Size || hp !== Hp){
+            if(size !== Size){
               can.width = (size+lw*2+4+height)*R;
               Size = size;
             } else {
@@ -390,7 +390,7 @@
     draw(ctx){
       ctx.translate(this.dx,this.dy);
       ctx.globalAlpha = this.dalpha;
-      if(this.type=='bull'){
+      if(this.type==='bull'){
         const can = General['drawBullet'].draw(ctx,{size:this.size,type:0,color:(this.hitted>1) ? 'hit' : this.color});
         return;
       }
@@ -419,7 +419,7 @@
       const tw = this.tween.sample(NET.now());
       this.dx = tw.x;
       this.dy = tw.y;
-      if(this.ddir != this.dir){
+      if(this.ddir !== this.dir){
         const k = General['lerpK'](0.2);
         this.ddir = Math.atan2(
           Math.sin(this.ddir)+(Math.sin(this.dir)-Math.sin(this.ddir))*k,

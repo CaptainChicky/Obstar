@@ -183,7 +183,7 @@
         let CLASS = 0;
         ///
         function drawAll(tankClass,states,max = 6){
-          if(tankClass == CLASS){
+          if(tankClass === CLASS){
             return;
           }
           CLASS = tankClass
@@ -247,10 +247,10 @@
           const data = STATES.up[state]
           if(!data){return;}
           if(data.isfull && nb>=STATES.max){return;}
-          if(isMouse == data.isMouse && data.nb == Math.min(nb,STATES.max) && data.isfull  == ((data.nb == STATES.max) || !colored)){return;}
+          if(isMouse === data.isMouse && data.nb === Math.min(nb,STATES.max) && data.isfull  === ((data.nb === STATES.max) || !colored)){return;}
           data.isMouse = isMouse;
           data.nb      = Math.min(nb,STATES.max);
-          data.isfull  = (data.nb == STATES.max) || !colored;
+          data.isfull  = (data.nb === STATES.max) || !colored;
           const w = STATES.max*(W+marge);
           ///
           ctx.setTransform(R,0,0,R,data.sx,data.sy);
@@ -341,7 +341,7 @@
           ctx.translate(0,plusRad*2+lw*2+4);
         };
         function setNb(nb){
-          if(NB.nb == nb){return;}
+          if(NB.nb === nb){return;}
           NB.nb = nb;
           ctx.setTransform(1,0,0,1,NB.sx,NB.sy);
           ctx.clearRect(0,0,NB.sw,NB.sh);
@@ -439,7 +439,7 @@
         }
         ///
         function mouseOn(c,is){
-          if(ALL.Class[c].is != is){
+          if(ALL.Class[c].is !== is){
             ALL.Class[c].is = is;
             const ctx = ALL.Class[c].can.getContext('2d');
             ctx.setTransform(R,0,0,R,0,0);
@@ -463,9 +463,9 @@
         }
         function setClass(classes){
           let same = 1;
-          if(classes.length == ALL.actual.length){
+          if(classes.length === ALL.actual.length){
             for(const i in classes){
-              if(ALL.actual[i] != classes[i]){
+              if(ALL.actual[i] !== classes[i]){
                 same = 0;
                 break;
               }
@@ -821,7 +821,7 @@
         const font = '600 '+fSize+'px Catamaran';
         function add(message){
           for(let mes of message){
-            if(mes[0] == '/' && mes[1] == 'i' && mes[2] == 'm' && mes[3] == 'g'){
+            if(mes[0] === '/' && mes[1] === 'i' && mes[2] === 'm' && mes[3] === 'g'){
               mes = mes.split(' ');
               const _img = document.createElement('IMG');
               const newImg = new Image;
@@ -897,7 +897,7 @@
       this.states      = function(){
         this.dlvl += (this.lvl-this.dlvl)*0.05;
         ///
-        if(this.ST.tank != User.class || this.ST.score != this.xp || this.dlvl!=this.ST.dlvl){
+        if(this.ST.tank !== User.class || this.ST.score !== this.xp || this.dlvl!==this.ST.dlvl){
           this.ST.tank = User.class;
           this.ST.score = this.xp;
           this.ST.dlvl = this.dlvl;
@@ -1020,7 +1020,7 @@
         }
       };
       this.tanks       = function(){
-        if((this.classLvl != this.TNK.classLvl || User.class != this.TNK.class)){
+        if((this.classLvl !== this.TNK.classLvl || User.class !== this.TNK.class)){
           this.TNK.classLvl = this.classLvl;
           this.TNK.class = User.class;
           this.TNK.tochoices = [];
@@ -1181,7 +1181,7 @@
         } else {
           this.close = 0;
         }
-        if(this.close == this.toClose){return;}
+        if(this.close === this.toClose){return;}
         this.toClose += (this.close-this.toClose)*0.04;
         if(this.toClose>.99){
           this.toClose = 1;

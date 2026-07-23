@@ -112,9 +112,9 @@ window.onload = function(){
     }
     POST.leader.forEach((item,i) => {
       const leader = document.createElement('DIV');
-      leader.classList.add('leader',((item.userKey == POST.key) ? 'isMe' : 'notme'));
+      leader.classList.add('leader',((item.userKey === POST.key) ? 'isMe' : 'notme'));
       let is = '';
-      if(item.userKey == POST.key){
+      if(item.userKey === POST.key){
         is='isMe';
       }
       leader.innerHTML =

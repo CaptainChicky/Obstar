@@ -25,7 +25,7 @@
       result.dot = new Array(size).fill(0).map((x,i)=>{
         const div = document.createElement('DIV')
         div.classList.add('dot');
-        if(i == 0) div.classList.add('dotOn');
+        if(i === 0) div.classList.add('dotOn');
         return div;
       });
       result.main.innerHTML = '';
@@ -45,7 +45,7 @@
         this.pos --;
         this.pivot.style.marginLeft = (-99*this.pos)+'%';
         for(const i in this.dot){
-          if(i == this.pos){
+          if(i === this.pos){
             this.dot[i].classList.add('dotOn');
           } else {
             this.dot[i].classList.remove('dotOn');
@@ -64,7 +64,7 @@
         this.pos ++;
         this.pivot.style.marginLeft = (-99*this.pos)+'%';
         for(const i in this.dot){
-          if(i == this.pos){
+          if(i === this.pos){
             this.dot[i].classList.add('dotOn');
           } else {
             this.dot[i].classList.remove('dotOn');
@@ -317,7 +317,7 @@
     itDiv.children[0].onclick = function(itemId){
       if(this.owned){
         for(const i in PETS.children){
-          if(PETS.children[i].children && i != itemId) PETS.children[i].children[0].classList.remove('item-select');
+          if(PETS.children[i].children && i !== itemId) PETS.children[i].children[0].classList.remove('item-select');
         }
         this.classList.toggle('item-select');
         ChosenPet = itemId;

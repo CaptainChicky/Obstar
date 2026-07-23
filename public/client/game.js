@@ -96,8 +96,8 @@
         can.height = (height+lw*2+4)*R
 
         function drawHp(hp,size,color){
-          if(size != Size || hp != Hp){
-            if(size != Size){
+          if(size !== Size || hp !== Hp){
+            if(size !== Size){
               can.width = (size+lw*2+4+height)*R;
               Size = size;
             } else {
@@ -176,7 +176,7 @@
         // drifted off the tank - guesses at an error that no longer exists, and one of the
         // reasons aim felt off while moving fast.
         this.dir = Math.atan2(Global.mouse_y-Global.winH/2, Global.mouse_x-Global.winW/2);
-        if(this.old.dir != parseInt(this.dir*100)){
+        if(this.old.dir !== parseInt(this.dir*100)){
           this.old.dir = parseInt(this.dir*100);
           this.DIFFDIR = 1;
         }
@@ -198,7 +198,7 @@
             }
           }
         }
-        if(this.canDir.length == this.canDdir.length){
+        if(this.canDir.length === this.canDdir.length){
           const k = General['lerpK'](0.3);
           for(const i in this.canDir){
             this.canDdir[i] = Math.atan2(
@@ -214,13 +214,13 @@
         ///STATE///
         if(this.shield){
           this.SH.lapse += 1;
-          if(this.SH.lapse == 6){
+          if(this.SH.lapse === 6){
             this.SH.body = [General.color.shade(C[this.color][0],1.1),C[this.color][1]];
             this.SH.canons = [General.color.shade(C.gray[0],1.1),C.gray[1]];
-          } else if(this.SH.lapse == 0){
+          } else if(this.SH.lapse === 0){
             this.SH.body = C[this.color];
             this.SH.canons = C.gray;
-          } else if(this.SH.lapse == 12){
+          } else if(this.SH.lapse === 12){
             this.SH.lapse = -1;
           }
         }
@@ -437,7 +437,7 @@
     function Loop(){
       ///
       if(General['KICK']){
-        if(General['doors'].toClose == 1){
+        if(General['doors'].toClose === 1){
           General['run'] = 0;
         }
       }
@@ -459,7 +459,7 @@
       ///
       General['doors'].update();
       Game.screen += (Game.realScreen-Game.screen)*General['lerpK'](0.1);
-      if(parseInt(Game.screen) != Game.realScreen){
+      if(parseInt(Game.screen) !== Game.realScreen){
         General['updateRatio']();
       }
       ///
@@ -485,7 +485,7 @@
         Global.mouseDelay = CONST.MOUSEDELAY;
         User.DIFFDIR = 0;
       } else {
-        if(Global.mouse_x != Global.oldMouse_x || Global.mouse_y != Global.oldMouse_y){
+        if(Global.mouse_x !== Global.oldMouse_x || Global.mouse_y !== Global.oldMouse_y){
           User.DIFFDIR = 1;
           Global.oldMouse_x = Global.mouse_x;
           Global.oldMouse_y = Global.mouse_y;
@@ -500,17 +500,17 @@
         CLIENT.preRun();
         return;
       }
-      if(Global.inputs.old.mouseL != Global.inputs.mouseL){
+      if(Global.inputs.old.mouseL !== Global.inputs.mouseL){
         Global.inputs.old.mouseL = Global.inputs.mouseL;
       }
       requestAnimationFrame(Loop);
       ///
       if(Global.mouse_out){
-        if(General['canvas'].style.cursor != 'pointer')
+        if(General['canvas'].style.cursor !== 'pointer')
         {General['canvas'].style.cursor = 'pointer';}
         Global.mouse_out--;
       } else {
-        if(General['canvas'].style.cursor != 'default')
+        if(General['canvas'].style.cursor !== 'default')
         {General['canvas'].style.cursor = 'default';}
       }
     }

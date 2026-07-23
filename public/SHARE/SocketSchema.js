@@ -37,7 +37,7 @@
   };
   /* Reading is the one genuinely platform-dependent thing here: the browser gets an
      ArrayBuffer it wraps in a DataView, Node gets a Buffer. Both are big-endian. */
-  const decode = (platform == 'client') ?
+  const decode = (platform === 'client') ?
   {
     "str":     ( dv, offset = 0 ) => {
       const length = dv.getUint8(offset)*2;
@@ -322,7 +322,7 @@
       ]
     },
   };
-  SCHEMA.GameUpdate.User = SCHEMA.GameUpdate.Players.filter(n => n != 'xp');
+  SCHEMA.GameUpdate.User = SCHEMA.GameUpdate.Players.filter(n => n !== 'xp');
 
   ///////////////////////////////////////////////////////////////////// enums
   const toSTRING = {
@@ -367,7 +367,7 @@
       'alphaTri',
       'bull'
     ],
-    'class':   (platform == 'client') ? TanksConfig.list : require('./TanksConfig.js').list,
+    'class':   (platform === 'client') ? TanksConfig.list : require('./TanksConfig.js').list,
     'color':   [
       'green',
       'red',
@@ -596,9 +596,9 @@
   class Decoder{
     constructor(data){
       this.data   = data;
-      this.view   = (platform == 'client') ? new DataView(data) : data;
+      this.view   = (platform === 'client') ? new DataView(data) : data;
       this.cursor = 0;
-      this.end    = (platform == 'client') ? data.byteLength : data.length;
+      this.end    = (platform === 'client') ? data.byteLength : data.length;
     }
     /* Unlike the old cursors, this one refuses to read off the end of the packet rather
        than letting DataView/Buffer throw something the caller cannot classify. */
@@ -610,14 +610,14 @@
       if(c === undefined){
         this.need(1);
         const n = decode['uint8']( this.view, this.cursor );
-        c = (type == 'str') ? 1+n*2 : 1+n;
+        c = (type === 'str') ? 1+n*2 : 1+n;
       }
       this.need(c);
       this.cursor += c;
       return decode[type]( this.view, this.cursor-c );
     }
     isEnd(){
-      return this.end == this.cursor;
+      return this.end === this.cursor;
     }
   }
 
@@ -690,7 +690,7 @@
     one exception and is handled in send() - it is a fragment spliced into a GameUpdate, so
     it carries no type byte and comes back as an Int8Array.
   */
-  const MSG = (platform == 'server') ? {
+  const MSG = (platform === 'server') ? {
     'ping': null,
     'kick': (ENC, reason) => {
       ENC.write(toBUFFER.reason[reason], TYPE.kick.reason);
@@ -763,7 +763,7 @@
     byte; length validation happens in decode() from LIMITS.packet, uniformly, before any
     of these run.
   */
-  const PARSE = (platform == 'server') ? {
+  const PARSE = (platform === 'server') ? {
     'init': (DEC, result) => {
       result.data.key  = DEC.read(TYPE.key);
       result.data.gm   = toSTRING.gamemode[DEC.read(TYPE.gm)];
@@ -837,7 +837,7 @@
   exports.encode = (type, data) => {
     const ENC = new Encoder();
     /* A single entity, encoded once per tick and spliced into every viewer's GameUpdate. */
-    if(type == 'Instance'){
+    if(type === 'Instance'){
       ENC.write(toBUFFER.construc[data.construc], TYPE.GameUpdate.CONSTRUCTOR);
       ENC.write(data.id, TYPE.GameUpdate.ID);
       writeRecord(ENC, data.construc, data);
@@ -854,7 +854,7 @@
   };
 
   exports.decode = (data) => {
-    const length = (platform == 'client') ? data.byteLength : data.length;
+    const length = (platform === 'client') ? data.byteLength : data.length;
     if(!length){
       return {error: 'ERR_PACKET_LENGTH'};
     }
@@ -865,7 +865,7 @@
       // An unknown or wrong-direction type byte. ERR_PACKET_TYPE has been in the kick enum
       // since the beginning and was never once produced; the switch simply fell through and
       // handed the caller an empty result.
-      if(platform == 'server'){ result.error = 'ERR_PACKET_TYPE'; }
+      if(platform === 'server'){ result.error = 'ERR_PACKET_TYPE'; }
       return result;
     }
     const bounds = LIMITS.packet[type];
@@ -876,7 +876,7 @@
     if(!PARSE[type]){
       return result;
     }
-    if(platform == 'client'){
+    if(platform === 'client'){
       PARSE[type](DEC, result);
       return result;
     }

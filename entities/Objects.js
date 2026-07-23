@@ -89,7 +89,7 @@ class Objects {
         this.getPlace = 1;
       break;
     }
-    if(this.type == 'bull'){
+    if(this.type === 'bull'){
       if(Math.random()<0.15){
         this.size = 23;
         this.hp = 32;
@@ -121,7 +121,7 @@ class Objects {
     const len = (this.vec.length()*this.weight<0.4) ? 2 : .4;
     switch(other.kind){
       case KIND.PLAYER:
-        if(other.necro && this.type == 'sqr' && other.droneCount<CLASS[other.class].maxDrone+other.upNb[1]){
+        if(other.necro && this.type === 'sqr' && other.droneCount<CLASS[other.class].maxDrone+other.upNb[1]){
           this.destroy = 1;
           return;
         }
@@ -131,14 +131,14 @@ class Objects {
         if(this.hp <= 0){this.destroy = config.DES;other.xp += this.prize;other.coins+=this.coinReward}
         break;
       case KIND.OBJECTS:
-        if(other.type == 'bull'){
+        if(other.type === 'bull'){
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(0.1,0.1)));
           return;
         }
         this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(len,len)));
         break;
       case KIND.BULLET:
-        if(other.necro && this.type == 'sqr'){
+        if(other.necro && this.type === 'sqr'){
           const play = RT.Controller.server[other.origine.GM][other.origine.sId].INSTANCE.players[other.origine.oId];
           if(play.droneCount<CLASS[play.class].maxDrone+play.upNb[1]){
             this.destroy = 1;
@@ -148,7 +148,7 @@ class Objects {
         this.hp-= ((option.pene>1) ? option.pene : option.pene/2)*other.damage;
         this.hit = 2;
         if(this.hp <= 0){this.destroy = config.DES;}
-        if(this.type[0] == 'B'){
+        if(this.type[0] === 'B'){
           break;
         }
         this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(0.4,0.4)));

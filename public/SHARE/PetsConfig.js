@@ -74,7 +74,7 @@
         const spike = 18, inner = 18*param.size/CONST.SIZE, outer = 23*param.size/CONST.SIZE;
         for(let i=0; i<spike; i+=2){
           let ang = (i/spike)*Math.PI*2;
-          if(i == 0){
+          if(i === 0){
             ctx.moveTo(Math.cos(ang)*outer,Math.sin(ang)*outer);
           } else {
             ctx.lineTo(Math.cos(ang)*outer,Math.sin(ang)*outer);
