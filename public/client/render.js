@@ -91,10 +91,13 @@
           ctx.setTransform(R,0,0,R,can.width/2,can.height/2)
         }
         ///
-        for(const i in tank.canons){
+        for(let i = 0; i < tank.canons.length; i++){
           Drawings.canons[tank.canons[i].type]( ctx, tank, param, i);
         };
         Drawings.body[tank.body.shape]( ctx, tank, param );
+        // for...in, not an indexed loop: `turrets` is an optional field, absent on most
+        // tanks, and for...in over undefined is a no-op where `.length` would throw. The
+        // index is only ever a subscript in the turret draw fn, so its string type is moot.
         for(const i in tank.turrets){
           Drawings.turrets[tank.turrets[i].type]( ctx, tank, param, i );
         };

@@ -157,7 +157,7 @@ class Player {
     if(this.state.disconnect){
       return;
     }
-    for(const r in CLASS[this.class].canons){
+    for(let r = 0; r < CLASS[this.class].canons.length; r++){
       if(typeof this.shootTimer[r] === 'undefined'){this.shootTimer[r] = 0;}
       const can = CLASS[this.class].canons[r];
       const reloadMax = Math.round(can.reload*this.up.Reload);

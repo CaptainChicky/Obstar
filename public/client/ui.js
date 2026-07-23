@@ -464,7 +464,7 @@
         function setClass(classes){
           let same = 1;
           if(classes.length === ALL.actual.length){
-            for(const i in classes){
+            for(let i = 0; i < classes.length; i++){
               if(ALL.actual[i] !== classes[i]){
                 same = 0;
                 break;
@@ -624,7 +624,7 @@
           ctx.setTransform(R,0,0,R,2,2)
           ctx.translate(lw/2,logo-marge);
           ctx.clearRect(-lw,marge,can.width,can.height);
-          for(const i in all){
+          for(let i = 0; i < all.length; i++){
             const one = all[i];
             const zeros = one.xp ? parseInt(Math.log10(one.xp)/3) : 0;
             const text = one.name+' - '+parseInt(one.xp/Math.pow(10,zeros*3)*10)/10+' '+ext[zeros];

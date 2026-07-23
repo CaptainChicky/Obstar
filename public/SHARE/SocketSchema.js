@@ -113,8 +113,8 @@
     "float32": ( dv, data, offset = 0 ) => { dv.setFloat32( offset, data ); },
     /* An already-encoded record (see the 'Instance' message) spliced in as-is. */
     "arr":     ( dv, data, offset = 0 ) => {
-      for(const i in data){
-        dv.setInt8( offset+parseInt(i), data[i] );
+      for(let i = 0; i < data.length; i++){
+        dv.setInt8( offset+i, data[i] );
       }
     }
   };

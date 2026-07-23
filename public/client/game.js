@@ -185,7 +185,7 @@
         } else {
           this.hpAlpha = Math.max(0,Math.min(.8,this.hpAlpha-0.01));
         }
-        for(const i in this.recoil){
+        for(let i = 0; i < this.recoil.length; i++){
           if(this.recoil[i] > 0 && this.recoil[i]<0.07){
             this.recoil[i]+=(0.075-this.recoil[i])*0.3;
           } else if(this.recoil[i]>=0.07){
@@ -200,7 +200,7 @@
         }
         if(this.canDir.length === this.canDdir.length){
           const k = General['lerpK'](0.3);
-          for(const i in this.canDir){
+          for(let i = 0; i < this.canDir.length; i++){
             this.canDdir[i] = Math.atan2(
               Math.sin(this.canDdir[i])+(Math.sin(this.canDir[i])-Math.sin(this.canDdir[i]))*k,
               Math.cos(this.canDdir[i])+(Math.cos(this.canDir[i])-Math.cos(this.canDdir[i]))*k

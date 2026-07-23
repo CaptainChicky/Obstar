@@ -1258,15 +1258,53 @@ does **not** currently have, and a future pass may want to revive rather than fo
 The other three deletions (`Drawings.obj.bull` superseded by `drawBullet`, the nine dead
 `break;`-after-`return;`, `views/redirec.ejs`) removed no capability — pure cruft.
 
-### 12.2 Bulk idiom (§8.12.4) — a mechanical find-and-replace
+### 12.2 Bulk idiom (§8.12.4) — ✅ DONE (`for...in` partial by design)
 
-Counted across [public/client/](public/client/) after the split, and similar density
-server-side: **84 `var`** → `let`/`const`, **51 loose `==`/`!=`** → `===`/`!==` (check each —
-a few may lean on coercion), **31 `for...in`** where a plain loop or `for...of` fits. These are
-left off in the linter (`no-var`/`eqeqeq` are **not** enabled) on purpose: turning them on
-would bury `no-undef`/`no-global-assign` — the two rules that actually catch bugs here — under
-~200 warnings. When you do this, enable the rules with `--fix` in the *same* commit that clears
-the tree, so the linter goes from silent to enforcing in one step rather than printing noise.
+Swept client- and server-side, and `no-var` + `eqeqeq` are now **enabled as errors** in
+[eslint.config.js](eslint.config.js) so the idiom cannot creep back (they sit in the `LEGACY`
+rules block with the reason, and the file header explains why they went from off to on).
+
+- **`var` → `let`/`const`** — every `var` in the tree, done with `eslint --fix` (`no-var` +
+  `prefer-const`), then eight auto-fixer bail-outs fixed by hand where a `var` was grouped,
+  self-referential, or leaked out of a loop on purpose. One of those was a real trap: `ui.js`'s
+  class-picker read a loop's last `gw` *after* the loop, relying on function-scoping; `const`
+  broke it and the differential did **not** catch it (that draw path isn't in the corpus) —
+  `no-undef` did. Lesson carried into the `==`/`for...in` work below.
+- **loose `==`/`!=` → `===`/`!==`** — 135 comparisons. Reviewed for coercion first (`grep` for
+  `== null` / string-vs-number): every site compared same-typed operands *except* one, the chat
+  relay's `clientMess[i] == null` empty-slot test, which matched `undefined` holes and was
+  rewritten as `=== undefined` (values there are group objects or the sentinel `0`, never
+  `null`). ESLint's `eqeqeq` fixer is deliberately conservative and won't autofix coercible
+  comparisons, so the mechanical pass was driven off ESLint's own reported fix ranges rather
+  than `--fix`.
+- **`for...in` → indexed loop — only where a plain loop genuinely fits.** Nine converted (dense
+  arrays whose index is used solely as a subscript: `canDir`/`recoil` in `entities.js`+`game.js`,
+  `canons` in `render.js`+`Player.js`, `classes`+leaderboard in `ui.js`, the `arr` byte-encoder
+  in `SocketSchema.js`). Everything else was **left as `for...in` on purpose**, and that is the
+  correct end state, not remaining debt:
+  - **`Instances` / `INSTANCE` traversals** (six in `game.js`, six in `rooms/Room.js`) are the
+    §12.3 hot-path item — sparse arrays a plain loop would iterate as holes. Left for that pass.
+  - **Object iteration** (`RT.ROOMS`, `this.up`, `defaultRadius`, the `data.User`/`obj` packet
+    walks, `ALL.leads`) — `for...in` is the right tool; a plain loop does not fit.
+  - **`render.js` `turrets`** — an *optional* field, absent on most tanks. `for...in` over
+    `undefined` is a no-op where `.length` throws; this one was converted, crashed the
+    differential, and was reverted with a comment. The nullish-skip is load-bearing.
+  - A handful of index-stored (`id: i`) and mutate-during-iterate (`M.splice(i,1)`) sites, and
+    all of `public/shop.js` (no test coverage), were left untouched as not-worth-the-risk.
+
+**How each phase was verified.** Client edits: the canvas-call differential (see the baseline
+note below). Server edits: `npm test` (300 assertions). Scope breakage the corpus can't reach:
+`no-undef`. All three green after each phase; the differential hash never moved, i.e. the whole
+§12.2 sweep is provably behaviour-preserving on every path the corpus exercises.
+
+> **Differential baseline — read this before trusting the §6 number.** The **180298-op**
+> figure quoted in §6 / the header was the *monolith-vs-split* differential, and it is now
+> **stale**: the client diverged from the old `new2Init.js` monolith when motion was rewritten
+> (§6.1), strict-mode was fixed (§8.12), and §12.1 deleted dead blocks. The guard used from
+> §12.2 onward is a **self-differential** — the current client recorded before a change vs after
+> — pinned at **232311 ops / hash `fff47764`** in [test/clientDiff.js](test/clientDiff.js) and
+> wired into `npm test`. For any post-motion-rewrite client edit, that is the baseline to hold;
+> the monolith is gone, so there is nothing left to diff 180298 against.
 
 Two idioms in §9 are **not** cleanup and must survive: `parseInt(Math.random()*n)` is load-
 bearing (`radix` is off for it), and the misspelled `Assasin` class name is on the wire and in
@@ -1281,6 +1319,35 @@ arrays stay dense — which **changes iteration order**, so the differential wil
 diverge; rebuild the baseline for this one. **Profile first: nobody has ever profiled the frame
 loop in a browser.** Do not assume this is the bottleneck just because it is the ugliest thing
 in the render path. Full reasoning in §6.2.
+
+**✅ PROFILED (numbers only — no code change made).** The frame loop was driven through the
+stub DOM ([test/clientDom.js](test/clientDom.js)) against real rooms in all four gamemodes; the
+profiler is preserved reasoning, not shipped code. Verdict: **the `for...in` is not a bottleneck
+and §12.3 is not worth doing for performance.** Measured:
+
+- **Realistic load, per gamemode:** 5–28 live entities, held in *heavily* sparse arrays — e.g.
+  `ffa` `Objects` = 10 live in a length-390 array (380 holes), because the arrays are indexed by
+  entity id and `delete` never compacts them. The six `for...in` traversals cost **2.4–6 µs per
+  frame**; a hypothetical dense structure costs ~0.05 µs. So the *removable* overhead is
+  **≈ 2.4–6 µs/frame = 0.01–0.04 % of a 16.67 ms (60 fps) budget.**
+- **`for...in` is the right tool for the current shape.** On a sparse id-indexed array it visits
+  only the live keys, so its cost scales with *live* count (~10s), not slot count (~100s). A
+  naive `for (i=0; i<length; i++)` would iterate every hole and be **slower** — which is exactly
+  why the original code uses `for...in`. That is also why §12.1/§12.2c left these loops alone.
+- **Even the JS is not where the time is.** A full real draw pass (entity `.draw()` against a
+  no-op ctx, no paint) is **82 % entity-draw logic, 18 % iteration.** And none of this includes
+  canvas paint (`fillRect`/`stroke`/`drawImage`, hundreds of ops/frame) — the real cost of a 2D
+  render loop, which the stub cannot measure and which dwarfs the whole JS side.
+- **Scaling headroom:** even at an unrealistic **N = 3000** entities the removable overhead is
+  only ~285 µs = **1.7 % of budget**. There is no entity count the game realistically reaches
+  where this loop matters.
+
+So the only reasons left to convert `Instances` to a dense `Map`/swap-and-pop are **clarity**
+(the sparse-array idiom is genuinely confusing) and **correctness robustness**, *not* speed. If
+someone does it anyway, the caveat above stands: iteration order changes, so rebuild the
+232311/`fff47764` baseline (§12.2) afterward. A real browser profile (Chrome DevTools, an actual
+canvas) is still the only way to find the *true* frame bottleneck — this pass proved only that
+`for...in` isn't it.
 
 ### 12.4 Larger follow-ups (design calls, not mechanical)
 
