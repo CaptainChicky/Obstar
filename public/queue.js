@@ -1,27 +1,18 @@
 
+/*
+  Highlight the picked mode. `deactivated` is the *unselected* style, not a disabled one.
+
+  This used to be a switch with one hand-written arm per mode, each arm naming every button
+  by index - so adding a mode meant editing every other arm, and a mode with no arm silently
+  left the highlight wherever it was. The buttons carry their own `data-gm` now, so this is
+  the same three lines for any number of modes.
+*/
 function selectGM(gm){
   var elem = document.getElementById('gamemode-box').getElementsByClassName('button');
   State = gm;
-  switch(gm){
-    case 'ffa':{
-      elem[0].classList.remove('deactivated');
-      elem[1].classList.add('deactivated');
-      elem[2].classList.add('deactivated');
-      break;
-    }
-    case '2team':{
-      elem[0].classList.add('deactivated');
-      elem[1].classList.remove('deactivated');
-      elem[2].classList.add('deactivated');
-      break;
-    }
-    case '4team':{
-      elem[0].classList.add('deactivated');
-      elem[1].classList.add('deactivated');
-      elem[2].classList.remove('deactivated');
-      break;
-    }
-  };
+  for(var i = 0; i<elem.length; i++){
+    elem[i].classList.toggle('deactivated', elem[i].dataset.gm !== gm);
+  }
 };
 
 function play(){

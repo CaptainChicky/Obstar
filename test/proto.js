@@ -295,10 +295,88 @@ function validation(){
         longName.length === 62 && !server.decode(longName).error, longName.length);
 }
 
+/// 5. Names //////////////////////////////////////////////////////////////////
+/*
+  Length is the only rule applied to a name, anywhere in the stack. The bot names in
+  lib/botNames.js are themselves non-ASCII, so a filter that only passed [a-z0-9] would make
+  human players second-class next to the bots; nothing is rendered as HTML either - the
+  client draws names into a canvas - so there is no markup to escape.
+
+  What is worth pinning is that the whole of Unicode makes it through unchanged, and that the
+  one place a naive length cut goes wrong - a surrogate pair straddling the boundary, which
+  is every emoji - is handled.
+*/
+function names(){
+  console.log('\nnames:');
+  const trip = (name) => server.decode(buf(client.encode('init',
+                  {key: KEY, gm: 'ffa', name: name, pet: -1}))).data.name;
+
+  let samples = [
+    ['ascii',              'bob'],
+    ['accented latin',     'Zoé Müller'],
+    ['cyrillic',           'Привет'],
+    ['greek',              'Στέλιος'],
+    ['cjk',                '中文名字'],
+    ['japanese kana',      'タンク'],
+    ['korean',             '한국어'],
+    ['hebrew (rtl)',       'שלום'],
+    ['arabic (rtl)',       'مرحبا'],
+    ['thai',               'สวัสดี'],
+    ['emoji (astral)',     '🚀🔥'],
+    ['mixed script',       'ab中ф🚀'],
+    ['symbols and marks',  '☠ x́ ♫'],
+    ['spaces kept',        'a b  c']
+  ];
+  for(let [what, name] of samples){
+    check(what + ' survives the wire unchanged', trip(name) === name,
+          JSON.stringify(trip(name)));
+  }
+
+  // The exact boundary. 16 UTF-16 code units is what the wire counts, what the browser's
+  // maxlength counts and what Controller.maxPseudoLength counts, so all three agree.
+  check('a name at exactly the limit is untouched',
+        trip('x'.repeat(16)) === 'x'.repeat(16));
+  check('a name over the limit is cut to it', trip('x'.repeat(40)).length === 16,
+        trip('x'.repeat(40)).length);
+  check('non-ASCII gets the same 16 units as ASCII, not fewer',
+        trip('中'.repeat(40)) === '中'.repeat(16));
+
+  // Eight emoji are exactly 16 code units; nine must lose a whole one, never half of one.
+  // Cutting mid-pair leaves a lone surrogate, which survives the codec and renders as the
+  // replacement glyph - the failure mode is silent and it hits exactly the names people
+  // most want.
+  let eight = '🚀'.repeat(8);
+  check('eight emoji fit exactly', trip(eight) === eight, JSON.stringify(trip(eight)));
+  let nine = trip('🚀'.repeat(9));
+  check('a ninth emoji is dropped whole', nine === '🚀'.repeat(8),
+        JSON.stringify(nine));
+  check('the cut never leaves a lone surrogate',
+        !/[\ud800-\udbff](?![\udc00-\udfff])|(?:[^\ud800-\udbff]|^)[\udc00-\udfff]/.test(nine),
+        JSON.stringify(nine));
+  // The same cut one unit earlier: 15 units of emoji plus a filler, so the boundary lands
+  // between the pair rather than on it.
+  let odd = trip('z'+'🚀'.repeat(9));
+  check('an odd-aligned cut also keeps pairs whole',
+        odd === 'z'+'🚀'.repeat(7) && odd.length === 15,
+        JSON.stringify(odd) + ' len ' + odd.length);
+
+  // A name that reaches the limit must still produce a packet the server accepts - this is
+  // the interaction that made the old clamp worth testing at all.
+  for(let [what, name] of samples.concat([['padded emoji', '🚀'.repeat(20)]])){
+    let packet = buf(client.encode('init', {key: KEY, gm: 'ffa', name: name, pet: -1}));
+    if(server.decode(packet).error){
+      check(what + ': the server accepts the packet', false, server.decode(packet).error);
+      return;
+    }
+  }
+  check('every sample produces an init the server accepts', true);
+}
+
 golden();
 sizes();
 roundTrips();
 validation();
+names();
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

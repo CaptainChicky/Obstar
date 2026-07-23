@@ -10,7 +10,6 @@
 */
 const RT   = require('../lib/runtime.js');
 const Room = require('./Room.js');
-const CLASS = require('../public/SHARE/TanksConfig.js').class;
 
 class TwoTeam extends Room {
   constructor(id){
@@ -23,6 +22,7 @@ class TwoTeam extends Room {
       objCaps:       {sqr: {max0: 160, max1: 18}, tri: {max0: 60, max1: 12}, pnt: {max0: 18, max1: 15}},
       betaPentRng:   0.99,
       bossRng:       0.9999,
+      maxBoss:       1,
       botCount:      3,
       botIdStart:    10,
       teams:         [0,1],
@@ -75,44 +75,6 @@ class TwoTeam extends Room {
   botBudget(humanCount){
     return Infinity;
   }
-  createBoss(){
-    for(let i = 0; i<=this.maxPlayer; i++){
-      if(typeof(this.INSTANCE.players[i]) === "undefined" && !this.boss){
-        ///
-        let randDir = Math.PI*2*Math.random();
-        let boss = new RT.Player(
-          {"GM":this.gm,"sId":this.id,"oId":i},
-          Math.cos(randDir)*this.map.width/4,
-          Math.sin(randDir)*this.map.width/4,
-          RT.CONFIG.BOSS[0][2],
-          9,
-          this.XPLVL
-        );
-        boss.hp = 20000;
-        boss.maxHp = 20000;
-        boss.boss = 1;
-        boss.size = 64;
-        boss.class = 'Summoner';
-        boss.screen = CLASS[boss.class].screen;
-        boss.prize = 100000;
-        boss.xp    = 100000;
-        boss.shield = 0;
-        boss.motion = RT.CONFIG.BOSS[0][0].bind(boss);
-        boss.update = RT.CONFIG.BOSS[0][1].bind(boss);
-        this.boss = boss;
-        this.INSTANCE.players[i] = boss;
-        ///
-      } else if(this.INSTANCE.players[i] && !this.INSTANCE.players[i].bot){
-        this.INSTANCE.players[i].mess.push('Tremble at the sight of the '+ RT.CONFIG.BOSS[0][2]+' !');
-      }
-    }
-  }
-  assignBulletTeam(bullet,origine){
-    bullet.team = origine.team;
-    if(origine.dev.color){
-      bullet.color = origine.dev.color;
-    }
-  }
   /* Cross the strip in front of the other side's base and you die on the spot. */
   inEnemyBase(obj){
     let edge = this.map.width/2-this.baseSize;
@@ -140,24 +102,6 @@ class TwoTeam extends Room {
   }
   leaderColor(player,viewerId){
     return player.team;
-  }
-  /* Join the thinner side; toss a coin when they are level. */
-  assignTeam(){
-    let count = new Array(this.rules.teams.length).fill(0);
-    for(let p of this.INSTANCE.players){
-      if(typeof p === "undefined" || !isNaN(p)){continue;}
-      let t = this.rules.teams.indexOf(p.team);
-      if(t>=0){count[t]++;}
-    }
-    let smallest = 0;
-    for(let i = 1; i<count.length; i++){
-      if(count[i]<count[smallest]){smallest = i;}
-    }
-    let tied = count.filter((n)=>n === count[smallest]).length;
-    if(tied === count.length){
-      smallest = parseInt(Math.random()*count.length);
-    }
-    return this.rules.teams[smallest];
   }
 };
 

@@ -15,9 +15,10 @@
       <div class='left-zone'>
         <div id='gamemode-box' class='white-box'>
           <span>Game mode</span>
-          <div class='ffa button'   onclick="selectGM('ffa')">Free For All</div>
-          <div class='team2 button deactivated' onclick="selectGM('2team')">2 Teams</div>
-          <div class='team4 button deactivated' onclick="selectGM('4team')">4 Teams</div>
+          <div class='ffa button'                data-gm='ffa'   onclick="selectGM('ffa')">Free For All</div>
+          <div class='team2 button deactivated'  data-gm='2team' onclick="selectGM('2team')">2 Teams</div>
+          <div class='team4 button deactivated'  data-gm='4team' onclick="selectGM('4team')">4 Teams</div>
+          <div class='bossgm button deactivated' data-gm='boss'  onclick="selectGM('boss')">Boss Hunt</div>
         </div>
       </div>
       <div class='center-zone'>

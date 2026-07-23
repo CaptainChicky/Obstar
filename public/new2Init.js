@@ -4,6 +4,10 @@
     RESOLUTION: 1.1,
     OFFCAN:     1.2,
     LINEWIDTH: 4,
+    // Per-frame factor for the remaining exponential smoothers - sizes, alphas, turret
+    // angles. Positions do not use it any more; see the Interp block below for why. It is
+    // calibrated at 60fps and rescaled per frame by General.lerpK() so a 144Hz monitor gets
+    // the same time constant rather than a 2.4x faster one.
     SMOOTH: 0.15,
     SIZE: 35,
     MOUSEDELAY: 60/15,
@@ -86,6 +90,10 @@
     canH: 0,
     winW: 0,
     winH: 0,
+    // Length of the frame being drawn, in 60Hz frames. Loop() sets it; General.lerpK() and
+    // the client-side motion prediction read it so neither depends on the refresh rate.
+    dtFrames: 1,
+    frameAt: 0,
   }
   var Game = {
     timestamp: 0,
@@ -500,6 +508,17 @@
                         Global.canH/(1920*.5625))//*(CONST.RESOLUTION);
   }
   General['ease-in-out'] = function(t,e = 5) {return t<=.5 ? Math.pow(2*t,e)/2 : 1-Math.pow(2*(1-t),e)/2}
+  /*
+    Rescale a per-frame smoothing factor for the frame we actually got.
+
+    `d += (target-d)*k` once per frame is a time constant only if the frame rate is fixed.
+    Every k in this file was tuned on a 60Hz monitor; on 144Hz the same code smoothed 2.4x
+    faster, and during a hitch it barely moved at all. The equivalent factor for a frame of
+    length dt is 1-(1-k)^(dt/16.667), which is what this returns.
+  */
+  General['lerpK'] = function(k){
+    return MOTION.lerpK(k, Global.dtFrames);
+  };
   General['isMouse'] = (x,y,w,h,r = 1)=>{
     let mouse_x = Global.mouse_x/r,mouse_y = Global.mouse_y/r;
     return (mouse_x>=x) && (mouse_y>=y) && (mouse_x<=x+w) && (mouse_y<=y+h)
@@ -516,6 +535,17 @@
           return "#" + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
         }
   }
+  /*
+    Motion primitives live in public/motion.js so they can be tested outside a browser
+    (test/interp.js requires it directly). Read the block comment at the top of that file
+    before touching anything that positions an entity - it explains why positions are no
+    longer smoothed with `d += (x-d)*CONST.SMOOTH`, which is the bug behind both "bullets
+    lag for a bit when you shoot" and "the camera drifts off centre when you move".
+
+    views/play.ejs loads it before this file.
+  */
+  const NET    = MOTION.NET;
+  const Interp = MOTION.Interp;
   //////////
   class Tank{
     constructor(x,y,size,color){
@@ -523,16 +553,20 @@
       this.x = x;
       this.y = y;
       this.name = {name:"",color:0};
+      // vx/vy are on the wire (SCHEMA.GameUpdate.Players) and assigned straight out of the
+      // packet, so they stay. The smoothed dvx/dvy that used to be derived from them are
+      // gone with the velocity lead they fed - see draw().
       this.vx = 0;
       this.vy = 0;
-      this.dvx = 0;
-      this.dvy = 0;
       this.dx = x;
       this.dy = y;
+      this.tween = new Interp(x,y);
       this.hp = 1;
       this.hpAlpha = 0;
       this.scale = 1;
-      this.class = 'Doble';
+      // Overwritten by the packet that creates this tank. Was 'Doble', which is not a class
+      // in TanksConfig - if it is ever read, drawTank cannot draw it.
+      this.class = 'Basic';
       this.size = size;
       this.SH = {
         lapse: -1
@@ -665,19 +699,19 @@
         this.off.xp = this.xp;
         this.off.drawXp(this.xp);
       }
-      this.dx += (this.x-this.dx)*CONST.SMOOTH;
-      this.dy += (this.y-this.dy)*CONST.SMOOTH;
-      this.dvx += (this.vx-this.dvx)*CONST.SMOOTH/2;
-      this.dvy += (this.vy-this.dvy)*CONST.SMOOTH/2;
+      let tw = this.tween.sample(NET.now());
+      this.dx = tw.x;
+      this.dy = tw.y;
+      let k = General['lerpK'](0.3);
       this.ddir = Math.atan2(
-        Math.sin(this.ddir)+(Math.sin(this.dir)-Math.sin(this.ddir))*0.3,
-        Math.cos(this.ddir)+(Math.cos(this.dir)-Math.cos(this.ddir))*0.3
+        Math.sin(this.ddir)+(Math.sin(this.dir)-Math.sin(this.ddir))*k,
+        Math.cos(this.ddir)+(Math.cos(this.dir)-Math.cos(this.ddir))*k
       );
       if(this.canDir.length == this.canDdir.length){
         for(let i in this.canDir){
           this.canDdir[i] = Math.atan2(
-            Math.sin(this.canDdir[i])+(Math.sin(this.canDir[i])-Math.sin(this.canDdir[i]))*0.3,
-            Math.cos(this.canDdir[i])+(Math.cos(this.canDir[i])-Math.cos(this.canDdir[i]))*0.3
+            Math.sin(this.canDdir[i])+(Math.sin(this.canDir[i])-Math.sin(this.canDdir[i]))*k,
+            Math.cos(this.canDdir[i])+(Math.cos(this.canDir[i])-Math.cos(this.canDdir[i]))*k
           )
         }
       } else {
@@ -717,9 +751,15 @@
       }
     };
     draw(ctx){
-      ctx.translate(this.dx+this.dvx,this.dy+this.dvy)
+      // Was `this.dx+this.dvx`: a one-tick velocity lead bolted on to hide how far the old
+      // exponential smoother trailed. The interpolator does not trail, so the lead is now
+      // just an error proportional to speed.
+      ctx.translate(this.dx,this.dy)
       ctx.globalAlpha = this.alpha;
-      let can = General['drawTank'](ctx,parseInt(this.alpha),{
+      // drawTank returns undefined for a class it does not know, so read `.can` off the
+      // result rather than out of it - User.draw has always done this, and one unknown class
+      // taking down the whole render loop is not a trade worth making.
+      let o = General['drawTank'](ctx,parseInt(this.alpha),{
          class: this.class,
          tankC: this.shield ? this.SH.body : ((this.hitted>1) ? C.hit : C[this.color]),
          canC: this.shield ? this.SH.canons : ((this.hitted>1) ? C.hit : C.gray),
@@ -727,14 +767,15 @@
          dir: this.ddir,
          recoils: this.recoil,
          canDir: this.canDdir
-      }).can;
+      });
+      let can = o && o.can;
       if(!can){return;}
       let w = can.width/(CONST.OFFCAN), h = can.height/(CONST.OFFCAN)
       ctx.drawImage(can,-w/2,-h/2,w,h);
       ///
     };
     drawUi(ctx){
-      ctx.translate(this.dx+this.dvx,this.dy+this.dvy)
+      ctx.translate(this.dx,this.dy)
       ctx.globalAlpha = .8*this.alpha;
       ctx.scale(1/CONST.OFFCAN/CONST.RESOLUTION,1/CONST.OFFCAN/CONST.RESOLUTION);
       ctx.drawImage(this.off.can,
@@ -757,6 +798,7 @@
       this.y = y;
       this.dx = x;
       this.dy = y;
+      this.tween = new Interp(x,y);
       this.vx = 0;
       this.vx = 0;
       this.hp = 1;
@@ -838,11 +880,13 @@
       }
     }
     update(){
-      this.dx += (this.x-this.dx)*CONST.SMOOTH;
-      this.dy += (this.y-this.dy)*CONST.SMOOTH;
-      this.dsize += (this.size-this.dsize)*CONST.SMOOTH*2;
-      this.dalpha += (this.alpha-this.dalpha)*CONST.SMOOTH*2;
-      this.dir+=this.rotate;
+      let tw = this.tween.sample(NET.now());
+      this.dx = tw.x;
+      this.dy = tw.y;
+      let k = General['lerpK'](CONST.SMOOTH*2);
+      this.dsize += (this.size-this.dsize)*k;
+      this.dalpha += (this.alpha-this.dalpha)*k;
+      this.dir+=this.rotate*Global.dtFrames;
       if(this.shield && this.color !== 'special'){
         this.color = 'special';
       }
@@ -913,12 +957,13 @@
   class Bullet{
     constructor(x,y,size,dir,type,color){
       this.color = color;
-      this.dx = x;//+(MAIN.x-MAIN.dx);
-      this.dy = y;//+(MAIN.y-MAIN.dy);
+      this.dx = x;
+      this.dy = y;
       this.x = x;
       this.y = y;
-      this.vx = 0//this.x-this.dx;
-      this.vy = 0//this.y-this.dy;
+      this.tween = new Interp(x,y);
+      this.vx = 0;
+      this.vy = 0;
       this.type = type;
       this.scale = 1;
       this.size = size;
@@ -928,14 +973,14 @@
       this.alpha = 1;
     }
     update(){
-      this.dx += (this.x-this.dx)*CONST.SMOOTH;
-      this.dy += (this.y-this.dy)*CONST.SMOOTH;
-      this.vx += (this.x-this.dx-this.vx)*CONST.SMOOTH;
-      this.vy += (this.y-this.dy-this.vy)*CONST.SMOOTH;
+      let tw = this.tween.sample(NET.now());
+      this.dx = tw.x;
+      this.dy = tw.y;
       if(this.ddir != this.dir){
+        let k = General['lerpK'](0.2);
         this.ddir = Math.atan2(
-          Math.sin(this.ddir)+(Math.sin(this.dir)-Math.sin(this.ddir))*0.2,
-          Math.cos(this.ddir)+(Math.cos(this.dir)-Math.cos(this.ddir))*0.2
+          Math.sin(this.ddir)+(Math.sin(this.dir)-Math.sin(this.ddir))*k,
+          Math.cos(this.ddir)+(Math.cos(this.dir)-Math.cos(this.ddir))*k
         )
       }
       ///
@@ -1251,14 +1296,22 @@
       this.color = 'green';
       this.x = 0;
       this.y = 0;
-      this.gx = 'move';
-      this.gy = 'move';
-      this.dx = 'move';
-      this.dy = 'move';
+      // gx/gy is the camera. It used to be a *third*, slower smoother than the one that
+      // moved the tank (CONST.SMOOTH/1.6 against CONST.SMOOTH, and the tank additionally
+      // carried a velocity lead and the input prediction). Three different filters chasing
+      // one position is exactly what "the camera lags behind when you move" is: the tank
+      // slid away from the centre of the screen by however far the three had drifted apart,
+      // proportional to speed, and snapped back when you stopped. The camera is now pinned
+      // to the position the tank is actually drawn at, so you are always dead centre.
+      // These were the string 'move' and were guarded with isNaN() on every frame until the
+      // first packet landed. The interpolator is seeded with real numbers instead.
+      this.gx = 0;
+      this.gy = 0;
+      this.dx = 0;
+      this.dy = 0;
+      this.tween = new Interp(0,0);
       this.vx = 0;
       this.vy = 0;
-      this.dvx = 0;
-      this.dvy = 0;
       this.scale = 1;
       this.class = "Rocket";
       this.SH = {
@@ -1346,9 +1399,16 @@
         }
       }
       this.update = function(){
+        /*
+          Local input prediction. `predic` is a small offset from the server position that
+          responds to WASD on the very next frame, then decays back to zero as the server's
+          own answer catches up - it is what stops your own tank feeling like it is on a
+          delay. It is an offset, not a position, so it survives the interpolation change
+          untouched; it just gets added to a position that is now correct.
+        */
         let motionDir = [0,0];
-        let len = 0.31/2;
-        let FRICTION = 0.95;
+        let len = 0.31/2*Global.dtFrames;
+        let FRICTION = Math.pow(0.95,Global.dtFrames);
         if(Global.inputs.w || Global.inputs.ArrowUp){motionDir[0]-=len;}
         if(Global.inputs.s || Global.inputs.ArrowDown){motionDir[0]+=len;}
         if(Global.inputs.a || Global.inputs.ArrowLeft){motionDir[1]-=len;}
@@ -1360,13 +1420,17 @@
         this.predic.x+=this.predic.xspeed;
         this.predic.y+=this.predic.yspeed;
         let tolen = Math.sqrt(Math.pow(this.predic.x,2)+Math.pow(this.predic.y,2));
-        tolen+=(-tolen)*CONST.SMOOTH;
+        tolen+=(-tolen)*General['lerpK'](CONST.SMOOTH);
         ddir = Math.atan2(this.predic.y,this.predic.x);
         this.predic.x = Math.cos(ddir)*tolen;
         this.predic.y = Math.sin(ddir)*tolen;
 
-        this.dir = Math.atan2((Global.mouse_y-Global.winH/2 -this.predic.y-(this.dvy/CONST.SMOOTH)),
-                              Global.mouse_x-Global.winW/2 -this.predic.x-(this.dvx/CONST.SMOOTH));
+        // Your tank is at the exact centre of the screen now that the camera is pinned to
+        // it, so the aim vector is straight from the centre to the cursor. It used to have
+        // to subtract `predic` and a `dvx/CONST.SMOOTH` term to undo how far the camera had
+        // drifted off the tank - guesses at an error that no longer exists, and one of the
+        // reasons aim felt off while moving fast.
+        this.dir = Math.atan2(Global.mouse_y-Global.winH/2, Global.mouse_x-Global.winW/2);
         if(this.old.dir != parseInt(this.dir*100)){
           this.old.dir = parseInt(this.dir*100);
           this.DIFFDIR = 1;
@@ -1390,10 +1454,11 @@
           }
         }
         if(this.canDir.length == this.canDdir.length){
+          let k = General['lerpK'](0.3);
           for(let i in this.canDir){
             this.canDdir[i] = Math.atan2(
-              Math.sin(this.canDdir[i])+(Math.sin(this.canDir[i])-Math.sin(this.canDdir[i]))*0.3,
-              Math.cos(this.canDdir[i])+(Math.cos(this.canDir[i])-Math.cos(this.canDdir[i]))*0.3
+              Math.sin(this.canDdir[i])+(Math.sin(this.canDir[i])-Math.sin(this.canDdir[i]))*k,
+              Math.cos(this.canDdir[i])+(Math.cos(this.canDir[i])-Math.cos(this.canDdir[i]))*k
             )
           }
         } else {
@@ -1414,28 +1479,18 @@
             this.SH.lapse = -1;
           }
         }
-        ///GRID///{
-          if(isNaN(this.gx)){
-            this.gx = this.x;
-          }
-          if(isNaN(this.gy)){
-            this.gy = this.y;
-          }
-          if(isNaN(this.dx)){
-            this.dx = this.x;
-          }
-          if(isNaN(this.dy)){
-            this.dy = this.y;
-          }
-          this.dx += (this.x-this.dx)*CONST.SMOOTH;
-          this.dy += (this.y-this.dy)*CONST.SMOOTH;
-          this.dvx += (this.vx-this.dvx)*CONST.SMOOTH;
-          this.dvy += (this.vy-this.dvy)*CONST.SMOOTH;
-          this.gx += (this.x-this.gx)*CONST.SMOOTH/1.6;
-          this.gy += (this.y-this.gy)*CONST.SMOOTH/1.6;
+        ///POSITION AND CAMERA///
+        // `dx`/`dy` is the interpolated server position; `+predic` is the local input lead.
+        // The camera (gx/gy) is that sum, exactly - one position, drawn and framed from the
+        // same number, so the tank cannot slide off centre.
+        let tw = this.tween.sample(NET.now());
+        this.dx = tw.x;
+        this.dy = tw.y;
+        this.gx = this.dx+this.predic.x;
+        this.gy = this.dy+this.predic.y;
       };
       this.draw = function(){
-        ctx.translate(this.dx+this.dvx+this.predic.x,this.dy+this.dvy+this.predic.y)
+        ctx.translate(this.dx+this.predic.x,this.dy+this.predic.y)
         ctx.globalAlpha = this.alpha;
         let o = General['drawTank'](ctx,parseInt(this.alpha),{
           class: this.class,
@@ -2298,7 +2353,6 @@
         };
         ALL.set = set;
         ALL.enter = setEnter();
-        console.log(ALL.enter);
         ///
         return ALL;
       })()
@@ -2320,7 +2374,6 @@
               var newImg = new Image;
               newImg.onload = function(){
                   _img.src = this.src;
-                  console.log(123);
                   M.unshift({
                     can:_img,
                     a: startA,
@@ -2455,7 +2508,6 @@
             if(j){Global.mouse_out = CONST.MOUSE_OUT;}
             if(j && Global.inputs.mouseL){
               if(!up.press){
-                console.log(i,CONST.UP_ORDER[i]);
                 General['WS'].send(PROTO.encode('upgrade',CONST.UP_ORDER[i]));
                 up.press = 1;
               }
@@ -2868,11 +2920,23 @@
         }
       }
       Global.oldfps = Date.now();
+      /*
+        How long this frame is, measured in 60Hz frames. Everything smoothed per frame -
+        General.lerpK(), the input prediction, the polygon spin - scales by it, so the game
+        looks the same on a 60Hz laptop and a 144Hz monitor instead of running its animations
+        2.4x fast on the latter. Clamped so a hitch or a backgrounded tab resumes smoothly
+        rather than jumping a quarter of a second in one frame.
+      */
+      {
+        let t = NET.now();
+        Global.dtFrames = Global.frameAt ? Math.min(4, Math.max(0.2, (t-Global.frameAt)/16.667)) : 1;
+        Global.frameAt = t;
+      }
       rnbcolor[0] = 'hsl('+(Game.timestamp*2)%360+',78%,56%)';
       rnbcolor[1] = 'hsl('+(Game.timestamp*2)%360+',50%,38%)';
       ///
       General['doors'].update();
-      Game.screen += (Game.realScreen-Game.screen)*0.1;
+      Game.screen += (Game.realScreen-Game.screen)*General['lerpK'](0.1);
       if(parseInt(Game.screen) != Game.realScreen){
         General['updateRatio']();
       }
@@ -2887,9 +2951,13 @@
       if(Global.mouseDelay){
         Global.mouseDelay--;
       } else if(User.DIFFDIR){
+        // The cursor's offset from your tank, which is the centre of the screen. The
+        // `-User.dvx/CONST.SMOOTH` terms that used to be in here were correcting for the
+        // camera drifting off the tank; it does not drift now, and leaving them in would
+        // send the server an aim point that is wrong by that much whenever you move.
         General['WS'].send(PROTO.encode('mousemove',{
-          x: Math.min(.5,Math.max(-.5,((Global.mouse_x-User.dvx/CONST.SMOOTH-Global.winW/2))/(Game.screen)*CONST.RESOLUTION/RATIO)),
-          y: Math.min(.5,Math.max(-.5,((Global.mouse_y-User.dvy/CONST.SMOOTH-Global.winH/2))/(Game.screen*0.5625)*CONST.RESOLUTION/RATIO)),
+          x: Math.min(.5,Math.max(-.5,(Global.mouse_x-Global.winW/2)/(Game.screen)*CONST.RESOLUTION/RATIO)),
+          y: Math.min(.5,Math.max(-.5,(Global.mouse_y-Global.winH/2)/(Game.screen*0.5625)*CONST.RESOLUTION/RATIO)),
           dir: User.dir
         }))
         Global.mouseDelay = CONST.MOUSEDELAY;
@@ -2924,6 +2992,25 @@
         {General['canvas'].style.cursor = 'default';}
       }
     }
+    /*
+      Test hook, read-only.
+
+      test/client.js boots this file against the stub DOM in test/clientDom.js and asserts
+      things like "the camera is exactly on the tank at speed" and "a bullet is drawn at its
+      real speed from the first interval". Those are statements about numbers this closure
+      computes, and nothing outside it can otherwise see them: it all ends up inside a canvas,
+      and there is no DOM to read it back from.
+
+      It lives here rather than at the bottom of the file because User and Instances are local
+      to Run(). Nothing in the client reads this back, and nothing outside writes to it.
+    */
+    window.__test = {
+      User:      User,
+      Global:    Global,
+      Game:      Game,
+      Instances: Instances,
+      CONST:     CONST
+    };
     General['run'] = 1;
     Loop();
     ///
@@ -2939,59 +3026,66 @@
           }
         }
       }
-      /// SET DATA ///
-      for(let THING in data){
-        ///Head///
-        if(THING == 'head'){
-          Game.realScreen = data.head.screen;
-          Game.timestamp = data.head.timestamp;
-          Game.width     = data.head.width;
-          Game.height    = data.head.height;
-          if(General['Ui']){
-            General['Ui'].xp = data.head.xp;
-            General['Ui'].still = data.head.still;
-            General['Ui'].classLvl = data.head.cLvl;
-            General['Ui'].lvl    = data.head.level;
+      /*
+        SET DATA
+
+        This used to be wrapped in `for(let THING in data)`, with the entity loop below
+        sitting *inside* it. `data` has four keys (type, head, User, Instances) and only
+        'head' continued, so every entity in the packet was applied three times per packet -
+        three passes of the whole quadtree slice for nothing, and `hit()` and `shoot()`
+        fired three times each. Each part is done once now.
+      */
+      let at = NET.mark();
+      ///Head///
+      Game.realScreen = data.head.screen;
+      Game.timestamp = data.head.timestamp;
+      Game.width     = data.head.width;
+      Game.height    = data.head.height;
+      if(General['Ui']){
+        General['Ui'].xp = data.head.xp;
+        General['Ui'].still = data.head.still;
+        General['Ui'].classLvl = data.head.cLvl;
+        General['Ui'].lvl    = data.head.level;
+      }
+      ///User///
+      if(data.User){
+        for(let param in data.User){
+          switch(param){
+            case 'states':{
+              if(data.User[param][0]){
+                User.hit();
+              }
+              if(User.followDir && !data.User[param][1]){
+                User.DIFFDIR = 1;
+              }
+              User.followDir = data.User[param][1];
+              ///
+              if(General['Ui']){
+                General['Ui'].dead = data.User[param][2];
+              }
+              ///
+              User.shield = data.User[param][3];
+              break;
+            };
+            case 'recoil':{
+              for(let i in data.User[param]){
+                if(data.User[param][i]){
+                  User.shoot(i)
+                }
+              }
+              break;
+            };
+            case 'dir':   {
+              User.realDir = data.User[param];
+              break;
+            };
+            default: User[param] = data.User[param];break;
           }
-         continue;
         }
-        ///User///
-        if(THING == 'User'){
-          for(let param in data.User){
-            switch(param){
-              case 'states':{
-                if(data.User[param][0]){
-                  User.hit();
-                }
-                if(User.followDir && !data.User[param][1]){
-                  User.DIFFDIR = 1;
-                }
-                User.followDir = data.User[param][1];
-                ///
-                if(General['Ui']){
-                  General['Ui'].dead = data.User[param][2];
-                }
-                ///
-                User.shield = data.User[param][3];
-                break;
-              };
-              case 'recoil':{
-                for(let i in data.User[param]){
-                  if(data.User[param][i]){
-                    User.shoot(i)
-                  }
-                }
-                break;
-              };
-              case 'dir':   {
-                User.realDir = data.User[param];
-                break;
-              };
-              default: User[param] = data.User[param];break;
-            }
-          }
-        }
-        ///REST
+        User.tween.push(data.User.x, data.User.y, at);
+      }
+      ///REST
+      {
         for(let CONSTRUC in data.Instances){
           for(let OBJ in data.Instances[CONSTRUC]){
             let obj = data.Instances[CONSTRUC][OBJ];
@@ -2999,45 +3093,62 @@
             /// NEW ///
             if ( typeof( inst[OBJ] ) === 'undefined' ){
               switch( CONSTRUC ){
-                case 'Players':  inst[OBJ] = new Tank(obj.x,obj.y,obj.size,obj.color);inst[OBJ].bot = obj.states[7];break;
+                case 'Players': inst[OBJ] = new Tank(obj.x,obj.y,obj.size,obj.color);break;
                 case 'Objects': inst[OBJ] = new Obj(obj.x,obj.y,obj.size,obj.type);break;
-                case 'Bullets':  inst[OBJ] = new Bullet(obj.x, obj.y, obj.size, obj.dir, obj.type, obj.color);break;
-
+                case 'Bullets': inst[OBJ] = new Bullet(obj.x, obj.y, obj.size, obj.dir, obj.type, obj.color);break;
+                default: continue;    // a construc byte this client does not know
               }
-            } else {
-               for(let PARAM in obj){
-                 switch( PARAM ){
-                   case 'states':{
-                     switch(CONSTRUC){
-                       case 'Players':{
-                         if(obj.states[0]) inst[OBJ].hit();
-                         inst[OBJ].shield = obj.states[1];
-                         inst[OBJ].bot = obj.states[6];
-                         break;
-                       }
-                       case 'Objects':{
-                        if(obj.states[0]) inst[OBJ].hit();
-                        break;
-                       }
-                       case 'Bullets':{
-                         inst[OBJ].pet = obj.states[0]
-                         break;
-                       }
-                     }
-                     break;
-                   };
-                   case 'recoil':{
-                     for(let i in obj[PARAM]){
-                       if(obj[PARAM][i]){
-                         inst[OBJ].shoot(i)
-                       }
-                     }
-                     break;
-                   };
-                   default: inst[OBJ][PARAM] = obj[PARAM];break;
-                 }
-               }
             }
+            /*
+              Apply the packet to the entity, new or not.
+
+              Creating one used to be an `else` against this block, so on the packet that
+              introduced an entity it got *only* the four constructor arguments - no class,
+              no name, no hp, no alpha, no dir. It looked fine solely because of the
+              triple-iteration bug this function used to have: passes two and three of the
+              same packet found the entity already present and took this branch. Fixing that
+              loop turned "harmless waste" into a Tank rendered with the constructor's
+              placeholder class for a whole packet interval, which is not a real class, so
+              drawTank returned undefined and draw() threw on it.
+            */
+            for(let PARAM in obj){
+              switch( PARAM ){
+                case 'states':{
+                  switch(CONSTRUC){
+                    case 'Players':{
+                      if(obj.states[0]) inst[OBJ].hit();
+                      inst[OBJ].shield = obj.states[1];
+                      // states[6] is the bot flag; creation used to read states[7], one past
+                      // the end of the record, so a new tank's bot flag was always undefined.
+                      inst[OBJ].bot = obj.states[6];
+                      break;
+                    }
+                    case 'Objects':{
+                     if(obj.states[0]) inst[OBJ].hit();
+                     break;
+                    }
+                    case 'Bullets':{
+                      inst[OBJ].pet = obj.states[0]
+                      break;
+                    }
+                  }
+                  break;
+                };
+                case 'recoil':{
+                  for(let i in obj[PARAM]){
+                    if(obj[PARAM][i]){
+                      inst[OBJ].shoot(i)
+                    }
+                  }
+                  break;
+                };
+                default: inst[OBJ][PARAM] = obj[PARAM];break;
+              }
+            }
+            // One server position, timestamped with when the packet landed. A brand new
+            // entity gets one too: its Interp was seeded with the same spawn point, so this
+            // is the second sample it needs before it can move at the right speed.
+            inst[OBJ].tween.push(obj.x, obj.y, at);
           }
         }
       }

@@ -331,10 +331,15 @@
       'Objects',
       'Bullets',
     ],
+    /* Must stay index-for-index with toBUFFER.gamemode below, and cover every key in
+       RT.ROOMS (lib/boot.js). It did not: '4team' encoded as 3 but decoded from index 2, so
+       the server read gamemode 3 as `undefined` and answered ERR_GAMEMODE - the mode could
+       never be joined. 'boss' was in neither table. */
     'gamemode':[
       'ffa',
       '2team',
-      '4team'
+      '4team',
+      'boss'
     ],
     'type':    [
       'init',
@@ -418,7 +423,8 @@
     'gamemode':{
       'ffa':   0,
       '2team': 1,
-      '4team': 3
+      '4team': 2,
+      'boss':  3
     },
     'type':    {
       'init':       0,
@@ -561,8 +567,26 @@
   function checkLength(value, min, max){
     return (min <= value && value <= max);
   }
+  /*
+    Cut a string to `max` UTF-16 code units - which is what the wire counts, what
+    Controller.maxPseudoLength counts, and what the browser's maxlength attribute counts, so
+    all three agree.
+
+    Length is the *only* thing done to a name. Every code point is allowed through: the bot
+    names in lib/botNames.js are themselves non-ASCII, and a game where you cannot type your
+    own alphabet is a worse game. Nothing here is rendered as HTML - the client draws names
+    with canvas fillText - so there is no markup to escape.
+
+    The one thing a naive cut gets wrong is a surrogate pair straddling the boundary, which
+    leaves a lone surrogate: it survives the wire (the codec is code-unit based) but renders
+    as a replacement glyph. Emoji and anything above the BMP are pairs, so this is the common
+    case for exactly the names people want, not an edge case. Drop the orphan instead.
+  */
   function clamp(str, max){
-    return (str.length > max) ? str.substr(0, max) : str;
+    if(str.length <= max){ return str; }
+    let code = str.charCodeAt(max-1);
+    if(code >= 0xD800 && code <= 0xDBFF){ max -= 1; }   // high surrogate with its pair cut off
+    return str.substr(0, max);
   }
 
   ///////////////////////////////////////////////////////////////////// cursors

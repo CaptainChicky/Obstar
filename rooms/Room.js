@@ -8,24 +8,32 @@
   of tunables and overrides a handful of small hooks:
 
     HOOK                    BASE DEFAULT                   WHY IT EXISTS
-    botRoster()             rules.botCount bots, one team  2team splits bots across sides
-    botBudget(humans)       rules.botCount - humans        2team respawns every dead bot
-    spawnPoint(tank)        anywhere, clear of the nests   2team spawns you in your base
-    assignTeam()            rules.teams[0]                 2team balances the two sides
-    assignBulletTeam(b,o)   dev colour, else the one team  2team tags bullets by shooter
-    createBoss()            nothing                        2team can summon a boss
-    inEnemyBase(obj)        false                          2team kills you in the enemy base
+    build()                 nothing                        team modes stand up base guards
+    botRoster()             rules.botCount bots, one team  team modes split bots across sides
+    botBudget(humans)       rules.botCount - humans        team modes restock every side
+    spawnPoint(tank)        anywhere, clear of the nests   team modes spawn you in your base
+    inEnemyBase(obj)        false                          team modes kill you in a foreign base
     entityColor(p)          1 - everyone else is red       team modes colour by team
     mainColor(p)            0 - you are blue               team modes colour by team
-    bulletColor(b)          traps 9, else the bullet team  team modes honour dev colour
+    bulletColor(b)          traps 9, else the bullet team  team modes colour traps by team
     ownBulletColor(b,you)   your own colour                only used when rules.viewerBullets
     leaderColor(p,id)       you 0, everyone else 1
 
   The defaults are free-for-all's behaviour, so Ffa overrides almost nothing.
 
+  `assignTeam` (join the thinnest side), `assignBulletTeam` and `createBoss` used to be on
+  that list too. All three were written in TwoTeam in a form that already generalised - the
+  balance loop counts N teams, the boss only varied by team id and hit points - and produced
+  identical results to the base version when a mode has one team and no bosses. They moved
+  up, so a new mode inherits them; rules.teams, rules.maxBoss, rules.bossHp and
+  rules.bossTeam are what a mode states instead. rooms/FourTeam.js and rooms/BossMode.js are
+  short mostly because of that.
+
   Adding a mode means writing one of these subclasses - see rooms/TwoTeam.js for the biggest
-  one there is. Nothing outside rooms/ needs to know a new mode exists beyond the ROOMS
-  table in lib/Controller.js and the gamemode whitelist in Controller.askConnection.
+  one there is - and naming it in the ROOMS table in lib/boot.js. Nothing else outside rooms/
+  needs to know it exists: Controller.askConnection whitelists whatever is in ROOMS, and the
+  only other edit is the gamemode enum in public/SHARE/SocketSchema.js, because the mode has
+  to fit in the byte the client sends.
 
   Entity classes and the Controller singleton are reached through the late-bound registry
   (lib/runtime.js) because the dependency graph is circular - see the note there.
@@ -39,6 +47,12 @@ const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION   = require('../lib/constants.js').FRICTION;
 const KIND       = require('../lib/kinds.js');
+const clock      = require('../lib/clock.js');
+
+// generate() used to re-arm itself with setTimeout(400). It is a simulation event, so it
+// rides the simulation clock now: one pass every this many fixed steps.
+const GENERATE_EVERY = Math.round(400/clock.STEP_MS);   // 20 steps = 400ms at 50Hz
+const FIRST_GENERATE = Math.round(300/clock.STEP_MS);   // Init() used to wait 300ms
 
 /*
   Every knob a gamemode can turn without writing code. A subclass spreads its own values
@@ -54,6 +68,9 @@ const DEFAULT_RULES = {
   objCaps:      {sqr: {max0: 220, max1: 18}, tri: {max0: 80, max1: 12}, pnt: {max0: 25, max1: 15}},
   betaPentRng:  0.98,   // RNG above this may spawn a beta pentagon
   bossRng:      2,      // ... and above this calls createBoss(). 2 = never.
+  maxBoss:      0,      // how many bosses may be alive at once. 0 = the mode has none.
+  bossHp:       20000,
+  bossTeam:     9,      // bosses are on nobody's side; 9 is the 'necro' colour
   botCount:     10,
   botIdStart:   10,     // bots occupy a fixed slot range so respawn can find them
   teams:        [1],    // the team ids this mode assigns. One entry = free-for-all.
@@ -109,9 +126,15 @@ class Room {
     };
     this.timestamp = 0;
     this.bots = [];
-    this.boss = null;
+    // Every boss currently alive. A list rather than a single slot because 'boss' mode runs
+    // several at once; modes with rules.maxBoss 0 never put anything in it.
+    this.bosses = [];
+    // Counts down to the next generate() pass. Init() sets it; step() decrements it.
+    this.generateIn = FIRST_GENERATE;
     this.build();
-    setTimeout((it)=>{it.Init(); it.update()},this.rules.bootDelay,this);
+    // A one-shot delay, not a self-re-arming chain: at the end of it the room joins the
+    // shared fixed-step clock (lib/clock.js) and every tick after this one comes from there.
+    setTimeout((it)=>{it.Init(); clock.add(it);},this.rules.bootDelay,this);
   }
   /*
     Anything a mode needs standing in the world before the first tick - 2team's base
@@ -120,12 +143,12 @@ class Room {
   build(){}
   Init(){
     for(let i = 0; i<this.rules.preGenerate; i++){
-      this.generate(0);
+      this.generate();
     }
     this.createAi();
-    setTimeout(function(it){it.generate()},300,this);
+    this.generateIn = FIRST_GENERATE;
   }
-  generate(go = 1){
+  generate(){
     if(this.destroy){return;}
     const RNG = Math.random();
     ///SQUARE///
@@ -168,11 +191,8 @@ class Room {
     }
     ///BOSSES///
     if(RNG>this.rules.bossRng){
-      if(!this.boss && Math.random()>0.3){this.createBoss()}
+      if(Math.random()>0.3){this.createBoss()}
     }
-    if(go){
-      setTimeout(function(it){it.generate()},400,this)
-    };
   }
   createObj(type,pos){
     let ppp = -1;
@@ -235,9 +255,54 @@ class Room {
   botBudget(humanCount){
     return Math.max(0,this.rules.botCount-humanCount);
   }
-  /* Modes with a boss override this. The base no-op is what makes the 'summonRandBoss'
-     admin command harmless in modes that have none. */
-  createBoss(){}
+  /*
+    Spawn one boss into a free player slot, if the mode has bosses and is not already at its
+    limit. rules.maxBoss 0 makes this a no-op, which is what keeps the 'summonRandBoss' admin
+    command harmless in ffa and 2team.
+
+    This used to be a 30-line override in rooms/TwoTeam.js and a no-op here. There is nothing
+    2-team about it - the only mode-specific parts were the team (now rules.bossTeam) and the
+    hit points (rules.bossHp) - so it moved up, which is what let rooms/BossMode.js be 30
+    lines instead of a third copy.
+  */
+  createBoss(){
+    if(this.bosses.length >= this.rules.maxBoss){ return; }
+    let spec = RT.CONFIG.BOSS[parseInt(Math.random()*RT.CONFIG.BOSS.length)];
+    let slot = -1;
+    for(let i = 0; i<=this.maxPlayer; i++){
+      if(typeof(this.INSTANCE.players[i]) === "undefined"){ slot = i; break; }
+    }
+    if(slot < 0){ return; }
+    ///
+    let randDir = Math.PI*2*Math.random();
+    let boss = new RT.Player(
+      {"GM":this.gm,"sId":this.id,"oId":slot},
+      Math.cos(randDir)*this.map.width/4,
+      Math.sin(randDir)*this.map.width/4,
+      spec[2],
+      this.rules.bossTeam,
+      this.XPLVL
+    );
+    boss.hp     = this.rules.bossHp;
+    boss.maxHp  = this.rules.bossHp;
+    boss.boss   = 1;
+    boss.size   = 64;
+    boss.class  = spec[2];
+    boss.screen = CLASS[boss.class].screen;
+    boss.prize  = 100000;
+    boss.xp     = 100000;
+    boss.shield = 0;
+    boss.motion = spec[0].bind(boss);
+    boss.update = spec[1].bind(boss);
+    this.bosses.push(boss);
+    this.INSTANCE.players[slot] = boss;
+    ///
+    for(let p of this.INSTANCE.players){
+      if(typeof p === "undefined" || !isNaN(p) || p.bot || p.boss){ continue; }
+      p.mess.push('Tremble at the sight of the '+spec[2]+' !');
+    }
+    return boss;
+  }
   createBullet(bullet,origine){
     this.assignBulletTeam(bullet,origine);
     bullet.map = this.map;
@@ -253,14 +318,30 @@ class Room {
       }
     }
   }
+  /* A bullet belongs to whoever fired it. The dev 'color' command tints it without moving
+     it to another side - bulletColor() is what reads that. */
   assignBulletTeam(bullet,origine){
-    bullet.team = origine.dev.color ? origine.dev.color-1 : this.rules.teams[0];
+    bullet.team = origine.team;
+    if(origine.dev.color){
+      bullet.color = origine.dev.color;
+    }
   }
-  update(){
+  /*
+    One fixed simulation step. lib/clock.js calls this; it does not schedule itself.
+
+    It used to end with setTimeout(update,20), which made the tick rate "20ms plus however
+    long the last tick took" and let it drift arbitrarily far under load - see the note at
+    the top of lib/clock.js for why that showed up as stutter on the client.
+  */
+  step(){
     let stop = 1;
     let playerCount = 0;
     for(let i of this.INSTANCE.players){
-      if(i && !i.bot){
+      // A boss is not a bot - it has its own AI, not RT.CONFIG.BOTS - so it used to satisfy
+      // this "is anyone still here?" test and keep an empty room ticking forever. Latent in
+      // 2team, where a boss is a once-in-ten-thousand-rolls event; certain in 'boss' mode,
+      // which keeps three of them alive at all times.
+      if(i && !i.bot && !i.boss){
         playerCount++;
         stop = 0;
       }
@@ -269,7 +350,13 @@ class Room {
       this.destroy = 1;
       console.log(cc.Bright+cc.BgYellow+'DELETED SERVER //'+cc.Reset+' '+this.gm+':'+this.id);
       delete RT.Controller.server[this.gm][this.id];
+      clock.remove(this);
       return;
+    }
+    ///SPAWNING/// (was a separate setTimeout(400) chain)
+    if(--this.generateIn <= 0){
+      this.generateIn = GENERATE_EVERY;
+      this.generate();
     }
     ///MAP///
     if(Math.abs(this.map.width-this.newMap.width)>0.1){
@@ -294,9 +381,11 @@ class Room {
       }
     }
     ///BOSS///
-    if(this.boss && this.boss.destroy == 1){
-      this.boss.state.disconnect = 1;
-      this.boss = null;
+    for(let b = this.bosses.length-1; b>=0; b--){
+      if(this.bosses[b].destroy == 1){
+        this.bosses[b].state.disconnect = 1;
+        this.bosses.splice(b,1);
+      }
     }
     ///LEAD+ ADD TO QT///
     this.timestamp++;
@@ -539,8 +628,6 @@ class Room {
         obj.update();
       }
     }
-    ///
-    setTimeout(function(it){it.update()},20,this);
   }
   /* Team modes fence each side out of the other's base. Anything in there dies. */
   inEnemyBase(obj){
@@ -770,9 +857,11 @@ class Room {
     };
     return buff;
   }
-  /* Colour of another tank, as everyone sees it. Cached, so it cannot depend on the viewer. */
+  /* Colour of another tank, as everyone sees it. Cached, so it cannot depend on the viewer.
+     Bosses keep their own team colour in every mode - they are on nobody's side, and a boss
+     that renders as just another red tank is not readable. */
   entityColor(player){
-    return 1;
+    return player.boss ? player.team : 1;
   }
   /* Colour of your own tank on your own screen. */
   mainColor(player){
@@ -807,9 +896,24 @@ class Room {
     this.INSTANCE.players[id].mess = [];
     return buff;
   }
-  /* Which side a joining player lands on. One-team modes always answer the same thing. */
+  /* Which side a joining player lands on: the thinnest one, coin toss when they are level.
+     A one-team mode has exactly one answer, so free-for-all falls out of the same code. */
   assignTeam(){
-    return this.rules.teams[0];
+    let count = new Array(this.rules.teams.length).fill(0);
+    for(let p of this.INSTANCE.players){
+      if(typeof p === "undefined" || !isNaN(p)){continue;}
+      let t = this.rules.teams.indexOf(p.team);
+      if(t>=0){count[t]++;}
+    }
+    let smallest = 0;
+    for(let i = 1; i<count.length; i++){
+      if(count[i]<count[smallest]){smallest = i;}
+    }
+    let tied = count.filter((n)=>n === count[smallest]).length;
+    if(tied === count.length){
+      smallest = parseInt(Math.random()*count.length);
+    }
+    return this.rules.teams[smallest];
   }
   ask(data){
     let name = data.name;

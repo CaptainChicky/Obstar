@@ -118,8 +118,10 @@ function checkGameUpdates(buffers){
 
 /// 2. Live server ////////////////////////////////////////////////////////////
 /*
-  Run once per gamemode. Ffa and TwoTeam live in separate modules and share ~90% of their
-  code by copy-paste, so a change that only breaks one of them is the realistic failure.
+  Run once per gamemode. Every mode is a different set of rules over the same tick, and the
+  realistic failure is a change that only breaks one of them - '4team' in particular is the
+  first mode with more than two sides, and 'boss' the first with entities that run their own
+  update() rather than the shared one.
 */
 function serverTests(gamemode, port, done){
   console.log('server (' + gamemode + '):');
@@ -222,7 +224,7 @@ console.log('obstar smoke test\n');
 protocolTests();
 
 // Sequential, not parallel: config.MAX_IP caps concurrent connections per IP at 2.
-let modes = [['ffa', PORT], ['2team', PORT + 1]];
+let modes = [['ffa', PORT], ['2team', PORT + 1], ['4team', PORT + 2], ['boss', PORT + 3]];
 (function next(){
   if(!modes.length){
     console.log('\n' + passed + ' passed, ' + failed + ' failed');

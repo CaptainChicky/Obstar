@@ -10,9 +10,17 @@
   somebody else made, which is what lets server.js put the game and the menu site on one
   port in one process (and still split them onto two when asked).
 
-  Timing note, unchanged from the original: `gameloop` re-arms itself with setTimeout(30)
-  and `longloop` with setTimeout(1000). Both drift under load, and neither is tied to the
-  room simulation's own ~50Hz setTimeout(20) chain.
+  Timing. `gameloop` sends a GameUpdate about every 30ms and `longloop` a heartbeat every
+  second. Neither is tied to the room simulation, and that is deliberate (HANDOFF 8.8): the
+  rooms run at a fixed 50Hz on the shared clock in lib/clock.js, and a send is just a
+  snapshot of whatever the simulation had reached when the timer fired. Nothing has to divide
+  evenly, and a slow send cannot slow the simulation down.
+
+  What did change is that both loops now aim at a *deadline* instead of re-arming with a flat
+  setTimeout(30). setTimeout means "in at least 30ms", so the old chain paid for its own work
+  every time round and the send rate sagged under load - the client saw that as jitter,
+  because its interpolation is driven by the spacing packets actually arrive with. The delay
+  is computed from when the next send was due, so overrun is absorbed rather than accumulated.
 */
 const RT        = require('../lib/runtime.js');
 const config    = require('../lib/config.js').config;
@@ -139,6 +147,22 @@ function attach(httpServer){
     }
   };
 
+  const SEND_MS = 30;    // target spacing between GameUpdate packets
+  const IDLE_MS = 200;   // ...while the client has nothing to look at yet
+  /*
+    Next firing time for a self-re-arming loop, as a delay in ms. `due` is carried on the
+    loop object and advanced by exactly `period` each time, so the average rate is the period
+    even when a tick runs long. If we fall more than one period behind - a real stall, not
+    a rounding error - the deadline resets to now rather than firing a catch-up burst.
+  */
+  function nextDelay(it,key,period){
+    let now = Date.now();
+    let due = (it[key] || now)+period;
+    if(due < now-period){ due = now+period; }
+    it[key] = due;
+    return Math.max(0,due-now);
+  }
+
   function loop(socket){
     this.socket = socket;
     this.strikes = 0;
@@ -147,17 +171,19 @@ function attach(httpServer){
     this.heartbeats = 0;
     this.run = 1;
     this.chat = 0;
+    this.sendDue = 0;
+    this.slowDue = 0;
     this.gameloop = function(){
       if(!this.run){return;}
       if(this.chat){
         this.chat--;
       }
       let id = RT.Controller.clients[this.socket.id];
-      let ms = 30;
+      let ms = SEND_MS;
       ///
       switch(id){
         case 'Waiting':{
-          ms = 200;
+          ms = IDLE_MS;
           break;
         }
         case 'ERR_GAMEMODE':
@@ -179,7 +205,7 @@ function attach(httpServer){
           if(buff){
             talk(this.socket,'GameUpdate',buff);
           } else {
-            ms = 200;
+            ms = IDLE_MS;
           }
           let mess = RT.Controller.chat.get(socket.id);
           if(mess){
@@ -189,7 +215,10 @@ function attach(httpServer){
         }
       }
       ///
-      setTimeout((it)=>{it.gameloop()},ms,this);
+      // A send that ran long eats into the next delay instead of pushing it back, so the
+      // spacing the client measures stays close to `ms`.
+      if(ms !== this.sendPeriod){ this.sendPeriod = ms; this.sendDue = 0; }
+      setTimeout((it)=>{it.gameloop()},nextDelay(this,'sendDue',ms),this);
     };
     this.longloop = function(){
       if(!this.run){return;}
@@ -226,7 +255,7 @@ function attach(httpServer){
       }
       this.heartbeats++;
       /////
-      setTimeout((it)=>{it.longloop()},1000,this);
+      setTimeout((it)=>{it.longloop()},nextDelay(this,'slowDue',1000),this);
     };
     this.gameloop();
     this.longloop();

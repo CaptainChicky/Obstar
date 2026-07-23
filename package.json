@@ -5,9 +5,12 @@
         "start": "node server.js",
         "start:game": "node server.js --game-only",
         "start:web": "node server.js --web-only",
-        "test": "node test/proto.js && node test/rooms.js && node test/smoke.js && node test/web.js",
+        "test": "node test/proto.js && node test/interp.js && node test/clock.js && node test/rooms.js && node test/client.js && node test/smoke.js && node test/web.js",
         "test:proto": "node test/proto.js",
+        "test:interp": "node test/interp.js",
+        "test:clock": "node test/clock.js",
         "test:rooms": "node test/rooms.js",
+        "test:client": "node test/client.js",
         "test:smoke": "node test/smoke.js",
         "test:web": "node test/web.js"
     },

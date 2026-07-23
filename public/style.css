@@ -64,6 +64,9 @@ body {
 #gamemode-box .team4{
   background-image: radial-gradient(circle, #ffc775, #ffa563, #ff7d63, #ff5073, #ff0f8f);
 }
+#gamemode-box .bossgm{
+  background-image: linear-gradient(to left top, #2b1055, #4b1f7a, #7028a0, #9d3fbf, #c65ed6);
+}
 #gamemode-box .button{
   user-select: none;
   cursor: pointer;
