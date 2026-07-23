@@ -1,8 +1,9 @@
 /*
   Player - the tank entity: motion, shooting, upgrades, class changes, collision.
 
-  Extracted from Alex.js. Cross-entity and Controller references go through the late-bound
-  registry (lib/runtime.js) because the dependency graph is circular - see the note there.
+  Extracted from the old Alex.js monolith (now server.js + lib/ + rooms/ + entities/).
+  Cross-entity and Controller references go through the late-bound registry
+  (lib/runtime.js) because the dependency graph is circular - see the note there.
 */
 const RT         = require('../lib/runtime.js');
 const Vec        = require('victor');
@@ -11,6 +12,7 @@ const cc         = require('../lib/terminal.js');
 const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION   = require('../lib/constants.js').FRICTION;
+const KIND       = require('../lib/kinds.js');
 
 class Player {
   constructor(id,x,y,name,team,xpLvl){
@@ -308,8 +310,8 @@ class Player {
       return;
     }
     let oldHp = this.hp;
-    switch(other.constructor.name){
-      case "Player":
+    switch(other.kind){
+      case KIND.PLAYER:
         this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(0.3,0.3)));
         if(option.noDam || this.shield){break;}
         this.hp-=other.damage;
@@ -325,7 +327,7 @@ class Player {
           }
         }
         break;
-      case "Objects":
+      case KIND.OBJECTS:
         let len = (this.vec.length()<0.5) ? 2 : .5;
         this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(len,len)));
         if(this.necro && other.type == 'sqr' && this.droneCount<CLASS[this.class].maxDrone+this.upNb[1]){
@@ -347,7 +349,7 @@ class Player {
         this.hit = 2;
         if(this.hp <= 0){this.dead = config.DEAD_DELAY; this.murder = ["objs",other.id];this.destroy = config.DES}
         break;
-      case 'Bullet':
+      case KIND.BULLET:
         if(option.noDam){break;}
         if(other.origine.oId == this.id.oId){
           return;
@@ -457,5 +459,9 @@ class Player {
     }
   }
 }
+
+// Type tag for collision / buffer dispatch - on the prototype, so it costs nothing per
+// instance. See lib/kinds.js for why this replaced `constructor.name`.
+Player.prototype.kind = KIND.PLAYER;
 
 module.exports = Player;

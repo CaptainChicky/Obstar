@@ -1,7 +1,7 @@
 /*
-  End-to-end smoke test. Boots a real Alex.js on a throwaway port, connects a real
-  WebSocket, performs the binary `init` handshake, and asserts that the server simulates
-  and streams GameUpdate packets back.
+  End-to-end smoke test. Boots a real server.js --game-only on a throwaway port, connects a
+  real WebSocket, performs the binary `init` handshake, and asserts that the server
+  simulates and streams GameUpdate packets back.
 
   This exists so the protocol and room code can be refactored without a browser in the
   loop. It is deliberately blunt: it does not check gameplay values, only that the pipe
@@ -118,13 +118,15 @@ function checkGameUpdates(buffers){
 
 /// 2. Live server ////////////////////////////////////////////////////////////
 /*
-  Run once per gamemode. Sffa and S2team live in separate modules and share ~90% of their
+  Run once per gamemode. Ffa and TwoTeam live in separate modules and share ~90% of their
   code by copy-paste, so a change that only breaks one of them is the realistic failure.
 */
 function serverTests(gamemode, port, done){
   console.log('server (' + gamemode + '):');
 
-  let child = fork(path.join(ROOT, 'Alex.js'), {
+  // --game-only: the test drives the binary protocol, and there is no reason to stand the
+  // Express site up (or to fight whatever else holds port 80) to do that.
+  let child = fork(path.join(ROOT, 'server.js'), ['--game-only'], {
     cwd: ROOT,
     env: Object.assign({}, process.env, {PORT: String(port)}),
     silent: true
@@ -150,7 +152,7 @@ function serverTests(gamemode, port, done){
   }
 
   child.on('exit', function(code){
-    if(!finished){ finish('Alex.js exited early with code ' + code); }
+    if(!finished){ finish('server.js exited early with code ' + code); }
   });
 
   // The server prints "Server started on port N" once listening. Poll the port instead of

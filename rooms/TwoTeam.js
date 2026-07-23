@@ -1,5 +1,5 @@
 /*
-  S2team - two sides, a base each, and a boss that turns up about once every ten thousand
+  TwoTeam - two sides, a base each, and a boss that turns up about once every ten thousand
   spawn rolls.
 
   The simulation lives in rooms/Room.js. What is left here is what actually makes this a
@@ -12,7 +12,7 @@ const RT   = require('../lib/runtime.js');
 const Room = require('./Room.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 
-class S2team extends Room {
+class TwoTeam extends Room {
   constructor(id){
     super(id,{
       gm:            '2team',
@@ -161,4 +161,4 @@ class S2team extends Room {
   }
 };
 
-module.exports = S2team;
+module.exports = TwoTeam;

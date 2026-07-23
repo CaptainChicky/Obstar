@@ -1,8 +1,9 @@
 /*
   Objects - the farmable polygons (squares, triangles, pentagons).
 
-  Extracted from Alex.js. Cross-entity and Controller references go through the late-bound
-  registry (lib/runtime.js) because the dependency graph is circular - see the note there.
+  Extracted from the old Alex.js monolith (now server.js + lib/ + rooms/ + entities/).
+  Cross-entity and Controller references go through the late-bound registry
+  (lib/runtime.js) because the dependency graph is circular - see the note there.
 */
 const RT         = require('../lib/runtime.js');
 const Vec        = require('victor');
@@ -11,6 +12,7 @@ const cc         = require('../lib/terminal.js');
 const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION   = require('../lib/constants.js').FRICTION;
+const KIND       = require('../lib/kinds.js');
 
 class Objects {
   constructor(type,pos,id,map){
@@ -76,7 +78,7 @@ class Objects {
       case "Bsqr": this.size = 90;this.hp = 8000;this.prize = 2000;this.maxspeed=0.01;this.weight = 100;break;
       case "Btri": this.size = 72;this.hp = 7000;this.prize = 1000;this.maxspeed=0.01;this.weight = 100;break;
       case "bull": this.size = 12;this.hp = 15; this.prize = 12; this.maxspeed = .42;this.damage = 7;
-                   this.DETEC = new RT.Detector(this,this.x,this.y,500,type = ['Player']);break;
+                   this.DETEC = new RT.Detector(this,this.x,this.y,500,type = [KIND.PLAYER]);break;
     }
     this.coinReward *= parseInt(this.prize/10);
     switch(this.type){
@@ -117,8 +119,8 @@ class Objects {
   }
   collision(other,option = {}){
     let len = (this.vec.length()*this.weight<0.4) ? 2 : .4;
-    switch(other.constructor.name){
-      case "Player":
+    switch(other.kind){
+      case KIND.PLAYER:
         if(other.necro && this.type == 'sqr' && other.droneCount<CLASS[other.class].maxDrone+other.upNb[1]){
           this.destroy = 1;
           return;
@@ -128,14 +130,14 @@ class Objects {
         this.hit = 2;
         if(this.hp <= 0){this.destroy = config.DES;other.xp += this.prize;other.coins+=this.coinReward}
         break;
-      case "Objects":
+      case KIND.OBJECTS:
         if(other.type == 'bull'){
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(0.1,0.1)));
           return;
         }
         this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(len,len)));
         break;
-      case 'Bullet':
+      case KIND.BULLET:
         if(other.necro && this.type == 'sqr'){
           let play = RT.Controller.server[other.origine.GM][other.origine.sId].INSTANCE.players[other.origine.oId];
           if(play.droneCount<CLASS[play.class].maxDrone+play.upNb[1]){
@@ -204,5 +206,8 @@ class Objects {
     };
   }
 }
+
+// Type tag for collision / buffer dispatch - see lib/kinds.js.
+Objects.prototype.kind = KIND.OBJECTS;
 
 module.exports = Objects;

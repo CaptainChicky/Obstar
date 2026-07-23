@@ -1,11 +1,14 @@
 /*
-  The network layer: an http server that 404s everything (it exists only to host the
-  WebSocket upgrade) plus the ws server itself.
+  The game's WebSocket layer.
 
   Contains the packet router `income()`, the per-socket `loop` object that drives the two
   outbound timers, and the `talk` / `kick` helpers. Everything gameplay-related is reached
   through RT.Controller, which does not exist yet when this module loads - see
   lib/runtime.js.
+
+  This module owns no port. `attach(httpServer)` hangs a ws server off an http server
+  somebody else made, which is what lets server.js put the game and the menu site on one
+  port in one process (and still split them onto two when asked).
 
   Timing note, unchanged from the original: `gameloop` re-arms itself with setTimeout(30)
   and `longloop` with setTimeout(1000). Both drift under load, and neither is tied to the
@@ -13,16 +16,10 @@
 */
 const RT        = require('../lib/runtime.js');
 const config    = require('../lib/config.js').config;
-const http      = require('http');
 const WebSocket = require('ws');
 const PROTO     = require('../public/SHARE/SocketSchema.js');
 
-const server = http.createServer(function(request, response){
-    response.writeHead(404);
-    response.end();
-});
-
-const ws = (function(){
+function attach(httpServer){
 
 
   function income(socket,packet){
@@ -249,19 +246,13 @@ const ws = (function(){
     setTimeout((s)=>{s.close()},100,socket);
   }
 
-  let wss = new WebSocket.Server({server});
+  let wss = new WebSocket.Server({server: httpServer});
   wss.on('connection', function(socket){
     socket.id = 'Waiting';
     socket.on('message', (packet)=>{income(socket,packet)});
     socket.on('close', () => {})
   });
   return wss;
-})();
+}
 
-exports.server = server;
-exports.ws     = ws;
-exports.listen = function(port){
-  server.listen(port, function(){
-    console.log('Server started on port ' + server.address().port);
-  });
-};
+exports.attach = attach;

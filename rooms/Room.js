@@ -1,7 +1,7 @@
 /*
   Room - the shared simulation behind every gamemode.
 
-  Sffa and S2team used to be two ~750-line files that were roughly 90% the same code and
+  Ffa and TwoTeam used to be two ~750-line files that were roughly 90% the same code and
   had already drifted apart in a dozen places (HANDOFF.md 5.8). Everything genuinely shared
   - the tick, the quadtree, collision, spawning, the leaderboard, the per-player view
   builder - now lives here exactly once. A gamemode is a subclass that hands super() a block
@@ -21,9 +21,9 @@
     ownBulletColor(b,you)   your own colour                only used when rules.viewerBullets
     leaderColor(p,id)       you 0, everyone else 1
 
-  The defaults are free-for-all's behaviour, so Sffa overrides almost nothing.
+  The defaults are free-for-all's behaviour, so Ffa overrides almost nothing.
 
-  Adding a mode means writing one of these subclasses - see rooms/S2team.js for the biggest
+  Adding a mode means writing one of these subclasses - see rooms/TwoTeam.js for the biggest
   one there is. Nothing outside rooms/ needs to know a new mode exists beyond the ROOMS
   table in lib/Controller.js and the gamemode whitelist in Controller.askConnection.
 
@@ -38,6 +38,7 @@ const quadTree   = require('../lib/quadTree.js');
 const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION   = require('../lib/constants.js').FRICTION;
+const KIND       = require('../lib/kinds.js');
 
 /*
   Every knob a gamemode can turn without writing code. A subclass spreads its own values
@@ -390,12 +391,12 @@ class Room {
           if(other.getPlace == 0 || obj.getPlace == 0){
             continue;
           }
-          let otherCLASS = other.constructor.name;
-          let objCLASS = obj.constructor.name;
+          let otherKind = other.kind;
+          let objKind = obj.kind;
           ///
           if(other.destroy>=1){continue;}
-          if(objCLASS == 'Detector' && otherCLASS == 'Detector'){continue;}
-          if(obj.id.oId == other.id.oId && objCLASS == otherCLASS){continue;}
+          if(objKind == KIND.DETECTOR && otherKind == KIND.DETECTOR){continue;}
+          if(obj.id.oId == other.id.oId && objKind == otherKind){continue;}
           let dis = Math.sqrt(Math.pow(other.x-obj.x,2)+Math.pow(other.y-obj.y,2));
           if((isNaN(other.getPlace) || isNaN(obj.getPlace)) && (!this.rules.teamPlay || other.team != obj.team)){
             if(obj.DETEC && obj.DETEC.enabled){
@@ -412,10 +413,10 @@ class Room {
             if(obj.size > other.size || obj.x+obj.y >= other.x+other.y){
               ///
               if(other.getPlace || obj.getPlace){
-                if(other.getPlace && objCLASS == 'Player'){
+                if(other.getPlace && objKind == KIND.PLAYER){
                   other.getPlace = 0;
                 }
-                if(obj.getPlace && otherCLASS == 'Player'){
+                if(obj.getPlace && otherKind == KIND.PLAYER){
                   obj.getPlace = 0;
                 }
                 continue;
@@ -427,35 +428,35 @@ class Room {
               ///
               let objOption = {};
               let otherOption = {};
-              if(this.rules.teamPlay && objCLASS != 'Objects' && otherCLASS != 'Objects' && obj.team == other.team){
+              if(this.rules.teamPlay && objKind != KIND.OBJECTS && otherKind != KIND.OBJECTS && obj.team == other.team){
                 objOption.noDam = 1;
                 otherOption.noDam = 1;
               }
-              if(objCLASS == 'Bullet'){
+              if(objKind == KIND.BULLET){
                 otherOption.pene = obj.pene;
               }
-              if(otherCLASS == 'Bullet'){
+              if(otherKind == KIND.BULLET){
                 objOption.pene = other.pene;
               }
               other.collision(obj,otherOption);
               obj.collision(other,objOption);
-              if(objCLASS == 'Bullet'){
+              if(objKind == KIND.BULLET){
                 if(other.destroy && other.prize){
                   if(this.INSTANCE.players[obj.origine.oId]){
                     this.INSTANCE.players[obj.origine.oId].xp+=other.prize;
                     this.INSTANCE.players[obj.origine.oId].coins+= other.coinReward || 0;
-                    if(otherCLASS == 'Player' && !this.INSTANCE.players[obj.origine.oId].bot){
+                    if(otherKind == KIND.PLAYER && !this.INSTANCE.players[obj.origine.oId].bot){
                       this.INSTANCE.players[obj.origine.oId].mess.push('You killed '+ other.name);
                     }
                   }
                 }
               }
-              if(otherCLASS == 'Bullet' && obj.prize){
+              if(otherKind == KIND.BULLET && obj.prize){
                 if(obj.destroy){
                   if(this.INSTANCE.players[other.origine.oId]){
                     this.INSTANCE.players[other.origine.oId].xp+=obj.prize;
                     this.INSTANCE.players[other.origine.oId].coins+=obj.coinReward || 0;
-                    if(objCLASS == 'Player' && !this.INSTANCE.players[other.origine.oId].bot){
+                    if(objKind == KIND.PLAYER && !this.INSTANCE.players[other.origine.oId].bot){
                       this.INSTANCE.players[other.origine.oId].mess.push('You killed '+ obj.name);
                     }
                   }
@@ -582,7 +583,7 @@ class Room {
     How much xp survives a death: a fractional power of what you had, floored at nothing and
     capped at 60% of the level-30 requirement. The Math.min matters - below roughly a
     thousand xp the curve returns *more* than it was given, so without it dying early is a
-    reward. (S2team was missing it; see HANDOFF.md 5.8.)
+    reward. (TwoTeam was missing it; see HANDOFF.md 5.8.)
   */
   respawnXp(xp){
     let mXp = this.XPLVL[this.XPLVL.length-1];
@@ -671,8 +672,8 @@ class Room {
       // colour rather than your team's, so they cannot come out of the shared cache.
       if(obj.BUFF.timestamp !== this.timestamp){
         let raw;
-        switch(obj.constructor.name){
-          case 'Player':{
+        switch(obj.kind){
+          case KIND.PLAYER:{
             obj.BUFF.len = 37+(obj.name.length*2)+(obj.canDir.length*2);
             raw = {
               construc: 'Players',
@@ -698,7 +699,7 @@ class Room {
             }
             break;
           };
-          case 'Objects':{
+          case KIND.OBJECTS:{
             obj.BUFF.len = 19;
             raw = {
               construc: 'Objects',
@@ -713,7 +714,7 @@ class Room {
             };
             break;
           };
-          case 'Bullet':{
+          case KIND.BULLET:{
             if(this.rules.viewerBullets && obj.origine.oId == RAW.main.id.oId){
               break;
             }
@@ -740,8 +741,8 @@ class Room {
         }
       }
       ///
-      switch(obj.constructor.name){
-        case 'Player':{
+      switch(obj.kind){
+        case KIND.PLAYER:{
           if(!obj.alpha){
             continue;
           }
@@ -750,7 +751,7 @@ class Room {
           }
           break;
         };
-        case 'Bullet':{
+        case KIND.BULLET:{
           if(this.rules.viewerBullets && obj.origine.oId == RAW.main.id.oId){
             let raw = new Int8Array(RT.Controller.encodeInst('Instance',{
               len: 21,

@@ -1,18 +1,36 @@
 # Obstar.io/Korexk.io server
 This is the original Obstar source code.
 The game still need a lot of work and love, I could help a little bit if some of you are planning on remaking a serious version of it.
+
+## Running it
+```bash
+npm install
+npm start          # http://localhost - game and menu site, one process, one port
+npm test           # rooms + protocol + web smoke tests
+```
+`PORT=3000 npm start` if port 80 is taken. See [HANDOFF.md](HANDOFF.md) for how the code is
+laid out and what is known to be broken.
+
 ## Prerequisites
-Run on nodejs 10 an above;
+Runs on Node 10 and above (verified on 24).
 All the dependencies are in package.json.
+
 ## Things you need to know
 The game could still be optimized. Also, the code is not clean, so it might be hard to understad what's happening. Again, if you are planning on working on it seriously, i could help a little bit.
 ###
-There is two main server files, ```obstarWeb.js``` and ```Alex.js```
-ObstarWeb.js is the web server, its handling the http request, the html/css/js files and the shop/leaderboad/accounts databases.
-Alex.js is the actual game.
+`server.js` is the only entry point. It runs the game simulation (a binary WebSocket
+protocol) and the Express site (menu page, static files, shop/leaderboard/accounts) on the
+same port.
 ###
-it's possible to put the web server, the game server and the mysql server on different machines.
-The files /lib/AlexMysql.js, /lib/webMysql.js, are both the config for to the mysql databse connection, and the file /public/share/ws_link.js is the link to the game server. (they are all set to localhost);
+It's still possible to put the web server, the game server and the mysql server on different
+machines:
+```bash
+node server.js --game-only                                   # box A, ws://…:8080
+WS_LINK=wss://game.example.com node server.js --web-only      # box B, http://…:80
+```
+WS_LINK is how the page finds the game server; leave it unset and the client just uses
+whatever origin served the page. MySQL credentials are in `/lib/dbConfig.js`, overridable
+with `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME`.
 ## Mysql Database
 To work, obstar needs a mysql database with the following tables:
 ###

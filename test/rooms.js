@@ -3,8 +3,8 @@
 
   smoke.js drives a real socket and proves the pipe from socket -> room -> encoder -> socket
   is intact, but every assertion it makes is true of any room. Teams, bases, bot rosters,
-  colours and respawn xp are exactly the things that differed between the old Sffa and
-  S2team copies, so they are exactly what a shared rooms/Room.js has to be pinned on. When
+  colours and respawn xp are exactly the things that differed between the old Ffa and
+  TwoTeam copies, so they are exactly what a shared rooms/Room.js has to be pinned on. When
   4team or boss gets written, this is the file that says whether the base still fits.
 
   No server and no socket: lib/boot.js fills the registry, and the rooms are built and
@@ -172,7 +172,7 @@ function teamTests(){
 /// Shared rules //////////////////////////////////////////////////////////////
 /*
   Dying must never pay. The xp curve returns more than it was given below roughly a
-  thousand xp, so the Math.min in Room.respawnXp is the whole point - S2team was missing it
+  thousand xp, so the Math.min in Room.respawnXp is the whole point - TwoTeam was missing it
   and low-level deaths were a small reward there. See HANDOFF.md 5.8.
 */
 function respawnTests(rooms){

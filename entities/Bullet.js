@@ -1,8 +1,9 @@
 /*
   Bullet - projectiles, including drone / trap / necro behaviour.
 
-  Extracted from Alex.js. Cross-entity and Controller references go through the late-bound
-  registry (lib/runtime.js) because the dependency graph is circular - see the note there.
+  Extracted from the old Alex.js monolith (now server.js + lib/ + rooms/ + entities/).
+  Cross-entity and Controller references go through the late-bound registry
+  (lib/runtime.js) because the dependency graph is circular - see the note there.
 */
 const RT         = require('../lib/runtime.js');
 const Vec        = require('victor');
@@ -11,6 +12,7 @@ const cc         = require('../lib/terminal.js');
 const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION   = require('../lib/constants.js').FRICTION;
+const KIND       = require('../lib/kinds.js');
 
 class Bullet {
   constructor(origine,x,y,direction,speed,exitSpeed){
@@ -56,8 +58,8 @@ class Bullet {
       this.destroy = config.DES;
     }
     if(other){
-      switch(other.constructor.name){
-        case "Player":
+      switch(other.kind){
+        case KIND.PLAYER:
            if(option.noDam){break;}
           if(this.origine.oId == other.id.oId){
             return;
@@ -66,7 +68,7 @@ class Bullet {
           this.pene -= Math.max(1,this.pene/5);
           if(this.pene <= 0){this.destroy = config.DES}
           break;
-        case "Objects":
+        case KIND.OBJECTS:
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.weight,this.weight)));
           if(this.necro && other.type == 'sqr'){
             let play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE.players[this.origine.oId];
@@ -88,7 +90,7 @@ class Bullet {
           this.pene -= Math.max(this.pene/2,1);
           if(this.pene <= 0){this.destroy = config.DES}
           break;
-        case 'Bullet':
+        case KIND.BULLET:
           if(other.origine.oId == this.origine.oId){
             if((parseInt(this.type) == 1 || parseInt(this.type) == 3) && this.type == other.type){
               this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.weight,this.weight)));
@@ -144,7 +146,7 @@ class Bullet {
         this.speed = this.maxspeed;
         ///
         if(!this.DETEC){
-          this.DETEC = new RT.Detector(play,this.x,this.y,300,['Player','Objects'])
+          this.DETEC = new RT.Detector(play,this.x,this.y,300,[KIND.PLAYER,KIND.OBJECTS])
           this.DETEC.team = this.team
         } else {
           this.DETEC.x = this.x;
@@ -200,7 +202,7 @@ class Bullet {
         }
         ///
         if(!this.DETEC){
-          this.DETEC = new RT.Detector(play,this.x,this.y,300,['Player','Objects'])
+          this.DETEC = new RT.Detector(play,this.x,this.y,300,[KIND.PLAYER,KIND.OBJECTS])
           this.DETEC.team = this.team
         } else {
           this.DETEC.x = this.x;
@@ -242,7 +244,7 @@ class Bullet {
         this.speed = this.maxspeed;
         ///
         if(!this.DETEC){
-          this.DETEC = new RT.Detector(play,this.x,this.y,1400,['Player','Objects'])
+          this.DETEC = new RT.Detector(play,this.x,this.y,1400,[KIND.PLAYER,KIND.OBJECTS])
           this.DETEC.team = this.team
         } else {
           this.DETEC.x = this.x;
@@ -288,7 +290,7 @@ class Bullet {
         this.pene = 200;
         ///
         if(!this.DETEC){
-          this.DETEC = new RT.Detector(this,this.x,this.y,1200,['Player'])
+          this.DETEC = new RT.Detector(this,this.x,this.y,1200,[KIND.PLAYER])
           this.DETEC.team = this.team
         } else {
           this.DETEC.x = this.x;
@@ -343,7 +345,7 @@ class Bullet {
         this.speed = this.maxspeed;
         ///
         if(!this.DETEC){
-          this.DETEC = new RT.Detector(play,this.x,this.y,300,['Player','Objects'])
+          this.DETEC = new RT.Detector(play,this.x,this.y,300,[KIND.PLAYER,KIND.OBJECTS])
           this.DETEC.team = this.team
         } else {
           this.DETEC.x = this.x;
@@ -463,5 +465,8 @@ class Bullet {
     }
   }
 }
+
+// Type tag for collision / buffer dispatch - see lib/kinds.js.
+Bullet.prototype.kind = KIND.BULLET;
 
 module.exports = Bullet;

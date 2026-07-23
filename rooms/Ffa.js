@@ -1,5 +1,5 @@
 /*
-  Sffa - the free-for-all room.
+  Ffa - the free-for-all room.
 
   Everything that used to be in here is now in rooms/Room.js, whose defaults *are*
   free-for-all's behaviour: one nominal team, friendly fire on, no bases, no boss, your own
@@ -8,7 +8,7 @@
 */
 const Room = require('./Room.js');
 
-class Sffa extends Room {
+class Ffa extends Room {
   constructor(id){
     super(id,{
       gm:          'ffa',
@@ -27,4 +27,4 @@ class Sffa extends Room {
   }
 };
 
-module.exports = Sffa;
+module.exports = Ffa;

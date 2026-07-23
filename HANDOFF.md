@@ -3,16 +3,20 @@
 Written for a fresh agent session tasked with refactoring this repo. It describes the code
 **as it actually is today**, including the parts that are wrong. Nothing here is aspirational.
 
-> **Status — updated 2026-07-22, after refactor chunks 1–5.**
-> Items 1–5 of the refactor order in §8 are **done and verified**. `Alex.js` is a 25-line
-> entry point instead of a 3918-line monolith, and the two ~750-line copy-paste room classes
-> are one 855-line [rooms/Room.js](rooms/Room.js) plus a 30-line and a 164-line subclass.
+> **Status — updated 2026-07-22, after refactor chunks 1–7.**
+> Items 1–7 of the refactor order in §8 are **done and verified**, except item 6 (the wire
+> protocol), which is deliberately still open and is now the next thing to do.
+> The 3918-line `Alex.js` monolith is gone; so are both of its names. There is now **one
+> entry point, [server.js](server.js), running one process on one port** — the two-servers
+> -you-must-both-remember-to-start arrangement is over (§1). `constructor.name` type dispatch
+> is gone (§5.9, [lib/kinds.js](lib/kinds.js)). Files whose names meant nothing outside the
+> original author's head were renamed (§2.2).
 > Sections below are marked ✅ DONE / ⬜ TODO throughout, and descriptions have been rewritten
 > to match the current tree — where a bug is fixed, the text says where the fix lives rather
-> than describing the old breakage. §8 items 6–10 are untouched and remain the roadmap.
+> than describing the old breakage.
 >
-> Verification: `npm test` → **80 passed, 0 failed** (51 room assertions + 29 protocol and
-> live-server assertions). Chunks 1–4 are committed; chunk 5 is not.
+> Verification: `npm test` → **88 passed, 0 failed** (51 room + 29 protocol/live-server +
+> 8 single-entry-point/web). Chunks 1–4 are committed; 5–7 are not.
 
 Obstar is an open-source clone of diep.io: a 2D multiplayer arena shooter. Players are tanks
 that shoot bullets, farm polygon "objects" for XP, level up, pick stat upgrades, and evolve
@@ -26,31 +30,44 @@ That is accurate.
 
 ```bash
 npm install     # ← the repo ships with NO node_modules; nothing runs until you do this
-npm start       # starts BOTH servers; if either dies, the other is taken down too
+npm start       # ONE process: game + menu site on http://localhost
 npm test        # boots a real server and drives it over the real binary protocol
 ```
 
-Then open <http://localhost>. The two servers are still **separate processes** and can still
-be run by hand in two terminals — `npm run start:game` (→ ws://localhost:8080) and
-`npm run start:web` (→ http://localhost:80), or plain `node Alex.js` / `node obstarWeb.js`.
-`npm start` just forks both via [scripts/dev.js](scripts/dev.js) so a crash in one is not
-silently survived by the other.
+Then open <http://localhost>. That is the whole procedure — `npm start` is `node server.js`,
+and the game's WebSocket is attached to the same http server Express is mounted on, so the
+browser reaches the simulation on the same origin that served the page. `PORT=3000 npm start`
+if something else holds `:80`.
 
-Verified end-to-end during this session: `GET /` returns 200 and renders `index.ejs`;
-`POST /play` renders `play.ejs`; a raw WebSocket client sent a binary `init` packet to
-`Alex.js` and received a continuous stream of `GameUpdate` packets. The game logic works.
+Split deployment (the topology the original supported, still available):
+
+```bash
+node server.js --game-only                                # ws://…:8080   (PORT overrides)
+WS_LINK=wss://game.example.com node server.js --web-only  # http://…:80
+```
+
+`WS_LINK` is handed to the browser through `POST.ws` in `play.ejs`; unset, the client
+computes `ws(s)://<same host>` itself. [public/SHARE/ws_link.js](public/SHARE/ws_link.js) is
+no longer a hardcoded `ws://localhost:8080`, so it no longer has to be edited to deploy and
+no longer breaks as mixed content behind TLS.
+
+Verified end-to-end during this session, and now asserted by [test/web.js](test/web.js):
+one `node server.js` serves `GET /` (index.ejs), `POST /play` (play.ejs), the static client
+files, **and** a live game socket, all on one port; a raw WebSocket client sends a binary
+`init` packet and receives a continuous stream of `GameUpdate` packets.
 
 ### Why it appeared "not running at all"
-Almost certainly one of these, in order of likelihood:
+Historically, one of these — the second is now impossible by construction:
 
 1. **`npm install` was never run.** There is no `node_modules` in the repo and no lockfile.
    Every `require` fails instantly.
-2. **Only one server was started.** Running just `obstarWeb.js` gives you a working menu page
-   that hangs forever when you press Play, because nothing is listening on `:8080`. Running
-   just `Alex.js` gives you no web page at all.
-3. **Port 80 is privileged/occupied.** On this machine it bound fine, but if IIS, Skype, or
-   another dev server holds `:80`, `obstarWeb.js` dies with `EADDRINUSE` or `EACCES`.
-   Workaround: `PORT=3000 node obstarWeb.js` — the port is read from `process.env.PORT`.
+2. ~~**Only one server was started.**~~ ✅ **FIXED (§8.11).** There used to be two entry
+   points. Running just `obstarWeb.js` gave you a menu page that hung forever on Play,
+   because nothing was listening on `:8080`; running just `Alex.js` gave you no web page at
+   all. There is one entry point now and it starts both halves.
+3. **Port 80 is privileged/occupied.** On this machine it binds fine, but if IIS, Skype, or
+   another dev server holds `:80`, `server.js` dies with `EADDRINUSE` or `EACCES`.
+   Workaround: `PORT=3000 npm start` — the port is read from `process.env.PORT`.
 4. ~~**Errors are swallowed and hidden.**~~ ✅ **FIXED.** Both entry files used to install a
    `process.on('uncaughtException')` handler that logged to `web_error.log` / `error.log` and
    **kept the process alive**, so a server could look "started" while being completely broken.
@@ -62,13 +79,8 @@ Almost certainly one of these, in order of likelihood:
 ### Ports and wiring
 | Thing | Where it's set | Default |
 |---|---|---|
-| Web server port | `obstarWeb.js` (last lines), `process.env.PORT` | 80 |
-| Game server port | `Alex.js` (last line: `net.listen(...)`), `process.env.PORT` | 8080 |
-| Client → game link | [public/SHARE/ws_link.js](public/SHARE/ws_link.js) | `ws://localhost:8080` |
-
-`ws_link.js` is a **one-line hardcoded global** (`window.WS_LINK = 'ws://localhost:8080'`).
-If you deploy, this must change, and it must become `wss://` behind TLS or browsers will
-block it as mixed content.
+| Server port | [server.js](server.js), `process.env.PORT` | 80 (8080 with `--game-only`) |
+| Client → game link | `process.env.WS_LINK` → `POST.ws` → [public/SHARE/ws_link.js](public/SHARE/ws_link.js) | same origin as the page |
 
 ### MySQL
 **Currently disabled and you do not need it.** `lib/config.js` exports `MYSQL: false` and all
@@ -76,7 +88,8 @@ four `DB` sub-flags false (commit `e190b51`, "now work without mysql"). With the
 accounts, the shop, the leaderboard, and dev-tokens are all bypassed: every player gets the
 anonymous key `'0'.repeat(25)`, the shop is hidden client-side via `POST.shop.HIDE`, and the
 leaderboard renders empty. The schema for re-enabling it is in the README. Credentials live in
-[lib/AlexMysql.js](lib/AlexMysql.js) and [lib/webMysql.js](lib/webMysql.js) (both localhost).
+[lib/dbConfig.js](lib/dbConfig.js) (localhost, `DB_HOST`/`DB_USER`/`DB_PASSWORD`/`DB_NAME`
+override it).
 **Warning: the MySQL paths are known-broken — see §5.** Do not assume flipping `MYSQL: true`
 works; it does not.
 
@@ -85,52 +98,55 @@ works; it does not.
 ## 2. Architecture
 
 ```
-Browser
-  ├── HTTP  ─────► obstarWeb.js  (Express)  :80   ── menu, static files, accounts/shop/LB
-  └── WS(binary) ► Alex.js       (ws)       :8080 ── the actual game simulation
+Browser ──► server.js  :80
+              ├── HTTP  ─► web/app.js       (Express) ── menu, static files, accounts/shop/LB
+              └── WS(bin) ► net/gameSocket.js (ws)    ── the actual game simulation
 ```
 
-The two servers **do not talk to each other**. They share only the MySQL database (when
-enabled) and the files in `public/SHARE/`. They can run on different machines. There is no
+The two halves **do not talk to each other** in process either: they share only the MySQL
+database (when enabled), the files in `public/SHARE/`, and now an http server. They can still
+be split onto different machines with `--game-only` / `--web-only`. There is no
 authentication between client and game server beyond a 25-char `userKey` cookie.
 
 ### File map
 
-Updated after the §8.4 split and the §8.5 room unification. Every file below `Alex.js` down
-to `scripts/dev.js` was carved out of the old monolith or added by the refactor.
+Updated after the §8.4 split, the §8.5 room unification and the §8.11 entry-point merge.
+Every file from `server.js` down to `test/web.js` was carved out of the old monolith or
+added by the refactor.
 
 | File | Lines | Role |
 |---|---|---|
-| [Alex.js](Alex.js) | 25 | Game server entry point. Installs the crash handler, calls `boot()`, listens. |
-| [obstarWeb.js](obstarWeb.js) | 182 | Express web server. Menu, cookies, shop purchase, leaderboard reads. |
+| [server.js](server.js) | 69 | **The only entry point.** Crash handler, flags, `boot()`, one http server, listens. |
+| [web/app.js](web/app.js) | 199 | `createApp()` — the Express site. Menu, cookies, shop purchase, leaderboard reads. Opens no port. |
 | [lib/boot.js](lib/boot.js) | 57 | Fills the `lib/runtime.js` registry in dependency order. Idempotent, opens no port. |
-| [net/server.js](net/server.js) | 256 | The http shell + the ws IIFE: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
+| [net/gameSocket.js](net/gameSocket.js) | 258 | `attach(httpServer)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
 | [lib/Controller.js](lib/Controller.js) | 581 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
 | [rooms/Room.js](rooms/Room.js) | 855 | **The simulation, once.** Tick, quadtree, collision, spawning, per-player views. |
-| [rooms/Sffa.js](rooms/Sffa.js) | 30 | Free-for-all: a block of tunables. `Room`'s defaults *are* ffa's behaviour. |
-| [rooms/S2team.js](rooms/S2team.js) | 164 | 2-team: teams, bases, guard drones, the boss, team colours. |
-| [entities/Player.js](entities/Player.js) | 456 | Tank entity: motion, shooting, upgrades, class changes, collision. |
-| [entities/Bullet.js](entities/Bullet.js) | 464 | Projectiles, including drone/trap/necro behaviour. |
-| [entities/Objects.js](entities/Objects.js) | 204 | Farmable polygons. |
-| [entities/Detector.js](entities/Detector.js) | 84 | Invisible "vision cone" query entity used by the AI. |
+| [rooms/Ffa.js](rooms/Ffa.js) | 30 | Free-for-all: a block of tunables. `Room`'s defaults *are* ffa's behaviour. |
+| [rooms/TwoTeam.js](rooms/TwoTeam.js) | 164 | 2-team: teams, bases, guard drones, the boss, team colours. |
+| [entities/Player.js](entities/Player.js) | 467 | Tank entity: motion, shooting, upgrades, class changes, collision. |
+| [entities/Bullet.js](entities/Bullet.js) | 472 | Projectiles, including drone/trap/necro behaviour. |
+| [entities/Objects.js](entities/Objects.js) | 213 | Farmable polygons. |
+| [entities/Detector.js](entities/Detector.js) | 94 | Invisible "vision cone" query entity used by the AI. |
 | [lib/gameAI.js](lib/gameAI.js) | 380 | Bot/boss/pet AI. A **factory** — the behaviour functions close over `Detector`, `Vec`, `FRICTION`, `CLASS`. |
 | [lib/quadTree.js](lib/quadTree.js) | 74 | Spatial index for broad-phase collision. |
 | [lib/runtime.js](lib/runtime.js) | 14 | **Late-bound registry.** Stands in for the old shared scope; read §2.1 before using it. |
-| [lib/crash.js](lib/crash.js) | 40 | Shared fail-fast crash handler for both entry points. |
+| [lib/crash.js](lib/crash.js) | 47 | Fail-fast crash handler. |
 | [lib/config.js](lib/config.js) | 25 | Live tunables/flags only. The dead `CONFIG` block is gone (§5.1). |
+| [lib/kinds.js](lib/kinds.js) | 33 | Entity type tags. Replaced `constructor.name` dispatch (§5.9). |
 | [lib/terminal.js](lib/terminal.js) | 32 | Terminal colour codes (`cc`). |
 | [lib/constants.js](lib/constants.js) | 4 | `FRICTION`. |
-| [lib/AlexMysql.js](lib/AlexMysql.js) / [lib/webMysql.js](lib/webMysql.js) | 7 each | DB credentials. |
-| [test/smoke.js](test/smoke.js) | 232 | End-to-end smoke test, 29 assertions. Real socket, real protocol. |
+| [lib/dbConfig.js](lib/dbConfig.js) | 18 | DB credentials, env-overridable. |
+| [test/smoke.js](test/smoke.js) | 234 | End-to-end smoke test, 29 assertions. Real socket, real protocol. |
 | [test/rooms.js](test/rooms.js) | 215 | Gamemode assertions, 51 of them. No socket — builds rooms via `boot()`. |
+| [test/web.js](test/web.js) | 167 | 8 assertions on the merged entry point: one port serves site + socket; split mode works. |
 | [test/clientProto.js](test/clientProto.js) | 27 | Loads `SocketSchema.js` in *client* mode inside Node, via `vm`. |
-| [scripts/dev.js](scripts/dev.js) | 31 | Forks both servers; kills both if either exits. |
-| [name.js](name.js) | ~100 | Bot name list. |
+| [lib/botNames.js](lib/botNames.js) | ~100 | Bot name list. |
 | [public/new2Init.js](public/new2Init.js) | 3241 | **The whole game client.** Rendering, input, UI, netcode. |
 | [public/SHARE/SocketSchema.js](public/SHARE/SocketSchema.js) | 1158 | Binary wire protocol. Dual-mode: runs on client *and* server. |
 | [public/SHARE/TanksConfig.js](public/SHARE/TanksConfig.js) | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. |
 | [public/SHARE/PetsConfig.js](public/SHARE/PetsConfig.js) | 132 | Cosmetic pet definitions. |
-| [public/SHARE/ws_link.js](public/SHARE/ws_link.js) | 1 | Game server URL. |
+| [public/SHARE/ws_link.js](public/SHARE/ws_link.js) | 18 | Game server URL: `POST.ws`, else the page's own origin. |
 | [public/queue.js](public/queue.js) | 155 | Menu page: gamemode selection, form submit. |
 | [public/shop.js](public/shop.js) | 344 | Menu page: pet shop carousel + purchase calls. |
 | [public/font.js](public/font.js) | 655 | Animated canvas background on the menu. |
@@ -151,7 +167,7 @@ construct entities, `Main` constructs rooms, and the AI closes over `Detector`. 
 
 `lib/runtime.js` is the explicit stand-in for that shared scope — an empty object (`RT`) that
 [lib/boot.js](lib/boot.js) fills in a documented order: entities → rooms → AI → `Controller`.
-[Alex.js](Alex.js) calls `boot()` and then listens, which is the fifth step and deliberately
+[server.js](server.js) calls `boot()` and then listens, which is the fifth step and deliberately
 not part of `boot()` — that is what lets [test/rooms.js](test/rooms.js) stand the whole game
 up without opening a port. Modules reach each other as `RT.Player`, `RT.Controller`, and so
 on; gamemodes are looked up in `RT.ROOMS`, keyed by the gamemode string.
@@ -165,24 +181,50 @@ exactly, which is what made the split safely verifiable. Breaking the cycles pro
 (dependency injection, or an event bus between `Controller` and the entities) is a reasonable
 follow-up once §8.5 lands.
 
+### 2.2 Renames — what used to be called what
+
+Several files were named after things that appear nowhere in the code. **`Alex` is one of
+them**: it was the game server's filename (`Alex.js`) and half of `AlexMysql.js`, and it
+occurs nowhere else in the repo, in any string, in any comment, in the README, or in the
+git history beyond those filenames. There is no `Alex` variable, class, table or endpoint.
+It reads as the original author's own name or nickname for the game process; nothing depends
+on it, and nothing explains it. It is gone.
+
+| Was | Is now | Why |
+|---|---|---|
+| `Alex.js` | [server.js](server.js) | Meaningless name; also now the *only* entry point (§8.11). |
+| `obstarWeb.js` | [web/app.js](web/app.js) | It is a module now, not an entry point — `createApp()`, no `listen`. |
+| `net/server.js` | [net/gameSocket.js](net/gameSocket.js) | "server" was ambiguous next to `server.js`; it is the ws layer. |
+| `lib/AlexMysql.js` + `lib/webMysql.js` | [lib/dbConfig.js](lib/dbConfig.js) | Two byte-identical files for two entry points that no longer exist. |
+| `rooms/Sffa.js` (`class Sffa`) | [rooms/Ffa.js](rooms/Ffa.js) (`class Ffa`) | The leading `S` meant "server"; every class here is server-side. |
+| `rooms/S2team.js` (`class S2team`) | [rooms/TwoTeam.js](rooms/TwoTeam.js) (`class TwoTeam`) | Same, plus a leading digit is awkward in a class name. |
+| `name.js` | [lib/botNames.js](lib/botNames.js) | A file called `name.js` at the repo root says nothing. |
+| `scripts/dev.js` | *(deleted)* | It existed only to fork the two entry points. There is one. |
+
+The gamemode **keys** are untouched: `'ffa'` and `'2team'` are what the client sends in the
+`init` packet and what `RT.ROOMS` is keyed by. Renaming those is a protocol change, not a
+rename.
+
 ---
 
 ## 3. The game server — read this before touching anything
 
 The 3918-line `Alex.js` described by earlier versions of this document no longer exists; its
 contents are the `net/`, `rooms/`, `entities/` and `lib/` files listed in §2, split along the
-class boundaries that were already there. `git show HEAD:Alex.js` still gets you the original
-if you need to diff behaviour against it — that is exactly how the split was checked.
+class boundaries that were already there. `git show 561ba88~1:Alex.js` still gets you the
+original if you need to diff behaviour against it — that is exactly how the split was checked.
 
 What survived unchanged is the *code*: the extraction was mechanical. Class bodies were moved
 verbatim, with only cyclic references rewritten to `RT.` prefixes (§2.1) and require paths
 adjusted for depth. The bugs fixed along the way are itemised in §5.
 
-One hazard worth naming, because it nearly caused a silent breakage during the split: **the
-whole codebase dispatches on `constructor.name` string literals** (§5.9). A rename that also
-touches string contents — `'Player'` → `'RT.Player'` — compiles fine, passes `node --check`,
-and silently breaks every collision branch. Any mechanical transform here must be
-string-literal and comment aware, and should be grepped for corrupted literals before it runs.
+One hazard worth naming, because it nearly caused a silent breakage during the split: the
+codebase used to dispatch on `constructor.name` string literals (§5.9). A rename that also
+touched string contents — `'Player'` → `'RT.Player'` — compiled fine, passed `node --check`,
+and silently broke every collision branch. That dispatch is now `obj.kind` against the
+constants in [lib/kinds.js](lib/kinds.js), so class names are free to move, but the general
+lesson stands: any mechanical transform here must be string-literal and comment aware, and
+should be grepped for corrupted literals before it runs.
 
 ### Loops and timing
 There is **no single game loop**. Timing is a mesh of independent `setTimeout` chains:
@@ -217,9 +259,10 @@ index can be recycled to a different entity between frames.
 ### Collision
 Per tick: rebuild a `quadTree`, insert every live entity, then `query()` with an AABB overlap
 test, then call `a.collision(b, {dis})` for each candidate pair. Each entity class implements
-its own `collision()` with type-name string dispatch (`other.constructor.name == 'Bullet'`).
-**`constructor.name` string comparison is used for all type dispatch across the codebase** —
-this breaks under any minifier, and is the reason you can't bundle the server.
+its own `collision()`, dispatching on the other entity's type: `switch(other.kind)` against
+the constants in [lib/kinds.js](lib/kinds.js). `kind` sits on each class's *prototype*, so it
+costs nothing per instance. This used to be `other.constructor.name == 'Bullet'`, which broke
+under any minifier — see §5.9.
 
 ---
 
@@ -305,7 +348,7 @@ the original handoff so older references still resolve.
    **336 NaN-sized entities reach the wire with the bug, 0 without it.** `test/smoke.js` asserts
    no entity ever ships a non-finite `x`/`y`/`size`, so this cannot silently regress.
 
-3. ✅ **FIXED — `obstarWeb.js` `c.DB.AC` typo for `.ACC`.** The account-lookup branch on `GET *`
+3. ✅ **FIXED — the web server's `c.DB.AC` typo for `.ACC`.** The account-lookup branch on `GET *`
    was unreachable. Still dormant (MySQL is off), but correct now.
 
 4. ✅ **FIXED — malformed SQL in the leaderboard query.** `ORDER BY score c.DESC` contained a
@@ -323,8 +366,8 @@ the original handoff so older references still resolve.
 8. ✅ **FIXED — `Sffa` and `S2team` were ~90% duplicated** (710 / 787 lines). The simulation
    now lives once in [rooms/Room.js](rooms/Room.js); a gamemode is a subclass that passes a
    block of tunables to `super()` and overrides a handful of named hooks (the table at the
-   top of `Room.js` lists all twelve). `Sffa` is 30 lines because `Room`'s defaults *are*
-   free-for-all's behaviour; `S2team` is 164 and carries everything that makes it a team
+   top of `Room.js` lists all twelve). `Ffa` is 30 lines because `Room`'s defaults *are*
+   free-for-all's behaviour; `TwoTeam` is 164 and carries everything that makes it a team
    mode. `4team` and `boss` still have no class — see §10, that is a product question, not a
    code one — but writing one is now a subclass, not a 780-line copy.
 
@@ -350,12 +393,20 @@ the original handoff so older references still resolve.
    player counts (11 in ffa, 4 in 2team), same polygon population, identical map dimensions,
    same colour palette on the wire, across repeated 20-second runs of both modes.
 
-9. ⬜ **TODO — `constructor.name` string dispatch everywhere.** Still blocks minification and
-   bundling, still slow in hot collision paths, and see the warning in §3 about mechanical
-   renames.
+9. ✅ **FIXED — `constructor.name` string dispatch everywhere.** All 18 sites now read
+   `obj.kind` and compare against [lib/kinds.js](lib/kinds.js); each entity class sets
+   `Klass.prototype.kind` at the bottom of its file. The dispatch no longer depends on class
+   *names*, so the server can be minified or bundled, and renaming `Sffa` → `Ffa` (§2.2)
+   became safe. The values are still the strings `'Player'`/`'Bullet'`/`'Objects'`/
+   `'Detector'`, deliberately, so the change was a pure substitution and `Detector`'s `type`
+   filter lists kept working — **including the three hardcoded `DETEC: {type:
+   ['Player','Objects']}` blocks in `public/SHARE/TanksConfig.js`**, which cannot `require()`
+   `lib/kinds.js` because they are also loaded by the browser. That is the one coupling left;
+   it is called out in `lib/kinds.js` too. Turning the values into ints is now a one-file
+   change plus those three literals.
 
 10. ⚠️ **PARTLY FIXED.** `package.json` now has a `scripts` block (`start`, `start:game`,
-    `start:web`, `dev`, `test`, `test:rooms`, `test:smoke`) and the two suites give 80
+    `start:web`, `test`, `test:rooms`, `test:smoke`, `test:web`) and the three suites give 88
     assertions.
     **Still missing: a lockfile and a linter.** Dependencies remain pinned with `~` to ~2019
     versions (`express ~4.17`, `ws ~7.2`, `ejs ~2.7`, `mysql ~2.17`); `npm install` reports 10
@@ -401,13 +452,13 @@ two-tone tank fills.
 
 ## 7. Data flow, end to end
 
-1. `GET /` → `obstarWeb.js` reads the `obstarkey` cookie → (with DB on) looks up/creates the
+1. `GET /` → `web/app.js` reads the `obstarkey` cookie → (with DB on) looks up/creates the
    account → renders `index.ejs` with `POST = {key, leader, shop}` injected as a JSON global.
 2. Player picks a gamemode/name/pet (`queue.js`, `shop.js`) and submits a form.
 3. `POST /play` → sets a `preference` cookie → renders `play.ejs` with
-   `POST = {key, gm, name, pet}`.
+   `POST = {key, gm, name, pet, ws}`.
 4. `new2Init.js` opens `WS_LINK` and sends the binary `init` packet.
-5. `net/server.js` `income()` → `Controller.askConnection()` → assigned to a room →
+5. `net/gameSocket.js` `income()` → `Controller.askConnection()` → assigned to a room →
    `new loop(socket)` starts the two per-socket timers.
 6. Room `update()` simulates at ~50 Hz; each socket's `gameloop` pulls a per-player view via
    `Controller.getBuffer(id)` → `room.getBuffer(id)` (which culls to the player's screen) and
@@ -420,7 +471,8 @@ two-tone tank fills.
 
 ## 8. Suggested refactor order
 
-Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–4 are done.**
+Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–5, 7 and 11 are done;
+6 is next.**
 
 1. ✅ **DONE — Make failure visible.** [lib/crash.js](lib/crash.js) replaces both
    `uncaughtException` handlers with fail-fast + stderr logging (`OBSTAR_SWALLOW_CRASHES=1`
@@ -435,12 +487,15 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–4 are 
    inside Node. The test therefore sends exactly the bytes a real client sends.
    [test/rooms.js](test/rooms.js) was added with §8.5 and covers what a socket cannot see:
    51 assertions on teams, bases, bot rosters, colours and respawn xp, built straight off
-   `boot()` with no server.
+   `boot()` with no server. [test/web.js](test/web.js) was added with §8.11 and is the only
+   suite that touches the Express side: 8 assertions that one `node server.js` really does
+   serve the menu, `/play`, the static files and the game socket on a single port, and that
+   `--web-only` + `WS_LINK` still produces a page pointed at a remote game server.
 3. ✅ **DONE — `c` shadowing (§5.2) and the dead `CONFIG` (§5.1).** Verified by negative
    control; see §5.2 for the measurement.
 4. ✅ **DONE — Split `Alex.js`** into `net/`, `rooms/`, `entities/`, `lib/`. See §2's file map
    and §2.1 for the late-bound registry that made the circular graph work.
-5. ✅ **DONE — Unified `Sffa` and `S2team`** into [rooms/Room.js](rooms/Room.js) plus one
+5. ✅ **DONE — Unified `Sffa` and `S2team`** (now `Ffa` / `TwoTeam`, §2.2) into [rooms/Room.js](rooms/Room.js) plus one
    subclass per mode. Twelve behaviours had to be reconciled to do it; they are itemised in
    §5.8, along with the differential check against the pre-refactor tree.
 6. ⬜ **NEXT — Replace the hand-rolled protocol** with a single declarative schema that generates both
@@ -448,8 +503,10 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–4 are 
    byte-compatible during the transition so client and server can be migrated separately.
    **Fix `checkLength` (§4/§5.12) here** — it is the only input validation and it currently
    does nothing, so enabling it will start rejecting traffic that works today.
-7. ⬜ **Replace `constructor.name` dispatch** with an explicit `type` field or class constants.
-   Prerequisite for ever bundling/minifying. Note the string-literal hazard in §3.
+   This is now the largest remaining structural problem in the repo.
+7. ✅ **DONE — Replaced `constructor.name` dispatch** with `obj.kind` and the constants in
+   [lib/kinds.js](lib/kinds.js). Details and the one remaining coupling (TanksConfig's
+   hardcoded `DETEC.type` lists) are in §5.9.
 8. ⬜ **Fix the fixed-timestep problem.** Replace the drifting `setTimeout(20)` chain with an
    accumulator-based fixed-step loop that decouples simulation rate from send rate.
 9. ⬜ **Modernize the client last.** It's the largest single file but the least dangerous —
@@ -458,6 +515,15 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–4 are 
 10. ⬜ **Dependencies and DB.** Commit a lockfile, add a linter, upgrade `express`/`ws`/`ejs`,
     replace `mysql` with `mysql2`. §5.3–5.5 are now fixed, but do not turn `MYSQL: true` on
     without testing those paths — they have never run in this tree.
+11. ✅ **DONE — One entry point.** `Alex.js` + `obstarWeb.js` + `scripts/dev.js` are now
+    [server.js](server.js), which mounts [web/app.js](web/app.js) and attaches
+    [net/gameSocket.js](net/gameSocket.js) to the same http server. The two halves never
+    talked to each other, so the split bought nothing but a failure mode (§1); the one thing
+    it did buy — running them on separate machines — survives as `--game-only` /
+    `--web-only` plus `WS_LINK`. `public/SHARE/ws_link.js` derives the socket URL from the
+    page's own origin instead of hardcoding `ws://localhost:8080`, which also fixes the
+    mixed-content problem behind TLS. Pinned by [test/web.js](test/web.js). (This item was
+    not in the original list; it was requested during the chunk 6–7 pass.)
 
 ---
 
@@ -481,7 +547,11 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–4 are 
 
 - ~~Faithful refactor or allowed to change balance?~~ **Fix the bugs.** The §5.2 rename was
   applied and the intended behaviour now takes effect, accepting the gameplay change.
-- ~~How far to go in one pass?~~ **Chunks 1–4**, then **chunk 5** in a second pass.
+- ~~How far to go in one pass?~~ **Chunks 1–4**, then **chunk 5**, then **6–7 + the
+  entry-point merge and renames** in a third pass.
+- ~~Target deployment: single box, or the split topology?~~ **Single box by default**
+  (`node server.js`), with the split still available behind `--game-only` / `--web-only`
+  (§8.11). Nobody has to choose at install time any more.
 
 **Still open:**
 
@@ -493,36 +563,40 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–4 are 
   subclass, or un-`deactivate` those menu buttons, until someone says the modes are wanted.
   Removing them instead means deleting two keys from `Main.server` and two buttons from
   `index.ejs`.
-- Target deployment: single box, or the split web/game/db topology the original supported?
 
 ---
 
 ## 11. State of the working tree
 
-Chunks 1–4 are committed (`561ba88`, `f03cc37`). **Chunk 5 is not committed.** `git status`
-shows `Alex.js`, `lib/Controller.js`, `lib/runtime.js`, `package.json`, `rooms/Sffa.js` and
-`rooms/S2team.js` modified, plus untracked `lib/boot.js`, `rooms/Room.js` and
-`test/rooms.js`.
+Chunks 1–4 are committed (`561ba88`, `f03cc37`). **Chunks 5, 7 and the entry-point merge
+(§8.11) are not committed.** `git status` shows the §2.2 renames (done with `git mv`, so
+history follows), the new `lib/kinds.js`, `rooms/Room.js`, `lib/boot.js`, `test/rooms.js`
+and `test/web.js`, and the deletions of `scripts/dev.js` and `lib/webMysql.js`.
 
 ### What was verified, and what was not
 
-Verified: `npm test` → **80 passed / 0 failed** (51 room + 29 protocol/live-server). Every
-file checked with `node --check`. The room unification checked differentially against the
-pre-refactor tree in a scratch `git worktree`: repeated 20-second in-process runs of both
-modes agree on live player count, polygon population and map dimensions, and repeated
-socket runs agree on the colour palette reaching the wire. The §5.2 fix from the previous
-pass is still asserted by `smoke.js` (no non-finite `x`/`y`/`size` reaches the wire).
+Verified: `npm test` → **88 passed / 0 failed** (51 room + 29 protocol/live-server + 8
+single-entry-point/web). Every file checked with `node --check`. The room unification was
+checked differentially against the pre-refactor tree in a scratch `git worktree`: repeated
+20-second in-process runs of both modes agree on live player count, polygon population and
+map dimensions, and repeated socket runs agree on the colour palette reaching the wire. The
+§5.2 fix from the first pass is still asserted by `smoke.js` (no non-finite `x`/`y`/`size`
+reaches the wire). The `kind` swap (§5.9) was made against a green suite and re-run against
+it; the room and smoke suites exercise every one of the dispatch sites it touched, since
+they are the collision and buffer paths.
 
 **Not verified — treat as unknown:**
 
-- **The game has never been opened in a browser since the refactor.** The client is untouched
-  and the protocol round-trips, but nothing has exercised actual rendering. This is the first
-  thing to check, and it matters more after §8.5 than it did before: colour assignment is
-  where the two room copies disagreed most, and only the client can show you that a 2-team
-  match still looks like two teams.
+- **The game has never been opened in a browser since the refactor.** `test/web.js` now
+  drives the real pages over HTTP and asserts the socket answers on the same port, but
+  nothing has exercised actual rendering. This is still the first thing to check, and it
+  matters more after §8.5 than it did before: colour assignment is where the two room copies
+  disagreed most, and only the client can show you that a 2-team match still looks like two
+  teams. Two things to look at specifically: the reordered `<script>` tags in `play.ejs`
+  (POST before `ws_link.js`), and that `WS_LINK` resolves to the page's own origin.
 - **The boss.** `createBoss` is asserted directly by `test/rooms.js`, but its AI has never
   been run — `bossRng` is 0.9999, so a natural spawn is rare. Use the `summonRandBoss` admin
-  command (needs `DB.DEV`, so MySQL) or lower `bossRng` in `rooms/S2team.js` to exercise it.
+  command (needs `DB.DEV`, so MySQL) or lower `bossRng` in `rooms/TwoTeam.js` to exercise it.
 - **MySQL paths.** Still off. §5.3–5.5 are fixed by inspection, not by execution.
 - **Admin commands, chat, the shop, and the death/leaderboard flow** are still uncovered.
   `mapResize` in particular now does something in 2team that it never did before (§5.8.7).
