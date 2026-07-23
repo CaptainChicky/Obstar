@@ -38,7 +38,7 @@ function check(name, ok, detail){
   The timers they arm are left running; the process exits at the end of the file.
 */
 function makeRoom(gm){
-  let room = RT.Controller.newServer(gm);
+  const room = RT.Controller.newServer(gm);
   room.ask({name: 'tester', key: '0'.repeat(25), pet: -1, gm: gm});
   return room;
 }
@@ -50,7 +50,7 @@ function player(room, id){
 /// Free-for-all //////////////////////////////////////////////////////////////
 function ffaTests(){
   console.log('rooms (ffa):');
-  let room = makeRoom('ffa');
+  const room = makeRoom('ffa');
 
   check('level cap comes from the mode', room.XPLVL[room.XPLVL.length-1] === 25000,
         room.XPLVL[room.XPLVL.length-1]);
@@ -60,11 +60,11 @@ function ffaTests(){
         room.newMap.height === room.map.height);
 
   // Bots are seated by Init(), which runs on a timer, so ask() ran first: slot 0.
-  let me = player(room, 0);
+  const me = player(room, 0);
   check('first player takes slot 0', !!me && me.id.oId === 0);
   check('everyone is on the same nominal team', me.team === 1, me.team);
 
-  let second = room.ask({name: 'tester2', key: '0'.repeat(25), pet: -1, gm: 'ffa'});
+  const second = room.ask({name: 'tester2', key: '0'.repeat(25), pet: -1, gm: 'ffa'});
   check('second player takes slot 1', second && second.oId === 1, second && second.oId);
   check('second player is on that same team', player(room, 1).team === 1, player(room, 1).team);
 
@@ -79,7 +79,7 @@ function ffaTests(){
         room.ownBulletColor({type: 1}, me));
   check('traps render as colour 9', room.bulletColor({type: 3, team: 1}) === 9,
         room.bulletColor({type: 3, team: 1}));
-  let bullet = {};
+  const bullet = {};
   room.assignBulletTeam(bullet, me);
   check('bullets inherit the one team', bullet.team === 1, bullet.team);
 
@@ -95,8 +95,8 @@ function ffaTests(){
   // The spawn has to clear the three polygon nests: the origin and the two quarter points.
   let clear = true;
   for(let i = 0; i < 200; i++){
-    let p = room.spawnPoint(me);
-    let d = (x, y) => Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2));
+    const p = room.spawnPoint(me);
+    const d = (x, y) => Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2));
     if(d(0, 0) <= 1100 || d(room.map.width/4, room.map.height/4) <= 800 ||
        d(-room.map.width/4, -room.map.height/4) <= 800){ clear = false; }
     if(Math.abs(p.x) > room.map.width/2 || Math.abs(p.y) > room.map.height/2){ clear = false; }
@@ -109,7 +109,7 @@ function ffaTests(){
 /// Two teams /////////////////////////////////////////////////////////////////
 function teamTests(){
   console.log('rooms (2team):');
-  let room = makeRoom('2team');
+  const room = makeRoom('2team');
 
   check('level cap comes from the mode', room.XPLVL[room.XPLVL.length-1] === 30000,
         room.XPLVL[room.XPLVL.length-1]);
@@ -117,11 +117,11 @@ function teamTests(){
         room.map.width + 'x' + room.map.height);
 
   // build() runs before the first tick, so the guard drones are there from the start.
-  let drones = room.INSTANCE.bullets.filter((b) => b && isNaN(b) && b.alone);
+  const drones = room.INSTANCE.bullets.filter((b) => b && isNaN(b) && b.alone);
   check('both bases are guarded', drones.length === 20, drones.length + ' drones');
   check('the guards are split evenly', drones.filter((d) => d.team === 0).length === 10,
         drones.filter((d) => d.team === 0).length + ' on team 0');
-  let leftGuards = drones.filter((d) => d.x < 0);
+  const leftGuards = drones.filter((d) => d.x < 0);
   check('each side guards its own half',
         leftGuards.length === 10 && leftGuards.every((d) => d.team === 0));
 
@@ -129,11 +129,11 @@ function teamTests(){
   for(let i = 0; i < 3; i++){
     room.ask({name: 'tester' + i, key: '0'.repeat(25), pet: -1, gm: '2team'});
   }
-  let sides = [0, 0];
+  const sides = [0, 0];
   for(let i = 0; i < 4; i++){ sides[player(room, i).team]++; }
   check('joins are balanced across the sides', sides[0] === 2 && sides[1] === 2, sides.join('/'));
 
-  let zero = {team: 0}, one = {team: 1};
+  const zero = {team: 0}, one = {team: 1};
   check('team 0 dies in team 1\'s base', room.inEnemyBase({team: 0, x: 3500}) === true);
   check('team 0 is safe in its own', room.inEnemyBase({team: 0, x: -3500}) === false);
   check('team 1 dies in team 0\'s base', room.inEnemyBase({team: 1, x: -3500}) === true);
@@ -159,15 +159,15 @@ function teamTests(){
   check('bullets are coloured by side', room.bulletColor({team: 1, type: 1}) === 1);
   check('a dev colour overrides the side', room.bulletColor({team: 1, type: 1, color: 5}) === 4);
 
-  let bullet = {};
+  const bullet = {};
   room.assignBulletTeam(bullet, {team: 1, dev: {}});
   check('bullets inherit the shooter\'s side', bullet.team === 1, bullet.team);
 
   // The room may already have rolled its own boss during Init() - bossRng is 0.9999, but
   // preGenerate rolls it a thousand times - so count from wherever it is now.
-  let before = room.bosses.length;
+  const before = room.bosses.length;
   room.createBoss();
-  let boss = room.bosses[room.bosses.length-1];
+  const boss = room.bosses[room.bosses.length-1];
   check('a boss can be summoned', room.bosses.length === Math.min(1, before+1) && !!boss && boss.boss === 1,
         room.bosses.length);
   check('the boss is on nobody\'s side', boss && boss.team === 9, boss && boss.team);
@@ -189,20 +189,20 @@ function teamTests(){
 */
 function fourTeamTests(){
   console.log('rooms (4team):');
-  let room = makeRoom('4team');
+  const room = makeRoom('4team');
 
   check('four sides', room.rules.teams.length === 4, room.rules.teams.join(','));
   check('team ids are colour indices', room.rules.teams.join(',') === '0,1,2,3');
   check('friendly fire is off', room.rules.teamPlay === true);
 
-  let drones = room.INSTANCE.bullets.filter((b) => b && isNaN(b) && b.alone);
+  const drones = room.INSTANCE.bullets.filter((b) => b && isNaN(b) && b.alone);
   check('every base is guarded', drones.length === 32, drones.length + ' drones');
   check('the guards are split evenly across four sides',
         [0,1,2,3].every((t) => drones.filter((d) => d.team === t).length === 8),
         [0,1,2,3].map((t) => drones.filter((d) => d.team === t).length).join('/'));
   // Each side's guards must sit in that side's corner and nowhere else.
-  let placed = drones.every((d) => {
-    let c = room.corner(d.team);
+  const placed = drones.every((d) => {
+    const c = room.corner(d.team);
     return Math.sign(d.x) === Math.sign(c.x) && Math.sign(d.y) === Math.sign(c.y);
   });
   check('each side guards its own corner', placed);
@@ -211,18 +211,18 @@ function fourTeamTests(){
   for(let i = 0; i < 3; i++){
     room.ask({name: 'tester' + i, key: '0'.repeat(25), pet: -1, gm: '4team'});
   }
-  let sides = [0,0,0,0];
+  const sides = [0,0,0,0];
   for(let i = 0; i < 4; i++){ sides[player(room, i).team]++; }
   check('joins are balanced across all four sides', sides.every((n) => n === 1), sides.join('/'));
 
   // The fence: your own corner is safe, all three others kill you.
   let ok = true, safe = true;
-  for(let mine of room.rules.teams){
-    let home = room.corner(mine);
+  for(const mine of room.rules.teams){
+    const home = room.corner(mine);
     if(room.inEnemyBase({team: mine, x: home.x*0.98, y: home.y*0.98})){ safe = false; }
-    for(let other of room.rules.teams){
+    for(const other of room.rules.teams){
       if(other === mine){ continue; }
-      let c = room.corner(other);
+      const c = room.corner(other);
       if(!room.inEnemyBase({team: mine, x: c.x*0.98, y: c.y*0.98})){ ok = false; }
     }
   }
@@ -234,9 +234,9 @@ function fourTeamTests(){
         room.inEnemyBase({team: 9, x: room.map.width/2, y: room.map.height/2}) === false);
 
   let inside = true;
-  for(let t of room.rules.teams){
+  for(const t of room.rules.teams){
     for(let i = 0; i < 100; i++){
-      let p = room.spawnPoint({team: t});
+      const p = room.spawnPoint({team: t});
       if(room.inEnemyBase({team: t, x: p.x, y: p.y})){ inside = false; }
       if(Math.abs(p.x) > room.map.width/2 || Math.abs(p.y) > room.map.height/2){ inside = false; }
     }
@@ -259,7 +259,7 @@ function fourTeamTests(){
 */
 function bossTests(){
   console.log('rooms (boss):');
-  let room = makeRoom('boss');
+  const room = makeRoom('boss');
 
   check('it is a free-for-all underneath', room.rules.teams.length === 1 &&
         room.rules.teamPlay === false);
@@ -301,10 +301,10 @@ function bossTests(){
 */
 function respawnTests(rooms){
   console.log('rooms (shared):');
-  for(let room of rooms){
+  for(const room of rooms){
     let never = true, cap = room.XPLVL[room.XPLVL.length-1];
-    for(let xp of [0, 1, 10, 100, 500, 1000, 5000, cap - 1, cap, cap * 2]){
-      let got = room.respawnXp(xp);
+    for(const xp of [0, 1, 10, 100, 500, 1000, 5000, cap - 1, cap, cap * 2]){
+      const got = room.respawnXp(xp);
       if(!(got <= xp) || !isFinite(got) || got < 0){ never = false; }
     }
     check(room.gm + ': a death never pays', never);
@@ -316,9 +316,9 @@ function respawnTests(rooms){
 
   // Bot slots are fixed for the life of a room - update() walks this.bots to respawn them -
   // so a roster that hands out a duplicate id would quietly overwrite a player.
-  for(let room of rooms){
-    let roster = room.botRoster();
-    let ids = roster.map((s) => s.id);
+  for(const room of rooms){
+    const roster = room.botRoster();
+    const ids = roster.map((s) => s.id);
     check(room.gm + ': bot slots are unique', new Set(ids).size === ids.length, ids.join(','));
     check(room.gm + ': bots sit clear of the join slots', Math.min.apply(null, ids) >= 10,
           Math.min.apply(null, ids));
@@ -352,7 +352,7 @@ function modeTableTests(rooms){
         rooms.map((r) => r.gm).join(','));
 
   // The round trip the client actually performs: encode the mode to a byte, decode it back.
-  let roundTrip = modes.filter((gm) => PROTO.toSTRING.gamemode[PROTO.toBUFFER.gamemode[gm]] !== gm);
+  const roundTrip = modes.filter((gm) => PROTO.toSTRING.gamemode[PROTO.toBUFFER.gamemode[gm]] !== gm);
   check('every mode survives the encode/decode round trip', roundTrip.length === 0,
         'broken: ' + roundTrip.join(','));
   check('every mode has a wire value',
@@ -367,7 +367,7 @@ function modeTableTests(rooms){
 }
 
 console.log('obstar room tests\n');
-let rooms = [];
+const rooms = [];
 rooms.push(ffaTests());       console.log('');
 rooms.push(teamTests());      console.log('');
 rooms.push(fourTeamTests());  console.log('');

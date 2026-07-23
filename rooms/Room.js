@@ -83,13 +83,13 @@ const DEFAULT_RULES = {
 class Room {
   constructor(id, rules){
     this.rules = Object.assign({}, DEFAULT_RULES, rules);
-    let POW = 2.5;
-    let MXLVL = this.rules.maxXp;
+    const POW = 2.5;
+    const MXLVL = this.rules.maxXp;
     this.XPLVL = new Array(30).fill(0).map((x,i)=>{
       if(i == 0){
         return 0;
       }
-      let a = 30/Math.pow(MXLVL,1/POW)
+      const a = 30/Math.pow(MXLVL,1/POW)
       return Math.min(MXLVL,parseInt(Math.pow((i+1)/a,POW)));
     })
     this.gm = this.rules.gm;
@@ -101,7 +101,7 @@ class Room {
       "bullets":[],
       "detectors": []
     };
-    let caps = this.rules.objCaps;
+    const caps = this.rules.objCaps;
     this.obj = {
       "sqr":{"0":0,"1":0,"max0":caps.sqr.max0,"max1":caps.sqr.max1},
       "tri":{"0":0,"1":0,"max0":caps.tri.max0,"max1":caps.tri.max1},
@@ -153,40 +153,40 @@ class Room {
     const RNG = Math.random();
     ///SQUARE///
     if(RNG<1){
-      let obj = this.obj.sqr;
+      const obj = this.obj.sqr;
       if(obj[0]<obj.max0){this.createObj("sqr",0); obj[0]++;}
       if(obj[1]<obj.max1 && Math.random()<0.26){this.createObj("sqr",1); obj[1]++;}
     }
     ///TRIANGLE///
     if(RNG<0.7){
-      let obj = this.obj.tri;
+      const obj = this.obj.tri;
       if(obj[0]<obj.max0){this.createObj("tri",0); obj[0]++;}
       if(obj[1]<obj.max1 && Math.random()<0.26){this.createObj("tri",1); obj[1]++;}
     }
     ///PENTAGONE///
     if(RNG<0.5){
-      let obj = this.obj.pnt;
+      const obj = this.obj.pnt;
       if(obj[0]<obj.max0){this.createObj("pnt",0); obj[0]++;}
       if(obj[1]<obj.max1 && Math.random()<0.2){this.createObj("pnt",1); obj[1]++;}
     }
     ///BULL///
     if(RNG<0.1){
-      let obj = this.obj.bull;
+      const obj = this.obj.bull;
       if(obj[1]<obj.max1){this.createObj("bull",0); obj[1]++;}
     }
     ///BETA PENTAGONE///
     if(RNG>this.rules.betaPentRng){
-      let obj = this.obj.Bpnt;
+      const obj = this.obj.Bpnt;
       if(obj[1]<obj.max1){this.createObj("Bpnt",1); obj[1]++;}
     }
     ///BETA SQUARE///
     if(RNG>0.992){
-      let obj = this.obj.Bsqr;
+      const obj = this.obj.Bsqr;
       if(obj[1]<obj.max1){this.createObj("Bsqr",1); obj[1]++;}
     }
     ///BETA TRIANGLE///
     if(RNG>0.992){
-      let obj = this.obj.Btri;
+      const obj = this.obj.Btri;
       if(obj[1]<obj.max1){this.createObj("Btri",1); obj[1]++;}
     }
     ///BOSSES///
@@ -223,8 +223,8 @@ class Room {
     }
   }
   createAi(){
-    for(let slot of this.botRoster()){
-      let bot = new RT.Player(
+    for(const slot of this.botRoster()){
+      const bot = new RT.Player(
         {"GM":this.gm,"sId":this.id,"oId":slot.id},
         0,
         0,
@@ -245,7 +245,7 @@ class Room {
     the room - update() walks this.bots to find dead ones.
   */
   botRoster(){
-    let roster = [];
+    const roster = [];
     for(let i = this.rules.botIdStart; i<this.rules.botIdStart+this.rules.botCount; i++){
       roster.push({id: i, team: this.rules.teams[0]});
     }
@@ -267,15 +267,15 @@ class Room {
   */
   createBoss(){
     if(this.bosses.length >= this.rules.maxBoss){ return; }
-    let spec = RT.CONFIG.BOSS[parseInt(Math.random()*RT.CONFIG.BOSS.length)];
+    const spec = RT.CONFIG.BOSS[parseInt(Math.random()*RT.CONFIG.BOSS.length)];
     let slot = -1;
     for(let i = 0; i<=this.maxPlayer; i++){
       if(typeof(this.INSTANCE.players[i]) === "undefined"){ slot = i; break; }
     }
     if(slot < 0){ return; }
     ///
-    let randDir = Math.PI*2*Math.random();
-    let boss = new RT.Player(
+    const randDir = Math.PI*2*Math.random();
+    const boss = new RT.Player(
       {"GM":this.gm,"sId":this.id,"oId":slot},
       Math.cos(randDir)*this.map.width/4,
       Math.sin(randDir)*this.map.width/4,
@@ -297,7 +297,7 @@ class Room {
     this.bosses.push(boss);
     this.INSTANCE.players[slot] = boss;
     ///
-    for(let p of this.INSTANCE.players){
+    for(const p of this.INSTANCE.players){
       if(typeof p === "undefined" || !isNaN(p) || p.bot || p.boss){ continue; }
       p.mess.push('Tremble at the sight of the '+spec[2]+' !');
     }
@@ -336,7 +336,7 @@ class Room {
   step(){
     let stop = 1;
     let playerCount = 0;
-    for(let i of this.INSTANCE.players){
+    for(const i of this.INSTANCE.players){
       // A boss is not a bot - it has its own AI, not RT.CONFIG.BOTS - so it used to satisfy
       // this "is anyone still here?" test and keep an empty room ticking forever. Latent in
       // 2team, where a boss is a once-in-ten-thousand-rolls event; certain in 'boss' mode,
@@ -372,8 +372,8 @@ class Room {
     ///BOTS///
     let botNeeded = this.botBudget(playerCount);
     if(botNeeded){
-      for(let b of this.bots){
-        let bot = this.INSTANCE.players[b];
+      for(const b of this.bots){
+        const bot = this.INSTANCE.players[b];
         if(bot && bot.dead == 1 && botNeeded){
           this.respawn(b,0,1);
           botNeeded --;
@@ -389,10 +389,10 @@ class Room {
     }
     ///LEAD+ ADD TO QT///
     this.timestamp++;
-    let qt = new quadTree(-this.map.width/2-1000,-this.map.height/2-1000,this.map.width+2000,this.map.height+2000,6);
+    const qt = new quadTree(-this.map.width/2-1000,-this.map.height/2-1000,this.map.width+2000,this.map.height+2000,6);
     this.leader = [];
-    for(let kind in this.INSTANCE){
-      for(let j in this.INSTANCE[kind]){
+    for(const kind in this.INSTANCE){
+      for(const j in this.INSTANCE[kind]){
         let i = this.INSTANCE[kind][j];
         if(!isNaN(i)){
           if(i){
@@ -450,8 +450,8 @@ class Room {
       }
     }
     ///COLLISION///
-    for(let kind in this.INSTANCE){
-      for(let obj of this.INSTANCE[kind]){
+    for(const kind in this.INSTANCE){
+      for(const obj of this.INSTANCE[kind]){
         if(typeof obj === "undefined" || !isNaN(obj)){continue;}
         if(obj.getPlace == 0){
           continue;
@@ -461,9 +461,9 @@ class Room {
           obj.collision(0,{base:1});
           continue;
         }
-        let collide = qt.query(function (rect,circle){
-            var distX = Math.abs(circle.x - rect.x-rect.w/2);
-            var distY = Math.abs(circle.y - rect.y-rect.h/2);
+        const collide = qt.query(function (rect,circle){
+            const distX = Math.abs(circle.x - rect.x-rect.w/2);
+            const distY = Math.abs(circle.y - rect.y-rect.h/2);
 
             if (distX > (rect.w/2 + circle.r)) { return false; }
             if (distY > (rect.h/2 + circle.r)) { return false; }
@@ -471,22 +471,22 @@ class Room {
             if (distX <= (rect.w/2)) { return true; }
             if (distY <= (rect.h/2)) { return true; }
 
-            var dx=distX-rect.w/2;
-            var dy=distY-rect.h/2;
+            const dx=distX-rect.w/2;
+            const dy=distY-rect.h/2;
             return (dx*dx+dy*dy<=(circle.r*circle.r));
         },{'x':obj.x,'y':obj.y,'r':(obj.DETEC && obj.DETEC.enabled ? obj.DETEC.size : obj.size)*2})
-        for(let i in collide){
-          let other = collide[i].data;
+        for(const i in collide){
+          const other = collide[i].data;
           if(other.getPlace == 0 || obj.getPlace == 0){
             continue;
           }
-          let otherKind = other.kind;
-          let objKind = obj.kind;
+          const otherKind = other.kind;
+          const objKind = obj.kind;
           ///
           if(other.destroy>=1){continue;}
           if(objKind == KIND.DETECTOR && otherKind == KIND.DETECTOR){continue;}
           if(obj.id.oId == other.id.oId && objKind == otherKind){continue;}
-          let dis = Math.sqrt(Math.pow(other.x-obj.x,2)+Math.pow(other.y-obj.y,2));
+          const dis = Math.sqrt(Math.pow(other.x-obj.x,2)+Math.pow(other.y-obj.y,2));
           if((isNaN(other.getPlace) || isNaN(obj.getPlace)) && (!this.rules.teamPlay || other.team != obj.team)){
             if(obj.DETEC && obj.DETEC.enabled){
               if(dis <= obj.DETEC.size+other.size){
@@ -515,8 +515,8 @@ class Room {
                 obj.y+=Math.random()-.5;
               }
               ///
-              let objOption = {};
-              let otherOption = {};
+              const objOption = {};
+              const otherOption = {};
               if(this.rules.teamPlay && objKind != KIND.OBJECTS && otherKind != KIND.OBJECTS && obj.team == other.team){
                 objOption.noDam = 1;
                 otherOption.noDam = 1;
@@ -561,21 +561,21 @@ class Room {
     }
     this.INSTANCE.detectors = [];
     ///BUFFING///
-    for(let p of this.INSTANCE.players){
+    for(const p of this.INSTANCE.players){
       if(p && p.pet){
         this.INSTANCE.bullets[p.pet.id.oId] = 20;
         if(p.alpha) qt.insert(p.pet.x,p.pet.y,p.size,p.pet);
       }
     }
     this.BUFFER = [];
-    for(let id in this.INSTANCE.players){
-      let player = this.INSTANCE.players[id];
+    for(const id in this.INSTANCE.players){
+      const player = this.INSTANCE.players[id];
       if(player.bot || player.boss){
         continue;
       }
 
-      var x = player.x-player.screen/2-200, y = player.y-player.screen/2*0.5625-200;
-      var w = player.screen+400, h = player.screen*0.5625+400;
+      const x = player.x-player.screen/2-200, y = player.y-player.screen/2*0.5625-200;
+      const w = player.screen+400, h = player.screen*0.5625+400;
 
       this.BUFFER[id] = {
         x:x,
@@ -595,9 +595,9 @@ class Room {
       {'x':x-200,'y':y-200,'w':w+400,'h':h+400});
     }
     ///UPDATE///
-    for(let kind in this.INSTANCE){
-      for(let o in this.INSTANCE[kind]){
-        let obj = this.INSTANCE[kind][o];
+    for(const kind in this.INSTANCE){
+      for(const o in this.INSTANCE[kind]){
+        const obj = this.INSTANCE[kind][o];
         if(typeof obj === "undefined" || !isNaN(obj)){continue;}
         if(obj.destroy == 1){
           if(kind == "players"){
@@ -607,7 +607,7 @@ class Room {
             if(obj.murder == -1){
               continue;
             }
-            let murder = this.INSTANCE[obj.murder[0]][obj.murder[1].oId];
+            const murder = this.INSTANCE[obj.murder[0]][obj.murder[1].oId];
             if(typeof(murder) === "undefined" || !isNaN(murder) || murder.destroy){
               obj.murder = -1;
               continue;
@@ -634,11 +634,11 @@ class Room {
     return false;
   }
   respawn(id, force = 0, bot = 0){
-    let tank = this.INSTANCE.players[id];
+    const tank = this.INSTANCE.players[id];
     if(!tank || (!force && !tank.destroy) || tank.dead>1) return;
     ///
-    let pos = this.spawnPoint(tank);
-    let newTank = new RT.Player(tank.id,pos.x,pos.y,tank.name,tank.team,this.XPLVL);
+    const pos = this.spawnPoint(tank);
+    const newTank = new RT.Player(tank.id,pos.x,pos.y,tank.name,tank.team,this.XPLVL);
     if(bot){
       newTank.motion = RT.CONFIG.BOTS[0].bind(newTank);
       newTank.bot = 1;
@@ -673,8 +673,8 @@ class Room {
     reward. (TwoTeam was missing it; see HANDOFF.md 5.8.)
   */
   respawnXp(xp){
-    let mXp = this.XPLVL[this.XPLVL.length-1];
-    let pow = this.rules.respawnPow;
+    const mXp = this.XPLVL[this.XPLVL.length-1];
+    const pow = this.rules.respawnPow;
     if(xp>mXp){
       return mXp*.6;
     }
@@ -683,8 +683,8 @@ class Room {
   /* Free-for-all drops you anywhere clear of the three polygon nests. */
   spawnPoint(tank){
     while(1){
-      let x = 200+Math.random()*(this.map.width-400)-this.map.width/2;
-      let y = 200+Math.random()*(this.map.height-400)-this.map.height/2;
+      const x = 200+Math.random()*(this.map.width-400)-this.map.width/2;
+      const y = 200+Math.random()*(this.map.height-400)-this.map.height/2;
       let dis = Math.sqrt(Math.pow(x,2)+Math.pow(y,2));
       if(dis>1100){
         dis = Math.sqrt(Math.pow(this.map.width/4-x,2)+Math.pow(this.map.height/4-y,2))
@@ -698,14 +698,14 @@ class Room {
     }
   }
   getBuffer(id){
-    let RAW = this.BUFFER[id];
+    const RAW = this.BUFFER[id];
     if(!RAW){
       return;
     }
     if(!RAW.main){
       return;
     }
-    let buff = {
+    const buff = {
       instances:[]
     };
     buff.head = {
@@ -718,7 +718,7 @@ class Room {
       cLvl:      RAW.main.dead ? 0 : parseInt((RAW.main.level)/10)
     };
     ///
-    let lvl = RAW.main.level, xp = RAW.main.xp, arr = RAW.main.XPLVL;
+    const lvl = RAW.main.level, xp = RAW.main.xp, arr = RAW.main.XPLVL;
     buff.head.level = (!lvl ? 1 : ((lvl>=arr.length-1) ? lvl : lvl+Math.max(Math.min(1,(xp-arr[lvl-1])/(arr[lvl]-arr[lvl-1])),0)));
     ///
     buff.main = {
@@ -741,8 +741,8 @@ class Room {
       recoil: RAW.main.recoil,
       canDir: RAW.main.canDir ? RAW.main.canDir : []
     };
-    for(let i of RAW.rest){
-      let obj = i.data;
+    for(const i of RAW.rest){
+      const obj = i.data;
       if(obj.getPlace == 0){
         continue;
       }
@@ -835,7 +835,7 @@ class Room {
         };
         case KIND.BULLET:{
           if(this.rules.viewerBullets && obj.origine.oId == RAW.main.id.oId){
-            let raw = new Int8Array(RT.Controller.encodeInst('Instance',{
+            const raw = new Int8Array(RT.Controller.encodeInst('Instance',{
               construc: 'Bullets',
               id: obj.id.oId,
               states: [!!obj.pet*1,0,0,0,0,0,0],
@@ -877,12 +877,12 @@ class Room {
     return (player.id.oId == viewerId) ? 0 : player.team;
   }
   getUi(id){
-    let buff = {
+    const buff = {
       leader:[],
       map:[],
       mess:[]
     };
-    for(let i of this.leader){
+    for(const i of this.leader){
       buff.leader.push({
         xp:i.xp,
         name:i.name,
@@ -890,7 +890,7 @@ class Room {
         team: i.dev.color ? i.dev.color-1 : this.leaderColor(i,id)
       })
     };
-    for(let i of this.INSTANCE.players[id].mess){
+    for(const i of this.INSTANCE.players[id].mess){
       buff.mess.push(i);
     };
     this.INSTANCE.players[id].mess = [];
@@ -899,25 +899,25 @@ class Room {
   /* Which side a joining player lands on: the thinnest one, coin toss when they are level.
      A one-team mode has exactly one answer, so free-for-all falls out of the same code. */
   assignTeam(){
-    let count = new Array(this.rules.teams.length).fill(0);
-    for(let p of this.INSTANCE.players){
+    const count = new Array(this.rules.teams.length).fill(0);
+    for(const p of this.INSTANCE.players){
       if(typeof p === "undefined" || !isNaN(p)){continue;}
-      let t = this.rules.teams.indexOf(p.team);
+      const t = this.rules.teams.indexOf(p.team);
       if(t>=0){count[t]++;}
     }
     let smallest = 0;
     for(let i = 1; i<count.length; i++){
       if(count[i]<count[smallest]){smallest = i;}
     }
-    let tied = count.filter((n)=>n === count[smallest]).length;
+    const tied = count.filter((n)=>n === count[smallest]).length;
     if(tied === count.length){
       smallest = parseInt(Math.random()*count.length);
     }
     return this.rules.teams[smallest];
   }
   ask(data){
-    let name = data.name;
-    let pet = (data.pet>-1) ? new RT.Bullet(0,0,0,0,0,0) : null;
+    const name = data.name;
+    const pet = (data.pet>-1) ? new RT.Bullet(0,0,0,0,0,0) : null;
     if(pet){
       pet.update = RT.CONFIG.PETS[0].bind(pet);
       pet.type = data.pet;
@@ -925,8 +925,8 @@ class Room {
     ///
     for(let i = 0; i<=this.maxPlayer; i++){
       if(typeof(this.INSTANCE.players[i]) === "undefined"){
-        let id = {"GM":this.gm,"sId":this.id,"oId":i};
-        let tank = new RT.Player(
+        const id = {"GM":this.gm,"sId":this.id,"oId":i};
+        const tank = new RT.Player(
             id,
             0,
             0,

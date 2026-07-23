@@ -8,30 +8,30 @@
   the same three lines for any number of modes.
 */
 function selectGM(gm){
-  var elem = document.getElementById('gamemode-box').getElementsByClassName('button');
+  const elem = document.getElementById('gamemode-box').getElementsByClassName('button');
   State = gm;
-  for(var i = 0; i<elem.length; i++){
+  for(let i = 0; i<elem.length; i++){
     elem[i].classList.toggle('deactivated', elem[i].dataset.gm !== gm);
   }
 };
 
 function play(){
-  let form = document.createElement('FORM');
+  const form = document.createElement('FORM');
   form.method = 'post';
   form.action = '/play';
-  let key = document.createElement('INPUT');
+  const key = document.createElement('INPUT');
   key.type = 'hidden';
   key.value = POST.key;
   key.name = 'key'
-  let name = document.createElement('INPUT');
+  const name = document.createElement('INPUT');
   name.type = 'hidden';
   name.value = document.getElementById('in-game-name').value || 'unnamed';
   name.name = 'name';
-  let gm = document.createElement('INPUT');
+  const gm = document.createElement('INPUT');
   gm.type = 'hidden';
   gm.value = State;
   gm.name = 'gm';
-  let pet = document.createElement('INPUT');
+  const pet = document.createElement('INPUT');
   pet.type = 'hidden';
   pet.value = ChosenPet;
   pet.name = 'pet';
@@ -48,7 +48,7 @@ window.onload = function(){
   window.UserData = {};
   try {
     window.Pref = JSON.parse(decodeURIComponent((function(name) {
-      var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
       if (match) return match[2];
     })('preference')).slice(2));
     if(Pref.name && Pref.name.length){
@@ -57,9 +57,9 @@ window.onload = function(){
   } catch {
     window.Pref = {};
   }
-  var Req = new XMLHttpRequest();
+  const Req = new XMLHttpRequest();
   Req.onload = function(){
-    var data = 0
+    let data = 0
     try{
       data = window.UserData = JSON.parse(this.responseText);
     } catch {
@@ -75,7 +75,7 @@ window.onload = function(){
         ChosenPet = Pref.pet;
         document.getElementById('pets-zone').children[ChosenPet].children[0].classList.toggle('item-select');
         for(let i = 0; i<parseInt(ChosenPet/3); i++){
-          let s = document.getElementById('shop-scroll');
+          const s = document.getElementById('shop-scroll');
           s.children[s.children.length-1].onclick();
         }
       }
@@ -85,12 +85,12 @@ window.onload = function(){
   Req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
   Req.send('userKey='+POST.key);
   //
-  var toggleLB = (()=>{
-    let box = document.createElement('DIV');
+  const toggleLB = (()=>{
+    const box = document.createElement('DIV');
     box.id = 'leadeBox';
     box.classList.add('white-box','hideDiv');
     box.innerHTML = '<h1>Obstar Top Scores</h1>';
-    let info = document.createElement('DIV');
+    const info = document.createElement('DIV');
     info.classList.add('leader','leaderinfo');
     info.innerHTML =
     `<div class='pos'> <br/> </div>`+
@@ -100,18 +100,18 @@ window.onload = function(){
     `<div class='gm'> Game Mode </div>`+
     `<div class='date'> Date </div>`;
     box.appendChild(info);
-    let leadZone = document.createElement('DIV');
+    const leadZone = document.createElement('DIV');
     leadZone.classList.add('leadZone');
     box.appendChild(leadZone);
     document.body.appendChild(box);
     function escapeHtml(html){
-      var text = document.createTextNode(html);
-      var p = document.createElement('p');
+      const text = document.createTextNode(html);
+      const p = document.createElement('p');
       p.appendChild(text);
       return p.innerHTML;
     }
     POST.leader.forEach((item,i) => {
-      let leader = document.createElement('DIV');
+      const leader = document.createElement('DIV');
       leader.classList.add('leader',((item.userKey == POST.key) ? 'isMe' : 'notme'));
       let is = '';
       if(item.userKey == POST.key){
@@ -129,7 +129,7 @@ window.onload = function(){
     return ()=>{
       box.classList.toggle('showDiv');
       box.classList.toggle('hideDiv');
-      var prevent = document.getElementById('prevent_click');
+      const prevent = document.getElementById('prevent_click');
       prevent.classList.toggle('hide-prevent');
       prevent.onclick = function(){
         box.classList.toggle('showDiv');

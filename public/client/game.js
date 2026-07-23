@@ -6,19 +6,19 @@
   reads them.
 */
 (function(CLIENT){
-  var CONST = CLIENT.CONST;
-  var rnbcolor = CLIENT.rnbcolor;
-  var C = CLIENT.C;
-  var Global = CLIENT.Global;
-  var Game = CLIENT.Game;
-  var General = CLIENT.General;
-  var sleep = CLIENT.sleep;
-  var roundRect = CLIENT.roundRect;
-  var NET = CLIENT.NET;
-  var Interp = CLIENT.Interp;
-  var Tank = CLIENT.Tank;
-  var Obj = CLIENT.Obj;
-  var Bullet = CLIENT.Bullet;
+  const CONST = CLIENT.CONST;
+  const rnbcolor = CLIENT.rnbcolor;
+  const C = CLIENT.C;
+  const Global = CLIENT.Global;
+  const Game = CLIENT.Game;
+  const General = CLIENT.General;
+  const sleep = CLIENT.sleep;
+  const roundRect = CLIENT.roundRect;
+  const NET = CLIENT.NET;
+  const Interp = CLIENT.Interp;
+  const Tank = CLIENT.Tank;
+  const Obj = CLIENT.Obj;
+  const Bullet = CLIENT.Bullet;
   ///
   CLIENT.Run = function(){
     if(!General['canvas']){
@@ -29,15 +29,15 @@
       document.body.appendChild(General['canvas']);
     }
     General['ctx'] = General['canvas'].getContext('2d');
-    var ctx = General['ctx'];
+    const ctx = General['ctx'];
     CLIENT.initRender();
     ///
-    var Instances = {
+    const Instances = {
       'Objects': [],
       'Players': [],
       'Bullets': []
     };
-    var User = new function(){
+    const User = new function(){
       this.color = 'green';
       this.x = 0;
       this.y = 0;
@@ -86,13 +86,13 @@
       }
       this.hitted = 0;
       this.hpBar = (()=>{
-        let can = document.createElement('CANVAS');
-        let ctx = can.getContext('2d');
-        let R = CONST.RESOLUTION*CONST.OFFCAN;
-        let Hp = 1;
+        const can = document.createElement('CANVAS');
+        const ctx = can.getContext('2d');
+        const R = CONST.RESOLUTION*CONST.OFFCAN;
+        const Hp = 1;
         let Size = 0;
-        let lw = 1.5;
-        let height = 5;
+        const lw = 1.5;
+        const height = 5;
         can.height = (height+lw*2+4)*R
 
         function drawHp(hp,size,color){
@@ -151,15 +151,15 @@
           delay. It is an offset, not a position, so it survives the interpolation change
           untouched; it just gets added to a position that is now correct.
         */
-        let motionDir = [0,0];
-        let len = 0.31/2*Global.dtFrames;
-        let FRICTION = Math.pow(0.95,Global.dtFrames);
+        const motionDir = [0,0];
+        const len = 0.31/2*Global.dtFrames;
+        const FRICTION = Math.pow(0.95,Global.dtFrames);
         if(Global.inputs.w || Global.inputs.ArrowUp){motionDir[0]-=len;}
         if(Global.inputs.s || Global.inputs.ArrowDown){motionDir[0]+=len;}
         if(Global.inputs.a || Global.inputs.ArrowLeft){motionDir[1]-=len;}
         if(Global.inputs.d || Global.inputs.ArrowRight){motionDir[1]+=len;}
         let ddir = Math.atan2(motionDir[0],motionDir[1]);
-        let llen = Math.min(Math.sqrt((motionDir[0]*motionDir[0])+(motionDir[1]*motionDir[1])),len);
+        const llen = Math.min(Math.sqrt((motionDir[0]*motionDir[0])+(motionDir[1]*motionDir[1])),len);
         this.predic.xspeed+=Math.cos(ddir)*llen;this.predic.xspeed*=FRICTION;
         this.predic.yspeed+=Math.sin(ddir)*llen;this.predic.yspeed*=FRICTION;
         this.predic.x+=this.predic.xspeed;
@@ -185,7 +185,7 @@
         } else {
           this.hpAlpha = Math.max(0,Math.min(.8,this.hpAlpha-0.01));
         }
-        for(let i in this.recoil){
+        for(const i in this.recoil){
           if(this.recoil[i] > 0 && this.recoil[i]<0.07){
             this.recoil[i]+=(0.075-this.recoil[i])*0.3;
           } else if(this.recoil[i]>=0.07){
@@ -199,8 +199,8 @@
           }
         }
         if(this.canDir.length == this.canDdir.length){
-          let k = General['lerpK'](0.3);
-          for(let i in this.canDir){
+          const k = General['lerpK'](0.3);
+          for(const i in this.canDir){
             this.canDdir[i] = Math.atan2(
               Math.sin(this.canDdir[i])+(Math.sin(this.canDir[i])-Math.sin(this.canDdir[i]))*k,
               Math.cos(this.canDdir[i])+(Math.cos(this.canDir[i])-Math.cos(this.canDdir[i]))*k
@@ -228,7 +228,7 @@
         // `dx`/`dy` is the interpolated server position; `+predic` is the local input lead.
         // The camera (gx/gy) is that sum, exactly - one position, drawn and framed from the
         // same number, so the tank cannot slide off centre.
-        let tw = this.tween.sample(NET.now());
+        const tw = this.tween.sample(NET.now());
         this.dx = tw.x;
         this.dy = tw.y;
         this.gx = this.dx+this.predic.x;
@@ -237,7 +237,7 @@
       this.draw = function(){
         ctx.translate(this.dx+this.predic.x,this.dy+this.predic.y)
         ctx.globalAlpha = this.alpha;
-        let o = General['drawTank'](ctx,parseInt(this.alpha),{
+        const o = General['drawTank'](ctx,parseInt(this.alpha),{
           class: this.class,
           tankC: this.shield ? this.SH.body : ((this.hitted>1) ? C.hit : C[this.color]),
           canC: this.shield ? this.SH.canons : ((this.hitted>1) ? C.hit : C.gray),
@@ -246,9 +246,9 @@
           recoils: this.recoil,
           canDir: this.canDdir
         });
-        let can = o.can;
+        const can = o.can;
         if(can){
-          let w = can.width/(CONST.OFFCAN), h = can.height/(CONST.OFFCAN);
+          const w = can.width/(CONST.OFFCAN), h = can.height/(CONST.OFFCAN);
           ctx.drawImage(can,-w/2,-h/2,w,h);
         }
         ///
@@ -313,7 +313,7 @@
         General['WS'].send(PROTO.encode('keyup',key));
       },
       onkeydown: e => {
-        let key = e.key.toLowerCase();
+        const key = e.key.toLowerCase();
         if(Global.inputs[key]){return};
         Global.inputs[key] = 1;
         switch(key){
@@ -345,7 +345,7 @@
         }
       },
       onkeyup: e => {
-        let key = e.key.toLowerCase();
+        const key = e.key.toLowerCase();
         if(!Global.inputs[key]){return;}
         Global.inputs[key] = 0;
         switch(key){
@@ -402,9 +402,9 @@
       ctx.clearRect(0,0,Global.canW,Global.canH);
       General['background'](User.gx,User.gy,20);
       ///
-      let sx = -User.gx*Global.RATIO+(Global.canW/2), sy = -User.gy*Global.RATIO+(Global.canH/2);
-      for(let c in Instances){
-        for(let i in Instances[c]){
+      const sx = -User.gx*Global.RATIO+(Global.canW/2), sy = -User.gy*Global.RATIO+(Global.canH/2);
+      for(const c in Instances){
+        for(const i in Instances[c]){
           ///
           ctx.setTransform(Global.RATIO, 0, 0, Global.RATIO, sx, sy);
           ctx.globalAlpha = 1;
@@ -417,8 +417,8 @@
       ctx.globalAlpha = 1;
       User.draw();
       ///
-      for(let c in Instances){
-        for(let i in Instances[c]){
+      for(const c in Instances){
+        for(const i in Instances[c]){
           if(Instances[c][i].drawUi){
             ctx.setTransform(Global.RATIO,0,0,Global.RATIO,sx,sy);
             Instances[c][i].drawUi(ctx);
@@ -450,7 +450,7 @@
         rather than jumping a quarter of a second in one frame.
       */
       {
-        let t = NET.now();
+        const t = NET.now();
         Global.dtFrames = Global.frameAt ? Math.min(4, Math.max(0.2, (t-Global.frameAt)/16.667)) : 1;
         Global.frameAt = t;
       }
@@ -463,8 +463,8 @@
         General['updateRatio']();
       }
       ///
-      for(let c in Instances){
-        for(let i in Instances[c]){
+      for(const c in Instances){
+        for(const i in Instances[c]){
           Instances[c][i].update();
         }
       }
@@ -541,8 +541,8 @@
         return;
       }
       /// DELETE OLD DATA ///
-      for( let C in Instances){
-        for( let I in Instances[C]){
+      for( const C in Instances){
+        for( const I in Instances[C]){
           if( typeof( data.Instances[C][I] ) === 'undefined' ){
             delete Instances[C][I];
           }
@@ -557,7 +557,7 @@
         three passes of the whole quadtree slice for nothing, and `hit()` and `shoot()`
         fired three times each. Each part is done once now.
       */
-      let at = NET.mark();
+      const at = NET.mark();
       ///Head///
       Game.realScreen = data.head.screen;
       Game.timestamp = data.head.timestamp;
@@ -571,7 +571,7 @@
       }
       ///User///
       if(data.User){
-        for(let param in data.User){
+        for(const param in data.User){
           switch(param){
             case 'states':{
               if(data.User[param][0]){
@@ -590,7 +590,7 @@
               break;
             };
             case 'recoil':{
-              for(let i in data.User[param]){
+              for(const i in data.User[param]){
                 if(data.User[param][i]){
                   User.shoot(i)
                 }
@@ -608,10 +608,10 @@
       }
       ///REST
       {
-        for(let CONSTRUC in data.Instances){
-          for(let OBJ in data.Instances[CONSTRUC]){
-            let obj = data.Instances[CONSTRUC][OBJ];
-            let inst = Instances[CONSTRUC];
+        for(const CONSTRUC in data.Instances){
+          for(const OBJ in data.Instances[CONSTRUC]){
+            const obj = data.Instances[CONSTRUC][OBJ];
+            const inst = Instances[CONSTRUC];
             /// NEW ///
             if ( typeof( inst[OBJ] ) === 'undefined' ){
               switch( CONSTRUC ){
@@ -633,7 +633,7 @@
               placeholder class for a whole packet interval, which is not a real class, so
               drawTank returned undefined and draw() threw on it.
             */
-            for(let PARAM in obj){
+            for(const PARAM in obj){
               switch( PARAM ){
                 case 'states':{
                   switch(CONSTRUC){
@@ -657,7 +657,7 @@
                   break;
                 };
                 case 'recoil':{
-                  for(let i in obj[PARAM]){
+                  for(const i in obj[PARAM]){
                     if(obj[PARAM][i]){
                       inst[OBJ].shoot(i)
                     }
@@ -676,8 +676,8 @@
       }
     }
     General['WS'].onmessage = packet => {
-      let decoded = PROTO.decode(packet.data);
-      let type = decoded.type;
+      const decoded = PROTO.decode(packet.data);
+      const type = decoded.type;
       switch(type){
         case 'ping':{
           if(!General['PING']){

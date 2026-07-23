@@ -1,12 +1,12 @@
 (function(window){
-  var PETS = document.getElementById('pets-zone');
+  const PETS = document.getElementById('pets-zone');
   if(POST.shop.HIDE){
     document.getElementById('shop').style.display = 'none';
     window.ChosenPet = -1;
     return;
   }
-  var SHOP_SCROLL = (()=>{
-    let result = {
+  const SHOP_SCROLL = (()=>{
+    const result = {
 
     };
     result.main = document.getElementById('shop-scroll');
@@ -23,7 +23,7 @@
       result.length = size;
       result.pos = 0;
       result.dot = new Array(size).fill(0).map((x,i)=>{
-        let div = document.createElement('DIV')
+        const div = document.createElement('DIV')
         div.classList.add('dot');
         if(i == 0) div.classList.add('dotOn');
         return div;
@@ -44,7 +44,7 @@
       if(this.pos > 0){
         this.pos --;
         this.pivot.style.marginLeft = (-99*this.pos)+'%';
-        for(let i in this.dot){
+        for(const i in this.dot){
           if(i == this.pos){
             this.dot[i].classList.add('dotOn');
           } else {
@@ -63,7 +63,7 @@
       if(this.pos < this.length-1){
         this.pos ++;
         this.pivot.style.marginLeft = (-99*this.pos)+'%';
-        for(let i in this.dot){
+        for(const i in this.dot){
           if(i == this.pos){
             this.dot[i].classList.add('dotOn');
           } else {
@@ -98,10 +98,10 @@
       3
     ]
   };
-  let PETS_POS = 0;
-  let zoneWidth = 280;
-  var rnbcolor = ['hsl(0,100%,50%)','hsl(0,100%,30%)'];
-  let C = {
+  const PETS_POS = 0;
+  const zoneWidth = 280;
+  const rnbcolor = ['hsl(0,100%,50%)','hsl(0,100%,30%)'];
+  const C = {
     //         ---light------Dark---
     green:     ["#19e56e","#14ad54"],
     red:       ["#e6584b","#a9443b"],
@@ -145,10 +145,10 @@
     ],
   };
   window.ChosenPet = -1;
-  var Mess = (()=>{
-    var messbox = document.getElementById('messages'),
+  const Mess = (()=>{
+    const messbox = document.getElementById('messages'),
         prevent = document.getElementById('prevent_click');
-    var valid_svg = messbox.children[0],
+    const valid_svg = messbox.children[0],
         warn_svg = messbox.children[1],
         abort_svg = messbox.children[2],
         innerText = messbox.children[3];
@@ -221,7 +221,7 @@
   function Buy(c,i,force = 0){
     if(force || POST.shop && POST.shop[c] && POST.shop[c][i] && POST.shop[c][i].price<= UserData.coins){
       Mess.send('none','Processing the request...',1)
-      var Req = new XMLHttpRequest();
+      const Req = new XMLHttpRequest();
       ///
       Req.onload = function(Mess){
         switch(this.responseText){
@@ -250,7 +250,7 @@
               Mess.send('abort',"The action couldn't be done.");
               break;
             }
-            var data;
+            let data;
             try {
               data = JSON.parse(this.responseText);
             } catch {
@@ -281,15 +281,15 @@
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   }
   ///
-  let clone = PETS.children[0].cloneNode(true);
+  const clone = PETS.children[0].cloneNode(true);
   PETS.innerHTML = '';
-  for(let i in POST.shop.pets){
+  for(const i in POST.shop.pets){
     if(isNaN(parseInt(i))) continue;
-    let can = document.createElement('CANVAS');
-    let ctx = can.getContext('2d');
+    const can = document.createElement('CANVAS');
+    const ctx = can.getContext('2d');
     can.width = can.height = 70;
     ctx.setTransform(1,0,0,1,can.width/2,can.height/2);
-    let param = {
+    const param = {
       size: 35,
       type: i,
       color: 'green',
@@ -313,10 +313,10 @@
       }
     }
     ///
-    let itDiv = clone.cloneNode(1);
+    const itDiv = clone.cloneNode(1);
     itDiv.children[0].onclick = function(itemId){
       if(this.owned){
-        for(let i in PETS.children){
+        for(const i in PETS.children){
           if(PETS.children[i].children && i != itemId) PETS.children[i].children[0].classList.remove('item-select');
         }
         this.classList.toggle('item-select');
@@ -332,9 +332,9 @@
   }
   window.SetPets = function(owned){
     if(!owned){return}
-    for(let item in owned){
+    for(const item in owned){
       PETS.children[item].children[0].owned = true;
-      let div = PETS.children[item].children[0].children[2];
+      const div = PETS.children[item].children[0].children[2];
       div.children[0].innerHTML = '<span style="color: #aab; font-size: 1em;">Owned</span>';
       div.children[1].style.display = 'none';
     }

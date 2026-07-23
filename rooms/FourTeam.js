@@ -49,13 +49,13 @@ class FourTeam extends Room {
   /* A fence of immortal guard drones along the arc of each base, facing the middle. */
   build(){
     this.droneQt = 8;
-    for(let team of this.rules.teams){
-      let c   = this.corner(team);
+    for(const team of this.rules.teams){
+      const c   = this.corner(team);
       // The quarter turn that faces the centre of the map from this corner.
-      let from = Math.atan2(-Math.sign(c.y), -Math.sign(c.x)) - Math.PI/4;
+      const from = Math.atan2(-Math.sign(c.y), -Math.sign(c.x)) - Math.PI/4;
       for(let i = 0; i<this.droneQt; i++){
-        let a = from + (Math.PI/2)*(i+0.5)/this.droneQt;
-        let bull = new RT.Bullet(
+        const a = from + (Math.PI/2)*(i+0.5)/this.droneQt;
+        const bull = new RT.Bullet(
           {"GM":this.gm,"sId":this.id,"oId":-1},
           c.x + Math.cos(a)*this.baseSize,
           c.y + Math.sin(a)*this.baseSize,
@@ -81,8 +81,8 @@ class FourTeam extends Room {
   }
   /* Bots dealt round-robin across the four sides, starting from a random one. */
   botRoster(){
-    let offset = parseInt(Math.random()*this.rules.teams.length);
-    let roster = [];
+    const offset = parseInt(Math.random()*this.rules.teams.length);
+    const roster = [];
     for(let i = 0; i<this.rules.botCount; i++){
       roster.push({
         id:   this.rules.botIdStart+i,
@@ -100,9 +100,9 @@ class FourTeam extends Room {
     // Anything not on a side - a boss, team 9 - belongs to no base and is fenced out of
     // none, matching TwoTeam, whose switch simply has no arm for it.
     if(this.rules.teams.indexOf(obj.team)<0){ return false; }
-    for(let team of this.rules.teams){
+    for(const team of this.rules.teams){
       if(team === obj.team){ continue; }
-      let c = this.corner(team);
+      const c = this.corner(team);
       if(Math.pow(obj.x-c.x,2)+Math.pow(obj.y-c.y,2) < this.baseSize*this.baseSize){
         return true;
       }
@@ -111,10 +111,10 @@ class FourTeam extends Room {
   }
   /* You always come back inside your own corner, clear of your own guard drones. */
   spawnPoint(tank){
-    let c = this.corner(tank.team);
-    let from = Math.atan2(-Math.sign(c.y), -Math.sign(c.x)) - Math.PI/4;
-    let a = from + (Math.PI/2)*Math.random();
-    let r = this.baseSize*(0.15+0.7*Math.random());
+    const c = this.corner(tank.team);
+    const from = Math.atan2(-Math.sign(c.y), -Math.sign(c.x)) - Math.PI/4;
+    const a = from + (Math.PI/2)*Math.random();
+    const r = this.baseSize*(0.15+0.7*Math.random());
     return {x: c.x+Math.cos(a)*r, y: c.y+Math.sin(a)*r};
   }
   entityColor(player){

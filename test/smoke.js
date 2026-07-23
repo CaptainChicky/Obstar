@@ -37,27 +37,27 @@ function check(name, ok, detail){
 function protocolTests(){
   console.log('protocol:');
 
-  let key = '0'.repeat(25);
-  let init = clientProto.encode('init', {key: key, gm: 'ffa', name: 'smoketest', pet: -1});
+  const key = '0'.repeat(25);
+  const init = clientProto.encode('init', {key: key, gm: 'ffa', name: 'smoketest', pet: -1});
   check('client encodes init', init && init.byteLength > 0);
 
-  let decoded = serverProto.decode(Buffer.from(init));
+  const decoded = serverProto.decode(Buffer.from(init));
   check('server decodes init as type init', decoded.type === 'init', 'got ' + decoded.type);
   check('init survives round trip: no error', !decoded.error, String(decoded.error));
   check('init survives round trip: key',  decoded.data.key === key, decoded.data.key);
   check('init survives round trip: gm',   decoded.data.gm === 'ffa', decoded.data.gm);
   check('init survives round trip: name', decoded.data.name === 'smoketest', decoded.data.name);
 
-  for(let key of ['w', 'a', 's', 'd', 'mouseL']){
-    let d = serverProto.decode(Buffer.from(clientProto.encode('keydown', key)));
+  for(const key of ['w', 'a', 's', 'd', 'mouseL']){
+    const d = serverProto.decode(Buffer.from(clientProto.encode('keydown', key)));
     check('keydown ' + key + ' round trips', d.type === 'keydown' && d.data.key === key,
           d.type + '/' + (d.data && d.data.key));
   }
 
-  let up = serverProto.decode(Buffer.from(clientProto.encode('upgrade', 3)));
+  const up = serverProto.decode(Buffer.from(clientProto.encode('upgrade', 3)));
   check('upgrade round trips', up.type === 'upgrade' && up.data.up === 3);
 
-  let ping = serverProto.decode(Buffer.from(clientProto.encode('ping', 0)));
+  const ping = serverProto.decode(Buffer.from(clientProto.encode('ping', 0)));
   check('ping round trips', ping.type === 'ping', ping.type);
 }
 
@@ -71,8 +71,8 @@ function protocolTests(){
 */
 function checkGameUpdates(buffers){
   let decoded = [], failure = null;
-  for(let buf of buffers){
-    let arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  for(const buf of buffers){
+    const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
     try {
       decoded.push(clientProto.decode(arrayBuffer));
     } catch(err){
@@ -83,7 +83,7 @@ function checkGameUpdates(buffers){
         failure || (decoded.length + '/' + buffers.length));
   if(!decoded.length){ return; }
 
-  let head = decoded[0].data && decoded[0].data.head;
+  const head = decoded[0].data && decoded[0].data.head;
   check('GameUpdate head has finite map size',
         head && isFinite(head.width) && isFinite(head.height),
         head && (head.width + 'x' + head.height));
@@ -96,8 +96,8 @@ function checkGameUpdates(buffers){
     exactly the arrangement that drifts into occasional duplicates - net/gameSocket.js skips
     those sends, and this is the assertion that says it still does.
   */
-  let stamps = decoded.map((u)=>u.data && u.data.head && u.data.head.timestamp);
-  let dupes = stamps.filter((t,i)=>i>0 && t === stamps[i-1]).length;
+  const stamps = decoded.map((u)=>u.data && u.data.head && u.data.head.timestamp);
+  const dupes = stamps.filter((t,i)=>i>0 && t === stamps[i-1]).length;
   check('no two GameUpdates carry the same world', dupes === 0,
         dupes + ' duplicate of ' + stamps.length + ' packets');
 
@@ -105,21 +105,21 @@ function checkGameUpdates(buffers){
   // nothing. Sample the whole window and require that we actually saw objects at all,
   // otherwise a green result would just mean an empty map.
   let seen = 0, bad = [];
-  let inspect = function(label, entity){
+  const inspect = function(label, entity){
     if(!entity){ return; }   // the instance arrays are sparse and full of nulls
     seen++;
-    for(let field of ['x', 'y', 'size']){
+    for(const field of ['x', 'y', 'size']){
       if(entity[field] !== undefined && !isFinite(entity[field])){
         bad.push(label + '.' + field + '=' + entity[field]);
       }
     }
   };
-  for(let update of decoded){
+  for(const update of decoded){
     if(!update.data){ continue; }
     inspect('User', update.data.User);
-    let instances = update.data.Instances || {};
-    for(let group of ['Players', 'Objects', 'Bullets']){
-      for(let entity of (instances[group] || [])){
+    const instances = update.data.Instances || {};
+    for(const group of ['Players', 'Objects', 'Bullets']){
+      for(const entity of (instances[group] || [])){
         inspect(group, entity);
       }
     }
@@ -141,7 +141,7 @@ function serverTests(gamemode, port, done){
 
   // --game-only: the test drives the binary protocol, and there is no reason to stand the
   // Express site up (or to fight whatever else holds port 80) to do that.
-  let child = fork(path.join(ROOT, 'server.js'), ['--game-only'], {
+  const child = fork(path.join(ROOT, 'server.js'), ['--game-only'], {
     cwd: ROOT,
     env: Object.assign({}, process.env, {PORT: String(port)}),
     silent: true
@@ -172,11 +172,11 @@ function serverTests(gamemode, port, done){
 
   // The server prints "Server started on port N" once listening. Poll the port instead of
   // parsing that, so the test does not depend on log wording.
-  let deadline = Date.now() + BOOT_TIMEOUT;
+  const deadline = Date.now() + BOOT_TIMEOUT;
   (function connect(){
     if(Date.now() > deadline){ return finish('server never accepted a connection'); }
 
-    let socket = new WebSocket('ws://localhost:' + port);
+    const socket = new WebSocket('ws://localhost:' + port);
     let updates = [], firstUpdate = null, timer = null;
 
     socket.on('error', function(){
@@ -195,7 +195,7 @@ function serverTests(gamemode, port, done){
       }));
 
       // Give up early if nothing ever arrives, otherwise sample a full window.
-      let firstPacket = setTimeout(function(){
+      const firstPacket = setTimeout(function(){
         finish('no GameUpdate packet within ' + UPDATE_TIMEOUT + 'ms');
       }, UPDATE_TIMEOUT);
 
@@ -216,8 +216,8 @@ function serverTests(gamemode, port, done){
     });
 
     socket.on('message', function(packet){
-      let buf = Buffer.from(packet);
-      let type = buf.readUInt8(0);
+      const buf = Buffer.from(packet);
+      const type = buf.readUInt8(0);
 
       // The server half of the schema cannot decode its own outbound packets (it only
       // implements the client->server direction), so identify by the leading type byte.
@@ -237,13 +237,13 @@ console.log('obstar smoke test\n');
 protocolTests();
 
 // Sequential, not parallel: config.MAX_IP caps concurrent connections per IP at 2.
-let modes = [['ffa', PORT], ['2team', PORT + 1], ['4team', PORT + 2], ['boss', PORT + 3]];
+const modes = [['ffa', PORT], ['2team', PORT + 1], ['4team', PORT + 2], ['boss', PORT + 3]];
 (function next(){
   if(!modes.length){
     console.log('\n' + passed + ' passed, ' + failed + ' failed');
     return process.exit(failed ? 1 : 0);
   }
-  let mode = modes.shift();
+  const mode = modes.shift();
   console.log('');
   serverTests(mode[0], mode[1], next);
 })();

@@ -36,7 +36,7 @@ function check(name, ok, detail){
 }
 /* Both halves hand back ArrayBuffers or Int8Arrays; normalise to hex for comparison. */
 function hex(x){
-  let u = (typeof x.length === 'number')
+  const u = (typeof x.length === 'number')
     ? Uint8Array.from({length: x.length}, (_, i) => x[i] & 0xff)
     : new Uint8Array(x);
   return Array.from(u).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -54,7 +54,7 @@ const KEY = '0'.repeat(25);
 */
 function golden(){
   console.log('wire format (vectors from the pre-refactor encoder):');
-  let cases = [
+  const cases = [
     ['init',        client.encode('init', {key: KEY, gm: 'ffa', name: 'ab', pet: -1}),
      '001930303030303030303030303030303030303030303030303030000200610062ff'],
     ['ping',        client.encode('ping', 0), '06'],
@@ -79,7 +79,7 @@ function golden(){
         leader: [{xp: 100, name: 'bo', nameC: 0, team: 1}], map: [], mess: ['hi']
       }), '0a0100000064020062006f000100010200680069'],
   ];
-  for(let [name, got, want] of cases){
+  for(const [name, got, want] of cases){
     check(name + ' encodes to the same bytes as before', hex(got) === want, hex(got));
   }
 }
@@ -100,7 +100,7 @@ function fieldSize(value, type){
    of angles in memory and a packed `str` on the wire, and it is the latter that has a size. */
 function recordSize(record, src){
   return server.SCHEMA.GameUpdate[record].reduce((n, f) => {
-    let codec = server.CODEC[record][f];
+    const codec = server.CODEC[record][f];
     return n + fieldSize(codec ? codec.enc(src[f]) : src[f], server.TYPE.GameUpdate[record][f]);
   }, 0);
 }
@@ -133,25 +133,25 @@ function sizes(){
 
   // ...and the same numbers again, derived from the schema instead of written down. 3 is the
   // CONSTRUCTOR byte plus the uint16 id that precede every record.
-  for(let [label, rec] of [['Players', aPlayer], ['Objects', anObject], ['Bullets', aBullet]]){
+  for(const [label, rec] of [['Players', aPlayer], ['Objects', anObject], ['Bullets', aBullet]]){
     check(label + ' record length matches the schema',
           server.encode('Instance', rec).length === 3 + recordSize(rec.construc, rec),
           server.encode('Instance', rec).length + ' vs ' + (3 + recordSize(rec.construc, rec)));
   }
 
-  let head = {timestamp: 4242, width: 8000, height: 6000, screen: 1600, xp: 987654,
+  const head = {timestamp: 4242, width: 8000, height: 6000, screen: 1600, xp: 987654,
               level: 12.5, still: 3, cLvl: 1};
-  let main = Object.assign({}, aPlayer, {name: 'me', canDir: [0,1,-1]});
-  let instances = [aPlayer, anObject, aBullet].map(r => new Int8Array(server.encode('Instance', r)));
-  let packet = server.encode('GameUpdate', {head: head, main: main, instances: instances});
-  let want = 1 + recordSize('head', head) + recordSize('User', main) +
+  const main = Object.assign({}, aPlayer, {name: 'me', canDir: [0,1,-1]});
+  const instances = [aPlayer, anObject, aBullet].map(r => new Int8Array(server.encode('Instance', r)));
+  const packet = server.encode('GameUpdate', {head: head, main: main, instances: instances});
+  const want = 1 + recordSize('head', head) + recordSize('User', main) +
              instances.reduce((n, a) => n + a.length, 0);
   check('a GameUpdate is exactly its head + own tank + entities', packet.byteLength === want,
         packet.byteLength + ' vs ' + want);
 
   // An oversized buffer used to leave trailing zeroes that the client's read-until-the-end
   // loop turned into phantom Players at id 0. Nothing trails now, so decoding is exact.
-  let back = client.decode(packet);
+  const back = client.decode(packet);
   check('the client decodes it back to exactly 3 entities and no more',
         Object.keys(back.data.Instances.Players).length === 1 &&
         Object.keys(back.data.Instances.Objects).length === 1 &&
@@ -161,14 +161,14 @@ function sizes(){
 /// 3. round trips //////////////////////////////////////////////////////////////
 function roundTrips(){
   console.log('\nround trips:');
-  let init = server.decode(buf(client.encode('init', {key: KEY, gm: '2team', name: 'bob', pet: 2})));
+  const init = server.decode(buf(client.encode('init', {key: KEY, gm: '2team', name: 'bob', pet: 2})));
   check('init survives the round trip',
         !init.error && init.data.key === KEY && init.data.gm === '2team' &&
         init.data.name === 'bob' && init.data.pet === 2,
         JSON.stringify(init));
 
-  for(let key of ['a','w','s','d','e','c','mouseL','mouseR']){
-    let d = server.decode(buf(client.encode('keydown', key)));
+  for(const key of ['a','w','s','d','e','c','mouseL','mouseR']){
+    const d = server.decode(buf(client.encode('keydown', key)));
     if(d.error || d.data.key !== key){
       check('keydown ' + key + ' survives', false, JSON.stringify(d));
       return;
@@ -176,23 +176,23 @@ function roundTrips(){
   }
   check('every keydown survives the round trip', true);
 
-  let mm = server.decode(buf(client.encode('mousemove', {x: 0.5, y: -0.25, dir: 1.5})));
+  const mm = server.decode(buf(client.encode('mousemove', {x: 0.5, y: -0.25, dir: 1.5})));
   check('mousemove survives within int16 resolution',
         Math.abs(mm.data.x - 0.5) < 1e-4 && Math.abs(mm.data.y + 0.25) < 1e-4 &&
         Math.abs(mm.data.dir - 1.5) < 1e-6, JSON.stringify(mm.data));
 
-  let cls = TanksConfig.list[5];
-  let uc = server.decode(buf(client.encode('upClass', cls)));
+  const cls = TanksConfig.list[5];
+  const uc = server.decode(buf(client.encode('upClass', cls)));
   check('upClass survives as a class name', uc.data.up === cls, uc.data.up);
 
   // Server -> client. The transforms these exercise (bit arrays, angles, 0..1 ratios, the
   // packed xp magnitude) are the ones that used to be written out four separate times.
-  let packet = server.encode('GameUpdate', {
+  const packet = server.encode('GameUpdate', {
     head: {timestamp: 1, width: 8000, height: 6000, screen: 1600, xp: 5, level: 2, still: 0, cLvl: 0},
     main: Object.assign({}, aPlayer),
     instances: [new Int8Array(server.encode('Instance', aPlayer))]
   });
-  let g = client.decode(packet);
+  const g = client.decode(packet);
   check('GameUpdate head comes back intact',
         g.data.head.timestamp === 1 && g.data.head.width === 8000 && g.data.head.screen === 1600,
         JSON.stringify(g.data.head));
@@ -211,7 +211,7 @@ function roundTrips(){
   check('canDir angles survive',
         g.data.User.canDir.length === 2 && Math.abs(g.data.User.canDir[0] - 0.5) < 1e-3,
         JSON.stringify(g.data.User.canDir));
-  let inst = g.data.Instances.Players[3];
+  const inst = g.data.Instances.Players[3];
   check('an entity record decodes under its own id', inst !== undefined && inst.x === 12.5,
         inst && inst.x);
   check('entity xp comes back as a scoreboard string', inst.xp === '123 k', inst.xp);
@@ -222,7 +222,7 @@ function roundTrips(){
           instances: [new Int8Array(server.encode('Instance', anObject))]
         })).data.Instances.Objects[17].type === 'sqr');
 
-  let ui = client.decode(server.encode('UiUpdate', {
+  const ui = client.decode(server.encode('UiUpdate', {
     leader: [{xp: 100, name: 'bob', nameC: 0, team: 1}], map: [], mess: ['hello']
   }));
   check('UiUpdate leader survives, with the team as a colour name',
@@ -246,7 +246,7 @@ function validation(){
   check('a server-to-client type sent back at the server is ERR_PACKET_TYPE',
         server.decode(Buffer.from([server.toBUFFER.type.GameUpdate])).error === 'ERR_PACKET_TYPE');
 
-  let keydown = buf(client.encode('keydown', 'w'));
+  const keydown = buf(client.encode('keydown', 'w'));
   check('a well-formed keydown is accepted', !server.decode(keydown).error);
   check('a keydown with a trailing byte is refused',
         server.decode(Buffer.concat([keydown, Buffer.alloc(1)])).error === 'ERR_PACKET_LENGTH');
@@ -255,7 +255,7 @@ function validation(){
   check('a short mousemove is refused',
         server.decode(buf(client.encode('mousemove', {x:0,y:0,dir:0})).slice(0, 8)).error === 'ERR_PACKET_LENGTH');
 
-  let init = buf(client.encode('init', {key: KEY, gm: 'ffa', name: 'bob', pet: -1}));
+  const init = buf(client.encode('init', {key: KEY, gm: 'ffa', name: 'bob', pet: -1}));
   check('a well-formed init is accepted', !server.decode(init).error);
   check('an oversized init is refused',
         server.decode(Buffer.concat([init, Buffer.alloc(40)])).error === 'ERR_PACKET_LENGTH');
@@ -264,7 +264,7 @@ function validation(){
   // A 3-character key, padded out with a long name so the packet size itself is legal. This
   // is the case HANDOFF §4 reported as getting through: it is the check the whole userKey
   // scheme rests on, and it has never fired.
-  let shortKey = buf(client.encode('init', {key: 'abc', gm: 'ffa', name: 'sixteencharacte', pet: -1}));
+  const shortKey = buf(client.encode('init', {key: 'abc', gm: 'ffa', name: 'sixteencharacte', pet: -1}));
   check('a short key inside a legal-sized init is ERR_BROKEN_KEY',
         server.decode(shortKey).error === 'ERR_BROKEN_KEY',
         shortKey.length + ' bytes -> ' + server.decode(shortKey).error);
@@ -272,25 +272,25 @@ function validation(){
   // A packet whose length prefix claims more than the packet holds. Before the bounds check
   // this threw a RangeError out of Buffer.readUInt8, and with lib/crash.js failing fast that
   // is a one-packet denial of service.
-  let liar = Buffer.concat([Buffer.from([server.toBUFFER.type.com, 50]), Buffer.alloc(20, 0x61)]);
+  const liar = Buffer.concat([Buffer.from([server.toBUFFER.type.com, 50]), Buffer.alloc(20, 0x61)]);
   check('a string length prefix that overruns the packet is refused, not thrown',
         server.decode(liar).error === 'ERR_PACKET_LENGTH', JSON.stringify(server.decode(liar)));
-  let liarInit = Buffer.concat([Buffer.from([server.toBUFFER.type.init, 60]), Buffer.alloc(28, 0x61)]);
+  const liarInit = Buffer.concat([Buffer.from([server.toBUFFER.type.init, 60]), Buffer.alloc(28, 0x61)]);
   check('an init claiming a 60-char key inside 30 bytes is refused, not thrown',
         server.decode(liarInit).error === 'ERR_PACKET_LENGTH');
 
   // The client encoder clamps to the same bounds the server enforces, so a player typing a
   // long message gets it truncated rather than getting kicked mid-sentence.
-  let longChat = 'x'.repeat(300);
-  let chat = buf(client.encode('chat', longChat));
+  const longChat = 'x'.repeat(300);
+  const chat = buf(client.encode('chat', longChat));
   check('the client clamps chat to the length the server accepts',
         chat.length === 202 && !server.decode(chat).error, chat.length);
   check('chat over the limit is refused',
         server.decode(Buffer.concat([chat, Buffer.alloc(2)])).error === 'ERR_PACKET_LENGTH');
-  let com = buf(client.encode('com', '/'.repeat(200)));
+  const com = buf(client.encode('com', '/'.repeat(200)));
   check('the client clamps commands to the length the server accepts',
         com.length === 52 && !server.decode(com).error, com.length);
-  let longName = buf(client.encode('init', {key: KEY, gm: 'ffa', name: 'x'.repeat(80), pet: -1}));
+  const longName = buf(client.encode('init', {key: KEY, gm: 'ffa', name: 'x'.repeat(80), pet: -1}));
   check('the client clamps names, so a long name cannot oversize an init',
         longName.length === 62 && !server.decode(longName).error, longName.length);
 }
@@ -311,7 +311,7 @@ function names(){
   const trip = (name) => server.decode(buf(client.encode('init',
                   {key: KEY, gm: 'ffa', name: name, pet: -1}))).data.name;
 
-  let samples = [
+  const samples = [
     ['ascii',              'bob'],
     ['accented latin',     'Zoé Müller'],
     ['cyrillic',           'Привет'],
@@ -327,7 +327,7 @@ function names(){
     ['symbols and marks',  '☠ x́ ♫'],
     ['spaces kept',        'a b  c']
   ];
-  for(let [what, name] of samples){
+  for(const [what, name] of samples){
     check(what + ' survives the wire unchanged', trip(name) === name,
           JSON.stringify(trip(name)));
   }
@@ -345,9 +345,9 @@ function names(){
   // Cutting mid-pair leaves a lone surrogate, which survives the codec and renders as the
   // replacement glyph - the failure mode is silent and it hits exactly the names people
   // most want.
-  let eight = '🚀'.repeat(8);
+  const eight = '🚀'.repeat(8);
   check('eight emoji fit exactly', trip(eight) === eight, JSON.stringify(trip(eight)));
-  let nine = trip('🚀'.repeat(9));
+  const nine = trip('🚀'.repeat(9));
   check('a ninth emoji is dropped whole', nine === '🚀'.repeat(8),
         JSON.stringify(nine));
   check('the cut never leaves a lone surrogate',
@@ -355,15 +355,15 @@ function names(){
         JSON.stringify(nine));
   // The same cut one unit earlier: 15 units of emoji plus a filler, so the boundary lands
   // between the pair rather than on it.
-  let odd = trip('z'+'🚀'.repeat(9));
+  const odd = trip('z'+'🚀'.repeat(9));
   check('an odd-aligned cut also keeps pairs whole',
         odd === 'z'+'🚀'.repeat(7) && odd.length === 15,
         JSON.stringify(odd) + ' len ' + odd.length);
 
   // A name that reaches the limit must still produce a packet the server accepts - this is
   // the interaction that made the old clamp worth testing at all.
-  for(let [what, name] of samples.concat([['padded emoji', '🚀'.repeat(20)]])){
-    let packet = buf(client.encode('init', {key: KEY, gm: 'ffa', name: name, pet: -1}));
+  for(const [what, name] of samples.concat([['padded emoji', '🚀'.repeat(20)]])){
+    const packet = buf(client.encode('init', {key: KEY, gm: 'ffa', name: name, pet: -1}));
     if(server.decode(packet).error){
       check(what + ': the server accepts the packet', false, server.decode(packet).error);
       return;

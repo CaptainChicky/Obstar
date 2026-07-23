@@ -6,18 +6,18 @@
   registry on each call rather than aliasing them at load: at load neither exists.
 */
 (function(CLIENT){
-  var CONST = CLIENT.CONST;
-  var CLASS_TREE = CLIENT.CLASS_TREE;
-  var CLASS = CLIENT.CLASS;
-  var C = CLIENT.C;
-  var Global = CLIENT.Global;
-  var Game = CLIENT.Game;
-  var General = CLIENT.General;
-  var roundRect = CLIENT.roundRect;
+  const CONST = CLIENT.CONST;
+  const CLASS_TREE = CLIENT.CLASS_TREE;
+  const CLASS = CLIENT.CLASS;
+  const C = CLIENT.C;
+  const Global = CLIENT.Global;
+  const Game = CLIENT.Game;
+  const General = CLIENT.General;
+  const roundRect = CLIENT.roundRect;
   ///
   CLIENT.initUi = function(){
-    var ctx  = General['ctx'];
-    var User = CLIENT.User;
+    const ctx  = General['ctx'];
+    const User = CLIENT.User;
     General['Ui'] = new function(){
       this.lvl = 0;
       this.dlvl = 0;
@@ -34,13 +34,13 @@
       this.dead = 0;
       ///
       this.MAP = (()=>{
-        let can = document.createElement('CANVAS');
-        let ctx = can.getContext('2d');
-        let R = CONST.RESOLUTION*CONST.OFFCAN;
-        let size = 150;
-        let lw = 12;
+        const can = document.createElement('CANVAS');
+        const ctx = can.getContext('2d');
+        const R = CONST.RESOLUTION*CONST.OFFCAN;
+        const size = 150;
+        const lw = 12;
         ctx.font = '700 24px Catamaran';
-        let m = ctx.measureText('Obstar.io').width+20;
+        const m = ctx.measureText('Obstar.io').width+20;
         can.height = can.width = (size+lw)*R+4;
         can.width+=m*R;
         //
@@ -92,34 +92,34 @@
         };
       })();
       this.ST = (()=>{
-        let can = document.createElement('CANVAS');
-        let ctx = can.getContext('2d');
-        let R = CONST.RESOLUTION*CONST.OFFCAN;
+        const can = document.createElement('CANVAS');
+        const ctx = can.getContext('2d');
+        const R = CONST.RESOLUTION*CONST.OFFCAN;
         can.width = 800*R;
         can.height = 75*R;
         let offy = 0;
         {
           ctx.scale(R,R);
-          let lw = 6;
+          const lw = 6;
           ctx.font = '700 36px Catamaran';
           ctx.lineJoin = 'round';
           ctx.lineWidth = lw;
           ctx.textBaseline = 'middle';
           ctx.strokeStyle = '#222222';
           ctx.fillStyle = '#fcfcfc';
-          let m = ctx.measureText(POST.name);
+          const m = ctx.measureText(POST.name);
           ctx.strokeText(POST.name,400-m.width/2,lw+18);
           ctx.fillText(POST.name,400-m.width/2,lw+18);
           offy = lw+34+lw
         }
         ///
-        let barc = '#fbe048 ';
-        let bardkc = General['color'].shade(barc,.5);
-        let barMarge = 9;
-        let barW = 42;
-        let barH = 16;
-        let barRad = 9;
-        let barlw = 6;
+        const barc = '#fbe048 ';
+        const bardkc = General['color'].shade(barc,.5);
+        const barMarge = 9;
+        const barW = 42;
+        const barH = 16;
+        const barRad = 9;
+        const barlw = 6;
         /// level ///
         function level(tank,score,lvl){
           ctx.clearRect(0,offy,can.width,can.height+offy);
@@ -129,13 +129,13 @@
           ctx.lineWidth = 3.5;
           ctx.strokeStyle = '#222222';
           ctx.fillStyle = '#fcfcfc';
-          let m = ctx.measureText(score+' '+tank);
+          const m = ctx.measureText(score+' '+tank);
           ctx.strokeText(score+' '+tank,400-m.width/2,5+offy+8);
           ctx.fillText(score+' '+tank,400-m.width/2,5+offy+8)
         }
         function bar(lvl){
           ctx.save();
-          let fullbar = barMarge*9+barW*10;
+          const fullbar = barMarge*9+barW*10;
           ctx.translate((400-fullbar/2),offy+5);
           ctx.beginPath();
           roundRect(ctx, -1, 0, fullbar+2, barH,barRad);
@@ -167,20 +167,20 @@
         };
       })();
       this.UP = (()=>{
-        let can = document.createElement('CANVAS');
-        let ctx = can.getContext('2d');
-        let R = CONST.RESOLUTION*CONST.OFFCAN;
-        let W = 38;
-        let h = 18;
-        let marge = 5;
-        let lw = 8;
-        let plusRad = 15;
-        let r = 9;
+        const can = document.createElement('CANVAS');
+        const ctx = can.getContext('2d');
+        const R = CONST.RESOLUTION*CONST.OFFCAN;
+        const W = 38;
+        const h = 18;
+        const marge = 5;
+        const lw = 8;
+        const plusRad = 15;
+        const r = 9;
         ///
-        var STATES;
-        var NB;
-        var LOGO;
-        var CLASS = 0;
+        let STATES;
+        let NB;
+        let LOGO;
+        let CLASS = 0;
         ///
         function drawAll(tankClass,states,max = 6){
           if(tankClass == CLASS){
@@ -188,7 +188,7 @@
           }
           CLASS = tankClass
           STATES = {up:[],max:max};
-          let w = max*(W+marge);
+          const w = max*(W+marge);
           can.height = ((plusRad*2+lw*2+4)*states.length)+20+18+6*4;
           can.height *= R;
           can.width  = w+plusRad*2+lw*2+4;
@@ -202,7 +202,7 @@
           ctx.font = '700 26px Catamaran';
           ctx.lineWidth = 4.5;
           ctx.textBaseline = 'middle';
-          let logom = ctx.measureText('Enhance').width
+          const logom = ctx.measureText('Enhance').width
           ctx.strokeText('Enhance',can.width/2/R-logom/2,offy+13);
           ctx.fillText('Enhance',can.width/2/R-logom/2,offy+13);
           offy += 20+6;
@@ -244,14 +244,14 @@
           }
         };
         function redraw(state,nb,isMouse,colored = 1){
-          let data = STATES.up[state]
+          const data = STATES.up[state]
           if(!data){return;}
           if(data.isfull && nb>=STATES.max){return;}
           if(isMouse == data.isMouse && data.nb == Math.min(nb,STATES.max) && data.isfull  == ((data.nb == STATES.max) || !colored)){return;}
           data.isMouse = isMouse;
           data.nb      = Math.min(nb,STATES.max);
           data.isfull  = (data.nb == STATES.max) || !colored;
-          let w = STATES.max*(W+marge);
+          const w = STATES.max*(W+marge);
           ///
           ctx.setTransform(R,0,0,R,data.sx,data.sy);
           ctx.clearRect(0,0,data.sw/R,data.sh/R)
@@ -276,7 +276,7 @@
                 ctx.fill();
               }
               /////
-              let plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(C.up[state],1.4) : C.up[state];
+              const plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(C.up[state],1.4) : C.up[state];
               ctx.beginPath();
               ctx.arc(plusRad,plusRad,plusRad,0,Math.PI*2);
               ctx.closePath();
@@ -295,7 +295,7 @@
             ctx.strokeStyle = '#222222';
             ctx.font = '700 18px Catamaran';
             ctx.fillStyle = '#fcfcfc';
-            let tw = ctx.measureText(data.name).width
+            const tw = ctx.measureText(data.name).width
             ctx.strokeText(data.name,w/2-tw/2+plusRad,plusRad);
             ctx.fillText(data.name,w/2-tw/2+plusRad,plusRad);
             ///
@@ -317,7 +317,7 @@
               ctx.fill();
             }
             ///
-            let plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(C.up[state],1.6) : C.up[state];
+            const plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(C.up[state],1.6) : C.up[state];
             ctx.beginPath();
             ctx.arc(w+plusRad,plusRad,plusRad,0,Math.PI*2);
             ctx.closePath();
@@ -334,7 +334,7 @@
             ctx.strokeStyle = '#222222';
             ctx.font = '700 18px Catamaran';
             ctx.fillStyle = '#fcfcfc';
-            let tw = ctx.measureText(data.name).width
+            const tw = ctx.measureText(data.name).width
             ctx.strokeText(data.name,r+2+w/2-tw/2,plusRad);
             ctx.fillText(data.name,r+2+w/2-tw/2,plusRad);
           }
@@ -351,7 +351,7 @@
           ctx.font = '700 20px Catamaran';
           ctx.textBaseline = 'middle';
           ctx.lineWidth = 3.5;
-          let nbm = ctx.measureText('x'+nb).width;
+          const nbm = ctx.measureText('x'+nb).width;
           ctx.beginPath();
           roundRect(ctx,NB.sw/2/R-nbm/2-5,2,nbm+10,24,4);
           ctx.closePath();
@@ -389,7 +389,7 @@
         }
       })();
       this.TNK = (()=>{
-        let ALL = {
+        const ALL = {
           actual: [],
           show: 0,
           dshow: 0,
@@ -400,17 +400,17 @@
           choices: [],
           actualClass: 0
         };
-        let R = CONST.RESOLUTION*CONST.OFFCAN;
-        let size = 100;
-        let tankS = 1.6;
-        let lw    = 4.5;
-        let inLw  = 9;
-        let round = 4;
-        let fnt = 18;
+        const R = CONST.RESOLUTION*CONST.OFFCAN;
+        const size = 100;
+        const tankS = 1.6;
+        const lw    = 4.5;
+        const inLw  = 9;
+        const round = 4;
+        const fnt = 18;
         {
-          let thislw = 4.5;
+          const thislw = 4.5;
           ALL.logo = document.createElement('CANVAS');
-          let ctx = ALL.logo.getContext('2d');
+          const ctx = ALL.logo.getContext('2d');
           ctx.font = '700 30px Catamaran';
           let m = ctx.measureText('Upgrade').width;
           ALL.logo.width = (m+thislw*2)*R;
@@ -441,7 +441,7 @@
         function mouseOn(c,is){
           if(ALL.Class[c].is != is){
             ALL.Class[c].is = is;
-            let ctx = ALL.Class[c].can.getContext('2d');
+            const ctx = ALL.Class[c].can.getContext('2d');
             ctx.setTransform(R,0,0,R,0,0);
             ctx.translate(2+lw,2+lw);
             ctx.beginPath();
@@ -464,7 +464,7 @@
         function setClass(classes){
           let same = 1;
           if(classes.length == ALL.actual.length){
-            for(let i in classes){
+            for(const i in classes){
               if(ALL.actual[i] != classes[i]){
                 same = 0;
                 break;
@@ -477,14 +477,14 @@
           ALL.actual = classes;
           ALL.Class = {};
           ALL.size = (size+4+lw*2)*R;
-          for(let i in classes){
-            let n = classes[i];
-            let tank = {
+          for(const i in classes){
+            const n = classes[i];
+            const tank = {
               id: i
             };
             ALL.Class[n] = tank;
-            let can = document.createElement('CANVAS');
-            let ctx = can.getContext('2d');
+            const can = document.createElement('CANVAS');
+            const ctx = can.getContext('2d');
             tank.can = can;
             tank.img = document.createElement('CANVAS');
             can.width = size+4+lw*2;
@@ -504,7 +504,7 @@
               ctx.rect(0,0,size,size);
               ctx.closePath();
               ctx.clip();
-              let img = General['drawTank'](ctx,0,
+              const img = General['drawTank'](ctx,0,
                 {
                  class: classes[i],
                  tankC: C.green,
@@ -531,7 +531,7 @@
               ctx.font = `700 ${fnt}px Catamaran`;
               ctx.textBaseline = 'middle';
               ctx.lineWidth = 3.5;
-              let m = ctx.measureText(n).width;
+              const m = ctx.measureText(n).width;
               ctx.fillStyle = '#f4f4f4';
               ctx.strokeStyle = '#222222';
               ctx.strokeText(n,size/2-m/2,fnt/2);
@@ -541,8 +541,8 @@
           }
         };
         function getImage(c){
-          let tank = ALL.Class[c]
-          let ctx = tank.img.getContext('2d');
+          const tank = ALL.Class[c]
+          const ctx = tank.img.getContext('2d');
           ctx.clearRect(0,0,tank.img.width,tank.img.height);
           //ctx.strokeRect(0,0,tank.img.width,tank.img.height);
           ctx.drawImage(
@@ -584,29 +584,29 @@
         return ALL;
       })();
       this.LB = (()=>{
-        let can = document.createElement('CANVAS');
-        let ctx = can.getContext('2d');
-        let R = CONST.RESOLUTION*CONST.OFFCAN;
-        let w = 240;
-        let h = 16;
-        let lw = 5;
-        let marge = 16;
-        let ext = [
+        const can = document.createElement('CANVAS');
+        const ctx = can.getContext('2d');
+        const R = CONST.RESOLUTION*CONST.OFFCAN;
+        const w = 240;
+        const h = 16;
+        const lw = 5;
+        const marge = 16;
+        const ext = [
           '',
           'k',
           'M',
           'Md'
         ];
-        let textS = 18;
-        let font = '700 '+textS+'px Catamaran';
-        let logo = 30;
+        const textS = 18;
+        const font = '700 '+textS+'px Catamaran';
+        const logo = 30;
         ///
         can.width = (lw+w)*R+4;
         can.height = (logo+marge+(marge+h)*10)*R+4;
         {
           ctx.setTransform(R,0,0,R,can.width/2,2);
           ctx.font = '700 '+logo+'px Catamaran';
-          let m = ctx.measureText('Leaderboard').width;
+          const m = ctx.measureText('Leaderboard').width;
           ctx.textBaseline = 'middle';
           ctx.lineWidth = 4.5;
           ctx.fillStyle = '#f4f4f4';
@@ -616,7 +616,7 @@
           ctx.fillText('Leaderboard',-m/2,logo/2);
         }
         ///
-        var ALL = {
+        const ALL = {
           leads: {}
         }
         ///
@@ -624,10 +624,10 @@
           ctx.setTransform(R,0,0,R,2,2)
           ctx.translate(lw/2,logo-marge);
           ctx.clearRect(-lw,marge,can.width,can.height);
-          for(let i in all){
-            let one = all[i];
-            let zeros = one.xp ? parseInt(Math.log10(one.xp)/3) : 0;
-            let text = one.name+' - '+parseInt(one.xp/Math.pow(10,zeros*3)*10)/10+' '+ext[zeros];
+          for(const i in all){
+            const one = all[i];
+            const zeros = one.xp ? parseInt(Math.log10(one.xp)/3) : 0;
+            const text = one.name+' - '+parseInt(one.xp/Math.pow(10,zeros*3)*10)/10+' '+ext[zeros];
             if(!ALL.leads[text]){
               ALL.leads[text] = addText(text);
             } else {
@@ -652,7 +652,7 @@
             ctx.drawImage(ALL.leads[text].can,0,-3,ALL.leads[text].can.width/R,ALL.leads[text].can.height/R);
           };
           ///
-          for(let i in ALL.leads){
+          for(const i in ALL.leads){
             if(ALL.leads[i].last){
               ALL.leads[i].last--;
             } else {
@@ -661,8 +661,8 @@
           }
         };
         function addText(text){
-          let can = document.createElement('CANVAS');
-          let ctx = can.getContext('2d');
+          const can = document.createElement('CANVAS');
+          const ctx = can.getContext('2d');
           can.height = (textS+lw)*R;
           can.width  = (w+lw)*R;
           ///
@@ -674,7 +674,7 @@
           ctx.lineWidth = 3.5;
           ctx.fillStyle = '#f4f4f4';
           ctx.strokeStyle = '#222222';
-          let m = ctx.measureText(text).width;
+          const m = ctx.measureText(text).width;
           if(m>=w){
             ctx.translate(w-m,0);
           } else {
@@ -697,14 +697,14 @@
       })();
       this.END = (()=>{
         ///
-        let xpS = 50;
-        let nameS = 22;
-        let marge = 30;
-        let lw = 6;
-        let fill = '#f0f0f0';
-        let stroke = '#333333';
+        const xpS = 50;
+        const nameS = 22;
+        const marge = 30;
+        const lw = 6;
+        const fill = '#f0f0f0';
+        const stroke = '#333333';
         let is = 0;
-        let ALL = {
+        const ALL = {
           offy: 0
         };
         ///
@@ -721,11 +721,11 @@
           }
         };
         function setTitle(name,xp){
-          let can = document.createElement('CANVAS');
-          let ctx = can.getContext('2d');
-          let R = CONST.RESOLUTION*CONST.OFFCAN;
-          let font = '700 '
-          let text = 'score: '+xp.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          const can = document.createElement('CANVAS');
+          const ctx = can.getContext('2d');
+          const R = CONST.RESOLUTION*CONST.OFFCAN;
+          const font = '700 '
+          const text = 'score: '+xp.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
           ctx.font = '700 '+xpS+'px Catamaran';
           let m = ctx.measureText(text).width;
           can.width = m*R+lw*R+4;
@@ -750,10 +750,10 @@
           return can;
         };
         function setTank(tank){
-          let can = document.createElement('CANVAS');
-          let ctx = can.getContext('2d');
-          let R = CONST.RESOLUTION*CONST.OFFCAN;
-          let img = General['drawTank'](ctx,0,
+          const can = document.createElement('CANVAS');
+          const ctx = can.getContext('2d');
+          const R = CONST.RESOLUTION*CONST.OFFCAN;
+          const img = General['drawTank'](ctx,0,
             {
              class: tank,
              tankC: C.green,
@@ -773,7 +773,7 @@
           ctx.restore();
           ///
           ctx.font = '700 '+parseInt(20*R)+'px Catamaran';
-          let m = ctx.measureText(tank).width;
+          const m = ctx.measureText(tank).width;
           ctx.textBaseline = 'middle';
           ctx.lineJoin = 'round';
           ctx.lineWidth = 4;
@@ -784,12 +784,12 @@
           return can;
         };
         function setEnter(){
-          let can = document.createElement('CANVAS');
-          let ctx = can.getContext('2d');
-          let R = CONST.RESOLUTION*CONST.OFFCAN;
-          let text = 'Press enter to respawn.';
+          const can = document.createElement('CANVAS');
+          const ctx = can.getContext('2d');
+          const R = CONST.RESOLUTION*CONST.OFFCAN;
+          const text = 'Press enter to respawn.';
           ctx.font = '700 '+nameS+'px Catamaran';
-          let m = ctx.measureText(text).width;
+          const m = ctx.measureText(text).width;
           can.width = (m+lw)*R+4;
           can.height = (nameS+lw)*R+4;
           ///
@@ -810,21 +810,21 @@
         return ALL;
       })()
       this.MES = (()=>{
-        let R = CONST.RESOLUTION*CONST.OFFCAN;
-        let M = [
+        const R = CONST.RESOLUTION*CONST.OFFCAN;
+        const M = [
         ];
-        let startA = 6;
-        let dimA   = .02;
-        let fSize = 25;
-        let mH = 25;
-        let mV = 4;
-        let font = '600 '+fSize+'px Catamaran';
+        const startA = 6;
+        const dimA   = .02;
+        const fSize = 25;
+        const mH = 25;
+        const mV = 4;
+        const font = '600 '+fSize+'px Catamaran';
         function add(message){
           for(let mes of message){
             if(mes[0] == '/' && mes[1] == 'i' && mes[2] == 'm' && mes[3] == 'g'){
               mes = mes.split(' ');
-              var _img = document.createElement('IMG');
-              var newImg = new Image;
+              const _img = document.createElement('IMG');
+              const newImg = new Image;
               newImg.onload = function(){
                   _img.src = this.src;
                   M.unshift({
@@ -837,10 +837,10 @@
               newImg.src = './pic/img_mess/'+mes[1];
               continue;
             }
-            let can = document.createElement('CANVAS');
-            let ctx = can.getContext('2d');
+            const can = document.createElement('CANVAS');
+            const ctx = can.getContext('2d');
             ctx.font = font;
-            let m = ctx.measureText(mes).width;
+            const m = ctx.measureText(mes).width;
             can.width = (m+mH)*R;
             can.height = (fSize+mV*2)*R;
             ////
@@ -862,7 +862,7 @@
         add(['set']);
         M[0].a = 0.1;
         function update(){
-          for(let i in M){
+          for(const i in M){
             M[i].da += (Math.min(1,M[i].a)-M[i].da)*0.1;
             if(M[i].da<0.01){
               M.splice(i,1);
@@ -926,15 +926,15 @@
         ///
         this.UP.init(User.class,CLASS[User.class].ups ? CLASS[User.class].ups : TanksConfig.defaultUps,6);
         ///
-        let SHOW = Math.min(General['ease-in-out'](this.UP.show,3),1);
-        let ALPHA = ctx.globalAlpha;
+        const SHOW = Math.min(General['ease-in-out'](this.UP.show,3),1);
+        const ALPHA = ctx.globalAlpha;
         ctx.setTransform(Global.UIRATIO,0,0,Global.UIRATIO,Global.canW/2+User.predic.x,Global.canH/2+User.predic.y);
         ctx.scale(1/CONST.OFFCAN/CONST.RESOLUTION,1/CONST.OFFCAN/CONST.RESOLUTION)
         ///
         if(SHOW){
           ctx.globalAlpha = ALPHA*SHOW;
           let n = 0;
-          let dis = Math.PI/this.UP.up.length*1;
+          const dis = Math.PI/this.UP.up.length*1;
           if(this.still){
             ctx.drawImage(this.UP.can,
               this.UP.logo.sx,//sx
@@ -947,13 +947,13 @@
               this.UP.logo.sh,//h
             );
           }
-          for(let i in this.UP.up){
-            let up = this.UP.up[i];
+          for(const i in this.UP.up){
+            const up = this.UP.up[i];
             if(!up.odd){n++;}
-            let angle = (-dis*this.UP.up.length/Math.PI)+(n*dis*SHOW)
-            let offx = Math.cos(angle)*120*CONST.RESOLUTION*CONST.OFFCAN;
-            let offy = Math.sin(angle)*120*CONST.RESOLUTION*CONST.OFFCAN;
-            let j = General.isMouseCirc(
+            const angle = (-dis*this.UP.up.length/Math.PI)+(n*dis*SHOW)
+            const offx = Math.cos(angle)*120*CONST.RESOLUTION*CONST.OFFCAN;
+            const offy = Math.sin(angle)*120*CONST.RESOLUTION*CONST.OFFCAN;
+            const j = General.isMouseCirc(
               (Global.canW/2+User.predic.x+(up.odd ? offx : -offx)/CONST.OFFCAN/CONST.RESOLUTION*Global.UIRATIO)/CONST.RESOLUTION,
               (Global.canH/2+User.predic.y+offy/CONST.OFFCAN*Global.UIRATIO/CONST.RESOLUTION)/CONST.RESOLUTION,
               12*Global.UIRATIO
@@ -1033,10 +1033,10 @@
           this.TNK.hide = 0;
         }
         ///
-        let reverse = 1/Global.UIRATIO*CONST.OFFCAN*CONST.RESOLUTION*CONST.RESOLUTION;
+        const reverse = 1/Global.UIRATIO*CONST.OFFCAN*CONST.RESOLUTION*CONST.RESOLUTION;
         if(this.TNK.hide){
           this.TNK.show = -.5;
-          let isIn = (General['isMouse'](
+          const isIn = (General['isMouse'](
             (Global.winW)-(30)/reverse,
             (Global.winH)-(-this.TNK.mDown+this.TNK.size*this.TNK.choices.length)/reverse,
             (30)/reverse,
@@ -1044,7 +1044,7 @@
           ));
           if(isIn){this.TNK.show = 1; this.TNK.hide = 0}
         } else {
-          let isIn = (General['isMouse'](
+          const isIn = (General['isMouse'](
             (Global.winW)-(-this.TNK.mRight+this.TNK.size/2+this.TNK.hideWidth/2)/reverse,
             (Global.winH)-(this.TNK.size/2+15*reverse+this.TNK.hideHeight+this.TNK.mDown+(this.TNK.size+2)*this.TNK.choices.length)/reverse,
             (this.TNK.hideWidth)/reverse,
@@ -1075,11 +1075,14 @@
         ctx.setTransform(Global.UIRATIO,0 ,0 ,Global.UIRATIO, Global.canW, Global.canH);
         ctx.scale(1/CONST.OFFCAN/CONST.RESOLUTION,1/CONST.OFFCAN/CONST.RESOLUTION);
         this.TNK.dshow += (this.TNK.show-this.TNK.dshow)*0.05;
-        for(let i in this.TNK.choices){
-          let n = this.TNK.choices[i];
-          let c = this.TNK.getImage(n);
-          var gw = c.width;
-          let isIn = (General['isMouse'](
+        // gw holds the last choice's width for the logo placement below the loop; it was a
+        // function-scoped `var` that leaked out of the loop on purpose (undefined if empty).
+        let gw;
+        for(const i in this.TNK.choices){
+          const n = this.TNK.choices[i];
+          const c = this.TNK.getImage(n);
+          gw = c.width;
+          const isIn = (General['isMouse'](
             (Global.winW)-(-this.TNK.mRight+c.width-5)/reverse,
             (Global.winH)-(-this.TNK.mDown+(c.height*(parseInt(i)+1)-5))/reverse,
             (c.width-20)/reverse,
@@ -1114,13 +1117,13 @@
         ctx.scale(1/CONST.OFFCAN/CONST.RESOLUTION,1/CONST.OFFCAN/CONST.RESOLUTION);
         this.MES.update();
         let offy = 0;
-        let a = ctx.globalAlpha;
-        for(let m of this.MES.mes){
+        const a = ctx.globalAlpha;
+        for(const m of this.MES.mes){
           if(m.img){
             ctx.globalAlpha = m.da;
             ctx.save();
             ctx.scale(CONST.RESOLUTION,CONST.RESOLUTION);
-            let mot = m.a > 1 ? m.da : 1;
+            const mot = m.a > 1 ? m.da : 1;
             ctx.drawImage(m.can,-m.can.width/2*mot,offy,m.can.width*mot,m.can.height*mot);
             offy += (m.a>1) ? ((m.can.height+10)*m.da)*CONST.RESOLUTION : (m.can.height+10)*CONST.RESOLUTION;
             ctx.globalAlpha = a;
@@ -1128,7 +1131,7 @@
             continue;
           }
           ctx.globalAlpha *= m.da;
-          let mot = m.a > 1 ? m.da : 1;
+          const mot = m.a > 1 ? m.da : 1;
           ctx.drawImage(m.can,-m.can.width/2*mot,offy,m.can.width*mot,m.can.height*mot);
           offy += (m.a>1) ? (m.can.height+10)*m.da : m.can.height+10;
           ctx.globalAlpha = a;
@@ -1137,7 +1140,7 @@
       this.endScreen   = function(){
         this.END.set(this.dead,User.name,this.xp,User.class);
         if(this.END.offy){
-          let invert = 1-this.END.offy
+          const invert = 1-this.END.offy
           ctx.setTransform(1,0,0,1,0,0);
           ctx.globalAlpha = this.END.offy;
           ctx.fillStyle = 'rgba(0,0,10,0.3)';
@@ -1188,8 +1191,8 @@
         }
       }
       this.draw = function(){
-        let Width = Global.winW*CONST.RESOLUTION;
-        let Height = Global.winH*CONST.RESOLUTION;
+        const Width = Global.winW*CONST.RESOLUTION;
+        const Height = Global.winH*CONST.RESOLUTION;
         //////////////////////////////////////////
         ctx.beginPath();
         ctx.moveTo(0,0);

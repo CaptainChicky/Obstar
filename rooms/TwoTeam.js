@@ -35,10 +35,10 @@ class TwoTeam extends Room {
   /* A row of immortal guard drones in front of each base. */
   build(){
     this.droneQt = 10;
-    for(let team of this.rules.teams){
-      let side = team ? 1 : -1;
+    for(const team of this.rules.teams){
+      const side = team ? 1 : -1;
       for(let i = 1; i<=this.droneQt; i++){
-        let bull = new RT.Bullet(
+        const bull = new RT.Bullet(
           {"GM":this.gm,"sId":this.id,"oId":-1},
           side*(this.map.width/2-this.baseSize/2),
           this.map.height*i/(this.droneQt+1)-this.map.height/2,
@@ -64,8 +64,8 @@ class TwoTeam extends Room {
   }
   /* Three bots, alternating sides, starting from one side or the other at random. */
   botRoster(){
-    let start = this.rules.botIdStart+parseInt(Math.random()*2);
-    let roster = [];
+    const start = this.rules.botIdStart+parseInt(Math.random()*2);
+    const roster = [];
     for(let i = start; i<start+this.rules.botCount; i++){
       roster.push({id: i, team: i%2});
     }
@@ -77,7 +77,7 @@ class TwoTeam extends Room {
   }
   /* Cross the strip in front of the other side's base and you die on the spot. */
   inEnemyBase(obj){
-    let edge = this.map.width/2-this.baseSize;
+    const edge = this.map.width/2-this.baseSize;
     switch(obj.team){
       case 0: return obj.x>edge;
       case 1: return obj.x<-edge;

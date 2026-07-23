@@ -4,19 +4,19 @@
   from inside Run().
 */
 (function(CLIENT){
-  var CONST = CLIENT.CONST;
-  var C = CLIENT.C;
-  var Global = CLIENT.Global;
-  var roundRect = CLIENT.roundRect;
-  var Drawings = {
+  const CONST = CLIENT.CONST;
+  const C = CLIENT.C;
+  const Global = CLIENT.Global;
+  const roundRect = CLIENT.roundRect;
+  const Drawings = {
       canons:[
         (ctx, config, param, i) => {
-          let c = config.canons[i], r = param.size/CONST.SIZE;
+          const c = config.canons[i], r = param.size/CONST.SIZE;
           if(c.hidden){
             return;
           }
           i = config.turrets ? parseInt(i) + config.turrets.length : i;
-          let recoil = param.recoils[i] ? 1-Math.abs(param.recoils[i]) : 1;
+          const recoil = param.recoils[i] ? 1-Math.abs(param.recoils[i]) : 1;
           ctx.save();
             ctx.beginPath();
             ctx.rotate(c.offdir+param.dir);
@@ -34,9 +34,9 @@
           ctx.restore();
         },
         (ctx, config, param, i) => {
-          let c = config.canons[i], r = param.size/CONST.SIZE;
+          const c = config.canons[i], r = param.size/CONST.SIZE;
           i = config.turrets ? parseInt(i) + config.turrets.length : i;
-          let recoil = param.recoils[i] ? 1-Math.abs(param.recoils[i]) : 1;
+          const recoil = param.recoils[i] ? 1-Math.abs(param.recoils[i]) : 1;
           ctx.save();
             ctx.beginPath();
             ctx.rotate(c.offdir+param.dir);
@@ -62,8 +62,8 @@
       ],
       turrets:[
         (ctx, config, param, i) => {
-          let c = config.turrets[i], r = param.size/CONST.SIZE;
-          let recoil = param.recoils[i] ? 1-Math.abs(param.recoils[i]) : 1;
+          const c = config.turrets[i], r = param.size/CONST.SIZE;
+          const recoil = param.recoils[i] ? 1-Math.abs(param.recoils[i]) : 1;
           ctx.save();
             ctx.beginPath();
             ctx.rotate(param.canDir[i] ? param.canDir[i] : 0);
@@ -125,7 +125,7 @@
           ctx.restore();
         },
         (ctx, config, param) => {
-          let a = Math.PI*2/5, size = param.size*1.236;
+          const a = Math.PI*2/5, size = param.size*1.236;
           ctx.save();
             ctx.rotate(param.dir+a/2);
             ctx.beginPath();
@@ -158,7 +158,7 @@
           ctx.closePath();
         },
         (ctx, param) => {
-          let $1=param.size*1.7;
+          const $1=param.size*1.7;
           ctx.rotate(param.dir);
           ctx.beginPath();
           ctx.moveTo($1,0);
@@ -173,8 +173,8 @@
           ctx.stroke();
         },
         (ctx, param) => {
-          let $1=param.size*1.8;
-          let mini = $1*.38;
+          const $1=param.size*1.8;
+          const mini = $1*.38;
           ///
           ctx.rotate(param.dir);
           ctx.beginPath();

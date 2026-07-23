@@ -1534,7 +1534,7 @@
     "Triple": new function(){
       this.screen = 1408;
       this.canons = [];
-      let c = new Array(3).fill(null).map(()=>({
+      const c = new Array(3).fill(null).map(()=>({
         reload :      28,
         offTime :     0,
         ///
@@ -1558,7 +1558,7 @@
     },
     "Twin Flank":new function(){
       this.screen = 1408;
-      let c = new Array(4).fill(null).map(()=>({
+      const c = new Array(4).fill(null).map(()=>({
         reload :      28,
         offTime :     0,
         type:         0,
@@ -1585,7 +1585,7 @@
     "Quad Shot":new function(){
       this.screen = 1408;
       this.canons = [];
-      let c = new Array(4).fill(null).map(()=>({
+      const c = new Array(4).fill(null).map(()=>({
         reload :      28,
         offTime :     0,
         ///
@@ -1609,7 +1609,7 @@
     },
     "Destroyer":new function(){
       this.screen = 1408;
-      let c = new Array(1).fill(null).map(()=>({
+      const c = new Array(1).fill(null).map(()=>({
         reload :      105,
         offTime :     0,
         type:         0,
@@ -1657,7 +1657,7 @@
       this.screen = 1664;
       this.maxDrone = 7;
       this.canons = [];
-      let c = new Array(2).fill(null).map(()=>({
+      const c = new Array(2).fill(null).map(()=>({
         reload :      220,
         offTime :     0,
         type:         1,
@@ -1683,7 +1683,7 @@
     },
     "Hover Tank":new function(){
       this.screen = 1408;
-      let c = new Array(3).fill(null).map(()=>({
+      const c = new Array(3).fill(null).map(()=>({
         reload :      30,
         offTime :     0,
         ///
@@ -1733,7 +1733,7 @@
     ///
     "Rocket":new function(){
       this.screen = 1408;
-      let c = new Array(2).fill(null).map(()=>({
+      const c = new Array(2).fill(null).map(()=>({
         reload :      20,
         offTime :     0,
         ///
@@ -1756,7 +1756,7 @@
     "Hybrid":new function(){
       this.screen = 1408;
       this.maxDrone = 2;
-      let c = new Array(1).fill(null).map(()=>({
+      const c = new Array(1).fill(null).map(()=>({
         reload :      105,
         offTime :     0,
         type:         0,
@@ -1802,7 +1802,7 @@
     },
     "Annihilator":new function(){
       this.screen = 1408;
-      let c = new Array(1).fill(null).map(()=>({
+      const c = new Array(1).fill(null).map(()=>({
         reload :      105,
         offTime :     0,
         type:         0,
@@ -1827,7 +1827,7 @@
     },
     "Sprayer":new function(){
       this.screen = 1664;
-      let c = new Array(5).fill(null).map(()=>({
+      const c = new Array(5).fill(null).map(()=>({
         reload :      28,
         offTime :     0,
         ///
@@ -1844,7 +1844,7 @@
         weight :      0.5,
         back :        0.15
       }));
-      let d = 7;
+      const d = 7;
       c[0].canonLength -= d ; c[0].offTime = .2;
       c[1].canonLength -= d*2 ; c[1].offTime = .4;
       c[2].canonLength -= d*3 ; c[2].offTime = .6;
@@ -1876,7 +1876,7 @@
     "Treble": new function(){
       this.screen = 1408;
       this.canons = [];
-      let c = new Array(3).fill(null).map(()=>({
+      const c = new Array(3).fill(null).map(()=>({
         reload :      28,
         offTime :     0,
         ///
@@ -1900,7 +1900,7 @@
     },
     "Triple Twin":new function(){
       this.screen = 1408;
-      let c = new Array(6).fill(null).map(()=>({
+      const c = new Array(6).fill(null).map(()=>({
         reload :      28,
         offTime :     0,
         type:         0,
@@ -1928,7 +1928,7 @@
     "Penta Shot": new function(){
       this.screen = 1408;
       this.canons = [];
-      let c = new Array(5).fill(null).map(()=>({
+      const c = new Array(5).fill(null).map(()=>({
         reload :      28,
         offTime :     0,
         ///
@@ -1955,7 +1955,7 @@
     "Octo Shot":new function(){
       this.screen = 1408;
       this.canons = [];
-      let c = new Array(8).fill(null).map(()=>({
+      const c = new Array(8).fill(null).map(()=>({
         reload :      28,
         offTime :     0,
         ///
@@ -2012,7 +2012,7 @@
     },
     "Booster":new function(){
       this.screen = 1408;
-      let c = new Array(5).fill(null).map(()=>({
+      const c = new Array(5).fill(null).map(()=>({
         reload :      31,
         offTime :     0,
         ///
@@ -2039,7 +2039,7 @@
     },
     "Raptor":new function(){
       this.screen = 1408;
-      let c = new Array(5).fill(null).map(()=>({
+      const c = new Array(5).fill(null).map(()=>({
         reload :      27,
         offTime :     0,
         ///
@@ -2122,7 +2122,7 @@
       this.screen = 1664;
       this.maxDrone = 8;
       this.canons = [];
-      let c = new Array(4).fill(null).map(()=>({
+      const c = new Array(4).fill(null).map(()=>({
         reload :      340,
         offTime :     0,
         type:         1,
@@ -2153,7 +2153,7 @@
       this.maxDrone = 8;
       this.alpha = .006;
       this.canons = [];
-      let c = [{
+      const c = [{
         reload :      140,
         offTime :     0,
         type:         1,
@@ -2194,7 +2194,7 @@
       this.screen = 1664;
       //this.maxDrone = 7;
       this.canons = [];
-      let c = new Array(4).fill(null).map(()=>({
+      const c = new Array(4).fill(null).map(()=>({
         reload :      27,
         offTime :     0,
         type:         1.2,
@@ -2275,7 +2275,7 @@
       this.screen = 1664;
       //this.maxDrone = 7;
       this.canons = [];
-      let c = [{
+      const c = [{
         reload :      85,
         offTime :     0,
         type:         2,
@@ -2352,7 +2352,7 @@
         all: 0,
         maxDis: 800,
       };
-      let c = [{
+      const c = [{
         reload :      35,
         offTime :     0,
         type:         0,
@@ -2527,7 +2527,7 @@
       this.canons = [];
       this.boss = true;
       this.maxDrone = 35;
-      let c = new Array(4).fill(null).map(()=>({
+      const c = new Array(4).fill(null).map(()=>({
         reload :      8,
         offTime :     0,
         auto:         1,

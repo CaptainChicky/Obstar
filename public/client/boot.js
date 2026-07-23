@@ -5,10 +5,10 @@
   Loading this file last is what makes the load order in views/play.ejs load-bearing.
 */
 (function(CLIENT){
-  var CONST = CLIENT.CONST;
-  var C = CLIENT.C;
-  var Global = CLIENT.Global;
-  var General = CLIENT.General;
+  const CONST = CLIENT.CONST;
+  const C = CLIENT.C;
+  const Global = CLIENT.Global;
+  const General = CLIENT.General;
   function preRun(){
     //
     if(!General['canvas']){
@@ -20,7 +20,7 @@
       document.body.appendChild(General['canvas']);
     }
     General['ctx'] = General['canvas'].getContext('2d');
-    var ctx = General['ctx'];
+    const ctx = General['ctx'];
     //////////
     General['foreground'] = new function(){
       this.y = -5000;
@@ -107,14 +107,14 @@
     /////////
     General['KICK'] = General['KICK'] || 0;
     General['WS'] = General['KICK'] ? 0 :  (() => {
-      let socket = new WebSocket(WS_LINK)
+      const socket = new WebSocket(WS_LINK)
           socket.binaryType = 'arraybuffer';
       socket.onopen    = ()=>{
         socket.send(PROTO.encode('init',POST))
       };
       socket.onmessage = (packet) => {
-        let decoded = PROTO.decode(packet.data);
-        let type = decoded.type;
+        const decoded = PROTO.decode(packet.data);
+        const type = decoded.type;
         switch(type){
           case 'ping':{
             socket.send(PROTO.encode('ping',0))

@@ -102,9 +102,9 @@ class Player {
 
   }
   motion(){
-    let key = this.inputs;
-    let motion = new Vec(0,0);
-    let len = 0.35+this.up.MSpeed-(this.level/155);
+    const key = this.inputs;
+    const motion = new Vec(0,0);
+    const len = 0.35+this.up.MSpeed-(this.level/155);
     if(!this.state.disconnect){
       if(key.w || key.arrw){motion.y-=len;}
       if(key.s || key.arrs){motion.y+=len;}
@@ -145,7 +145,7 @@ class Player {
   shoot(){
     if(CLASS[this.class].DETEC){
       if(!this.DETEC){
-        let detec = CLASS[this.class].DETEC;
+        const detec = CLASS[this.class].DETEC;
         this.DETEC = new RT.Detector(this,this.x,this.y,detec.size,detec.type,detec.all)
         this.DETEC.team = this.team;
       } else {
@@ -157,19 +157,19 @@ class Player {
     if(this.state.disconnect){
       return;
     }
-    for(let r in CLASS[this.class].canons){
+    for(const r in CLASS[this.class].canons){
       if(typeof this.shootTimer[r] === 'undefined'){this.shootTimer[r] = 0;}
-      let can = CLASS[this.class].canons[r];
-      let reloadMax = Math.round(can.reload*this.up.Reload);
-      let reload = this.shootTimer[r];
-      let maxD = CLASS[this.class].maxDrone;
-      var autoDir, shoot;
-      let ra = this.size/35;
+      const can = CLASS[this.class].canons[r];
+      const reloadMax = Math.round(can.reload*this.up.Reload);
+      const reload = this.shootTimer[r];
+      const maxD = CLASS[this.class].maxDrone;
+      let autoDir, shoot;
+      const ra = this.size/35;
       if(can.autoDir){
         if(this.DETEC.select){
           this.DETEC.enabled = 0;
-          let other = this.DETEC.select;
-          let dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
+          const other = this.DETEC.select;
+          const dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
           if(!other.destroy && other.alpha && dis<=CLASS[this.class].DETEC.maxDis){
             autoDir = Math.atan2(other.y+other.vec.y*dis/12-this.y,other.x+other.vec.x*dis/12-this.x);
             this.canDir[r] = autoDir;
@@ -199,15 +199,15 @@ class Player {
             this.alpha+=Math.min(1,CLASS[this.class].alpha*30);
           }
           ///
-          let dir = can.autoDir ? autoDir : this.dir+can.offdir;
-          let exitSpeed = can.exitSpeed ? can.exitSpeed : 40;
-          let offx = can.offx*ra;
-          let len = (can.canonLength*.93)*ra-((this.up.BSpeed*can.speed)*exitSpeed*2);
-          let offlen  = Math.sqrt(Math.pow(len,2)+(offx*offx));
-          let offdir  = Math.atan(offx/len);
-          let x = this.x+Math.cos(dir+offdir)*(offlen)//-can.size*ra);
-          let y = this.y+Math.sin(dir+offdir)*(offlen)//-can.size*ra);
-          let Bull = new RT.Bullet(this.id,x,y,dir+Math.random()*can.rand-can.rand/2,this.up.BSpeed*can.speed,exitSpeed);
+          const dir = can.autoDir ? autoDir : this.dir+can.offdir;
+          const exitSpeed = can.exitSpeed ? can.exitSpeed : 40;
+          const offx = can.offx*ra;
+          const len = (can.canonLength*.93)*ra-((this.up.BSpeed*can.speed)*exitSpeed*2);
+          const offlen  = Math.sqrt(Math.pow(len,2)+(offx*offx));
+          const offdir  = Math.atan(offx/len);
+          const x = this.x+Math.cos(dir+offdir)*(offlen)//-can.size*ra);
+          const y = this.y+Math.sin(dir+offdir)*(offlen)//-can.size*ra);
+          const Bull = new RT.Bullet(this.id,x,y,dir+Math.random()*can.rand-can.rand/2,this.up.BSpeed*can.speed,exitSpeed);
               Bull.type = (can.type ? can.type : 0);
               Bull.class = this.class;
               Bull.pene = this.up.BPene*can.pene;
@@ -255,8 +255,8 @@ class Player {
         this.stillLvl+=1;
         this.upNb[data]+=1;
         let nb = -1;
-        let re = 0;
-        for(let i in this.up){
+        const re = 0;
+        for(const i in this.up){
           nb++;
           if(nb != data){continue;}
           switch(i){
@@ -306,7 +306,7 @@ class Player {
       this.dead = config.DEAD_DELAY;
       return;
     }
-    let oldHp = this.hp;
+    const oldHp = this.hp;
     switch(other.kind){
       case KIND.PLAYER:
         this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(0.3,0.3)));
@@ -325,11 +325,11 @@ class Player {
         }
         break;
       case KIND.OBJECTS:
-        let len = (this.vec.length()<0.5) ? 2 : .5;
+        const len = (this.vec.length()<0.5) ? 2 : .5;
         this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(len,len)));
         if(this.necro && other.type == 'sqr' && this.droneCount<CLASS[this.class].maxDrone+this.upNb[1]){
           this.droneCount++;
-          let Bull = new RT.Bullet(this.id,other.x,other.y,Math.random()*Math.PI*2,this.up.BSpeed*this.necro.speed,0);
+          const Bull = new RT.Bullet(this.id,other.x,other.y,Math.random()*Math.PI*2,this.up.BSpeed*this.necro.speed,0);
               Bull.type = this.necro.type;
               Bull.class = this.class;
               Bull.necro = this.necro.necro;
@@ -446,7 +446,7 @@ class Player {
     }
     ///
     if(this.dev.stick){
-      let obj = RT.Controller.server[this.id.GM][this.id.sId].INSTANCE[this.dev.stick[0]][this.dev.stick[1]];
+      const obj = RT.Controller.server[this.id.GM][this.id.sId].INSTANCE[this.dev.stick[0]][this.dev.stick[1]];
       if(obj && isNaN(obj) && !obj.destroy){
         obj.x += (this.x+this.inputs.mouse_x-obj.x)*0.2;
         obj.y += (this.y+this.inputs.mouse_y-obj.y)*0.2;

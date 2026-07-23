@@ -15,7 +15,7 @@ const path = require('path');
 const SRC = path.join(__dirname, '..', 'public', 'SHARE', 'SocketSchema.js');
 
 module.exports = function loadClientProto(){
-  let sandbox = {console: console};
+  const sandbox = {console: console};
   // Node's Buffer is used by the decode half (DecoderBuff calls buffer.readUInt8), and vm
   // contexts do not get it for free.
   sandbox.Buffer = Buffer;

@@ -61,7 +61,7 @@
   const TELEPORT = 400;   // a jump this big is not motion; see push()
   const MAX_EXTRAP = 2;   // how far past the newest snapshot sample() will coast
 
-  var NET = {
+  const NET = {
     interval: NET_TICK,   // EMA of the gap between GameUpdate packets, ms
     last:     0,          // when the most recent one arrived
     now: (typeof performance !== 'undefined' && performance.now)
@@ -71,7 +71,7 @@
     mark: function(t){
       if(typeof t === 'undefined'){ t = NET.now(); }
       if(NET.last){
-        let dt = t-NET.last;
+        const dt = t-NET.last;
         // A backgrounded tab or a stall produces gaps of seconds. Letting one into the
         // average would make every entity on screen crawl for the next minute.
         if(dt>4 && dt<250){
@@ -125,7 +125,7 @@
     /* Where to draw it now. Writes and returns this.x / this.y. */
     sample(t){
       if(typeof t === 'undefined'){ t = NET.now(); }
-      let span = this.t1-this.t0;
+      const span = this.t1-this.t0;
       if(span<=0){
         this.x = this.x1;
         this.y = this.y1;
@@ -133,7 +133,7 @@
       }
       // Clamped at both ends: a dropped packet coasts forward for at most one extra interval
       // instead of extrapolating off the map, and a late frame never rewinds past t0.
-      let a = Math.max(0, Math.min(MAX_EXTRAP, (t-NET.interval-this.t0)/span));
+      const a = Math.max(0, Math.min(MAX_EXTRAP, (t-NET.interval-this.t0)/span));
       this.x = this.x0+(this.x1-this.x0)*a;
       this.y = this.y0+(this.y1-this.y0)*a;
       return this;

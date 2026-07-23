@@ -36,7 +36,7 @@ class Detector {
     this.construc = type.length;
   }
   collision(other, option = {}){
-    let kind = other.kind;
+    const kind = other.kind;
     if(this.all){
       if(this.type.includes(kind) && other.alpha && !other.shield){
         if(kind == KIND.BULLET){
@@ -62,7 +62,7 @@ class Detector {
       if(kind == KIND.BULLET && this.id.oId == other.origine.oId){
         return;
       }
-      let index = this.type.indexOf(kind);
+      const index = this.type.indexOf(kind);
       if(index<this.construc){
         this.dis = option.dis
         this.select = other;

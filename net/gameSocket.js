@@ -34,7 +34,7 @@ function attach(httpServer){
     if(socket.main){
       socket.main.request++;
     }
-    let data = PROTO.decode(packet);
+    const data = PROTO.decode(packet);
     ///
     if(data.error){
       kick(socket,data.error);
@@ -55,7 +55,7 @@ function attach(httpServer){
       };
       case 'keydown':{
         socket.main.request -= .5;
-        let tank = RT.Controller.getPlayer(socket.id);
+        const tank = RT.Controller.getPlayer(socket.id);
         if(!RT.Controller.getPlayer(socket.id)){ break; }
         switch(data.data.key){
           case 'a':
@@ -79,7 +79,7 @@ function attach(httpServer){
       };
       case 'keyup':{
         socket.main.request -= .5;
-        let tank = RT.Controller.getPlayer(socket.id);
+        const tank = RT.Controller.getPlayer(socket.id);
         if(!RT.Controller.getPlayer(socket.id)){ break; }
         switch(data.data.key){
           case 'a':
@@ -96,8 +96,8 @@ function attach(httpServer){
             break;
           };
           case 'enter':{
-            let ans = RT.Controller.respawn(socket.id);
-            let tank = RT.Controller.getPlayer(socket.id);
+            const ans = RT.Controller.respawn(socket.id);
+            const tank = RT.Controller.getPlayer(socket.id);
             if(!tank && ! ans){ break; }
             talk(socket,'UpdateUp',tank.upNb);
             break;
@@ -106,7 +106,7 @@ function attach(httpServer){
         break;
       };
       case 'mousemove':{
-        let tank = RT.Controller.getPlayer(socket.id);
+        const tank = RT.Controller.getPlayer(socket.id);
         if(!RT.Controller.getPlayer(socket.id)){ break; }
         if(tank.botMod){break;}
         tank.dir = data.data.dir;
@@ -115,20 +115,20 @@ function attach(httpServer){
         break;
       };
       case 'upgrade':{
-        let tank = RT.Controller.getPlayer(socket.id);
+        const tank = RT.Controller.getPlayer(socket.id);
         if(!tank){ break; }
         tank.upgrade(data.data.up);
         talk(socket,'UpdateUp',tank.upNb);
         break;
       };
       case 'upClass':{
-        let tank = RT.Controller.getPlayer(socket.id);
+        const tank = RT.Controller.getPlayer(socket.id);
         if(!tank){ break; }
         tank.upClass(data.data.up);
       };
       case 'com':{
         socket.main.request+=4;
-        let ans = RT.Controller.command(socket.id,data.data);
+        const ans = RT.Controller.command(socket.id,data.data);
         if(ans){
           talk(socket,'comResponse',ans);
         }
@@ -175,7 +175,7 @@ function attach(httpServer){
     a rounding error - the deadline resets to now rather than firing a catch-up burst.
   */
   function nextDelay(it,key,period){
-    let now = Date.now();
+    const now = Date.now();
     let due = (it[key] || now)+period;
     if(due < now-period){ due = now+period; }
     it[key] = due;
@@ -198,7 +198,7 @@ function attach(httpServer){
       if(this.chat){
         this.chat--;
       }
-      let id = RT.Controller.clients[this.socket.id];
+      const id = RT.Controller.clients[this.socket.id];
       let ms = SEND_MS;
       ///
       switch(id){
@@ -221,7 +221,7 @@ function attach(httpServer){
           break;
         }
         default:{
-          let buff = RT.Controller.getBuffer(socket.id);
+          const buff = RT.Controller.getBuffer(socket.id);
           if(!buff){
             ms = IDLE_MS;
           } else if(typeof buff === 'object' && buff.head.timestamp === this.sentStamp){
@@ -231,7 +231,7 @@ function attach(httpServer){
             if(typeof buff === 'object'){ this.sentStamp = buff.head.timestamp; }
             talk(this.socket,'GameUpdate',buff);
           }
-          let mess = RT.Controller.chat.get(socket.id);
+          const mess = RT.Controller.chat.get(socket.id);
           if(mess){
             talk(this.socket,'chatUpdate',mess);
           }
@@ -255,7 +255,7 @@ function attach(httpServer){
         this.strikes = 0;
       }
       ///DEAD
-      let play = RT.Controller.getPlayer(socket.id);
+      const play = RT.Controller.getPlayer(socket.id);
       if(this.dead>config.S_BEFORE_KICK){
         kick(this.socket,'ERR_SERVER_OFF');
         return;
@@ -272,7 +272,7 @@ function attach(httpServer){
         kick(this.socket,'ERR_HEARTBEATS_LOST');
       } else {
         talk(this.socket,'ping',0);
-        let ui = RT.Controller.getUi(this.socket.id);
+        const ui = RT.Controller.getUi(this.socket.id);
         if(ui){
           talk(this.socket,'UiUpdate',ui);
         }
@@ -299,7 +299,7 @@ function attach(httpServer){
     setTimeout((s)=>{s.close()},100,socket);
   }
 
-  let wss = new WebSocket.Server({server: httpServer});
+  const wss = new WebSocket.Server({server: httpServer});
   wss.on('connection', function(socket){
     socket.id = 'Waiting';
     socket.on('message', (packet)=>{income(socket,packet)});

@@ -46,13 +46,13 @@ function run(opts){
   NET.reset();
   let t = 1000;
   let truth = 0;
-  let e = new Interp(0,0);
-  let frames = [];
+  const e = new Interp(0,0);
+  const frames = [];
   for(let p = 0; p<(opts.packets||12); p++){
     NET.mark(t);
     e.push(truth,0,t);
     for(let f = 0; f<TICK/FRAME; f++){
-      let at = t+f*FRAME;
+      const at = t+f*FRAME;
       e.sample(at);
       frames.push({t: at, drawn: e.x, truth: truth, packet: p, phase: f});
     }
@@ -78,7 +78,7 @@ function oldSmooth(){
 
 /* Drawn speed per frame, over the frames of one packet interval. */
 function drawnSpeed(frames, packet){
-  let f = frames.filter((x)=>x.packet === packet);
+  const f = frames.filter((x)=>x.packet === packet);
   return (f[f.length-1].drawn-f[0].drawn)/(f.length-1);
 }
 
@@ -86,12 +86,12 @@ console.log('obstar client motion tests\n');
 
 console.log('interpolation:');
 {
-  let frames = run();
-  let perFrame = SPEED/(TICK/FRAME);   // what a constant-speed entity should cover per frame
+  const frames = run();
+  const perFrame = SPEED/(TICK/FRAME);   // what a constant-speed entity should cover per frame
 
   // THE BUG. The old filter starts from rest and spends ~30 frames winding up, so the first
   // packet-interval of a bullet's life is drawn at a small fraction of its real speed.
-  let oldFrames = oldSmooth();
+  const oldFrames = oldSmooth();
   check('the old smoother drew the first interval far too slow',
         drawnSpeed(oldFrames,1) < perFrame*0.5,
         'drew ' + drawnSpeed(oldFrames,1).toFixed(2) + ' of ' + perFrame.toFixed(2) + ' per frame');
@@ -110,8 +110,8 @@ console.log('interpolation:');
 
   // Speed being right is not enough: it must also be in the right *place*, trailing by one
   // interval and no more. The old filter's lag grew with speed and never settled.
-  let lag = frames.filter((f)=>f.packet>=2).map((f)=>f.truth-f.drawn);
-  let lo = Math.min.apply(null,lag), hi = Math.max.apply(null,lag);
+  const lag = frames.filter((f)=>f.packet>=2).map((f)=>f.truth-f.drawn);
+  const lo = Math.min.apply(null,lag), hi = Math.max.apply(null,lag);
   check('lag is bounded at about one packet interval of travel',
         hi <= SPEED*2.05 && lo >= -0.001,
         'between ' + lo.toFixed(2) + ' and ' + hi.toFixed(2) + ' units');
@@ -119,7 +119,7 @@ console.log('interpolation:');
   // sawtooths, because `truth` steps once per packet while the drawing advances every frame.
   // What must not happen is the lag at a given phase drifting from packet to packet, which
   // is what the old filter did until it had finished winding up.
-  let atPhase0 = frames.filter((f)=>f.packet>=2 && f.phase === 0).map((f)=>f.truth-f.drawn);
+  const atPhase0 = frames.filter((f)=>f.packet>=2 && f.phase === 0).map((f)=>f.truth-f.drawn);
   check('lag is constant, not growing',
         near(Math.min.apply(null,atPhase0), Math.max.apply(null,atPhase0), SPEED*0.02),
         atPhase0.map((n)=>n.toFixed(2)).join(' '));
@@ -138,7 +138,7 @@ console.log('\nspawning:');
   // A brand-new entity has exactly one position. It must hold still, not jump to the origin
   // and not fly off; the second packet is what gives it a velocity.
   NET.reset();
-  let e = new Interp(500,-200);
+  const e = new Interp(500,-200);
   NET.mark(1000);
   e.push(500,-200,1000);
   e.sample(1000+FRAME);
@@ -153,7 +153,7 @@ console.log('\nspawning:');
 console.log('\nteleports and id reuse:');
 {
   NET.reset();
-  let e = new Interp(0,0);
+  const e = new Interp(0,0);
   NET.mark(1000); e.push(0,0,1000);
   NET.mark(1030); e.push(12,0,1030);
   // A respawn, or the entity slot being handed to a different entity - see HANDOFF "Entity
@@ -173,10 +173,10 @@ console.log('\npacket loss:');
 {
   // One dropped packet must coast, not freeze and not extrapolate off the map.
   NET.reset();
-  let e = new Interp(0,0);
+  const e = new Interp(0,0);
   NET.mark(1000); e.push(0,0,1000);
   NET.mark(1030); e.push(12,0,1030);
-  let atGap = e.sample(1030+TICK*4).x;
+  const atGap = e.sample(1030+TICK*4).x;
   check('coasts forward through a gap', atGap > 12, atGap);
   check('but stops well short of extrapolating away',
         atGap <= 12+12*Interp.MAX_EXTRAP+1e-9, atGap);
@@ -193,7 +193,7 @@ console.log('\ninterval estimate:');
         near(NET.interval,45,1), NET.interval.toFixed(2));
   // A backgrounded tab produces gaps of seconds. Averaging one in would make everything on
   // screen crawl for the next minute.
-  let before = NET.interval;
+  const before = NET.interval;
   NET.mark(t+9000);
   check('a multi-second stall is ignored, not averaged in',
         NET.interval === before, NET.interval.toFixed(2));

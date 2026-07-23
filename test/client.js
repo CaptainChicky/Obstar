@@ -45,7 +45,7 @@ const FRAME = TICK/FPP;  // ...so the frame clock and the packet clock advance t
   per-tick cache the room keeps on each entity) and the message encoder splices them in.
 */
 function packet(t, user, bullet, other){
-  let buff = {
+  const buff = {
     head: {timestamp: t, width: 8000, height: 8000, screen: 1920, xp: 500,
            level: 5, still: 0, cLvl: 0},
     main: {
@@ -103,7 +103,7 @@ console.log('\nreal packets from a real room:');
   let fed = 0, err = null;
   for(let p = 0; p < 30 && !err; p++){
     room.step();
-    let buff = room.getBuffer(0);
+    const buff = room.getBuffer(0);
     if(!buff){ continue; }
     try {
       app.deliver(PROTO.encode('GameUpdate', buff));
@@ -130,7 +130,7 @@ console.log('\nthe camera stays on the tank:');
     Camera and tank are read straight out of the client here: User.gx/gy is what Draw()
     frames the world with, and User.dx+predic is where draw() puts the tank.
   */
-  let a = boot({key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: ''});
+  const a = boot({key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: ''});
   const hook = a.start(packet(1, {x: 0, y: 0}));
   check('the client hands over from the connecting screen to the game loop', !!hook);
   const User = hook.User;
@@ -143,8 +143,8 @@ console.log('\nthe camera stays on the tank:');
     for(let f = 0; f < FPP; f++){
       a.frame(FRAME);
       if(p < 3){ continue; }                   // let the first two snapshots land
-      let cam  = {x: User.gx, y: User.gy};
-      let tank = {x: User.dx+User.predic.x, y: User.dy+User.predic.y};
+      const cam  = {x: User.gx, y: User.gy};
+      const tank = {x: User.dx+User.predic.x, y: User.dy+User.predic.y};
       worst = Math.max(worst, Math.abs(cam.x-tank.x), Math.abs(cam.y-tank.y));
       samples++;
     }
@@ -155,7 +155,7 @@ console.log('\nthe camera stays on the tank:');
 
   // And the aim vector, which used to subtract guesses at that same drift.
   check('aim is measured from the centre of the screen', (function(){
-    let G = hook.Global;
+    const G = hook.Global;
     G.mouse_x = G.winW/2;                      // cursor dead centre-right
     G.mouse_y = G.winH/2;
     a.frame(FRAME);
@@ -171,7 +171,7 @@ console.log('\na bullet moves at its real speed from the start:');
     given it. Here the bullet's drawn position is read frame by frame and compared against
     the speed the packets describe.
   */
-  let a = boot({key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: ''});
+  const a = boot({key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: ''});
   const Instances = a.start(packet(1, {x: 0, y: 0})).Instances;
 
   const SPEED = 36;                            // units per packet - a fast bullet
@@ -180,7 +180,7 @@ console.log('\na bullet moves at its real speed from the start:');
     a.deliver(packet(p+1, {x: 0, y: 0}, {x: bx, y: 0}));
     for(let f = 0; f < FPP; f++){
       a.frame(FRAME);
-      let b = Instances.Bullets[7];
+      const b = Instances.Bullets[7];
       if(b){ drawn.push({p: p, x: b.dx}); }
     }
     bx += SPEED;
@@ -189,7 +189,7 @@ console.log('\na bullet moves at its real speed from the start:');
 
   const perFrame = SPEED/FPP;
   function speedDuring(p){
-    let f = drawn.filter((d)=>d.p === p);
+    const f = drawn.filter((d)=>d.p === p);
     return f.length > 1 ? (f[f.length-1].x-f[0].x)/(f.length-1) : 0;
   }
   // Packet 0 is the spawn - one snapshot, nothing to interpolate between, so it holds still
@@ -222,7 +222,7 @@ console.log('\na new entity is complete on the packet that introduces it:');
     TanksConfig knows, so drawTank returned undefined and Tank.draw threw on it - taking the
     whole render loop down, from one entity appearing.
   */
-  let a = boot({key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: ''});
+  const a = boot({key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: ''});
   const hook  = a.start(packet(1, {x: 0, y: 0}));
   const TC    = a.sandbox.TanksConfig;
   const Insts = hook.Instances;
@@ -234,7 +234,7 @@ console.log('\na new entity is complete on the packet that introduces it:');
   } catch(e){ err = e.message; }
   check('the frame a tank first appears on renders', !err, err);
 
-  let tank = Insts.Players[3];
+  const tank = Insts.Players[3];
   check('the new tank exists', !!tank);
   check('it has a class TanksConfig knows, immediately',
         tank && TC.list.indexOf(tank.class) >= 0, tank && tank.class);

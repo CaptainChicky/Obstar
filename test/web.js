@@ -41,11 +41,11 @@ function check(name, ok, detail){
 
 function request(port, method, path, body){
   return new Promise(function(resolve, reject){
-    let headers = body ? {
+    const headers = body ? {
       'Content-Type':   'application/x-www-form-urlencoded',
       'Content-Length': Buffer.byteLength(body)
     } : {};
-    let req = http.request({host:'localhost', port:port, path:path, method:method, headers:headers}, function(res){
+    const req = http.request({host:'localhost', port:port, path:path, method:method, headers:headers}, function(res){
       let text = '';
       res.on('data', function(d){ text += d; });
       res.on('end', function(){ resolve({status: res.statusCode, body: text}); });
@@ -58,7 +58,7 @@ function request(port, method, path, body){
 // The server prints "Server started on port N" once listening, but poll instead of parsing
 // it so the test does not depend on log wording.
 async function waitUntilUp(port){
-  let deadline = Date.now() + BOOT_TIMEOUT;
+  const deadline = Date.now() + BOOT_TIMEOUT;
   while(Date.now() < deadline){
     try {
       await request(port, 'GET', '/favicon.ico');
@@ -71,7 +71,7 @@ async function waitUntilUp(port){
 }
 
 function start(args, port, extraEnv){
-  let child = fork(path.join(ROOT, 'server.js'), args, {
+  const child = fork(path.join(ROOT, 'server.js'), args, {
     cwd: ROOT,
     env: Object.assign({}, process.env, {PORT: String(port)}, extraEnv || {}),
     silent: true
@@ -85,7 +85,7 @@ function start(args, port, extraEnv){
 /// 1. One process, one port ///////////////////////////////////////////////////
 async function combinedTests(){
   console.log('server.js (game + web on one port):');
-  let child = start([], PORT);
+  const child = start([], PORT);
 
   if(!await waitUntilUp(PORT)){
     check('server came up', false, child.output.trim().split('\n').slice(-3).join(' / '));
@@ -93,10 +93,10 @@ async function combinedTests(){
     return;
   }
 
-  let index = await request(PORT, 'GET', '/');
+  const index = await request(PORT, 'GET', '/');
   check('GET / renders the menu', index.status === 200 && index.body.includes('var POST'), 'status ' + index.status);
 
-  let play = await request(PORT, 'POST', '/play', 'gm=ffa&name=smoke&pet=-1');
+  const play = await request(PORT, 'POST', '/play', 'gm=ffa&name=smoke&pet=-1');
   check('POST /play renders the game page', play.status === 200 && play.body.includes('/client/game.js'), 'status ' + play.status);
   check('play.ejs defines POST before loading ws_link.js',
         play.body.indexOf('var POST =') < play.body.indexOf("'./SHARE/ws_link.js'"));
@@ -104,22 +104,22 @@ async function combinedTests(){
 
   // The client has no bundler, so the page IS the dependency graph. Each file assumes the
   // ones before it have run; a reordered tag is a runtime error nothing else would catch.
-  let order = ['runtime','config','util','drawings','entities','render','ui','game','overlay','boot'];
-  let at = order.map(function(f){ return play.body.indexOf('/client/' + f + '.js'); });
+  const order = ['runtime','config','util','drawings','entities','render','ui','game','overlay','boot'];
+  const at = order.map(function(f){ return play.body.indexOf('/client/' + f + '.js'); });
   check('play.ejs loads every client file', at.every(function(i){ return i >= 0; }),
         order.filter(function(f, i){ return at[i] < 0; }).join(', ') + ' missing');
   check('play.ejs loads them in dependency order',
         at.every(function(i, n){ return n === 0 || i > at[n-1]; }), at.join(','));
   check('the client loads after motion.js', play.body.indexOf('/client/runtime.js') > play.body.indexOf('./motion.js'));
 
-  let shared = await request(PORT, 'GET', '/SHARE/ws_link.js');
+  const shared = await request(PORT, 'GET', '/SHARE/ws_link.js');
   check('static client files are served', shared.status === 200 && shared.body.includes('WS_LINK'), 'status ' + shared.status);
 
-  let client = await request(PORT, 'GET', '/client/runtime.js');
+  const client = await request(PORT, 'GET', '/client/runtime.js');
   check('/client/ is served', client.status === 200 && client.body.includes('CLIENT'), 'status ' + client.status);
 
   await new Promise(function(resolve){
-    let socket = new WebSocket('ws://localhost:' + PORT);
+    const socket = new WebSocket('ws://localhost:' + PORT);
     let updates = 0;
     socket.on('open', function(){
       socket.send(clientProto.encode('init', {key: '0'.repeat(25), gm: 'ffa', name: 'smoke', pet: -1}));
@@ -143,7 +143,7 @@ async function combinedTests(){
 /// 2. Split deployment ////////////////////////////////////////////////////////
 async function splitTests(){
   console.log('server.js --web-only (game on another machine):');
-  let child = start(['--web-only'], SPLIT_PORT, {WS_LINK: SPLIT_LINK});
+  const child = start(['--web-only'], SPLIT_PORT, {WS_LINK: SPLIT_LINK});
 
   if(!await waitUntilUp(SPLIT_PORT)){
     check('web-only server came up', false, child.output.trim().split('\n').slice(-3).join(' / '));
@@ -151,11 +151,11 @@ async function splitTests(){
     return;
   }
 
-  let play = await request(SPLIT_PORT, 'POST', '/play', 'gm=ffa&name=smoke&pet=-1');
+  const play = await request(SPLIT_PORT, 'POST', '/play', 'gm=ffa&name=smoke&pet=-1');
   check('WS_LINK reaches the client through POST.ws', play.body.includes('"ws":"' + SPLIT_LINK + '"'));
 
   await new Promise(function(resolve){
-    let socket = new WebSocket('ws://localhost:' + SPLIT_PORT);
+    const socket = new WebSocket('ws://localhost:' + SPLIT_PORT);
     let opened = false;
     socket.on('open',  function(){ opened = true; });
     // Express answers the upgrade with a plain HTTP response, so ws errors out. That is

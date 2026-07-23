@@ -53,7 +53,7 @@ const server = http.createServer(app || function(request, response){
 
 if(runGame){
   if(config.MYSQL){
-    let USERS = require('mysql').createPool(require('./lib/dbConfig.js').info);
+    const USERS = require('mysql').createPool(require('./lib/dbConfig.js').info);
     USERS.getConnection(function(err){
       if(err) throw err;
       console.log('connect database');
@@ -64,6 +64,6 @@ if(runGame){
 }
 
 server.listen(port, function(){
-  let what = (runGame && runWeb) ? 'game + web' : (runGame ? 'game' : 'web');
+  const what = (runGame && runWeb) ? 'game + web' : (runGame ? 'game' : 'web');
   console.log('Server started on port ' + server.address().port + ' (' + what + ')');
 });

@@ -6,36 +6,36 @@
   off-screen canvases that have to appear in the same order they always did.
 */
 (function(CLIENT){
-  var CONST = CLIENT.CONST;
-  var CLASS = CLIENT.CLASS;
-  var C = CLIENT.C;
-  var Global = CLIENT.Global;
-  var Game = CLIENT.Game;
-  var General = CLIENT.General;
-  var Drawings = CLIENT.Drawings;
+  const CONST = CLIENT.CONST;
+  const CLASS = CLIENT.CLASS;
+  const C = CLIENT.C;
+  const Global = CLIENT.Global;
+  const Game = CLIENT.Game;
+  const General = CLIENT.General;
+  const Drawings = CLIENT.Drawings;
   ///
   CLIENT.initRender = function(){
     ///
     General['drawTank'] = General['drawTank'] || (() => {
-      let can = document.createElement('CANVAS');
-      let ctxx = can.getContext('2d');
-      let R = CONST.OFFCAN;
-      let Coord = {};
+      const can = document.createElement('CANVAS');
+      const ctxx = can.getContext('2d');
+      const R = CONST.OFFCAN;
+      const Coord = {};
       ///
       function setCoord(config){
         let middleX = 0, middleY = 0, canSize = CONST.SIZE/2+CONST.LINEWIDTH;
-        let marge = 2;
+        const marge = 2;
         ///
         if(config.canons){
-          for(let c of config.canons){
+          for(const c of config.canons){
             ///
-            let len = Math.sqrt(
+            const len = Math.sqrt(
               Math.pow(c.height,2)+
               Math.pow(c.width/2+c.offx+c.open/2,2)
             )+CONST.LINEWIDTH;
             canSize = Math.max(canSize,len);
             ///
-            let cos = Math.cos(c.offdir),sin = Math.sin(c.offdir);
+            const cos = Math.cos(c.offdir),sin = Math.sin(c.offdir);
             middleX += cos*Math.max(0,c.height-CONST.SIZE/2)+sin*c.offx;
             middleY += sin*Math.max(0,c.height-CONST.SIZE/2)+cos*c.offx;
           }
@@ -43,15 +43,15 @@
           middleY /= config.canons.length*2;
         }
         if(config.turrets){
-          for(let c of config.turrets){
+          for(const c of config.turrets){
             ///
-            let len = Math.sqrt(
+            const len = Math.sqrt(
               Math.pow(c.height,2)+
               Math.pow(c.width/2+c.offx+c.open/2,2)
             )+CONST.LINEWIDTH;
             canSize = Math.max(canSize,len);
             ///
-            let cos = Math.cos(c.offdir),sin = Math.sin(c.offdir);
+            const cos = Math.cos(c.offdir),sin = Math.sin(c.offdir);
             middleX += cos*Math.max(0,c.height-CONST.SIZE/2)+sin*c.offx;
             middleY += sin*Math.max(0,c.height-CONST.SIZE/2)+cos*c.offx;
           }
@@ -73,7 +73,7 @@
       };
       ///
       return (ctx,isOpac,param)=>{
-        var tank, coord;
+        let tank, coord;
         if(CLASS[param.class]){
           tank = CLASS[param.class];
         } else {
@@ -85,17 +85,17 @@
         coord = Coord[param.class];
         ///
         if(!isOpac){
-          let s = coord.size*param.size/CONST.SIZE*R;
+          const s = coord.size*param.size/CONST.SIZE*R;
           can.width = can.height = s;
           ctx = ctxx;
           ctx.setTransform(R,0,0,R,can.width/2,can.height/2)
         }
         ///
-        for(let i in tank.canons){
+        for(const i in tank.canons){
           Drawings.canons[tank.canons[i].type]( ctx, tank, param, i);
         };
         Drawings.body[tank.body.shape]( ctx, tank, param );
-        for(let i in tank.turrets){
+        for(const i in tank.turrets){
           Drawings.turrets[tank.turrets[i].type]( ctx, tank, param, i );
         };
         return {
@@ -107,8 +107,8 @@
     })();
     General['drawBullet'] = (()=>{
       function canDraw(param){
-        let can = document.createElement('CANVAS');
-        let ctx = can.getContext('2d');
+        const can = document.createElement('CANVAS');
+        const ctx = can.getContext('2d');
         can.width = can.height = (param.size*2+CONST.LINEWIDTH+2)*CONST.OFFCAN;
         ctx.setTransform(CONST.OFFCAN,0,0,CONST.OFFCAN,can.width/2,can.height/2);
         Drawings.bullet[param.type](ctx,param.color,param.size,param.recoil);
@@ -133,8 +133,8 @@
     })();
     General['drawPet'] = (()=>{
       function canDraw(param){
-        let can = document.createElement('CANVAS');
-        let ctx = can.getContext('2d');
+        const can = document.createElement('CANVAS');
+        const ctx = can.getContext('2d');
         can.width = can.height = (param.size*2+CONST.LINEWIDTH+2)*CONST.OFFCAN;
         ctx.setTransform(CONST.OFFCAN,0,0,CONST.OFFCAN,can.width/2,can.height/2);
         Drawings.pet[param.type]( ctx, param, CONST, C );
@@ -160,10 +160,10 @@
     })();
   };
   CLIENT.initBackground = function(){
-    var ctx = General['ctx'];
+    const ctx = General['ctx'];
     General['background'] = General['background'] || (()=>{
       return (posx,posy, tileSize) => {
-        let h = Game.screen*.5625*Global.RATIO;
+        const h = Game.screen*.5625*Global.RATIO;
         ///
         ctx.fillStyle = C.Grid[0];
         ctx.fillRect(
@@ -173,7 +173,7 @@
           Game.height*Global.RATIO
         );
         ///
-        let ts = tileSize*Global.RATIO;
+        const ts = tileSize*Global.RATIO;
         ctx.globalAlpha = 0.05;
         ctx.beginPath();
         for(let x = -(posx*Global.RATIO-Global.canW/2)%ts ; x<=Game.screen*Global.RATIO+(posx%ts) ; x+=ts){

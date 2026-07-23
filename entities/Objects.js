@@ -53,7 +53,7 @@ class Objects {
         while(1){
           this.x = Math.random()*1400-700
           this.y = Math.random()*1400-700
-          let dis = Math.sqrt(Math.pow(this.x,2)+Math.pow(this.y,2))
+          const dis = Math.sqrt(Math.pow(this.x,2)+Math.pow(this.y,2))
           if(dis < 700 && dis>650){
             break;
           }
@@ -61,7 +61,7 @@ class Objects {
         this.pos = 1;
         break;
       default:
-        let dir = Math.random()*Math.PI*2;
+        const dir = Math.random()*Math.PI*2;
         this.x = Math.min(map.width/2-this.marge,
                  Math.max(-map.width/2+this.marge,
                           pos[0]+Math.sin(dir)*(Math.random()*pos[2])));
@@ -118,7 +118,7 @@ class Objects {
     RT.Controller.server[this.id.GM][this.id.sId].obj[this.type][this.pos] -= 1;
   }
   collision(other,option = {}){
-    let len = (this.vec.length()*this.weight<0.4) ? 2 : .4;
+    const len = (this.vec.length()*this.weight<0.4) ? 2 : .4;
     switch(other.kind){
       case KIND.PLAYER:
         if(other.necro && this.type == 'sqr' && other.droneCount<CLASS[other.class].maxDrone+other.upNb[1]){
@@ -139,7 +139,7 @@ class Objects {
         break;
       case KIND.BULLET:
         if(other.necro && this.type == 'sqr'){
-          let play = RT.Controller.server[other.origine.GM][other.origine.sId].INSTANCE.players[other.origine.oId];
+          const play = RT.Controller.server[other.origine.GM][other.origine.sId].INSTANCE.players[other.origine.oId];
           if(play.droneCount<CLASS[play.class].maxDrone+play.upNb[1]){
             this.destroy = 1;
             return;
@@ -174,12 +174,12 @@ class Objects {
         if(this.DETEC.select.destroy || this.DETEC.select.god){
           this.DETEC.reset();
         } else {
-          let v = new Vec(0.28,0).rotate(Math.atan2(this.DETEC.select.y-this.y,this.DETEC.select.x-this.x))
+          const v = new Vec(0.28,0).rotate(Math.atan2(this.DETEC.select.y-this.y,this.DETEC.select.x-this.x))
           this.vec.add(v)
           this.DETEC.enabled = 0;
         }
       } else if(Math.sqrt(Math.pow(this.x-this.rx,2)+Math.pow(this.y-this.ry,2)) > 120){
-        let v = new Vec(0.28,0).rotate(Math.atan2(this.ry-this.y,this.rx-this.x))
+        const v = new Vec(0.28,0).rotate(Math.atan2(this.ry-this.y,this.rx-this.x))
         this.vec.add(v);
       } else {
         this.DETEC.enabled = 1;

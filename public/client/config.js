@@ -34,8 +34,8 @@
   };
   const CLASS = TanksConfig.class;
   const CLASS_TREE = TanksConfig.tree;
-  var rnbcolor = ['hsl(0,100%,50%)','hsl(0,100%,30%)'];
-  var C = window.colorPattern = window.colorPattern || {
+  const rnbcolor = ['hsl(0,100%,50%)','hsl(0,100%,30%)'];
+  const C = window.colorPattern = window.colorPattern || {
     //         ---light------Dark---
     green:     ["#19e56e","#14ad54"],
     red:       ["#e6584b","#a9443b"],
@@ -78,7 +78,7 @@
       '#ceb5bd'
     ],
   };
-  var Global = {
+  const Global = {
     // Screen scale factors, reassigned by General.updateRatio() (public/client/util.js).
     RATIO: 1,
     UIRATIO: undefined,
@@ -105,7 +105,7 @@
     dtFrames: 1,
     frameAt: 0,
   }
-  var Game = {
+  const Game = {
     timestamp: 0,
     screen: 1920,
     realScreen: 1920,

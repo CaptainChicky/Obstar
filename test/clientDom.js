@@ -73,6 +73,7 @@ function makeElement(record, tag){
     classList: {add(){}, remove(){}, toggle(){}, contains(){ return false; }},
     getContext:            function(){ return makeCtx(record); },
     appendChild:           function(c){ this.children.push(c); return c; },
+    insertBefore:          function(c){ this.children.push(c); return c; },
     removeChild:           function(){},
     addEventListener:      function(){},
     removeEventListener:   function(){},
@@ -103,8 +104,8 @@ function boot(POST, opts){
     }
   };
 
-  let rafQueue = [];
-  let clock = {at: 1000};
+  const rafQueue = [];
+  const clock = {at: 1000};
 
   const document = {
     createElement:        function(tag){ return makeElement(record, tag); },
@@ -130,9 +131,20 @@ function boot(POST, opts){
   window.window = window;
 
   let socket = null;
+  // For the differential (test/clientDiff.js) the client must be a pure function of its
+  // packets: the four Math.random() sites in entities.js (polygon spin/heading) and the two
+  // Date.now() fps reads would otherwise make two runs disagree. Seed both off deterministic
+  // sources - a small LCG, and the same frame clock performance.now() already uses.
+  let seededMath = Math, seededDate = Date;
+  if(opts.deterministic){
+    let s = 0x9e3779b9 >>> 0;
+    const rng = function(){ s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+    seededMath = new Proxy(Math, { get: function(t,k){ return k === 'random' ? rng : t[k]; } });
+    seededDate = new Proxy(Date, { get: function(t,k){ return k === 'now' ? function(){ return clock.at; } : t[k]; } });
+  }
   const sandbox = {
     window: window, document: document, console: console,
-    Math, Date, JSON, Object, Array, String, Number, Boolean, Promise, Set, Map, Error, RegExp,
+    Math: seededMath, Date: seededDate, JSON, Object, Array, String, Number, Boolean, Promise, Set, Map, Error, RegExp,
     parseInt, parseFloat, isNaN, isFinite, encodeURIComponent, decodeURIComponent,
     Uint8Array, Uint8ClampedArray, Float32Array, DataView, ArrayBuffer, Buffer,
     setTimeout: setTimeout, clearTimeout: clearTimeout,
@@ -195,7 +207,7 @@ function boot(POST, opts){
     */
     deliver: function(bytes){
       if(!socket || !socket.onmessage){ return false; }
-      let view = ArrayBuffer.isView(bytes) ? bytes : new Uint8Array(bytes);
+      const view = ArrayBuffer.isView(bytes) ? bytes : new Uint8Array(bytes);
       socket.onmessage({
         data: view.buffer.slice(view.byteOffset, view.byteOffset+view.byteLength)
       });

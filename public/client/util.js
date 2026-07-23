@@ -2,15 +2,15 @@
   Geometry helpers and the General namespace every later file hangs its pieces off.
 */
 (function(CLIENT){
-  var CONST = CLIENT.CONST;
-  var Global = CLIENT.Global;
-  var Game = CLIENT.Game;
+  const CONST = CLIENT.CONST;
+  const Global = CLIENT.Global;
+  const Game = CLIENT.Game;
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   function roundedPoly(ctx, points, radius) {
-    var i, x, y, len, p1, p2, p3, v1, v2, sinA, sinA90, radDirection, drawDirection, angle, halfAngle, cRadius, lenOut;
-    var asVec = function(p, pp, v) {
+    let i, x, y, len, p1, p2, p3, v1, v2, sinA, sinA90, radDirection, drawDirection, angle, halfAngle, cRadius, lenOut;
+    const asVec = function(p, pp, v) {
       v.x = pp.x - p.x;
       v.y = pp.y - p.y;
       v.len = Math.sqrt(v.x * v.x + v.y * v.y);
@@ -74,8 +74,8 @@
     if (typeof radius === 'number') {
       radius = {tl: radius, tr: radius, br: radius, bl: radius};
     } else {
-      var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0};
-      for (var side in defaultRadius) {
+      const defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0};
+      for (const side in defaultRadius) {
         radius[side] = radius[side] || defaultRadius[side];
       }
     }
@@ -90,7 +90,7 @@
     ctx.quadraticCurveTo(x, y, x + radius.tl, y);
   }
   ///
-  var General = {};
+  const General = {};
   General['updateRatio'] = ()=>{
       Global.RATIO = Math.max(Global.canW/Game.screen,
                         Global.canH/(Game.screen*.5625))
@@ -110,15 +110,15 @@
     return MOTION.lerpK(k, Global.dtFrames);
   };
   General['isMouse'] = (x,y,w,h,r = 1)=>{
-    let mouse_x = Global.mouse_x/r,mouse_y = Global.mouse_y/r;
+    const mouse_x = Global.mouse_x/r,mouse_y = Global.mouse_y/r;
     return (mouse_x>=x) && (mouse_y>=y) && (mouse_x<=x+w) && (mouse_y<=y+h)
   };
   General['isMouseCirc'] = (x,y,r)=>{return (Math.sqrt(Math.pow(Global.mouse_x-x,2)+Math.pow(Global.mouse_y-y,2)) <= r)};
   General['color'] = {
     shade: (color, percent) => {
-          var R = parseInt(parseInt(color.substring(1,3),16)*percent);
-          var G = parseInt(parseInt(color.substring(3,5),16)*percent);
-          var B = parseInt(parseInt(color.substring(5,7),16)*percent);
+          let R = parseInt(parseInt(color.substring(1,3),16)*percent);
+          let G = parseInt(parseInt(color.substring(3,5),16)*percent);
+          let B = parseInt(parseInt(color.substring(5,7),16)*percent);
           R = (R<255)?R:255;
           G = (G<255)?G:255;
           B = (B<255)?B:255;

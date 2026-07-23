@@ -5,12 +5,12 @@
 */
 (function(CLIENT){
   'use strict';
-  var General = CLIENT.General;
+  const General = CLIENT.General;
   General['DEV'] = (() => {
-    var dev = {
+    const dev = {
       isOn: 0,
     };
-    let input = document.createElement('INPUT');
+    const input = document.createElement('INPUT');
     input.onkeydown = function(e){
       switch(e.key){
         case 'ArrowUp':{
@@ -32,8 +32,8 @@
     input.type = 'text';
     input.id = 'dinput';
     input.maxLength = '50';
-    var history = [''], curs = 0;
-    let div = document.createElement('DIV');
+    let history = [''], curs = 0;
+    const div = document.createElement('DIV');
     div.appendChild(input);
     div.id = 'console'
     ////
@@ -67,8 +67,8 @@
     dev.send = send;
     ////
     function log(arr){
-      for(let data of arr){
-        let log = document.createElement('DIV')
+      for(const data of arr){
+        const log = document.createElement('DIV')
         log.innerHTML = data.replace(/ /g, '\u00a0');
         div.insertBefore(log,input);
       }
@@ -78,16 +78,16 @@
     return dev;
   })();
   General['CHAT'] = (() => {
-    var chat = {
+    const chat = {
       isOn: 0,
     };
-    let input = document.createElement('INPUT');
+    const input = document.createElement('INPUT');
     input.type = 'text';
     input.id = 'cinput';
     input.maxLength = '100';
-    let div = document.createElement('DIV');
+    const div = document.createElement('DIV');
     div.id = 'chat';
-    let mess = document.createElement('DIV');
+    const mess = document.createElement('DIV');
     mess.id = 'mess';
     mess.innerHTML =
     "<div style='line-height: 115%'>"+
@@ -122,19 +122,19 @@
     chat.send = send;
     ////
     function escapeHtml(html){
-      var text = document.createTextNode(html);
-      var p = document.createElement('p');
+      const text = document.createTextNode(html);
+      const p = document.createElement('p');
       p.appendChild(text);
       return p.innerHTML;
     }
     function log(arr){
-      for(let data of arr){
-        let log = document.createElement('DIV');
-        let splited = data[0].split(' ');
-        let name = splited.slice(1).join(' ');
+      for(const data of arr){
+        const log = document.createElement('DIV');
+        const splited = data[0].split(' ');
+        const name = splited.slice(1).join(' ');
         log.innerHTML =  data[0].length ? `<span style="color: #${splited[0]}">`+escapeHtml(name)+' : </span>' : '<span style="color:#ccc;font-weight:500">server : </span>'
         log.innerHTML += escapeHtml(data[1]);
-        let doScroll = (mess.scrollTop+mess.clientHeight>=mess.scrollHeight-5);
+        const doScroll = (mess.scrollTop+mess.clientHeight>=mess.scrollHeight-5);
         mess.appendChild(log,input);
         if(doScroll){
           mess.scrollTo(0,mess.scrollHeight);

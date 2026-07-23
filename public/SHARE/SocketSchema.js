@@ -26,7 +26,7 @@
   ///////////////////////////////////////////////////////////////////// primitives
   /* Byte width of every fixed-size primitive. `str`/`str8`/`arr` are length-prefixed and
      computed from the value instead - see sizeOf() and Decoder.read(). */
-  var WIDTH = {
+  const WIDTH = {
     'int8':    1,
     'uint8':   1,
     'int16':   2,
@@ -37,10 +37,10 @@
   };
   /* Reading is the one genuinely platform-dependent thing here: the browser gets an
      ArrayBuffer it wraps in a DataView, Node gets a Buffer. Both are big-endian. */
-  var decode = (platform == 'client') ?
+  const decode = (platform == 'client') ?
   {
     "str":     ( dv, offset = 0 ) => {
-      let length = dv.getUint8(offset)*2;
+      const length = dv.getUint8(offset)*2;
       let str = '';
       for( let i = offset+1; i<length+offset+1; i+=2){
         str += String.fromCharCode(dv.getUint16(i));
@@ -48,7 +48,7 @@
       return str;
     },
     "str8":    ( dv, offset = 0 ) => {
-      let length = dv.getUint8(offset);
+      const length = dv.getUint8(offset);
       let str = '';
       for( let i = offset+1; i<length+offset+1; i++){
         str += String.fromCharCode(dv.getUint8(i));
@@ -65,7 +65,7 @@
   }:
   {
     "str":     ( buff, offset = 0 ) => {
-      let length = buff.readUInt8(offset)*2;
+      const length = buff.readUInt8(offset)*2;
       let str = '';
       for( let i = offset+1; i<length+offset+1; i+=2){
         str += String.fromCharCode(buff.readUInt16BE(i));
@@ -73,7 +73,7 @@
       return str;
     },
     "str8":    ( buff, offset = 0 ) => {
-      let length = buff.readUInt8(offset);
+      const length = buff.readUInt8(offset);
       let str = '';
       for( let i = offset+1; i<length+offset+1; i++){
         str += String.fromCharCode(buff.readUInt8(i));
@@ -89,16 +89,16 @@
     "float32": ( buff, offset = 0 ) => buff.readFloatBE( offset )
   };
   /* Writing is always into a DataView, on both platforms. */
-  var encode = {
+  const encode = {
     "str":     ( dv, data, offset = 0 ) => {
-      let length = data.length;
+      const length = data.length;
       dv.setUint8( offset, length );
       for( let i = 0; i<length; i++){
         dv.setUint16( 1+offset+(i*2), data.charCodeAt(i) );
       }
     },
     "str8":    ( dv, data, offset = 0 ) => {
-      let length = data.length;
+      const length = data.length;
       dv.setUint8( offset, length );
       for( let i = 0; i<length; i++){
         dv.setUint8( 1+offset+i, data.charCodeAt(i) );
@@ -113,7 +113,7 @@
     "float32": ( dv, data, offset = 0 ) => { dv.setFloat32( offset, data ); },
     /* An already-encoded record (see the 'Instance' message) spliced in as-is. */
     "arr":     ( dv, data, offset = 0 ) => {
-      for(let i in data){
+      for(const i in data){
         dv.setInt8( offset+parseInt(i), data[i] );
       }
     }
@@ -129,7 +129,7 @@
   }
 
   ///////////////////////////////////////////////////////////////////// field types
-  var TYPE = {
+  const TYPE = {
     'message':'uint8',
     'gm':     'uint8',
     'key':    'str8',
@@ -238,7 +238,7 @@
   TYPE.GameUpdate.User = TYPE.GameUpdate.Players;
 
   ///////////////////////////////////////////////////////////////////// field order
-  var SCHEMA = {
+  const SCHEMA = {
     /// basic
     'init':[
       'result',
@@ -325,7 +325,7 @@
   SCHEMA.GameUpdate.User = SCHEMA.GameUpdate.Players.filter(n => n != 'xp');
 
   ///////////////////////////////////////////////////////////////////// enums
-  var toSTRING = {
+  const toSTRING = {
     'construc':[
       'Players',
       'Objects',
@@ -414,7 +414,7 @@
       ' b'
     ],
   };
-  var toBUFFER = {
+  const toBUFFER = {
     'construc':{
       'Players': 0,
       'Objects': 1,
@@ -482,7 +482,7 @@
     }
   };
   ///
-  for(let i in toSTRING.class){
+  for(const i in toSTRING.class){
     toBUFFER.class[toSTRING.class[i]] = i;
   }
 
@@ -494,7 +494,7 @@
     encoder (own tank / other entities) and twice in the decoder - where a case present in
     one copy and missing from another was a silent desync.
   */
-  var CODECS = {
+  const CODECS = {
     /* A bit array. The leading 1 keeps toString(2) from eating leading zeroes. */
     bits:   {enc: (v) => parseInt('1'+v.join(''),2),
              dec: (v) => v.toString(2).substr(1).split('').map(x=>parseInt(x))},
@@ -510,7 +510,7 @@
     shape:  {enc: (v) => toBUFFER.shapes[v], dec: (v) => toSTRING.shapes[v], as: 'type'},
     /* Scoreboard xp as 3 significant digits + a power-of-1000 exponent; comes back as a
        display string ("12 k"), which is why the head's raw uint32 `xp` must not use this. */
-    xpMag:  {enc: (v) => { let exp = v ? parseInt(Math.log10(v)/3) : 0;
+    xpMag:  {enc: (v) => { const exp = v ? parseInt(Math.log10(v)/3) : 0;
                            return parseInt((v)/(Math.pow(1000,exp)))*10 + exp; },
              dec: (v) => parseInt(v/10) + toSTRING.xpExt[(v-(parseInt(v/10)*10))]},
     /* Per-barrel aim angles, packed as UTF-16 code units in a `str`. */
@@ -519,7 +519,7 @@
   };
   /* Codecs are per record, not per field name: `xp` means a raw uint32 in the GameUpdate
      head and a packed magnitude in a Players record, and the two must not be confused. */
-  var CODEC = {
+  const CODEC = {
     'head':    {},
     'Players': {states: CODECS.bits,  class: CODECS.klass, color: CODECS.color,
                 dir:    CODECS.angle, hp:    CODECS.unit,  alpha: CODECS.unit,
@@ -538,7 +538,7 @@
     `str` is the longest string the *encoder* will emit for a field, so a well-behaved client
     cannot build a packet its own server would then reject.
   */
-  var LIMITS = {
+  const LIMITS = {
     packet: {
       'init':      [25, 65],
       'ping':      [1, 1],
@@ -584,7 +584,7 @@
   */
   function clamp(str, max){
     if(str.length <= max){ return str; }
-    let code = str.charCodeAt(max-1);
+    const code = str.charCodeAt(max-1);
     if(code >= 0xD800 && code <= 0xDBFF){ max -= 1; }   // high surrogate with its pair cut off
     return str.substr(0, max);
   }
@@ -609,7 +609,7 @@
       let c = WIDTH[type];
       if(c === undefined){
         this.need(1);
-        let n = decode['uint8']( this.view, this.cursor );
+        const n = decode['uint8']( this.view, this.cursor );
         c = (type == 'str') ? 1+n*2 : 1+n;
       }
       this.need(c);
@@ -641,13 +641,13 @@
       if(this.cursor + n <= this.buffer.byteLength){ return; }
       let size = this.buffer.byteLength || 1;
       while(size < this.cursor + n){ size *= 2; }
-      let grown = new ArrayBuffer(size);
+      const grown = new ArrayBuffer(size);
       new Uint8Array(grown).set(new Uint8Array(this.buffer));
       this.buffer = grown;
       this.dv     = new DataView(grown);
     }
     write(data, type){
-      let c = sizeOf(data, type);
+      const c = sizeOf(data, type);
       this.room(c);
       encode[type](this.dv, data, this.cursor);
       this.cursor += c;
@@ -661,16 +661,16 @@
   ///////////////////////////////////////////////////////////////////// schema drivers
   /* Write one record: every field of `SCHEMA[...]` in order, through `CODEC[record]`. */
   function writeFields(ENC, fields, types, codecs, src){
-    for(let n of fields){
-      let codec = codecs[n];
+    for(const n of fields){
+      const codec = codecs[n];
       ENC.write( codec ? codec.enc(src[n]) : src[n], types[n] );
     }
   }
   /* Read one record back into `dst`, honouring any `as` rename. */
   function readFields(DEC, fields, types, codecs, dst){
-    for(let n of fields){
-      let codec = codecs[n];
-      let raw   = DEC.read(types[n]);
+    for(const n of fields){
+      const codec = codecs[n];
+      const raw   = DEC.read(types[n]);
       dst[(codec && codec.as) ? codec.as : n] = codec ? codec.dec(raw) : raw;
     }
     return dst;
@@ -690,7 +690,7 @@
     one exception and is handled in send() - it is a fragment spliced into a GameUpdate, so
     it carries no type byte and comes back as an Int8Array.
   */
-  var MSG = (platform == 'server') ? {
+  const MSG = (platform == 'server') ? {
     'ping': null,
     'kick': (ENC, reason) => {
       ENC.write(toBUFFER.reason[reason], TYPE.kick.reason);
@@ -698,24 +698,24 @@
     'GameUpdate': (ENC, data) => {
       writeRecord(ENC, 'head', data.head);
       writeRecord(ENC, 'User', data.main);
-      for(let INST of data.instances){
+      for(const INST of data.instances){
         ENC.write(INST, 'arr');
       }
     },
     'UiUpdate': (ENC, data) => {
       ENC.write(data.leader.length, TYPE.UiUpdate.array);
-      for(let d of data.leader){
+      for(const d of data.leader){
         writeFields(ENC, SCHEMA.UiUpdate.leader, TYPE.UiUpdate.leader, CODEC.leader, d);
       }
       ENC.write(data.map.length,  TYPE.UiUpdate.array);
       ENC.write(data.mess.length, TYPE.UiUpdate.array);
-      for(let m of data.mess){
+      for(const m of data.mess){
         ENC.write(m, 'str');
       }
     },
     'UpdateUp': (ENC, data) => {
       ENC.write(data.length, TYPE.UpdateUp.ups);
-      for(let i of data){
+      for(const i of data){
         ENC.write(i, TYPE.UpdateUp.ups);
       }
     },
@@ -723,7 +723,7 @@
       // [author, text] pairs, flattened; the count is of strings, not of pairs.
       data = new Array(data.length*2).fill(0).map((x,i)=>data[parseInt(i/2)][i%2]);
       ENC.write(data.length, 'uint8');
-      for(let i of data){
+      for(const i of data){
         ENC.write(i, 'str');
       }
     },
@@ -732,7 +732,7 @@
         data = [data];
       }
       ENC.write(data.length, 'uint8');
-      for(let i of data){
+      for(const i of data){
         ENC.write(i, 'str8');
       }
     }
@@ -763,7 +763,7 @@
     byte; length validation happens in decode() from LIMITS.packet, uniformly, before any
     of these run.
   */
-  var PARSE = (platform == 'server') ? {
+  const PARSE = (platform == 'server') ? {
     'init': (DEC, result) => {
       result.data.key  = DEC.read(TYPE.key);
       result.data.gm   = toSTRING.gamemode[DEC.read(TYPE.gm)];
@@ -795,8 +795,8 @@
       result.data.User = readRecord(DEC, 'User', {});
       result.data.Instances = {Objects:[], Players:[], Bullets:[]};
       while(!DEC.isEnd()){
-        let construc = toSTRING.construc[DEC.read(TYPE.GameUpdate.CONSTRUCTOR)];
-        let id       = DEC.read(TYPE.GameUpdate.ID);
+        const construc = toSTRING.construc[DEC.read(TYPE.GameUpdate.CONSTRUCTOR)];
+        const id       = DEC.read(TYPE.GameUpdate.ID);
         result.data.Instances[construc][id] = readRecord(DEC, construc, {});
       }
     },
@@ -819,14 +819,14 @@
     },
     'chatUpdate': (DEC, result) => {
       result.data.res = [];
-      let len = DEC.read('uint8');
+      const len = DEC.read('uint8');
       for(let i = 0; i<len/2; i+=2){
         result.data.res.push([DEC.read('str'), DEC.read('str')]);
       }
     },
     'comResponse': (DEC, result) => {
       result.data.res = [];
-      let len = DEC.read('uint8');
+      const len = DEC.read('uint8');
       for(let i = 0; i<len; i++){
         result.data.res.push(DEC.read('str8'));
       }
@@ -835,7 +835,7 @@
 
   /////////////////////////////////////////////////////////////////////
   exports.encode = (type, data) => {
-    let ENC = new Encoder();
+    const ENC = new Encoder();
     /* A single entity, encoded once per tick and spliced into every viewer's GameUpdate. */
     if(type == 'Instance'){
       ENC.write(toBUFFER.construc[data.construc], TYPE.GameUpdate.CONSTRUCTOR);
@@ -854,13 +854,13 @@
   };
 
   exports.decode = (data) => {
-    let length = (platform == 'client') ? data.byteLength : data.length;
+    const length = (platform == 'client') ? data.byteLength : data.length;
     if(!length){
       return {error: 'ERR_PACKET_LENGTH'};
     }
-    let DEC    = new Decoder(data);
-    let type   = toSTRING.type[DEC.read(TYPE.message)];
-    let result = {type: type, data: {}};
+    const DEC    = new Decoder(data);
+    const type   = toSTRING.type[DEC.read(TYPE.message)];
+    const result = {type: type, data: {}};
     if(!(type in PARSE)){
       // An unknown or wrong-direction type byte. ERR_PACKET_TYPE has been in the kick enum
       // since the beginning and was never once produced; the switch simply fell through and
@@ -868,7 +868,7 @@
       if(platform == 'server'){ result.error = 'ERR_PACKET_TYPE'; }
       return result;
     }
-    let bounds = LIMITS.packet[type];
+    const bounds = LIMITS.packet[type];
     if(bounds && !checkLength(length, bounds[0], bounds[1])){
       result.error = 'ERR_PACKET_LENGTH';
       return result;

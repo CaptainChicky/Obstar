@@ -70,10 +70,10 @@ class Bullet {
         case KIND.OBJECTS:
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.weight,this.weight)));
           if(this.necro && other.type == 'sqr'){
-            let play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE.players[this.origine.oId];
+            const play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE.players[this.origine.oId];
             if(play.droneCount<CLASS[play.class].maxDrone+play.upNb[1]){
               play.droneCount++;
-              let Bull = new RT.Bullet(play.id,other.x,other.y,Math.random()*Math.PI*2,play.up.BSpeed*play.necro.speed,0);
+              const Bull = new RT.Bullet(play.id,other.x,other.y,Math.random()*Math.PI*2,play.up.BSpeed*play.necro.speed,0);
                   Bull.type = play.necro.type;
                   Bull.class = play.class;
                   Bull.necro = play.necro.necro;
@@ -104,7 +104,7 @@ class Bullet {
       }
     }
     if(this.destroy && this.life == -1){
-      let play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE["players"][this.origine.oId];
+      const play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE["players"][this.origine.oId];
       if(play){
         play.droneCount--;
       }
@@ -153,17 +153,17 @@ class Bullet {
         }
         ///
         if(play.inputs.mouseR){
-          let dir = Math.PI+Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
+          const dir = Math.PI+Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
           this.dir = dir;
         } else if(play.inputs.mouseL || play.inputs.e){
-          let dir = Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
+          const dir = Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
           this.dir = dir;
         } else  {
           if(this.DETEC.select){
             this.DETEC.enabled = 0;
-            let other = this.DETEC.select;
-            let dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
-            let playdis = Math.sqrt(Math.pow(other.x-play.x,2)+Math.pow(other.y-play.y,2));
+            const other = this.DETEC.select;
+            const dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
+            const playdis = Math.sqrt(Math.pow(other.x-play.x,2)+Math.pow(other.y-play.y,2));
             if(dis<300 && !other.destroy && playdis < play.screen/4 && other.alpha){
               this.dir = Math.atan2(other.y-this.y,other.x-this.x);
               break;
@@ -172,18 +172,18 @@ class Bullet {
               this.DETEC.enabled = 1;
             }
           }
-          let playDis = Math.sqrt(Math.pow(this.x-play.x,2)+Math.pow(this.y-play.y,2))
+          const playDis = Math.sqrt(Math.pow(this.x-play.x,2)+Math.pow(this.y-play.y,2))
           if(playDis < play.size*3.5){
             this.speed = .08;
             if(Math.random()>.999){
               this.comingDir += Math.PI/2;
             }
-            let dir = Math.atan2(play.y+Math.sin(play.autoDir*2+this.comingDir)*play.size*3-this.y,
+            const dir = Math.atan2(play.y+Math.sin(play.autoDir*2+this.comingDir)*play.size*3-this.y,
             play.x+Math.cos(play.autoDir*2+this.comingDir)*play.size*3-this.x);
             this.dir = dir;
             break;
           }
-          let dir = Math.atan2((play.y)-this.y,play.x-this.x)
+          const dir = Math.atan2((play.y)-this.y,play.x-this.x)
           this.dir = dir;
           this.comingDir = this.dir;
         }
@@ -210,9 +210,9 @@ class Bullet {
         ///
         if(this.DETEC.select){
           this.DETEC.enabled = 0;
-          let other = this.DETEC.select;
-          let dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
-          let playdis = Math.sqrt(Math.pow(other.x-play.x,2)+Math.pow(other.y-play.y,2));
+          const other = this.DETEC.select;
+          const dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
+          const playdis = Math.sqrt(Math.pow(other.x-play.x,2)+Math.pow(other.y-play.y,2));
           if(dis<300 && !other.destroy && playdis < play.screen/4 && other.alpha){
             this.dir = Math.atan2(other.y-this.y,other.x-this.x);
             break;
@@ -221,18 +221,18 @@ class Bullet {
             this.DETEC.enabled = 1;
           }
         }
-        let playDis = Math.sqrt(Math.pow(this.x-play.x,2)+Math.pow(this.y-play.y,2))
+        const playDis = Math.sqrt(Math.pow(this.x-play.x,2)+Math.pow(this.y-play.y,2))
         if(playDis < play.size*3){
             this.speed = .08;
             if(Math.random()>.999){
               this.comingDir += Math.PI/2;
             }
-            let dir = Math.atan2(play.y+Math.sin(play.autoDir*2+this.comingDir)*play.size*3-this.y,
+            const dir = Math.atan2(play.y+Math.sin(play.autoDir*2+this.comingDir)*play.size*3-this.y,
             play.x+Math.cos(play.autoDir*2+this.comingDir)*play.size*2.5-this.x);
             this.dir = dir;
             break;
           }
-        let dir = Math.atan2((play.y)-this.y,play.x-this.x)
+        const dir = Math.atan2((play.y)-this.y,play.x-this.x)
         this.dir = dir;
         this.comingDir = this.dir;
         break;
@@ -252,8 +252,8 @@ class Bullet {
         ///
         if(this.DETEC.select){
           this.DETEC.enabled = 0;
-          let other = this.DETEC.select;
-          let dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
+          const other = this.DETEC.select;
+          const dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
           if(!other.destroy && other.alpha){
             this.dir = Math.atan2(other.y-this.y,other.x-this.x);
             break;
@@ -269,10 +269,10 @@ class Bullet {
         this.showDir = this.vec.angle();
         ///
         if(play.inputs.mouseR){
-          let dir = Math.PI+Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
+          const dir = Math.PI+Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
           this.dir = dir;
         } else {
-          let dir = Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
+          const dir = Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
           this.dir = dir;
         }
         break;
@@ -298,9 +298,9 @@ class Bullet {
         ///
         if(this.DETEC.select){
           this.DETEC.enabled = 0;
-          let other = this.DETEC.select;
-          let dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
-          let basedis = Math.sqrt(Math.pow(other.x-this.ox,2)+Math.pow(other.y-this.oy,2));
+          const other = this.DETEC.select;
+          const dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
+          const basedis = Math.sqrt(Math.pow(other.x-this.ox,2)+Math.pow(other.y-this.oy,2));
           if(basedis<1800 && !other.destroy){
             this.dir = Math.atan2(other.y-this.y,other.x-this.x);
             break;
@@ -309,13 +309,13 @@ class Bullet {
             this.DETEC.enabled = 1;
           }
         }
-        let baseDis = Math.sqrt(Math.pow(this.x-this.ox,2)+Math.pow(this.y-this.oy,2))
+        const baseDis = Math.sqrt(Math.pow(this.x-this.ox,2)+Math.pow(this.y-this.oy,2))
         if(baseDis < 320){
           this.speed = .07;
           if(Math.random()>.999){
             this.comingDir += Math.PI/2;
           }
-          let dir = Math.atan2(this.oy+Math.sin(this.autoDir+this.comingDir)*300-this.y,
+          const dir = Math.atan2(this.oy+Math.sin(this.autoDir+this.comingDir)*300-this.y,
           this.ox+Math.cos(this.autoDir+this.comingDir)*300-this.x);
           this.dir = dir;
           break;
@@ -352,17 +352,17 @@ class Bullet {
         }
         ///
         if(play.inputs.mouseR){
-          let dir = Math.PI+Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
+          const dir = Math.PI+Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
           this.dir = dir;
         } else if(play.inputs.mouseL || play.inputs.e){
-          let dir = Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
+          const dir = Math.atan2((play.y+play.inputs.mouse_y)-this.y,play.x+play.inputs.mouse_x-this.x)
           this.dir = dir;
         } else  {
           if(this.DETEC.select){
             this.DETEC.enabled = 0;
-            let other = this.DETEC.select;
-            let dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
-            let playdis = Math.sqrt(Math.pow(other.x-play.x,2)+Math.pow(other.y-play.y,2));
+            const other = this.DETEC.select;
+            const dis = Math.sqrt(Math.pow(this.x-other.x,2)+Math.pow(this.y-other.y,2));
+            const playdis = Math.sqrt(Math.pow(other.x-play.x,2)+Math.pow(other.y-play.y,2));
             if(dis<300 && !other.destroy && playdis < play.screen/4 && other.alpha){
               this.dir = Math.atan2(other.y-this.y,other.x-this.x);
               break;
@@ -371,18 +371,18 @@ class Bullet {
               this.DETEC.enabled = 1;
             }
           }
-          let playDis = Math.sqrt(Math.pow(this.x-play.x,2)+Math.pow(this.y-play.y,2))
+          const playDis = Math.sqrt(Math.pow(this.x-play.x,2)+Math.pow(this.y-play.y,2))
           if(playDis < play.size*3.5){
             this.speed = .08;
             if(Math.random()>.999){
               this.comingDir += Math.PI/2;
             }
-            let dir = Math.atan2(play.y+Math.sin(play.autoDir*2+this.comingDir)*play.size*3-this.y,
+            const dir = Math.atan2(play.y+Math.sin(play.autoDir*2+this.comingDir)*play.size*3-this.y,
             play.x+Math.cos(play.autoDir*2+this.comingDir)*play.size*2.5-this.x);
             this.dir = dir;
             break;
           }
-          let dir = Math.atan2((play.y)-this.y,play.x-this.x)
+          const dir = Math.atan2((play.y)-this.y,play.x-this.x)
           this.dir = dir;
           this.comingDir = this.dir;
         }
@@ -398,8 +398,8 @@ class Bullet {
         ///
         if(play.detected.length >= 1){
           let tar, minDis = play.screen;
-          for(let n of play.detected){
-            let dis = Math.sqrt(Math.pow(n.x-this.x,2)+Math.pow(n.y-this.y,2));
+          for(const n of play.detected){
+            const dis = Math.sqrt(Math.pow(n.x-this.x,2)+Math.pow(n.y-this.y,2));
             if(dis<=minDis){
               minDis = dis;
               tar = n;
@@ -412,19 +412,19 @@ class Bullet {
             }
         }
         /// else
-        let playDis = Math.sqrt(Math.pow(this.x-play.x,2)+Math.pow(this.y-play.y,2))
+        const playDis = Math.sqrt(Math.pow(this.x-play.x,2)+Math.pow(this.y-play.y,2))
         if(playDis < play.size*4){
           this.speed = Math.max(this.speed*.99,.05);
           if(Math.random()>.9995){
             this.comingDir += Math.PI*.8;
             this.speed = this.maxspeed*2;
           }
-          let dir = Math.atan2(play.y+Math.sin(this.comingDir)*this.randPos-this.y,
+          const dir = Math.atan2(play.y+Math.sin(this.comingDir)*this.randPos-this.y,
                                play.x+Math.cos(this.comingDir)*this.randPos-this.x);
           this.dir = dir;
           this.comingDir-=0.01
         } else {
-          let dir = Math.atan2(play.y-this.y,play.x-this.x)
+          const dir = Math.atan2(play.y-this.y,play.x-this.x)
           this.dir = dir;
           this.speed = this.maxspeed;
         }
