@@ -1,33 +1,33 @@
 {
-    "name": "obstar-server-test",
-    "version": "0.1.0",
-    "scripts": {
-        "start": "node server.js",
-        "start:game": "node server.js --game-only",
-        "start:web": "node server.js --web-only",
-        "test": "node test/proto.js && node test/interp.js && node test/clock.js && node test/rooms.js && node test/client.js && node test/clientDiff.js && node test/smoke.js && node test/web.js",
-        "test:proto": "node test/proto.js",
-        "test:interp": "node test/interp.js",
-        "test:clock": "node test/clock.js",
-        "test:rooms": "node test/rooms.js",
-        "test:client": "node test/client.js",
-        "test:clientDiff": "node test/clientDiff.js",
-        "test:smoke": "node test/smoke.js",
-        "test:web": "node test/web.js",
-        "lint": "eslint ."
-    },
-    "dependencies": {
-        "cookie-parser": "~1.4.4",
-        "ejs": "^3.1.10",
-        "express": "^5.1.0",
-        "mysql2": "^3.11.0",
-        "util": "~0.12.1",
-        "victor": "~1.1",
-        "ws": "^8.18.0"
-    },
-    "devDependencies": {
-        "@eslint/js": "^10.0.1",
-        "eslint": "^10.7.0",
-        "globals": "^17.7.0"
-    }
+	"name": "obstar-server-test",
+	"version": "0.1.0",
+	"scripts": {
+		"start": "node server.js",
+		"start:game": "node server.js --game-only",
+		"start:web": "node server.js --web-only",
+		"test": "node test/proto.js && node test/interp.js && node test/clock.js && node test/rooms.js && node test/client.js && node test/clientDiff.js && node test/smoke.js && node test/web.js",
+		"test:proto": "node test/proto.js",
+		"test:interp": "node test/interp.js",
+		"test:clock": "node test/clock.js",
+		"test:rooms": "node test/rooms.js",
+		"test:client": "node test/client.js",
+		"test:clientDiff": "node test/clientDiff.js",
+		"test:smoke": "node test/smoke.js",
+		"test:web": "node test/web.js",
+		"lint": "eslint ."
+	},
+	"dependencies": {
+		"cookie-parser": "~1.4.4",
+		"ejs": "^3.1.10",
+		"express": "^5.1.0",
+		"mysql2": "^3.11.0",
+		"util": "~0.12.1",
+		"victor": "~1.1",
+		"ws": "^8.18.0"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.7.0",
+		"globals": "^17.7.0"
+	}
 }
