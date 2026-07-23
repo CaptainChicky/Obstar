@@ -3,9 +3,9 @@
 Written for a fresh agent session tasked with refactoring this repo. It describes the code
 **as it actually is today**, including the parts that are wrong. Nothing here is aspirational.
 
-> **Status — updated 2026-07-22, after refactor chunks 1–8.**
-> Items 1–7 **and item 6, the wire protocol**, are done and verified. The next open item is
-> §8.8, the fixed-timestep loop.
+> **Status — updated 2026-07-22, after refactor chunks 1–9.**
+> **Items 1–8 and 11 are done.** The remaining open items are §8.9 (modernize the client)
+> and §8.10 (dependencies and DB).
 > The 3918-line `Alex.js` monolith is gone; so are both of its names. There is now **one
 > entry point, [server.js](server.js), running one process on one port** — the two-servers
 > -you-must-both-remember-to-start arrangement is over (§1). `constructor.name` type dispatch
@@ -13,14 +13,35 @@ Written for a fresh agent session tasked with refactoring this repo. It describe
 > original author's head were renamed (§2.2). The protocol is one declarative schema that
 > drives both the encoder and the decoder, it sizes its own packets, and — for the first time
 > in the repo's history — it validates its input (§4).
+>
+> **New in this pass**, driven by a session where the game was finally opened in a browser:
+> - **The simulation runs on a fixed timestep** (§8.8, [lib/clock.js](lib/clock.js)). The
+>   self-re-arming `setTimeout(20)` chain is gone; every room shares one accumulator-driven
+>   clock, so the tick rate no longer sags under load and a stall is dropped rather than
+>   repaid as a burst.
+> - **The client's motion was rewritten** ([public/motion.js](public/motion.js), §6.1). Both
+>   of the things a player reported — bullets that crawl for half a second after you fire,
+>   and a camera that slides off your tank while you move — were one bug: exponential
+>   smoothing towards a moving target. Positions are snapshot-interpolated now and the camera
+>   is pinned to the tank.
+> - **`4team` and `boss` are real gamemodes** ([rooms/FourTeam.js](rooms/FourTeam.js),
+>   [rooms/BossMode.js](rooms/BossMode.js)), and the gamemode enum that made `4team`
+>   unjoinable for the life of the codebase is fixed (§5.14). §10's open question is answered.
+> - **The client is executed by the test suite** ([test/client.js](test/client.js)) — the
+>   first time in this repo's history that the rendering code has run outside a browser.
+>
 > Sections below are marked ✅ DONE / ⬜ TODO throughout, and descriptions have been rewritten
 > to match the current tree — where a bug is fixed, the text says where the fix lives rather
 > than describing the old breakage.
 >
-> Verification: `npm test` → **145 passed, 0 failed** (57 protocol + 51 room + 29
-> live-server + 8 single-entry-point/web). The protocol rewrite was additionally checked
-> **byte for byte** against the implementation it replaced: 82 encode/decode comparisons over
-> every message type, zero differences (§4). Chunks 1–4 are committed; 5–8 are not.
+> Verification: `npm test` → **292 passed, 0 failed** (79 protocol/names + 22 client motion +
+> 16 clock + 99 room + 23 client render + 45 live-server + 8 single-entry-point/web). The
+> protocol rewrite was additionally checked **byte for byte** against the implementation it
+> replaced: 82 encode/decode comparisons over every message type, zero differences (§4). The
+> two client fixes were checked by **negative control** — reinstating the old smoother makes
+> `test/client.js` fail with the camera 184 units off the tank and a bullet still
+> accelerating thirteen packets after it spawned (§6.1). Chunks 1–4 are committed; 5–9 are
+> not.
 
 Obstar is an open-source clone of diep.io: a 2D multiplayer arena shooter. Players are tanks
 that shoot bullets, farm polygon "objects" for XP, level up, pick stat upgrades, and evolve
@@ -121,34 +142,42 @@ added by the refactor.
 | File | Lines | Role |
 |---|---|---|
 | [server.js](server.js) | 69 | **The only entry point.** Crash handler, flags, `boot()`, one http server, listens. |
-| [web/app.js](web/app.js) | 199 | `createApp()` — the Express site. Menu, cookies, shop purchase, leaderboard reads. Opens no port. |
-| [lib/boot.js](lib/boot.js) | 57 | Fills the `lib/runtime.js` registry in dependency order. Idempotent, opens no port. |
-| [net/gameSocket.js](net/gameSocket.js) | 258 | `attach(httpServer)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
-| [lib/Controller.js](lib/Controller.js) | 586 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
-| [rooms/Room.js](rooms/Room.js) | 845 | **The simulation, once.** Tick, quadtree, collision, spawning, per-player views. |
+| [web/app.js](web/app.js) | 202 | `createApp()` — the Express site. Menu, cookies, shop purchase, leaderboard reads. Opens no port. |
+| [lib/boot.js](lib/boot.js) | 59 | Fills the `lib/runtime.js` registry in dependency order. **`RT.ROOMS` here is the one list of gamemodes.** Idempotent, opens no port. |
+| [net/gameSocket.js](net/gameSocket.js) | 287 | `attach(httpServer)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. Deadline-corrected send timers. |
+| [lib/Controller.js](lib/Controller.js) | 618 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
+| [lib/clock.js](lib/clock.js) | 157 | **The fixed-timestep clock** (§8.8). One accumulator-driven timer drives every room's `step()`. |
+| [rooms/Room.js](rooms/Room.js) | 949 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, per-player views. |
 | [rooms/Ffa.js](rooms/Ffa.js) | 30 | Free-for-all: a block of tunables. `Room`'s defaults *are* ffa's behaviour. |
-| [rooms/TwoTeam.js](rooms/TwoTeam.js) | 164 | 2-team: teams, bases, guard drones, the boss, team colours. |
+| [rooms/TwoTeam.js](rooms/TwoTeam.js) | 108 | 2-team: two base strips, guard drones, team colours. |
+| [rooms/FourTeam.js](rooms/FourTeam.js) | 134 | 4-team: four corner bases, guard arcs, team colours. |
+| [rooms/BossMode.js](rooms/BossMode.js) | 39 | Boss hunt: ffa with the boss knobs turned up. Tunables only. |
 | [entities/Player.js](entities/Player.js) | 467 | Tank entity: motion, shooting, upgrades, class changes, collision. |
 | [entities/Bullet.js](entities/Bullet.js) | 472 | Projectiles, including drone/trap/necro behaviour. |
 | [entities/Objects.js](entities/Objects.js) | 213 | Farmable polygons. |
 | [entities/Detector.js](entities/Detector.js) | 94 | Invisible "vision cone" query entity used by the AI. |
-| [lib/gameAI.js](lib/gameAI.js) | 380 | Bot/boss/pet AI. A **factory** — the behaviour functions close over `Detector`, `Vec`, `FRICTION`, `CLASS`. |
-| [lib/quadTree.js](lib/quadTree.js) | 74 | Spatial index for broad-phase collision. |
-| [lib/runtime.js](lib/runtime.js) | 14 | **Late-bound registry.** Stands in for the old shared scope; read §2.1 before using it. |
+| [lib/gameAI.js](lib/gameAI.js) | 387 | Bot/boss/pet AI. A **factory** — the behaviour functions close over `Detector`, `Vec`, `FRICTION`, `CLASS`. |
+| [lib/quadTree.js](lib/quadTree.js) | 75 | Spatial index for broad-phase collision. |
+| [lib/runtime.js](lib/runtime.js) | 18 | **Late-bound registry.** Stands in for the old shared scope; read §2.1 before using it. |
 | [lib/crash.js](lib/crash.js) | 47 | Fail-fast crash handler. |
-| [lib/config.js](lib/config.js) | 25 | Live tunables/flags only. The dead `CONFIG` block is gone (§5.1). |
+| [lib/config.js](lib/config.js) | 27 | Live tunables/flags only. The dead `CONFIG` block is gone (§5.1). |
 | [lib/kinds.js](lib/kinds.js) | 33 | Entity type tags. Replaced `constructor.name` dispatch (§5.9). |
-| [lib/terminal.js](lib/terminal.js) | 32 | Terminal colour codes (`cc`). |
+| [lib/terminal.js](lib/terminal.js) | 34 | Terminal colour codes (`cc`). |
 | [lib/constants.js](lib/constants.js) | 4 | `FRICTION`. |
 | [lib/dbConfig.js](lib/dbConfig.js) | 18 | DB credentials, env-overridable. |
-| [test/proto.js](test/proto.js) | 304 | Wire protocol, 57 assertions: golden bytes, self-sizing, round trips, input validation. |
-| [test/smoke.js](test/smoke.js) | 234 | End-to-end smoke test, 29 assertions. Real socket, real protocol. |
-| [test/rooms.js](test/rooms.js) | 215 | Gamemode assertions, 51 of them. No socket — builds rooms via `boot()`. |
+| [test/proto.js](test/proto.js) | 382 | Wire protocol + names, 79 assertions: golden bytes, self-sizing, round trips, input validation, Unicode. |
+| [test/interp.js](test/interp.js) | 218 | Client motion arithmetic, 22 assertions, compared against the smoother it replaced. |
+| [test/clock.js](test/clock.js) | 158 | Fixed-timestep clock, 16 assertions: drift, catch-up, stalls, self-removal. |
+| [test/rooms.js](test/rooms.js) | 379 | Gamemode assertions, 99 of them, over all four modes. No socket — builds rooms via `boot()`. |
+| [test/client.js](test/client.js) | 251 | **Runs the client.** 23 assertions: camera, bullet speed, entity completeness, no NaN to canvas. |
+| [test/clientDom.js](test/clientDom.js) | 193 | The stub DOM `test/client.js` boots `new2Init.js` against. Not a suite. |
+| [test/smoke.js](test/smoke.js) | 236 | End-to-end smoke test, 45 assertions, all four modes. Real socket, real protocol. |
 | [test/web.js](test/web.js) | 167 | 8 assertions on the merged entry point: one port serves site + socket; split mode works. |
-| [test/clientProto.js](test/clientProto.js) | 27 | Loads `SocketSchema.js` in *client* mode inside Node, via `vm`. |
-| [lib/botNames.js](lib/botNames.js) | ~100 | Bot name list. |
-| [public/new2Init.js](public/new2Init.js) | 3241 | **The whole game client.** Rendering, input, UI, netcode. |
-| [public/SHARE/SocketSchema.js](public/SHARE/SocketSchema.js) | 881 | Binary wire protocol, declarative (§4). Dual-mode: runs on client *and* server. |
+| [test/clientProto.js](test/clientProto.js) | 31 | Loads `SocketSchema.js` in *client* mode inside Node, via `vm`. |
+| [lib/botNames.js](lib/botNames.js) | ~100 | Bot name list. Non-ASCII, deliberately — see §5.11. |
+| [public/new2Init.js](public/new2Init.js) | 3352 | **The whole game client.** Rendering, input, UI, netcode. |
+| [public/motion.js](public/motion.js) | 158 | **Client motion primitives** (§6.1): snapshot interpolation and frame-rate-independent smoothing. Loaded by `play.ejs`, `require()`d by the tests. |
+| [public/SHARE/SocketSchema.js](public/SHARE/SocketSchema.js) | 905 | Binary wire protocol, declarative (§4). Dual-mode: runs on client *and* server. |
 | [public/SHARE/TanksConfig.js](public/SHARE/TanksConfig.js) | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. |
 | [public/SHARE/PetsConfig.js](public/SHARE/PetsConfig.js) | 132 | Cosmetic pet definitions. |
 | [public/SHARE/ws_link.js](public/SHARE/ws_link.js) | 18 | Game server URL: `POST.ws`, else the page's own origin. |
@@ -231,22 +260,40 @@ constants in [lib/kinds.js](lib/kinds.js), so class names are free to move, but 
 lesson stands: any mechanical transform here must be string-literal and comment aware, and
 should be grepped for corrupted literals before it runs.
 
-### Loops and timing
-There is **no single game loop**. Timing is a mesh of independent `setTimeout` chains:
+### Loops and timing — ✅ REWRITTEN (§8.8)
 
-- **Room simulation**: each room's `update()` ends with `setTimeout(..., 20, this)` → ~50 Hz,
-  but it's `setTimeout` not `setInterval`, so it *drifts* under load and silently slows the
-  whole simulation. This is why the game feels laggy with many entities.
-- **Per-socket send loop** (`loop.gameloop`): `setTimeout(..., 30)` → ~33 Hz per client,
-  independent of the simulation tick. Falls back to 200 ms when idle/waiting.
+- **Room simulation**: **one** fixed-timestep clock, [lib/clock.js](lib/clock.js), calls
+  every room's `step()` at exactly 20 ms of wall clock on average. Rooms no longer schedule
+  themselves.
+- **Per-socket send loop** (`loop.gameloop`): ~33 Hz per client, deliberately independent of
+  the simulation tick — a send is a snapshot of whatever the simulation had reached, and
+  neither rate has to divide the other. Falls back to 200 ms when idle/waiting.
 - **Per-socket slow loop** (`loop.longloop`): 1 s. Heartbeats, AFK kick, rate-limit reset, UI
   updates.
-- **Object respawn**: `generate()` re-arms itself on a 300 ms timer.
+- **Object respawn**: `generate()` is a simulation event now, run every 20 steps from
+  `step()`, not a separate 400 ms chain.
 - **Leaderboard/shop refresh** (web server): `setInterval(..., 120000)`.
 
+What changed and why: each room used to end its own `update()` with
+`setTimeout(update, 20, this)`. That is a self-re-arming chain, not a schedule — `setTimeout`
+means "in *at least* 20 ms", so every tick paid for its own overrun and the error was never
+repaid. Under load the simulation quietly ran slow, and with several rooms open each drifted
+independently, so two players in different rooms ran at different speeds. The accumulator in
+`lib/clock.js` measures elapsed wall clock and pays it out in whole fixed steps: overrun is
+repaid, and a stall beyond the catch-up budget (5 steps) is **dropped and logged** rather
+than repaid as a burst that causes the next stall. Entity code is untouched — its constants
+were always "per tick" and a tick is now a reliable 20 ms.
+
+Diagnostics: the `tps` admin command reports target rate, measured rate, steps and drops;
+a stall also prints a throttled `[clock]` line to stderr. Both exist because a simulation
+running slow used to be indistinguishable from a bad network from every angle anyone could
+see, which is why "the game feels laggy with many entities" stayed a guess for so long.
+
 Room lifecycle: `Main.askConnection()` places a client in an existing room or calls
-`newServer()`. A room self-destructs inside its own `update()` when zero non-bot players
-remain (`this.destroy = 1; delete Controller.server[gm][id]`).
+`newServer()`. A room self-destructs inside its own `step()` when zero human players remain
+(`this.destroy = 1; delete Controller.server[gm][id]; clock.remove(this)`). Bots **and
+bosses** are excluded from that count; bosses were not, which would have kept a `boss`-mode
+room ticking forever (§5.15).
 
 ### Entity storage
 Each room holds `this.INSTANCE = { players:[], objs:[], bullets:[], detectors:[] }` — plain
