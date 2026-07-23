@@ -4,7 +4,8 @@ Written for a fresh agent session tasked with refactoring this repo. It describe
 **as it actually is today**, including the parts that are wrong. Nothing here is aspirational.
 
 > **Status — updated 2026-07-23, after refactor chunks 1–9 and the client split.**
-> **Items 1–9 and 11 are done.** The only remaining open item is §8.10 (dependencies and DB).
+> **Items 1–9 and 11 are done.** Open: §8.10 (dependencies and DB) and §8.12 (client idiom
+> and hot-path cleanup — what the §8.9 split deliberately did not touch; see §6.2).
 > The 3918-line `Alex.js` monolith is gone; so are both of its names. There is now **one
 > entry point, [server.js](server.js), running one process on one port** — the two-servers
 > -you-must-both-remember-to-start arrangement is over (§1). `constructor.name` type dispatch
@@ -841,6 +842,63 @@ See also §5.16 — fixing the packet handler to build complete entities is what
 latent `drawTank` crash, and §5.19 for the duplicate-frame problem, which is the same
 "interpolator reads two identical positions as stopped" failure arriving from the server side.
 
+### 6.2 What the split did *not* fix — ⬜ TODO (§8.12)
+
+The §8.9 split was equivalence-preserving on purpose, and the differential proves it: 180298
+identical canvas operations means **nothing about the client's runtime behaviour changed**,
+inefficiencies included. "Modernize the client" meant *split the monolith*; idiom and
+performance work was never in that item and was deliberately not smuggled into it. If it had
+been, the differential would have been worthless — you cannot use a zero-difference result to
+prove a rewrite is safe if the same commit also changed behaviour on purpose.
+
+So the following is all still true of [public/client/](public/client/), counted after the
+split. Numbers are across the nine non-`runtime` files.
+
+**Latent bugs, not style.** There is **no `'use strict'` anywhere** (0 occurrences), which is
+the only reason these work at all:
+
+- [public/client/overlay.js](public/client/overlay.js) assigns three **undeclared** variables:
+  `mess` (`:89`), `name` (`:133`), `doScroll` (`:136`). Each becomes a property of `window`.
+  `name` is the dangerous one — `window.name` is a real browser property that survives
+  navigation and is visible to whatever the tab loads next; the chat code overwrites it with
+  whatever precedes the message text.
+- [public/client/game.js:379](public/client/game.js#L379) and
+  [public/client/boot.js:83](public/client/boot.js#L83) do
+  `for(let i in General['Interact']){ window[i] = General['Interact'][i]; }` — the whole input
+  surface (`onresize`, `onkeydown`, `onmousemove`, …) is sprayed onto `window` by name. It
+  works, and it is how the original bound its handlers, but nothing namespaces it and nothing
+  stops a later `window.onkeydown =` anywhere else from silently winning.
+
+**Order matters here:** adding `'use strict'` turns all three implicit globals into a
+`ReferenceError` at runtime, not at parse time — and `General.CHAT` is only reached once a
+message arrives, so the breakage will not show up at page load. Declare `mess`/`name`/
+`doScroll` with `let` inside the IIFE in the *same* commit; that alone stops the
+`window.name` clobber, since a local binding shadows the global. Renaming `name` on top of
+that is worth it for the next reader. Do not add `'use strict'` file-by-file as a tidy-up.
+
+**The one real hot-path cost.** `Instances` is walked with nested `for...in` **three times per
+animation frame** — 60–144 times a second: twice in `Draw`
+([:398](public/client/game.js#L398) draw, [:412](public/client/game.js#L412) drawUi) and once
+in `Loop` ([:458](public/client/game.js#L458) update). Six `for...in` traversals a frame.
+`for...in` walks the prototype chain and boxes each index as a string. (A fourth pair at
+[:536](public/client/game.js#L536) is in `SetPacket`, once per packet, not per frame.)
+
+This is *not* a loop rewrite. `SetPacket` removes entities with `delete Instances[C][I]`
+([:539](public/client/game.js#L539)), so `Instances.Players`
+and friends are genuinely **sparse arrays used as dictionaries**; an
+indexed `for(let i=0;i<len;i++)` would iterate holes. Fixing it means changing the data
+structure — a `Map`, or swap-and-pop on removal so the arrays stay dense — and that changes
+iteration *order*, which the canvas-call differential will (correctly) flag. Expect to rebuild
+the baseline for this one rather than expecting zero differences.
+
+**Nobody has measured what this costs.** The frame loop has never been profiled in a browser.
+Do not assume it is the bottleneck just because it is the ugliest thing in the render path.
+
+**Cosmetic, untouched, safe to do in bulk once a linter exists (§8.10):** 84 `var`
+declarations, 51 loose `==`/`!=`, 31 `for...in` in total, and several dead commented-out
+blocks — the `ParticuleSys` one in [public/client/entities.js](public/client/entities.js) sits
+inside a `/* */` and is unreachable; it moved across in the split because everything did.
+
 ---
 
 ## 7. Data flow, end to end
@@ -948,7 +1006,8 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 
    check: 125 real packets replayed through the old monolith and the new files against a
    recording stub DOM gave **180298 canvas operations with zero differences**, and three
    negative controls confirmed the check would have caught the seams going wrong. Full account
-   in §6.
+   in §6. **This item split the client; it did not modernize its idioms or its hot path, and
+   deliberately so — see §6.2 and item 12 below for what is still open.**
 10. ⬜ **NEXT — Dependencies and DB.** Add a linter, upgrade `express`/`ws`/`ejs`, replace
     `mysql` with `mysql2`. (The lockfile this item used to ask for is committed — see §5.10.)
     §5.3–5.5 are now fixed, but do not turn `MYSQL: true` on without testing those paths —
@@ -962,6 +1021,28 @@ Ordered by (risk reduction × unblocking) per unit of effort. **Items 1–8 and 
     page's own origin instead of hardcoding `ws://localhost:8080`, which also fixes the
     mixed-content problem behind TLS. Pinned by [test/web.js](test/web.js). (This item was
     not in the original list; it was requested during the chunk 6–7 pass.)
+12. ⬜ **Client idiom and hot-path cleanup — the part §8.9 deliberately left alone.** Full
+    detail and the reasoning in **§6.2**. Summary, in the order they should be done:
+
+    1. **`'use strict'` + the three implicit globals** in
+       [public/client/overlay.js](public/client/overlay.js) (`mess`, `name`, `doScroll` —
+       `name` currently clobbers `window.name`). One commit, not file-by-file: strict mode
+       turns them into runtime `ReferenceError`s, so the declarations have to land together.
+       This is the only item on this list that fixes an actual bug.
+    2. **Namespace the input handlers** instead of `window[i] = General['Interact'][i]`
+       ([game.js:379](public/client/game.js#L379),
+       [boot.js:83](public/client/boot.js#L83)).
+    3. **`Instances` as a dense structure**, so `Draw`/`Loop` stop running four nested
+       `for...in` per frame. Needs `delete Instances[C][I]` in `SetPacket` replaced with
+       swap-and-pop or a `Map`. **Profile first — nobody has.** This one legitimately changes
+       iteration order, so rebuild the differential baseline rather than expecting zero
+       differences from it.
+    4. **Bulk idiom** (`var` → `let`/`const`, `==` → `===`, dead comment blocks). Cheapest
+       after §8.10 lands a linter, which will find all of it for you.
+
+    Do these one category per commit with the §6 canvas-call differential re-run each time.
+    The harness is the point: it is what makes it safe to touch a 3000-line render path that
+    no test asserts pixels for.
 
 ---
 
