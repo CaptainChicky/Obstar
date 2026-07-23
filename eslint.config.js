@@ -105,7 +105,8 @@ const LEGACY = {
   'no-control-regex': 'off',
   'no-irregular-whitespace': 'off',
 
-  // `parseInt(Math.random()*n)` (HANDOFF 9) passes a number to parseInt on purpose.
+  // Bare `parseInt(x)` (no radix arg) is used throughout for numeric truncation, not just
+  // string parsing - e.g. entities/Player.js, rooms/Room.js, public/SHARE/SocketSchema.js.
   'radix': 'off',
 
   // Swept clean in HANDOFF 12.2 and kept on so the idiom cannot creep back. See the header.

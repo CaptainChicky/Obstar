@@ -6,10 +6,20 @@ and things nobody has verified yet. No status prose, just the list.
 
 ---
 
+*The game is being remade from scratch: the DB will be emptied and rebuilt, and nothing
+documented from the old dev (naming, MySQL, anything below) needs a migration path or
+backward-compat story. Old conventions are defaults to improve on, not constraints.*
+
 ## 🔴 Decisions on game direction (need your call)
 
 1. **MySQL** — bring it back, swap to SQLite/Postgres, or drop persistence entirely? Currently
-   off; accounts/shop/leaderboard are all bypassed.
+   off; accounts/shop/leaderboard are all bypassed. Since the DB is being wiped anyway, there's
+   no legacy-data reason to pick MySQL specifically — a locally-run option (e.g. SQLite via
+   `better-sqlite3`, single file, no server process) fits "should run locally" better, unless
+   you want networked/multi-instance DB access later. For logged-out players, `localStorage`
+   (not just a cookie — more space, doesn't ride every request) holding XP/coins/achievements is
+   the common pattern for this genre; treat it as client-editable/untrusted if it ever feeds a
+   leaderboard. Still your call on the actual tech.
 2. **Next gamemodes** — Domination/Maze want *new mechanics* (capturable structures, static
    walls), not just new tunables like the current 4 modes. Worth building that entity type, or
    stick to tunable-only modes?
@@ -52,6 +62,11 @@ and things nobody has verified yet. No status prose, just the list.
     (browser can't `require()` it). Noted so a future kind-to-int change doesn't miss them.
 17. CSS lives in 4 places (`style.css`, `LeaderBoard.css`, `fontStyle.css`, inline in `play.ejs`).
     Cosmetic, real debt.
+18. **`canons` (194 occurrences, 10 files, incl. `TanksConfig.js`) looks like the same French/typo
+    leftover as the now-fixed `Assasin`/`origine`** — probably meant "cannons." Not touched: too
+    large/structural to be a mechanical find-replace (unlike the completed style pass below), and
+    not confirmed whether it's a deliberate term or an accident. Worth a deliberate pass if you
+    want it gone, now that the DB wipe removes any migration concern.
 
 ---
 

@@ -63,7 +63,7 @@ if(USERS){
 const generateKey = (()=>{
   const str = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
   return (length)=>{
-    return new Array(length).fill(0).map((x)=>{return str[parseInt(Math.random()*str.length)]}).join('');
+    return new Array(length).fill(0).map((x)=>{return str[Math.floor(Math.random()*str.length)]}).join('');
   }
 })()
 const basicKey = '0'.repeat(25);
@@ -81,7 +81,7 @@ app.get('/favicon.ico', async function(req,res){res.status(404).end()});
 // Express 5 upgraded to path-to-regexp v8, which rejects a bare '*' string path; a RegExp
 // catch-all is the direct, syntax-independent equivalent of the old app.get('*') (HANDOFF 8.10).
 app.get(/.*/, function(request, respond){
-    const id = parseInt(Math.random()*1000);
+    const id = Math.floor(Math.random()*1000);
     const KEY = request.cookies.obstarkey || 1;
     /// get the acc///
     if(USERS && config.DB.ACC){

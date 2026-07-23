@@ -5,7 +5,7 @@
 */
 (function(CLIENT){
   const CONST = CLIENT.CONST;
-  const C = CLIENT.C;
+  const Palette = CLIENT.Palette;
   const Global = CLIENT.Global;
   const roundRect = CLIENT.roundRect;
   const Drawings = {
@@ -147,13 +147,13 @@
         (ctx, param) => {
           ctx.beginPath();
           ctx.arc(0,0,param.size,0,Math.PI*2,0);
-          ctx.fillStyle = C[param.color][1];
+          ctx.fillStyle = Palette[param.color][1];
           ctx.fill();
           ctx.closePath();
           ///
           ctx.beginPath();
           ctx.arc(0,0,param.size-CONST.LINEWIDTH,0,Math.PI*2,0);
-          ctx.fillStyle = C[param.color][0];
+          ctx.fillStyle = Palette[param.color][0];
           ctx.fill();
           ctx.closePath();
         },
@@ -165,11 +165,11 @@
           ctx.lineTo(-0.6*$1,0.8660254037844387*$1)
           ctx.lineTo(-0.6*$1,-0.8660254037844387*$1)
           ctx.closePath();
-          ctx.fillStyle = C[param.color][0];
+          ctx.fillStyle = Palette[param.color][0];
           ctx.fill();
           ctx.lineWidth = CONST.LINEWIDTH;
           ctx.lineJoin = 'round';
-          ctx.strokeStyle = C[param.color][1];
+          ctx.strokeStyle = Palette[param.color][1];
           ctx.stroke();
         },
         (ctx, param) => {
@@ -185,11 +185,11 @@
           ctx.lineTo(-0.5*$1,-0.8660254037844387*$1);
           ctx.lineTo(0.5*mini ,-0.8660254037844387*mini);
           ctx.closePath();
-          ctx.fillStyle = C[param.color][0];
+          ctx.fillStyle = Palette[param.color][0];
           ctx.fill();
           ctx.lineWidth = CONST.LINEWIDTH;
           ctx.lineJoin = 'round';
-          ctx.strokeStyle = C[param.color][1];
+          ctx.strokeStyle = Palette[param.color][1];
           ctx.stroke();
         },
         (ctx, param) => {
@@ -198,11 +198,11 @@
           ctx.beginPath();
           ctx.rect(-param.size,-param.size,param.size*2,param.size*2)
           ctx.closePath();
-          ctx.fillStyle = C[param.color][0];
+          ctx.fillStyle = Palette[param.color][0];
           ctx.fill();
           ctx.lineWidth = CONST.LINEWIDTH;
           ctx.lineJoin = 'round';
-          ctx.strokeStyle = C[param.color][1];
+          ctx.strokeStyle = Palette[param.color][1];
           ctx.stroke();
         }
       ],

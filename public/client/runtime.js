@@ -21,7 +21,7 @@
   registry, not one file's exports - and the parts that are pure arithmetic can be poked at
   directly. Node has to supply what the page would have:
 
-    global.window = global;                                    // config.js caches C on it
+    global.window = global;                                    // config.js caches Palette on it
     global.TanksConfig = require('../SHARE/TanksConfig.js');
     global.PetsConfig  = require('../SHARE/PetsConfig.js');
     global.MOTION      = require('../motion.js');

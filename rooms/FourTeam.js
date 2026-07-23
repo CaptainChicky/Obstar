@@ -81,7 +81,7 @@ class FourTeam extends Room {
   }
   /* Bots dealt round-robin across the four sides, starting from a random one. */
   botRoster(){
-    const offset = parseInt(Math.random()*this.rules.teams.length);
+    const offset = Math.floor(Math.random()*this.rules.teams.length);
     const roster = [];
     for(let i = 0; i<this.rules.botCount; i++){
       roster.push({

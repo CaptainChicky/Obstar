@@ -8,7 +8,7 @@
 const RT         = require('../lib/runtime.js');
 const Vec        = require('victor');
 const config     = require('../lib/config.js').config;
-const cc         = require('../lib/terminal.js');
+const termColors = require('../lib/terminal.js');
 const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION   = require('../lib/constants.js').FRICTION;
@@ -40,7 +40,7 @@ class Detector {
     if(this.all){
       if(this.type.includes(kind) && other.alpha && !other.shield){
         if(kind === KIND.BULLET){
-          if(this.id.oId !== other.origine.oId){
+          if(this.id.oId !== other.origin.oId){
             this.selectAll[kind].push(other);
           }
         } else if(kind === KIND.PLAYER){
@@ -59,7 +59,7 @@ class Detector {
       }
     }
     if(this.type.includes(kind) && other.alpha && !other.shield){
-      if(kind === KIND.BULLET && this.id.oId === other.origine.oId){
+      if(kind === KIND.BULLET && this.id.oId === other.origin.oId){
         return;
       }
       const index = this.type.indexOf(kind);

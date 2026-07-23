@@ -9,7 +9,7 @@
   const CONST = CLIENT.CONST;
   const CLASS_TREE = CLIENT.CLASS_TREE;
   const CLASS = CLIENT.CLASS;
-  const C = CLIENT.C;
+  const Palette = CLIENT.Palette;
   const Global = CLIENT.Global;
   const Game = CLIENT.Game;
   const General = CLIENT.General;
@@ -65,9 +65,9 @@
             ctx.clip();
             ctx.fillStyle = '#f4f4f4';
             ctx.fillRect(0,0,size,size);
-            ctx.fillStyle = C.green[0];
+            ctx.fillStyle = Palette.green[0];
             ctx.fillRect(0,0,size/12,size);
-            ctx.fillStyle = C.red[0];
+            ctx.fillStyle = Palette.red[0];
             ctx.fillRect(size,0,-size/12,size);
             break;
           }
@@ -268,7 +268,7 @@
               ctx.closePath();
               ctx.fill();ctx.stroke();
               /////
-              ctx.fillStyle = C.up[state];
+              ctx.fillStyle = Palette.up[state];
               for(let i = 0; i<data.nb; i++){
                 ctx.beginPath();
                 roundRect(ctx,plusRad*2-r + (W+marge)*i,plusRad-h/2  , W, h,r);
@@ -276,7 +276,7 @@
                 ctx.fill();
               }
               /////
-              const plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(C.up[state],1.4) : C.up[state];
+              const plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(Palette.up[state],1.4) : Palette.up[state];
               ctx.beginPath();
               ctx.arc(plusRad,plusRad,plusRad,0,Math.PI*2);
               ctx.closePath();
@@ -309,7 +309,7 @@
             ctx.closePath();
             ctx.fill();ctx.stroke();
             ///
-            ctx.fillStyle = C.up[state];
+            ctx.fillStyle = Palette.up[state];
             for(let i = 0; i<data.nb; i++){
               ctx.beginPath();
               roundRect(ctx,w+plusRad-2 - (W+marge)*(i+1),plusRad-h/2  , W, h,r);
@@ -317,7 +317,7 @@
               ctx.fill();
             }
             ///
-            const plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(C.up[state],1.6) : C.up[state];
+            const plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(Palette.up[state],1.6) : Palette.up[state];
             ctx.beginPath();
             ctx.arc(w+plusRad,plusRad,plusRad,0,Math.PI*2);
             ctx.closePath();
@@ -447,7 +447,7 @@
             ctx.beginPath();
             roundRect(ctx,0,0,size,size,round);
             ctx.closePath();
-            ctx.fillStyle = is ? General.color.shade(C.class[ALL.Class[c].id],1.3) : C.class[ALL.Class[c].id];
+            ctx.fillStyle = is ? General.color.shade(Palette.class[ALL.Class[c].id],1.3) : Palette.class[ALL.Class[c].id];
             ctx.fill();
             ctx.lineJoin = 'round';
             ctx.lineWidth = lw;
@@ -507,8 +507,8 @@
               const img = General['drawTank'](ctx,0,
                 {
                  class: classes[i],
-                 tankC: C.green,
-                 canC: C.gray,
+                 tankC: Palette.green,
+                 canC: Palette.gray,
                  size: 28,
                  dir: 0,
                  recoils: [],
@@ -646,7 +646,7 @@
             ctx.beginPath();
             roundRect(ctx,0,0,h+(w-h)*((one.xp+1)/(all[0].xp+1)),h,h/2+1);
             ctx.closePath();
-            ctx.fillStyle  = C[one.team][0];
+            ctx.fillStyle  = Palette[one.team][0];
             ctx.fill();
             ///
             ctx.drawImage(ALL.leads[text].can,0,-3,ALL.leads[text].can.width/R,ALL.leads[text].can.height/R);
@@ -756,8 +756,8 @@
           const img = General['drawTank'](ctx,0,
             {
              class: tank,
-             tankC: C.green,
-             canC: C.gray,
+             tankC: Palette.green,
+             canC: Palette.gray,
              size: 35,
              dir: 0,
              recoils: [],

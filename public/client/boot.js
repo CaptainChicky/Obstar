@@ -6,7 +6,7 @@
 */
 (function(CLIENT){
   const CONST = CLIENT.CONST;
-  const C = CLIENT.C;
+  const Palette = CLIENT.Palette;
   const Global = CLIENT.Global;
   const General = CLIENT.General;
   function preRun(){
@@ -16,7 +16,7 @@
       General['canvas'].oncontextmenu = event => event.preventDefault();
       General['canvas'].style.width = '100%';
       General['canvas'].style.height = '100%';
-      document.body.style.backgroundColor = C.Grid[1];
+      document.body.style.backgroundColor = Palette.Grid[1];
       document.body.appendChild(General['canvas']);
     }
     General['ctx'] = General['canvas'].getContext('2d');

@@ -8,19 +8,19 @@
 const RT         = require('../lib/runtime.js');
 const Vec        = require('victor');
 const config     = require('../lib/config.js').config;
-const cc         = require('../lib/terminal.js');
+const termColors = require('../lib/terminal.js');
 const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION   = require('../lib/constants.js').FRICTION;
 const KIND       = require('../lib/kinds.js');
 
 class Bullet {
-  constructor(origine,x,y,direction,speed,exitSpeed){
+  constructor(origin,x,y,direction,speed,exitSpeed){
     this.BUFF = {
       timestamp: -1,
     };
     this.id = 0;
-    this.origine = origine;
+    this.origin = origin;
     this.class = 0;
     this.life = 130;
     this.team = 0;
@@ -46,7 +46,7 @@ class Bullet {
     if(option.type){
       switch (option.type) {
         case 'god':
-          if(this.origine.oId === other.id.oId){
+          if(this.origin.oId === other.id.oId){
             return;
           }
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.speed*2+1,this.speed*2+1)));
@@ -60,7 +60,7 @@ class Bullet {
       switch(other.kind){
         case KIND.PLAYER:
            if(option.noDam){break;}
-          if(this.origine.oId === other.id.oId){
+          if(this.origin.oId === other.id.oId){
             return;
           }
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.weight,this.weight)));
@@ -70,7 +70,7 @@ class Bullet {
         case KIND.OBJECTS:
           this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.weight,this.weight)));
           if(this.necro && other.type === 'sqr'){
-            const play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE.players[this.origine.oId];
+            const play = RT.Controller.server[this.origin.GM][this.origin.sId].INSTANCE.players[this.origin.oId];
             if(play.droneCount<CLASS[play.class].maxDrone+play.upNb[1]){
               play.droneCount++;
               const Bull = new RT.Bullet(play.id,other.x,other.y,Math.random()*Math.PI*2,play.up.BSpeed*play.necro.speed,0);
@@ -90,7 +90,7 @@ class Bullet {
           if(this.pene <= 0){this.destroy = config.DES}
           break;
         case KIND.BULLET:
-          if(other.origine.oId === this.origine.oId){
+          if(other.origin.oId === this.origin.oId){
             if((parseInt(this.type) === 1 || parseInt(this.type) === 3) && this.type === other.type){
               this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(this.weight,this.weight)));
             }
@@ -104,7 +104,7 @@ class Bullet {
       }
     }
     if(this.destroy && this.life === -1){
-      const play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE["players"][this.origine.oId];
+      const play = RT.Controller.server[this.origin.GM][this.origin.sId].INSTANCE["players"][this.origin.oId];
       if(play){
         play.droneCount--;
       }
@@ -122,7 +122,7 @@ class Bullet {
     ///
     let play;
     if(!this.alone){
-      play = RT.Controller.server[this.origine.GM][this.origine.sId].INSTANCE.players[this.origine.oId];
+      play = RT.Controller.server[this.origin.GM][this.origin.sId].INSTANCE.players[this.origin.oId];
       if(typeof play === "undefined"){
         this.destroy = config.DES;
         return;

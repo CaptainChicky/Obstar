@@ -41,7 +41,7 @@
 const RT         = require('../lib/runtime.js');
 const Vec        = require('victor');
 const config     = require('../lib/config.js').config;
-const cc         = require('../lib/terminal.js');
+const termColors = require('../lib/terminal.js');
 const quadTree   = require('../lib/quadTree.js');
 const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
@@ -228,13 +228,13 @@ class Room {
         {"GM":this.gm,"sId":this.id,"oId":slot.id},
         0,
         0,
-        RT.CONFIG.BOT_NAMES[parseInt(Math.random()*(RT.CONFIG.BOT_NAMES.length-1))],
+        RT.CONFIG.BOT_NAMES[Math.floor(Math.random()*(RT.CONFIG.BOT_NAMES.length-1))],
         slot.team,
         this.XPLVL
       );
       bot.motion = RT.CONFIG.BOTS[0].bind(bot);
       bot.bot = 1;
-      bot.xp = 5000+parseInt(Math.random()*60000)
+      bot.xp = 5000+Math.floor(Math.random()*60000)
       this.INSTANCE.players[slot.id] = bot;
       this.bots.push(slot.id);
       this.respawn(slot.id,1,1);
@@ -267,7 +267,7 @@ class Room {
   */
   createBoss(){
     if(this.bosses.length >= this.rules.maxBoss){ return; }
-    const spec = RT.CONFIG.BOSS[parseInt(Math.random()*RT.CONFIG.BOSS.length)];
+    const spec = RT.CONFIG.BOSS[Math.floor(Math.random()*RT.CONFIG.BOSS.length)];
     let slot = -1;
     for(let i = 0; i<=this.maxPlayer; i++){
       if(typeof(this.INSTANCE.players[i]) === "undefined"){ slot = i; break; }
@@ -303,8 +303,8 @@ class Room {
     }
     return boss;
   }
-  createBullet(bullet,origine){
-    this.assignBulletTeam(bullet,origine);
+  createBullet(bullet,origin){
+    this.assignBulletTeam(bullet,origin);
     bullet.map = this.map;
     for(let i = 0; i<=this.INSTANCE.bullets.length; i++){
       if(!this.INSTANCE.bullets[i]){
@@ -320,10 +320,10 @@ class Room {
   }
   /* A bullet belongs to whoever fired it. The dev 'color' command tints it without moving
      it to another side - bulletColor() is what reads that. */
-  assignBulletTeam(bullet,origine){
-    bullet.team = origine.team;
-    if(origine.dev.color){
-      bullet.color = origine.dev.color;
+  assignBulletTeam(bullet,origin){
+    bullet.team = origin.team;
+    if(origin.dev.color){
+      bullet.color = origin.dev.color;
     }
   }
   /*
@@ -348,7 +348,7 @@ class Room {
     }
     if(stop){
       this.destroy = 1;
-      console.log(cc.Bright+cc.BgYellow+'DELETED SERVER //'+cc.Reset+' '+this.gm+':'+this.id);
+      console.log(termColors.Bright+termColors.BgYellow+'DELETED SERVER //'+termColors.Reset+' '+this.gm+':'+this.id);
       delete RT.Controller.server[this.gm][this.id];
       clock.remove(this);
       return;
@@ -531,22 +531,22 @@ class Room {
               obj.collision(other,objOption);
               if(objKind === KIND.BULLET){
                 if(other.destroy && other.prize){
-                  if(this.INSTANCE.players[obj.origine.oId]){
-                    this.INSTANCE.players[obj.origine.oId].xp+=other.prize;
-                    this.INSTANCE.players[obj.origine.oId].coins+= other.coinReward || 0;
-                    if(otherKind === KIND.PLAYER && !this.INSTANCE.players[obj.origine.oId].bot){
-                      this.INSTANCE.players[obj.origine.oId].mess.push('You killed '+ other.name);
+                  if(this.INSTANCE.players[obj.origin.oId]){
+                    this.INSTANCE.players[obj.origin.oId].xp+=other.prize;
+                    this.INSTANCE.players[obj.origin.oId].coins+= other.coinReward || 0;
+                    if(otherKind === KIND.PLAYER && !this.INSTANCE.players[obj.origin.oId].bot){
+                      this.INSTANCE.players[obj.origin.oId].mess.push('You killed '+ other.name);
                     }
                   }
                 }
               }
               if(otherKind === KIND.BULLET && obj.prize){
                 if(obj.destroy){
-                  if(this.INSTANCE.players[other.origine.oId]){
-                    this.INSTANCE.players[other.origine.oId].xp+=obj.prize;
-                    this.INSTANCE.players[other.origine.oId].coins+=obj.coinReward || 0;
-                    if(objKind === KIND.PLAYER && !this.INSTANCE.players[other.origine.oId].bot){
-                      this.INSTANCE.players[other.origine.oId].mess.push('You killed '+ obj.name);
+                  if(this.INSTANCE.players[other.origin.oId]){
+                    this.INSTANCE.players[other.origin.oId].xp+=obj.prize;
+                    this.INSTANCE.players[other.origin.oId].coins+=obj.coinReward || 0;
+                    if(objKind === KIND.PLAYER && !this.INSTANCE.players[other.origin.oId].bot){
+                      this.INSTANCE.players[other.origin.oId].mess.push('You killed '+ obj.name);
                     }
                   }
                 }
@@ -643,7 +643,7 @@ class Room {
       newTank.motion = RT.CONFIG.BOTS[0].bind(newTank);
       newTank.bot = 1;
       if(Math.random()<0.1){
-        newTank.name = RT.CONFIG.BOT_NAMES[parseInt(Math.random()*(RT.CONFIG.BOT_NAMES.length-1))];
+        newTank.name = RT.CONFIG.BOT_NAMES[Math.floor(Math.random()*(RT.CONFIG.BOT_NAMES.length-1))];
       }
     }
     ///
@@ -799,7 +799,7 @@ class Room {
             break;
           };
           case KIND.BULLET:{
-            if(this.rules.viewerBullets && obj.origine.oId === RAW.main.id.oId){
+            if(this.rules.viewerBullets && obj.origin.oId === RAW.main.id.oId){
               break;
             }
             raw = {
@@ -834,7 +834,7 @@ class Room {
           break;
         };
         case KIND.BULLET:{
-          if(this.rules.viewerBullets && obj.origine.oId === RAW.main.id.oId){
+          if(this.rules.viewerBullets && obj.origin.oId === RAW.main.id.oId){
             const raw = new Int8Array(RT.Controller.encodeInst('Instance',{
               construc: 'Bullets',
               id: obj.id.oId,
@@ -911,7 +911,7 @@ class Room {
     }
     const tied = count.filter((n)=>n === count[smallest]).length;
     if(tied === count.length){
-      smallest = parseInt(Math.random()*count.length);
+      smallest = Math.floor(Math.random()*count.length);
     }
     return this.rules.teams[smallest];
   }
@@ -935,7 +935,7 @@ class Room {
             this.XPLVL
           );
         tank.userKey = data.key;
-        if(pet){ tank.pet = pet; pet.origine = tank.id; pet.team = tank.team; }
+        if(pet){ tank.pet = pet; pet.origin = tank.id; pet.team = tank.team; }
         this.INSTANCE.players[i] = tank;
         this.respawn(i,1);
         console.log('NEW PLAYER gm: '+this.gm+' serve-Id: '+this.id+' player id: '+i);

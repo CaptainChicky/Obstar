@@ -7,7 +7,7 @@
 */
 (function(CLIENT){
   const CONST = CLIENT.CONST;
-  const C = CLIENT.C;
+  const Palette = CLIENT.Palette;
   const Global = CLIENT.Global;
   const General = CLIENT.General;
   const Drawings = CLIENT.Drawings;
@@ -76,7 +76,7 @@
           ctx.lineWidth = lw;
           ctx.textBaseline = 'middle';
           ctx.strokeStyle = '#222222';
-          ctx.fillStyle = bot ? C.botName : '#fcfcfc';
+          ctx.fillStyle = bot ? Palette.botName : '#fcfcfc';
           ctx.setTransform(r,0,0,r,can.width/2,0);
           const c = ctx.measureText(name);
           ctx.strokeText( name, -c.width/2, lw + 12 );
@@ -189,11 +189,11 @@
       if(this.shield){
         this.SH.lapse += 1;
         if(this.SH.lapse === 6){
-          this.SH.body = [General.color.shade(C[this.color][0],1.1),C[this.color][1]];
-          this.SH.canons = [General.color.shade(C.gray[0],1.1),C.gray[1]];
+          this.SH.body = [General.color.shade(Palette[this.color][0],1.1),Palette[this.color][1]];
+          this.SH.canons = [General.color.shade(Palette.gray[0],1.1),Palette.gray[1]];
         } else if(this.SH.lapse === 0){
-          this.SH.body = C[this.color];
-          this.SH.canons = C.gray;
+          this.SH.body = Palette[this.color];
+          this.SH.canons = Palette.gray;
         } else if(this.SH.lapse === 12){
           this.SH.lapse = -1;
         }
@@ -229,8 +229,8 @@
       // taking down the whole render loop is not a trade worth making.
       const o = General['drawTank'](ctx,parseInt(this.alpha),{
          class: this.class,
-         tankC: this.shield ? this.SH.body : ((this.hitted>1) ? C.hit : C[this.color]),
-         canC: this.shield ? this.SH.canons : ((this.hitted>1) ? C.hit : C.gray),
+         tankC: this.shield ? this.SH.body : ((this.hitted>1) ? Palette.hit : Palette[this.color]),
+         canC: this.shield ? this.SH.canons : ((this.hitted>1) ? Palette.hit : Palette.gray),
          size: this.size,
          dir: this.ddir,
          recoils: this.recoil,
@@ -252,7 +252,7 @@
       );
       ///
       ctx.globalAlpha = this.hpAlpha*this.alpha;
-      this.hpBar.redraw(this.hp,this.size*1.7,C[this.color][0]);
+      this.hpBar.redraw(this.hp,this.size*1.7,Palette[this.color][0]);
       ctx.drawImage(this.hpBar.can,
         -this.hpBar.can.width/2,
         (this.size*1.2)*CONST.OFFCAN*CONST.RESOLUTION
@@ -338,7 +338,7 @@
             ctx.translate(this.dx,this.dy);
             ctx.scale(1/CONST.OFFCAN/CONST.RESOLUTION,1/CONST.OFFCAN/CONST.RESOLUTION);
             ctx.globalAlpha = this.hpAlpha*this.alpha;
-            this.hpBar.redraw(this.hp,this.size*1.7,C[this.color][0]);
+            this.hpBar.redraw(this.hp,this.size*1.7,Palette[this.color][0]);
             ctx.drawImage(this.hpBar.can,
               -this.hpBar.can.width/2,
               (this.size*1.2)*CONST.OFFCAN*CONST.RESOLUTION
@@ -363,7 +363,7 @@
           ctx.translate(this.dx,this.dy);
           ctx.scale(1/CONST.OFFCAN/CONST.RESOLUTION,1/CONST.OFFCAN/CONST.RESOLUTION);
           ctx.globalAlpha = this.hpAlpha*this.alpha;
-          this.hpBar.redraw(this.hp,this.size*1.7,C[this.color][0]);
+          this.hpBar.redraw(this.hp,this.size*1.7,Palette[this.color][0]);
           ctx.drawImage(this.hpBar.can,
             -this.hpBar.can.width/2,
             (this.size*1.2)*CONST.OFFCAN*CONST.RESOLUTION
@@ -394,7 +394,7 @@
         const can = General['drawBullet'].draw(ctx,{size:this.size,type:0,color:(this.hitted>1) ? 'hit' : this.color});
         return;
       }
-      Drawings['obj'][this.type](ctx,(this.hitted>1) ? C.hit : C[this.color],this.dsize,this.dir);
+      Drawings['obj'][this.type](ctx,(this.hitted>1) ? Palette.hit : Palette[this.color],this.dsize,this.dir);
     }
   };
   class Bullet{

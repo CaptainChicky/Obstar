@@ -221,7 +221,7 @@
         shape: 0,
       }
     },
-    "Assasin":{
+    "Assassin":{
       canons:[
           {
             type: 0,
@@ -1632,7 +1632,7 @@
       ///
       this.canons = c;
     },
-    "Assasin":new function(){
+    "Assassin":new function(){
       this.screen = 1920;
       this.canons = [];
       this.canons[0] = new function(){
@@ -2575,7 +2575,7 @@
     {
       Twin:['Twin Flank','Triple','Quad Shot'],
       Rifle:['Destroyer','Gunner'],
-      Sniper:['Trapper','Assasin','Pilote'],
+      Sniper:['Trapper','Assassin','Pilote'],
       'Flank Guard':['Triple','Hover Tank'],
     },
     {
@@ -2588,7 +2588,7 @@
       'Quad Shot':   ['Cyclone','Octo Shot'],
       'Twin Flank':  ['BattleShip','Triple Twin'],
       Triple:        ['Treble','Penta Shot'],
-      Assasin:       ['Sprayer','Ranger'],
+      Assassin:      ['Sprayer','Ranger'],
       Trapper:       ['Protector','Auto Trapper','Mega Trapper']
     }
   ];
@@ -2603,7 +2603,7 @@
     "Triple",
     "Quad Shot",
     "Destroyer",
-    "Assasin",
+    "Assassin",
     "Pilote",
     "Hover Tank",
     "Trapper",

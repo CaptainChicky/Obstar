@@ -8,7 +8,7 @@
 (function(CLIENT){
   const CONST = CLIENT.CONST;
   const CLASS = CLIENT.CLASS;
-  const C = CLIENT.C;
+  const Palette = CLIENT.Palette;
   const Global = CLIENT.Global;
   const Game = CLIENT.Game;
   const General = CLIENT.General;
@@ -140,7 +140,7 @@
         const ctx = can.getContext('2d');
         can.width = can.height = (param.size*2+CONST.LINEWIDTH+2)*CONST.OFFCAN;
         ctx.setTransform(CONST.OFFCAN,0,0,CONST.OFFCAN,can.width/2,can.height/2);
-        Drawings.pet[param.type]( ctx, param, CONST, C );
+        Drawings.pet[param.type]( ctx, param, CONST, Palette );
         return can;
       }
       function draw(ctx,param){
@@ -154,7 +154,7 @@
             }
           }
         }
-        Drawings.pet[param.type]( ctx, param, CONST, C );
+        Drawings.pet[param.type]( ctx, param, CONST, Palette );
       }
       ///
       return {
@@ -168,7 +168,7 @@
       return (posx,posy, tileSize) => {
         const h = Game.screen*.5625*Global.RATIO;
         ///
-        ctx.fillStyle = C.Grid[0];
+        ctx.fillStyle = Palette.Grid[0];
         ctx.fillRect(
           -(Game.width/2+posx)*Global.RATIO+Global.canW/2,
           -(Game.height/2+posy)*Global.RATIO+Global.canH/2,
@@ -193,7 +193,7 @@
         ctx.globalAlpha = 1;
         switch(POST.gm){
           case '2team':{
-            ctx.fillStyle = C.red[0];
+            ctx.fillStyle = Palette.red[0];
             ctx.globalAlpha = 0.2;
             ctx.fillRect(
               -(-Game.width/2+posx)*Global.RATIO+Global.canW/2,
@@ -201,7 +201,7 @@
               -600*Global.RATIO,
               Game.height*Global.RATIO
             );
-            ctx.fillStyle = C.green[0];
+            ctx.fillStyle = Palette.green[0];
             ctx.fillRect(
               -(Game.width/2+posx)*Global.RATIO+Global.canW/2,
               -(Game.height/2+posy)*Global.RATIO+Global.canH/2,

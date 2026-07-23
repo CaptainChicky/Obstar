@@ -8,7 +8,7 @@
 (function(CLIENT){
   const CONST = CLIENT.CONST;
   const rnbcolor = CLIENT.rnbcolor;
-  const C = CLIENT.C;
+  const Palette = CLIENT.Palette;
   const Global = CLIENT.Global;
   const Game = CLIENT.Game;
   const General = CLIENT.General;
@@ -215,11 +215,11 @@
         if(this.shield){
           this.SH.lapse += 1;
           if(this.SH.lapse === 6){
-            this.SH.body = [General.color.shade(C[this.color][0],1.1),C[this.color][1]];
-            this.SH.canons = [General.color.shade(C.gray[0],1.1),C.gray[1]];
+            this.SH.body = [General.color.shade(Palette[this.color][0],1.1),Palette[this.color][1]];
+            this.SH.canons = [General.color.shade(Palette.gray[0],1.1),Palette.gray[1]];
           } else if(this.SH.lapse === 0){
-            this.SH.body = C[this.color];
-            this.SH.canons = C.gray;
+            this.SH.body = Palette[this.color];
+            this.SH.canons = Palette.gray;
           } else if(this.SH.lapse === 12){
             this.SH.lapse = -1;
           }
@@ -239,8 +239,8 @@
         ctx.globalAlpha = this.alpha;
         const o = General['drawTank'](ctx,parseInt(this.alpha),{
           class: this.class,
-          tankC: this.shield ? this.SH.body : ((this.hitted>1) ? C.hit : C[this.color]),
-          canC: this.shield ? this.SH.canons : ((this.hitted>1) ? C.hit : C.gray),
+          tankC: this.shield ? this.SH.body : ((this.hitted>1) ? Palette.hit : Palette[this.color]),
+          canC: this.shield ? this.SH.canons : ((this.hitted>1) ? Palette.hit : Palette.gray),
           size: this.size,
           dir: this.followDir ? this.realDir : this.dir,
           recoils: this.recoil,
@@ -253,7 +253,7 @@
         }
         ///
         ctx.scale(1/CONST.OFFCAN/CONST.RESOLUTION,1/CONST.OFFCAN/CONST.RESOLUTION);
-        this.hpBar.redraw(this.hp,this.size*1.5,C[this.color][0]);
+        this.hpBar.redraw(this.hp,this.size*1.5,Palette[this.color][0]);
         ctx.globalAlpha *= this.hpAlpha;
         ctx.drawImage(this.hpBar.can,
           -this.hpBar.can.width/2,
@@ -541,10 +541,10 @@
         return;
       }
       /// DELETE OLD DATA ///
-      for( const C in Instances){
-        for( const I in Instances[C]){
-          if( typeof( data.Instances[C][I] ) === 'undefined' ){
-            delete Instances[C][I];
+      for( const category in Instances){
+        for( const id in Instances[category]){
+          if( typeof( data.Instances[category][id] ) === 'undefined' ){
+            delete Instances[category][id];
           }
         }
       }

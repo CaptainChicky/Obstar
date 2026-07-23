@@ -33,7 +33,11 @@ WS_LINK=wss://game.example.com node server.js --web-only  # http://…:80
 `'0'.repeat(25)`, the shop is hidden client-side, the leaderboard renders empty. Credentials
 (when enabled) live in `lib/dbConfig.js`, overridable via `DB_HOST`/`DB_USER`/`DB_PASSWORD`/
 `DB_NAME`. The MySQL code paths exist and are wired to `mysql2`, but have **never been executed**
-in this environment — see [PENDING.md](PENDING.md).
+in this environment — see [PENDING.md](PENDING.md). **The game is being remade from scratch and
+the DB will be emptied and rebuilt** — there is no legacy data or old-client compatibility to
+preserve, so persistence decisions (MySQL vs. SQLite vs. something else) are unconstrained by
+anything documented here; treat old-dev conventions as defaults to improve on, not rules to
+honor for their own sake.
 
 ---
 
@@ -74,7 +78,7 @@ cookie.
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
 | `lib/config.js` | 68 | Live tunables/flags. **`TICK_MS`** lives here — read §4 first. |
 | `lib/kinds.js` | 33 | Entity type tags, used for `obj.kind` dispatch. |
-| `lib/terminal.js` | 34 | Terminal colour codes (`cc`). |
+| `lib/terminal.js` | 34 | Terminal colour codes (`termColors`). |
 | `lib/constants.js` | 4 | `FRICTION`. |
 | `lib/dbConfig.js` | 18 | DB credentials, env-overridable. |
 | `lib/botNames.js` | ~100 | Bot name list. Non-ASCII, deliberately. |
@@ -143,9 +147,6 @@ The things in this codebase that are *not* obvious from reading the code around 
   `DETEC:{type:['Player','Objects']}` literals in `TanksConfig.js` can't `require()`
   `lib/kinds.js` because that file also loads in the browser — keep them in sync by hand if you
   touch `lib/kinds.js`.
-- **`Assasin` (sic) is load-bearing.** The class name is misspelled in `TanksConfig.js` and the
-  misspelling is on the wire and (when DB is on) in the database. Don't "fix" the typo without
-  a migration plan.
 - **A room self-destructs when it has zero human players** (bots and bosses excluded from the
   count) — see `Room.js`. This is why an empty `boss`-mode room doesn't tick forever.
 - **No HTML is ever escaped, anywhere.** Rendering is canvas-only, so there is currently no DOM
@@ -325,15 +326,18 @@ rooms at once. Full list and reasoning: [PENDING.md](PENDING.md).
 
 - `let`/`const` dominate now (server-side `var` was swept); a few `for...in` traversals remain
   by design (§6).
-- Single-letter globals: `C` (client colours), `cc` (terminal colours). Server config is
-  `config`; client still uses `c` in places.
 - Objects used as enums with parallel string↔int tables (`toBUFFER`/`toSTRING`).
-- French/English mixed identifiers: `origine` (not `origin`). `Assasin` (sic, load-bearing —
-  see §3).
-- `parseInt(Math.random()*n)` instead of `Math.floor` throughout — intentional, radix rule is
-  off for it in `eslint.config.js`.
 - Vector math via the `victor` package (`new Vec(x,y).rotate(dir).add(…)`), though some code
   still does raw `Math.sqrt(Math.pow(…))` distance instead.
+- Bare `parseInt(x)` (no radix arg) is still used throughout for numeric truncation — that's why
+  `radix` is off in `eslint.config.js`. Random-int generation was `parseInt(Math.random()*n)`
+  and has been swept to `Math.floor(Math.random()*n)`; if you see the old form, it's new code,
+  not a pattern to copy.
+- The single-letter globals `C` (client colours) and `cc` (terminal colours) have been renamed
+  to `Palette` and `termColors`. `Assasin` (sic) has been corrected to `Assassin` and `origine`
+  to `origin` — safe to do without a migration because the DB is being wiped and rebuilt from
+  scratch (see §1). `TanksConfig.js`'s `canons` property name (194 occurrences across 10 files)
+  looks like the same kind of leftover — not yet touched, flagged in PENDING.md.
 
 ---
 

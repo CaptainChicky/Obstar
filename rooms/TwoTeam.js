@@ -64,7 +64,7 @@ class TwoTeam extends Room {
   }
   /* Three bots, alternating sides, starting from one side or the other at random. */
   botRoster(){
-    const start = this.rules.botIdStart+parseInt(Math.random()*2);
+    const start = this.rules.botIdStart+Math.floor(Math.random()*2);
     const roster = [];
     for(let i = start; i<start+this.rules.botCount; i++){
       roster.push({id: i, team: i%2});

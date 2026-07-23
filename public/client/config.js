@@ -35,7 +35,7 @@
   const CLASS = TanksConfig.class;
   const CLASS_TREE = TanksConfig.tree;
   const rnbcolor = ['hsl(0,100%,50%)','hsl(0,100%,30%)'];
-  const C = window.colorPattern = window.colorPattern || {
+  const Palette = window.colorPattern = window.colorPattern || {
     //         ---light------Dark---
     green:     ["#19e56e","#14ad54"],
     red:       ["#e6584b","#a9443b"],
@@ -117,7 +117,7 @@
   CLIENT.CLASS = CLASS;
   CLIENT.CLASS_TREE = CLASS_TREE;
   CLIENT.rnbcolor = rnbcolor;
-  CLIENT.C = C;
+  CLIENT.Palette = Palette;
   CLIENT.Global = Global;
   CLIENT.Game = Game;
 })(typeof(exports) === 'undefined'

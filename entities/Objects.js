@@ -8,7 +8,7 @@
 const RT         = require('../lib/runtime.js');
 const Vec        = require('victor');
 const config     = require('../lib/config.js').config;
-const cc         = require('../lib/terminal.js');
+const termColors = require('../lib/terminal.js');
 const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION   = require('../lib/constants.js').FRICTION;
@@ -19,7 +19,7 @@ class Objects {
     this.BUFF = {
       timestamp: -1,
     };
-    this.coinReward = parseInt(Math.random()+.02);
+    this.coinReward = Math.floor(Math.random()+.02);
     this.type = type;
     this.id = id;
     this.size = 20;
@@ -73,7 +73,7 @@ class Objects {
     switch(this.type){
       case "sqr": this.size = 20;this.hp = 13;this.prize = 15;break;
       case "tri": this.size = 18;this.hp = 25;this.prize = 50;this.maxspeed=.26;break;
-      case "pnt": this.size = 42;this.hp = 190;this.prize = 100+parseInt(Math.random()*100);this.maxspeed= 0.08;this.weight = 4;this.damage=5;break;
+      case "pnt": this.size = 42;this.hp = 190;this.prize = 100+Math.floor(Math.random()*100);this.maxspeed= 0.08;this.weight = 4;this.damage=5;break;
       case "Bpnt": this.size = 115;this.hp = 9000;this.prize = 3000;this.maxspeed=0.01;this.weight = 100;break;
       case "Bsqr": this.size = 90;this.hp = 8000;this.prize = 2000;this.maxspeed=0.01;this.weight = 100;break;
       case "Btri": this.size = 72;this.hp = 7000;this.prize = 1000;this.maxspeed=0.01;this.weight = 100;break;
@@ -139,7 +139,7 @@ class Objects {
         break;
       case KIND.BULLET:
         if(other.necro && this.type === 'sqr'){
-          const play = RT.Controller.server[other.origine.GM][other.origine.sId].INSTANCE.players[other.origine.oId];
+          const play = RT.Controller.server[other.origin.GM][other.origin.sId].INSTANCE.players[other.origin.oId];
           if(play.droneCount<CLASS[play.class].maxDrone+play.upNb[1]){
             this.destroy = 1;
             return;

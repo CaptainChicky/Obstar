@@ -8,7 +8,7 @@
 const RT         = require('../lib/runtime.js');
 const Vec        = require('victor');
 const config     = require('../lib/config.js').config;
-const cc         = require('../lib/terminal.js');
+const termColors = require('../lib/terminal.js');
 const CLASS      = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION   = require('../lib/constants.js').FRICTION;
@@ -348,17 +348,17 @@ class Player {
         break;
       case KIND.BULLET:
         if(option.noDam){break;}
-        if(other.origine.oId === this.id.oId){
+        if(other.origin.oId === this.id.oId){
           return;
         }
         if(this.bot){
-          this.lastBullet = other.origine;
+          this.lastBullet = other.origin;
         }
         this.vec.add(new Vec(this.x-other.x,this.y-other.y).norm().multiply(new Vec(other.weight/3,other.weight/3)));
         if(this.shield){return;}
         this.hp-=other.damage*Math.max(1,other.pene/5);
         this.hit = 2;
-        if(this.hp <= 0){this.dead = config.DEAD_DELAY; this.murder = ["players",other.origine]; this.destroy = config.DES;}
+        if(this.hp <= 0){this.dead = config.DEAD_DELAY; this.murder = ["players",other.origin]; this.destroy = config.DES;}
         break;
     }
     if(this.alpha<1 && !this.dev.invisible){
