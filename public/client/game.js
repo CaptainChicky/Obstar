@@ -314,6 +314,17 @@
 			},
 			onkeydown: e => {
 				const key = e.key.toLowerCase();
+				// Console/chat input is focused - typing shouldn't also drive the tank
+				// (e.g. 'c' toggling auto-spin). Only the open/close chord still gets through.
+				if (General['DEV'].isOn || General['CHAT'].isOn) {
+					if (key === 'l' && e.ctrlKey && e.shiftKey) { General['DEV'].toggle(); }
+					else if (key === 'q' && e.ctrlKey && e.shiftKey) { General['CHAT'].toggle(); }
+					else if (key === 'escape') {
+						if (General['DEV'].isOn) { General['DEV'].toggle(); }
+						else if (General['CHAT'].isOn) { General['CHAT'].toggle(); }
+					}
+					return;
+				}
 				if (Global.inputs[key]) { return };
 				Global.inputs[key] = 1;
 				switch (key) {
@@ -346,6 +357,16 @@
 			},
 			onkeyup: e => {
 				const key = e.key.toLowerCase();
+				if (General['DEV'].isOn || General['CHAT'].isOn) {
+					if (key === 'enter') {
+						if (General['DEV'].isOn) {
+							General['DEV'].send();
+						} else if (General['CHAT'].isOn) {
+							General['CHAT'].send();
+						}
+					}
+					return;
+				}
 				if (!Global.inputs[key]) { return; }
 				Global.inputs[key] = 0;
 				switch (key) {

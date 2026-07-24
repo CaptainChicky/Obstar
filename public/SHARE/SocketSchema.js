@@ -562,12 +562,12 @@
 			'upgrade': [2, 2],
 			'upClass': [2, 2],
 			'chat': [2, 202],
-			'com': [2, 52]
+			'com': [2, 257]
 		},
 		str: {
 			'name': 16,   // Controller.maxPseudoLength; 16 chars -> a 62 byte init packet
 			'chat': 100,  // -> 202 bytes
-			'com': 50    // -> 52 bytes
+			'com': 255   // -> 257 bytes; str8's 1-byte length prefix caps out here
 		},
 		key: 25         // the account key is exactly this long
 	};

@@ -289,9 +289,9 @@ function validation() {
 		chat.length === 202 && !server.decode(chat).error, chat.length);
 	check('chat over the limit is refused',
 		server.decode(Buffer.concat([chat, Buffer.alloc(2)])).error === 'ERR_PACKET_LENGTH');
-	const com = buf(client.encode('com', '/'.repeat(200)));
+	const com = buf(client.encode('com', '/'.repeat(300)));
 	check('the client clamps commands to the length the server accepts',
-		com.length === 52 && !server.decode(com).error, com.length);
+		com.length === 257 && !server.decode(com).error, com.length);
 	const longName = buf(client.encode('init', { key: KEY, gm: 'ffa', name: 'x'.repeat(80), pet: -1 }));
 	check('the client clamps names, so a long name cannot oversize an init',
 		longName.length === 62 && !server.decode(longName).error, longName.length);

@@ -36,6 +36,7 @@ module.exports = function createApp() {
 			setInterval(updateLB, 120000);
 		}
 		if (config.DB.SHOP) {
+			delete SHOP.HIDE;
 			const updateShop = () => {
 				db.query('SELECT class, id, label, price FROM shop').then((shop) => {
 					shop.forEach((item) => {

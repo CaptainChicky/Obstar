@@ -128,10 +128,13 @@ function attach(httpServer) {
 			};
 			case 'com': {
 				socket.main.request += 4;
-				const ans = RT.Controller.command(socket.id, data.data);
-				if (ans) {
-					talk(socket, 'comResponse', ans);
-				}
+				// command() answers most commands synchronously, but 'connect' checks the
+				// devs table first - Promise.resolve() lets both shapes flow through the same path.
+				Promise.resolve(RT.Controller.command(socket.id, data.data)).then((ans) => {
+					if (ans) {
+						talk(socket, 'comResponse', ans);
+					}
+				});
 				break;
 			};
 			case 'chat': {

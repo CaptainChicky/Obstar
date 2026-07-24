@@ -18,6 +18,7 @@
 		result.reset = function (size, shop) {
 			result.Shop = shop;
 			result.pivot = shop.children[0];
+			if (!result.pivot) return; // empty catalog - nothing to page through
 			result.pivot.style.transition = '.4s';
 			result.pivot.style.marginLeft = '0px';
 			result.length = size;

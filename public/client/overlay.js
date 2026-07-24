@@ -31,11 +31,13 @@
 		};
 		input.type = 'text';
 		input.id = 'dinput';
-		input.maxLength = '50';
+		input.maxLength = '255';
 		let history = [''], curs = 0;
 		const div = document.createElement('DIV');
 		div.appendChild(input);
 		div.id = 'console'
+		// Clicking the dimmed page itself (not the input, not a log line) closes the console.
+		div.onclick = (e) => { if (e.target === div) toggle(); };
 		////
 		function toggle() {
 			General['CHAT'].isOn ? General['CHAT'].toggle() : 0;
@@ -50,6 +52,15 @@
 		dev.toggle = toggle;
 		window.toggleConsole = toggle;
 		////
+		// Newest entry lands right under the input (as input.nextSibling); everything already
+		// there gets pushed down. Lines within one call keep their relative order.
+		function prepend(lines) {
+			for (let i = lines.length - 1; i >= 0; i--) {
+				const line = document.createElement('DIV');
+				line.innerHTML = lines[i].replace(/ /g, '\u00a0');
+				div.insertBefore(line, input.nextSibling);
+			}
+		}
 		function send() {
 			if (input.value === 'clear') {
 				div.innerHTML = '';
@@ -57,6 +68,7 @@
 				input.focus();
 			}
 			if (input.value.length) {
+				prepend(['> ' + input.value]);
 				General['WS'].send(PROTO.encode('com', input.value))
 				history[history.length - 1] = input.value;
 				curs = history.length;
@@ -67,11 +79,7 @@
 		dev.send = send;
 		////
 		function log(arr) {
-			for (const data of arr) {
-				const log = document.createElement('DIV')
-				log.innerHTML = data.replace(/ /g, '\u00a0');
-				div.insertBefore(log, input);
-			}
+			prepend(arr);
 		}
 		dev.log = log;
 		////

@@ -14,26 +14,31 @@ body {
 }
 
 #console {
-	position: absolute;
-	bottom: 20px;
-	left: -1px;
+	position: fixed;
+	inset: 0;
+	z-index: 41;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
 	color: #bcbcbc;
-	/*height: 30px;*/
 	padding: 2px;
-	width: 25%;
 	background: rgba(0, 0, 0, .6);
 	font-family: 'Lucida console';
 	font-weight: normal;
 	font-size: .8em;
-	vertical-align: text-bottom;
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 
 #dinput {
-	margin-top: 2px;
-	padding-left: 10px;
-	background-color: transparent;
-	color: #bbbbbb;
-	border: 0px;
+	flex-shrink: 0;
+	box-sizing: border-box;
+	margin-top: 6px;
+	padding: 6px 10px;
+	background-color: rgba(255, 255, 255, .06);
+	color: #d6ffd6;
+	border: 1px solid #3a4a3e;
+	border-radius: 3px;
 	width: 100%;
 	font-family: 'Lucida console';
 	font-weight: normal;
@@ -41,7 +46,9 @@ body {
 }
 
 #console div {
-	margin: 1px;
+	margin: 1px 0;
+	line-height: 1.4;
+	overflow-wrap: break-word;
 }
 
 input:focus {

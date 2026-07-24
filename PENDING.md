@@ -13,10 +13,21 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 
 ## 🔴 Decisions on game direction (need your call)
 
+1. **Real login, and what the dev console means for a regular player.** Right now there's no
+   login UI at all — every visitor just gets a random 25-char key in a cookie (HANDOFF.md
+   §1/§8), and `Ctrl+Shift+L` opens the same dev console for literally anyone; it only does
+   anything once you pass `connect <password>` against the `devs` table. Two open questions,
+   possibly resolved together:
+   - A real front-page login (username/password or otherwise) instead of the anonymous cookie.
+   - What non-admins get from that keyboard shortcut, if anything. Options run from "nothing —
+     console stays admin-gated, as today" to a diep.io-style client-side "script" console
+     everyone can open, scoped to cosmetics only (tank color/UI customization) with no command
+     execution or server access. Not designed yet — needs a concrete decision before either
+     side gets built.
 
 ## 🔵 Decided — queued for implementation (not yet built)
 
-1. **Next gamemodes: Domination/Maze get real new entity types.** Decided — not tunable-only.
+2. **Next gamemodes: Domination/Maze get real new entity types.** Decided — not tunable-only.
    Needs: a new `kind` in `public/SHARE/kinds.js` for static geometry (walls) and one for capturable
    structures; a static (no `step()`) entity class with its own `collision()`; quadtree
    insertion for that static geometry; a wire-schema addition (`SocketSchema.js`) so the client
@@ -26,22 +37,21 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 
 ## 🟢 Untested — real risk, nobody has watched these happen
 
-2. A full match, start to finish: leveling into the class tree, death screen, respawn.
-3. Two real humans in the same room (only single-player/single-tab has been tested).
-4. Boss AI behavior — bosses are *created* under test, nothing has watched them act.
-5. The client in an actual browser (only a stub-DOM harness has run it — no real frame timing,
+3. A full match, start to finish: leveling into the class tree, death screen, respawn.
+4. Two real humans in the same room (only single-player/single-tab has been tested).
+5. Boss AI behavior — bosses are *created* under test, nothing has watched them act.
+6. The client in an actual browser (only a stub-DOM harness has run it — no real frame timing,
    no tab throttling).
-6. Admin commands and chat over a real client connection — the `devs` password lookup in
-   `command()` uses the same `$1`-placeholder query shape already proven against Postgres
-   (account create/lookup, shop purchase, leaderboard write all confirmed live), but nobody
-   has driven it from an actual dev-authed socket.
-7. Real browser hitting the new packet-length validation (`chat`/`com` in particular) — a
+7. Chat over a real client connection — admin commands are now proven end-to-end over a real
+   socket against Postgres (connect/disconnect, permission gating, `broadcast`, `tps` all
+   confirmed live), but chat hasn't been exercised the same way.
+8. Real browser hitting the new packet-length validation (`chat`/`com` in particular) — a
     mistake here shows up as a kicked player, not a crash.
-8. Load: multiple busy rooms at once on one process (everything so far is one room alone).
+9. Load: multiple busy rooms at once on one process (everything so far is one room alone).
 
 ## ⚪ Optional cleanup — no urgency, no bug, do only if you want it
 
-9. Break the circular module graph (`lib/runtime.js` stopgap) with real dependency injection — big change, only worth it once everything else is settled.
+10. Break the circular module graph (`lib/runtime.js` stopgap) with real dependency injection — big change, only worth it once everything else is settled.
 
 ---
 

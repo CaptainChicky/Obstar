@@ -50,6 +50,17 @@ Committed default stays off so `npm test` (which runs with the DB off) stays gre
 legacy data or old-client compatibility to preserve. Postgres columns are lowercase
 (`userkey`, `userdata`, `lastconnection`, …) since Postgres folds unquoted identifiers anyway.
 
+**Testing admin commands locally.** With `DB.ON`/`DB.DEV` both `true`, insert a password row:
+```bash
+docker compose exec db psql -U root -d users -c "INSERT INTO devs (password, level) VALUES ('changeme', 3);"
+```
+Level 3 is the top tier (`lib/Controller.js`'s `command()` switch). There's no in-game keybind
+for the dev console — it's opened from the browser devtools console with `toggleConsole()`
+(`public/client/overlay.js` puts it on `window`), then type `connect changeme` and hit Enter to
+authenticate the tab, followed by commands like `player <id> invisible on` or `broadcast <msg>`.
+The regular chat box (`/join`, `/quit`, `/name`) is bound to Enter the same way but doesn't need
+a `connect` step.
+
 ---
 
 ## 2. Architecture

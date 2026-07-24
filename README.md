@@ -1,95 +1,71 @@
-# Obstar.io/Korexk.io server
-This is the original Obstar source code.
-The game still need a lot of work and love, I could help a little bit if some of you are planning on remaking a serious version of it.
+# Obstar / Korexk.io
+
+An open-source clone of diep.io: a 2D multiplayer arena shooter. Players are tanks that shoot
+bullets, farm polygon "objects" for XP, level up, pick stat upgrades, and evolve through a
+class tree.
+
+The codebase has been through a substantial refactor and cleanup pass (single entry point,
+Postgres instead of the old MySQL wiring, a real test suite, linting). It's still a
+work-in-progress game, not a finished product — see [PENDING.md](PENDING.md) for what's
+decided-but-not-built and what's untested, and [HANDOFF.md](HANDOFF.md) for the full
+architecture map and gotcha list.
 
 ## Running it
 ```bash
 npm install
 npm start          # http://localhost - game and menu site, one process, one port
-npm test           # rooms + protocol + web smoke tests
+npm test           # protocol, physics, rooms, client, and end-to-end smoke tests
+npm run lint       # eslint, flat config
 ```
-`PORT=3000 npm start` if port 80 is taken. See [HANDOFF.md](HANDOFF.md) for how the code is
-laid out and what is known to be broken.
+`PORT=3000 npm start` if port 80 is taken or restricted (common on Windows). Runs entirely
+without a database — every player gets the same anonymous key, the shop stays hidden, and the
+leaderboard renders empty. See [Database](#database-postgres) below to turn accounts/shop/
+leaderboard on.
 
 ## Prerequisites
-Runs on Node 10 and above (verified on 24).
-All the dependencies are in package.json.
+- Node 18+ (all dependencies are in package.json; no other setup needed for the game itself)
+- Docker Desktop — only if you want the Postgres-backed features (see below)
 
-## Things you need to know
-The game could still be optimized. Also, the code is not clean, so it might be hard to understad what's happening. Again, if you are planning on working on it seriously, i could help a little bit.
-###
-`server.js` is the only entry point. It runs the game simulation (a binary WebSocket
-protocol) and the Express site (menu page, static files, shop/leaderboard/accounts) on the
-same port.
-###
-It's still possible to put the web server, the game server and the mysql server on different
-machines:
+## Split deployment
+`server.js` is the only entry point and normally runs the game simulation (binary WebSocket
+protocol) and the Express menu site on the same port. It's still possible to split them across
+two machines:
 ```bash
 node server.js --game-only                                   # box A, ws://…:8080
 WS_LINK=wss://game.example.com node server.js --web-only      # box B, http://…:80
 ```
-WS_LINK is how the page finds the game server; leave it unset and the client just uses
-whatever origin served the page. MySQL credentials are in `/lib/dbConfig.js`, overridable
-with `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME`.
-## Mysql Database
-To work, obstar needs a mysql database with the following tables:
-###
-Create statement for the database 
-```
-CREATE DATABASE `users` /*!40100 DEFAULT CHARACTER SET utf8 */ /*!80016 DEFAULT ENCRYPTION='N' */;
-```
-Then, you have to use the database users: ```use users```
+`WS_LINK` is how the web page finds the game server; leave it unset and the client just uses
+whatever origin served the page.
 
-Create statement for the accounts table :
+## Database (Postgres)
+Accounts, the shop, and the leaderboard are backed by Postgres, off by default
+(`config.DB.ON` is `false` in `lib/config.js` — the game runs fine without it). To turn it on
+for local dev:
+```bash
+docker compose up -d      # starts postgres:16, applies db/schema.sql on first init
 ```
-CREATE TABLE `acc` (
-  `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
-  `userKey` varchar(25) NOT NULL,
-  `userData` text,
-  `ip` varchar(30) DEFAULT NULL,
-  `lastConnection` date NOT NULL,
-  `coins` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_UNIQUE` (`id`),
-  UNIQUE KEY `key_UNIQUE` (`userKey`)
-) ENGINE=InnoDB AUTO_INCREMENT=146 DEFAULT CHARSET=utf16;
-```
+then flip `DB.ON` (plus whichever of `DB.ACC`/`DB.SHOP`/`DB.DEV`/`DB.LB` you want) to `true`
+in `lib/config.js` and `npm start`. `db/schema.sql` holds the table definitions only — the
+actual data lives in a Docker-managed volume, not in that folder. Credentials are in
+`lib/dbConfig.js`, overridable via `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` /
+`DB_NAME`.
 
-Create statement for the shops :
+**Wiping the DB:**
+```bash
+docker compose down -v    # deletes the container AND the data volume
+docker compose up -d      # recreates it; schema.sql reapplies since the volume starts empty
 ```
-CREATE TABLE `shop` (
-  `id` int(11) NOT NULL,
-  `class` varchar(45) NOT NULL,
-  `label` varchar(45) NOT NULL,
-  `price` int(11) NOT NULL,
-  PRIMARY KEY (`class`,`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-```
+Plain `docker compose down` (no `-v`) / `docker compose up -d` just stops/restarts the
+container and keeps all data — `-v` is the one that actually resets everything.
 
-Create statement for the leaderboard table :
-```
-CREATE TABLE `wrs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(20) NOT NULL DEFAULT 'unnamed',
-  `score` int(11) NOT NULL DEFAULT '0',
-  `tank` varchar(20) DEFAULT NULL,
-  `gm` varchar(15) DEFAULT NULL,
-  `userKey` varchar(25) DEFAULT NULL,
-  `date` date DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=126 DEFAULT CHARSET=utf8;
-```
-For the leaderboard to work, you need to insert at least one row: 
-```
-insert into wrs value(NULL,'unnamed',0,'Basic','ffa',NULL,NOW());
-```
+Don't commit `lib/config.js` with `DB.ON: true` — the test suite expects it off.
 
-Create statement for the dev-token table :
-```
-CREATE TABLE `devs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `password` varchar(25) NOT NULL,
-  `level` int(3) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
-```
+See [HANDOFF.md](HANDOFF.md) §1 and §8 for the full picture, including how account
+create/lookup, shop purchases, and leaderboard writes were verified end to end against a real
+local Postgres instance, and how to test admin commands via the in-browser dev console.
+
+## Contributing
+The game still needs a lot of work — new gamemode content, more test coverage on the untested
+paths, general polish. [PENDING.md](PENDING.md) is the up-to-date punch list of what's decided
+but not built and what nobody has verified yet; [HANDOFF.md](HANDOFF.md) is the map to get
+oriented in the code before touching anything.
