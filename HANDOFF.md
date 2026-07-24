@@ -334,11 +334,6 @@ rooms at once. Full list and reasoning: [PENDING.md](PENDING.md).
   `radix` is off in `eslint.config.js`. Random-int generation was `parseInt(Math.random()*n)`
   and has been swept to `Math.floor(Math.random()*n)`; if you see the old form, it's new code,
   not a pattern to copy.
-- The single-letter globals `C` (client colours) and `cc` (terminal colours) have been renamed
-  to `Palette` and `termColors`. `Assasin` (sic) has been corrected to `Assassin`, `origine`
-  to `origin`, and `canons` to `cannons` (196 occurrences across 10 files) — safe to do without
-  a migration because the DB is being wiped and rebuilt from scratch (see §1).
-
 ---
 
 For what's undecided, unverified, or intentionally deferred, see **[PENDING.md](PENDING.md)** —
