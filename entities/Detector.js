@@ -5,13 +5,6 @@
 	Cross-entity and Controller references go through the late-bound registry
 	(lib/runtime.js) because the dependency graph is circular - see the note there.
 */
-const RT = require('../lib/runtime.js');
-const Vec = require('victor');
-const config = require('../lib/config.js').config;
-const termColors = require('../lib/terminal.js');
-const CLASS = require('../public/SHARE/TanksConfig.js').class;
-const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
-const FRICTION = require('../lib/constants.js').FRICTION;
 const KIND = require('../public/SHARE/kinds.js');
 
 class Detector {

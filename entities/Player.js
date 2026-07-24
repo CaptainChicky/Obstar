@@ -8,7 +8,6 @@
 const RT = require('../lib/runtime.js');
 const Vec = require('victor');
 const config = require('../lib/config.js').config;
-const termColors = require('../lib/terminal.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION = require('../lib/constants.js').FRICTION;
@@ -255,7 +254,6 @@ class Player {
 				this.stillLvl += 1;
 				this.upNb[data] += 1;
 				let nb = -1;
-				const re = 0;
 				for (const i in this.up) {
 					nb++;
 					if (nb !== data) { continue; }

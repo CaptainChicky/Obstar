@@ -8,9 +8,7 @@
 const RT = require('../lib/runtime.js');
 const Vec = require('victor');
 const config = require('../lib/config.js').config;
-const termColors = require('../lib/terminal.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
-const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION = require('../lib/constants.js').FRICTION;
 const KIND = require('../public/SHARE/kinds.js');
 
@@ -253,7 +251,6 @@ class Bullet {
 				if (this.DETEC.select) {
 					this.DETEC.enabled = 0;
 					const other = this.DETEC.select;
-					const dis = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
 					if (!other.destroy && other.alpha) {
 						this.dir = Math.atan2(other.y - this.y, other.x - this.x);
 						break;
@@ -299,7 +296,6 @@ class Bullet {
 				if (this.DETEC.select) {
 					this.DETEC.enabled = 0;
 					const other = this.DETEC.select;
-					const dis = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
 					const basedis = Math.sqrt(Math.pow(other.x - this.ox, 2) + Math.pow(other.y - this.oy, 2));
 					if (basedis < 1800 && !other.destroy) {
 						this.dir = Math.atan2(other.y - this.y, other.x - this.x);
