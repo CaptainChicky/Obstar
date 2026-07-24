@@ -284,6 +284,11 @@ class Player {
 		if (tanks.includes(data)) {
 			this.classLvl++;
 			this.class = data;
+			// A human evolving out of an auto-aim class must drop its vision cone: shoot()
+			// only ever *creates* this.DETEC (when the class defines one), so otherwise the
+			// stale cone lingers forever. Bots are skipped - gameAI rebuilds their own AI
+			// cone every tick, so they never hold a stale one nor need a churned allocation.
+			if (!this.bot && this.DETEC && !CLASS[this.class].DETEC) { this.DETEC = null; }
 			this.droneCount = 0;
 			this.necro = CLASS[this.class].necro;
 			this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);

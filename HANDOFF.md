@@ -310,7 +310,7 @@ but untested in this environment.
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
 | `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp. No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas. |
-| `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (232311 ops / hash `fff47764`) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
+| `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (247353 ops / hash `c4eb110d`) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all four modes. |
 | `test/web.js` | The merged entry point: one port serves site + socket, `play.ejs` script order, split-mode wiring. |
 | `test/clientProto.js` | Loads `SocketSchema.js` in *client* mode inside Node via `vm` — used by the above, not a standalone suite. |

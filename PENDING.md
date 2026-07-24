@@ -2,7 +2,8 @@
 
 Short-form companion to [HANDOFF.md](HANDOFF.md). Everything mechanical (the refactor, §1–9,
 §12.1–12.2) is done and tested — this doc is only what's *left*: things needing a human call,
-and things nobody has verified yet. No status prose, just the list.
+decisions already made but not yet built, and things nobody has verified yet. No status prose,
+just the list.
 
 ---
 
@@ -20,23 +21,16 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
    (not just a cookie — more space, doesn't ride every request) holding XP/coins/achievements is
    the common pattern for this genre; treat it as client-editable/untrusted if it ever feeds a
    leaderboard. Still your call on the actual tech.
-2. **Next gamemodes** — Domination/Maze want *new mechanics* (capturable structures, static
-   walls), not just new tunables like the current 4 modes. Worth building that entity type, or
-   stick to tunable-only modes?
-3. **Tick rate: keep 33ms or retune for 20ms (50Hz)?** 33ms matches how the game has always
-   actually played and been balanced. 20ms is what the code always *claimed* but never hit —
-   doing it means a full balance pass plus ~2x CPU per room. Not a bug either way, pure design
-   call. (Detail: HANDOFF §3.1, §10.)
 
-## 🟡 Flagged possible bugs (deliberately left unfixed — need a ruling)
+## 🔵 Decided — queued for implementation (not yet built)
 
-4. **Shielded bot never picks a random facing.** Dead code was removed that *would* have
-   randomized a freshly-shielded bot's heading, but it sat after a `return` so it never ran
-   anyway — deleting it changed nothing. Was this intended behavior that never shipped? If yes,
-   the fix is moving the block above the `return`. (`lib/gameAI.js`)
-5. **Stale `DETEC` (auto-aim cone) after evolving out of an auto-aim class.** A disabled
-   `if(false)` reset was removed (no behavior change). Players who evolve out of an auto-aim
-   class keep the old vision-cone object. Harmless leftover, or worth clearing? (`entities/Player.js`)
+2. **Next gamemodes: Domination/Maze get real new entity types.** Decided — not tunable-only.
+   Needs: a new `kind` in `lib/kinds.js` for static geometry (walls) and one for capturable
+   structures; a static (no `step()`) entity class with its own `collision()`; quadtree
+   insertion for that static geometry; a wire-schema addition (`SocketSchema.js`) so the client
+   can draw walls/structures; team-ownership state on capturable structures synced over the
+   wire. Touches `TanksConfig.js`'s 3 hardcoded `DETEC` literals too if new kinds shift anything
+   there (see #16).
 
 ## 🟢 Untested — real risk, nobody has watched these happen
 
@@ -53,15 +47,9 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 
 ## ⚪ Optional cleanup — no urgency, no bug, do only if you want it
 
-14. **`Instances` sparse-array → `Map`/dense structure.** Profiled: costs ~0.01–0.04% of frame
-    budget today, and still only ~1.7% at 3000 entities. Not a performance problem. Only worth
-    doing for code clarity, not speed.
-15. Break the circular module graph (`lib/runtime.js` stopgap) with real dependency injection —
-    big change, only worth it once everything else is settled.
-16. `TanksConfig` has 3 hardcoded entity-type literals that can't reference `lib/kinds.js`
-    (browser can't `require()` it). Noted so a future kind-to-int change doesn't miss them.
-17. CSS lives in 4 places (`style.css`, `LeaderBoard.css`, `fontStyle.css`, inline in `play.ejs`).
-    Cosmetic, real debt.
+14. **`Instances` sparse-array → `Map`/dense structure.** Profiled: costs ~0.01–0.04% of frame budget today, and still only ~1.7% at 3000 entities. Not a performance problem. Only worth doing for code clarity, not speed. *Evaluated and left as-is:* `{oId: <index>}` IDs are the array index and travel the wire, and the sparse-slot idiom is load-bearing across server, client and quadtree — a genuine `Map` conversion is a broad, risky change on the order of #15, not a low-risk clarity tidy, so it stays deferred.
+15. Break the circular module graph (`lib/runtime.js` stopgap) with real dependency injection — big change, only worth it once everything else is settled.
+16. `TanksConfig` has 3 hardcoded entity-type literals that can't reference `lib/kinds.js` (browser can't `require()` it). The coupling can't be removed, but the pointer was one-way (`kinds.js` → TanksConfig); *added the reverse comment* at each of the 3 `DETEC` literals so an editor there sees the `lib/kinds.js` dependency without already knowing about it.
 
 ---
 

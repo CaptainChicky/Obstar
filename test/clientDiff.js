@@ -97,7 +97,7 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-const GOLDEN = { count: 232311, hash: 'fff47764' };
+const GOLDEN = { count: 247353, hash: 'c4eb110d' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

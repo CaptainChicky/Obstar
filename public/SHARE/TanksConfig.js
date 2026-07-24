@@ -2068,6 +2068,9 @@
 			"Auto Hover": new function () {
 				this.screen = 1408;
 				this.DETEC = {
+					// These strings must match lib/kinds.js (KIND.PLAYER / KIND.OBJECTS) - the
+					// Detector filters on them. This file also loads in the browser and can't
+					// require() kinds.js, so keep them in sync by hand if those values change.
 					type: ['Player', 'Objects'],
 					size: 800,
 					all: 0,
@@ -2347,6 +2350,9 @@
 			"Auto Trapper": new function () {
 				this.screen = 1664;
 				this.DETEC = {
+					// These strings must match lib/kinds.js (KIND.PLAYER / KIND.OBJECTS) - the
+					// Detector filters on them. This file also loads in the browser and can't
+					// require() kinds.js, so keep them in sync by hand if those values change.
 					type: ['Player', 'Objects'],
 					size: 1500,
 					all: 0,
@@ -2447,6 +2453,9 @@
 			'Auto Gunner': new function () {
 				this.screen = 1408;
 				this.DETEC = {
+					// These strings must match lib/kinds.js (KIND.PLAYER / KIND.OBJECTS) - the
+					// Detector filters on them. This file also loads in the browser and can't
+					// require() kinds.js, so keep them in sync by hand if those values change.
 					type: ['Player', 'Objects'],
 					size: 700,
 					all: 0,
