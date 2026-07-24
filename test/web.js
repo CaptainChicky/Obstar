@@ -95,11 +95,13 @@ async function combinedTests() {
 
 	const index = await request(PORT, 'GET', '/');
 	check('GET / renders the menu', index.status === 200 && index.body.includes('var POST'), 'status ' + index.status);
+	check('menu executes POST EJS data', index.body.includes('var POST = {'));
+	check('menu has no unrendered EJS tags', !index.body.includes('<%'));
 
 	const play = await request(PORT, 'POST', '/play', 'gm=ffa&name=smoke&pet=-1');
 	check('POST /play renders the game page', play.status === 200 && play.body.includes('/client/game.js'), 'status ' + play.status);
-	check('play.ejs defines POST before loading ws_link.js',
-		play.body.indexOf('var POST =') < play.body.indexOf("'./SHARE/ws_link.js'"));
+	check('POST /play renders POST data', play.body.includes('var POST = {'));
+	check('play.ejs defines POST before loading ws_link.js', play.body.indexOf('var POST =') < play.body.indexOf("'./SHARE/ws_link.js'"));
 	check('combined mode leaves POST.ws empty (same origin)', /"ws":""/.test(play.body));
 
 	// The client has no bundler, so the page IS the dependency graph. Each file assumes the
