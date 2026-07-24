@@ -286,8 +286,8 @@ function draw() {
 function tank(x, y, angle, size, type, color) {
 	var CLASS = {
 		"Basic": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 24;
 				this.height = 60,
 					this.offx = 0;
@@ -296,15 +296,15 @@ function tank(x, y, angle, size, type, color) {
 			}
 		},
 		"Doble": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 22;
 				this.height = 60,
 					this.offx = -15;
 				this.offdir = 0;
 				this.openWidth = 0;
 			}
-			this.canons[1] = new function () {
+			this.cannons[1] = new function () {
 				this.width = 22;
 				this.height = 60,
 					this.offx = 15;
@@ -313,8 +313,8 @@ function tank(x, y, angle, size, type, color) {
 			}
 		},
 		"Sniper": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 25;
 				this.height = 70,
 					this.offx = 0;
@@ -323,15 +323,15 @@ function tank(x, y, angle, size, type, color) {
 			}
 		},
 		"Rocket": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 23;
 				this.height = 55,
 					this.offx = 0;
 				this.offdir = Math.PI * 4 / 5;
 				this.openWidth = 0;
 			}
-			this.canons[1] = new function () {
+			this.cannons[1] = new function () {
 				this.width = 23;
 				this.height = 55,
 					this.offx = 0;
@@ -340,8 +340,8 @@ function tank(x, y, angle, size, type, color) {
 			}
 		},
 		"Uzid": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 22;
 				this.height = 60,
 					this.offx = 0;
@@ -350,8 +350,8 @@ function tank(x, y, angle, size, type, color) {
 			}
 		},
 		"Bolly": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 45;
 				this.height = 58,
 					this.offx = 0;
@@ -360,8 +360,8 @@ function tank(x, y, angle, size, type, color) {
 			}
 		},
 		"Submachine": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 38;
 				this.height = 55,
 					this.offx = 0;
@@ -370,15 +370,15 @@ function tank(x, y, angle, size, type, color) {
 			};
 		},
 		"Fire-box": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 14;
 				this.height = 58,
 					this.offx = 0;
 				this.offdir = 0;
 				this.openWidth = 6;
 			};
-			this.canons[1] = new function () {
+			this.cannons[1] = new function () {
 				this.width = 32;
 				this.height = 50,
 					this.offx = 0;
@@ -387,22 +387,22 @@ function tank(x, y, angle, size, type, color) {
 			};
 		},
 		"Vulcan": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 12;
 				this.height = 58,
 					this.offx = 10;
 				this.offdir = 0;
 				this.openWidth = 2;
 			};
-			this.canons[1] = new function () {
+			this.cannons[1] = new function () {
 				this.width = 12;
 				this.height = 58,
 					this.offx = -10;
 				this.offdir = 0;
 				this.openWidth = 2;
 			};
-			this.canons[2] = new function () {
+			this.cannons[2] = new function () {
 				this.width = 32;
 				this.height = 50,
 					this.offx = 0;
@@ -411,29 +411,29 @@ function tank(x, y, angle, size, type, color) {
 			};
 		},
 		"Quade": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 24;
 				this.height = 60,
 					this.offx = 0;
 				this.offdir = 0;
 				this.openWidth = 0;
 			};
-			this.canons[1] = new function () {
+			this.cannons[1] = new function () {
 				this.width = 24;
 				this.height = 60,
 					this.offx = 0;
 				this.offdir = Math.PI * 1 / 2;
 				this.openWidth = 0;
 			};
-			this.canons[2] = new function () {
+			this.cannons[2] = new function () {
 				this.width = 24;
 				this.height = 60,
 					this.offx = 0;
 				this.offdir = Math.PI;
 				this.openWidth = 0;
 			};
-			this.canons[3] = new function () {
+			this.cannons[3] = new function () {
 				this.width = 24;
 				this.height = 60,
 					this.offx = 0;
@@ -442,57 +442,57 @@ function tank(x, y, angle, size, type, color) {
 			};
 		},
 		"Octop": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 26;
 				this.height = 62,
 					this.offx = 0;
 				this.offdir = 0;
 				this.openWidth = 0;
 			};
-			this.canons[1] = new function () {
+			this.cannons[1] = new function () {
 				this.width = 26;
 				this.height = 62,
 					this.offx = 0;
 				this.offdir = Math.PI * 1 / 2;
 				this.openWidth = 0;
 			};
-			this.canons[2] = new function () {
+			this.cannons[2] = new function () {
 				this.width = 26;
 				this.height = 62,
 					this.offx = 0;
 				this.offdir = Math.PI;
 				this.openWidth = 0;
 			};
-			this.canons[3] = new function () {
+			this.cannons[3] = new function () {
 				this.width = 26;
 				this.height = 62,
 					this.offx = 0;
 				this.offdir = Math.PI * 3 / 2;
 				this.openWidth = 0;
 			};
-			this.canons[4] = new function () {
+			this.cannons[4] = new function () {
 				this.width = 26;
 				this.height = 62,
 					this.offx = 0;
 				this.offdir = Math.PI / 4;
 				this.openWidth = 0;
 			};
-			this.canons[5] = new function () {
+			this.cannons[5] = new function () {
 				this.width = 26;
 				this.height = 62,
 					this.offx = 0;
 				this.offdir = Math.PI * 1 / 2 + Math.PI / 4;
 				this.openWidth = 0;
 			};
-			this.canons[6] = new function () {
+			this.cannons[6] = new function () {
 				this.width = 26;
 				this.height = 62,
 					this.offx = 0;
 				this.offdir = Math.PI + Math.PI / 4;
 				this.openWidth = 0;
 			};
-			this.canons[7] = new function () {
+			this.cannons[7] = new function () {
 				this.width = 26;
 				this.height = 62,
 					this.offx = 0;
@@ -501,15 +501,15 @@ function tank(x, y, angle, size, type, color) {
 			};
 		},
 		"Pilote": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 50;
 				this.height = 48,
 					this.offx = 0;
 				this.offdir = 0;
 				this.openWidth = -10;
 			}
-			this.canons[1] = new function () {
+			this.cannons[1] = new function () {
 				this.width = 50;
 				this.height = 48,
 					this.offx = 0;
@@ -518,22 +518,22 @@ function tank(x, y, angle, size, type, color) {
 			}
 		},
 		"X-wing": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 50;
 				this.height = 48,
 					this.offx = 0;
 				this.offdir = 0;
 				this.openWidth = -10;
 			}
-			this.canons[1] = new function () {
+			this.cannons[1] = new function () {
 				this.width = 50;
 				this.height = 48,
 					this.offx = 0;
 				this.offdir = Math.PI * 2 / 3;
 				this.openWidth = -10;
 			}
-			this.canons[2] = new function () {
+			this.cannons[2] = new function () {
 				this.width = 50;
 				this.height = 48,
 					this.offx = 0;
@@ -542,8 +542,8 @@ function tank(x, y, angle, size, type, color) {
 			}
 		},
 		"Thief": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 27;
 				this.height = 75,
 					this.offx = 0;
@@ -552,15 +552,15 @@ function tank(x, y, angle, size, type, color) {
 			}
 		},
 		"Rogue": new function () {
-			this.canons = [];
-			this.canons[0] = new function () {
+			this.cannons = [];
+			this.cannons[0] = new function () {
 				this.width = 27;
 				this.height = 78,
 					this.offx = 0;
 				this.offdir = 0;
 				this.openWidth = 0;
 			};
-			this.canons[1] = new function () {
+			this.cannons[1] = new function () {
 				this.width = 60;
 				this.height = 42,
 					this.offx = 0;
@@ -569,7 +569,7 @@ function tank(x, y, angle, size, type, color) {
 			};
 		},
 	}
-	for (let c of CLASS[type].canons) {
+	for (let c of CLASS[type].cannons) {
 		ctx.save();
 		ctx.translate(x, y);
 		ctx.rotate((angle / 360 * Math.PI * 2) + c.offdir);

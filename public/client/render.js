@@ -26,8 +26,8 @@
 				let middleX = 0, middleY = 0, canSize = CONST.SIZE / 2 + CONST.LINEWIDTH;
 				const marge = 2;
 				///
-				if (config.canons) {
-					for (const c of config.canons) {
+				if (config.cannons) {
+					for (const c of config.cannons) {
 						///
 						const len = Math.sqrt(
 							Math.pow(c.height, 2) +
@@ -39,8 +39,8 @@
 						middleX += cos * Math.max(0, c.height - CONST.SIZE / 2) + sin * c.offx;
 						middleY += sin * Math.max(0, c.height - CONST.SIZE / 2) + cos * c.offx;
 					}
-					middleX /= config.canons.length * 2;
-					middleY /= config.canons.length * 2;
+					middleX /= config.cannons.length * 2;
+					middleY /= config.cannons.length * 2;
 				}
 				if (config.turrets) {
 					for (const c of config.turrets) {
@@ -55,10 +55,10 @@
 						middleX += cos * Math.max(0, c.height - CONST.SIZE / 2) + sin * c.offx;
 						middleY += sin * Math.max(0, c.height - CONST.SIZE / 2) + cos * c.offx;
 					}
-					middleX /= config.canons.length * 2;
-					middleY /= config.canons.length * 2;
+					middleX /= config.cannons.length * 2;
+					middleY /= config.cannons.length * 2;
 				}
-				if (!config.canons && !config.turrets) {
+				if (!config.cannons && !config.turrets) {
 					middleX = canSize;
 					middleY = canSize;
 				};
@@ -91,8 +91,8 @@
 					ctx.setTransform(R, 0, 0, R, can.width / 2, can.height / 2)
 				}
 				///
-				for (let i = 0; i < tank.canons.length; i++) {
-					Drawings.canons[tank.canons[i].type](ctx, tank, param, i);
+				for (let i = 0; i < tank.cannons.length; i++) {
+					Drawings.cannons[tank.cannons[i].type](ctx, tank, param, i);
 				};
 				Drawings.body[tank.body.shape](ctx, tank, param);
 				// for...in, not an indexed loop: `turrets` is an optional field, absent on most

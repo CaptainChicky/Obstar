@@ -157,9 +157,9 @@ class Player {
 		if (this.state.disconnect) {
 			return;
 		}
-		for (let r = 0; r < CLASS[this.class].canons.length; r++) {
+		for (let r = 0; r < CLASS[this.class].cannons.length; r++) {
 			if (typeof this.shootTimer[r] === 'undefined') { this.shootTimer[r] = 0; }
-			const can = CLASS[this.class].canons[r];
+			const can = CLASS[this.class].cannons[r];
 			const reloadMax = Math.round(can.reload * this.up.Reload);
 			const reload = this.shootTimer[r];
 			const maxD = CLASS[this.class].maxDrone;
@@ -286,7 +286,7 @@ class Player {
 			this.class = data;
 			this.droneCount = 0;
 			this.necro = CLASS[this.class].necro;
-			this.shootTimer = new Array(CLASS[this.class].canons.length).fill(0);
+			this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
 		} else {
 			return;
 		}

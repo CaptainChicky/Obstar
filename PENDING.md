@@ -62,11 +62,6 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
     (browser can't `require()` it). Noted so a future kind-to-int change doesn't miss them.
 17. CSS lives in 4 places (`style.css`, `LeaderBoard.css`, `fontStyle.css`, inline in `play.ejs`).
     Cosmetic, real debt.
-18. **`canons` (194 occurrences, 10 files, incl. `TanksConfig.js`) looks like the same French/typo
-    leftover as the now-fixed `Assasin`/`origine`** — probably meant "cannons." Not touched: too
-    large/structural to be a mechanical find-replace (unlike the completed style pass below), and
-    not confirmed whether it's a deliberate term or an accident. Worth a deliberate pass if you
-    want it gone, now that the DB wipe removes any migration concern.
 
 ---
 

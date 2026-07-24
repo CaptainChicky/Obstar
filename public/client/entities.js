@@ -190,10 +190,10 @@
 				this.SH.lapse += 1;
 				if (this.SH.lapse === 6) {
 					this.SH.body = [General.color.shade(Palette[this.color][0], 1.1), Palette[this.color][1]];
-					this.SH.canons = [General.color.shade(Palette.gray[0], 1.1), Palette.gray[1]];
+					this.SH.cannons = [General.color.shade(Palette.gray[0], 1.1), Palette.gray[1]];
 				} else if (this.SH.lapse === 0) {
 					this.SH.body = Palette[this.color];
-					this.SH.canons = Palette.gray;
+					this.SH.cannons = Palette.gray;
 				} else if (this.SH.lapse === 12) {
 					this.SH.lapse = -1;
 				}
@@ -230,7 +230,7 @@
 			const o = General['drawTank'](ctx, parseInt(this.alpha), {
 				class: this.class,
 				tankC: this.shield ? this.SH.body : ((this.hitted > 1) ? Palette.hit : Palette[this.color]),
-				canC: this.shield ? this.SH.canons : ((this.hitted > 1) ? Palette.hit : Palette.gray),
+				canC: this.shield ? this.SH.cannons : ((this.hitted > 1) ? Palette.hit : Palette.gray),
 				size: this.size,
 				dir: this.ddir,
 				recoils: this.recoil,

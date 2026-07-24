@@ -4,7 +4,7 @@
 		///CLIENTS///
 		{
 			"Basic": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 68,
@@ -20,7 +20,7 @@
 			},
 			///
 			"Twin": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 60,
@@ -43,7 +43,7 @@
 				}
 			},
 			"Rifle": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 62,
@@ -58,7 +58,7 @@
 				}
 			},
 			"Sniper": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 80,
@@ -73,7 +73,7 @@
 				}
 			},
 			"Flank Guard": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 65,
@@ -98,7 +98,7 @@
 			},
 			///
 			"Triple": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 58,
@@ -129,7 +129,7 @@
 				}
 			},
 			"Twin Flank": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 60,
@@ -168,7 +168,7 @@
 				}
 			},
 			"Quad Shot": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 66,
@@ -207,7 +207,7 @@
 				}
 			},
 			"Destroyer": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 62,
@@ -222,7 +222,7 @@
 				}
 			},
 			"Assassin": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 85,
@@ -237,7 +237,7 @@
 				}
 			},
 			"Pilote": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 48,
@@ -260,7 +260,7 @@
 				}
 			},
 			"Hover Tank": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 62,
@@ -293,7 +293,7 @@
 				}
 			},
 			"Trapper": {
-				canons: [
+				cannons: [
 					{
 						type: 1,
 						height: 65,
@@ -310,7 +310,7 @@
 			},
 			///
 			"Rocket": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 56,
@@ -333,7 +333,7 @@
 				}
 			},
 			'Hybrid': {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 62,
@@ -356,7 +356,7 @@
 				}
 			},
 			"Annihilator": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 64,
@@ -371,7 +371,7 @@
 				}
 			},
 			"Sprayer": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 82,
@@ -418,7 +418,7 @@
 				}
 			},
 			"Ranger": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 88,
@@ -441,7 +441,7 @@
 				}
 			},
 			"Booster": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 62,
@@ -491,7 +491,7 @@
 				}
 			},
 			"Raptor": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 65,
@@ -541,7 +541,7 @@
 				}
 			},
 			"Auto Hover": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 62,
@@ -585,7 +585,7 @@
 				}
 			},
 			"Treble": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 55,
@@ -616,7 +616,7 @@
 				}
 			},
 			"Triple Twin": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 60,
@@ -671,7 +671,7 @@
 				}
 			},
 			"Penta Shot": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 55,
@@ -718,7 +718,7 @@
 				}
 			},
 			"Octo Shot": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 62,
@@ -789,7 +789,7 @@
 				}
 			},
 			"Cyclone": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 52,
@@ -876,7 +876,7 @@
 				}
 			},
 			"Autocrat": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 48,
@@ -915,7 +915,7 @@
 				}
 			},
 			"Necromancer": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 52,
@@ -950,7 +950,7 @@
 				]
 			},
 			"Predator": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 48,
@@ -965,7 +965,7 @@
 				}
 			},
 			"BattleShip": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 48,
@@ -1004,7 +1004,7 @@
 				}
 			},
 			"Fortress": {
-				canons: [
+				cannons: [
 					{
 						type: 1,
 						height: 65,
@@ -1062,7 +1062,7 @@
 				}
 			},
 			"Mega Trapper": {
-				canons: [
+				cannons: [
 					{
 						type: 1,
 						height: 68,
@@ -1078,7 +1078,7 @@
 				}
 			},
 			"Protector": {
-				canons: [
+				cannons: [
 					{
 						type: 1,
 						height: 65,
@@ -1110,7 +1110,7 @@
 				}
 			},
 			"Auto Trapper": {
-				canons: [
+				cannons: [
 					{
 						type: 1,
 						height: 65,
@@ -1137,7 +1137,7 @@
 				}
 			},
 			"Submachine": {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 65,
@@ -1153,7 +1153,7 @@
 			},
 			///
 			'Gunner': {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 45,
@@ -1193,7 +1193,7 @@
 				}
 			},
 			'Auto Gunner': {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 45,
@@ -1244,7 +1244,7 @@
 				}
 			},
 			testbed: {
-				canons: [
+				cannons: [
 					{
 						hidden: 1,
 						type: 0,
@@ -1260,7 +1260,7 @@
 				}
 			},
 			bigView: {
-				canons: [
+				cannons: [
 					{
 						hidden: 1,
 						type: 0,
@@ -1276,7 +1276,7 @@
 				}
 			},
 			'pre launch': {
-				canons: [
+				cannons: [
 					{
 						hidden: 1,
 						type: 0,
@@ -1292,7 +1292,7 @@
 				}
 			},
 			shapes: {
-				canons: [
+				cannons: [
 					{
 						hidden: 1,
 						type: 0,
@@ -1308,7 +1308,7 @@
 				}
 			},
 			shape1: {
-				canons: [
+				cannons: [
 					{
 						hidden: 1,
 						type: 0,
@@ -1326,7 +1326,7 @@
 				}
 			},
 			shape2: {
-				canons: [
+				cannons: [
 					{
 						hidden: 1,
 						type: 0,
@@ -1343,7 +1343,7 @@
 			},
 			///boss
 			Summoner: {
-				canons: [
+				cannons: [
 					{
 						type: 0,
 						height: 44,
@@ -1388,8 +1388,8 @@
 		{
 			"Basic": new function () {
 				this.screen = 1408;
-				this.canons = [];
-				this.canons[0] = new function () {
+				this.cannons = [];
+				this.cannons[0] = new function () {
 					this.reload = 32;
 					this.offTime = 0;
 					this.type = 0;
@@ -1411,8 +1411,8 @@
 			},
 			"Flank Guard": new function () {
 				this.screen = 1408;
-				this.canons = [];
-				this.canons[0] = new function () {
+				this.cannons = [];
+				this.cannons[0] = new function () {
 					this.reload = 32;
 					this.offTime = 0;
 					this.type = 0;
@@ -1430,7 +1430,7 @@
 					this.weight = 0.3;
 					this.back = 0.4;
 				}
-				this.canons[1] = {
+				this.cannons[1] = {
 					reload: 32,
 					offTime: 0,
 					///
@@ -1450,8 +1450,8 @@
 			},
 			"Twin": new function () {
 				this.screen = 1408;
-				this.canons = [];
-				this.canons[1] = new function () {
+				this.cannons = [];
+				this.cannons[1] = new function () {
 					this.reload = 28;
 					this.offTime = 0;
 					///
@@ -1469,7 +1469,7 @@
 					this.weight = 0.3;
 					this.back = 0.3;
 				};
-				this.canons[0] = new function () {
+				this.cannons[0] = new function () {
 					this.reload = 28;
 					this.offTime = 0.5;
 					///
@@ -1490,8 +1490,8 @@
 			},
 			"Rifle": new function () {
 				this.screen = 1408;
-				this.canons = [];
-				this.canons[0] = new function () {
+				this.cannons = [];
+				this.cannons[0] = new function () {
 					this.reload = 14;
 					this.offTime = 0;
 					///
@@ -1511,8 +1511,8 @@
 			},
 			"Sniper": new function () {
 				this.screen = 1664;
-				this.canons = [];
-				this.canons[0] = new function () {
+				this.cannons = [];
+				this.cannons[0] = new function () {
 					this.reload = 55;
 					this.offTime = 0;
 					///
@@ -1533,7 +1533,7 @@
 			///
 			"Triple": new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 				const c = new Array(3).fill(null).map(() => ({
 					reload: 28,
 					offTime: 0,
@@ -1554,7 +1554,7 @@
 				c[0].offx = 6; c[0].offdir = .4;
 				c[1].offx = -6; c[1].offdir = -.4;
 				c[2].canonLength = 65; c[2].offTime = .5;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Twin Flank": new function () {
 				this.screen = 1408;
@@ -1580,11 +1580,11 @@
 				c[2].offdir = c[3].offdir = Math.PI;
 				c[1].offTime = c[3].offTime = .5;
 				c[1].offx = c[3].offx = 18;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Quad Shot": new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
 					reload: 28,
 					offTime: 0,
@@ -1605,7 +1605,7 @@
 				c[1].offdir = Math.PI / 2; c[1].offTime = .5;
 				c[2].offdir = Math.PI;
 				c[3].offdir = Math.PI * 1.5; c[3].offTime = .5;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Destroyer": new function () {
 				this.screen = 1408;
@@ -1630,12 +1630,12 @@
 					back: 3.8
 				}));
 				///
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Assassin": new function () {
 				this.screen = 1920;
-				this.canons = [];
-				this.canons[0] = new function () {
+				this.cannons = [];
+				this.cannons[0] = new function () {
 					this.reload = 52;
 					this.offTime = 0;
 					///
@@ -1656,7 +1656,7 @@
 			"Pilote": new function () {
 				this.screen = 1664;
 				this.maxDrone = 7;
-				this.canons = [];
+				this.cannons = [];
 				const c = new Array(2).fill(null).map(() => ({
 					reload: 220,
 					offTime: 0,
@@ -1679,7 +1679,7 @@
 					back: 0
 				}));
 				c[1].offdir = -Math.PI / 2;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Hover Tank": new function () {
 				this.screen = 1408;
@@ -1704,12 +1704,12 @@
 				c[1].offdir = -Math.PI - .4; c[1].offx = -5; c[1].offTime = .5;
 				c[2].offdir = -Math.PI + .4; c[2].offx = 5; c[2].offTime = .5;
 				///
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Trapper": new function () {
 				this.screen = 1664;
-				this.canons = [];
-				this.canons[0] = new function () {
+				this.cannons = [];
+				this.cannons[0] = new function () {
 					this.reload = 30;
 					this.offTime = 0;
 					this.type = 2;
@@ -1751,7 +1751,7 @@
 					back: 0.85
 				}));
 				c[1].offdir = -Math.PI + .4; c[1].offx = 5;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Hybrid": new function () {
 				this.screen = 1408;
@@ -1798,7 +1798,7 @@
 					back: 0.1
 				})
 				///
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Annihilator": new function () {
 				this.screen = 1408;
@@ -1823,7 +1823,7 @@
 					back: 4
 				}));
 				///
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Sprayer": new function () {
 				this.screen = 1664;
@@ -1850,12 +1850,12 @@
 				c[2].canonLength -= d * 3; c[2].offTime = .6;
 				c[3].canonLength -= d * 4; c[3].offTime = .8;
 				///
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Ranger": new function () {
 				this.screen = 2208;
-				this.canons = [];
-				this.canons[0] = new function () {
+				this.cannons = [];
+				this.cannons[0] = new function () {
 					this.reload = 54;
 					this.offTime = 0;
 					///
@@ -1875,7 +1875,7 @@
 			},
 			"Treble": new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 				const c = new Array(3).fill(null).map(() => ({
 					reload: 28,
 					offTime: 0,
@@ -1896,7 +1896,7 @@
 				c[0].offx = 17;
 				c[1].offx = -17;
 				c[2].canonLength = 60; c[2].offTime = .5;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Triple Twin": new function () {
 				this.screen = 1408;
@@ -1923,11 +1923,11 @@
 				c[4].offdir = c[5].offdir = Math.PI * 4 / 3;
 				c[1].offTime = c[3].offTime = c[5].offTime = .5;
 				c[1].offx = c[3].offx = c[5].offx = 18;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Penta Shot": new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 				const c = new Array(5).fill(null).map(() => ({
 					reload: 28,
 					offTime: 0,
@@ -1950,11 +1950,11 @@
 				c[2].offx = 3; c[2].offdir = .3; c[2].canonLength = 63; c[2].offTime = .5;
 				c[3].offx = -3; c[3].offdir = -.3; c[3].canonLength = 63; c[3].offTime = .5;
 				c[4].canonLength = 69;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Octo Shot": new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 				const c = new Array(8).fill(null).map(() => ({
 					reload: 28,
 					offTime: 0,
@@ -1979,11 +1979,11 @@
 				c[5].offdir = Math.PI * 5 / 4; c[5].offTime = .5;
 				c[6].offdir = Math.PI * 6 / 4;
 				c[7].offdir = Math.PI * 7 / 4; c[7].offTime = .5;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Cyclone": new function () {
 				this.screen = 1408;
-				this.canons = new Array(10).fill(null).map(() => ({
+				this.cannons = new Array(10).fill(null).map(() => ({
 					reload: 33,
 					offTime: 0,
 					///
@@ -2000,15 +2000,15 @@
 					weight: 0.5,
 					back: 0
 				}));
-				this.canons[1].offdir = Math.PI * .2; this.canons[1].offTime = .5;
-				this.canons[2].offdir = Math.PI * .4; this.canons[2].offTime = 0;
-				this.canons[3].offdir = Math.PI * .6; this.canons[3].offTime = .5;
-				this.canons[4].offdir = Math.PI * .8; this.canons[4].offTime = 0;
-				this.canons[5].offdir = Math.PI * 1; this.canons[5].offTime = .5;
-				this.canons[6].offdir = Math.PI * 1.2; this.canons[6].offTime = 0;
-				this.canons[7].offdir = Math.PI * 1.4; this.canons[7].offTime = .5;
-				this.canons[8].offdir = Math.PI * 1.6; this.canons[8].offTime = 0;
-				this.canons[9].offdir = Math.PI * 1.8; this.canons[9].offTime = .5;
+				this.cannons[1].offdir = Math.PI * .2; this.cannons[1].offTime = .5;
+				this.cannons[2].offdir = Math.PI * .4; this.cannons[2].offTime = 0;
+				this.cannons[3].offdir = Math.PI * .6; this.cannons[3].offTime = .5;
+				this.cannons[4].offdir = Math.PI * .8; this.cannons[4].offTime = 0;
+				this.cannons[5].offdir = Math.PI * 1; this.cannons[5].offTime = .5;
+				this.cannons[6].offdir = Math.PI * 1.2; this.cannons[6].offTime = 0;
+				this.cannons[7].offdir = Math.PI * 1.4; this.cannons[7].offTime = .5;
+				this.cannons[8].offdir = Math.PI * 1.6; this.cannons[8].offTime = 0;
+				this.cannons[9].offdir = Math.PI * 1.8; this.cannons[9].offTime = .5;
 			},
 			"Booster": new function () {
 				this.screen = 1408;
@@ -2035,7 +2035,7 @@
 				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].height = 58; c[3].offTime = .5;
 				c[4].offdir = -Math.PI + .35; c[4].offx = 5; c[4].height = 58; c[4].offTime = .5;
 				///
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Raptor": new function () {
 				this.screen = 1408;
@@ -2063,7 +2063,7 @@
 				c[4].offdir = -Math.PI + .4; c[2].offx = 5; c[4].offTime = .5; c[4].height = 59;
 				c[3].back = c[4].back = 1.4;
 				///
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Auto Hover": new function () {
 				this.screen = 1408;
@@ -2116,12 +2116,12 @@
 				c[2].offdir = -Math.PI - .4; c[2].offx = -5; c[2].offTime = .5;
 				c[3].offdir = -Math.PI + .4; c[3].offx = 5; c[3].offTime = .5;
 				///
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Autocrat": new function () {
 				this.screen = 1664;
 				this.maxDrone = 8;
-				this.canons = [];
+				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
 					reload: 340,
 					offTime: 0,
@@ -2146,13 +2146,13 @@
 				c[1].offdir = Math.PI / 2;
 				c[2].offdir = Math.PI;
 				c[3].offdir = Math.PI * 3 / 2;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Predator": new function () {
 				this.screen = 1824;
 				this.maxDrone = 8;
 				this.alpha = .006;
-				this.canons = [];
+				this.cannons = [];
 				const c = [{
 					reload: 140,
 					offTime: 0,
@@ -2174,7 +2174,7 @@
 					weight: 0.5,
 					back: 0.1
 				}]
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Necromancer": new function () {
 				this.screen = 1664;
@@ -2188,12 +2188,12 @@
 					damage: 1.3,
 					weight: 0.55
 				};
-				this.canons = [];
+				this.cannons = [];
 			},
 			"BattleShip": new function () {
 				this.screen = 1664;
 				//this.maxDrone = 7;
-				this.canons = [];
+				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
 					reload: 27,
 					offTime: 0,
@@ -2220,12 +2220,12 @@
 				c[3].offdir = -Math.PI / 2; c[3].offx = 12;
 				c[2].type = c[3].type = 1.3;
 				c[2].life = c[3].life = 145;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Fortress": new function () {
 				this.screen = 1664;
 				//this.maxDrone = 7;
-				this.canons = [];
+				this.cannons = [];
 				let c = new Array(3).fill(null).map(() => ({
 					reload: 50,
 					offTime: 0,
@@ -2269,12 +2269,12 @@
 					back: 0
 				})));
 				c[4].offdir = Math.PI * 2 / 3 + Math.PI / 3; c[5].offdir = Math.PI * 4 / 3 + Math.PI / 3;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Mega Trapper": new function () {
 				this.screen = 1664;
 				//this.maxDrone = 7;
-				this.canons = [];
+				this.cannons = [];
 				const c = [{
 					reload: 85,
 					offTime: 0,
@@ -2295,7 +2295,7 @@
 					weight: 0.3,
 					back: 1.2
 				}];
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Protector": new function () {
 				this.screen = 1664;
@@ -2342,7 +2342,7 @@
 					back: 0.1
 				})));
 				c[2].offdir = Math.PI * 4 / 3; c[2].offTime = .5;
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Auto Trapper": new function () {
 				this.screen = 1664;
@@ -2394,12 +2394,12 @@
 					weight: 0.3,
 					back: .8
 				});
-				this.canons = c;
+				this.cannons = c;
 			},
 			"Submachine": new function () {
 				this.screen = 1408;
-				this.canons = [];
-				this.canons[0] = new function () {
+				this.cannons = [];
+				this.cannons[0] = new function () {
 					this.reload = 20;
 					this.offTime = 0;
 					///
@@ -2442,7 +2442,7 @@
 				c[2].canonLength = c[3].canonLength = 58;
 				c[2].offx = 13; c[3].offx = -13;
 				c[1].offTime = c[2].offTime = .5;
-				this.canons = c;
+				this.cannons = c;
 			},
 			'Auto Gunner': new function () {
 				this.screen = 1408;
@@ -2495,36 +2495,36 @@
 				c[3].canonLength = c[4].canonLength = 58;
 				c[3].offx = 13; c[4].offx = -13;
 				c[2].offTime = c[3].offTime = .5;
-				this.canons = c;
+				this.cannons = c;
 			},
 			testbed: new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 			},
 			'pre launch': new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 			},
 			bigView: new function () {
 				this.screen = 2600;
-				this.canons = [];
+				this.cannons = [];
 			},
 			shapes: new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 			},
 			shape1: new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 			},
 			shape2: new function () {
 				this.screen = 1408;
-				this.canons = [];
+				this.cannons = [];
 			},
 			///Boss
 			"Summoner": new function () {
 				this.screen = 2400;
-				this.canons = [];
+				this.cannons = [];
 				this.boss = true;
 				this.maxDrone = 35;
 				const c = new Array(4).fill(null).map(() => ({
@@ -2551,7 +2551,7 @@
 				c[1].offdir = Math.PI / 2; c[1].offTime = .5;
 				c[2].offdir = Math.PI;
 				c[3].offdir = Math.PI * 1.5; c[3].offTime = .5;
-				this.canons = c;
+				this.cannons = c;
 			},
 		};
 	///

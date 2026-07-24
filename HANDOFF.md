@@ -334,10 +334,9 @@ rooms at once. Full list and reasoning: [PENDING.md](PENDING.md).
   and has been swept to `Math.floor(Math.random()*n)`; if you see the old form, it's new code,
   not a pattern to copy.
 - The single-letter globals `C` (client colours) and `cc` (terminal colours) have been renamed
-  to `Palette` and `termColors`. `Assasin` (sic) has been corrected to `Assassin` and `origine`
-  to `origin` — safe to do without a migration because the DB is being wiped and rebuilt from
-  scratch (see §1). `TanksConfig.js`'s `canons` property name (194 occurrences across 10 files)
-  looks like the same kind of leftover — not yet touched, flagged in PENDING.md.
+  to `Palette` and `termColors`. `Assasin` (sic) has been corrected to `Assassin`, `origine`
+  to `origin`, and `canons` to `cannons` (196 occurrences across 10 files) — safe to do without
+  a migration because the DB is being wiped and rebuilt from scratch (see §1).
 
 ---
 

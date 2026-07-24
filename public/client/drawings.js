@@ -9,9 +9,9 @@
 	const Global = CLIENT.Global;
 	const roundRect = CLIENT.roundRect;
 	const Drawings = {
-		canons: [
+		cannons: [
 			(ctx, config, param, i) => {
-				const c = config.canons[i], r = param.size / CONST.SIZE;
+				const c = config.cannons[i], r = param.size / CONST.SIZE;
 				if (c.hidden) {
 					return;
 				}
@@ -34,7 +34,7 @@
 				ctx.restore();
 			},
 			(ctx, config, param, i) => {
-				const c = config.canons[i], r = param.size / CONST.SIZE;
+				const c = config.cannons[i], r = param.size / CONST.SIZE;
 				i = config.turrets ? parseInt(i) + config.turrets.length : i;
 				const recoil = param.recoils[i] ? 1 - Math.abs(param.recoils[i]) : 1;
 				ctx.save();

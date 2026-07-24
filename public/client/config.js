@@ -41,7 +41,7 @@
 		red: ["#e6584b", "#a9443b"],
 		yellow: ["#f4e433", "#cab810"],
 		blue: ["#408edd", "#3b6fa9"],
-		gray: ["#8e8ca5", "#716e86"],//canons
+		gray: ["#8e8ca5", "#716e86"],//cannons
 		special: rnbcolor,
 		black: ['#4a4a50', '#1a1a1a'],
 		white: ['#f2f2f2', '#e1e1e1'],
