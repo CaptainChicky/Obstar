@@ -19,21 +19,16 @@ const WS_LINK = process.env.WS_LINK || '';
 
 module.exports = function createApp() {
 	const app = express();
-	const USERS = config.MYSQL ? require('mysql2').createPool(require('../lib/dbConfig.js').info) : 0;
+	const db = require('../lib/db.js');
 	///
 	let LEADERBOARD = [];
 	const SHOP = { HIDE: 1 };
 	const SHOPPER = {};
 	///
-	if (USERS) {
-		USERS.getConnection(function (err) {
-			if (err) throw err;
-			console.log("connect database");
-		});
+	if (db.enabled) {
 		if (config.DB.LB) {
 			const updateLB = () => {
-				USERS.query('SELECT score, name, tank, gm, DATE_FORMAT(date, "%d-%m-%Y") AS date FROM wrs ORDER BY score DESC', function (err, leader) {
-					if (err) throw (err);
+				db.query("SELECT score, name, tank, gm, TO_CHAR(date, 'DD-MM-YYYY') AS date FROM wrs ORDER BY score DESC").then((leader) => {
 					LEADERBOARD = leader;
 				})
 			};
@@ -42,8 +37,7 @@ module.exports = function createApp() {
 		}
 		if (config.DB.SHOP) {
 			const updateShop = () => {
-				USERS.query('SELECT class, id, label, price FROM shop', function (err, shop) {
-					if (err) throw (err);
+				db.query('SELECT class, id, label, price FROM shop').then((shop) => {
 					shop.forEach((item) => {
 						SHOP[item.class] = SHOP[item.class] || [];
 						SHOP[item.class][item.id] = {
@@ -84,10 +78,10 @@ module.exports = function createApp() {
 		const id = Math.floor(Math.random() * 1000);
 		const KEY = request.cookies.obstarkey || 1;
 		/// get the acc///
-		if (USERS && config.DB.ACC) {
-			USERS.query('SELECT * FROM acc WHERE userKey LIKE ?', [KEY], function (err, result, fields) {
+		if (db.enabled && config.DB.ACC) {
+			db.query('SELECT * FROM acc WHERE userkey = $1', [KEY]).then((result) => {
 				if (result && result.length && result[0]) { ///   THERE IS AN ACC  ///
-					USERS.query("UPDATE acc SET lastConnection = NOW() WHERE userKey = ?", [KEY], function (err) { if (err) { throw (err) } });
+					db.query('UPDATE acc SET lastconnection = NOW() WHERE userkey = $1', [KEY]);
 					respond.cookie('obstarkey', KEY, { expires: new Date(253402300000000), sameSite: 'Lax' });
 					const sendData = {
 						key: KEY,
@@ -98,7 +92,7 @@ module.exports = function createApp() {
 					return;
 				} else {           /// there is no acc :-(///
 					const newkey = generateKey(25);
-					USERS.query("INSERT INTO acc VALUES (NULL,?,?,?,NOW(),255000)", [
+					db.query('INSERT INTO acc (userkey, userdata, remoteaddress, lastconnection, coins) VALUES ($1,$2,$3,NOW(),255000)', [
 						newkey,
 						JSON.stringify({ own: { pets: {} } }),
 						request.connection.remoteAddress
@@ -123,10 +117,10 @@ module.exports = function createApp() {
 		}
 	});
 	app.post('/userData', function (req, res) {
-		if (USERS && config.DB.ACC) {
-			USERS.query('SELECT userData, coins FROM acc WHERE userKey = ?', [req.body.userKey], function (err, result, fields) {
+		if (db.enabled && config.DB.ACC) {
+			db.query('SELECT userdata, coins FROM acc WHERE userkey = $1', [req.body.userKey]).then((result) => {
 				if (result.length) {
-					const data = JSON.parse(result[0].userData);
+					const data = JSON.parse(result[0].userdata);
 					data.coins = result[0].coins;
 					res.status(200).send(JSON.stringify(data));
 				} else {
@@ -138,7 +132,7 @@ module.exports = function createApp() {
 		}
 	});
 	app.post('/buy', function (req, res) {
-		if (!USERS || !config.DB.ACC || !config.DB.SHOP) {
+		if (!db.enabled || !config.DB.ACC || !config.DB.SHOP) {
 			res.status(200).send('no obj');
 			return;
 		}
@@ -154,9 +148,9 @@ module.exports = function createApp() {
 			return;
 		}
 		const obj = SHOP[req.body.class][req.body.id], objC = req.body.class, objId = req.body.id;
-		USERS.query('SELECT userData, coins FROM acc WHERE userKey = ?', [req.body.userKey], function (err, result, fields) {
-			if (result.length && result[0].userData) {
-				const user = JSON.parse(result[0].userData);
+		db.query('SELECT userdata, coins FROM acc WHERE userkey = $1', [req.body.userKey]).then((result) => {
+			if (result.length && result[0].userdata) {
+				const user = JSON.parse(result[0].userdata);
 				///
 				if (user.own && user.own[objC] && user.own[objC][objId]) {
 					delete SHOPPER[req.body.userKey];
@@ -167,8 +161,7 @@ module.exports = function createApp() {
 					user.own[objC][objId] = 1;
 					user.coins = result[0].coins - obj.price;
 					const stringUser = JSON.stringify(user);
-					USERS.query("UPDATE acc SET userData = ?, coins = ? WHERE userKey = ?", [stringUser, user.coins, req.body.userKey], function (err) {
-						if (err) throw (err);
+					db.query('UPDATE acc SET userdata = $1, coins = $2 WHERE userkey = $3', [stringUser, user.coins, req.body.userKey]).then(() => {
 						delete SHOPPER[req.body.userKey];
 					});
 					res.status(200).send(stringUser);

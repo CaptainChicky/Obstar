@@ -24,7 +24,6 @@
 require('./lib/crash.js').install('error.log');
 
 const http = require('http');
-const config = require('./lib/config.js').config;
 
 const argv = process.argv.slice(2);
 const gameOnly = argv.includes('--game-only');
@@ -52,16 +51,11 @@ const server = http.createServer(app || function (request, response) {
 });
 
 if (runGame) {
-	if (config.MYSQL) {
-		const USERS = require('mysql').createPool(require('./lib/dbConfig.js').info);
-		USERS.getConnection(function (err) {
-			if (err) throw err;
-			console.log('connect database');
-		});
-	}
 	require('./lib/boot.js')();
 	require('./net/gameSocket.js').attach(server);
 }
+
+require('./lib/db.js').check().catch(err => { throw err; });
 
 server.listen(port, function () {
 	const what = (runGame && runWeb) ? 'game + web' : (runGame ? 'game' : 'web');

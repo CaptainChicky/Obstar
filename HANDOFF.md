@@ -29,15 +29,26 @@ WS_LINK=wss://game.example.com node server.js --web-only  # http://…:80
 `WS_LINK` reaches the browser through `POST.ws` in `play.ejs`; unset, the client computes
 `ws(s)://<same host>` itself.
 
-**MySQL is off.** `lib/config.js` exports `MYSQL: false`; every player gets the anonymous key
-`'0'.repeat(25)`, the shop is hidden client-side, the leaderboard renders empty. Credentials
-(when enabled) live in `lib/dbConfig.js`, overridable via `DB_HOST`/`DB_USER`/`DB_PASSWORD`/
-`DB_NAME`. The MySQL code paths exist and are wired to `mysql2`, but have **never been executed**
-in this environment — see [PENDING.md](PENDING.md). **The game is being remade from scratch and
-the DB will be emptied and rebuilt** — there is no legacy data or old-client compatibility to
-preserve, so persistence decisions (MySQL vs. SQLite vs. something else) are unconstrained by
-anything documented here; treat old-dev conventions as defaults to improve on, not rules to
-honor for their own sake.
+**The DB (Postgres) is off by default.** `lib/config.js`'s `DB.ON` is `false`; every player gets
+the anonymous key `'0'.repeat(25)`, the shop is hidden client-side, the leaderboard renders
+empty. All DB access goes through the single adapter `lib/db.js` — nothing else calls `pg`
+directly. Credentials live in `lib/dbConfig.js`, overridable via `DB_HOST`/`DB_PORT`/`DB_USER`/
+`DB_PASSWORD`/`DB_NAME`.
+
+To turn it on locally:
+
+```bash
+docker compose up -d          # starts postgres:16, applies db/schema.sql on first init
+```
+
+then set `DB.ON: true` (plus whichever of `DB.ACC`/`DB.SHOP`/`DB.DEV`/`DB.LB` you want) in
+`lib/config.js` and `npm start`. `db/schema.sql` only runs on the container's **first** init
+(empty data dir) — to reapply it after editing, `docker compose down -v` then `up -d` again.
+Committed default stays off so `npm test` (which runs with the DB off) stays green regardless.
+
+**The game is being remade from scratch and the DB will be emptied and rebuilt** — there is no
+legacy data or old-client compatibility to preserve. Postgres columns are lowercase
+(`userkey`, `userdata`, `lastconnection`, …) since Postgres folds unquoted identifiers anyway.
 
 ---
 
@@ -49,7 +60,7 @@ Browser ──► server.js  :80
               └── WS(bin) ► net/gameSocket.js (ws)    ── the actual game simulation
 ```
 
-The two halves **do not talk to each other** in-process — they share the MySQL DB (when
+The two halves **do not talk to each other** in-process — they share the Postgres DB (when
 enabled), `public/SHARE/`, and one http server. No authentication beyond a 25-char `userKey`
 cookie.
 
@@ -78,9 +89,12 @@ cookie.
 | `lib/runtime.js` | 18 | **Late-bound registry** standing in for a shared scope. Read §4 before using it. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
 | `lib/config.js` | 68 | Live tunables/flags. **`TICK_MS`** lives here — read §4 first. |
+| `lib/db.js` | ~25 | The one Postgres connection point — `db.enabled`, `db.query()`, `db.check()`. Off unless `config.DB.ON`. |
 | `lib/terminal.js` | 34 | Terminal colour codes (`termColors`). |
 | `lib/constants.js` | 4 | `FRICTION`. |
-| `lib/dbConfig.js` | 18 | DB credentials, env-overridable. |
+| `lib/dbConfig.js` | 18 | Postgres credentials, env-overridable. |
+| `db/schema.sql` | ~40 | Postgres table definitions (`acc`, `wrs`, `shop`, `devs`), applied on first container init. |
+| `docker-compose.yml` | ~15 | Local Postgres (`postgres:16`), version-pinned to rehearse the eventual managed-Postgres target. |
 | `lib/botNames.js` | ~100 | Bot name list. Non-ASCII, deliberately. |
 | `public/SHARE/kinds.js` | 36 | Entity type tags (`KIND`), used for `obj.kind` dispatch. Dual-mode: server require() + client global. |
 | `public/SHARE/SocketSchema.js` | 905 | Binary wire protocol, declarative (§6). Dual-mode: client *and* server. |
@@ -299,8 +313,11 @@ gamemode/name/pet (`queue.js`, `shop.js`), submits → `POST /play` sets a `pref
 renders `play.ejs` with `POST = {key, gm, name, pet, ws}`. On death (DB on), `Main.insertLB()`
 writes to the `wrs` table. Leaderboard/shop refresh: `setInterval(..., 120000)`.
 
-MySQL is off by default (§1) — every DB-touching code path is present and swapped onto `mysql2`,
-but untested in this environment.
+The DB is off by default (§1) — every DB-touching code path in `web/app.js` and
+`lib/Controller.js` goes through the single `lib/db.js` adapter. Account create/lookup, shop
+purchase, and a leaderboard write have been run end to end against a real local Postgres
+(`docker compose up -d`) and confirmed correct; admin commands/chat over a live dev-authed
+socket haven't — see [PENDING.md](PENDING.md).
 
 ---
 
@@ -322,7 +339,7 @@ but untested in this environment.
 
 **What's not covered:** a full match beyond the first minute (leveling, death screen, respawn),
 two real human players in one room, observed boss AI behavior, the client under real browser
-frame timing, MySQL code paths, admin commands/chat/shop end to end, and load with several busy
+frame timing, admin commands/chat over a live dev-authed socket, and load with several busy
 rooms at once. Full list and reasoning: [PENDING.md](PENDING.md).
 
 ---
