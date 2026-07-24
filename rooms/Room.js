@@ -46,7 +46,7 @@ const quadTree = require('../lib/quadTree.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION = require('../lib/constants.js').FRICTION;
-const KIND = require('../lib/kinds.js');
+const KIND = require('../public/SHARE/kinds.js');
 const clock = require('../lib/clock.js');
 
 // generate() used to re-arm itself with setTimeout(400). It is a simulation event, so it

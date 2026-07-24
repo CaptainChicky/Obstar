@@ -12,7 +12,7 @@ const termColors = require('../lib/terminal.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION = require('../lib/constants.js').FRICTION;
-const KIND = require('../lib/kinds.js');
+const KIND = require('../public/SHARE/kinds.js');
 
 class Player {
 	constructor(id, x, y, name, team, xpLvl) {
@@ -463,7 +463,7 @@ class Player {
 }
 
 // Type tag for collision / buffer dispatch - on the prototype, so it costs nothing per
-// instance. See lib/kinds.js for why this replaced `constructor.name`.
+// instance. See public/SHARE/kinds.js for why this replaced `constructor.name`.
 Player.prototype.kind = KIND.PLAYER;
 
 module.exports = Player;

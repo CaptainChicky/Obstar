@@ -77,11 +77,11 @@ cookie.
 | `lib/runtime.js` | 18 | **Late-bound registry** standing in for a shared scope. Read §4 before using it. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
 | `lib/config.js` | 68 | Live tunables/flags. **`TICK_MS`** lives here — read §4 first. |
-| `lib/kinds.js` | 33 | Entity type tags, used for `obj.kind` dispatch. |
 | `lib/terminal.js` | 34 | Terminal colour codes (`termColors`). |
 | `lib/constants.js` | 4 | `FRICTION`. |
 | `lib/dbConfig.js` | 18 | DB credentials, env-overridable. |
 | `lib/botNames.js` | ~100 | Bot name list. Non-ASCII, deliberately. |
+| `public/SHARE/kinds.js` | 36 | Entity type tags (`KIND`), used for `obj.kind` dispatch. Dual-mode: server require() + client global. |
 | `public/SHARE/SocketSchema.js` | 905 | Binary wire protocol, declarative (§6). Dual-mode: client *and* server. |
 | `public/SHARE/TanksConfig.js` | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. |
 | `public/SHARE/PetsConfig.js` | 132 | Cosmetic pet definitions. |
@@ -142,11 +142,12 @@ The things in this codebase that are *not* obvious from reading the code around 
 - **Packet sizes are self-computed.** The `Encoder` grows itself; nothing needs to hand-compute
   a byte length. If you see one being computed by hand, that's new code to remove, not a
   pattern to copy.
-- **Entity type dispatch is `obj.kind` against `lib/kinds.js`, not `constructor.name`.** `kind`
-  sits on each class's prototype. The one remaining coupling: three hardcoded
-  `DETEC:{type:['Player','Objects']}` literals in `TanksConfig.js` can't `require()`
-  `lib/kinds.js` because that file also loads in the browser — keep them in sync by hand if you
-  touch `lib/kinds.js`.
+- **Entity type dispatch is `obj.kind` against `public/SHARE/kinds.js`, not `constructor.name`.**
+  `kind` sits on each class's prototype. `kinds.js` is dual-mode (the same `typeof(exports)`
+  footer as `TanksConfig.js`): the server `require()`s it, the browser loads it as a `<script>`
+  before `TanksConfig.js`. That's what lets `TanksConfig.js`'s three `DETEC:{type:[KIND.PLAYER,
+  KIND.OBJECTS]}` auto-turret filters name the constants directly — there is no longer any
+  keep-in-sync-by-hand coupling.
 - **A room self-destructs when it has zero human players** (bots and bosses excluded from the
   count) — see `Room.js`. This is why an empty `boss`-mode room doesn't tick forever.
 - **No HTML is ever escaped, anywhere.** Rendering is canvas-only, so there is currently no DOM

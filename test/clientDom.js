@@ -173,6 +173,8 @@ function boot(POST, opts) {
 	// In a browser `window` IS the global object, so `window.WS_LINK = ...` publishes a global.
 	// A vm context's `window` is an ordinary object, so republish it by hand.
 	sandbox.WS_LINK = window.WS_LINK;
+	// kinds.js before TanksConfig.js, same as play.ejs: TanksConfig reads KIND at load time.
+	load('public/SHARE/kinds.js');
 	load('public/SHARE/TanksConfig.js');
 	load('public/SHARE/PetsConfig.js');
 	load('public/SHARE/SocketSchema.js');

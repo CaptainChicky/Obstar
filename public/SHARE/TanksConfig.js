@@ -1,5 +1,11 @@
 (function (exports, platform) {
 
+	// Entity type tags, shared with the server's collision/AI dispatch. kinds.js loads before
+	// this file (as a <script> in play.ejs, and via require() in Node), so the three DETEC
+	// auto-turret filters below can name KIND.PLAYER / KIND.OBJECTS instead of hardcoding the
+	// string literals - see public/SHARE/kinds.js.
+	const KIND = (platform === 'client') ? globalThis.KIND : require('./kinds.js');
+
 	exports.class = (platform === 'client') ?
 		///CLIENTS///
 		{
@@ -2068,10 +2074,7 @@
 			"Auto Hover": new function () {
 				this.screen = 1408;
 				this.DETEC = {
-					// These strings must match lib/kinds.js (KIND.PLAYER / KIND.OBJECTS) - the
-					// Detector filters on them. This file also loads in the browser and can't
-					// require() kinds.js, so keep them in sync by hand if those values change.
-					type: ['Player', 'Objects'],
+					type: [KIND.PLAYER, KIND.OBJECTS],
 					size: 800,
 					all: 0,
 					maxDis: 850,
@@ -2350,10 +2353,7 @@
 			"Auto Trapper": new function () {
 				this.screen = 1664;
 				this.DETEC = {
-					// These strings must match lib/kinds.js (KIND.PLAYER / KIND.OBJECTS) - the
-					// Detector filters on them. This file also loads in the browser and can't
-					// require() kinds.js, so keep them in sync by hand if those values change.
-					type: ['Player', 'Objects'],
+					type: [KIND.PLAYER, KIND.OBJECTS],
 					size: 1500,
 					all: 0,
 					maxDis: 800,
@@ -2453,10 +2453,7 @@
 			'Auto Gunner': new function () {
 				this.screen = 1408;
 				this.DETEC = {
-					// These strings must match lib/kinds.js (KIND.PLAYER / KIND.OBJECTS) - the
-					// Detector filters on them. This file also loads in the browser and can't
-					// require() kinds.js, so keep them in sync by hand if those values change.
-					type: ['Player', 'Objects'],
+					type: [KIND.PLAYER, KIND.OBJECTS],
 					size: 700,
 					all: 0,
 					maxDis: 800,

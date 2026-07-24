@@ -14,20 +14,23 @@
 	`type` filter list and its `selectAll` buckets are keyed by them, and keeping them equal
 	made the swap a pure substitution. They never reach the wire (SocketSchema has its own
 	'Players'/'Bullets'/'Objects' `construc` table), so they can become ints later if this
-	dispatch ever shows up in a profile - with one caveat:
+	dispatch ever shows up in a profile.
 
-		public/SHARE/TanksConfig.js hardcodes `DETEC: {type: ['Player','Objects']}` on the three
-		auto-turret classes, and that list is matched against these values. TanksConfig is
-		shared with the browser and cannot require() this file, so those literals have to be
-		changed by hand if the values here ever change.
+	This file lives in public/SHARE/ and carries the same typeof(exports) footer as
+	TanksConfig.js / SocketSchema.js, so it loads in the browser as a global (`window.KIND`,
+	reached as `globalThis.KIND`) and in Node via require(). That is what lets the three
+	`DETEC: {type: [KIND.PLAYER, KIND.OBJECTS]}` auto-turret entries in TanksConfig.js name
+	these constants directly - TanksConfig also loads in the browser, and this file loading
+	before it means there is no longer anything to keep in sync by hand.
 
 	Compare with these constants, never with a bare string literal.
 */
-const KIND = {
-	PLAYER: 'Player',
-	BULLET: 'Bullet',
-	OBJECTS: 'Objects',
-	DETECTOR: 'Detector'
-};
+(function (exports, platform) {
 
-module.exports = KIND;
+	exports.PLAYER = 'Player';
+	exports.BULLET = 'Bullet';
+	exports.OBJECTS = 'Objects';
+	exports.DETECTOR = 'Detector';
+
+})(typeof (exports) === 'undefined' ? function () { this['KIND'] = {}; return this['KIND'] }() : exports,
+	typeof (exports) === 'undefined' ? 'client' : 'server')

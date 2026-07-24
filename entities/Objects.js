@@ -12,7 +12,7 @@ const termColors = require('../lib/terminal.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION = require('../lib/constants.js').FRICTION;
-const KIND = require('../lib/kinds.js');
+const KIND = require('../public/SHARE/kinds.js');
 
 class Objects {
 	constructor(type, pos, id, map) {
@@ -207,7 +207,7 @@ class Objects {
 	}
 }
 
-// Type tag for collision / buffer dispatch - see lib/kinds.js.
+// Type tag for collision / buffer dispatch - see public/SHARE/kinds.js.
 Objects.prototype.kind = KIND.OBJECTS;
 
 module.exports = Objects;
