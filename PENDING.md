@@ -55,8 +55,7 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 
 ## ⚪ Optional cleanup — no urgency, no bug, do only if you want it
 
-14. **`Instances` sparse-array → `Map`/dense structure.** Profiled: costs ~0.01–0.04% of frame budget today, and still only ~1.7% at 3000 entities. Not a performance problem. Only worth doing for code clarity, not speed. *Evaluated and left as-is:* `{oId: <index>}` IDs are the array index and travel the wire, and the sparse-slot idiom is load-bearing across server, client and quadtree — a genuine `Map` conversion is a broad, risky change on the order of #15, not a low-risk clarity tidy, so it stays deferred.
-15. Break the circular module graph (`lib/runtime.js` stopgap) with real dependency injection — big change, only worth it once everything else is settled.
+14. Break the circular module graph (`lib/runtime.js` stopgap) with real dependency injection — big change, only worth it once everything else is settled.
 
 ---
 

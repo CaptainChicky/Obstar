@@ -62,7 +62,6 @@ class FourTeam extends Room {
 					0,
 					0,
 				);
-				bull.id = { "GM": this.gm, "sId": this.id, "oId": this.INSTANCE.bullets.length };
 				bull.team = team;
 				bull.ox = bull.x;
 				bull.oy = bull.y;
@@ -75,7 +74,10 @@ class FourTeam extends Room {
 				bull.weight = 2;
 				bull.size = 20;
 				bull.map = this.map;
-				this.INSTANCE.bullets.push(bull);
+				this.INSTANCE.bullets.add((id) => {
+					bull.id = { "GM": this.gm, "sId": this.id, "oId": id };
+					return bull;
+				});
 			}
 		}
 	}

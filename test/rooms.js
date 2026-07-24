@@ -44,7 +44,7 @@ function makeRoom(gm) {
 }
 
 function player(room, id) {
-	return room.INSTANCE.players[id];
+	return room.INSTANCE.players.get(id);
 }
 
 /// Free-for-all //////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ function teamTests() {
 		room.map.width + 'x' + room.map.height);
 
 	// build() runs before the first tick, so the guard drones are there from the start.
-	const drones = room.INSTANCE.bullets.filter((b) => b && isNaN(b) && b.alone);
+	const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.alone);
 	check('both bases are guarded', drones.length === 20, drones.length + ' drones');
 	check('the guards are split evenly', drones.filter((d) => d.team === 0).length === 10,
 		drones.filter((d) => d.team === 0).length + ' on team 0');
@@ -195,7 +195,7 @@ function fourTeamTests() {
 	check('team ids are colour indices', room.rules.teams.join(',') === '0,1,2,3');
 	check('friendly fire is off', room.rules.teamPlay === true);
 
-	const drones = room.INSTANCE.bullets.filter((b) => b && isNaN(b) && b.alone);
+	const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.alone);
 	check('every base is guarded', drones.length === 32, drones.length + ' drones');
 	check('the guards are split evenly across four sides',
 		[0, 1, 2, 3].every((t) => drones.filter((d) => d.team === t).length === 8),

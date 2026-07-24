@@ -42,6 +42,7 @@ const RT = require('../lib/runtime.js');
 const config = require('../lib/config.js').config;
 const termColors = require('../lib/terminal.js');
 const quadTree = require('../lib/quadTree.js');
+const SlotMap = require('../lib/SlotMap.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const KIND = require('../public/SHARE/kinds.js');
 const clock = require('../lib/clock.js');
@@ -92,11 +93,12 @@ class Room {
 		this.gm = this.rules.gm;
 		this.id = id;
 		this.BUFFER = {};
+		this.maxPlayer = this.rules.maxPlayer;
 		this.INSTANCE = {
-			"players": [],
-			"objs": [],
-			"bullets": [],
-			"detectors": []
+			"players": new SlotMap({ max: this.maxPlayer }),
+			"objs": new SlotMap(),
+			"bullets": new SlotMap(),
+			"detectors": new SlotMap()
 		};
 		const caps = this.rules.objCaps;
 		this.obj = {
@@ -108,7 +110,6 @@ class Room {
 			"Btri": { '1': 0, 'max1': 2 },
 			"bull": { '1': 0, 'max1': 20 }
 		};
-		this.maxPlayer = this.rules.maxPlayer;
 		this.baseSize = this.rules.baseSize;
 		this.leader = [];
 		this.map = {
@@ -210,14 +211,7 @@ class Room {
 			}
 		}
 		if (type === 'bull') { ppp = 'bull'; }
-		for (let i = 0; i <= this.INSTANCE.objs.length; i++) {
-			if (!this.INSTANCE.objs[i]) {
-				this.INSTANCE.objs[i] = (new RT.Objects(type, ppp, { "GM": this.gm, "sId": this.id, "oId": i }, this.map));
-				break;
-			} else if (!isNaN(this.INSTANCE.objs[i])) {
-				this.INSTANCE.objs[i]--
-			}
-		}
+		this.INSTANCE.objs.add((id) => new RT.Objects(type, ppp, { "GM": this.gm, "sId": this.id, "oId": id }, this.map));
 	}
 	createAi() {
 		for (const slot of this.botRoster()) {
@@ -232,7 +226,7 @@ class Room {
 			bot.motion = RT.CONFIG.BOTS[0].bind(bot);
 			bot.bot = 1;
 			bot.xp = 5000 + Math.floor(Math.random() * 60000)
-			this.INSTANCE.players[slot.id] = bot;
+			this.INSTANCE.players.set(slot.id, bot);
 			this.bots.push(slot.id);
 			this.respawn(slot.id, 1, 1);
 		}
@@ -265,37 +259,35 @@ class Room {
 	createBoss() {
 		if (this.bosses.length >= this.rules.maxBoss) { return; }
 		const spec = RT.CONFIG.BOSS[Math.floor(Math.random() * RT.CONFIG.BOSS.length)];
-		let slot = -1;
-		for (let i = 0; i <= this.maxPlayer; i++) {
-			if (typeof (this.INSTANCE.players[i]) === "undefined") { slot = i; break; }
-		}
-		if (slot < 0) { return; }
-		///
 		const randDir = Math.PI * 2 * Math.random();
-		const boss = new RT.Player(
-			{ "GM": this.gm, "sId": this.id, "oId": slot },
-			Math.cos(randDir) * this.map.width / 4,
-			Math.sin(randDir) * this.map.width / 4,
-			spec[2],
-			this.rules.bossTeam,
-			this.XPLVL
-		);
-		boss.hp = this.rules.bossHp;
-		boss.maxHp = this.rules.bossHp;
-		boss.boss = 1;
-		boss.size = 64;
-		boss.class = spec[2];
-		boss.screen = CLASS[boss.class].screen;
-		boss.prize = 100000;
-		boss.xp = 100000;
-		boss.shield = 0;
-		boss.motion = spec[0].bind(boss);
-		boss.update = spec[1].bind(boss);
-		this.bosses.push(boss);
-		this.INSTANCE.players[slot] = boss;
+		const boss = this.INSTANCE.players.add((id) => {
+			const b = new RT.Player(
+				{ "GM": this.gm, "sId": this.id, "oId": id },
+				Math.cos(randDir) * this.map.width / 4,
+				Math.sin(randDir) * this.map.width / 4,
+				spec[2],
+				this.rules.bossTeam,
+				this.XPLVL
+			);
+			b.hp = this.rules.bossHp;
+			b.maxHp = this.rules.bossHp;
+			b.boss = 1;
+			b.size = 64;
+			b.class = spec[2];
+			b.screen = CLASS[b.class].screen;
+			b.prize = 100000;
+			b.xp = 100000;
+			b.shield = 0;
+			b.motion = spec[0].bind(b);
+			b.update = spec[1].bind(b);
+			return b;
+		});
+		if (!boss) { return; }
 		///
-		for (const p of this.INSTANCE.players) {
-			if (typeof p === "undefined" || !isNaN(p) || p.bot || p.boss) { continue; }
+		this.bosses.push(boss);
+		///
+		for (const p of this.INSTANCE.players.live()) {
+			if (p.bot || p.boss) { continue; }
 			p.mess.push('Tremble at the sight of the ' + spec[2] + ' !');
 		}
 		return boss;
@@ -303,17 +295,10 @@ class Room {
 	createBullet(bullet, origin) {
 		this.assignBulletTeam(bullet, origin);
 		bullet.map = this.map;
-		for (let i = 0; i <= this.INSTANCE.bullets.length; i++) {
-			if (!this.INSTANCE.bullets[i]) {
-				bullet.id = { 'GM': this.gm, 'sId': this.id, 'oId': i };
-				this.INSTANCE.bullets[i] = bullet;
-				break;
-			} else {
-				if (!isNaN(this.INSTANCE.bullets[i])) {
-					this.INSTANCE.bullets[i] -= 1;
-				}
-			}
-		}
+		this.INSTANCE.bullets.add((id) => {
+			bullet.id = { 'GM': this.gm, 'sId': this.id, 'oId': id };
+			return bullet;
+		});
 	}
 	/* A bullet belongs to whoever fired it. The dev 'color' command tints it without moving
 		 it to another side - bulletColor() is what reads that. */
@@ -333,12 +318,12 @@ class Room {
 	step() {
 		let stop = 1;
 		let playerCount = 0;
-		for (const i of this.INSTANCE.players) {
+		for (const i of this.INSTANCE.players.live()) {
 			// A boss is not a bot - it has its own AI, not RT.CONFIG.BOTS - so it used to satisfy
 			// this "is anyone still here?" test and keep an empty room ticking forever. Latent in
 			// 2team, where a boss is a once-in-ten-thousand-rolls event; certain in 'boss' mode,
 			// which keeps three of them alive at all times.
-			if (i && !i.bot && !i.boss) {
+			if (!i.bot && !i.boss) {
 				playerCount++;
 				stop = 0;
 			}
@@ -370,7 +355,7 @@ class Room {
 		let botNeeded = this.botBudget(playerCount);
 		if (botNeeded) {
 			for (const b of this.bots) {
-				const bot = this.INSTANCE.players[b];
+				const bot = this.INSTANCE.players.get(b);
 				if (bot && bot.dead === 1 && botNeeded) {
 					this.respawn(b, 0, 1);
 					botNeeded--;
@@ -389,16 +374,8 @@ class Room {
 		const qt = new quadTree(-this.map.width / 2 - 1000, -this.map.height / 2 - 1000, this.map.width + 2000, this.map.height + 2000, 6);
 		this.leader = [];
 		for (const kind in this.INSTANCE) {
-			for (const j in this.INSTANCE[kind]) {
-				let i = this.INSTANCE[kind][j];
-				if (!isNaN(i)) {
-					if (i) {
-						i--;
-					} else {
-						delete this.INSTANCE[kind][j];
-					}
-					continue;
-				} else if (!i) continue;
+			this.INSTANCE[kind].tick();
+			for (const i of this.INSTANCE[kind].live()) {
 				if (kind === 'players' && !i.destroy && !i.boss) {
 					if (this.leader.length) {
 						for (let l = Math.min(this.leader.length - 1, 9); l >= 0; l--) {
@@ -427,17 +404,17 @@ class Room {
 				if (i.destroy === 1) {
 					if (kind === "players") {
 						if (i.state.disconnect) {
-							this.INSTANCE[kind][j].delete();
-						} else {
-							continue;
+							i.delete();
+							this.INSTANCE[kind].delete(i.id.oId);
 						}
+						continue;
 					}
 					// objs and bullets leave a numeric tombstone rather than a hole, so the slot -
 					// and with it the entity id the client is tracking - is not handed to a new
 					// entity on the next frame.
-					if (kind === "objs") { this.INSTANCE[kind][j].delete(); this.INSTANCE[kind][j] = config.KEEP_PLACE; continue; }
-					if (kind === 'bullets') { this.INSTANCE[kind][j] = config.KEEP_PLACE; continue; }
-					delete this.INSTANCE[kind][j];
+					if (kind === "objs") { i.delete(); this.INSTANCE[kind].delete(i.id.oId, true); continue; }
+					if (kind === 'bullets') { this.INSTANCE[kind].delete(i.id.oId, true); continue; }
+					this.INSTANCE[kind].delete(i.id.oId);
 				} else {
 					if (i.getPlace === 1) {
 						i.size += config.SIZE_GET_POS;
@@ -448,8 +425,7 @@ class Room {
 		}
 		///COLLISION///
 		for (const kind in this.INSTANCE) {
-			for (const obj of this.INSTANCE[kind]) {
-				if (typeof obj === "undefined" || !isNaN(obj)) { continue; }
+			for (const obj of this.INSTANCE[kind].live()) {
 				if (obj.getPlace === 0) {
 					continue;
 				}
@@ -528,22 +504,24 @@ class Room {
 							obj.collision(other, objOption);
 							if (objKind === KIND.BULLET) {
 								if (other.destroy && other.prize) {
-									if (this.INSTANCE.players[obj.origin.oId]) {
-										this.INSTANCE.players[obj.origin.oId].xp += other.prize;
-										this.INSTANCE.players[obj.origin.oId].coins += other.coinReward || 0;
-										if (otherKind === KIND.PLAYER && !this.INSTANCE.players[obj.origin.oId].bot) {
-											this.INSTANCE.players[obj.origin.oId].mess.push('You killed ' + other.name);
+									const killer = this.INSTANCE.players.get(obj.origin.oId);
+									if (killer) {
+										killer.xp += other.prize;
+										killer.coins += other.coinReward || 0;
+										if (otherKind === KIND.PLAYER && !killer.bot) {
+											killer.mess.push('You killed ' + other.name);
 										}
 									}
 								}
 							}
 							if (otherKind === KIND.BULLET && obj.prize) {
 								if (obj.destroy) {
-									if (this.INSTANCE.players[other.origin.oId]) {
-										this.INSTANCE.players[other.origin.oId].xp += obj.prize;
-										this.INSTANCE.players[other.origin.oId].coins += obj.coinReward || 0;
-										if (objKind === KIND.PLAYER && !this.INSTANCE.players[other.origin.oId].bot) {
-											this.INSTANCE.players[other.origin.oId].mess.push('You killed ' + obj.name);
+									const killer = this.INSTANCE.players.get(other.origin.oId);
+									if (killer) {
+										killer.xp += obj.prize;
+										killer.coins += obj.coinReward || 0;
+										if (objKind === KIND.PLAYER && !killer.bot) {
+											killer.mess.push('You killed ' + obj.name);
 										}
 									}
 								}
@@ -556,17 +534,16 @@ class Room {
 				}
 			}
 		}
-		this.INSTANCE.detectors = [];
+		this.INSTANCE.detectors.clear();
 		///BUFFING///
-		for (const p of this.INSTANCE.players) {
-			if (p && p.pet) {
-				this.INSTANCE.bullets[p.pet.id.oId] = 20;
+		for (const p of this.INSTANCE.players.live()) {
+			if (p.pet) {
+				this.INSTANCE.bullets.reserve(p.pet.id.oId);
 				if (p.alpha) qt.insert(p.pet.x, p.pet.y, p.size, p.pet);
 			}
 		}
 		this.BUFFER = [];
-		for (const id in this.INSTANCE.players) {
-			const player = this.INSTANCE.players[id];
+		for (const [id, player] of this.INSTANCE.players.entries()) {
 			if (player.bot || player.boss) {
 				continue;
 			}
@@ -593,9 +570,7 @@ class Room {
 		}
 		///UPDATE///
 		for (const kind in this.INSTANCE) {
-			for (const o in this.INSTANCE[kind]) {
-				const obj = this.INSTANCE[kind][o];
-				if (typeof obj === "undefined" || !isNaN(obj)) { continue; }
+			for (const [o, obj] of this.INSTANCE[kind].entries()) {
 				if (obj.destroy === 1) {
 					if (kind === "players") {
 						if (obj.dead > 1) {
@@ -604,8 +579,8 @@ class Room {
 						if (obj.murder === -1) {
 							continue;
 						}
-						const murder = this.INSTANCE[obj.murder[0]][obj.murder[1].oId];
-						if (typeof (murder) === "undefined" || !isNaN(murder) || murder.destroy) {
+						const murder = this.INSTANCE[obj.murder[0]].get(obj.murder[1].oId);
+						if (!murder || murder.destroy) {
 							obj.murder = -1;
 							continue;
 						}
@@ -619,7 +594,7 @@ class Room {
 					obj.size -= config.SIZE_GET_POS;
 				} else if (obj.getPlace === 0) {
 					obj.delete();
-					delete this.INSTANCE[kind][o];
+					this.INSTANCE[kind].delete(o, false);
 					continue;
 				}
 				obj.update();
@@ -631,7 +606,7 @@ class Room {
 		return false;
 	}
 	respawn(id, force = 0, bot = 0) {
-		const tank = this.INSTANCE.players[id];
+		const tank = this.INSTANCE.players.get(id);
 		if (!tank || (!force && !tank.destroy) || tank.dead > 1) return;
 		///
 		const pos = this.spawnPoint(tank);
@@ -646,19 +621,16 @@ class Room {
 		///
 		newTank.xp = force ? tank.xp : this.respawnXp(tank.xp);
 		newTank.coins = tank.coins || 0;
-		this.INSTANCE.players[id] = newTank;
+		this.INSTANCE.players.set(id, newTank);
 		///
 		if (tank.pet) {
 			newTank.pet = tank.pet;
 			newTank.pet.x = newTank.x;
 			newTank.pet.y = newTank.y;
 			newTank.pet.pet = 1;
-			let newId = 0;
-			while (this.INSTANCE.bullets[newId]) {
-				newId++;
-			}
+			const newId = this.INSTANCE.bullets.freeIndex();
 			newTank.pet.id = { "GM": this.gm, "sId": this.id, "oId": newId };
-			this.INSTANCE.bullets[newId] = 20;
+			this.INSTANCE.bullets.reserve(newId);
 		}
 		///
 		return tank.xp;
@@ -887,18 +859,17 @@ class Room {
 				team: i.dev.color ? i.dev.color - 1 : this.leaderColor(i, id)
 			})
 		};
-		for (const i of this.INSTANCE.players[id].mess) {
+		for (const i of this.INSTANCE.players.get(id).mess) {
 			buff.mess.push(i);
 		};
-		this.INSTANCE.players[id].mess = [];
+		this.INSTANCE.players.get(id).mess = [];
 		return buff;
 	}
 	/* Which side a joining player lands on: the thinnest one, coin toss when they are level.
 		 A one-team mode has exactly one answer, so free-for-all falls out of the same code. */
 	assignTeam() {
 		const count = new Array(this.rules.teams.length).fill(0);
-		for (const p of this.INSTANCE.players) {
-			if (typeof p === "undefined" || !isNaN(p)) { continue; }
+		for (const p of this.INSTANCE.players.live()) {
 			const t = this.rules.teams.indexOf(p.team);
 			if (t >= 0) { count[t]++; }
 		}
@@ -920,26 +891,24 @@ class Room {
 			pet.type = data.pet;
 		}
 		///
-		for (let i = 0; i <= this.maxPlayer; i++) {
-			if (typeof (this.INSTANCE.players[i]) === "undefined") {
-				const id = { "GM": this.gm, "sId": this.id, "oId": i };
-				const tank = new RT.Player(
-					id,
-					0,
-					0,
-					name,
-					this.assignTeam(),
-					this.XPLVL
-				);
-				tank.userKey = data.key;
-				if (pet) { tank.pet = pet; pet.origin = tank.id; pet.team = tank.team; }
-				this.INSTANCE.players[i] = tank;
-				this.respawn(i, 1);
-				console.log('NEW PLAYER gm: ' + this.gm + ' serve-Id: ' + this.id + ' player id: ' + i);
-				return id;
-			}
-		}
-		return;
+		const tank = this.INSTANCE.players.add((i) => {
+			const id = { "GM": this.gm, "sId": this.id, "oId": i };
+			const t = new RT.Player(
+				id,
+				0,
+				0,
+				name,
+				this.assignTeam(),
+				this.XPLVL
+			);
+			t.userKey = data.key;
+			if (pet) { t.pet = pet; pet.origin = t.id; pet.team = t.team; }
+			return t;
+		});
+		if (!tank) { return; }
+		this.respawn(tank.id.oId, 1);
+		console.log('NEW PLAYER gm: ' + this.gm + ' serve-Id: ' + this.id + ' player id: ' + tank.id.oId);
+		return tank.id;
 	}
 };
 

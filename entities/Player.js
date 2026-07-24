@@ -449,8 +449,8 @@ class Player {
 		}
 		///
 		if (this.dev.stick) {
-			const obj = RT.Controller.server[this.id.GM][this.id.sId].INSTANCE[this.dev.stick[0]][this.dev.stick[1]];
-			if (obj && isNaN(obj) && !obj.destroy) {
+			const obj = RT.Controller.server[this.id.GM][this.id.sId].INSTANCE[this.dev.stick[0]].get(this.dev.stick[1]);
+			if (obj && !obj.destroy) {
 				obj.x += (this.x + this.inputs.mouse_x - obj.x) * 0.2;
 				obj.y += (this.y + this.inputs.mouse_y - obj.y) * 0.2;
 			} else {

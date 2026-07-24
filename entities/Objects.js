@@ -137,7 +137,7 @@ class Objects {
 				break;
 			case KIND.BULLET:
 				if (other.necro && this.type === 'sqr') {
-					const play = RT.Controller.server[other.origin.GM][other.origin.sId].INSTANCE.players[other.origin.oId];
+					const play = RT.Controller.server[other.origin.GM][other.origin.sId].INSTANCE.players.get(other.origin.oId);
 					if (play.droneCount < CLASS[play.class].maxDrone + play.upNb[1]) {
 						this.destroy = 1;
 						return;

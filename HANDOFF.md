@@ -74,6 +74,7 @@ cookie.
 | `entities/Detector.js` | 94 | Invisible "vision cone" query entity used by AI. |
 | `lib/gameAI.js` | 384 | Bot/boss/pet AI. A **factory** — closes over `Detector`, `Vec`, `FRICTION`, `CLASS`. |
 | `lib/quadTree.js` | 75 | Spatial index for broad-phase collision. |
+| `lib/SlotMap.js` | ~90 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. |
 | `lib/runtime.js` | 18 | **Late-bound registry** standing in for a shared scope. Read §4 before using it. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
 | `lib/config.js` | 68 | Live tunables/flags. **`TICK_MS`** lives here — read §4 first. |
@@ -129,12 +130,15 @@ The things in this codebase that are *not* obvious from reading the code around 
   `undefined` and fails on first use. Always read through `RT.X` / `CLIENT.X` at the point of
   use. The client's version of the rule is slightly looser — see the header comment in
   `public/client/runtime.js`.
-- **Entity storage is sparse arrays used as slot maps, not real arrays.** `this.INSTANCE =
-  {players:[], objs:[], bullets:[], detectors:[]}`; deleted slots leave holes or the tombstone
-  number `KEEP_PLACE` (20). The guard `if(typeof obj === "undefined" || !isNaN(obj)){continue;}`
-  appears throughout the server and client for this reason — it is not defensive cruft, it is
-  load-bearing. IDs are `{oId: <index>}`; a recycled index can point at a different entity
-  between frames.
+- **Entity storage is integer-slot-indexed, not identity-keyed.** Server-side, `this.INSTANCE =
+  {players, objs, bullets, detectors}` are `lib/SlotMap.js` instances now (PENDING.md's old #14) —
+  allocation, `KEEP_PLACE` (20) tombstoning, and live-only iteration (`.live()`/`.entries()`) live
+  behind that class, so server call sites no longer hand-roll `!isNaN(obj)` guards. The client's
+  own `Instances` store (`public/client/game.js`) is untouched — still the sparse-array/tombstone
+  idiom described in §6, deliberately, since it never reaches the wire either way. IDs are still
+  `{oId: <index>}` — the slot index, not a monotonic id — because it travels the wire as a
+  `uint16` (`SocketSchema.js`); a recycled index can still point at a different entity between
+  frames on the client, which is exactly what the tombstone delay is for.
 - **`SocketSchema.js`'s `CODEC` table is keyed by record, not by field name.** The same field
   name means different things in different messages — `xp` is a raw `uint32` in the
   `GameUpdate` head but a packed value in a `Players` record. Don't collapse it into a

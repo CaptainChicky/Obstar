@@ -97,7 +97,16 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-const GOLDEN = { count: 247353, hash: 'c4eb110d' };
+//
+// Rebaselined for PENDING #14 (Instances sparse-array -> SlotMap, Number14PLAN.md): the old
+// per-tick tombstone countdown in Room.js's step() was dead code (`let i = INSTANCE[kind][j];
+// i--` decremented a local copy, never writing back to the array), so an objs/bullets tombstone
+// was in practice only ever freed by createObj/createBullet's allocation scan stepping over it,
+// not by wall-clock ticks. SlotMap.tick() actually decrements every tick, which is real, working
+// KEEP_PLACE expiry - the one intended, documented behaviour change in that plan. Verified by
+// isolation: reverting SlotMap to bug-for-bug replicate the old scan-only decrement reproduces
+// the previous golden (247353/c4eb110d) exactly, confirming this is the sole source of the diff.
+const GOLDEN = { count: 247353, hash: 'de9eb1a1' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);
