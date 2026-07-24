@@ -13,16 +13,24 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 
 ## 🔴 Decisions on game direction (need your call)
 
-1. **MySQL** — bring it back, swap to SQLite/Postgres, or drop persistence entirely? Currently
-   off; accounts/shop/leaderboard are all bypassed. Since the DB is being wiped anyway, there's
-   no legacy-data reason to pick MySQL specifically — a locally-run option (e.g. SQLite via
-   `better-sqlite3`, single file, no server process) fits "should run locally" better, unless
-   you want networked/multi-instance DB access later. For logged-out players, `localStorage`
-   (not just a cookie — more space, doesn't ride every request) holding XP/coins/achievements is
-   the common pattern for this genre; treat it as client-editable/untrusted if it ever feeds a
-   leaderboard. Still your call on the actual tech.
 
 ## 🔵 Decided — queued for implementation (not yet built)
+
+1. **DB: decided on Postgres, not yet built.** Bypasses MySQL entirely — currently off,
+   accounts/shop/leaderboard all bypassed. Reasoning: SQLite is the simpler local-dev option
+   (`better-sqlite3`, single file, no server process, zero ops) but doesn't hold up if this
+   scales toward many concurrent rooms across processes/machines (arras.io/diep.io territory),
+   since it's single-writer-friendly rather than built for concurrent networked access. Postgres
+   costs more up front only operationally — one more service to run locally (a one-file
+   `docker-compose.yml` postgres service is the common approach) — not in code: `lib/dbConfig.js`
+   already has the `DB_HOST`/`DB_USER`/`DB_PASSWORD`/`DB_NAME` env-var shape from the MySQL setup,
+   so swapping the `pg` driver in for `mysql2` is comparable effort to wiring up `better-sqlite3`.
+   Deploying later, managed Postgres is a one-click add-on on most hosts (Railway, Render,
+   Fly.io, Supabase, RDS). Since the DB is being wiped anyway there's no legacy-data migration
+   cost either way. Not yet implemented — MySQL code paths are still what's wired to `mysql2`.
+   For logged-out players, `localStorage` (not just a cookie — more space, doesn't ride every
+   request) holding XP/coins/achievements is the common pattern for this genre; treat it as
+   client-editable/untrusted if it ever feeds a leaderboard.
 
 2. **Next gamemodes: Domination/Maze get real new entity types.** Decided — not tunable-only.
    Needs: a new `kind` in `lib/kinds.js` for static geometry (walls) and one for capturable
@@ -49,7 +57,27 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 
 14. **`Instances` sparse-array → `Map`/dense structure.** Profiled: costs ~0.01–0.04% of frame budget today, and still only ~1.7% at 3000 entities. Not a performance problem. Only worth doing for code clarity, not speed. *Evaluated and left as-is:* `{oId: <index>}` IDs are the array index and travel the wire, and the sparse-slot idiom is load-bearing across server, client and quadtree — a genuine `Map` conversion is a broad, risky change on the order of #15, not a low-risk clarity tidy, so it stays deferred.
 15. Break the circular module graph (`lib/runtime.js` stopgap) with real dependency injection — big change, only worth it once everything else is settled.
-16. `TanksConfig` has 3 hardcoded entity-type literals that can't reference `lib/kinds.js` (browser can't `require()` it). The coupling can't be removed, but the pointer was one-way (`kinds.js` → TanksConfig); *added the reverse comment* at each of the 3 `DETEC` literals so an editor there sees the `lib/kinds.js` dependency without already knowing about it.
+16. **`TanksConfig`'s 3 hardcoded `DETEC` literals CAN be collapsed to one source of truth** —
+    correction to the earlier note here, which claimed the coupling couldn't be removed. It can;
+    `SocketSchema.js:370` already does the identical cross-SHARE-file trick for `TanksConfig`
+    itself (`(platform === 'client') ? TanksConfig.list : require('./TanksConfig.js').list`).
+    Plan, same pattern applied to `kinds.js`:
+    1. Move `lib/kinds.js` → `public/SHARE/kinds.js`, wrap in the same dual-mode IIFE footer
+       `TanksConfig.js`/`SocketSchema.js` use (`window.KIND` client / `module.exports` server).
+    2. Add `<script src='./SHARE/kinds.js'>` to `play.ejs`, **before** `TanksConfig.js` (the
+       `DETEC` literals are evaluated at `TanksConfig.js` load time, so `KIND` must exist first).
+    3. In `TanksConfig.js`, add `const KIND = (platform === 'client') ? window.KIND :
+       require('./kinds.js');`, replace the 3 `type: ['Player', 'Objects']` literals with
+       `type: [KIND.PLAYER, KIND.OBJECTS]`, and delete the "keep in sync by hand" comments.
+    4. Repoint the 6 server-side `require('../lib/kinds.js')` / `require('./kinds.js')` sites
+       (`entities/Player.js`, `entities/Objects.js`, `entities/Detector.js`, `entities/Bullet.js`,
+       `rooms/Room.js`, `lib/gameAI.js`) at the new path.
+
+    Verified no test hardcodes `lib/kinds.js`'s path, and `test/web.js`'s script-order check only
+    covers `/client/*.js`, not `SHARE/*` — nothing there breaks. Low risk, small: this copies an
+    established pattern rather than inventing one. `lib/kinds.js`'s own header comment (the
+    "TanksConfig hardcodes... has to be changed by hand" paragraph) and HANDOFF.md §3's matching
+    note are now stale and should be corrected/removed as part of this fix.
 
 ---
 
