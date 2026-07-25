@@ -8,7 +8,12 @@ CREATE TABLE acc (
   userdata      text NOT NULL,
   remoteaddress text,
   lastconnection timestamptz DEFAULT now(),
-  coins         integer NOT NULL DEFAULT 0
+  coins         integer NOT NULL DEFAULT 0,
+  username      text,                      -- display form, as typed
+  username_lc   text UNIQUE,                -- lowercased; the lookup key (avoids the citext ext.)
+  passhash      text,                       -- scrypt, see lib/auth.js; NULL for a guest row
+  email         text,                       -- optional, collected but unused: reserved for recovery
+  devlevel      integer NOT NULL DEFAULT 0  -- replaces the devs table
 );
 
 CREATE TABLE wrs (
@@ -30,11 +35,6 @@ CREATE TABLE shop (
   PRIMARY KEY (class, id)
 );
 
-CREATE TABLE devs (
-  password text PRIMARY KEY,
-  level    integer NOT NULL
-);
-
 -- Optional seed data for exercising shop/dev-command paths locally; safe to delete.
 -- INSERT INTO shop (class, id, label, price) VALUES ('basic', 0, 'Test Pet', 1000);
--- INSERT INTO devs (password, level) VALUES ('changeme', 3);
+-- UPDATE acc SET devlevel = 3 WHERE userkey = '...';

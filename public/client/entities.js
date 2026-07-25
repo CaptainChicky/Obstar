@@ -15,6 +15,7 @@
 	const roundRect = CLIENT.roundRect;
 	const NET = CLIENT.NET;
 	const Interp = CLIENT.Interp;
+	const RARITY = ObjectsConfig.rarity;
 	class Tank {
 		constructor(x, y, size, color) {
 			this.color = color;
@@ -355,10 +356,14 @@
 			this.dsize += (this.size - this.dsize) * k;
 			this.dalpha += (this.alpha - this.dalpha) * k;
 			this.dir += this.rotate * Global.dtFrames;
-			if (this.shield && this.color !== 'special') {
-				this.color = 'special';
+			// Rarity tier (THEPLAN 4.2) - this used to be dead code keyed on `this.shield`,
+			// which no Objects wire field ever sets. RARITY[0].color is null, so an ordinary
+			// (tier 0) polygon never enters either branch below.
+			const tier = RARITY[this.tier || 0];
+			if (tier.color && this.color !== tier.color) {
+				this.color = tier.color;
 			}
-			if (this.shield && !this.drawUi) {
+			if (tier.showHp && !this.drawUi) {
 				this.drawUi = function (ctx) {
 					ctx.translate(this.dx, this.dy);
 					ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
@@ -390,11 +395,20 @@
 		draw(ctx) {
 			ctx.translate(this.dx, this.dy);
 			ctx.globalAlpha = this.dalpha;
+			// A tiered polygon gets an outline glow (THEPLAN 4.2). Nothing wraps entity draw()
+			// calls in ctx.save()/restore(), so shadowBlur must be reset before returning down
+			// every path here, or it bleeds onto whatever draws next.
+			if (this.tier) {
+				ctx.shadowColor = Palette[this.color][0];
+				ctx.shadowBlur = 14;
+			}
 			if (this.type === 'bull') {
 				const can = General['drawBullet'].draw(ctx, { size: this.size, type: 0, color: (this.hitted > 1) ? 'hit' : this.color });
+				ctx.shadowBlur = 0;
 				return;
 			}
 			Drawings['obj'][this.type](ctx, (this.hitted > 1) ? Palette.hit : Palette[this.color], this.dsize, this.dir);
+			ctx.shadowBlur = 0;
 		}
 	};
 	class Bullet {

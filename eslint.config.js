@@ -41,6 +41,8 @@ const PAGE_GLOBALS = {
 	WS_LINK: 'readonly',   // public/SHARE/ws_link.js
 	TanksConfig: 'readonly',   // public/SHARE/TanksConfig.js
 	PetsConfig: 'readonly',   // public/SHARE/PetsConfig.js
+	AchievementsConfig: 'readonly',   // public/SHARE/AchievementsConfig.js
+	ObjectsConfig: 'readonly',   // public/SHARE/ObjectsConfig.js
 	PROTO: 'readonly',   // public/SHARE/SocketSchema.js
 	MOTION: 'readonly',   // public/motion.js
 	CLIENT: 'writable',   // public/client/runtime.js - the client's shared scope
@@ -53,11 +55,13 @@ const PAGE_GLOBALS = {
 const MENU_GLOBALS = {
 	POST: 'readonly',
 	PetsConfig: 'readonly', // public/SHARE/PetsConfig.js - the shop renders the pet art
+	AchievementsConfig: 'readonly', // public/SHARE/AchievementsConfig.js - the achievements panel
 	State: 'writable',   // public/font.js - selected gamemode
 	Pref: 'writable',   // public/queue.js - cookie-restored preferences
 	UserData: 'writable',   // public/shop.js  - account + owned pets
 	ChosenPet: 'writable',   // public/shop.js  - selected pet id
 	SetPets: 'writable',   // public/shop.js  - repaint-the-shop callback
+	Mess: 'writable',   // public/shop.js  - toast helper, reused by public/account.js
 	resize: 'readonly',   // public/font.js
 	loop: 'readonly'    // public/font.js
 };
@@ -132,7 +136,7 @@ module.exports = [
 	},
 	{
 		// --- Browser menu page (views/index.ejs) ---
-		files: ['public/queue.js', 'public/shop.js'],
+		files: ['public/queue.js', 'public/shop.js', 'public/account.js'],
 		languageOptions: {
 			ecmaVersion: 'latest',
 			sourceType: 'script',

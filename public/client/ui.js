@@ -835,6 +835,23 @@
 								});
 							}
 							newImg.src = './pic/img_mess/' + mes[1];
+							// Guest-side achievement persistence (HANDOFF Part 2.2): the icon
+							// filename is unique per entry in AchievementsConfig, so the toast
+							// itself is enough to recover which achievement fired - no separate
+							// wire message needed. A signed-in account's unlocks are already
+							// persisted server-side (Controller.disconnect); this local copy
+							// just rides along so a guest who signs up later can claim them too
+							// (see the ach union in web/app.js's /auth/signup).
+							try {
+								const entry = AchievementsConfig.list.find((a) => a.icon === mes[1]);
+								if (entry) {
+									const store = JSON.parse(localStorage.getItem('obstar_ach')) || {};
+									if (!store[entry.id]) {
+										store[entry.id] = Date.now();
+										localStorage.setItem('obstar_ach', JSON.stringify(store));
+									}
+								}
+							} catch { /* storage unavailable - achievement toast still shows */ }
 							continue;
 						}
 						const can = document.createElement('CANVAS');

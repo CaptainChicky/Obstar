@@ -12,6 +12,7 @@ const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const FRICTION = require('../lib/constants.js').FRICTION;
 const KIND = require('../public/SHARE/kinds.js');
+const ACHIEVEMENTS = require('../public/SHARE/AchievementsConfig.js').list;
 
 class Player {
 	constructor(id, x, y, name, team, xpLvl) {
@@ -25,6 +26,11 @@ class Player {
 			size: 0,
 			stick: 0
 		};
+		// Achievements (HANDOFF Part 2): id -> 1 once unlocked, guards unlock() against firing
+		// twice; Controller.disconnect() reads this once per life and persists it into
+		// acc.userdata.ach. killCounts backs the kill-tally achievements (registerKill below).
+		this.unlocked = {};
+		this.killCounts = {};
 		this.id = id;
 		this.name = name;
 		this.mess = [];
@@ -101,6 +107,8 @@ class Player {
 
 	}
 	motion() {
+		// public/client/game.js's User.update() duplicates this accel and FRICTION (below) for
+		// local input prediction, scaled per-frame instead of per-tick - retune both together.
 		const key = this.inputs;
 		const motion = new Vec(0, 0);
 		const len = 0.35 + this.up.MSpeed - (this.level / 155);
@@ -290,6 +298,9 @@ class Player {
 			this.droneCount = 0;
 			this.necro = CLASS[this.class].necro;
 			this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
+			// classLvl counts evolutions, one per CLASS_TREE tier (0..3) - reaching 3 means a
+			// tier 4 (final) class.
+			if (this.classLvl >= 3) { this.unlock('scary_tank'); }
 		} else {
 			return;
 		}
@@ -324,6 +335,7 @@ class Player {
 					if (this.coinReward) other.coins += this.coinReward;
 					if (!other.bot) {
 						other.mess.push('You killed ' + this.name);
+						other.unlock('first_blood');
 					}
 				}
 				break;
@@ -347,7 +359,12 @@ class Player {
 				if (this.shield) { return; }
 				this.hp -= other.damage;
 				this.hit = 2;
-				if (this.hp <= 0) { this.dead = config.DEAD_DELAY; this.murder = ["objs", other.id]; this.destroy = config.DES }
+				if (this.hp <= 0) {
+					this.dead = config.DEAD_DELAY;
+					this.murder = ["objs", other.id];
+					this.destroy = config.DES;
+					if (other.type === 'pnt') { this.unlock('died_to_penta'); }
+				}
 				break;
 			case KIND.BULLET:
 				if (option.noDam) { break; }
@@ -366,6 +383,27 @@ class Player {
 		}
 		if (this.alpha < 1 && !this.dev.invisible) {
 			this.alpha = Math.min(1, this.alpha + (oldHp - this.hp) / this.maxHp * 5)
+		}
+	}
+	// One-shot achievement unlock: pushes the registry's toast onto the same mess feed the
+	// two legacy flags (mess_cursed_score / mess_im_speed) used to push directly, so the
+	// client's existing '/img <file>' toast handling needs no changes.
+	unlock(id) {
+		if (this.unlocked[id]) { return; }
+		this.unlocked[id] = 1;
+		const entry = ACHIEVEMENTS.find((a) => a.id === id);
+		this.mess.push('/img ' + (entry ? entry.icon : 'achievement.png'));
+	}
+	// Farmable-shape kill tally, called from Room.js's collision resolution where the killer
+	// and the destroyed Objects instance's type ('sqr'/'tri'/'pnt') are both in scope.
+	registerKill(type) {
+		if (type === 'pnt') {
+			this.unlock('penta_slayer');
+			return;
+		}
+		this.killCounts[type] = (this.killCounts[type] || 0) + 1;
+		if (type === 'sqr' && this.killCounts.sqr >= 200) {
+			this.unlock('kawaii_smash');
 		}
 	}
 	update() {
@@ -419,6 +457,7 @@ class Player {
 			this.hp += 3;
 			this.maxHp += 3;
 			this.level++;
+			if (this.level >= this.XPLVL.length) { this.unlock('the_end'); }
 		}
 		if (this.shield) {
 			this.shield--;
@@ -433,9 +472,8 @@ class Player {
 		this.screen = this.extraView + CLASS[this.class].screen + this.level * 22;
 		if (this.xp !== this.oldXp) {
 			this.oldXp = this.xp;
-			if (this.xp === 666666 && !this.mess_cursed_score && !this.bot) {
-				this.mess_cursed_score = 1;
-				this.mess.push('/img mc_cursed_score.png');
+			if (this.xp === 666666 && !this.bot) {
+				this.unlock('cursed_score');
 			}
 			if (this.xp < this.XPLVL[this.XPLVL.length - 3]) {
 				this.prize = parseInt(Math.min(this.XPLVL[this.XPLVL.length - 3], Math.pow(this.xp / this.mlx, 1.8)));
@@ -443,9 +481,8 @@ class Player {
 				this.prize = parseInt(this.XPLVL[this.XPLVL.length - 3] + (this.xp - this.XPLVL[this.XPLVL.length - 3]) / 10);
 			}
 		}
-		if (this.class === 'Rocket' && !this.mess_im_speed && this.upNb[0] === 6 && this.upNb[1] === 6) {
-			this.mess_im_speed = 1;
-			this.mess.push('/img mc_im_speed.png');
+		if (this.class === 'Rocket' && this.upNb[0] === 6 && this.upNb[1] === 6) {
+			this.unlock('speed_demon');
 		}
 		///
 		if (this.dev.stick) {

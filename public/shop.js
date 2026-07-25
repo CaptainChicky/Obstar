@@ -146,7 +146,9 @@
 		],
 	};
 	window.ChosenPet = -1;
-	const Mess = (() => {
+	// Exported on window so account.js's login/signup/achievements feedback can reuse the same
+	// toast (icons + #messages box) instead of building a second one.
+	const Mess = window.Mess = (() => {
 		const messbox = document.getElementById('messages'),
 			prevent = document.getElementById('prevent_click');
 		const valid_svg = messbox.children[0],
@@ -271,7 +273,7 @@
 			}.bind(Mess);
 			Req.open("post", "/buy", true);
 			Req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-			Req.send(`userKey=${POST.key}&id=${i}&class=${c}`);
+			Req.send(`id=${i}&class=${c}`);
 		} else {
 			Mess.send('warn', 'You need more coins !')
 			return;

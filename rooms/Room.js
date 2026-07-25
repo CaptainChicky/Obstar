@@ -510,6 +510,9 @@ class Room {
 										killer.coins += other.coinReward || 0;
 										if (otherKind === KIND.PLAYER && !killer.bot) {
 											killer.mess.push('You killed ' + other.name);
+											killer.unlock('first_blood');
+										} else if (otherKind === KIND.OBJECTS) {
+											killer.registerKill(other.type);
 										}
 									}
 								}
@@ -522,6 +525,9 @@ class Room {
 										killer.coins += obj.coinReward || 0;
 										if (objKind === KIND.PLAYER && !killer.bot) {
 											killer.mess.push('You killed ' + obj.name);
+											killer.unlock('first_blood');
+										} else if (objKind === KIND.OBJECTS) {
+											killer.registerKill(obj.type);
 										}
 									}
 								}
@@ -757,7 +763,9 @@ class Room {
 						raw = {
 							construc: 'Objects',
 							id: obj.id.oId,
-							states: [!!obj.hit * 1, !!obj.extra * 1, 0, 0, 0, 0, 0],
+							// Slots 1-3 are obj.tier (0-7) as 3 bits, not a flag - see
+							// public/SHARE/ObjectsConfig.js.
+							states: [!!obj.hit * 1, (obj.tier >> 2) & 1, (obj.tier >> 1) & 1, obj.tier & 1, 0, 0, 0],
 							shape: obj.type,
 							hp: Math.max(0, obj.hp / obj.maxHp),
 							x: obj.x,

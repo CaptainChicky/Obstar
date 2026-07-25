@@ -19,6 +19,10 @@
 	const Tank = CLIENT.Tank;
 	const Obj = CLIENT.Obj;
 	const Bullet = CLIENT.Bullet;
+	const CLASS = CLIENT.CLASS;
+	// One server tick (public/motion.js:60) expressed in 60fps-equivalent frames, so the
+	// per-tick server constants below can be applied per-frame scaled by Global.dtFrames.
+	const FRAMES_PER_TICK = MOTION.NET_TICK / 16.667;
 	///
 	CLIENT.Run = function () {
 		if (!General['canvas']) {
@@ -151,9 +155,24 @@
 					delay. It is an offset, not a position, so it survives the interpolation change
 					untouched; it just gets added to a position that is now correct.
 				*/
+				/*
+					Same three constants entities/Player.js:112,128 uses per server tick
+					(len = 0.35 + up.MSpeed - level/155, FRICTION = 0.964) - duplicated here on
+					purpose (THEPLAN 4.1), so retune both files together. mspeedPoints/lvl come from
+					the same packets ui.js's upgrade panel already reads (UpdateUp's `ups`,
+					GameUpdate's head.level) rather than a guess, and the Movement Speed slot is
+					looked up by name instead of hardcoded, since a class can override `ups`
+					(public/client/ui.js's upgrade-panel init does the same lookup).
+				*/
+				const Ui = General['Ui'];
+				const ups = (CLASS[this.class] && CLASS[this.class].ups) ? CLASS[this.class].ups : TanksConfig.defaultUps;
+				const mspeedIdx = ups.indexOf('Movement Speed');
+				const mspeedPoints = (mspeedIdx >= 0 && Ui && Ui.upNb) ? (Ui.upNb[mspeedIdx] || 0) : 0;
+				const lvl = (Ui && Ui.lvl) || 0;
+				const tickLen = (Global.dtFrames / FRAMES_PER_TICK);
 				const motionDir = [0, 0];
-				const len = 0.31 / 2 * Global.dtFrames;
-				const FRICTION = Math.pow(0.95, Global.dtFrames);
+				const len = (0.35 + mspeedPoints * 0.020 - lvl / 155) * tickLen;
+				const FRICTION = Math.pow(0.964, tickLen);
 				if (Global.inputs.w || Global.inputs.ArrowUp) { motionDir[0] -= len; }
 				if (Global.inputs.s || Global.inputs.ArrowDown) { motionDir[0] += len; }
 				if (Global.inputs.a || Global.inputs.ArrowLeft) { motionDir[1] -= len; }
@@ -166,6 +185,10 @@
 				this.predic.y += this.predic.yspeed;
 				let tolen = Math.sqrt(Math.pow(this.predic.x, 2) + Math.pow(this.predic.y, 2));
 				tolen += (-tolen) * General['lerpK'](CONST.SMOOTH);
+				// The lighter, correct drag (0.964 vs the old 0.95) lets the lead grow further
+				// before this decay catches it, so cap it explicitly - a lead should read as
+				// "slightly ahead", never as a teleport when the server position lands.
+				tolen = Math.min(tolen, CONST.SIZE * 2);
 				ddir = Math.atan2(this.predic.y, this.predic.x);
 				this.predic.x = Math.cos(ddir) * tolen;
 				this.predic.y = Math.sin(ddir) * tolen;
@@ -666,6 +689,9 @@
 										}
 										case 'Objects': {
 											if (obj.states[0]) inst[OBJ].hit();
+											// Slots 1-3 are the tier (0-7) as 3 bits - see
+											// public/SHARE/ObjectsConfig.js.
+											inst[OBJ].tier = (obj.states[1] << 2) | (obj.states[2] << 1) | obj.states[3];
 											break;
 										}
 										case 'Bullets': {

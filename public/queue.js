@@ -69,6 +69,9 @@ window.onload = function () {
 			data = window.UserData = { coins: 0 };
 		}
 		document.getElementById('coin-data').innerHTML = data.coins;
+		// account.js loads after this script but its own render needs the same response, so
+		// it hangs a hook here rather than issuing a second /userData request of its own.
+		if (window.onUserData) window.onUserData(data);
 		if (UserData.own && UserData.own.pets) {
 			SetPets(UserData.own.pets);
 			if (UserData.own.pets[window.Pref.pet]) {
@@ -83,7 +86,7 @@ window.onload = function () {
 	};
 	Req.open("post", "/userData", true);
 	Req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	Req.send('userKey=' + POST.key);
+	Req.send();
 	//
 	const toggleLB = (() => {
 		const box = document.createElement('DIV');

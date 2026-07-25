@@ -6,6 +6,80 @@
 (function (CLIENT) {
 	'use strict';
 	const General = CLIENT.General;
+	/*
+		Cosmetics console (HANDOFF Part 3). The console opens for anyone (Ctrl+Shift+L,
+		game.js:320) - always did, since there was never a client-side gate on it, only on
+		whether a typed command did anything server-side. Rather than gate the console itself,
+		a recognised *cosmetic* command (color/uiscale/palette/fps/help/clear) is handled and
+		persisted entirely client-side and never reaches the socket; anything else still goes to
+		the server exactly as before, where lib/Controller.js's command() gates on devlevel. So
+		this adds no new attack surface - a non-admin typing an admin command still gets nothing.
+	*/
+	const COSMETICS_KEY = 'obstar_cosmetics';
+	const cosmetics = (() => {
+		try { return JSON.parse(localStorage.getItem(COSMETICS_KEY)) || {}; } catch { return {}; }
+	})();
+	function saveCosmetics() {
+		try { localStorage.setItem(COSMETICS_KEY, JSON.stringify(cosmetics)); } catch { /* storage unavailable - cosmetic, fine to drop */ }
+	}
+	(function applyCosmetics() {
+		const Palette = CLIENT.Palette;
+		if (cosmetics.palette) {
+			for (const name in cosmetics.palette) {
+				if (Palette[name]) Palette[name] = cosmetics.palette[name];
+			}
+		}
+		if (cosmetics.uiscale) {
+			CLIENT.CONST.RESOLUTION = cosmetics.uiscale;
+		}
+	})();
+	const HEX6 = /^[0-9a-fA-F]{6}$/;
+	const COSMETIC_COMMANDS = {
+		help: () => [
+			'cosmetic commands (client-side only):',
+			'  color <name> <hex6> [hex6-dark] - recolor a palette entry, e.g. color green ff0000',
+			'  palette reset                   - undo all color overrides (reload to fully apply)',
+			'  uiscale <0.5-2>                 - resize the HUD/canvas',
+			'  fps <on|off>                    - toggle the fps counter',
+			'  clear                           - clear this console',
+			'anything else is sent to the server, which still requires an admin account.'
+		],
+		color: (args) => {
+			const Palette = CLIENT.Palette;
+			const name = args[0], hexA = args[1], hexB = args[2];
+			if (!name || !Palette[name] || !HEX6.test(hexA || '')) {
+				return ['usage: color <name> <hex6> [hex6-dark]'];
+			}
+			const pair = ['#' + hexA, '#' + (HEX6.test(hexB || '') ? hexB : hexA)];
+			cosmetics.palette = cosmetics.palette || {};
+			cosmetics.palette[name] = pair;
+			Palette[name] = pair;
+			saveCosmetics();
+			return [`color "${name}" set to ${pair[0]}`];
+		},
+		palette: (args) => {
+			if (args[0] !== 'reset') return ['usage: palette reset'];
+			delete cosmetics.palette;
+			saveCosmetics();
+			return ['palette overrides cleared - reload the page to fully restore defaults'];
+		},
+		uiscale: (args) => {
+			const s = parseFloat(args[0]);
+			if (isNaN(s) || s < 0.5 || s > 2) return ['usage: uiscale <0.5-2>'];
+			cosmetics.uiscale = s;
+			saveCosmetics();
+			CLIENT.CONST.RESOLUTION = s;
+			if (General['Interact']) General['Interact'].onresize();
+			return [`ui scale set to ${s}`];
+		},
+		fps: (args) => {
+			if (args[0] !== 'on' && args[0] !== 'off') return ['usage: fps <on|off>'];
+			cosmetics.fps = args[0] === 'on';
+			saveCosmetics();
+			CLIENT.Global.showFps = cosmetics.fps;
+			return [`fps counter ${args[0]}`];
+		}
+	};
 	General['DEV'] = (() => {
 		const dev = {
 			isOn: 0,
@@ -62,19 +136,27 @@
 			}
 		}
 		function send() {
-			if (input.value === 'clear') {
+			const value = input.value;
+			if (!value.length) return;
+			const args = value.trim().split(/\s+/);
+			const cmd = args.shift().toLowerCase();
+			if (cmd === 'clear') {
 				div.innerHTML = '';
 				div.appendChild(input);
-				input.focus();
-			}
-			if (input.value.length) {
-				prepend(['> ' + input.value]);
-				General['WS'].send(PROTO.encode('com', input.value))
-				history[history.length - 1] = input.value;
-				curs = history.length;
-				history.push('');
 				input.value = '';
+				input.focus();
+				return;
 			}
+			if (COSMETIC_COMMANDS[cmd]) {
+				prepend(['> ' + value, ...COSMETIC_COMMANDS[cmd](args)]);
+			} else {
+				prepend(['> ' + value]);
+				General['WS'].send(PROTO.encode('com', value))
+			}
+			history[history.length - 1] = value;
+			curs = history.length;
+			history.push('');
+			input.value = '';
 		}
 		dev.send = send;
 		////

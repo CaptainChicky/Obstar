@@ -177,6 +177,8 @@ function boot(POST, opts) {
 	load('public/SHARE/kinds.js');
 	load('public/SHARE/TanksConfig.js');
 	load('public/SHARE/PetsConfig.js');
+	load('public/SHARE/AchievementsConfig.js');
+	load('public/SHARE/ObjectsConfig.js');
 	load('public/SHARE/SocketSchema.js');
 	load('public/motion.js');
 	// The client, in the same order views/play.ejs lists it. Keep the two in step.

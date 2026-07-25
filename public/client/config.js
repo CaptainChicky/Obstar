@@ -57,6 +57,10 @@
 		alphaTri: ["#d1adb2", "#a38a8e"],
 		pnt: ["#b2b2cc", "#8686ab"],
 		alphaPnt: ["#b2b2cc", "#8686ab"],
+		// Objects rarity tier 1 (public/SHARE/ObjectsConfig.js) - deliberately a brighter,
+		// more saturated green than the muted tank `green` above so a shiny reads as loot,
+		// not as a friendly tank.
+		shiny: ["#38f77c", "#1fbf5c"],
 		botName: '#f6f1b5',
 		up: [
 			'#e6ab22',///Reload

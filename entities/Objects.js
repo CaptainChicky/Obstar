@@ -11,6 +11,7 @@ const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const FRICTION = require('../lib/constants.js').FRICTION;
 const KIND = require('../public/SHARE/kinds.js');
+const RARITY = require('../public/SHARE/ObjectsConfig.js').rarity;
 
 class Objects {
 	constructor(type, pos, id, map) {
@@ -93,11 +94,18 @@ class Objects {
 				this.hp = 32;
 			}
 		}
-		if (Math.random() < 0.00004) {
-			this.extra = 1;
-			this.hp = 10000;
-			this.prize = 50000;
-			this.weight = 100;
+		// Rarity roll (THEPLAN 4.2). Checked rarest-first: each tier is its own independent
+		// chance, so a roll that already won Mythic cannot be re-decided into Shiny by also
+		// checking that (weaker) threshold afterwards.
+		this.tier = 0;
+		for (let i = RARITY.length - 1; i >= 1; i--) {
+			if (Math.random() < RARITY[i].chance) {
+				this.tier = RARITY[i].id;
+				this.hp = Math.round(this.hp * RARITY[i].hpMul);
+				this.prize = Math.round(this.prize * RARITY[i].prizeMul);
+				if (RARITY[i].weight !== null) { this.weight = RARITY[i].weight; }
+				break;
+			}
 		}
 		this.map = map;
 		this.maxHp = this.hp;

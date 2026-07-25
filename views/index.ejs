@@ -6,6 +6,7 @@
 	<link rel="stylesheet" type="text/css" href="./style.css">
 	<script type='text/javascript'>var POST = <%- data %>;</script>
 	<script type='text/javascript' src='./SHARE/PetsConfig.js'></script>
+	<script type='text/javascript' src='./SHARE/AchievementsConfig.js'></script>
 </head>
 
 <body>
@@ -67,6 +68,9 @@
 			</div>
 		</div>
 		<div class='right-zone'>
+			<div id='account' class='white-box'>
+				<div id='account-chip'></div>
+			</div>
 			<div id='Info' class='white-box'>
 				<div class='head-radio'>
 					<input type="radio" id="changelog_is" class='radio' name="radios" value="false">
@@ -125,6 +129,10 @@
 					</div>
 				</div>
 			</div>
+			<div id='achievements' class='white-box'>
+				<div id='ach-count'>0/0</div>
+				<div id='ach-list' class='inside_info'></div>
+			</div>
 			<div id='Follow' class='white-box'>
 				<span>Obstar on...</span>
 				<div>
@@ -160,6 +168,7 @@
 	<script src="./queue.js"></script>
 	<script src="./font.js"></script>
 	<script type='text/javascript' src='./shop.js'></script>
+	<script type='text/javascript' src='./account.js'></script>
 	<script type='text/javascript'>
 	</script>
 </body>

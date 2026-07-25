@@ -823,3 +823,190 @@ body {
 .leadZone::-webkit-scrollbar-thumb:hover {
 	background: #bbc;
 }
+
+/* ------------------------------------------------------------------------- *
+ * Account chip + auth modal (menu-only, HANDOFF Part 1.5).
+ * ------------------------------------------------------------------------- */
+#account {
+	text-align: center;
+	padding: 10px 14px;
+	width: 226px;
+}
+
+#account-chip {
+	color: #55555f;
+}
+
+#account-chip .chip-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-weight: 700;
+}
+
+#account-chip .name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+#account-chip .chip-coins {
+	color: #e8b923;
+	opacity: .9;
+}
+
+#account-chip .chip-actions {
+	display: flex;
+	justify-content: center;
+	margin-top: 8px;
+}
+
+#account-chip button {
+	font-family: 'Catamaran';
+	font-size: .85em;
+	font-weight: 700;
+	border: 0px;
+	border-radius: 4px;
+	padding: 6px 10px;
+	margin: 0px 3px;
+	color: white;
+	background-color: #7289DA;
+	cursor: pointer;
+	transition: .2s;
+}
+
+#account-chip button:hover {
+	opacity: .8;
+}
+
+#Info {
+	margin-top: 8px;
+}
+
+#accountBox {
+	position: absolute;
+	transform: translate(-50%, -50%);
+	width: 280px;
+	padding: 18px 22px 22px 22px;
+	transition: .5s;
+	text-align: left;
+}
+
+#accountBox .acc-form {
+	display: none;
+	flex-direction: column;
+}
+
+#accountBox input {
+	font-family: 'Catamaran';
+	font-size: 1em;
+	padding: 8px 10px;
+	margin-bottom: 8px;
+	margin-top: 10px;
+	border: 2px solid #eee;
+	border-radius: 4px;
+	outline: none;
+}
+
+.acc-submit {
+	font-family: 'Catamaran';
+	font-size: 1em;
+	font-weight: 700;
+	color: white;
+	background-color: #7289DA;
+	border: 0px;
+	border-radius: 4px;
+	padding: 10px;
+	cursor: pointer;
+	transition: .2s;
+}
+
+.acc-submit:hover {
+	opacity: .8;
+}
+
+#login_is:checked~#login_form {
+	display: flex;
+}
+
+#signup_is:checked~#signup_form {
+	display: flex;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Achievements panel (menu-only, HANDOFF Part 2.3). Collapsed to a narrow
+ * vertical strip of icons; hovering widens it (CSS transition, same idiom as
+ * .radio+label and #changelogs_info) to reveal name/desc and become
+ * scrollable, borrowing .inside_info's scrollbar skin.
+ * ------------------------------------------------------------------------- */
+#achievements {
+	width: 50px;
+	padding: 10px 0px;
+	margin-top: 8px;
+	overflow: hidden;
+	transition: width .3s;
+}
+
+#achievements:hover {
+	width: 226px;
+}
+
+#ach-count {
+	text-align: center;
+	color: #aaaab5;
+	font-weight: 700;
+	font-size: .85em;
+	line-height: 20px;
+}
+
+#ach-list {
+	height: 230px;
+	margin-top: 6px;
+}
+
+.ach-entry {
+	display: flex;
+	align-items: center;
+	padding: 6px 9px;
+}
+
+.ach-entry img {
+	width: 32px;
+	height: 32px;
+	border-radius: 4px;
+	flex-shrink: 0;
+}
+
+.ach-entry .txt {
+	display: flex;
+	flex-direction: column;
+	line-height: 18px;
+	overflow: hidden;
+	white-space: nowrap;
+	margin-left: 10px;
+	opacity: 0;
+	transition: opacity .2s;
+}
+
+#achievements:hover .ach-entry .txt {
+	opacity: 1;
+}
+
+.ach-entry .name {
+	font-weight: 700;
+	font-size: .95em;
+}
+
+.ach-entry .desc {
+	font-size: .8em;
+	opacity: .7;
+}
+
+.ach-entry.locked img {
+	opacity: .35;
+}
+
+.ach-entry.locked .name,
+.ach-entry.locked .desc {
+	opacity: .5;
+}
