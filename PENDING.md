@@ -73,9 +73,14 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
      auto-scroll.
    - `Ctrl+Shift+L` accepts `color`/`uiscale`/etc. and refuses an admin command for a non-admin.
    - Bullets visibly leave from the barrel tip, including while strafing hard perpendicular to
-     the aim direction (this was reported broken and fixed — see `public/client/game.js`'s
-     `BULLET_MINE_RADIUS` heuristic; there's no real owner field on the wire, so this is a
-     proximity guess, not a certainty).
+     the aim direction. Reported broken twice. The owner is now a real wire bit (`states[1]` on
+     a `Bullets` instance), not a proximity guess, and the second fix replaced the temporal lead
+     — which could only ever slide a bullet along its own velocity, and so did nothing for the
+     strafing case, where the whole error is perpendicular to it — with a spatial offset that
+     rides the drawn tank for the first packet interval and then decays
+     (`public/client/entities.js`, `Bullet.update()`; `CONST.BULLET_LEAD_DECAY`).
+     `test/client.js` now asserts the alignment directly, so this is a "confirm it *feels*
+     right" check rather than a "confirm it works" one.
    - The camera has a *slight* trailing lag again (`CONST.CAM_SMOOTH`) — confirm it reads as a
      hair of chase, not the old pre-refactor drift.
    - A green "shiny" polygon and a rainbow "Mythic" one are both visibly distinct from an
@@ -101,6 +106,17 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
     movement/knockback/recoil numbers themselves against any external reference. `lib/config.js`
     is explicit that every one of those was hand-tuned against a measured ~29Hz tick; retuning
     them is its own pass, to be scoped once real reference numbers are available.
+
+12. **Forward velocity inheritance on bullets** — a real diep/arras feel difference, deliberately
+    not taken while fixing the muzzle alignment above, because it changes damage-relevant physics
+    rather than what gets drawn. `entities/Bullet.js`'s constructor gives a bullet
+    `Vec(speed*exitSpeed, 0).rotate(direction)` and nothing else: driving forward into your own
+    shot changes nothing about it. arras adds the tank's velocity *projected onto the firing
+    direction*, clamped at zero so it can only ever speed a bullet up, never slow it or bend it
+    (`open-source-arras-main/server/game/entities/gun.js`, the `extraBoost` block in `fire()`) —
+    which is why a rammer's shots there feel like they carry. Sideways motion is correctly
+    ignored by that formula, so it does not reintroduce anything the muzzle fix just solved. Cheap
+    to add; needs a balance opinion first, and interacts with #11.
 
 ## ⚪ Optional cleanup — no urgency, no bug, do only if you want it
 

@@ -60,8 +60,11 @@ function packet(t, user, bullet, other) {
 	};
 	if (bullet) {
 		buff.instances.push(new Int8Array(PROTO.encode('Instance', {
+			// states[1] is the `mine` bit - the server saying this bullet is the receiving
+			// player's own, which is what puts it in the local tank's reference frame on the
+			// client (public/client/entities.js, Bullet.update()).
 			construc: 'Bullets', id: 7,
-			states: [0, 0, 0, 0, 0, 0, 0], type: 0, color: 0,
+			states: [0, bullet.mine ? 1 : 0, 0, 0, 0, 0, 0], type: 0, color: 0,
 			x: bullet.x, y: bullet.y, size: 10, alpha: 1, dir: 0
 		})));
 	}
@@ -233,6 +236,116 @@ console.log('\na bullet moves at its real speed from the start:');
 		if (drawn[i].x < drawn[i - 1].x - 1e-9) { backwards++; }
 	}
 	check('the bullet never stutters backwards', backwards === 0, backwards + ' frames');
+}
+
+console.log('\nyour own bullet leaves the muzzle, even strafing across your own aim:');
+{
+	/*
+		THE OTHER BUG a player reported, and the one this file could not see before: firing while
+		moving hard sideways, the bullet appeared to come out of empty space beside the tank
+		rather than out of the barrel.
+
+		The server spawns a bullet at the *server's* tank position plus the barrel offset. The
+		client draws the tank somewhere else - that same server position plus `predic`, the local
+		input lead - so a bullet is born `predic` away from the muzzle it is supposed to have come
+		out of. It used to be papered over by drawing own bullets one packet interval further into
+		the future, which can only ever slide a bullet along its own velocity; strafing puts the
+		entire error perpendicular to that, so none of it was cancelled.
+
+		Set up exactly that: the tank strafing along +x under real held input, firing along +y.
+		The bullet is placed where the server would put it - the tank's server position plus a
+		barrel length in +y - and what is asserted is that it is *drawn* on the drawn tank's
+		muzzle, which is the only place a player can see.
+	*/
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+	const hook = a.start(packet(1, { x: 0, y: 0 }));
+	const User = hook.User, Global = hook.Global, Insts = hook.Instances;
+
+	const SPEED = 40;      // tank travel per packet, sideways
+	const BARREL = 55;     // muzzle offset, perpendicular to the movement
+	const BSPEED = 36;     // bullet travel per packet, also perpendicular
+	Global.inputs.d = 1;   // hold "right" so predic is real input lead, not a fabricated number
+
+	let x = 0;
+	for (let p = 0; p < 20; p++) {          // let predic reach steady state
+		x += SPEED;
+		a.deliver(packet(p + 1, { x: x, y: 0, vx: SPEED, vy: 0 }));
+		for (let f = 0; f < FPP; f++) { a.frame(FRAME); }
+	}
+	const lead = Math.hypot(User.predic.x, User.predic.y);
+	check('the tank has a real input lead to be wrong about',
+		lead > 10, lead.toFixed(1) + ' units');
+	check('...and it is the sideways one, across the aim',
+		Math.abs(User.predic.x) > Math.abs(User.predic.y) * 10,
+		User.predic.x.toFixed(1) + ', ' + User.predic.y.toFixed(1));
+
+	// The shot. Server tank position is (x + SPEED, 0); the muzzle is BARREL up from it.
+	x += SPEED;
+	a.deliver(packet(21, { x: x, y: 0, vx: SPEED, vy: 0 }, { x: x, y: BARREL, mine: 1 }));
+	a.frame(FRAME);
+	const b = Insts.Bullets[7];
+	check('the bullet exists on the client', !!b);
+
+	// Through the whole first interval the bullet has one snapshot, so its own interpolation
+	// cannot move it yet; it rides the muzzle instead of parking in world space. Exact, not
+	// approximate - it is drawn from the same two terms the tank is.
+	let worst = 0, apart = 0;
+	for (let f = 0; ; f++) {
+		worst = Math.max(worst, Math.hypot(b.dx - User.gx, b.dy - User.gy - BARREL));
+		// How far that is from where the old code drew it - the raw server spawn point. This is
+		// the size of the reported bug, and it has to be big enough that the check above means
+		// something rather than passing on two numbers that were equal anyway.
+		apart = Math.max(apart, Math.hypot(b.dx - b.x, b.dy - b.y));
+		if (f >= FPP - 1) { break; }
+		a.frame(FRAME);
+	}
+	check('it is drawn on the muzzle for as long as it is still in the barrel',
+		worst < 1e-6, worst.toExponential(1) + ' units off');
+	check('...which is a visibly different place from the raw server spawn point',
+		apart > 10, apart.toFixed(1) + ' units apart - the size of the bug');
+
+	// Now the shot proper. The bullet flies +y only: it does not inherit the tank's sideways
+	// velocity (neither does diep's, nor arras.io's - see the extraBoost in its gun.js, which
+	// projects onto the firing direction and clamps at zero), so the tank strafes out from
+	// under it and the two separate. What must not happen is a jump when the bullet's own
+	// interpolation takes over from the muzzle ride on the second snapshot.
+	// The offset it is holding as it leaves - the whole of the error being corrected. Read it
+	// here, before the decay has had any frames to work on it.
+	const held = Math.hypot(b.lead.x, b.lead.y);
+	const step = [];
+	let px = b.dx, py = b.dy;
+	for (let p = 21; p < 27; p++) {
+		x += SPEED;
+		a.deliver(packet(p + 1, { x: x, y: 0, vx: SPEED, vy: 0 },
+			{ x: x - SPEED * (p - 20), y: BARREL + BSPEED * (p - 20), mine: 1 }));
+		for (let f = 0; f < FPP; f++) {
+			a.frame(FRAME);
+			step.push(Math.hypot(b.dx - px, b.dy - py));
+			px = b.dx; py = b.dy;
+		}
+	}
+	// Steady drawn travel is one bullet-speed per packet spread over FPP frames; the handoff
+	// frame must not be an outlier against it.
+	const per = BSPEED / FPP;
+	check('there is no jump where its own interpolation takes over',
+		step.every((s) => s < per * 1.5), Math.max.apply(null, step).toFixed(1) +
+		' worst frame vs ' + per.toFixed(1) + ' steady');
+	check('...and it is moving at its real speed by then',
+		near(step[step.length - 1], per, per * 0.15), step[step.length - 1].toFixed(1));
+
+	// And it lets go: the offset bleeds away so the bullet flies the path the server will
+	// actually judge it on, rather than carrying the lead forever.
+	for (let p = 27; p < 60; p++) {
+		x += SPEED;
+		a.deliver(packet(p + 1, { x: x, y: 0, vx: SPEED, vy: 0 },
+			{ x: x - SPEED * (p - 20), y: BARREL + BSPEED * (p - 20), mine: 1 }));
+		for (let f = 0; f < FPP; f++) { a.frame(FRAME); }
+	}
+	const now = Math.hypot(b.lead.x, b.lead.y);
+	check('the offset decays instead of riding along forever',
+		held > 10 && now < held * 0.2, held.toFixed(1) + ' -> ' + now.toFixed(1) + ' units');
+
+	Global.inputs.d = 0;
 }
 
 console.log('\na new entity is complete on the packet that introduces it:');

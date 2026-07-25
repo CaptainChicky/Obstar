@@ -102,6 +102,12 @@
 			this.t0 = 0; this.x0 = x; this.y0 = y;
 			this.t1 = 0; this.x1 = x; this.y1 = y;
 			this.x = x; this.y = y;
+			// How many real server positions this history holds. Below 2 there is nothing to
+			// interpolate between and sample() parks on the spawn point for one interval -
+			// public/client/entities.js's Bullet.update() has to know which of those two regimes
+			// it is in to keep a bullet on the muzzle, and nothing else about the interpolator
+			// tells it apart from a genuinely stationary entity.
+			this.n = 0;
 		}
 		/* One new server position. */
 		push(x, y, t) {
@@ -113,10 +119,12 @@
 			if (Math.abs(x - this.x1) > TELEPORT || Math.abs(y - this.y1) > TELEPORT) {
 				this.set(x, y);
 				this.t1 = t;
+				this.n = 1;
 				return this;
 			}
 			this.t0 = this.t1; this.x0 = this.x1; this.y0 = this.y1;
 			this.t1 = t; this.x1 = x; this.y1 = y;
+			this.n++;
 			// First ever packet: invent a previous sample one interval back, at the same place, so
 			// the entity holds still for one interval instead of jumping.
 			if (!this.t0) { this.t0 = t - NET.interval; }
