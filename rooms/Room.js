@@ -792,7 +792,10 @@ class Room {
 						break;
 					};
 					case KIND.BULLET: {
-						if (this.rules.viewerBullets && obj.origin.oId === RAW.main.id.oId) {
+						// Your own bullet never populates the shared cache - it always takes the
+						// per-viewer path below (states[1] `mine`, and the colour override) in every
+						// gamemode, not just when rules.viewerBullets is set.
+						if (obj.origin.oId === RAW.main.id.oId) {
 							break;
 						}
 						raw = {
@@ -827,16 +830,19 @@ class Room {
 					break;
 				};
 				case KIND.BULLET: {
-					if (this.rules.viewerBullets && obj.origin.oId === RAW.main.id.oId) {
+					if (obj.origin.oId === RAW.main.id.oId) {
 						const raw = new Int8Array(RT.Controller.encodeInst('Instance', {
 							construc: 'Bullets',
 							id: obj.id.oId,
-							states: [!!obj.pet * 1, 0, 0, 0, 0, 0, 0],
+							states: [!!obj.pet * 1, 1, 0, 0, 0, 0, 0],
 							type: parseInt(obj.type),
 							x: obj.x,
 							y: obj.y,
 							size: obj.size,
-							color: this.ownBulletColor(obj, RAW.main),
+							// Colour still only differs from the shared cache when the gamemode
+							// actually uses per-viewer bullet colour - team-mode colours don't
+							// change just because the mine bit is now always real.
+							color: this.rules.viewerBullets ? this.ownBulletColor(obj, RAW.main) : this.bulletColor(obj),
 							alpha: obj.alpha,
 							dir: obj.showDir
 						}));

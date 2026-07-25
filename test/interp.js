@@ -182,6 +182,33 @@ console.log('\npacket loss:');
 		atGap <= 12 + 12 * Interp.MAX_EXTRAP + 1e-9, atGap);
 }
 
+console.log('\nlead (own-bullet sync with the tank):');
+{
+	// public/client/entities.js leads the local tank's own bullets by NET.interval, so a
+	// bullet stays in sync with the tank itself (drawn at interp+predic, roughly "now") instead
+	// of trailing NET.interval behind it like everything else does - see public/motion.js's
+	// sample(t, lead) and public/client/entities.js's Bullet.update().
+	NET.reset();
+	const e = new Interp(0, 0);
+	NET.mark(1000); e.push(0, 0, 1000);
+	NET.mark(1030); e.push(SPEED, 0, 1030);
+
+	const unled = e.sample(1030, 0).x;
+	const led = e.sample(1030, NET.interval).x;
+	check('leading by one interval draws at the newest snapshot instead of one interval behind it',
+		near(led, SPEED, 0.05) && unled < led,
+		unled.toFixed(3) + ' -> ' + led.toFixed(3) + ' (truth ' + SPEED + ')');
+
+	// Without the raised cap, a lead this large would be clamped back down by the ordinary
+	// MAX_EXTRAP the same as coasting through packet loss - defeating the point of leading.
+	const span = 30;
+	const farLead = span * (Interp.MAX_EXTRAP + 1);
+	const farAt = e.sample(1030, farLead).x;
+	const oldCapX = SPEED * Interp.MAX_EXTRAP;    // where the unraised cap would have clamped it
+	check('a large lead is not eaten by the ordinary extrapolation cap',
+		farAt > oldCapX, farAt.toFixed(2) + ' vs old cap ' + oldCapX.toFixed(2));
+}
+
 console.log('\ninterval estimate:');
 {
 	NET.reset();

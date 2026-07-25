@@ -122,8 +122,14 @@
 			if (!this.t0) { this.t0 = t - NET.interval; }
 			return this;
 		}
-		/* Where to draw it now. Writes and returns this.x / this.y. */
-		sample(t) {
+		/*
+			Where to draw it now. Writes and returns this.x / this.y. `lead` (ms) draws further
+			into the span than `t` alone would - used to keep the local tank's own bullets in sync
+			with the tank itself, which is drawn one interval ahead of everything else (see
+			public/client/entities.js). The extrapolation cap is raised by the same amount so a
+			lead can't be eaten by MAX_EXTRAP.
+		*/
+		sample(t, lead = 0) {
 			if (typeof t === 'undefined') { t = NET.now(); }
 			const span = this.t1 - this.t0;
 			if (span <= 0) {
@@ -132,8 +138,9 @@
 				return this;
 			}
 			// Clamped at both ends: a dropped packet coasts forward for at most one extra interval
-			// instead of extrapolating off the map, and a late frame never rewinds past t0.
-			const a = Math.max(0, Math.min(MAX_EXTRAP, (t - NET.interval - this.t0) / span));
+			// (plus lead) instead of extrapolating off the map, and a late frame never rewinds past t0.
+			const cap = MAX_EXTRAP + lead / span;
+			const a = Math.max(0, Math.min(cap, (t + lead - NET.interval - this.t0) / span));
 			this.x = this.x0 + (this.x1 - this.x0) * a;
 			this.y = this.y0 + (this.y1 - this.y0) * a;
 			return this;

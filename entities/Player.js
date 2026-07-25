@@ -209,9 +209,9 @@ class Player {
 					const dir = can.autoDir ? autoDir : this.dir + can.offdir;
 					const exitSpeed = can.exitSpeed ? can.exitSpeed : 40;
 					const offx = can.offx * ra;
-					const len = (can.canonLength * .93) * ra - ((this.up.BSpeed * can.speed) * exitSpeed * 2);
-					const offlen = Math.sqrt(Math.pow(len, 2) + (offx * offx));
-					const offdir = Math.atan(offx / len);
+					const len = can.canonLength * .93 * ra;
+					const offlen = Math.hypot(len, offx);
+					const offdir = Math.atan2(offx, len);
 					const x = this.x + Math.cos(dir + offdir) * (offlen)//-can.size*ra);
 					const y = this.y + Math.sin(dir + offdir) * (offlen)//-can.size*ra);
 					const Bull = new RT.Bullet(this.id, x, y, dir + Math.random() * can.rand - can.rand / 2, this.up.BSpeed * can.speed, exitSpeed);

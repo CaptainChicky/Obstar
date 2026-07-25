@@ -430,7 +430,9 @@
 			this.alpha = 1;
 		}
 		update() {
-			const tw = this.tween.sample(NET.now());
+			// Own bullets are drawn one packet interval ahead, same as the local tank, so the
+			// muzzle and the bullet agree at every strafe angle (see public/motion.js's sample()).
+			const tw = this.tween.sample(NET.now(), this.mine ? NET.interval : 0);
 			this.dx = tw.x;
 			this.dy = tw.y;
 			if (this.ddir !== this.dir) {

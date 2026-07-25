@@ -963,7 +963,12 @@
 				///
 				const SHOW = Math.min(General['ease-in-out'](this.UP.show, 3), 1);
 				const ALPHA = ctx.globalAlpha;
-				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW / 2 + User.predic.x, Global.canH / 2 + User.predic.y);
+				// The tank's real canvas position (device pixels), not the screen centre - the
+				// camera trails the tank by CONST.CAM_SMOOTH now, and `predic` is a world-unit
+				// offset that was being added here as if it were a pixel one.
+				const tankOffX = (User.gx - User.camx) * Global.RATIO;
+				const tankOffY = (User.gy - User.camy) * Global.RATIO;
+				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW / 2 + tankOffX, Global.canH / 2 + tankOffY);
 				ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION)
 				///
 				if (SHOW) {
@@ -989,8 +994,8 @@
 						const offx = Math.cos(angle) * 120 * CONST.RESOLUTION * CONST.OFFCAN;
 						const offy = Math.sin(angle) * 120 * CONST.RESOLUTION * CONST.OFFCAN;
 						const j = General.isMouseCirc(
-							(Global.canW / 2 + User.predic.x + (up.odd ? offx : -offx) / CONST.OFFCAN / CONST.RESOLUTION * Global.UIRATIO) / CONST.RESOLUTION,
-							(Global.canH / 2 + User.predic.y + offy / CONST.OFFCAN * Global.UIRATIO / CONST.RESOLUTION) / CONST.RESOLUTION,
+							(Global.canW / 2 + tankOffX + (up.odd ? offx : -offx) / CONST.OFFCAN / CONST.RESOLUTION * Global.UIRATIO) / CONST.RESOLUTION,
+							(Global.canH / 2 + tankOffY + offy / CONST.OFFCAN * Global.UIRATIO / CONST.RESOLUTION) / CONST.RESOLUTION,
 							12 * Global.UIRATIO
 						);
 						if (j) { Global.mouse_out = CONST.MOUSE_OUT; }
@@ -1033,8 +1038,8 @@
 						this.UP.nb.sh,//h
 					);
 					let j = General.isMouseCirc(
-						(Global.canW / 2 + User.predic.x) / CONST.RESOLUTION,
-						(Global.canH / 2 + User.predic.y) / CONST.RESOLUTION - 45 * Global.RATIO,
+						(Global.canW / 2 + tankOffX) / CONST.RESOLUTION,
+						(Global.canH / 2 + tankOffY) / CONST.RESOLUTION - 45 * Global.RATIO,
 						15 * Global.UIRATIO
 					);
 					if (j) {
@@ -1044,8 +1049,8 @@
 						this.UP.isShowing = 1;
 					}
 					j = General.isMouseCirc(
-						(Global.canW / 2) / CONST.RESOLUTION,
-						(Global.canH / 2) / CONST.RESOLUTION,
+						(Global.canW / 2 + tankOffX) / CONST.RESOLUTION,
+						(Global.canH / 2 + tankOffY) / CONST.RESOLUTION,
 						125 * Global.UIRATIO
 					);
 					if (Global.inputs.mouseL && !j) {

@@ -121,48 +121,71 @@ console.log('\nreal packets from a real room:');
 		app.record.badTransform + ' transforms, ' + app.record.badTranslate + ' translates');
 }
 
-console.log('\nthe camera stays on the tank:');
+console.log('\nthe camera trails the tank (WP2), and aim corrects for it:');
 {
 	/*
-		THE BUG. The camera used to run its own exponential smoother at CONST.SMOOTH/1.6 while
-		the tank was drawn with CONST.SMOOTH plus a velocity lead plus the input prediction -
-		three filters chasing one position. The gap between them grew with speed, which is
-		exactly "the game goes off centre when moving".
-
-		Camera and tank are read straight out of the client here: User.gx/gy is what Draw()
-		frames the world with, and User.dx+predic is where draw() puts the tank.
+		The camera used to be pinned exactly on the tank (worst === 0). It now trails by
+		CONST.CAM_SMOOTH on purpose - a dead-centre camera reads as sterile, and diep.io has the
+		same small chase - which is only safe because General.tankOff() lets aim (and the
+		upgrade-panel UI in public/client/ui.js) correct for however far off centre the tank
+		actually is. This retargets the old "camera sits exactly on the tank" assertion at the
+		real camera (camx/camy): the trail must be bounded and speed-proportional, converge to
+		zero once the tank stops, and the aim vector must still land on zero from dead centre
+		regardless of how far the camera has trailed.
 	*/
 	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
 	const hook = a.start(packet(1, { x: 0, y: 0 }));
 	check('the client hands over from the connecting screen to the game loop', !!hook);
 	const User = hook.User;
+	const MOTION = a.sandbox.MOTION;
 
 	let worst = 0, samples = 0;
 	let x = 0;
+	const SPEED = 40;                              // a fast tank: units per packet
 	for (let p = 0; p < 40; p++) {
-		x += 40;                                   // a fast tank: 40 units per packet
-		a.deliver(packet(p + 1, { x: x, y: 0, vx: 40, vy: 0 }));
+		x += SPEED;
+		a.deliver(packet(p + 1, { x: x, y: 0, vx: SPEED, vy: 0 }));
 		for (let f = 0; f < FPP; f++) {
 			a.frame(FRAME);
-			if (p < 3) { continue; }                   // let the first two snapshots land
-			const cam = { x: User.gx, y: User.gy };
-			const tank = { x: User.dx + User.predic.x, y: User.dy + User.predic.y };
-			worst = Math.max(worst, Math.abs(cam.x - tank.x), Math.abs(cam.y - tank.y));
+			if (p < 20) { continue; }                  // let the trail reach steady state
+			worst = Math.max(worst, Math.abs(User.gx - User.camx));
 			samples++;
 		}
 	}
-	check('sampled the moving tank', samples > 50, samples);
-	check('the camera sits exactly on the tank, at speed', worst === 0,
-		worst.toFixed(4) + ' units off');
+	check('sampled the moving tank', samples > 20, samples);
 
-	// And the aim vector, which used to subtract guesses at that same drift.
-	check('aim is measured from the centre of the screen', (function () {
+	// A first-order filter chasing a constant-velocity target settles at a steady lag of
+	// (per-frame travel) / camK - the same arithmetic Loop() runs every frame.
+	const dtFrames = FRAME / 16.667;
+	const camK = MOTION.lerpK(hook.CONST.CAM_SMOOTH, dtFrames);
+	const expected = (SPEED / FPP) / camK;
+	check('the camera trails a fast tank by roughly CAM_SMOOTH\'s steady-state lag, not zero',
+		near(worst, expected, expected * 0.4),
+		worst.toFixed(1) + ' vs ~' + expected.toFixed(1) + ' expected');
+
+	// Still trailing significantly here - this is the real test of tankOff(): the tank is not
+	// drawn at the window centre any more, so aiming at the tank's own screen position (centre
+	// plus tankOff(), not bare centre) must land on zero. General.tankOff() is computed inside
+	// User.update() before camx/gx are advanced for the frame, from the same values read here,
+	// so this is exact rather than off by one frame of travel.
+	check('aim lands on the tank\'s own screen position, not the window centre', (function () {
 		const G = hook.Global;
-		G.mouse_x = G.winW / 2;                      // cursor dead centre-right
-		G.mouse_y = G.winH / 2;
+		const offX = (User.gx - User.camx) * G.RATIO / hook.CONST.RESOLUTION;
+		const offY = (User.gy - User.camy) * G.RATIO / hook.CONST.RESOLUTION;
+		G.mouse_x = G.winW / 2 + offX;
+		G.mouse_y = G.winH / 2 + offY;
 		a.frame(FRAME);
-		return near(User.dir, 0, 1e-9);
+		return near(User.dir, 0, 1e-6);
 	})(), User.dir);
+
+	// Stop the tank and let the camera catch back up.
+	for (let p = 40; p < 70; p++) {
+		a.deliver(packet(p + 1, { x: x, y: 0, vx: 0, vy: 0 }));
+		for (let f = 0; f < FPP; f++) { a.frame(FRAME); }
+	}
+	const settled = Math.abs(User.gx - User.camx);
+	check('...and converges back to zero once the tank stops',
+		settled < 1, settled.toFixed(4) + ' units off');
 }
 
 console.log('\na bullet moves at its real speed from the start:');

@@ -115,7 +115,10 @@ const hash = fnv1a(blob);
 // Rebuilt again for THEPLAN Part 4.3 (real minimap): Room.getUi's `map` is no longer always
 // empty, so Ui.map() now actually draws a fillStyle/arc/fill per live player instead of skipping
 // the loop entirely. Confirmed intentional the same way - no NaN/Inf in the captured stream.
-const GOLDEN = { count: 243865, hash: 'd6096c67' };
+//
+// Rebuilt again for massplanchunks WP1/WP2: real bullet muzzle spawn, the real `mine` bit, and
+// camera lag/tankOff() all change what reaches the canvas and cascade through the seeded RNG.
+const GOLDEN = { count: 226843, hash: '129e0c78' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

@@ -23,9 +23,6 @@
 	// One server tick (public/motion.js:60) expressed in 60fps-equivalent frames, so the
 	// per-tick server constants below can be applied per-frame scaled by Global.dtFrames.
 	const FRAMES_PER_TICK = MOTION.NET_TICK / 16.667;
-	// How close a brand-new bullet has to spawn to the local tank to be treated as "probably
-	// mine" for the barrel-tip lead below - generous enough to cover any cannon length.
-	const BULLET_MINE_RADIUS = 140;
 	///
 	CLIENT.Run = function () {
 		if (!General['canvas']) {
@@ -48,13 +45,10 @@
 			this.color = 'green';
 			this.x = 0;
 			this.y = 0;
-			// gx/gy is the camera. It used to be a *third*, slower smoother than the one that
-			// moved the tank (CONST.SMOOTH/1.6 against CONST.SMOOTH, and the tank additionally
-			// carried a velocity lead and the input prediction). Three different filters chasing
-			// one position is exactly what "the camera lags behind when you move" is: the tank
-			// slid away from the centre of the screen by however far the three had drifted apart,
-			// proportional to speed, and snapped back when you stopped. The camera is now pinned
-			// to the position the tank is actually drawn at, so you are always dead centre.
+			// gx/gy is the tank's own position: interpolated server position plus the local input
+			// lead (see update()). The camera (camx/camy, below) trails this by CONST.CAM_SMOOTH
+			// instead of sitting pinned on it, so the tank is not always dead centre - anything
+			// that needs the tank's actual screen position has to go through General.tankOff().
 			// These were the string 'move' and were guarded with isNaN() on every frame until the
 			// first packet landed. The interpolator is seeded with real numbers instead.
 			this.gx = 0;
@@ -201,12 +195,11 @@
 				this.predic.x = Math.cos(ddir) * tolen;
 				this.predic.y = Math.sin(ddir) * tolen;
 
-				// Your tank is at the exact centre of the screen now that the camera is pinned to
-				// it, so the aim vector is straight from the centre to the cursor. It used to have
-				// to subtract `predic` and a `dvx/CONST.SMOOTH` term to undo how far the camera had
-				// drifted off the tank - guesses at an error that no longer exists, and one of the
-				// reasons aim felt off while moving fast.
-				this.dir = Math.atan2(Global.mouse_y - Global.winH / 2, Global.mouse_x - Global.winW / 2);
+				// The tank is not at the screen centre - the camera trails it by CONST.CAM_SMOOTH -
+				// so the aim vector has to correct for that offset (General.tankOff(), in window
+				// pixels) or aim would drift with speed as the camera lag grows.
+				const off = General['tankOff']();
+				this.dir = Math.atan2(Global.mouse_y - Global.winH / 2 - off.y, Global.mouse_x - Global.winW / 2 - off.x);
 				if (this.old.dir !== parseInt(this.dir * 100)) {
 					this.old.dir = parseInt(this.dir * 100);
 					this.DIFFDIR = 1;
@@ -258,7 +251,8 @@
 				///POSITION AND CAMERA///
 				// `dx`/`dy` is the interpolated server position; `+predic` is the local input lead.
 				// gx/gy is that sum, exactly - the tank itself (User.draw()) is always drawn there,
-				// with zero lag, so it never slides off centre.
+				// with zero lag. The camera (camx/camy, below) trails gx/gy instead, which is what
+				// lets the tank slide off screen centre - see General.tankOff().
 				const tw = this.tween.sample(NET.now());
 				this.dx = tw.x;
 				this.dy = tw.y;
@@ -310,6 +304,15 @@
 		CLIENT.Instances = Instances;
 		CLIENT.initBackground();
 		CLIENT.initUi();
+		///
+		// The tank's screen position relative to the true centre, in window pixels (the space
+		// Global.mouse_x/y and winW/winH live in) - zero when the camera has caught up, growing
+		// with speed as CONST.CAM_SMOOTH's lag falls behind. Anything that used to assume "the
+		// tank is at the screen centre" has to subtract this instead.
+		General['tankOff'] = () => ({
+			x: (User.gx - User.camx) * Global.RATIO / CONST.RESOLUTION,
+			y: (User.gy - User.camy) * Global.RATIO / CONST.RESOLUTION
+		});
 		///
 		General['Interact'] = {
 			onresize: () => {
@@ -538,13 +541,14 @@
 			if (Global.mouseDelay) {
 				Global.mouseDelay--;
 			} else if (User.DIFFDIR) {
-				// The cursor's offset from your tank, which is the centre of the screen. The
-				// `-User.dvx/CONST.SMOOTH` terms that used to be in here were correcting for the
-				// camera drifting off the tank; it does not drift now, and leaving them in would
-				// send the server an aim point that is wrong by that much whenever you move.
+				// The cursor's offset from your tank, which is not the centre of the screen while
+				// the camera trails it (General.tankOff(), window pixels) - subtract that first so
+				// the server's aim point means what it says regardless of how far behind the
+				// camera has fallen.
+				const off = General['tankOff']();
 				General['WS'].send(PROTO.encode('mousemove', {
-					x: Math.min(.5, Math.max(-.5, (Global.mouse_x - Global.winW / 2) / (Game.screen) * CONST.RESOLUTION / Global.RATIO)),
-					y: Math.min(.5, Math.max(-.5, (Global.mouse_y - Global.winH / 2) / (Game.screen * 0.5625) * CONST.RESOLUTION / Global.RATIO)),
+					x: Math.min(.5, Math.max(-.5, (Global.mouse_x - Global.winW / 2 - off.x) / (Game.screen) * CONST.RESOLUTION / Global.RATIO)),
+					y: Math.min(.5, Math.max(-.5, (Global.mouse_y - Global.winH / 2 - off.y) / (Game.screen * 0.5625) * CONST.RESOLUTION / Global.RATIO)),
 					dir: User.dir
 				}))
 				Global.mouseDelay = CONST.MOUSEDELAY;
@@ -681,22 +685,7 @@
 								case 'Players': inst[OBJ] = new Tank(obj.x, obj.y, obj.size, obj.color); break;
 								case 'Objects': inst[OBJ] = new Obj(obj.x, obj.y, obj.size, obj.type); break;
 								case 'Bullets': {
-									/*
-										Diep spawns your own bullets exactly at the barrel tip. This client has no
-										local shot prediction, so a bullet that just arrived at the server's exact
-										spawn point looks like it came from beside the tank rather than the barrel,
-										worst while strafing hard - because the tank itself is drawn at dx+predic
-										(User.draw()) but this bullet would otherwise render at the un-led dx alone.
-										There is no owner field on the wire (public/SHARE/SocketSchema.js's Bullets
-										record), so treat "spawned right on top of me" as "probably mine" and seed
-										it with the same lead; the tween.push() below with the true, un-led
-										position lands within one interpolation window regardless, so a false
-										positive on someone else's bullet self-corrects almost immediately.
-									*/
-									const mine = Math.abs(obj.x - User.gx) < BULLET_MINE_RADIUS && Math.abs(obj.y - User.gy) < BULLET_MINE_RADIUS;
-									const bx = mine ? obj.x + User.predic.x : obj.x;
-									const by = mine ? obj.y + User.predic.y : obj.y;
-									inst[OBJ] = new Bullet(bx, by, obj.size, obj.dir, obj.type, obj.color);
+									inst[OBJ] = new Bullet(obj.x, obj.y, obj.size, obj.dir, obj.type, obj.color);
 									break;
 								}
 								default: continue;    // a construc byte this client does not know
@@ -735,6 +724,7 @@
 										}
 										case 'Bullets': {
 											inst[OBJ].pet = obj.states[0]
+											inst[OBJ].mine = obj.states[1]
 											break;
 										}
 									}
