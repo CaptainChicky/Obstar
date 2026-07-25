@@ -83,6 +83,10 @@ body {
 	background-image: linear-gradient(to left top, #2b1055, #4b1f7a, #7028a0, #9d3fbf, #c65ed6);
 }
 
+#gamemode-box .sandboxgm {
+	background-image: linear-gradient(to left top, #0f5132, #157347, #1a9c5b, #2fb673, #56cf94);
+}
+
 #gamemode-box .button {
 	user-select: none;
 	cursor: pointer;

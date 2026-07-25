@@ -354,7 +354,8 @@
 			'ffa',
 			'2team',
 			'4team',
-			'boss'
+			'boss',
+			'sandbox'
 		],
 		'type': [
 			'init',
@@ -420,7 +421,9 @@
 			'arrw',
 			'arrs',
 			'arra',
-			'arrd'
+			'arrd',
+			'k',
+			'o'
 		],
 		'xpExt': [
 			'',
@@ -439,7 +442,8 @@
 			'ffa': 0,
 			'2team': 1,
 			'4team': 2,
-			'boss': 3
+			'boss': 3,
+			'sandbox': 4
 		},
 		'type': {
 			'init': 0,
@@ -493,7 +497,9 @@
 			'arrowup': 9,
 			'arrowdown': 10,
 			'arrowleft': 11,
-			'arrowright': 12
+			'arrowright': 12,
+			'k': 13,
+			'o': 14
 		}
 	};
 	///

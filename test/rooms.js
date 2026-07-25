@@ -316,6 +316,42 @@ function bossTests() {
 	return room;
 }
 
+/// Sandbox ///////////////////////////////////////////////////////////////////
+/*
+	Single-player practice room: same level cap as ffa (so 'k' has nowhere further to reach
+	than the rest of the game ever sees), a small arena, and exactly one player slot - see the
+	comment on rooms/Sandbox.js's maxPlayer for why that has to be 0, not 1.
+*/
+function sandboxTests() {
+	console.log('rooms (sandbox):');
+	const room = makeRoom('sandbox');
+
+	check('level cap matches ffa - "k" tops out at the real max level', room.XPLVL[room.XPLVL.length - 1] === 25000,
+		room.XPLVL[room.XPLVL.length - 1]);
+	check('the arena is small', room.map.width === 3000 && room.map.height === 3000,
+		room.map.width + 'x' + room.map.height);
+	check('no bots', room.rules.botCount === 0 && room.botRoster().length === 0);
+
+	const me = player(room, 0);
+	check('first player takes slot 0', !!me && me.id.oId === 0);
+	const second = room.ask({ name: 'tester2', key: '0'.repeat(25), pet: -1, gm: 'sandbox' });
+	check('a second player is refused - single-player only', second === undefined, second);
+
+	// 'k'/'o' are net/gameSocket.js keydown cases, not Room methods - what belongs to the room
+	// is that it hands out a real XP ceiling for that handler to set, and that the ordinary
+	// death path (used for the 'o' self-kill) still works with nobody else in the room.
+	me.xp = room.XPLVL[room.XPLVL.length - 1];
+	for (let i = 0; i < room.XPLVL.length; i++) { me.update(); }
+	check('max xp actually climbs to the real max level', me.level === room.XPLVL.length,
+		me.level);
+	me.hp = 0;
+	me.update();
+	check('zero hp kills you same as anywhere else', me.destroy > 0 && me.dead > 0,
+		'destroy=' + me.destroy + ' dead=' + me.dead);
+
+	return room;
+}
+
 /// Shared rules //////////////////////////////////////////////////////////////
 /*
 	Dying must never pay. The xp curve returns more than it was given below roughly a
@@ -428,6 +464,7 @@ rooms.push(ffaTests()); console.log('');
 rooms.push(teamTests()); console.log('');
 rooms.push(fourTeamTests()); console.log('');
 rooms.push(bossTests()); console.log('');
+rooms.push(sandboxTests()); console.log('');
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);

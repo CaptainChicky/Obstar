@@ -48,7 +48,7 @@
 					shape: 0,
 				}
 			},
-			"Rifle": {
+			"Machine Gun": {
 				cannons: [
 					{
 						type: 0,
@@ -103,7 +103,7 @@
 				}
 			},
 			///
-			"Triple": {
+			"Triple Shot": {
 				cannons: [
 					{
 						type: 0,
@@ -173,7 +173,7 @@
 					shape: 0,
 				}
 			},
-			"Quad Shot": {
+			"Quad Tank": {
 				cannons: [
 					{
 						type: 0,
@@ -242,7 +242,7 @@
 					shape: 0,
 				}
 			},
-			"Pilote": {
+			"Overseer": {
 				cannons: [
 					{
 						type: 0,
@@ -265,7 +265,7 @@
 					shape: 0,
 				}
 			},
-			"Hover Tank": {
+			"Triangle": {
 				cannons: [
 					{
 						type: 0,
@@ -496,7 +496,7 @@
 					shape: 0,
 				}
 			},
-			"Raptor": {
+			"Fighter": {
 				cannons: [
 					{
 						type: 0,
@@ -590,7 +590,7 @@
 					shape: 0,
 				}
 			},
-			"Treble": {
+			"Triplet": {
 				cannons: [
 					{
 						type: 0,
@@ -723,7 +723,7 @@
 					shape: 0,
 				}
 			},
-			"Octo Shot": {
+			"Octo Tank": {
 				cannons: [
 					{
 						type: 0,
@@ -881,7 +881,7 @@
 					shape: 0,
 				}
 			},
-			"Autocrat": {
+			"Overlord": {
 				cannons: [
 					{
 						type: 0,
@@ -955,7 +955,7 @@
 					'Bullet Penetration'
 				]
 			},
-			"Predator": {
+			"Manager": {
 				cannons: [
 					{
 						type: 0,
@@ -1083,7 +1083,7 @@
 					shape: 0,
 				}
 			},
-			"Protector": {
+			"Overtrapper": {
 				cannons: [
 					{
 						type: 1,
@@ -1494,7 +1494,7 @@
 					this.back = 0.4;
 				};
 			},
-			"Rifle": new function () {
+			"Machine Gun": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[0] = new function () {
@@ -1537,7 +1537,7 @@
 				}
 			},
 			///
-			"Triple": new function () {
+			"Triple Shot": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(3).fill(null).map(() => ({
@@ -1588,7 +1588,7 @@
 				c[1].offx = c[3].offx = 18;
 				this.cannons = c;
 			},
-			"Quad Shot": new function () {
+			"Quad Tank": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
@@ -1659,7 +1659,7 @@
 					this.back = 0.3;
 				}
 			},
-			"Pilote": new function () {
+			"Overseer": new function () {
 				this.screen = 1664;
 				this.maxDrone = 7;
 				this.cannons = [];
@@ -1687,7 +1687,7 @@
 				c[1].offdir = -Math.PI / 2;
 				this.cannons = c;
 			},
-			"Hover Tank": new function () {
+			"Triangle": new function () {
 				this.screen = 1408;
 				const c = new Array(3).fill(null).map(() => ({
 					reload: 30,
@@ -1879,7 +1879,7 @@
 					this.back = 0.8;
 				}
 			},
-			"Treble": new function () {
+			"Triplet": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(3).fill(null).map(() => ({
@@ -1958,7 +1958,7 @@
 				c[4].canonLength = 69;
 				this.cannons = c;
 			},
-			"Octo Shot": new function () {
+			"Octo Tank": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(8).fill(null).map(() => ({
@@ -2043,7 +2043,7 @@
 				///
 				this.cannons = c;
 			},
-			"Raptor": new function () {
+			"Fighter": new function () {
 				this.screen = 1408;
 				const c = new Array(5).fill(null).map(() => ({
 					reload: 27,
@@ -2124,7 +2124,7 @@
 				///
 				this.cannons = c;
 			},
-			"Autocrat": new function () {
+			"Overlord": new function () {
 				this.screen = 1664;
 				this.maxDrone = 8;
 				this.cannons = [];
@@ -2154,7 +2154,7 @@
 				c[3].offdir = Math.PI * 3 / 2;
 				this.cannons = c;
 			},
-			"Predator": new function () {
+			"Manager": new function () {
 				this.screen = 1824;
 				this.maxDrone = 8;
 				this.alpha = .006;
@@ -2303,7 +2303,7 @@
 				}];
 				this.cannons = c;
 			},
-			"Protector": new function () {
+			"Overtrapper": new function () {
 				this.screen = 1664;
 				this.maxDrone = 4;
 				let c = [{
@@ -2573,45 +2573,45 @@
 	];
 	exports.tree = [
 		{
-			Basic: ['Twin', 'Rifle', 'Sniper', 'Flank Guard'],
+			Basic: ['Twin', 'Machine Gun', 'Sniper', 'Flank Guard'],
 			testbed: ['bigView', 'shapes', 'pre launch'],
 			shapes: ['shape1', 'shape2'],
 			'pre launch': ['Fortress', 'Necromancer', 'Auto Hover']
 		},
 		{
-			Twin: ['Twin Flank', 'Triple', 'Quad Shot'],
-			Rifle: ['Destroyer', 'Gunner'],
-			Sniper: ['Trapper', 'Assassin', 'Pilote'],
-			'Flank Guard': ['Triple', 'Hover Tank'],
+			Twin: ['Twin Flank', 'Triple Shot', 'Quad Tank'],
+			'Machine Gun': ['Destroyer', 'Gunner'],
+			Sniper: ['Trapper', 'Assassin', 'Overseer'],
+			'Flank Guard': ['Triple Shot', 'Triangle'],
 		},
 		{
 			'Flank Guard': ['Rocket'],
-			Rifle: ['Submachine'],
+			'Machine Gun': ['Submachine'],
 			Gunner: ['Sprayer', 'Auto Gunner'],
 			Destroyer: ['Hybrid', 'Annihilator'],
-			Pilote: ['Predator', 'Necromancer', 'BattleShip', 'Autocrat'],
-			'Hover Tank': ['Raptor', 'Booster'],
-			'Quad Shot': ['Cyclone', 'Octo Shot'],
+			Overseer: ['Manager', 'Necromancer', 'BattleShip', 'Overlord'],
+			'Triangle': ['Fighter', 'Booster'],
+			'Quad Tank': ['Cyclone', 'Octo Tank'],
 			'Twin Flank': ['BattleShip', 'Triple Twin'],
-			Triple: ['Treble', 'Penta Shot'],
+			'Triple Shot': ['Triplet', 'Penta Shot'],
 			Assassin: ['Sprayer', 'Ranger'],
-			Trapper: ['Protector', 'Auto Trapper', 'Mega Trapper']
+			Trapper: ['Overtrapper', 'Auto Trapper', 'Mega Trapper']
 		}
 	];
 	exports.list = [
 		"Basic",
 		///
 		"Twin",
-		"Rifle",
+		"Machine Gun",
 		"Sniper",
 		"Flank Guard",
 		///
-		"Triple",
-		"Quad Shot",
+		"Triple Shot",
+		"Quad Tank",
 		"Destroyer",
 		"Assassin",
-		"Pilote",
-		"Hover Tank",
+		"Overseer",
+		"Triangle",
 		"Trapper",
 		"Gunner",
 		"Twin Flank",
@@ -2622,19 +2622,19 @@
 		"Sprayer",
 		"Ranger",
 		'Triple Twin',
-		"Treble",
+		"Triplet",
 		"Penta Shot",
-		"Octo Shot",
+		"Octo Tank",
 		"Cyclone",
 		"Booster",
-		"Raptor",
+		"Fighter",
 		"Auto Hover",
-		"Autocrat",
-		"Predator",
+		"Overlord",
+		"Manager",
 		"BattleShip",
 		"Fortress",
 		"Mega Trapper",
-		"Protector",
+		"Overtrapper",
 		"Auto Trapper",
 		"Submachine",
 		"Auto Gunner",

@@ -169,7 +169,7 @@ function roundTrips() {
 		init.data.name === 'bob' && init.data.pet === 2,
 		JSON.stringify(init));
 
-	for (const key of ['a', 'w', 's', 'd', 'e', 'c', 'mouseL', 'mouseR']) {
+	for (const key of ['a', 'w', 's', 'd', 'e', 'c', 'mouseL', 'mouseR', 'k', 'o']) {
 		const d = server.decode(buf(client.encode('keydown', key)));
 		if (d.error || d.data.key !== key) {
 			check('keydown ' + key + ' survives', false, JSON.stringify(d));

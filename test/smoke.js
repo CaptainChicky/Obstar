@@ -237,7 +237,8 @@ console.log('obstar smoke test\n');
 protocolTests();
 
 // Sequential, not parallel: config.MAX_IP caps concurrent connections per IP at 2.
-const modes = [['ffa', PORT], ['2team', PORT + 1], ['4team', PORT + 2], ['boss', PORT + 3]];
+const modes = [['ffa', PORT], ['2team', PORT + 1], ['4team', PORT + 2], ['boss', PORT + 3],
+['sandbox', PORT + 4]];
 (function next() {
 	if (!modes.length) {
 		console.log('\n' + passed + ' passed, ' + failed + ' failed');

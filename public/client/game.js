@@ -393,6 +393,8 @@
 					case 'd':
 					case 'e':
 					case 'c':
+					case 'k':
+					case 'o':
 					case 'arrowup':
 					case 'arrowdown':
 					case 'arrowleft':

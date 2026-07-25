@@ -74,6 +74,19 @@ function attach(httpServer) {
 					case 'e':
 						tank.inputs[data.data.key] = !tank.inputs[data.data.key] * 1
 						break;
+					// Sandbox-only practice keys - inert everywhere else, so a modified client
+					// gains nothing by sending them outside a sandbox room.
+					case 'k':
+					case 'o': {
+						if (tank.id.GM !== 'sandbox') { break; }
+						const room = RT.Controller.server[tank.id.GM][tank.id.sId];
+						if (data.data.key === 'k') {
+							tank.xp = room.XPLVL[room.XPLVL.length - 1];
+						} else {
+							tank.hp = 0;
+						}
+						break;
+					};
 				}
 				break;
 			};
