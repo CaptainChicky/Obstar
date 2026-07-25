@@ -224,6 +224,15 @@
 				'name': 'str',
 				'nameC': 'uint8',
 				'team': 'uint8'
+			},
+			// A minimap dot. x/y are CODECS.unit fractions of the map (0..1 -> uint8), not world
+			// coordinates - a dot needs nothing sharper than ~256 steps per axis, and it keeps a
+			// record this small regardless of how big the map itself is.
+			'map': {
+				'x': 'uint8',
+				'y': 'uint8',
+				'team': 'uint8',
+				'size': 'uint8'
 			}
 		},
 		'UpdateUp': {
@@ -319,6 +328,12 @@
 				'name',
 				'nameC',
 				'team'
+			],
+			'map': [
+				'x',
+				'y',
+				'team',
+				'size'
 			]
 		},
 	};
@@ -540,7 +555,10 @@
 		},
 		'Objects': { states: CODECS.bits, shape: CODECS.shape, hp: CODECS.unit, alpha: CODECS.unit },
 		'Bullets': { states: CODECS.bits, dir: CODECS.angle, color: CODECS.color, alpha: CODECS.unit },
-		'leader': { team: CODECS.color }
+		'leader': { team: CODECS.color },
+		// x/y reuse CODECS.unit (already a 0..1 float packed into a uint8) since Room.getUi()
+		// hands over map-fraction floats, not world coordinates - see TYPE.UiUpdate.map.
+		'map': { team: CODECS.color, x: CODECS.unit, y: CODECS.unit }
 	};
 	CODEC.User = CODEC.Players;
 
@@ -722,6 +740,9 @@
 				writeFields(ENC, SCHEMA.UiUpdate.leader, TYPE.UiUpdate.leader, CODEC.leader, d);
 			}
 			ENC.write(data.map.length, TYPE.UiUpdate.array);
+			for (const d of data.map) {
+				writeFields(ENC, SCHEMA.UiUpdate.map, TYPE.UiUpdate.map, CODEC.map, d);
+			}
 			ENC.write(data.mess.length, TYPE.UiUpdate.array);
 			for (const m of data.mess) {
 				ENC.write(m, 'str');
@@ -820,6 +841,9 @@
 				result.data.leader[i] = readFields(DEC, SCHEMA.UiUpdate.leader, TYPE.UiUpdate.leader, CODEC.leader, {});
 			}
 			result.data.map = new Array(DEC.read(TYPE.UiUpdate.array));
+			for (let i = 0; i < result.data.map.length; i++) {
+				result.data.map[i] = readFields(DEC, SCHEMA.UiUpdate.map, TYPE.UiUpdate.map, CODEC.map, {});
+			}
 			result.data.mess = new Array(DEC.read(TYPE.UiUpdate.array));
 			for (let i = 0; i < result.data.mess.length; i++) {
 				result.data.mess[i] = DEC.read('str');

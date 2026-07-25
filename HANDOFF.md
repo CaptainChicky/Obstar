@@ -330,6 +330,34 @@ purchase, and a leaderboard write have been run end to end against a real local 
 (`docker compose up -d`) and confirmed correct; admin commands/chat over a live dev-authed
 socket haven't — see [PENDING.md](PENDING.md).
 
+**Accounts, achievements, and the cosmetics console** (THEPLAN.md) sit on top of the same
+DB-off-by-default pattern, gated behind `config.DB.AUTH`:
+
+- `lib/auth.js` — `scrypt` password hashing, a stateless HMAC-signed session cookie (no session
+  table), username/password validation, an in-memory login-attempt throttle.
+- `web/app.js`'s `/auth/signup|login|logout` — signup is a *claim*: it attaches credentials to
+  the caller's existing anonymous `obstarkey` row (read via `resolveKey()`, which trusts only the
+  `obstarkey` cookie now, never a request-body field — the same fix applied to `/userData`/`/buy`).
+- `public/SHARE/AchievementsConfig.js` is the one registry both server (`entities/Player.js`'s
+  `unlock()`/`registerKill()`) and client (`public/account.js`, the menu's `#ach-edge` hover
+  panel) read; guests get `localStorage`, unioned into the account on claim.
+- `Ctrl+Shift+L` (`public/client/overlay.js`) now opens for anyone: a small client-side command
+  table handles cosmetics locally (never reaching the server), and only an unrecognised line is
+  forwarded — where `lib/Controller.js`'s permission check still gates on `devlevel`
+  (`askConnection`'s `SELECT * FROM acc`), not the old plaintext `devs` table.
+
+**Diep-feel fixes** (also THEPLAN.md, Part 4): `public/client/game.js`'s input-prediction accel/
+drag now match `entities/Player.js`'s real per-tick constants instead of a stale, unscaled guess
+(both files note the duplication — retune together); a bullet spawned close to the local tank
+gets the same prediction lead the tank itself is drawn with, so it appears to leave the barrel
+tip instead of a fixed world point (no real per-bullet owner field exists on the wire, so this is
+a proximity heuristic, not a certainty); the camera carries a small `CONST.CAM_SMOOTH` trailing
+lag again instead of sitting pinned dead-centre; `public/SHARE/ObjectsConfig.js` adds rarity
+tiers to farmable polygons, packed into 3 previously-unused bits of the existing `states`
+bitfield (no packet growth); and `UiUpdate` split off `longloop` into its own `UI_MS`-paced
+`uiloop` (`net/gameSocket.js`) and now actually fills `map` with every live player's position, so
+the minimap draws more than your own dot.
+
 ---
 
 ## 9. Test coverage
@@ -338,20 +366,22 @@ socket haven't — see [PENDING.md](PENDING.md).
 
 | Suite | What it covers |
 |---|---|
-| `test/proto.js` | Wire protocol: golden bytes, self-sizing, round trips, input validation, Unicode. |
+| `test/proto.js` | Wire protocol: golden bytes, self-sizing, round trips, input validation, Unicode, `UiUpdate.map` and Objects rarity-tier bits. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp. No socket, built via `boot()`. |
+| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas. |
-| `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (247353 ops / hash `c4eb110d`) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
+| `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all four modes. |
-| `test/web.js` | The merged entry point: one port serves site + socket, `play.ejs` script order, split-mode wiring. |
+| `test/web.js` | The merged entry point: one port serves site + socket, `play.ejs` script order, split-mode wiring, and that the auth routes degrade to a clean `{error}` (never a 500) with `DB.AUTH` off. |
 | `test/clientProto.js` | Loads `SocketSchema.js` in *client* mode inside Node via `vm` — used by the above, not a standalone suite. |
 
 **What's not covered:** a full match beyond the first minute (leveling, death screen, respawn),
-two real human players in one room, observed boss AI behavior, the client under real browser
-frame timing, admin commands/chat over a live dev-authed socket, and load with several busy
-rooms at once. Full list and reasoning: [PENDING.md](PENDING.md).
+two real human players in one room, the client under real browser frame timing (this pass leaned
+harder on that gap than usual — see PENDING.md's item 6 for the specific things this round of
+changes needs a browser to actually confirm), the full signup→login DB round trip (needs a real
+Postgres), admin commands/chat over a live dev-authed socket, and load with several busy rooms at
+once. Full list and reasoning: [PENDING.md](PENDING.md).
 
 ---
 

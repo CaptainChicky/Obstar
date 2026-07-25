@@ -10,8 +10,8 @@
 */
 (function (window) {
 	const chip = document.getElementById('account-chip');
-	const achCount = document.getElementById('ach-count');
-	const achList = document.getElementById('ach-list');
+	const achEdge = document.getElementById('ach-edge');
+	const achList = document.getElementById('ach-edge-list');
 
 	const box = document.createElement('DIV');
 	box.id = 'accountBox';
@@ -130,36 +130,50 @@
 		chip.appendChild(actions);
 	}
 
+	// Icons only, on purpose - this is a peek panel you glance at, not a page you read.
 	function renderAchievements(data) {
 		const server = (data && data.ach) || {};
 		const merged = Object.assign({}, getGuestAch(), server);
-		const list = AchievementsConfig.list;
-		let unlocked = 0;
 		achList.innerHTML = '';
-		for (const entry of list) {
+		for (const entry of AchievementsConfig.list) {
 			const has = !!merged[entry.id];
-			if (has) { unlocked++; }
 			const secret = entry.hidden && !has;
-			const row = document.createElement('DIV');
-			row.className = 'ach-entry' + (has ? '' : ' locked');
 			const img = document.createElement('IMG');
+			img.className = has ? '' : 'locked';
 			img.src = './pic/img_mess/' + (secret ? 'achievement.png' : entry.icon);
-			const txt = document.createElement('DIV');
-			txt.className = 'txt';
-			const eName = document.createElement('SPAN');
-			eName.className = 'name';
-			eName.textContent = secret ? '???' : entry.name;
-			const desc = document.createElement('SPAN');
-			desc.className = 'desc';
-			desc.textContent = secret ? '???' : entry.desc;
-			txt.appendChild(eName);
-			txt.appendChild(desc);
-			row.appendChild(img);
-			row.appendChild(txt);
-			achList.appendChild(row);
+			// Not shown as text in the panel (that is the whole point of it being icon-only),
+			// but a native title tooltip costs nothing and means locked-and-hidden isn't a total
+			// mystery to someone who deliberately hovers one icon rather than the edge itself.
+			img.title = secret ? '???' : (entry.name + ' - ' + entry.desc);
+			achList.appendChild(img);
 		}
-		achCount.textContent = unlocked + '/' + list.length;
 	}
+
+	/*
+		Auto-scroll while the edge is hovered, slow enough to read the icons going by. Ping-pongs
+		at the ends rather than jumping back to the top, so it never looks like a stutter.
+		Any wheel/touch scroll is real user intent, so it takes over immediately and auto-scroll
+		stays out of the way for a few seconds afterwards instead of instantly fighting it.
+	*/
+	let scrollTimer = null;
+	let scrollDir = 1;
+	let lastManual = 0;
+	function stepScroll() {
+		if (Date.now() - lastManual < 1500) { return; }
+		const max = achList.scrollHeight - achList.clientHeight;
+		if (max <= 0) { return; }
+		achList.scrollTop += scrollDir * 0.6;
+		if (achList.scrollTop >= max) { scrollDir = -1; }
+		else if (achList.scrollTop <= 0) { scrollDir = 1; }
+	}
+	achEdge.addEventListener('mouseenter', function () {
+		if (!scrollTimer) { scrollTimer = setInterval(stepScroll, 30); }
+	});
+	achEdge.addEventListener('mouseleave', function () {
+		if (scrollTimer) { clearInterval(scrollTimer); scrollTimer = null; }
+	});
+	achList.addEventListener('wheel', function () { lastManual = Date.now(); });
+	achList.addEventListener('touchmove', function () { lastManual = Date.now(); });
 
 	window.onUserData = function (data) {
 		renderChip(data);

@@ -23,6 +23,9 @@
 	// One server tick (public/motion.js:60) expressed in 60fps-equivalent frames, so the
 	// per-tick server constants below can be applied per-frame scaled by Global.dtFrames.
 	const FRAMES_PER_TICK = MOTION.NET_TICK / 16.667;
+	// How close a brand-new bullet has to spawn to the local tank to be treated as "probably
+	// mine" for the barrel-tip lead below - generous enough to cover any cannon length.
+	const BULLET_MINE_RADIUS = 140;
 	///
 	CLIENT.Run = function () {
 		if (!General['canvas']) {
@@ -56,6 +59,11 @@
 			// first packet landed. The interpolator is seeded with real numbers instead.
 			this.gx = 0;
 			this.gy = 0;
+			// The camera's own position - chases gx/gy by CONST.CAM_SMOOTH each frame instead of
+			// snapping to them, so the viewport trails the tank by a hair. null until the first
+			// update, which snaps instead of chasing from a fake (0,0) origin. See User.update().
+			this.camx = null;
+			this.camy = null;
 			this.dx = 0;
 			this.dy = 0;
 			this.tween = new Interp(0, 0);
@@ -249,13 +257,26 @@
 				}
 				///POSITION AND CAMERA///
 				// `dx`/`dy` is the interpolated server position; `+predic` is the local input lead.
-				// The camera (gx/gy) is that sum, exactly - one position, drawn and framed from the
-				// same number, so the tank cannot slide off centre.
+				// gx/gy is that sum, exactly - the tank itself (User.draw()) is always drawn there,
+				// with zero lag, so it never slides off centre.
 				const tw = this.tween.sample(NET.now());
 				this.dx = tw.x;
 				this.dy = tw.y;
 				this.gx = this.dx + this.predic.x;
 				this.gy = this.dy + this.predic.y;
+				// The camera trails gx/gy by a hair instead of sitting pinned on them - see
+				// CONST.CAM_SMOOTH. Snap instead of chasing on the very first update (nothing to
+				// trail from yet) and across a teleport (death/respawn, or any jump too big to be
+				// real motion - reuses Interp's own threshold), so the lag never shows up as the
+				// camera visibly gliding across the map.
+				if (this.camx === null || Math.abs(this.gx - this.camx) > Interp.TELEPORT || Math.abs(this.gy - this.camy) > Interp.TELEPORT) {
+					this.camx = this.gx;
+					this.camy = this.gy;
+				} else {
+					const camK = General['lerpK'](CONST.CAM_SMOOTH);
+					this.camx += (this.gx - this.camx) * camK;
+					this.camy += (this.gy - this.camy) * camK;
+				}
 			};
 			this.draw = function () {
 				ctx.translate(this.dx + this.predic.x, this.dy + this.predic.y)
@@ -444,9 +465,9 @@
 			///
 			ctx.setTransform(1, 0, 0, 1, 0, 0);
 			ctx.clearRect(0, 0, Global.canW, Global.canH);
-			General['background'](User.gx, User.gy, 20);
+			General['background'](User.camx, User.camy, 20);
 			///
-			const sx = -User.gx * Global.RATIO + (Global.canW / 2), sy = -User.gy * Global.RATIO + (Global.canH / 2);
+			const sx = -User.camx * Global.RATIO + (Global.canW / 2), sy = -User.camy * Global.RATIO + (Global.canH / 2);
 			for (const c in Instances) {
 				for (const i in Instances[c]) {
 					///
@@ -659,7 +680,25 @@
 							switch (CONSTRUC) {
 								case 'Players': inst[OBJ] = new Tank(obj.x, obj.y, obj.size, obj.color); break;
 								case 'Objects': inst[OBJ] = new Obj(obj.x, obj.y, obj.size, obj.type); break;
-								case 'Bullets': inst[OBJ] = new Bullet(obj.x, obj.y, obj.size, obj.dir, obj.type, obj.color); break;
+								case 'Bullets': {
+									/*
+										Diep spawns your own bullets exactly at the barrel tip. This client has no
+										local shot prediction, so a bullet that just arrived at the server's exact
+										spawn point looks like it came from beside the tank rather than the barrel,
+										worst while strafing hard - because the tank itself is drawn at dx+predic
+										(User.draw()) but this bullet would otherwise render at the un-led dx alone.
+										There is no owner field on the wire (public/SHARE/SocketSchema.js's Bullets
+										record), so treat "spawned right on top of me" as "probably mine" and seed
+										it with the same lead; the tween.push() below with the true, un-led
+										position lands within one interpolation window regardless, so a false
+										positive on someone else's bullet self-corrects almost immediately.
+									*/
+									const mine = Math.abs(obj.x - User.gx) < BULLET_MINE_RADIUS && Math.abs(obj.y - User.gy) < BULLET_MINE_RADIUS;
+									const bx = mine ? obj.x + User.predic.x : obj.x;
+									const by = mine ? obj.y + User.predic.y : obj.y;
+									inst[OBJ] = new Bullet(bx, by, obj.size, obj.dir, obj.type, obj.color);
+									break;
+								}
 								default: continue;    // a construc byte this client does not know
 							}
 						}

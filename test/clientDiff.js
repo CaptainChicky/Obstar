@@ -106,7 +106,16 @@ const hash = fnv1a(blob);
 // KEEP_PLACE expiry - the one intended, documented behaviour change in that plan. Verified by
 // isolation: reverting SlotMap to bug-for-bug replicate the old scan-only decrement reproduces
 // the previous golden (247353/c4eb110d) exactly, confirming this is the sole source of the diff.
-const GOLDEN = { count: 247353, hash: 'de9eb1a1' };
+//
+// Rebuilt again for THEPLAN Part 4.2 (shiny/rare polygons): entities/Objects.js's rarity roll
+// consumes extra Math.random() calls per spawn, which shifts every downstream seeded-RNG draw,
+// and a tiered polygon's draw() now writes shadowColor/shadowBlur. Confirmed intentional by
+// checking the captured op stream for NaN/Inf (none) and for the new shadowBlur writes (present).
+//
+// Rebuilt again for THEPLAN Part 4.3 (real minimap): Room.getUi's `map` is no longer always
+// empty, so Ui.map() now actually draws a fillStyle/arc/fill per live player instead of skipping
+// the loop entirely. Confirmed intentional the same way - no NaN/Inf in the captured stream.
+const GOLDEN = { count: 243865, hash: 'd6096c67' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

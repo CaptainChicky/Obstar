@@ -903,8 +903,26 @@
 
 				ctx.translate(-this.MAP.lw, this.MAP.lw)
 				ctx.globalAlpha = 0.5;
-				ctx.fillStyle = '#222222';
 				ctx.scale(CONST.OFFCAN * CONST.RESOLUTION, CONST.OFFCAN * CONST.RESOLUTION);
+				/*
+					Everyone else, from Room.getUi's `map` (THEPLAN 4.3) - drawn first so your own
+					cursor (below) is never hidden under someone else's dot. `dot.x`/`dot.y` are 0..1
+					fractions of the current map size (CODECS.unit, TYPE.UiUpdate.map), so they use
+					the same -0.5 recentring as User.x/Game.width does for your own dot, just spelled
+					out instead of folded into one expression, and `dot.team` already decoded to a
+					Palette colour name (CODECS.color), same as any other coloured entity.
+				*/
+				if (this.mapInfo) {
+					for (const dot of this.mapInfo) {
+						ctx.fillStyle = Palette[dot.team] ? Palette[dot.team][0] : '#222222';
+						ctx.beginPath();
+						ctx.arc(-this.MAP.size / 2 + (dot.x - 0.5) * this.MAP.size,
+							this.MAP.size / 2 + (dot.y - 0.5) * this.MAP.size, Math.max(2, dot.size / 12), 0, Math.PI * 2)
+						ctx.closePath();
+						ctx.fill();
+					}
+				}
+				ctx.fillStyle = '#222222';
 				ctx.beginPath();
 				ctx.arc(-this.MAP.size / 2 + (User.x / Game.width) * this.MAP.size,
 					this.MAP.size / 2 + (User.y / Game.height) * this.MAP.size, this.MAP.cursSize, 0, Math.PI * 2)

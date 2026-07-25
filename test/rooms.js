@@ -290,6 +290,29 @@ function bossTests() {
 		room.bosses.map((b) => b.id.oId).join(','));
 	check('a boss stays off the leaderboard', room.leader.every((p) => !p.boss));
 
+	/*
+		lib/gameAI.js's Summoner detection divided by n.level with no floor, so raw/0 is
+		Infinity and a level-0 target never clears the `dis < n.screen/30` check - meaning a
+		just-respawned player (rooms/Room.js's respawn() hands back a fresh RT.Player, always
+		level 0) was invisible to every boss until they levelled back up. Stand a level-0 human
+		right on top of a boss and step the room twice: once to let motion() build the boss's
+		Detector (a step it does not have yet), once more so the collision pass it now runs can
+		actually populate DETEC.selectAll for that Detector to read.
+	*/
+	{
+		const me = player(room, 0);
+		const boss = room.bosses[0];
+		me.level = 0;
+		me.shield = 0;
+		me.alpha = 1;
+		me.x = boss.x;
+		me.y = boss.y;
+		room.step();
+		room.step();
+		check('the summoner detects a level-0 (freshly respawned) player standing next to it',
+			boss.detected.includes(me), 'detected ' + boss.detected.length + ' players');
+	}
+
 	return room;
 }
 
@@ -366,6 +389,39 @@ function modeTableTests(rooms) {
 		modes.map((gm) => gm + '=' + PROTO.toBUFFER.gamemode[gm]).join(' '));
 }
 
+/*
+	respawn() swaps in a brand-new RT.Player, so anything its constructor zeroes has to be
+	carried across by hand or it silently resets on every death - see the comment inside
+	rooms/Room.js's respawn(). A held movement key is the concrete case: the client only
+	re-sends 'keydown' on an actual state change (net/gameSocket.js), so a key already held at
+	the moment of death would otherwise arrive on the new tank looking exactly like "never
+	pressed" - and since shield (spawn protection) only clears inside motion()/shoot() when they
+	see real input, that silently extended spawn protection, which Detector.js hides from every
+	boss/bot, until the player happened to press something new.
+*/
+function respawnCarryoverTests(rooms) {
+	console.log('\nrespawn carries live player state:');
+	const room = rooms[0];
+	const before = player(room, 0);
+	before.inputs.w = 1;
+	before.userKey = 'a'.repeat(25);
+	before.unlocked = { first_blood: 1 };
+	before.killCounts = { sqr: 42 };
+	room.respawn(0, 1);
+	const after = player(room, 0);
+	check('a held key survives the respawn', after.inputs.w === 1, after.inputs.w);
+	check('userKey survives the respawn (achievement persistence needs it)',
+		after.userKey === before.userKey, after.userKey);
+	check('unlocked achievements survive the respawn', after.unlocked.first_blood === 1,
+		JSON.stringify(after.unlocked));
+	check('kill-count progress survives the respawn', after.killCounts.sqr === 42,
+		JSON.stringify(after.killCounts));
+	check('spawn protection still starts fresh', after.shield > 0, after.shield);
+	after.motion();
+	check('...and clears immediately given the carried-over held key', after.shield === 0,
+		after.shield);
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -373,6 +429,7 @@ rooms.push(teamTests()); console.log('');
 rooms.push(fourTeamTests()); console.log('');
 rooms.push(bossTests()); console.log('');
 respawnTests(rooms);
+respawnCarryoverTests(rooms);
 modeTableTests(rooms);
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');

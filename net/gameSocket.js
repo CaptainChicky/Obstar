@@ -155,6 +155,9 @@ function attach(httpServer) {
 	// see the note on SEND_MS in lib/config.js.
 	const SEND_MS = Math.max(config.SEND_MS, config.TICK_MS);
 	const IDLE_MS = 200;   // ...while the client has nothing to look at yet
+	// Leaderboard/minimap/message-feed cadence - see the note on UI_MS in lib/config.js for why
+	// this is its own loop instead of riding longloop's 1000ms heartbeat tick.
+	const UI_MS = config.UI_MS;
 	/*
 		>= is necessary but not sufficient. The send loop and the simulation clock are separate
 		timers with separate jitter, so even at exactly equal periods they drift against each
@@ -195,6 +198,7 @@ function attach(httpServer) {
 		this.chat = 0;
 		this.sendDue = 0;
 		this.slowDue = 0;
+		this.uiDue = 0;
 		this.sentStamp = -1;   // room step counter of the last GameUpdate actually sent
 		this.gameloop = function () {
 			if (!this.run) { return; }
@@ -275,17 +279,24 @@ function attach(httpServer) {
 				kick(this.socket, 'ERR_HEARTBEATS_LOST');
 			} else {
 				talk(this.socket, 'ping', 0);
-				const ui = RT.Controller.getUi(this.socket.id);
-				if (ui) {
-					talk(this.socket, 'UiUpdate', ui);
-				}
 			}
 			this.heartbeats++;
 			/////
 			setTimeout((it) => { it.longloop() }, nextDelay(this, 'slowDue', 1000), this);
 		};
+		// Leaderboard, minimap and the message feed - split out of longloop (lib/config.js's
+		// UI_MS note) so a HUD refresh rate has nothing to do with heartbeat/AFK bookkeeping.
+		this.uiloop = function () {
+			if (!this.run) { return; }
+			const ui = RT.Controller.getUi(this.socket.id);
+			if (ui) {
+				talk(this.socket, 'UiUpdate', ui);
+			}
+			setTimeout((it) => { it.uiloop() }, nextDelay(this, 'uiDue', UI_MS), this);
+		};
 		this.gameloop();
 		this.longloop();
+		this.uiloop();
 	};
 
 	function talk(socket, type, data) {

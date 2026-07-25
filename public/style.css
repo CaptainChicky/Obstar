@@ -934,79 +934,60 @@ body {
 }
 
 /* ------------------------------------------------------------------------- *
- * Achievements panel (menu-only, HANDOFF Part 2.3). Collapsed to a narrow
- * vertical strip of icons; hovering widens it (CSS transition, same idiom as
- * .radio+label and #changelogs_info) to reveal name/desc and become
- * scrollable, borrowing .inside_info's scrollbar skin.
+ * Achievements edge panel (menu-only). Not a .white-box card: hovering
+ * anywhere in the rightmost slice of the whole page reveals a dark-to-light
+ * gradient strip with your achievement icons, auto-scrolling (public/account.js
+ * drives the scroll; wheel/touch input pauses it for a few seconds - see the
+ * comment there). The hit-box and the reveal are the same element and the same
+ * size on purpose - a hover target that resizes itself is unreliable, since
+ * the pointer can end up outside its own new bounds.
  * ------------------------------------------------------------------------- */
-#achievements {
-	width: 50px;
-	padding: 10px 0px;
-	margin-top: 8px;
+#ach-edge {
+	position: fixed;
+	top: 0;
+	right: 0;
+	width: 10%;
+	min-width: 120px;
+	max-width: 220px;
+	height: 100%;
+	z-index: 40;
 	overflow: hidden;
-	transition: width .3s;
-}
-
-#achievements:hover {
-	width: 226px;
-}
-
-#ach-count {
-	text-align: center;
-	color: #aaaab5;
-	font-weight: 700;
-	font-size: .85em;
-	line-height: 20px;
-}
-
-#ach-list {
-	height: 230px;
-	margin-top: 6px;
-}
-
-.ach-entry {
-	display: flex;
-	align-items: center;
-	padding: 6px 9px;
-}
-
-.ach-entry img {
-	width: 32px;
-	height: 32px;
-	border-radius: 4px;
-	flex-shrink: 0;
-}
-
-.ach-entry .txt {
-	display: flex;
-	flex-direction: column;
-	line-height: 18px;
-	overflow: hidden;
-	white-space: nowrap;
-	margin-left: 10px;
+	background: linear-gradient(to right, rgba(10, 10, 16, 0) 0%, rgba(10, 10, 16, .6) 100%);
 	opacity: 0;
-	transition: opacity .2s;
+	transition: opacity .35s;
 }
 
-#achievements:hover .ach-entry .txt {
+#ach-edge:hover {
 	opacity: 1;
 }
 
-.ach-entry .name {
-	font-weight: 700;
-	font-size: .95em;
+#ach-edge-list {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+	padding: 30px 0;
+	overflow-y: auto;
 }
 
-.ach-entry .desc {
-	font-size: .8em;
-	opacity: .7;
+/* The scroll is driven by JS (auto-scroll + wheel), not meant to be dragged by its
+	 thumb - so the scrollbar itself stays invisible, same as a diep.io-style peek panel. */
+#ach-edge-list::-webkit-scrollbar {
+	width: 0;
+	background: transparent;
 }
 
-.ach-entry.locked img {
-	opacity: .35;
+#ach-edge-list img {
+	width: 42px;
+	height: 42px;
+	border-radius: 6px;
+	flex-shrink: 0;
+	filter: drop-shadow(0 0 4px rgba(0, 0, 0, .5));
 }
 
-.ach-entry.locked .name,
-.ach-entry.locked .desc {
-	opacity: .5;
+#ach-edge-list img.locked {
+	opacity: .3;
+	filter: grayscale(1);
 }

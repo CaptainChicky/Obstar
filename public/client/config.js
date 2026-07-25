@@ -17,6 +17,11 @@
 		// calibrated at 60fps and rescaled per frame by General.lerpK() so a 144Hz monitor gets
 		// the same time constant rather than a 2.4x faster one.
 		SMOOTH: 0.15,
+		// The camera trails the tank by a hair rather than sitting pinned exactly on it - a
+		// dead-on-centre camera reads as sterile, and diep.io itself has this same small chase.
+		// High on purpose: this is the *fast* end of lerpK, so the lag stays barely perceptible
+		// instead of reintroducing the multi-filter drift the camera refactor removed.
+		CAM_SMOOTH: 0.55,
 		SIZE: 35,
 		MOUSEDELAY: 60 / 15,
 		MOUSE_OUT: 3,

@@ -627,6 +627,22 @@ class Room {
 		///
 		newTank.xp = force ? tank.xp : this.respawnXp(tank.xp);
 		newTank.coins = tank.coins || 0;
+		// respawn() swaps in a brand new RT.Player, so anything the constructor defaults to
+		// zero/empty has to be carried across by hand or it quietly resets on every death:
+		//   - inputs: a key held through the moment of death stays held physically, but the
+		//     client only re-sends 'keydown' on an actual state change (net/gameSocket.js), so
+		//     a fresh {w:0,...} here means motion()/shoot() see no input at all next tick -
+		//     which also means shield (spawn protection) never clears, since that only happens
+		//     inside motion()/shoot() - so anyone who died while holding a key stayed invisible
+		//     to every Detector-based AI (bots, bosses) until they released and pressed again.
+		//   - userKey/unlocked/killCounts: without these, Controller.disconnect()'s achievement
+		//     write-back (tank.userKey && Object.keys(tank.unlocked).length) silently no-ops for
+		//     the rest of the session after a single death, and kill-count achievements
+		//     (kawaii_smash) would restart counting from zero every life.
+		newTank.inputs = Object.assign({}, tank.inputs);
+		newTank.userKey = tank.userKey;
+		newTank.unlocked = Object.assign({}, tank.unlocked);
+		newTank.killCounts = Object.assign({}, tank.killCounts);
 		this.INSTANCE.players.set(id, newTank);
 		///
 		if (tank.pet) {
@@ -867,6 +883,20 @@ class Room {
 				team: i.dev.color ? i.dev.color - 1 : this.leaderColor(i, id)
 			})
 		};
+		// Every live player as a minimap dot - same exclusion (dead/destroyed, bosses) and the
+		// same viewer-relative colouring (you're always "your" colour, everyone else by team)
+		// that this.leader already uses, just not limited to the top 10. x/y go out as 0..1
+		// fractions of the current map size (TYPE.UiUpdate.map, CODECS.unit), so they still land
+		// in the right place after this.map.width/height finish lerping toward a resize.
+		for (const i of this.INSTANCE.players.live()) {
+			if (i.destroy || i.boss) { continue; }
+			buff.map.push({
+				x: (i.x + this.map.width / 2) / this.map.width,
+				y: (i.y + this.map.height / 2) / this.map.height,
+				team: i.dev.color ? i.dev.color - 1 : this.leaderColor(i, id),
+				size: Math.min(255, Math.round(i.size))
+			});
+		}
 		for (const i of this.INSTANCE.players.get(id).mess) {
 			buff.mess.push(i);
 		};

@@ -129,10 +129,6 @@
 					</div>
 				</div>
 			</div>
-			<div id='achievements' class='white-box'>
-				<div id='ach-count'>0/0</div>
-				<div id='ach-list' class='inside_info'></div>
-			</div>
 			<div id='Follow' class='white-box'>
 				<span>Obstar on...</span>
 				<div>
@@ -144,6 +140,12 @@
 		</div>
 	</div>
 	<div id='prevent_click' class='hide-prevent'></div>
+	<!-- Achievements: not a white-box card - hovering the right edge of the whole page reveals
+		 a dark-to-light gradient strip with your achievement icons, auto-scrolling. See
+		 public/account.js and the #ach-edge rules in public/style.css. -->
+	<div id='ach-edge'>
+		<div id='ach-edge-list'></div>
+	</div>
 	<div id='messages' class='white-box hide-message'>
 		<svg id='log-svg' class='hide-svg' xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
 			version="1.1" id="Capa_1" x="0px" y="0px" width="150px" height="150px" viewBox="-20 -20 478.533 478.533"

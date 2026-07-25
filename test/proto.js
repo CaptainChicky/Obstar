@@ -224,13 +224,40 @@ function roundTrips() {
 			instances: [new Int8Array(server.encode('Instance', anObject))]
 		})).data.Instances.Objects[17].type === 'sqr');
 
+	// THEPLAN 4.2: an Objects record's rarity tier (0-7) rides slots 1-3 of the existing
+	// `states` bitfield - no new field, so the whole point is that this is an ordinary bits
+	// round trip. tier 5 = binary 101, i.e. states[1..3] = [1,0,1].
+	const tieredObject = Object.assign({}, anObject, { states: [1, 1, 0, 1, 0, 0, 0] });
+	const tieredStates = client.decode(server.encode('GameUpdate', {
+		head: { timestamp: 0, width: 0, height: 0, screen: 0, xp: 0, level: 0, still: 0, cLvl: 0 },
+		main: aPlayer,
+		instances: [new Int8Array(server.encode('Instance', tieredObject))]
+	})).data.Instances.Objects[17].states;
+	check('an Objects record carries a rarity tier in states[1..3] intact',
+		JSON.stringify(tieredStates) === JSON.stringify(tieredObject.states), JSON.stringify(tieredStates));
+	check('...and the client reconstructs the same tier number the server rolled',
+		(tieredStates[1] << 2 | tieredStates[2] << 1 | tieredStates[3]) === 5, JSON.stringify(tieredStates));
+
 	const ui = client.decode(server.encode('UiUpdate', {
-		leader: [{ xp: 100, name: 'bob', nameC: 0, team: 1 }], map: [], mess: ['hello']
+		leader: [{ xp: 100, name: 'bob', nameC: 0, team: 1 }],
+		// THEPLAN 4.3: x/y are 0..1 map fractions (CODECS.unit -> uint8), so this is the
+		// minimap - a dot per live player, not the leaderboard's top 10.
+		map: [{ x: 0.25, y: 0.75, team: 3, size: 40 }, { x: 0, y: 1, team: 1, size: 200 }],
+		mess: ['hello']
 	}));
 	check('UiUpdate leader survives, with the team as a colour name',
 		ui.data.leader[0].xp === 100 && ui.data.leader[0].name === 'bob' &&
 		ui.data.leader[0].team === 'red' && ui.data.mess[0] === 'hello',
 		JSON.stringify(ui.data));
+	check('UiUpdate map survives as a per-player minimap dot list',
+		ui.data.map.length === 2 && ui.data.map[0].team === 'blue' && ui.data.map[1].team === 'red',
+		JSON.stringify(ui.data.map));
+	check('UiUpdate map x/y survive within uint8 fraction resolution',
+		Math.abs(ui.data.map[0].x - 0.25) < 0.01 && Math.abs(ui.data.map[0].y - 0.75) < 0.01,
+		JSON.stringify(ui.data.map[0]));
+	check('UiUpdate map size survives, clamped to a uint8',
+		ui.data.map[0].size === 40 && ui.data.map[1].size === 200,
+		JSON.stringify(ui.data.map));
 
 	check('kick reasons survive',
 		client.decode(server.encode('kick', 'ERR_HEARTBEATS_LOST')).reason === 'ERR_HEARTBEATS_LOST');

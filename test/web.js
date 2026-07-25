@@ -120,6 +120,32 @@ async function combinedTests() {
 	const client = await request(PORT, 'GET', '/client/runtime.js');
 	check('/client/ is served', client.status === 200 && client.body.includes('CLIENT'), 'status ' + client.status);
 
+	/*
+		THEPLAN Part 1.4's auth routes and the two security fixes. The full guest -> signup ->
+		/userData reflects the username -> logout -> login -> same coins round trip needs a real
+		Postgres (docker compose up -d, DB.ON/ACC/AUTH true in lib/config.js) - this suite runs
+		with the DB fully off (this file's whole reason for existing is the DB-off local-dev
+		flow), so what is checked here is what that environment can actually prove: every auth
+		route degrades to a clean {error} JSON instead of throwing, and /userData ignores an
+		attacker-supplied body.userKey exactly as it ignores everything else in the body once
+		there is no DB behind it (web/app.js's resolveKey reads only the obstarkey cookie).
+	*/
+	const signup = await request(PORT, 'POST', '/auth/signup', 'username=newuser&password=longenoughpassword');
+	check('POST /auth/signup answers without a 500 when DB.AUTH is off',
+		signup.status === 200 && !!JSON.parse(signup.body).error, 'status ' + signup.status + ' body ' + signup.body);
+
+	const login = await request(PORT, 'POST', '/auth/login', 'username=newuser&password=longenoughpassword');
+	check('POST /auth/login answers without a 500 when DB.AUTH is off',
+		login.status === 200 && !!JSON.parse(login.body).error, 'status ' + login.status + ' body ' + login.body);
+
+	const logout = await request(PORT, 'POST', '/auth/logout', 'x=1');
+	check('POST /auth/logout answers without a 500 regardless of DB.AUTH',
+		logout.status === 200 && JSON.parse(logout.body).ok === true, 'status ' + logout.status + ' body ' + logout.body);
+
+	const userData = await request(PORT, 'POST', '/userData', 'userKey=' + '9'.repeat(25));
+	check('POST /userData ignores a body userKey (reads the cookie only)',
+		userData.status === 200 && userData.body === 'none', 'status ' + userData.status + ' body ' + userData.body);
+
 	await new Promise(function (resolve) {
 		const socket = new WebSocket('ws://localhost:' + PORT);
 		let updates = 0;
