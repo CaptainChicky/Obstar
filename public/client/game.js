@@ -531,13 +531,18 @@
 				General['updateRatio']();
 			}
 			///
+			// Before the Instances loop, not after it: a freshly spawned bullet of your own reads
+			// User.predic on its first update() to line itself up with the muzzle
+			// (public/client/entities.js), and it has to be this frame's value, not last frame's.
+			// User.update() reads only input and its own tween, never Instances, so the order is
+			// free to be this way round.
+			User.update();
 			for (const c in Instances) {
 				for (const i in Instances[c]) {
 					Instances[c][i].update();
 				}
 			}
 			///
-			User.update();
 			if (Global.mouseDelay) {
 				Global.mouseDelay--;
 			} else if (User.DIFFDIR) {

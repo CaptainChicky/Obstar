@@ -3,7 +3,12 @@
 
 	These moved out of the monolith untouched. Their draw(ctx)/drawUi(ctx) methods take the
 	context as a parameter - none of them closes over Run()'s `ctx`, and none of them reads
-	User or Instances - so there is no plumbing here at all.
+	Instances.
+
+	The one exception is Bullet.update(), which reads CLIENT.User.predic to keep your own
+	bullets on the muzzle - see the comment there. It has to go through CLIENT lazily rather
+	than aliasing it up top like the consts below: Run() does not assign CLIENT.User until it
+	is called, long after this file has been evaluated.
 */
 (function (CLIENT) {
 	const CONST = CLIENT.CONST;
@@ -428,13 +433,81 @@
 			this.ddir = dir;
 			this.destroy = 0;
 			this.alpha = 1;
+			// Both set on the first update() of one of your own bullets - see there.
+			this.lead = null;
+			this.origin = null;
 		}
 		update() {
-			// Own bullets are drawn one packet interval ahead, same as the local tank, so the
-			// muzzle and the bullet agree at every strafe angle (see public/motion.js's sample()).
-			const tw = this.tween.sample(NET.now(), this.mine ? NET.interval : 0);
-			this.dx = tw.x;
-			this.dy = tw.y;
+			/*
+				Keeping your own bullets on the muzzle.
+
+				The server spawns a bullet at the *server's* tank position plus the barrel offset.
+				The client draws your tank somewhere else: at that same server position plus
+				`predic`, the local input lead (public/client/game.js, User.update()), which is
+				real lag compensation - roughly interp delay + RTT worth of travel, up to
+				CONST.SIZE*2 - and points along the direction you are *moving*.
+
+				This used to be papered over by drawing own bullets one packet interval further
+				into the future than everything else. That cannot work, and strafing is the proof:
+				a temporal lead only ever slides the bullet along its own velocity, i.e. straight
+				out of the barrel, while the error it has to cancel is `predic` - which when you
+				strafe perpendicular to your aim is entirely *sideways*. So the bullet appeared
+				a tank-width or two to the side of the muzzle, looking like it came from open space
+				next to the tank rather than out of the barrel.
+
+				Instead: draw own bullets on the same clock as every other entity (no lead), and
+				carry a spatial offset that puts the bullet on the muzzle. It runs in two phases,
+				because a brand new bullet and a flying one are in different situations.
+
+				PHASE 1, the first packet interval. The bullet has one snapshot, so there is
+				nothing to interpolate between and sample() parks it on its spawn point (see
+				Interp.n in public/motion.js) - while the tank's own interpolator is still crossing
+				the interval that ends at the tick that fired it. The two are on different parts of
+				the same span, so no fixed offset lines them up. Weld the bullet to the tank
+				instead: `User.x`/`User.y` is the raw newest server tank position and it arrived in
+				the very same packet as this bullet, so it *is* the position the server fired from,
+				and (drawn tank - that) is exactly the shift that carries the spawn point onto the
+				drawn muzzle, whatever the interpolator is doing underneath.
+
+				PHASE 2, from the second snapshot on. The bullet's own interpolation is live and
+				running on the same clock as everything else, so the shift it needs is just the
+				tank's `predic` - which is what phase 1 has naturally converged to by then, the two
+				phases meeting exactly rather than stepping. Hold it and bleed it off
+				(CONST.BULLET_LEAD_DECAY) so the bullet settles onto the true server path it will
+				actually be judged against, while it is far enough away for the slide not to read
+				as a curve.
+
+				(arras.io never has this problem because it never puts the local tank in its own
+				reference frame: one lag-compensation clock is set per frame and *every* instance,
+				player included, goes through the same predict() - see its public/client/app.js.
+				The barrel and the bullet cannot disagree if nothing is predicted separately. The
+				price is a tank that answers the keyboard a network round trip late, which is the
+				one thing `predic` exists to avoid, so we pay for it here instead.)
+
+				Under ~30fps two packets can land between frames, and `User.x` is then already the
+				tick after the one that fired - phase 1 anchors one packet of tank travel off. It
+				self-corrects at the phase 2 handoff and is bounded by that, so it is left alone.
+			*/
+			const tw = this.tween.sample(NET.now());
+			const U = this.mine ? CLIENT.User : null;
+			if (U) {
+				if (this.origin === null) { this.origin = { x: U.x, y: U.y }; }
+				if (this.tween.n < 2) {
+					this.lead = { x: U.gx - this.origin.x, y: U.gy - this.origin.y };
+				}
+			}
+			if (this.lead) {
+				if (this.tween.n > 1) {
+					const k = General['lerpK'](CONST.BULLET_LEAD_DECAY);
+					this.lead.x -= this.lead.x * k;
+					this.lead.y -= this.lead.y * k;
+				}
+				this.dx = tw.x + this.lead.x;
+				this.dy = tw.y + this.lead.y;
+			} else {
+				this.dx = tw.x;
+				this.dy = tw.y;
+			}
 			if (this.ddir !== this.dir) {
 				const k = General['lerpK'](0.2);
 				this.ddir = Math.atan2(

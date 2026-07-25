@@ -24,6 +24,13 @@
 		// test/client.js's camera check), so 0.1467 is 0.22's lag x1.5, per playtest feedback.
 		// PENDING: measure diep's actual camera lag and retune against it.
 		CAM_SMOOTH: 0.1467,
+		// How fast one of your own bullets sheds the muzzle-alignment offset it is born with
+		// (public/client/entities.js, Bullet.update()). Per 60Hz frame, rescaled by lerpK().
+		// It is deliberately much slower than SMOOTH: the offset is up to SIZE*2 of lateral
+		// shift, and bleeding that off quickly bends the bullet's visible path. At 0.08 it is
+		// ~90% gone after half a second, by which time the bullet is most of a screen away and
+		// the remaining slide is spread over ~700 units of travel - a few degrees, unnoticeable.
+		BULLET_LEAD_DECAY: 0.08,
 		SIZE: 35,
 		MOUSEDELAY: 60 / 15,
 		MOUSE_OUT: 3,
