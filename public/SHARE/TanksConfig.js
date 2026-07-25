@@ -1706,7 +1706,11 @@
 					weight: 0.5,
 					back: 1
 				}));
-				c[0].back = .1; c[0].height = 62; c[0].pene = 1.35; c[0].damage = 3.3; c[0].speed = .31;
+				// The main cannon's length bump used to write `.height`, a client-only field
+				// name the server never reads (Player.js:212 reads `canonLength`), so this
+				// line was a no-op and the cannon stayed at the 58 default. test/tanks.js's
+				// muzzle-tip band caught it once canonLength was corrected.
+				c[0].back = .1; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 3.3; c[0].speed = .31;
 				c[1].offdir = -Math.PI - .4; c[1].offx = -5; c[1].offTime = .5;
 				c[2].offdir = -Math.PI + .4; c[2].offx = 5; c[2].offTime = .5;
 				///
@@ -1850,12 +1854,16 @@
 					weight: 0.5,
 					back: 0.15
 				}));
+				// This array is index-paired against the client's cannons list in
+				// TanksConfig.js's ///CLIENTS/// half (longest barrel first, at index 0,
+				// firing first); test/tanks.js cross-checks the two. Shorten indices 1-4,
+				// not 0-3, or the drawn barrel and the one that actually fires drift apart.
 				const d = 7;
-				c[0].canonLength -= d; c[0].offTime = .2;
-				c[1].canonLength -= d * 2; c[1].offTime = .4;
-				c[2].canonLength -= d * 3; c[2].offTime = .6;
-				c[3].canonLength -= d * 4; c[3].offTime = .8;
-				///
+				c[1].canonLength -= d;     c[1].offTime = .2;
+				c[2].canonLength -= d * 2; c[2].offTime = .4;
+				c[3].canonLength -= d * 3; c[3].offTime = .6;
+				c[4].canonLength -= d * 4; c[4].offTime = .8;
+				// c[0] keeps canonLength 82, offTime 0 - longest barrel, fires first.
 				this.cannons = c;
 			},
 			"Ranger": new function () {
@@ -2035,11 +2043,13 @@
 					weight: 0.5,
 					back: 0.86
 				}));
-				c[0].back = .2; c[0].height = 62; c[0].pene = 1.35; c[0].damage = 3.3; c[0].speed = .32;
+				// Same `.height`-instead-of-`.canonLength` typo as Triangle above; these three
+				// lines were no-ops until test/tanks.js caught it.
+				c[0].back = .2; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 3.3; c[0].speed = .32;
 				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
 				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
-				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].height = 58; c[3].offTime = .5;
-				c[4].offdir = -Math.PI + .35; c[4].offx = 5; c[4].height = 58; c[4].offTime = .5;
+				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 58; c[3].offTime = .5;
+				c[4].offdir = -Math.PI + .35; c[4].offx = 5; c[4].canonLength = 58; c[4].offTime = .5;
 				///
 				this.cannons = c;
 			},
@@ -2062,11 +2072,16 @@
 					weight: 0.5,
 					back: 0.1
 				}));
-				c[0].back = .1; c[0].height = 65; c[0].pene = 1.30; c[0].damage = 3.3; c[0].speed = .31;
+				// Same `.height`/`.canonLength` typo as Triangle/Booster above, plus a second
+				// one: the rear pair's offx was written to c[1]/c[2] (already set two lines
+				// up) instead of c[3]/c[4], so the rear cannons never got their splay and the
+				// side cannons silently lost theirs. test/tanks.js's index-paired offx check
+				// is what caught both.
+				c[0].back = .1; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 3.3; c[0].speed = .31;
 				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 1.4; c[1].damage = 3.2; c[1].speed = .30;
 				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 1.4; c[2].damage = 3.2; c[2].speed = .30;
-				c[3].offdir = -Math.PI - .4; c[1].offx = -5; c[3].offTime = .5; c[3].height = 59;
-				c[4].offdir = -Math.PI + .4; c[2].offx = 5; c[4].offTime = .5; c[4].height = 59;
+				c[3].offdir = -Math.PI - .4; c[3].offx = -5; c[3].offTime = .5; c[3].canonLength = 59;
+				c[4].offdir = -Math.PI + .4; c[4].offx = 5; c[4].offTime = .5; c[4].canonLength = 59;
 				c[3].back = c[4].back = 1.4;
 				///
 				this.cannons = c;
@@ -2118,7 +2133,16 @@
 					weight: 0.5,
 					back: 1
 				})));
-				c[1].back = .1; c[0].height = 62; c[0].pene = 1.35; c[0].damage = 3.3;
+				// `.height` was a typo for `.canonLength` (see Triangle/Booster/Fighter
+				// above), and it targeted c[0] - the auto-turret, already fully specified
+				// above - instead of c[1], the main cannon `back` is correctly set on here.
+				// The auto-turret was silently getting its pene/damage clobbered to 1.35/3.3
+				// instead of keeping its own 1.8/2.5. test/tanks.js's offdir/offx/length
+				// checks don't reach the auto-turret slot (it's outside the client's
+				// `cannons` array), which is why this one wasn't caught by the muzzle-tip
+				// band the way its siblings were - found by the same static read that fixed
+				// them.
+				c[1].back = .1; c[1].canonLength = 62; c[1].pene = 1.35; c[1].damage = 3.3;
 				c[2].offdir = -Math.PI - .4; c[2].offx = -5; c[2].offTime = .5;
 				c[3].offdir = -Math.PI + .4; c[3].offx = 5; c[3].offTime = .5;
 				///

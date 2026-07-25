@@ -3,12 +3,11 @@
 
 	Contains the packet router `income()`, the per-socket `loop` object that drives the two
 	outbound timers, and the `talk` / `kick` helpers. Everything gameplay-related is reached
-	through RT.Controller, which does not exist yet when this module loads - see
-	lib/runtime.js.
+	through the `controller` handed to attach().
 
-	This module owns no port. `attach(httpServer)` hangs a ws server off an http server
-	somebody else made, which is what lets server.js put the game and the menu site on one
-	port in one process (and still split them onto two when asked).
+	This module owns no port. `attach(httpServer, controller)` hangs a ws server off an http
+	server somebody else made, which is what lets server.js put the game and the menu site on
+	one port in one process (and still split them onto two when asked).
 
 	Timing. `gameloop` sends a GameUpdate about every 30ms and `longloop` a heartbeat every
 	second. Neither is tied to the room simulation, and that is deliberate (HANDOFF 8.8): the
@@ -22,12 +21,11 @@
 	because its interpolation is driven by the spacing packets actually arrive with. The delay
 	is computed from when the next send was due, so overrun is absorbed rather than accumulated.
 */
-const RT = require('../lib/runtime.js');
 const config = require('../lib/config.js').config;
 const WebSocket = require('ws');
 const PROTO = require('../public/SHARE/SocketSchema.js');
 
-function attach(httpServer) {
+function attach(httpServer, controller) {
 
 
 	function income(socket, packet) {
@@ -49,14 +47,14 @@ function attach(httpServer) {
 				if (socket.main) {
 					break;
 				}
-				socket.id = RT.Controller.askConnection(data.data, socket._socket.remoteAddress);
+				socket.id = controller.askConnection(data.data, socket._socket.remoteAddress);
 				socket.main = new loop(socket);
 				break;
 			};
 			case 'keydown': {
 				socket.main.request -= .5;
-				const tank = RT.Controller.getPlayer(socket.id);
-				if (!RT.Controller.getPlayer(socket.id)) { break; }
+				const tank = controller.getPlayer(socket.id);
+				if (!controller.getPlayer(socket.id)) { break; }
 				switch (data.data.key) {
 					case 'a':
 					case 'w':
@@ -79,7 +77,7 @@ function attach(httpServer) {
 					case 'k':
 					case 'o': {
 						if (tank.id.GM !== 'sandbox') { break; }
-						const room = RT.Controller.server[tank.id.GM][tank.id.sId];
+						const room = controller.server[tank.id.GM][tank.id.sId];
 						if (data.data.key === 'k') {
 							tank.xp = room.XPLVL[room.XPLVL.length - 1];
 						} else {
@@ -92,8 +90,8 @@ function attach(httpServer) {
 			};
 			case 'keyup': {
 				socket.main.request -= .5;
-				const tank = RT.Controller.getPlayer(socket.id);
-				if (!RT.Controller.getPlayer(socket.id)) { break; }
+				const tank = controller.getPlayer(socket.id);
+				if (!controller.getPlayer(socket.id)) { break; }
 				switch (data.data.key) {
 					case 'a':
 					case 'w':
@@ -109,8 +107,8 @@ function attach(httpServer) {
 						break;
 					};
 					case 'enter': {
-						const ans = RT.Controller.respawn(socket.id);
-						const tank = RT.Controller.getPlayer(socket.id);
+						const ans = controller.respawn(socket.id);
+						const tank = controller.getPlayer(socket.id);
 						if (!tank && !ans) { break; }
 						talk(socket, 'UpdateUp', tank.upNb);
 						break;
@@ -119,8 +117,8 @@ function attach(httpServer) {
 				break;
 			};
 			case 'mousemove': {
-				const tank = RT.Controller.getPlayer(socket.id);
-				if (!RT.Controller.getPlayer(socket.id)) { break; }
+				const tank = controller.getPlayer(socket.id);
+				if (!controller.getPlayer(socket.id)) { break; }
 				if (tank.botMod) { break; }
 				tank.dir = data.data.dir;
 				tank.inputs.mouse_x = data.data.x * tank.screen;
@@ -128,14 +126,14 @@ function attach(httpServer) {
 				break;
 			};
 			case 'upgrade': {
-				const tank = RT.Controller.getPlayer(socket.id);
+				const tank = controller.getPlayer(socket.id);
 				if (!tank) { break; }
 				tank.upgrade(data.data.up);
 				talk(socket, 'UpdateUp', tank.upNb);
 				break;
 			};
 			case 'upClass': {
-				const tank = RT.Controller.getPlayer(socket.id);
+				const tank = controller.getPlayer(socket.id);
 				if (!tank) { break; }
 				tank.upClass(data.data.up);
 			};
@@ -143,7 +141,7 @@ function attach(httpServer) {
 				socket.main.request += 4;
 				// command() answers most commands synchronously, but 'connect' checks the
 				// devs table first - Promise.resolve() lets both shapes flow through the same path.
-				Promise.resolve(RT.Controller.command(socket.id, data.data)).then((ans) => {
+				Promise.resolve(controller.command(socket.id, data.data)).then((ans) => {
 					if (ans) {
 						talk(socket, 'comResponse', ans);
 					}
@@ -157,7 +155,7 @@ function attach(httpServer) {
 					break;
 				}
 				socket.main.chat += 20;
-				RT.Controller.chat.add(socket.id, data.data);
+				controller.chat.add(socket.id, data.data);
 				break;
 			};
 		}
@@ -218,7 +216,7 @@ function attach(httpServer) {
 			if (this.chat) {
 				this.chat--;
 			}
-			const id = RT.Controller.clients[this.socket.id];
+			const id = controller.clients[this.socket.id];
 			let ms = SEND_MS;
 			///
 			switch (id) {
@@ -241,7 +239,7 @@ function attach(httpServer) {
 					break;
 				}
 				default: {
-					const buff = RT.Controller.getBuffer(socket.id);
+					const buff = controller.getBuffer(socket.id);
 					if (!buff) {
 						ms = IDLE_MS;
 					} else if (typeof buff === 'object' && buff.head.timestamp === this.sentStamp) {
@@ -251,7 +249,7 @@ function attach(httpServer) {
 						if (typeof buff === 'object') { this.sentStamp = buff.head.timestamp; }
 						talk(this.socket, 'GameUpdate', buff);
 					}
-					const mess = RT.Controller.chat.get(socket.id);
+					const mess = controller.chat.get(socket.id);
 					if (mess) {
 						talk(this.socket, 'chatUpdate', mess);
 					}
@@ -275,7 +273,7 @@ function attach(httpServer) {
 				this.strikes = 0;
 			}
 			///DEAD
-			const play = RT.Controller.getPlayer(socket.id);
+			const play = controller.getPlayer(socket.id);
 			if (this.dead > config.S_BEFORE_KICK) {
 				kick(this.socket, 'ERR_SERVER_OFF');
 				return;
@@ -301,7 +299,7 @@ function attach(httpServer) {
 		// UI_MS note) so a HUD refresh rate has nothing to do with heartbeat/AFK bookkeeping.
 		this.uiloop = function () {
 			if (!this.run) { return; }
-			const ui = RT.Controller.getUi(this.socket.id);
+			const ui = controller.getUi(this.socket.id);
 			if (ui) {
 				talk(this.socket, 'UiUpdate', ui);
 			}
@@ -322,7 +320,7 @@ function attach(httpServer) {
 		};
 		console.log('KICKED id:' + socket.id + '//' + reason)
 		socket.send(PROTO.encode('kick', reason));
-		RT.Controller.disconnect(socket.id, socket._socket.remoteAddress);
+		controller.disconnect(socket.id, socket._socket.remoteAddress);
 		setTimeout((s) => { s.close() }, 100, socket);
 	}
 

@@ -347,7 +347,7 @@
 			'Bullets',
 		],
 		/* Must stay index-for-index with toBUFFER.gamemode below, and cover every key in
-			 RT.ROOMS (lib/boot.js). It did not: '4team' encoded as 3 but decoded from index 2, so
+			 rooms/index.js. It did not: '4team' encoded as 3 but decoded from index 2, so
 			 the server read gamemode 3 as `undefined` and answered ERR_GAMEMODE - the mode could
 			 never be joined. 'boss' was in neither table. */
 		'gamemode': [

@@ -8,11 +8,11 @@
 	or be targeted by each other's drones, each side spawns in and is fenced out of a base
 	strip, and ten guard drones sit in front of each base from the moment the room opens.
 */
-const RT = require('../lib/runtime.js');
+const Bullet = require('../entities/Bullet.js');
 const Room = require('./Room.js');
 
 class TwoTeam extends Room {
-	constructor(id) {
+	constructor(id, controller) {
 		super(id, {
 			gm: '2team',
 			maxXp: 30000,
@@ -30,7 +30,7 @@ class TwoTeam extends Room {
 			respawnPow: 0.8,
 			baseSize: 600,
 			viewerBullets: false
-		});
+		}, controller);
 	}
 	/* A row of immortal guard drones in front of each base. */
 	build() {
@@ -38,12 +38,14 @@ class TwoTeam extends Room {
 		for (const team of this.rules.teams) {
 			const side = team ? 1 : -1;
 			for (let i = 1; i <= this.droneQt; i++) {
-				const bull = new RT.Bullet(
+				const bull = new Bullet(
 					{ "GM": this.gm, "sId": this.id, "oId": -1 },
 					side * (this.map.width / 2 - this.baseSize / 2),
 					this.map.height * i / (this.droneQt + 1) - this.map.height / 2,
 					0,
 					0,
+					undefined,
+					this
 				);
 				bull.team = team;
 				bull.ox = bull.x;

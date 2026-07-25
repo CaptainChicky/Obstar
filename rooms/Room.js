@@ -30,15 +30,16 @@
 	short mostly because of that.
 
 	Adding a mode means writing one of these subclasses - see rooms/TwoTeam.js for the biggest
-	one there is - and naming it in the ROOMS table in lib/boot.js. Nothing else outside rooms/
-	needs to know it exists: Controller.askConnection whitelists whatever is in ROOMS, and the
-	only other edit is the gamemode enum in public/SHARE/SocketSchema.js, because the mode has
+	one there is - and naming it in the ROOMS table in rooms/index.js. Nothing else outside
+	rooms/ needs to know it exists: Controller.askConnection whitelists whatever is in ROOMS, and
+	the only other edit is the gamemode enum in public/SHARE/SocketSchema.js, because the mode has
 	to fit in the byte the client sends.
 
-	Entity classes and the Controller singleton are reached through the late-bound registry
-	(lib/runtime.js) because the dependency graph is circular - see the note there.
+	A room takes its controller as a constructor parameter rather than reaching through a
+	registry - Room -> Controller is the only edge that isn't already a plain tree (Controller
+	constructs rooms, rooms construct entities), so passing it down is enough to make the whole
+	graph acyclic.
 */
-const RT = require('../lib/runtime.js');
 const config = require('../lib/config.js').config;
 const termColors = require('../lib/terminal.js');
 const quadTree = require('../lib/quadTree.js');
@@ -46,6 +47,10 @@ const SlotMap = require('../lib/SlotMap.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const KIND = require('../public/SHARE/kinds.js');
 const clock = require('../lib/clock.js');
+const Player = require('../entities/Player.js');
+const Bullet = require('../entities/Bullet.js');
+const Objects = require('../entities/Objects.js');
+const CONFIG = require('../lib/gameAI.js');
 
 // generate() used to re-arm itself with setTimeout(400). It is a simulation event, so it
 // rides the simulation clock now: one pass every this many fixed steps.
@@ -79,8 +84,9 @@ const DEFAULT_RULES = {
 };
 
 class Room {
-	constructor(id, rules) {
+	constructor(id, rules, controller) {
 		this.rules = Object.assign({}, DEFAULT_RULES, rules);
+		this.controller = controller;
 		const POW = 2.5;
 		const MXLVL = this.rules.maxXp;
 		this.XPLVL = new Array(30).fill(0).map((x, i) => {
@@ -95,7 +101,7 @@ class Room {
 		this.BUFFER = {};
 		this.maxPlayer = this.rules.maxPlayer;
 		this.INSTANCE = {
-			"players": new SlotMap({ max: this.maxPlayer }),
+			"players": new SlotMap({ maxIndex: this.maxPlayer }),
 			"objs": new SlotMap(),
 			"bullets": new SlotMap(),
 			"detectors": new SlotMap()
@@ -211,19 +217,20 @@ class Room {
 			}
 		}
 		if (type === 'bull') { ppp = 'bull'; }
-		this.INSTANCE.objs.add((id) => new RT.Objects(type, ppp, { "GM": this.gm, "sId": this.id, "oId": id }, this.map));
+		this.INSTANCE.objs.add((id) => new Objects(type, ppp, { "GM": this.gm, "sId": this.id, "oId": id }, this.map, this));
 	}
 	createAi() {
 		for (const slot of this.botRoster()) {
-			const bot = new RT.Player(
+			const bot = new Player(
 				{ "GM": this.gm, "sId": this.id, "oId": slot.id },
 				0,
 				0,
-				RT.CONFIG.BOT_NAMES[Math.floor(Math.random() * (RT.CONFIG.BOT_NAMES.length - 1))],
+				CONFIG.BOT_NAMES[Math.floor(Math.random() * (CONFIG.BOT_NAMES.length - 1))],
 				slot.team,
-				this.XPLVL
+				this.XPLVL,
+				this
 			);
-			bot.motion = RT.CONFIG.BOTS[0].bind(bot);
+			bot.motion = CONFIG.BOTS[0].bind(bot);
 			bot.bot = 1;
 			bot.xp = 5000 + Math.floor(Math.random() * 60000)
 			this.INSTANCE.players.set(slot.id, bot);
@@ -258,16 +265,17 @@ class Room {
 	*/
 	createBoss() {
 		if (this.bosses.length >= this.rules.maxBoss) { return; }
-		const spec = RT.CONFIG.BOSS[Math.floor(Math.random() * RT.CONFIG.BOSS.length)];
+		const spec = CONFIG.BOSS[Math.floor(Math.random() * CONFIG.BOSS.length)];
 		const randDir = Math.PI * 2 * Math.random();
 		const boss = this.INSTANCE.players.add((id) => {
-			const b = new RT.Player(
+			const b = new Player(
 				{ "GM": this.gm, "sId": this.id, "oId": id },
 				Math.cos(randDir) * this.map.width / 4,
 				Math.sin(randDir) * this.map.width / 4,
 				spec[2],
 				this.rules.bossTeam,
-				this.XPLVL
+				this.XPLVL,
+				this
 			);
 			b.hp = this.rules.bossHp;
 			b.maxHp = this.rules.bossHp;
@@ -319,7 +327,7 @@ class Room {
 		let stop = 1;
 		let playerCount = 0;
 		for (const i of this.INSTANCE.players.live()) {
-			// A boss is not a bot - it has its own AI, not RT.CONFIG.BOTS - so it used to satisfy
+			// A boss is not a bot - it has its own AI, not CONFIG.BOTS - so it used to satisfy
 			// this "is anyone still here?" test and keep an empty room ticking forever. Latent in
 			// 2team, where a boss is a once-in-ten-thousand-rolls event; certain in 'boss' mode,
 			// which keeps three of them alive at all times.
@@ -331,7 +339,7 @@ class Room {
 		if (stop) {
 			this.destroy = 1;
 			console.log(termColors.Bright + termColors.BgYellow + 'DELETED SERVER //' + termColors.Reset + ' ' + this.gm + ':' + this.id);
-			delete RT.Controller.server[this.gm][this.id];
+			delete this.controller.server[this.gm][this.id];
 			clock.remove(this);
 			return;
 		}
@@ -616,18 +624,18 @@ class Room {
 		if (!tank || (!force && !tank.destroy) || tank.dead > 1) return;
 		///
 		const pos = this.spawnPoint(tank);
-		const newTank = new RT.Player(tank.id, pos.x, pos.y, tank.name, tank.team, this.XPLVL);
+		const newTank = new Player(tank.id, pos.x, pos.y, tank.name, tank.team, this.XPLVL, this);
 		if (bot) {
-			newTank.motion = RT.CONFIG.BOTS[0].bind(newTank);
+			newTank.motion = CONFIG.BOTS[0].bind(newTank);
 			newTank.bot = 1;
 			if (Math.random() < 0.1) {
-				newTank.name = RT.CONFIG.BOT_NAMES[Math.floor(Math.random() * (RT.CONFIG.BOT_NAMES.length - 1))];
+				newTank.name = CONFIG.BOT_NAMES[Math.floor(Math.random() * (CONFIG.BOT_NAMES.length - 1))];
 			}
 		}
 		///
 		newTank.xp = force ? tank.xp : this.respawnXp(tank.xp);
 		newTank.coins = tank.coins || 0;
-		// respawn() swaps in a brand new RT.Player, so anything the constructor defaults to
+		// respawn() swaps in a brand new Player, so anything the constructor defaults to
 		// zero/empty has to be carried across by hand or it quietly resets on every death:
 		//   - inputs: a key held through the moment of death stays held physically, but the
 		//     client only re-sends 'keydown' on an actual state change (net/gameSocket.js), so
@@ -814,7 +822,7 @@ class Room {
 					};
 				}
 				if (raw) {
-					obj.BUFF.data = new Int8Array(RT.Controller.encodeInst('Instance', raw));
+					obj.BUFF.data = new Int8Array(this.controller.encodeInst('Instance', raw));
 					obj.BUFF.timestamp = this.timestamp;
 				}
 			}
@@ -831,7 +839,7 @@ class Room {
 				};
 				case KIND.BULLET: {
 					if (obj.origin.oId === RAW.main.id.oId) {
-						const raw = new Int8Array(RT.Controller.encodeInst('Instance', {
+						const raw = new Int8Array(this.controller.encodeInst('Instance', {
 							construc: 'Bullets',
 							id: obj.id.oId,
 							states: [!!obj.pet * 1, 1, 0, 0, 0, 0, 0],
@@ -929,21 +937,22 @@ class Room {
 	}
 	ask(data) {
 		const name = data.name;
-		const pet = (data.pet > -1) ? new RT.Bullet(0, 0, 0, 0, 0, 0) : null;
+		const pet = (data.pet > -1) ? new Bullet(0, 0, 0, 0, 0, 0, this) : null;
 		if (pet) {
-			pet.update = RT.CONFIG.PETS[0].bind(pet);
+			pet.update = CONFIG.PETS[0].bind(pet);
 			pet.type = data.pet;
 		}
 		///
 		const tank = this.INSTANCE.players.add((i) => {
 			const id = { "GM": this.gm, "sId": this.id, "oId": i };
-			const t = new RT.Player(
+			const t = new Player(
 				id,
 				0,
 				0,
 				name,
 				this.assignTeam(),
-				this.XPLVL
+				this.XPLVL,
+				this
 			);
 			t.userKey = data.key;
 			if (pet) { t.pet = pet; pet.origin = t.id; pet.team = t.team; }

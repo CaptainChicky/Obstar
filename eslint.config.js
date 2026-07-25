@@ -45,6 +45,7 @@ const PAGE_GLOBALS = {
 	ObjectsConfig: 'readonly',   // public/SHARE/ObjectsConfig.js
 	PROTO: 'readonly',   // public/SHARE/SocketSchema.js
 	MOTION: 'readonly',   // public/motion.js
+	Physics: 'readonly',   // public/SHARE/Physics.js
 	CLIENT: 'writable',   // public/client/runtime.js - the client's shared scope
 	colorPattern: 'writable'    // the two-tone tank palette, hung on window
 };

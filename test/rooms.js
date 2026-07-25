@@ -10,7 +10,7 @@
 	touching rooms/Room.js's tick, and the shared block at the bottom runs the same rules over
 	every one of them, which is the assertion that the base really did fit.
 
-	No server and no socket: lib/boot.js fills the registry, and the rooms are built and
+	No server and no socket: lib/boot.js constructs the Controller, and the rooms are built and
 	poked directly.
 
 		node test/rooms.js        (npm test runs this and smoke.js)
@@ -18,8 +18,8 @@
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
-require(path.join(ROOT, 'lib', 'boot.js'))();
-const RT = require(path.join(ROOT, 'lib', 'runtime.js'));
+const controller = require(path.join(ROOT, 'lib', 'boot.js'))();
+const ROOMS = require(path.join(ROOT, 'rooms', 'index.js'));
 
 let passed = 0, failed = 0;
 function check(name, ok, detail) {
@@ -38,7 +38,7 @@ function check(name, ok, detail) {
 	The timers they arm are left running; the process exits at the end of the file.
 */
 function makeRoom(gm) {
-	const room = RT.Controller.newServer(gm);
+	const room = controller.newServer(gm);
 	room.ask({ name: 'tester', key: '0'.repeat(25), pet: -1, gm: gm });
 	return room;
 }
@@ -293,7 +293,7 @@ function bossTests() {
 	/*
 		lib/gameAI.js's Summoner detection divided by n.level with no floor, so raw/0 is
 		Infinity and a level-0 target never clears the `dis < n.screen/30` check - meaning a
-		just-respawned player (rooms/Room.js's respawn() hands back a fresh RT.Player, always
+		just-respawned player (rooms/Room.js's respawn() hands back a fresh Player, always
 		level 0) was invisible to every boss until they levelled back up. Stand a level-0 human
 		right on top of a boss and step the room twice: once to let motion() build the boss's
 		Detector (a step it does not have yet), once more so the collision pass it now runs can
@@ -397,17 +397,17 @@ function respawnTests(rooms) {
 function modeTableTests(rooms) {
 	console.log('\ngamemode tables:');
 	const PROTO = require(path.join(ROOT, 'public', 'SHARE', 'SocketSchema.js'));
-	const modes = Object.keys(RT.ROOMS);
+	const modes = Object.keys(ROOMS);
 
-	check('every mode has a room class', modes.every((gm) => typeof RT.ROOMS[gm] === 'function'),
+	check('every mode has a room class', modes.every((gm) => typeof ROOMS[gm] === 'function'),
 		modes.join(','));
 	check('every mode has a room list on the Controller',
-		modes.every((gm) => Array.isArray(RT.Controller.server[gm])), modes.join(','));
+		modes.every((gm) => Array.isArray(controller.server[gm])), modes.join(','));
 	check('the Controller has no room list for a mode that does not exist',
-		Object.keys(RT.Controller.server).every((gm) => !!RT.ROOMS[gm]),
-		Object.keys(RT.Controller.server).join(','));
+		Object.keys(controller.server).every((gm) => !!ROOMS[gm]),
+		Object.keys(controller.server).join(','));
 	check('every room reports the gamemode it is filed under',
-		rooms.every((r) => RT.ROOMS[r.gm] === r.constructor),
+		rooms.every((r) => ROOMS[r.gm] === r.constructor),
 		rooms.map((r) => r.gm).join(','));
 
 	// The round trip the client actually performs: encode the mode to a byte, decode it back.
@@ -417,7 +417,7 @@ function modeTableTests(rooms) {
 	check('every mode has a wire value',
 		modes.every((gm) => typeof PROTO.toBUFFER.gamemode[gm] === 'number'), modes.join(','));
 	check('the wire enum lists nothing the server cannot serve',
-		PROTO.toSTRING.gamemode.every((gm) => !!RT.ROOMS[gm]),
+		PROTO.toSTRING.gamemode.every((gm) => !!ROOMS[gm]),
 		PROTO.toSTRING.gamemode.join(','));
 	check('the wire values are dense and unique',
 		new Set(modes.map((gm) => PROTO.toBUFFER.gamemode[gm])).size === modes.length &&
@@ -426,7 +426,7 @@ function modeTableTests(rooms) {
 }
 
 /*
-	respawn() swaps in a brand-new RT.Player, so anything its constructor zeroes has to be
+	respawn() swaps in a brand-new Player, so anything its constructor zeroes has to be
 	carried across by hand or it silently resets on every death - see the comment inside
 	rooms/Room.js's respawn(). A held movement key is the concrete case: the client only
 	re-sends 'keydown' on an actual state change (net/gameSocket.js), so a key already held at

@@ -2,8 +2,7 @@
 	Detector - an invisible entity used as a vision-cone query for the AI.
 
 	Extracted from the old Alex.js monolith (now server.js + lib/ + rooms/ + entities/).
-	Cross-entity and Controller references go through the late-bound registry
-	(lib/runtime.js) because the dependency graph is circular - see the note there.
+	A leaf: it never reaches into another entity's room or the Controller.
 */
 const KIND = require('../public/SHARE/kinds.js');
 

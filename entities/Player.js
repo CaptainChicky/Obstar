@@ -2,20 +2,21 @@
 	Player - the tank entity: motion, shooting, upgrades, class changes, collision.
 
 	Extracted from the old Alex.js monolith (now server.js + lib/ + rooms/ + entities/).
-	Cross-entity and Controller references go through the late-bound registry
-	(lib/runtime.js) because the dependency graph is circular - see the note there.
+	A Player only ever spawns bullets into and reads state from its own room, so it holds a
+	direct `this.room` reference instead of reaching through a registry.
 */
-const RT = require('../lib/runtime.js');
 const Vec = require('victor');
 const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
-const FRICTION = require('../lib/constants.js').FRICTION;
+const Physics = require('../public/SHARE/Physics.js');
 const KIND = require('../public/SHARE/kinds.js');
 const ACHIEVEMENTS = require('../public/SHARE/AchievementsConfig.js').list;
+const Bullet = require('./Bullet.js');
+const Detector = require('./Detector.js');
 
 class Player {
-	constructor(id, x, y, name, team, xpLvl) {
+	constructor(id, x, y, name, team, xpLvl, room) {
 		this.XPLVL = xpLvl;
 		this.mlx = this.XPLVL[this.XPLVL.length - 3] / Math.pow(this.XPLVL[this.XPLVL.length - 3], 1 / 1.8);
 		this.BUFF = {
@@ -71,7 +72,8 @@ class Player {
 		this.destroy = 0;
 		this.shootTimer = [0, 0];
 		///
-		this.map = RT.Controller.server[this.id.GM][this.id.sId].map
+		this.room = room;
+		this.map = room.map;
 		this.x = x;
 		this.y = y;
 		this.vec = new Vec(0, 0)
@@ -107,19 +109,21 @@ class Player {
 
 	}
 	motion() {
-		// public/client/game.js's User.update() duplicates this accel and FRICTION (below) for
-		// local input prediction, scaled per-frame instead of per-tick - retune both together.
+		// The movement accel/friction integrator lives in public/SHARE/Physics.js -
+		// public/client/game.js's User.update() shares it for local input prediction.
 		const key = this.inputs;
 		const motion = new Vec(0, 0);
-		const len = 0.35 + this.up.MSpeed - (this.level / 155);
+		const accel = Physics.moveAccel(this.up.MSpeed, this.level);
 		if (!this.state.disconnect) {
-			if (key.w || key.arrw) { motion.y -= len; }
-			if (key.s || key.arrs) { motion.y += len; }
-			if (key.a || key.arra) { motion.x -= len; }
-			if (key.d || key.arrd) { motion.x += len; }
+			if (key.w || key.arrw) { motion.y -= accel; }
+			if (key.s || key.arrs) { motion.y += accel; }
+			if (key.a || key.arra) { motion.x -= accel; }
+			if (key.d || key.arrd) { motion.x += accel; }
 		}
+		let ax = 0, ay = 0;
 		if (motion.length() > 0) {
-			this.vec.add(motion.norm().multiply(new Vec(len, len)));
+			const a = motion.norm().multiply(new Vec(accel, accel));
+			ax = a.x; ay = a.y;
 			if (this.alpha < 1 && !this.dev.invisible) {
 				this.alpha += Math.min(1, CLASS[this.class].alpha * 10);
 			}
@@ -127,10 +131,10 @@ class Player {
 				this.shield = 0;
 			}
 		}
-		this.vec.x *= FRICTION;
-		this.vec.y *= FRICTION;
-		this.x += this.vec.x;
-		this.y += this.vec.y;
+		const body = { x: this.x, y: this.y, vx: this.vec.x, vy: this.vec.y };
+		Physics.stepBody(body, ax, ay, 1);
+		this.x = body.x; this.y = body.y;
+		this.vec.x = body.vx; this.vec.y = body.vy;
 		this.autoDir += .015;
 		if (this.x < -this.map.width / 2) {
 			this.x = -this.map.width / 2;
@@ -153,7 +157,7 @@ class Player {
 		if (CLASS[this.class].DETEC) {
 			if (!this.DETEC) {
 				const detec = CLASS[this.class].DETEC;
-				this.DETEC = new RT.Detector(this, this.x, this.y, detec.size, detec.type, detec.all)
+				this.DETEC = new Detector(this, this.x, this.y, detec.size, detec.type, detec.all)
 				this.DETEC.team = this.team;
 			} else {
 				this.DETEC.x = this.x;
@@ -214,7 +218,7 @@ class Player {
 					const offdir = Math.atan2(offx, len);
 					const x = this.x + Math.cos(dir + offdir) * (offlen)//-can.size*ra);
 					const y = this.y + Math.sin(dir + offdir) * (offlen)//-can.size*ra);
-					const Bull = new RT.Bullet(this.id, x, y, dir + Math.random() * can.rand - can.rand / 2, this.up.BSpeed * can.speed, exitSpeed);
+					const Bull = new Bullet(this.id, x, y, dir + Math.random() * can.rand - can.rand / 2, this.up.BSpeed * can.speed, exitSpeed, this.room);
 					Bull.type = (can.type ? can.type : 0);
 					Bull.class = this.class;
 					Bull.pene = this.up.BPene * can.pene;
@@ -222,7 +226,7 @@ class Player {
 					Bull.damage = this.up.BDamage * can.damage;
 					Bull.size = this.boss ? can.size : can.size * ra;
 					Bull.weight = can.weight;
-					RT.Controller.server[this.id.GM][this.id.sId].createBullet(Bull, this)
+					this.room.createBullet(Bull, this)
 					this.vec.add(new Vec(can.back, 0).rotate(dir - Math.PI));
 					if (maxD && can.life === -1) {
 						this.droneCount++;
@@ -344,7 +348,7 @@ class Player {
 				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(len, len)));
 				if (this.necro && other.type === 'sqr' && this.droneCount < CLASS[this.class].maxDrone + this.upNb[1]) {
 					this.droneCount++;
-					const Bull = new RT.Bullet(this.id, other.x, other.y, Math.random() * Math.PI * 2, this.up.BSpeed * this.necro.speed, 0);
+					const Bull = new Bullet(this.id, other.x, other.y, Math.random() * Math.PI * 2, this.up.BSpeed * this.necro.speed, 0, this.room);
 					Bull.type = this.necro.type;
 					Bull.class = this.class;
 					Bull.necro = this.necro.necro;
@@ -353,7 +357,7 @@ class Player {
 					Bull.damage = this.up.BDamage * this.necro.damage;
 					Bull.size = other.size;
 					Bull.weight = this.necro.weight;
-					RT.Controller.server[this.id.GM][this.id.sId].createBullet(Bull, this);
+					this.room.createBullet(Bull, this);
 					return;
 				}
 				if (this.shield) { return; }
@@ -486,7 +490,7 @@ class Player {
 		}
 		///
 		if (this.dev.stick) {
-			const obj = RT.Controller.server[this.id.GM][this.id.sId].INSTANCE[this.dev.stick[0]].get(this.dev.stick[1]);
+			const obj = this.room.INSTANCE[this.dev.stick[0]].get(this.dev.stick[1]);
 			if (obj && !obj.destroy) {
 				obj.x += (this.x + this.inputs.mouse_x - obj.x) * 0.2;
 				obj.y += (this.y + this.inputs.mouse_y - obj.y) * 0.2;

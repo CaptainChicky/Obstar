@@ -2,22 +2,23 @@
 	Bullet - projectiles, including drone / trap / necro behaviour.
 
 	Extracted from the old Alex.js monolith (now server.js + lib/ + rooms/ + entities/).
-	Cross-entity and Controller references go through the late-bound registry
-	(lib/runtime.js) because the dependency graph is circular - see the note there.
+	Bullets never cross rooms - a bullet only ever looks up its own origin's room - so it holds
+	a direct `this.room` reference instead of reaching through a registry.
 */
-const RT = require('../lib/runtime.js');
 const Vec = require('victor');
 const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const FRICTION = require('../lib/constants.js').FRICTION;
 const KIND = require('../public/SHARE/kinds.js');
+const Detector = require('./Detector.js');
 
 class Bullet {
-	constructor(origin, x, y, direction, speed, exitSpeed) {
+	constructor(origin, x, y, direction, speed, exitSpeed, room) {
 		this.BUFF = {
 			timestamp: -1,
 		};
 		this.id = 0;
+		this.room = room;
 		this.origin = origin;
 		this.class = 0;
 		this.life = 130;
@@ -68,10 +69,10 @@ class Bullet {
 				case KIND.OBJECTS:
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(this.weight, this.weight)));
 					if (this.necro && other.type === 'sqr') {
-						const play = RT.Controller.server[this.origin.GM][this.origin.sId].INSTANCE.players.get(this.origin.oId);
+						const play = this.room.INSTANCE.players.get(this.origin.oId);
 						if (play.droneCount < CLASS[play.class].maxDrone + play.upNb[1]) {
 							play.droneCount++;
-							const Bull = new RT.Bullet(play.id, other.x, other.y, Math.random() * Math.PI * 2, play.up.BSpeed * play.necro.speed, 0);
+							const Bull = new Bullet(play.id, other.x, other.y, Math.random() * Math.PI * 2, play.up.BSpeed * play.necro.speed, 0, this.room);
 							Bull.type = play.necro.type;
 							Bull.class = play.class;
 							Bull.necro = play.necro.necro;
@@ -80,7 +81,7 @@ class Bullet {
 							Bull.damage = play.up.BDamage * play.necro.damage;
 							Bull.size = other.size;
 							Bull.weight = play.necro.weight;
-							RT.Controller.server[play.id.GM][play.id.sId].createBullet(Bull, play);
+							play.room.createBullet(Bull, play);
 							return;
 						}
 					}
@@ -102,7 +103,7 @@ class Bullet {
 			}
 		}
 		if (this.destroy && this.life === -1) {
-			const play = RT.Controller.server[this.origin.GM][this.origin.sId].INSTANCE["players"].get(this.origin.oId);
+			const play = this.room.INSTANCE["players"].get(this.origin.oId);
 			if (play) {
 				play.droneCount--;
 			}
@@ -120,7 +121,7 @@ class Bullet {
 		///
 		let play;
 		if (!this.alone) {
-			play = RT.Controller.server[this.origin.GM][this.origin.sId].INSTANCE.players.get(this.origin.oId);
+			play = this.room.INSTANCE.players.get(this.origin.oId);
 			if (typeof play === "undefined") {
 				this.destroy = config.DES;
 				return;
@@ -143,7 +144,7 @@ class Bullet {
 				this.speed = this.maxspeed;
 				///
 				if (!this.DETEC) {
-					this.DETEC = new RT.Detector(play, this.x, this.y, 300, [KIND.PLAYER, KIND.OBJECTS])
+					this.DETEC = new Detector(play, this.x, this.y, 300, [KIND.PLAYER, KIND.OBJECTS])
 					this.DETEC.team = this.team
 				} else {
 					this.DETEC.x = this.x;
@@ -199,7 +200,7 @@ class Bullet {
 				}
 				///
 				if (!this.DETEC) {
-					this.DETEC = new RT.Detector(play, this.x, this.y, 300, [KIND.PLAYER, KIND.OBJECTS])
+					this.DETEC = new Detector(play, this.x, this.y, 300, [KIND.PLAYER, KIND.OBJECTS])
 					this.DETEC.team = this.team
 				} else {
 					this.DETEC.x = this.x;
@@ -241,7 +242,7 @@ class Bullet {
 				this.speed = this.maxspeed;
 				///
 				if (!this.DETEC) {
-					this.DETEC = new RT.Detector(play, this.x, this.y, 1400, [KIND.PLAYER, KIND.OBJECTS])
+					this.DETEC = new Detector(play, this.x, this.y, 1400, [KIND.PLAYER, KIND.OBJECTS])
 					this.DETEC.team = this.team
 				} else {
 					this.DETEC.x = this.x;
@@ -286,7 +287,7 @@ class Bullet {
 				this.pene = 200;
 				///
 				if (!this.DETEC) {
-					this.DETEC = new RT.Detector(this, this.x, this.y, 1200, [KIND.PLAYER])
+					this.DETEC = new Detector(this, this.x, this.y, 1200, [KIND.PLAYER])
 					this.DETEC.team = this.team
 				} else {
 					this.DETEC.x = this.x;
@@ -340,7 +341,7 @@ class Bullet {
 				this.speed = this.maxspeed;
 				///
 				if (!this.DETEC) {
-					this.DETEC = new RT.Detector(play, this.x, this.y, 300, [KIND.PLAYER, KIND.OBJECTS])
+					this.DETEC = new Detector(play, this.x, this.y, 300, [KIND.PLAYER, KIND.OBJECTS])
 					this.DETEC.team = this.team
 				} else {
 					this.DETEC.x = this.x;

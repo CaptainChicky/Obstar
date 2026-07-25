@@ -96,9 +96,8 @@ let app;
 console.log('\nreal packets from a real room:');
 {
 	// Boot the actual server-side simulation and pipe its per-player view into the client.
-	require(path.join(ROOT, 'lib', 'boot.js'))();
-	const RT = require(path.join(ROOT, 'lib', 'runtime.js'));
-	const room = RT.Controller.newServer('ffa');
+	const controller = require(path.join(ROOT, 'lib', 'boot.js'))();
+	const room = controller.newServer('ffa');
 	room.ask({ name: 'tester', key: '0'.repeat(25), pet: -1, gm: 'ffa' });
 	room.Init();                    // normally on a timer; run it now so the world is full
 	for (let i = 0; i < 20; i++) { room.step(); }
@@ -346,6 +345,48 @@ console.log('\nyour own bullet leaves the muzzle, even strafing across your own 
 		held > 10 && now < held * 0.2, held.toFixed(1) + ' -> ' + now.toFixed(1) + ' units');
 
 	Global.inputs.d = 0;
+}
+
+console.log('\ninput prediction reaches the same steady-state lead at any frame rate:');
+{
+	/*
+		THE BUG PENDING #24 measured: game.js used to scale its per-tick accel by tickLen once
+		instead of tickLen^2, so the steady-state `predic` lead grew with the frame rate instead
+		of staying put - 24 units at 30fps, 54 at 60, 70 (capped) at 144, all chasing the same
+		284 u/s server truth. That is a ~3x runaway that saturates at CONST.SIZE*2.
+
+		public/SHARE/Physics.js's stepBody fixes the dimension, but a large per-frame `dtTicks`
+		(30fps takes one whole reference tick in a single Euler step) vs a small one (144fps takes
+		~0.2 of a tick, four times finer) still do not integrate to bit-identical answers - that is
+		ordinary step-size discretization error, bounded and independent of frame rate once you're
+		past a couple of time constants (FRICTION's time constant here is ~28 ticks), not the old
+		unbounded, cap-hitting divergence. Measured empirically at ~15% end to end across 30-144fps
+		once settled; the assertion below is deliberately looser than that measurement so it fails
+		on a regression of the old bug's magnitude (~3x), not on this residual.
+	*/
+	function steadyLead(frameMs) {
+		const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+		const hook = a.start(packet(1, { x: 0, y: 0 }));
+		hook.Global.inputs.d = 1;
+		const WALLCLOCK = 6000;                    // ms, the same at every frame rate
+		for (let t = 0; t < WALLCLOCK; t += frameMs) { a.frame(frameMs); }
+		return Math.hypot(hook.User.predic.x, hook.User.predic.y);
+	}
+
+	const lead30 = steadyLead(1000 / 30);
+	const lead60 = steadyLead(1000 / 60);
+	const lead144 = steadyLead(1000 / 144);
+	check('steady-state lead at 30fps and 60fps agree within discretization noise',
+		near(lead30, lead60, lead30 * 0.25),
+		lead30.toFixed(2) + ' vs ' + lead60.toFixed(2));
+	check('steady-state lead at 60fps and 144fps agree within discretization noise',
+		near(lead60, lead144, lead60 * 0.25),
+		lead60.toFixed(2) + ' vs ' + lead144.toFixed(2));
+	check('...and 30fps vs 144fps never reaches the old bug\'s ~3x magnitude',
+		lead144 < lead30 * 1.5,
+		lead30.toFixed(2) + ' vs ' + lead144.toFixed(2));
+	check('...and it is a real, non-zero lead, not three coincidental zeroes',
+		lead30 > 5, lead30.toFixed(2));
 }
 
 console.log('\na new entity is complete on the packet that introduces it:');

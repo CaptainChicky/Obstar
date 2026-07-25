@@ -57,8 +57,7 @@ function uiPackets() {
 // Drive one client through a real room's own GameUpdates, interleaving the UI packets, and
 // return the ordered canvas-op stream it produced.
 function runMode(gm) {
-	const RT = require(path.join(ROOT, 'lib', 'runtime.js'));
-	const room = RT.Controller.newServer(gm);
+	const room = controller.newServer(gm);
 	room.ask({ name: 'tester', key: '0'.repeat(25), pet: -1, gm: gm });
 	room.Init();
 	for (let i = 0; i < 20; i++) { room.step(); }
@@ -87,7 +86,7 @@ function fnv1a(str) {
 	return ('0000000' + h.toString(16)).slice(-8);
 }
 
-require(path.join(ROOT, 'lib', 'boot.js'))();
+const controller = require(path.join(ROOT, 'lib', 'boot.js'))();
 
 let ops = [];
 for (const gm of ['ffa', '2team', '4team', 'boss']) {

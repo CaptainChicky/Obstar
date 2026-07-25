@@ -9,7 +9,7 @@
 const Room = require('./Room.js');
 
 class Ffa extends Room {
-	constructor(id) {
+	constructor(id, controller) {
 		super(id, {
 			gm: 'ffa',
 			maxXp: 25000,
@@ -23,7 +23,7 @@ class Ffa extends Room {
 			teams: [1],
 			teamPlay: false,
 			respawnPow: 0.9
-		});
+		}, controller);
 	}
 };
 

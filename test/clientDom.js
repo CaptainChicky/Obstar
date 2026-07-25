@@ -180,6 +180,7 @@ function boot(POST, opts) {
 	load('public/SHARE/AchievementsConfig.js');
 	load('public/SHARE/ObjectsConfig.js');
 	load('public/SHARE/SocketSchema.js');
+	load('public/SHARE/Physics.js');
 	load('public/motion.js');
 	// The client, in the same order views/play.ejs lists it. Keep the two in step.
 	for (const f of ['runtime', 'config', 'util', 'drawings', 'entities', 'render', 'ui', 'game', 'overlay', 'boot']) {

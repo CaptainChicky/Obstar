@@ -15,7 +15,7 @@
 const Room = require('./Room.js');
 
 class BossMode extends Room {
-	constructor(id) {
+	constructor(id, controller) {
 		super(id, {
 			gm: 'boss',
 			maxXp: 35000,
@@ -32,7 +32,7 @@ class BossMode extends Room {
 			teams: [1],
 			teamPlay: false,
 			respawnPow: 0.9
-		});
+		}, controller);
 	}
 };
 

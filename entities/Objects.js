@@ -2,22 +2,23 @@
 	Objects - the farmable polygons (squares, triangles, pentagons).
 
 	Extracted from the old Alex.js monolith (now server.js + lib/ + rooms/ + entities/).
-	Cross-entity and Controller references go through the late-bound registry
-	(lib/runtime.js) because the dependency graph is circular - see the note there.
+	An Objects instance only ever collides with a bullet from its own room, so it holds a
+	direct `this.room` reference instead of reaching through a registry.
 */
-const RT = require('../lib/runtime.js');
 const Vec = require('victor');
 const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const FRICTION = require('../lib/constants.js').FRICTION;
 const KIND = require('../public/SHARE/kinds.js');
 const RARITY = require('../public/SHARE/ObjectsConfig.js').rarity;
+const Detector = require('./Detector.js');
 
 class Objects {
-	constructor(type, pos, id, map) {
+	constructor(type, pos, id, map, room) {
 		this.BUFF = {
 			timestamp: -1,
 		};
+		this.room = room;
 		this.coinReward = Math.floor(Math.random() + .02);
 		this.type = type;
 		this.id = id;
@@ -77,7 +78,7 @@ class Objects {
 			case "Bsqr": this.size = 90; this.hp = 8000; this.prize = 2000; this.maxspeed = 0.01; this.weight = 100; break;
 			case "Btri": this.size = 72; this.hp = 7000; this.prize = 1000; this.maxspeed = 0.01; this.weight = 100; break;
 			case "bull": this.size = 12; this.hp = 15; this.prize = 12; this.maxspeed = .42; this.damage = 7;
-				this.DETEC = new RT.Detector(this, this.x, this.y, 500, type = [KIND.PLAYER]); break;
+				this.DETEC = new Detector(this, this.x, this.y, 500, type = [KIND.PLAYER]); break;
 		}
 		this.coinReward *= parseInt(this.prize / 10);
 		switch (this.type) {
@@ -121,7 +122,7 @@ class Objects {
 		}
 	}
 	delete() {
-		RT.Controller.server[this.id.GM][this.id.sId].obj[this.type][this.pos] -= 1;
+		this.room.obj[this.type][this.pos] -= 1;
 	}
 	collision(other, option = {}) {
 		const len = (this.vec.length() * this.weight < 0.4) ? 2 : .4;
@@ -145,7 +146,7 @@ class Objects {
 				break;
 			case KIND.BULLET:
 				if (other.necro && this.type === 'sqr') {
-					const play = RT.Controller.server[other.origin.GM][other.origin.sId].INSTANCE.players.get(other.origin.oId);
+					const play = other.room.INSTANCE.players.get(other.origin.oId);
 					if (play.droneCount < CLASS[play.class].maxDrone + play.upNb[1]) {
 						this.destroy = 1;
 						return;

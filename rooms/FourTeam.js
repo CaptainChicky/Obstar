@@ -12,11 +12,11 @@
 	on its arc facing the middle. Everything else - joining the thinnest side, friendly fire,
 	base fencing, boss summoning - comes from rooms/Room.js unchanged.
 */
-const RT = require('../lib/runtime.js');
+const Bullet = require('../entities/Bullet.js');
 const Room = require('./Room.js');
 
 class FourTeam extends Room {
-	constructor(id) {
+	constructor(id, controller) {
 		super(id, {
 			gm: '4team',
 			maxXp: 30000,
@@ -34,7 +34,7 @@ class FourTeam extends Room {
 			respawnPow: 0.8,
 			baseSize: 900,
 			viewerBullets: false
-		});
+		}, controller);
 	}
 	/*
 		Where a side's base sits, as the map corner it is built around. The order matches the
@@ -55,12 +55,14 @@ class FourTeam extends Room {
 			const from = Math.atan2(-Math.sign(c.y), -Math.sign(c.x)) - Math.PI / 4;
 			for (let i = 0; i < this.droneQt; i++) {
 				const a = from + (Math.PI / 2) * (i + 0.5) / this.droneQt;
-				const bull = new RT.Bullet(
+				const bull = new Bullet(
 					{ "GM": this.gm, "sId": this.id, "oId": -1 },
 					c.x + Math.cos(a) * this.baseSize,
 					c.y + Math.sin(a) * this.baseSize,
 					0,
 					0,
+					undefined,
+					this
 				);
 				bull.team = team;
 				bull.ox = bull.x;

@@ -81,38 +81,39 @@ cookie.
 |---|---|---|
 | `server.js` | 69 | **The only entry point.** Crash handler, flags, `boot()`, one http server. |
 | `web/app.js` | 205 | `createApp()` — the Express site. Menu, cookies, shop purchase, leaderboard reads. Opens no port. |
-| `lib/boot.js` | 59 | Fills the `lib/runtime.js` registry in dependency order. **`RT.ROOMS` is the one list of gamemodes.** Idempotent, opens no port. |
-| `net/gameSocket.js` | 311 | `attach(httpServer)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
-| `lib/Controller.js` | 613 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
+| `lib/boot.js` | 22 | Constructs the `Controller` singleton, memoised. No registry to fill any more — see §3. |
+| `net/gameSocket.js` | 336 | `attach(httpServer, controller)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
+| `lib/Controller.js` | 649 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
 | `lib/clock.js` | 160 | Fixed-timestep clock (§4). One accumulator drives every room's `step()`. |
-| `rooms/Room.js` | 949 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, per-player views. |
+| `rooms/Room.js` | 968 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, per-player views. Takes a `controller` constructor argument (§3). |
+| `rooms/index.js` | 16 | **The one list of gamemodes**, keyed by the string the client's `init` packet sends. |
 | `rooms/Ffa.js` | 30 | Free-for-all: tunables only. `Room`'s defaults *are* ffa's behaviour. |
 | `rooms/TwoTeam.js` | 108 | 2-team: two base strips, guard drones, team colours. |
 | `rooms/FourTeam.js` | 134 | 4-team: four corner bases, guard arcs, team colours. |
 | `rooms/BossMode.js` | 39 | Boss hunt: ffa with the boss knobs turned up. |
-| `entities/Player.js` | 464 | Tank entity: motion, shooting, upgrades, class changes, collision. |
-| `entities/Bullet.js` | 471 | Projectiles, incl. drone/trap/necro behaviour. |
-| `entities/Objects.js` | 213 | Farmable polygons. |
-| `entities/Detector.js` | 94 | Invisible "vision cone" query entity used by AI. |
-| `lib/gameAI.js` | 384 | Bot/boss/pet AI. A **factory** — closes over `Detector`, `Vec`, `FRICTION`, `CLASS`. |
+| `entities/Player.js` | 508 | Tank entity: motion, shooting, upgrades, class changes, collision. Takes a `room` constructor argument (§3). |
+| `entities/Bullet.js` | 468 | Projectiles, incl. drone/trap/necro behaviour. Takes a `room` constructor argument (§3). |
+| `entities/Objects.js` | 220 | Farmable polygons. Takes a `room` constructor argument (§3). |
+| `entities/Detector.js` | 94 | Invisible "vision cone" query entity used by AI. A leaf — no `room`/`controller` reference needed. |
+| `lib/gameAI.js` | 403 | Bot/boss/pet AI. A plain module now — `Detector`/`Vec`/`FRICTION`/`CLASS`/`DES` are all leaves, so `module.exports = CONFIG` directly. |
 | `lib/quadTree.js` | 75 | Spatial index for broad-phase collision. |
-| `lib/SlotMap.js` | ~90 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. |
-| `lib/runtime.js` | 18 | **Late-bound registry** standing in for a shared scope. Read §4 before using it. |
+| `lib/SlotMap.js` | 128 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. `maxIndex` is the highest allocatable id, not a capacity. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
 | `lib/config.js` | 68 | Live tunables/flags. **`TICK_MS`** lives here — read §4 first. |
 | `lib/db.js` | ~25 | The one Postgres connection point — `db.enabled`, `db.query()`, `db.check()`. Off unless `config.DB.ON`. |
 | `lib/terminal.js` | 34 | Terminal colour codes (`termColors`). |
-| `lib/constants.js` | 4 | `FRICTION`. |
+| `lib/constants.js` | 7 | Re-exports `FRICTION` from `public/SHARE/Physics.js`. |
 | `lib/dbConfig.js` | 18 | Postgres credentials, env-overridable. |
 | `db/schema.sql` | ~40 | Postgres table definitions (`acc`, `wrs`, `shop`, `devs`), applied on first container init. |
 | `docker-compose.yml` | ~15 | Local Postgres (`postgres:16`), version-pinned to rehearse the eventual managed-Postgres target. |
 | `lib/botNames.js` | ~100 | Bot name list. Non-ASCII, deliberately. |
 | `public/SHARE/kinds.js` | 36 | Entity type tags (`KIND`), used for `obj.kind` dispatch. Dual-mode: server require() + client global. |
 | `public/SHARE/SocketSchema.js` | 905 | Binary wire protocol, declarative (§6). Dual-mode: client *and* server. |
-| `public/SHARE/TanksConfig.js` | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. |
+| `public/SHARE/TanksConfig.js` | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. Cross-checked against itself by `test/tanks.js` — see §3. |
+| `public/SHARE/Physics.js` | 37 | **The one movement integrator** (`moveAccel`/`stepBody`/`FRICTION`) — `entities/Player.js`, `lib/gameAI.js`'s bots and `public/client/game.js` all call into it. Dual-mode. |
 | `public/SHARE/PetsConfig.js` | 132 | Cosmetic pet definitions. |
 | `public/SHARE/ws_link.js` | 18 | Game server URL: `POST.ws`, else the page's own origin. |
-| `public/client/runtime.js` | 38 | **Late-bound client registry** (`CLIENT`). Browser twin of `lib/runtime.js`. |
+| `public/client/runtime.js` | 38 | **Late-bound client registry** (`CLIENT`). The server side no longer has an equivalent (§3) — this one is purely a client-side sequencing device, for scripts loaded by `<script>` tag with no bundler. |
 | `public/client/config.js` | 125 | `CONST`, palette `C`, `CLASS`/`CLASS_TREE`, mutable bags `Global`/`Game`. |
 | `public/client/util.js` | 148 | `roundedPoly`, `roundRect`, `sleep`, the `General` namespace, `NET`/`Interp`. |
 | `public/client/drawings.js` | 307 | Shape table: one function per body/barrel/turret/bullet/pet. |
@@ -128,7 +129,7 @@ cookie.
 | `public/font.js` | 655 | Animated canvas background on the menu. |
 | `views/index.ejs` | 153 | Menu page. |
 | `views/play.ejs` | 131 | Game page. **`<script>` order is the client's dependency graph** — §7. |
-| `test/*.js` | ~1976 total | 8 suites, see §9. |
+| `test/*.js` | ~2835 total | 9 suites, see §9. |
 
 `public/SHARE/` is loaded by `<script>` in the browser **and** by `require()` in Node, via a
 `typeof(exports)` sniff footer. `public/motion.js` and everything in `public/client/` carry the
@@ -148,13 +149,25 @@ The things in this codebase that are *not* obvious from reading the code around 
   ~1.7× too fast — that's a balance project, not a config change. `SEND_MS` must stay `>=
   TICK_MS`, or consecutive packets carry an identical world and the client's interpolator reads
   that as "this entity stopped."
-- **Never destructure or cache a value off `RT` (or client `CLIENT`) at module load time.** The
-  dependency graph is genuinely circular (entities call `Controller`, rooms construct entities,
-  `Main` constructs rooms, AI closes over `Detector`). `lib/runtime.js` / `boot.js` fill an
-  empty registry in dependency order; `const {Player} = RT` at the top of a file captures
-  `undefined` and fails on first use. Always read through `RT.X` / `CLIENT.X` at the point of
-  use. The client's version of the rule is slightly looser — see the header comment in
-  `public/client/runtime.js`.
+- **Never destructure or cache a value off client `CLIENT` at module load time.** The server side
+  no longer has an `RT`-style registry to worry about (below) — this rule is client-only now.
+  `CLIENT.Run()` builds `User`/`Instances`/the 2D context after every `public/client/*.js` file has
+  already loaded, so a module-scope `const {User} = CLIENT` captures `undefined`; always read
+  through `CLIENT.X` at the point of use. See the header comment in `public/client/runtime.js`.
+- **The movement integrator and the two tank tables are enforced by code, not by memory.**
+  `public/SHARE/Physics.js` is the one place the per-tick accel/friction constants are written
+  down — `entities/Player.js`, `lib/gameAI.js`'s bots and `public/client/game.js`'s input
+  prediction all call into it rather than keeping their own copy. `public/SHARE/TanksConfig.js`'s
+  client (drawn) and server (spawn) cannon tables are cross-checked index-by-index by
+  `test/tanks.js`, which fails `npm test` on drift instead of relying on a comment asking the next
+  editor to keep two hand-authored tables in sync (see PENDING.md item 26 for what that check
+  has already caught and still has open as a human balance call).
+- **Entities hold `this.room` and rooms hold `this.controller` — reached directly, not through a
+  registry.** `Player`/`Bullet`/`Objects` take a trailing `room` constructor argument;
+  `rooms/Room.js` takes a trailing `controller` argument. The dependency graph was never actually
+  circular (`Detector` ← `Bullet`/`Player`/`Objects` ← `Room` ← `Controller`, a tree) — the only
+  cycle was entities reaching back to *their own* room through a global lookup instead of a
+  reference they were already handed. `rooms/index.js` is the one list of gamemode classes.
 - **Entity storage is integer-slot-indexed, not identity-keyed.** Server-side, `this.INSTANCE =
   {players, objs, bullets, detectors}` are `lib/SlotMap.js` instances now (PENDING.md's old #14) —
   allocation, `KEEP_PLACE` (20) tombstoning, and live-only iteration (`.live()`/`.entries()`) live
@@ -199,11 +212,11 @@ drops — a stall also prints a throttled `[clock]` line to stderr.
 **Rooms.** `rooms/Room.js` is the whole simulation; each gamemode is a subclass passing a block
 of tunables to `super()` and overriding named hooks (table at the top of `Room.js` lists all
 twelve). `Ffa` is 30 lines because `Room`'s defaults *are* ffa. Adding a gamemode = a subclass +
-one line in `lib/boot.js`'s `RT.ROOMS` (`Controller`'s whitelist, its `server` map, and the
-tests all derive from that one object). The wire enum in `SocketSchema.js`
-(`toBUFFER.gamemode`/`toSTRING.gamemode`) does **not** derive from `RT.ROOMS` — the client can't
-`require()` `boot.js` — so a new mode needs a key added to both tables in the same order;
-`test/rooms.js` cross-checks all three lists against each other.
+one line in `rooms/index.js` (`Controller`'s whitelist, its `server` map, and the tests all derive
+from that one table). The wire enum in `SocketSchema.js`
+(`toBUFFER.gamemode`/`toSTRING.gamemode`) does **not** derive from `rooms/index.js` — the client
+can't `require()` server modules — so a new mode needs a key added to both tables in the same
+order; `test/rooms.js` cross-checks all three lists against each other.
 
 **Collision.** Per tick: rebuild a `quadTree`, insert every live entity, `query()` with an AABB
 overlap test, then `a.collision(b, {dis})` per candidate pair. Each entity class implements its
@@ -362,15 +375,16 @@ the minimap draws more than your own dot.
 
 ## 9. Test coverage
 
-`npm test` runs 8 suites in dependency order (cheapest/most load-bearing first):
+`npm test` runs 9 suites in dependency order (cheapest/most load-bearing first):
 
 | Suite | What it covers |
 |---|---|
 | `test/proto.js` | Wire protocol: golden bytes, self-sizing, round trips, input validation, Unicode, `UiUpdate.map` and Objects rarity-tier bits. |
+| `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. See §3 and PENDING.md. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
 | `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. No socket, built via `boot()`. |
-| `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas. |
+| `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, and that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps. |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all four modes. |
 | `test/web.js` | The merged entry point: one port serves site + socket, `play.ejs` script order, split-mode wiring, and that the auth routes degrade to a clean `{error}` (never a 500) with `DB.AUTH` off. |

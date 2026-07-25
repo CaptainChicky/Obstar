@@ -18,14 +18,13 @@
 const Room = require('./Room.js');
 
 class Sandbox extends Room {
-	constructor(id) {
+	constructor(id, controller) {
 		super(id, {
 			gm: 'sandbox',
 			maxXp: 25000,
 			mapSize: { width: 3000, height: 3000 },
-			// SlotMap.add() refuses a slot only once `id > max` (rooms/Room.js -> lib/SlotMap.js),
-			// so `max` is the highest allocatable index, not a headcount - 0 is what actually caps
-			// this at one player (ids 0 and 1 would both fit under a literal maxPlayer: 1).
+			// maxPlayer becomes SlotMap's maxIndex (lib/SlotMap.js) - the highest allocatable
+			// id, not a headcount - so 0 is what caps this room at one player.
 			maxPlayer: 0,
 			preGenerate: 60,
 			bootDelay: 100,
@@ -36,7 +35,7 @@ class Sandbox extends Room {
 			teams: [1],
 			teamPlay: false,
 			respawnPow: 0.9
-		});
+		}, controller);
 	}
 };
 

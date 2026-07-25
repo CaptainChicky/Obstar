@@ -82,8 +82,8 @@
 			this.predic = {
 				x: 0,
 				y: 0,
-				xspeed: 0,
-				yspeed: 0,
+				vx: 0,
+				vy: 0,
 			}
 			this.old = {
 				"size": this.size,
@@ -158,10 +158,9 @@
 					untouched; it just gets added to a position that is now correct.
 				*/
 				/*
-					Same three constants entities/Player.js:112,128 uses per server tick
-					(len = 0.35 + up.MSpeed - level/155, FRICTION = 0.964) - duplicated here on
-					purpose (THEPLAN 4.1), so retune both files together. mspeedPoints/lvl come from
-					the same packets ui.js's upgrade panel already reads (UpdateUp's `ups`,
+					The movement accel/friction integrator lives in public/SHARE/Physics.js -
+					entities/Player.js's motion() shares it, per server tick. mspeedPoints/lvl come
+					from the same packets ui.js's upgrade panel already reads (UpdateUp's `ups`,
 					GameUpdate's head.level) rather than a guess, and the Movement Speed slot is
 					looked up by name instead of hardcoded, since a class can override `ups`
 					(public/client/ui.js's upgrade-panel init does the same lookup).
@@ -173,18 +172,18 @@
 				const lvl = (Ui && Ui.lvl) || 0;
 				const tickLen = (Global.dtFrames / FRAMES_PER_TICK);
 				const motionDir = [0, 0];
-				const len = (0.35 + mspeedPoints * 0.020 - lvl / 155) * tickLen;
-				const FRICTION = Math.pow(0.964, tickLen);
-				if (Global.inputs.w || Global.inputs.ArrowUp) { motionDir[0] -= len; }
-				if (Global.inputs.s || Global.inputs.ArrowDown) { motionDir[0] += len; }
-				if (Global.inputs.a || Global.inputs.ArrowLeft) { motionDir[1] -= len; }
-				if (Global.inputs.d || Global.inputs.ArrowRight) { motionDir[1] += len; }
+				// Per reference tick, same as the server - Physics.stepBody below is what converts
+				// this to per-frame, not this variable (that one-step conversion here is the bug
+				// PENDING #24 measured: it scaled by tickLen once where the accel-to-position
+				// conversion needs tickLen^2).
+				const accel = Physics.moveAccel(mspeedPoints * Physics.MOVE_ACCEL_PER_UP, lvl);
+				if (Global.inputs.w || Global.inputs.ArrowUp) { motionDir[0] -= accel; }
+				if (Global.inputs.s || Global.inputs.ArrowDown) { motionDir[0] += accel; }
+				if (Global.inputs.a || Global.inputs.ArrowLeft) { motionDir[1] -= accel; }
+				if (Global.inputs.d || Global.inputs.ArrowRight) { motionDir[1] += accel; }
 				let ddir = Math.atan2(motionDir[0], motionDir[1]);
-				const llen = Math.min(Math.sqrt((motionDir[0] * motionDir[0]) + (motionDir[1] * motionDir[1])), len);
-				this.predic.xspeed += Math.cos(ddir) * llen; this.predic.xspeed *= FRICTION;
-				this.predic.yspeed += Math.sin(ddir) * llen; this.predic.yspeed *= FRICTION;
-				this.predic.x += this.predic.xspeed;
-				this.predic.y += this.predic.yspeed;
+				const llen = Math.min(Math.sqrt((motionDir[0] * motionDir[0]) + (motionDir[1] * motionDir[1])), accel);
+				Physics.stepBody(this.predic, Math.cos(ddir) * llen, Math.sin(ddir) * llen, tickLen);
 				let tolen = Math.sqrt(Math.pow(this.predic.x, 2) + Math.pow(this.predic.y, 2));
 				tolen += (-tolen) * General['lerpK'](CONST.SMOOTH);
 				// The lighter, correct drag (0.964 vs the old 0.95) lets the lead grow further

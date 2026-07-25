@@ -16,7 +16,7 @@
 	served the page, so nothing has to be configured. Split mode needs the web half told
 	where the game half lives: WS_LINK=wss://game.example.com node server.js --web-only.
 
-	Boot order matters: boot() fills the late-bound registry (see lib/runtime.js) and must
+	Boot order matters: boot() constructs the Controller singleton (see lib/boot.js) and must
 	finish before anything can accept a player. Listening is deliberately the last step, and
 	deliberately not part of boot(), so test/rooms.js can stand the whole game up in-process
 	without opening a port.
@@ -51,8 +51,8 @@ const server = http.createServer(app || function (request, response) {
 });
 
 if (runGame) {
-	require('./lib/boot.js')();
-	require('./net/gameSocket.js').attach(server);
+	const controller = require('./lib/boot.js')();
+	require('./net/gameSocket.js').attach(server, controller);
 }
 
 require('./lib/db.js').check().catch(err => { throw err; });

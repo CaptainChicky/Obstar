@@ -11,31 +11,6 @@ just the list.
 documented from the old dev (naming, MySQL, anything below) needs a migration path or
 backward-compat story. Old conventions are defaults to improve on, not constraints.*
 
-## ✅ Resolved this pass (see THEPLAN.md for the full spec that was implemented)
-
-1. **Real login, and what the dev console means for a regular player.** Both built.
-   - Guest-first + claim: every visitor still gets an anonymous `obstarkey` row; `POST
-     /auth/signup` attaches `username`/`passhash`/`email` to that *same* row (carrying over
-     coins/pets/achievements), `POST /auth/login` swaps the cookie to the claimed account's key,
-     `POST /auth/logout` hands back a fresh guest identity. All gated behind `DB.AUTH` (off by
-     default) and degrade to a clean `{error}` JSON with no DB, never a 500 — see `lib/auth.js`,
-     `web/app.js`, and the two security fixes (`/userData`/`/buy` now read only
-     `req.cookies.obstarkey`, never a body field; `obstarkey` is `httpOnly`).
-   - `Ctrl+Shift+L` now opens for everyone. A non-admin gets a client-side-only cosmetics table
-     (`color`, `uiscale`, `palette`, `fps`, `help`, `clear` — `public/client/overlay.js`);
-     anything else still gets forwarded to the server and still refused there unless
-     `askConnection` attached a nonzero `devlevel` (replaces the old plaintext `devs` table).
-   - **Still needs a real browser** to confirm the account chip/modal and the cosmetics console
-     actually feel right end to end — see item 6 below.
-
-1b. **Achievements** (not in the original numbered list — added alongside #1 since it shares the
-    login/account plumbing). `public/SHARE/AchievementsConfig.js` is the registry;
-    `Player.unlock()`/`registerKill()` fire it server-side and persist into `acc.userdata.ach` via
-    `Controller.disconnect()`; guests get `localStorage['obstar_ach']`, unioned into the account
-    on claim. The menu-page panel is a right-edge hover zone (`public/account.js` +
-    `#ach-edge` in `views/index.ejs`/`public/style.css`) — icon-only, auto-scrolling, pauses on a
-    real wheel/touch scroll. **Needs a real browser** to confirm the hover/scroll feel.
-
 ## 🔵 Decided — queued for implementation (not yet built)
 
 2. **Next gamemodes: Domination/Maze get real new entity types.** Decided — not tunable-only.
@@ -46,6 +21,24 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
    wire. New `kind`s go in `public/SHARE/kinds.js`, which `TanksConfig.js`'s `DETEC` filters
    now reference by constant (#16 done) rather than hardcoding — nothing to keep in sync by hand.
 
+## 🟣 Needs a human balance call (flagged by `test/tanks.js`)
+
+26. `test/tanks.js` cross-checks `public/SHARE/TanksConfig.js`'s client (drawn) and server (spawn)
+    cannon tables and whitelists a handful of real, deliberate deviations that aren't bugs but
+    aren't confirmed-intentional either — full reasoning is in the `WHITELIST` table in that file,
+    not duplicated here:
+    - Twin, Twin Flank, and Triple Twin's cannons are all drawn `offx` ±17 but spawn bullets at
+      ±18 - too consistent across three independently-written classes to be a typo, but never
+      confirmed as an intentional spawn nudge either.
+    - Summoner is the only class in the table where the drawn barrel is *shorter* than the spawn
+      point (by 2.5 units) rather than the usual few-unit muzzle-tip lead - fixing it means either
+      lengthening the drawn barrel or shortening the spawn radius, both of which change this
+      boss's visuals or bullet range.
+    - Minor test gap, low priority: the whitelist's `offdir` comparison is a literal `!==` and
+      doesn't normalize angles mod 2π, so two float64 expressions for the same angle
+      (Fortress/Summoner) read as a mismatch and need a whitelist entry that a correct comparison
+      wouldn't require. Only ever a false positive, never a false negative.
+
 ## 🟢 Untested — real risk, nobody has watched these happen
 
 3. A full match, start to finish: leveling into the class tree, death screen, respawn.
@@ -54,7 +47,7 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
    through two real `step()`s and asserts it actually adds a nearby player to `this.detected`,
    which caught a real bug (below) rather than just proving bosses *exist*. Still never watched
    in a live match with a human moving around it, though.
-   - **Bug found and fixed**: `rooms/Room.js`'s `respawn()` swaps in a brand-new `RT.Player`
+   - **Bug found and fixed**: `rooms/Room.js`'s `respawn()` swaps in a brand-new `Player`
      object and was not carrying over `inputs`, `userKey`, `unlocked`, or `killCounts` from the
      tank it replaced. A movement key held through the moment of death stayed physically held
      but arrived on the new tank looking exactly like "never pressed" (the client only re-sends
@@ -69,8 +62,7 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
    no tab throttling). This pass touched rendering/feel more than anything before it has, so the
    in-browser checklist is longer than usual:
    - Account chip shows `Guest`; signing up carries coins over; the achievements edge-hover zone
-     (item 1b) darkens/scrolls the way it's supposed to and a manual scroll actually pauses the
-     auto-scroll.
+     darkens/scrolls the way it's supposed to and a manual scroll actually pauses the auto-scroll.
    - `Ctrl+Shift+L` accepts `color`/`uiscale`/etc. and refuses an admin command for a non-admin.
    - Bullets visibly leave from the barrel tip, including while strafing hard perpendicular to
      the aim direction. Reported broken twice. The owner is now a real wire bit (`states[1]` on
@@ -82,7 +74,10 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
      `test/client.js` now asserts the alignment directly, so this is a "confirm it *feels*
      right" check rather than a "confirm it works" one.
    - The camera has a *slight* trailing lag again (`CONST.CAM_SMOOTH`) — confirm it reads as a
-     hair of chase, not the old pre-refactor drift.
+     hair of chase, not the old pre-refactor drift. `CONST.CAM_SMOOTH` was playtest-tuned on top
+     of a since-fixed bug in the local tank's own input-prediction lead (item 24) — the lead is now
+     smaller and frame-rate-stable instead of growing with refresh rate, so this needs a genuine
+     human retune with the game open, not just a "does it still look ok" check.
    - A green "shiny" polygon and a rainbow "Mythic" one are both visibly distinct from an
      ordinary shape (`public/SHARE/ObjectsConfig.js` — chances were retuned rarer than the
      first-pass defaults; confirm they still turn up often enough to notice in a normal session).
@@ -97,6 +92,20 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 8. Real browser hitting the new packet-length validation (`chat`/`com` in particular) — a
     mistake here shows up as a kicked player, not a crash.
 9. Load: multiple busy rooms at once on one process (everything so far is one room alone).
+
+## 🟠 Known bug, not yet fixed
+
+25. **`Room.spawnPoint()`'s `while(1)` can hang the server on a small enough map.** The default
+    implementation (`rooms/Room.js`) rejects any point within a hardcoded 1100-unit radius of the
+    origin plus two 800-unit nests at the quarter-points - written against ffa's 9020-unit map,
+    where that's a small carve-out. Below roughly 1960 units wide, no point on the map can ever be
+    1100 units from the origin, so the loop never finds an accepted point and spins forever, on
+    the simulation thread, taking the whole room (every player in it) down with it. Currently
+    survived only because `rooms/Sandbox.js` documents the floor in a comment and stays at 3000
+    (comfortably clear); nothing stops a future mode, an admin `mapResize`, or a typo'd config from
+    landing under 1960 and hitting it for real. Fix is either a loop iteration cap that falls back
+    to a cheaper placement, or deriving the rejection radii from `mapSize` instead of hardcoding
+    them against ffa's map.
 
 ## 🟡 Explicitly deferred (told not to do this pass)
 
@@ -302,62 +311,40 @@ first, re-derive against the new step.*
     push, base-drone stats. This is the same list massplanchunks.md WP13 asks for; the page closes
     the FOV and camera-adjacent parts of it (item 19) and nothing else.
 
-24. **Close-quarters bullet truth — root cause found, and it is not the interpolator.**
-    `public/client/game.js`'s input prediction integrates a per-frame velocity but scales the
-    acceleration by only **one** power of `tickLen` (`:176`, `len = (…) * tickLen`), where the
-    conversion from a per-tick accel to a per-frame one needs `tickLen²`. Measured against the
-    server's own integrator (`entities/Player.js:112-133`):
-
-    | fps | `predic` chase speed | server truth | steady-state `predic` offset |
-    |---|---|---|---|
-    | 30 | 281 u/s | 284 u/s | 24 units |
-    | 60 | 568 u/s | 284 u/s | 54 units |
-    | 144 | 1369 u/s | 284 u/s | 70 units (hits the `CONST.SIZE*2` cap) |
-
-    So the local tank is drawn up to **a full tank diameter (56 units) ahead of the server**, and
-    the lead *grows with refresh rate* — the exact frame-rate dependence `lerpK` was introduced to
-    kill. `public/client/entities.js`'s `Bullet.update()` then hands that whole offset to each of
-    your own bullets as its spawn `lead`, so at 60–144 fps a freshly fired bullet is drawn 54–70
-    units off its true server position and takes ~0.5 s (`BULLET_LEAD_DECAY 0.08`) to converge.
-    At destroyer range that is the entire flight: a Destroyer bullet coasts at ~5.9 u/tick, so a
-    150-unit shot lands in ~0.5 s and is drawn wrong for all of it. That is the reported symptom.
-
-    Ranked fixes, cheapest first:
-    - **(a) Fix the missing `tickLen`.** Either `len = (…) * tickLen * tickLen`, or better keep
-      `predic.xspeed` in units-per-*tick* and scale at integration (`xspeed += a*tickLen;
-      xspeed *= F^tickLen; x += xspeed*tickLen`), which is dimensionally obvious and can't rot.
-      This alone cuts the bullet's spawn error by 2.2× at 60 fps and 2.9× at 144. **Caveat: it
-      changes feel, and `CONST.CAM_SMOOTH` was playtest-tuned on top of the bug — retune the
-      camera in the same sitting.**
-    - **(b) Derive the lead instead of tuning it.** The correct prediction lead is
-      `(interp delay + RTT/2) × velocity` ≈ 16 units at base top speed on a 50 ms RTT, against
-      today's 54. We do not measure RTT — the `ping` message is a server→client heartbeat the
-      client echoes (`net/gameSocket.js:44`, `public/client/game.js:761`). Making it measurable is
-      cheap and needs no schema change: `ping` already carries a value byte, so a client-initiated
-      probe can send `1`, the server echoes it back as `1`, and the client times it; `0` stays the
-      heartbeat. Then `CONST.SIZE*2` and `CONST.SMOOTH`'s decay stop being the things that decide
-      how big the lie is.
-    - **(c) Dead-reckon bullets instead of interpolating them.** A non-drone bullet's motion is
+24. **Close-quarters bullet truth — the dimensional bug is fixed; the rest of the error budget is
+    still open.** `public/client/game.js`'s input prediction used to scale a per-tick acceleration
+    by only **one** power of `tickLen`, where the conversion to per-frame needs `tickLen²` — the
+    local tank was drawn up to a full tank diameter ahead of the server, growing with refresh
+    rate (up to 70 units at 144fps), and every freshly-fired bullet inherited that as its spawn
+    lead. Fixed: the integrator moved into `public/SHARE/Physics.js` and `predic` stays in
+    units-per-*tick*, scaled once at integration (`Physics.stepBody`). The remaining, unfixed
+    sources of client/server bullet-position disagreement rank cheapest-first:
+    - **(a) Derive the lead instead of tuning it.** The correct prediction lead is
+      `(interp delay + RTT/2) × velocity` ≈ 16 units at base top speed on a 50 ms RTT, smaller
+      than what the fixed integrator settles on now. We do not measure RTT — the `ping` message
+      is a server→client heartbeat the client echoes (`net/gameSocket.js:44`,
+      `public/client/game.js:761`). Making it measurable is cheap and needs no schema change:
+      `ping` already carries a value byte, so a client-initiated probe can send `1`, the server
+      echoes it back as `1`, and the client times it; `0` stays the heartbeat. Then
+      `CONST.SIZE*2` and `CONST.SMOOTH`'s decay stop being the things that decide how big the lie
+      is.
+    - **(b) Dead-reckon bullets instead of interpolating them.** A non-drone bullet's motion is
       fully deterministic between collisions (`vec += speed·dir; vec *= FRICTION`, no input), so
       the client can integrate it forward from the newest snapshot rather than drawing it one
       packet interval in the past. This is the only item that fixes *incoming* bullets too — an
       enemy Destroyer shot is currently drawn ~12 units behind the server's version, i.e. it hits
       you before it visually arrives, which is the same complaint from the receiving end. Drones
       (`type >= 1`) steer and must stay on interpolation.
-    - **(d) The floor.** Even with all three, the shooter and the target disagree by RTT/2 and
-      every *other* entity is still drawn one interval late. Zero error is unreachable client-side;
-      only server-side lag compensation (rewinding hit checks by the shooter's latency) removes it,
-      and diep does not do that either. Worth writing down so this doesn't get "fixed" a fourth
-      time — the goal is bounded, symmetric error, not zero.
+    - **(c) The floor.** Even with both, the shooter and the target disagree by RTT/2 and every
+      *other* entity is still drawn one interval late. Zero error is unreachable client-side; only
+      server-side lag compensation (rewinding hit checks by the shooter's latency) removes it, and
+      diep does not do that either. Worth writing down so this doesn't get "fixed" a third time —
+      the goal is bounded, symmetric error, not zero.
     - **Destroyer-specific amplifier, unfixable by tuning:** `predic` is driven by *input keys
       only*, so a Destroyer's own recoil (`back: 3.8` → ~100 units of displacement) is entirely
       server-side. At the instant of firing the prediction is therefore wrong in the *opposite*
       direction of the kick until the next snapshot lands, and the bullet's spawn `lead` bakes that
       error in. Only real input-replay reconciliation (predicting recoil locally too) removes it.
-
-## ⚪ Optional cleanup — no urgency, no bug, do only if you want it
-
-10. Break the circular module graph (`lib/runtime.js` stopgap) with real dependency injection — big change, only worth it once everything else is settled.
 
 ---
 
