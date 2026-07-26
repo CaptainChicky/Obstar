@@ -6,11 +6,17 @@
 	a direct `this.room` reference instead of reaching through a registry.
 */
 const Vec = require('victor');
-const config = require('../lib/config.js').config;
+const tick = require('../lib/tick.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
-const FRICTION = require('../lib/constants.js').FRICTION;
+const FRICTION = tick.drag(require('../lib/constants.js').FRICTION);
 const KIND = require('../public/SHARE/kinds.js');
 const Detector = require('./Detector.js');
+
+// Per-tick re-aim chance for homing bullets/drones - one-time-rescaled from the old .999/.9995
+// thresholds (33ms ref), then converted to a real-tick probability once at load (massplanchunks
+// WP3's "chance" category).
+const REAIM_CHANCE = tick.chance(0.0012121);
+const CHARGE_CHANCE = tick.chance(0.0006061);
 
 class Bullet {
 	constructor(origin, x, y, direction, speed, exitSpeed, room) {
@@ -21,7 +27,7 @@ class Bullet {
 		this.room = room;
 		this.origin = origin;
 		this.class = 0;
-		this.life = 130;
+		this.life = tick.ticks(107);   // 107 = 130 one-time-rescaled from the 33ms reference
 		this.team = 0;
 		this.type = 0;
 		this.pene = 1;
@@ -39,7 +45,7 @@ class Bullet {
 		this.maxspeed = speed;
 		this.speed = speed;
 		this.destroy = 0;
-		this.vec = new Vec(speed * exitSpeed, 0).rotate(direction);
+		this.vec = new Vec(tick.perTick(speed) * exitSpeed, 0).rotate(direction);
 	}
 	collision(other, option = {}) {
 		if (option.type) {
@@ -48,12 +54,12 @@ class Bullet {
 					if (this.origin.oId === other.id.oId) {
 						return;
 					}
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(this.speed * 2 + 1, this.speed * 2 + 1)));
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.speed * 2 + 0.91418), tick.perTick(this.speed * 2 + 0.91418))));
 					return;
 			}
 		}
 		if (option.base) {
-			this.destroy = config.DES;
+			this.destroy = tick.DES;
 		}
 		if (other) {
 			switch (other.kind) {
@@ -62,12 +68,12 @@ class Bullet {
 					if (this.origin.oId === other.id.oId) {
 						return;
 					}
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(this.weight, this.weight)));
-					this.pene -= Math.max(1, this.pene / 5);
-					if (this.pene <= 0) { this.destroy = config.DES }
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
+					this.pene -= tick.perTick(Math.max(1, this.pene / 5));
+					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.OBJECTS:
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(this.weight, this.weight)));
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
 					if (this.necro && other.type === 'sqr') {
 						const play = this.room.INSTANCE.players.get(this.origin.oId);
 						if (play.droneCount < CLASS[play.class].maxDrone + play.upNb[1]) {
@@ -85,20 +91,20 @@ class Bullet {
 							return;
 						}
 					}
-					this.pene -= Math.max(this.pene / 2, 1);
-					if (this.pene <= 0) { this.destroy = config.DES }
+					this.pene -= tick.perTick(Math.max(this.pene / 2, 1));
+					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.BULLET:
 					if (other.origin.oId === this.origin.oId) {
 						if ((parseInt(this.type) === 1 || parseInt(this.type) === 3) && this.type === other.type) {
-							this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(this.weight, this.weight)));
+							this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
 						}
 						return;
 					} else {
 					}
 					if (option.noDam || this.type === 1.4) { break; }
-					this.pene -= option.pene;
-					if (this.pene <= 0) { this.destroy = config.DES; }
+					this.pene -= tick.perTick(option.pene);
+					if (this.pene <= 0) { this.destroy = tick.DES; }
 					break;
 			}
 		}
@@ -114,8 +120,8 @@ class Bullet {
 			this.x += this.vec.x;
 			this.y += this.vec.y;
 			this.destroy -= 1;
-			this.alpha = (this.destroy) / config.DES;
-			this.size *= 1.03;
+			this.alpha = (this.destroy) / tick.DES;
+			this.size *= tick.drag(1.03648);   // one-time-rescaled from 1.03 (33ms ref)
 			return;
 		}
 		///
@@ -123,11 +129,11 @@ class Bullet {
 		if (!this.alone) {
 			play = this.room.INSTANCE.players.get(this.origin.oId);
 			if (typeof play === "undefined") {
-				this.destroy = config.DES;
+				this.destroy = tick.DES;
 				return;
 			} else {
 				if (play.destroy > 1 || play.dead || play.state.disconnect || play.class !== this.class) {
-					this.destroy = config.DES;
+					this.destroy = tick.DES;
 					return;
 				}
 			}
@@ -173,8 +179,8 @@ class Bullet {
 					}
 					const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
 					if (playDis < play.size * 3.5) {
-						this.speed = .08;
-						if (Math.random() > .999) {
+						this.speed = 0.07313;   // one-time-rescaled from .08 (singleAppFactor, see Physics.js)
+						if (Math.random() < REAIM_CHANCE) {
 							this.comingDir += Math.PI / 2;
 						}
 						const dir = Math.atan2(play.y + Math.sin(play.autoDir * 2 + this.comingDir) * play.size * 3 - this.y,
@@ -196,7 +202,7 @@ class Bullet {
 				}
 				this.speed = this.maxspeed;
 				if (play.droneCount === -1) {
-					this.destroy = config.DES;
+					this.destroy = tick.DES;
 				}
 				///
 				if (!this.DETEC) {
@@ -222,8 +228,8 @@ class Bullet {
 				}
 				const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
 				if (playDis < play.size * 3) {
-					this.speed = .08;
-					if (Math.random() > .999) {
+					this.speed = 0.07313;   // one-time-rescaled from .08 (singleAppFactor, see Physics.js)
+					if (Math.random() < REAIM_CHANCE) {
 						this.comingDir += Math.PI / 2;
 					}
 					const dir = Math.atan2(play.y + Math.sin(play.autoDir * 2 + this.comingDir) * play.size * 3 - this.y,
@@ -282,7 +288,7 @@ class Bullet {
 					this.comingDir = 0;
 				}
 				if (!this.autoDir) { this.autoDir = 0; }
-				this.autoDir += .012;
+				this.autoDir += tick.perTick(0.01455);   // one-time-rescaled from .012 (33ms ref)
 				this.speed = this.maxspeed;
 				this.pene = 200;
 				///
@@ -308,8 +314,8 @@ class Bullet {
 				}
 				const baseDis = Math.sqrt(Math.pow(this.x - this.ox, 2) + Math.pow(this.y - this.oy, 2))
 				if (baseDis < 320) {
-					this.speed = .07;
-					if (Math.random() > .999) {
+					this.speed = 0.06399;   // one-time-rescaled from .07 (singleAppFactor, see Physics.js)
+					if (Math.random() < REAIM_CHANCE) {
 						this.comingDir += Math.PI / 2;
 					}
 					const dir = Math.atan2(this.oy + Math.sin(this.autoDir + this.comingDir) * 300 - this.y,
@@ -325,11 +331,11 @@ class Bullet {
 				if (!this.first) {
 					this.first = 1;
 					this.showDir = Math.random() * Math.PI * 2;
-					this.speed += Math.random() * .2;
+					this.speed += tick.perTick(Math.random() * 0.17916);   // .2 one-time-rescaled against the trap's own .82 decay (not global FRICTION)
 				}
-				this.showDir += this.vec.length() / 100
+				this.showDir += tick.perTick(this.vec.length() / 100)
 					;
-				this.speed *= .82;
+				this.speed *= tick.drag(0.7862);   // .82 one-time-rescaled (33ms ref)
 				break;
 			}
 			///////////////square
@@ -370,8 +376,8 @@ class Bullet {
 					}
 					const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
 					if (playDis < play.size * 3.5) {
-						this.speed = .08;
-						if (Math.random() > .999) {
+						this.speed = 0.07313;   // one-time-rescaled from .08 (singleAppFactor, see Physics.js)
+						if (Math.random() < REAIM_CHANCE) {
 							this.comingDir += Math.PI / 2;
 						}
 						const dir = Math.atan2(play.y + Math.sin(play.autoDir * 2 + this.comingDir) * play.size * 3 - this.y,
@@ -411,15 +417,15 @@ class Bullet {
 				/// else
 				const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
 				if (playDis < play.size * 4) {
-					this.speed = Math.max(this.speed * .99, .05);
-					if (Math.random() > .9995) {
+					this.speed = Math.max(this.speed * tick.drag(0.98789), .05);   // .99 one-time-rescaled (33ms ref)
+					if (Math.random() < CHARGE_CHANCE) {
 						this.comingDir += Math.PI * .8;
 						this.speed = this.maxspeed * 2;
 					}
 					const dir = Math.atan2(play.y + Math.sin(this.comingDir) * this.randPos - this.y,
 						play.x + Math.cos(this.comingDir) * this.randPos - this.x);
 					this.dir = dir;
-					this.comingDir -= 0.01
+					this.comingDir -= tick.perTick(0.01212)   // .01 one-time-rescaled (33ms ref)
 				} else {
 					const dir = Math.atan2(play.y - this.y, play.x - this.x)
 					this.dir = dir;
@@ -429,7 +435,7 @@ class Bullet {
 				break;
 			};
 		}
-		this.vec.add(new Vec(this.speed, 0).rotate(this.dir))
+		this.vec.add(new Vec(tick.perTick(this.speed), 0).rotate(this.dir))
 		this.vec.x *= FRICTION;
 		this.vec.y *= FRICTION;
 		this.x += this.vec.x;
@@ -455,7 +461,7 @@ class Bullet {
 			return;
 		};
 		if (this.life === 0) {
-			this.destroy = config.DES;
+			this.destroy = tick.DES;
 		} else {
 			this.life -= 1;
 		}

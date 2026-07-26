@@ -20,9 +20,12 @@
 	const Obj = CLIENT.Obj;
 	const Bullet = CLIENT.Bullet;
 	const CLASS = CLIENT.CLASS;
-	// One server tick (public/motion.js:60) expressed in 60fps-equivalent frames, so the
-	// per-tick server constants below can be applied per-frame scaled by Global.dtFrames.
-	const FRAMES_PER_TICK = MOTION.NET_TICK / 16.667;
+	// One *reference* tick (public/motion.js's REF_TICK, 40ms - massplanchunks WP3) expressed in
+	// 60fps-equivalent frames, so the per-reference-tick server constants below (Physics.js) can
+	// be applied per-frame scaled by Global.dtFrames. Deliberately not MOTION.NET_TICK (the send
+	// interval, 33ms) - that only coincidentally used to equal the tick server constants were
+	// denominated against, and the two are no longer the same number at all.
+	const FRAMES_PER_TICK = MOTION.REF_TICK / 16.667;
 	///
 	CLIENT.Run = function () {
 		if (!General['canvas']) {
@@ -523,8 +526,11 @@
 				Global.dtFrames = Global.frameAt ? Math.min(4, Math.max(0.2, (t - Global.frameAt) / 16.667)) : 1;
 				Global.frameAt = t;
 			}
-			rnbcolor[0] = 'hsl(' + (Game.timestamp * 2) % 360 + ',78%,56%)';
-			rnbcolor[1] = 'hsl(' + (Game.timestamp * 2) % 360 + ',50%,38%)';
+			// Game.timestamp increments once per server tick, which is 25/33 as long a wall-clock
+			// moment as it used to be (massplanchunks WP3) - 1.515152 = 2 * 25/33 keeps this
+			// spinning at its old real-world rate instead of 1.32x faster.
+			rnbcolor[0] = 'hsl(' + (Game.timestamp * 1.515152) % 360 + ',78%,56%)';
+			rnbcolor[1] = 'hsl(' + (Game.timestamp * 1.515152) % 360 + ',50%,38%)';
 			///
 			General['doors'].update();
 			Game.screen += (Game.realScreen - Game.screen) * General['lerpK'](0.1);

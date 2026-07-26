@@ -117,7 +117,12 @@ const hash = fnv1a(blob);
 //
 // Rebuilt again for massplanchunks WP1/WP2: real bullet muzzle spawn, the real `mine` bit, and
 // camera lag/tankOff() all change what reaches the canvas and cascade through the seeded RNG.
-const GOLDEN = { count: 226843, hash: '129e0c78' };
+//
+// Rebuilt again for massplanchunks WP3 (40Hz simulation via a reference-tick split, lib/tick.js)
+// and WP4 (wider FOV): every bot AI decision this test's seeded RNG drives happens against
+// rescaled movement/bullet constants and a different quadtree cull rect, so op count and hash
+// both move. Confirmed intentional the same way - no NaN/Inf in the captured stream.
+const GOLDEN = { count: 275433, hash: '7ed8d55c' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

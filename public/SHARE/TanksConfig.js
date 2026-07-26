@@ -1396,7 +1396,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 32;
+					this.reload = 26;
 					this.offTime = 0;
 					this.type = 0;
 					///
@@ -1405,21 +1405,21 @@
 					this.canonLength = 68;
 					this.rand = 0.14;
 					///
-					this.speed = 0.31;
+					this.speed = 0.2834;
 					this.pene = 1.7;
 					this.peneMult = 1;
-					this.damage = 4;
+					this.damage = 4.84848;
 					this.size = 18;
 					///
-					this.weight = 0.3;
-					this.back = 0.4;
+					this.weight = 0.27426;
+					this.back = 0.58508;
 				}
 			},
 			"Flank Guard": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 32;
+					this.reload = 26;
 					this.offTime = 0;
 					this.type = 0;
 					///
@@ -1428,16 +1428,16 @@
 					this.canonLength = 65;
 					this.rand = 0.14;
 					///
-					this.speed = 0.31;
+					this.speed = 0.2834;
 					this.pene = 1.5;
-					this.damage = 3.6;
+					this.damage = 4.36364;
 					this.size = 18;
 					///
-					this.weight = 0.3;
-					this.back = 0.4;
+					this.weight = 0.27426;
+					this.back = 0.58508;
 				}
 				this.cannons[1] = {
-					reload: 32,
+					reload: 26,
 					offTime: 0,
 					///
 					offdir: Math.PI,
@@ -1445,20 +1445,20 @@
 					canonLength: 58,
 					rand: 0.13,
 					///
-					speed: 0.28,
+					speed: 0.25597,
 					pene: .6,
-					damage: 2,
+					damage: 2.42424,
 					size: 17,
 					///
-					weight: 0.5,
-					back: 1.2
+					weight: 0.45709,
+					back: 1.75523
 				};
 			},
 			"Twin": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[1] = new function () {
-					this.reload = 28;
+					this.reload = 23;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -1466,17 +1466,17 @@
 					this.canonLength = 60;
 					this.rand = 0.21;
 					///
-					this.speed = 0.31;
+					this.speed = 0.2834;
 					this.pene = 1.3;
 					this.peneMult = 1;
-					this.damage = 3.5;
+					this.damage = 4.24242;
 					this.size = 17;
 					///
-					this.weight = 0.3;
-					this.back = 0.3;
+					this.weight = 0.27426;
+					this.back = 0.43881;
 				};
 				this.cannons[0] = new function () {
-					this.reload = 28;
+					this.reload = 23;
 					this.offTime = 0.5;
 					///
 					this.offdir = 0;
@@ -1484,21 +1484,21 @@
 					this.canonLength = 60;
 					this.rand = 0.21;
 					///
-					this.speed = 0.31;
+					this.speed = 0.2834;
 					this.pene = 1.3;
 					this.peneMult = 1;
-					this.damage = 3.5;
+					this.damage = 4.24242;
 					this.size = 17;
 					///
-					this.weight = 0.3;
-					this.back = 0.4;
+					this.weight = 0.27426;
+					this.back = 0.58508;
 				};
 			},
 			"Machine Gun": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 14;
+					this.reload = 12;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -1506,20 +1506,20 @@
 					this.canonLength = 62;
 					this.rand = 0.6;
 					///
-					this.speed = 0.32;//.22
+					this.speed = 0.29254;//.22
 					this.pene = 1.2;
-					this.damage = 2.6;
+					this.damage = 3.15152;
 					this.size = 18;//17
 					///
-					this.weight = 0.3;
-					this.back = 0.6;
+					this.weight = 0.27426;
+					this.back = 0.87761;
 				}
 			},
 			"Sniper": new function () {
 				this.screen = 1664;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 55;
+					this.reload = 45;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -1527,13 +1527,13 @@
 					this.canonLength = 80;
 					this.rand = 0.2;
 					///
-					this.speed = 0.4;
+					this.speed = 0.36567;
 					this.pene = 2.5;
-					this.damage = 2.7;
+					this.damage = 3.27273;
 					this.size = 18;
 					///
-					this.weight = .6;
-					this.back = 0.3;
+					this.weight = 0.54851;
+					this.back = 0.43881;
 				}
 			},
 			///
@@ -1541,7 +1541,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(3).fill(null).map(() => ({
-					reload: 28,
+					reload: 23,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1549,13 +1549,13 @@
 					canonLength: 58,
 					rand: 0.2,
 					///
-					speed: 0.27,
+					speed: 0.24683,
 					pene: 1,
-					damage: 2,
+					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.5,
-					back: 0.4
+					weight: 0.45709,
+					back: 0.58508
 				}));
 				c[0].offx = 6; c[0].offdir = .4;
 				c[1].offx = -6; c[1].offdir = -.4;
@@ -1565,22 +1565,22 @@
 			"Twin Flank": new function () {
 				this.screen = 1408;
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 28,
+					reload: 23,
 					offTime: 0,
 					type: 0,
-					life: 180,
+					life: 149,
 					///
 					offdir: 0,
 					offx: -18,
 					canonLength: 60,
 					rand: 0.15,
 					///
-					speed: 0.31,
+					speed: 0.2834,
 					pene: 1.2,
-					damage: 3,
+					damage: 3.63636,
 					size: 16,
 					///
-					weight: .3,
+					weight: 0.27426,
 					back: 0
 				}));
 				c[2].offdir = c[3].offdir = Math.PI;
@@ -1592,7 +1592,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 28,
+					reload: 23,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1600,12 +1600,12 @@
 					canonLength: 66,
 					rand: 0.2,
 					///
-					speed: 0.27,
+					speed: 0.24683,
 					pene: 1.3,
-					damage: 3.5,
+					damage: 4.24242,
 					size: 15,
 					///
-					weight: 0.5,
+					weight: 0.45709,
 					back: 0
 				}));
 				c[1].offdir = Math.PI / 2; c[1].offTime = .5;
@@ -1616,24 +1616,24 @@
 			"Destroyer": new function () {
 				this.screen = 1408;
 				const c = new Array(1).fill(null).map(() => ({
-					reload: 105,
+					reload: 87,
 					offTime: 0,
 					type: 0,
-					life: 180,
+					life: 149,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 62,
 					rand: 0.10,
 					///
-					speed: 0.22,
+					speed: 0.20112,
 					pene: 18,
-					damage: 1.5,
+					damage: 1.81818,
 					size: 27,
 					///
 					exitSpeed: 53,
-					weight: .3,
-					back: 3.8
+					weight: 0.27426,
+					back: 5.55821
 				}));
 				///
 				this.cannons = c;
@@ -1642,7 +1642,7 @@
 				this.screen = 1920;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 52;
+					this.reload = 43;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -1650,13 +1650,13 @@
 					this.canonLength = 85;
 					this.rand = 0.1;
 					///
-					this.speed = 0.41;
+					this.speed = 0.37481;
 					this.pene = 2.5;
-					this.damage = 2.6;
+					this.damage = 3.15152;
 					this.size = 19;
 					///
-					this.weight = .6;
-					this.back = 0.3;
+					this.weight = 0.54851;
+					this.back = 0.43881;
 				}
 			},
 			"Overseer": new function () {
@@ -1664,7 +1664,7 @@
 				this.maxDrone = 7;
 				this.cannons = [];
 				const c = new Array(2).fill(null).map(() => ({
-					reload: 220,
+					reload: 182,
 					offTime: 0,
 					type: 1,
 					life: -1,
@@ -1675,13 +1675,13 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.3,
+					speed: 0.27426,
 					pene: 5.3,
-					damage: 2,
+					damage: 2.42424,
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.4,
+					weight: 0.36567,
 					back: 0
 				}));
 				c[1].offdir = -Math.PI / 2;
@@ -1690,7 +1690,7 @@
 			"Triangle": new function () {
 				this.screen = 1408;
 				const c = new Array(3).fill(null).map(() => ({
-					reload: 30,
+					reload: 25,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1698,19 +1698,19 @@
 					canonLength: 58,
 					rand: 0.13,
 					///
-					speed: 0.28,
+					speed: 0.25597,
 					pene: .6,
-					damage: 2,
+					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.5,
-					back: 1
+					weight: 0.45709,
+					back: 1.46269
 				}));
 				// The main cannon's length bump used to write `.height`, a client-only field
 				// name the server never reads (Player.js:212 reads `canonLength`), so this
 				// line was a no-op and the cannon stayed at the 58 default. test/tanks.js's
 				// muzzle-tip band caught it once canonLength was corrected.
-				c[0].back = .1; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 3.3; c[0].speed = .31;
+				c[0].back = 0.14627; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.2834;
 				c[1].offdir = -Math.PI - .4; c[1].offx = -5; c[1].offTime = .5;
 				c[2].offdir = -Math.PI + .4; c[2].offx = 5; c[2].offTime = .5;
 				///
@@ -1720,31 +1720,31 @@
 				this.screen = 1664;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 30;
+					this.reload = 25;
 					this.offTime = 0;
 					this.type = 2;
-					this.life = 360;
+					this.life = 297;
 					///
 					this.offdir = 0;
 					this.offx = 0;
 					this.canonLength = 68;
 					this.rand = 0.3;
 					///
-					this.speed = 0.15;
+					this.speed = 0.13713;
 					this.pene = 4.2;
-					this.damage = 1.3;
+					this.damage = 1.57576;
 					this.size = 12;
 					///
 					this.exitSpeed = 60;
-					this.weight = 0.3;
-					this.back = 0.4;
+					this.weight = 0.27426;
+					this.back = 0.58508;
 				}
 			},
 			///
 			"Rocket": new function () {
 				this.screen = 1408;
 				const c = new Array(2).fill(null).map(() => ({
-					reload: 20,
+					reload: 17,
 					offTime: 0,
 					///
 					offdir: -Math.PI - .4,
@@ -1752,13 +1752,13 @@
 					canonLength: 56,
 					rand: 0.3,
 					///
-					speed: 0.27,
+					speed: 0.24683,
 					pene: 1.6,
-					damage: 3.5,
+					damage: 4.24242,
 					size: 16,
 					///
-					weight: 1,
-					back: 0.85
+					weight: 0.91418,
+					back: 1.24328
 				}));
 				c[1].offdir = -Math.PI + .4; c[1].offx = 5;
 				this.cannons = c;
@@ -1767,27 +1767,27 @@
 				this.screen = 1408;
 				this.maxDrone = 2;
 				const c = new Array(1).fill(null).map(() => ({
-					reload: 105,
+					reload: 87,
 					offTime: 0,
 					type: 0,
-					life: 180,
+					life: 149,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 62,
 					rand: 0.10,
 					///
-					speed: 0.22,
+					speed: 0.20112,
 					pene: 17,
-					damage: 1.5,
+					damage: 1.81818,
 					size: 27,
 					///
 					exitSpeed: 53,
-					weight: .3,
-					back: 3.8
+					weight: 0.27426,
+					back: 5.55821
 				}));
 				c.push({
-					reload: 200,
+					reload: 165,
 					offTime: 0,
 					type: 1.1,
 					life: -1,
@@ -1798,14 +1798,14 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.3,
+					speed: 0.27426,
 					pene: 5,
-					damage: 1.8,
+					damage: 2.18182,
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.4,
-					back: 0.1
+					weight: 0.36567,
+					back: 0.14627
 				})
 				///
 				this.cannons = c;
@@ -1813,24 +1813,24 @@
 			"Annihilator": new function () {
 				this.screen = 1408;
 				const c = new Array(1).fill(null).map(() => ({
-					reload: 105,
+					reload: 87,
 					offTime: 0,
 					type: 0,
-					life: 180,
+					life: 149,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 62,
 					rand: 0.10,
 					///
-					speed: 0.215,
+					speed: 0.19655,
 					pene: 17,
-					damage: 1.5,
+					damage: 1.81818,
 					size: 34,
 					///
 					exitSpeed: 53,
-					weight: .3,
-					back: 4
+					weight: 0.27426,
+					back: 5.85075
 				}));
 				///
 				this.cannons = c;
@@ -1838,7 +1838,7 @@
 			"Sprayer": new function () {
 				this.screen = 1664;
 				const c = new Array(5).fill(null).map(() => ({
-					reload: 28,
+					reload: 23,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1846,13 +1846,13 @@
 					canonLength: 82,
 					rand: 0.11,
 					///
-					speed: 0.4,
+					speed: 0.36567,
 					pene: .45,
-					damage: 2.2,
+					damage: 2.66667,
 					size: 15,
 					///
-					weight: 0.5,
-					back: 0.15
+					weight: 0.45709,
+					back: 0.21941
 				}));
 				// This array is index-paired against the client's cannons list in
 				// TanksConfig.js's ///CLIENTS/// half (longest barrel first, at index 0,
@@ -1870,7 +1870,7 @@
 				this.screen = 2208;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 54;
+					this.reload = 45;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -1878,20 +1878,20 @@
 					this.canonLength = 88;
 					this.rand = 0.1;
 					///
-					this.speed = 0.41;
+					this.speed = 0.37481;
 					this.pene = 3;
-					this.damage = 2.5;
+					this.damage = 3.0303;
 					this.size = 19;
 					///
-					this.weight = .7;
-					this.back = 0.8;
+					this.weight = 0.63992;
+					this.back = 1.17015;
 				}
 			},
 			"Triplet": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(3).fill(null).map(() => ({
-					reload: 28,
+					reload: 23,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1899,13 +1899,13 @@
 					canonLength: 55,
 					rand: 0.16,
 					///
-					speed: 0.27,
+					speed: 0.24683,
 					pene: 1,
-					damage: 2,
+					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.5,
-					back: 0.4
+					weight: 0.45709,
+					back: 0.58508
 				}));
 				c[0].offx = 17;
 				c[1].offx = -17;
@@ -1915,22 +1915,22 @@
 			"Triple Twin": new function () {
 				this.screen = 1408;
 				const c = new Array(6).fill(null).map(() => ({
-					reload: 28,
+					reload: 23,
 					offTime: 0,
 					type: 0,
-					life: 180,
+					life: 149,
 					///
 					offdir: 0,
 					offx: -18,
 					canonLength: 60,
 					rand: 0.15,
 					///
-					speed: 0.31,
+					speed: 0.2834,
 					pene: 1.2,
-					damage: 2.8,
+					damage: 3.39394,
 					size: 16,
 					///
-					weight: .3,
+					weight: 0.27426,
 					back: 0
 				}));
 				c[2].offdir = c[3].offdir = Math.PI * 2 / 3;
@@ -1943,7 +1943,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(5).fill(null).map(() => ({
-					reload: 28,
+					reload: 23,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1951,13 +1951,13 @@
 					canonLength: 55,
 					rand: 0.16,
 					///
-					speed: 0.27,
+					speed: 0.24683,
 					pene: .95,
-					damage: 2.3,
+					damage: 2.78788,
 					size: 16,
 					///
-					weight: 0.5,
-					back: 0.28
+					weight: 0.45709,
+					back: 0.40955
 				}));
 				c[0].offx = 7; c[0].offdir = .6;
 				c[1].offx = -7; c[1].offdir = -.6;
@@ -1970,7 +1970,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(8).fill(null).map(() => ({
-					reload: 28,
+					reload: 23,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1978,12 +1978,12 @@
 					canonLength: 62,
 					rand: 0.2,
 					///
-					speed: 0.27,
+					speed: 0.24683,
 					pene: 1.3,
-					damage: 2.5,
+					damage: 3.0303,
 					size: 16,
 					///
-					weight: 0.5,
+					weight: 0.45709,
 					back: 0
 				}));
 				c[1].offdir = Math.PI * 1 / 4; c[1].offTime = .5;
@@ -1998,7 +1998,7 @@
 			"Cyclone": new function () {
 				this.screen = 1408;
 				this.cannons = new Array(10).fill(null).map(() => ({
-					reload: 33,
+					reload: 27,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2006,12 +2006,12 @@
 					canonLength: 52,
 					rand: 0.13,
 					///
-					speed: 0.265,
+					speed: 0.24226,
 					pene: 1,
-					damage: 3.7,
+					damage: 4.48485,
 					size: 12,
 					///
-					weight: 0.5,
+					weight: 0.45709,
 					back: 0
 				}));
 				this.cannons[1].offdir = Math.PI * .2; this.cannons[1].offTime = .5;
@@ -2027,7 +2027,7 @@
 			"Booster": new function () {
 				this.screen = 1408;
 				const c = new Array(5).fill(null).map(() => ({
-					reload: 31,
+					reload: 26,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2035,17 +2035,17 @@
 					canonLength: 52,
 					rand: 0.13,
 					///
-					speed: 0.28,
+					speed: 0.25597,
 					pene: .6,
-					damage: 2,
+					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.5,
-					back: 0.86
+					weight: 0.45709,
+					back: 1.25791
 				}));
 				// Same `.height`-instead-of-`.canonLength` typo as Triangle above; these three
 				// lines were no-ops until test/tanks.js caught it.
-				c[0].back = .2; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 3.3; c[0].speed = .32;
+				c[0].back = 0.29253; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.29254;
 				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
 				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
 				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 58; c[3].offTime = .5;
@@ -2056,7 +2056,7 @@
 			"Fighter": new function () {
 				this.screen = 1408;
 				const c = new Array(5).fill(null).map(() => ({
-					reload: 27,
+					reload: 22,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2064,25 +2064,25 @@
 					canonLength: 57,
 					rand: 0.13,
 					///
-					speed: 0.29,
+					speed: 0.26512,
 					pene: .5,
-					damage: 1.2,
+					damage: 1.45455,
 					size: 16,
 					///
-					weight: 0.5,
-					back: 0.1
+					weight: 0.45709,
+					back: 0.14627
 				}));
 				// Same `.height`/`.canonLength` typo as Triangle/Booster above, plus a second
 				// one: the rear pair's offx was written to c[1]/c[2] (already set two lines
 				// up) instead of c[3]/c[4], so the rear cannons never got their splay and the
 				// side cannons silently lost theirs. test/tanks.js's index-paired offx check
 				// is what caught both.
-				c[0].back = .1; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 3.3; c[0].speed = .31;
-				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 1.4; c[1].damage = 3.2; c[1].speed = .30;
-				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 1.4; c[2].damage = 3.2; c[2].speed = .30;
+				c[0].back = 0.14627; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 4; c[0].speed = 0.2834;
+				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 1.4; c[1].damage = 3.87879; c[1].speed = 0.27426;
+				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 1.4; c[2].damage = 3.87879; c[2].speed = 0.27426;
 				c[3].offdir = -Math.PI - .4; c[3].offx = -5; c[3].offTime = .5; c[3].canonLength = 59;
 				c[4].offdir = -Math.PI + .4; c[4].offx = 5; c[4].offTime = .5; c[4].canonLength = 59;
-				c[3].back = c[4].back = 1.4;
+				c[3].back = c[4].back = 2.04776;
 				///
 				this.cannons = c;
 			},
@@ -2095,10 +2095,10 @@
 					maxDis: 850,
 				};
 				let c = [{
-					reload: 35,
+					reload: 29,
 					offTime: 0,
 					type: 0,
-					life: 120,
+					life: 99,
 					auto: 1,
 					autoShoot: 1,
 					autoDir: 1,
@@ -2108,16 +2108,16 @@
 					canonLength: 38,
 					rand: 0.1,
 					///
-					speed: 0.36,
+					speed: 0.3291,
 					pene: 1.8,
-					damage: 2.5,
+					damage: 3.0303,
 					size: 14,
 					///
-					weight: 0.3,
-					back: 0.1
+					weight: 0.27426,
+					back: 0.14627
 				}];
 				c = c.concat(new Array(3).fill(null).map(() => ({
-					reload: 30,
+					reload: 25,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2125,13 +2125,13 @@
 					canonLength: 58,
 					rand: 0.13,
 					///
-					speed: 0.28,
+					speed: 0.25597,
 					pene: .6,
-					damage: 2,
+					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.5,
-					back: 1
+					weight: 0.45709,
+					back: 1.46269
 				})));
 				// `.height` was a typo for `.canonLength` (see Triangle/Booster/Fighter
 				// above), and it targeted c[0] - the auto-turret, already fully specified
@@ -2142,7 +2142,7 @@
 				// `cannons` array), which is why this one wasn't caught by the muzzle-tip
 				// band the way its siblings were - found by the same static read that fixed
 				// them.
-				c[1].back = .1; c[1].canonLength = 62; c[1].pene = 1.35; c[1].damage = 3.3;
+				c[1].back = 0.14627; c[1].canonLength = 62; c[1].pene = 1.35; c[1].damage = 4;
 				c[2].offdir = -Math.PI - .4; c[2].offx = -5; c[2].offTime = .5;
 				c[3].offdir = -Math.PI + .4; c[3].offx = 5; c[3].offTime = .5;
 				///
@@ -2153,7 +2153,7 @@
 				this.maxDrone = 8;
 				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 340,
+					reload: 281,
 					offTime: 0,
 					type: 1,
 					life: -1,
@@ -2164,14 +2164,14 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.3,
+					speed: 0.27426,
 					pene: 4.5,
-					damage: 1.8,
+					damage: 2.18182,
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.5,
-					back: 0.1
+					weight: 0.45709,
+					back: 0.14627
 				}));
 				c[1].offdir = Math.PI / 2;
 				c[2].offdir = Math.PI;
@@ -2181,10 +2181,10 @@
 			"Manager": new function () {
 				this.screen = 1824;
 				this.maxDrone = 8;
-				this.alpha = .006;
+				this.alpha = 0.00727;
 				this.cannons = [];
 				const c = [{
-					reload: 140,
+					reload: 116,
 					offTime: 0,
 					type: 1,
 					life: -1,
@@ -2195,14 +2195,14 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.3,
+					speed: 0.27426,
 					pene: 5,
-					damage: 2,
+					damage: 2.42424,
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.5,
-					back: 0.1
+					weight: 0.45709,
+					back: 0.14627
 				}]
 				this.cannons = c;
 			},
@@ -2213,10 +2213,10 @@
 					type: 3,
 					necro: 1,
 					///
-					speed: 0.3,
+					speed: 0.27426,
 					pene: 4,
-					damage: 1.3,
-					weight: 0.55
+					damage: 1.57576,
+					weight: 0.5028
 				};
 				this.cannons = [];
 			},
@@ -2225,10 +2225,10 @@
 				//this.maxDrone = 7;
 				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 27,
+					reload: 22,
 					offTime: 0,
 					type: 1.2,
-					life: 110,
+					life: 91,
 					auto: 0,
 					///
 					offdir: Math.PI / 2,
@@ -2236,20 +2236,20 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.52,
+					speed: 0.47537,
 					pene: .8,
-					damage: .9,
+					damage: 1.09091,
 					size: 6,
 					///
 					exitSpeed: 25,
-					weight: 0.05,
+					weight: 0.04571,
 					back: 0
 				}));
 				c[1].offdir = -Math.PI / 2; c[1].offx = -12; c[1].offTime = .5;
 				c[2].offdir = Math.PI / 2; c[2].offx = -12; c[2].offTime = .5;
 				c[3].offdir = -Math.PI / 2; c[3].offx = 12;
 				c[2].type = c[3].type = 1.3;
-				c[2].life = c[3].life = 145;
+				c[2].life = c[3].life = 120;
 				this.cannons = c;
 			},
 			"Fortress": new function () {
@@ -2257,31 +2257,31 @@
 				//this.maxDrone = 7;
 				this.cannons = [];
 				let c = new Array(3).fill(null).map(() => ({
-					reload: 50,
+					reload: 41,
 					offTime: 0,
 					type: 2,
-					life: 360,
+					life: 297,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 65,
 					rand: 0.2,
 					///
-					speed: 0.15,
+					speed: 0.13713,
 					pene: 4,
-					damage: 0.8,
+					damage: 0.9697,
 					size: 10,
 					///
 					exitSpeed: 60,
-					weight: 0.3,
+					weight: 0.27426,
 					back: 0
 				}));
 				c[1].offdir = Math.PI * 2 / 3; c[2].offdir = Math.PI * 4 / 3;
 				c = c.concat(new Array(3).fill(null).map(() => ({
-					reload: 40,
+					reload: 33,
 					offTime: .5,
 					type: 1.2,
-					life: 100,
+					life: 83,
 					auto: 0,
 					///
 					offdir: Math.PI / 3,
@@ -2289,13 +2289,13 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.42,
+					speed: 0.38395,
 					pene: .7,
-					damage: .8,
+					damage: 0.9697,
 					size: 6,
 					///
 					exitSpeed: 28,
-					weight: 0.05,
+					weight: 0.04571,
 					back: 0
 				})));
 				c[4].offdir = Math.PI * 2 / 3 + Math.PI / 3; c[5].offdir = Math.PI * 4 / 3 + Math.PI / 3;
@@ -2306,24 +2306,24 @@
 				//this.maxDrone = 7;
 				this.cannons = [];
 				const c = [{
-					reload: 85,
+					reload: 70,
 					offTime: 0,
 					type: 2,
-					life: 480,
+					life: 396,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 68,
 					rand: 0.2,
 					///
-					speed: 0.15,
+					speed: 0.13713,
 					pene: 18,
-					damage: 1.4,
+					damage: 1.69697,
 					size: 19,
 					///
 					exitSpeed: 70,
-					weight: 0.3,
-					back: 1.2
+					weight: 0.27426,
+					back: 1.75523
 				}];
 				this.cannons = c;
 			},
@@ -2331,27 +2331,27 @@
 				this.screen = 1664;
 				this.maxDrone = 4;
 				let c = [{
-					reload: 48,
+					reload: 40,
 					offTime: 0,
 					type: 2,
-					life: 360,
+					life: 297,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 65,
 					rand: 0.2,
 					///
-					speed: 0.16,
+					speed: 0.14627,
 					pene: 5,
-					damage: 1.2,
+					damage: 1.45455,
 					size: 10,
 					///
 					exitSpeed: 60,
-					weight: 0.3,
-					back: .8
+					weight: 0.27426,
+					back: 1.17015
 				}];
 				c = c.concat(new Array(2).fill(null).map(() => ({
-					reload: 250,
+					reload: 206,
 					offTime: 0,
 					type: 1,
 					life: -1,
@@ -2362,14 +2362,14 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.3,
+					speed: 0.27426,
 					pene: 5.5,
-					damage: 1.5,
+					damage: 1.81818,
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.5,
-					back: 0.1
+					weight: 0.45709,
+					back: 0.14627
 				})));
 				c[2].offdir = Math.PI * 4 / 3; c[2].offTime = .5;
 				this.cannons = c;
@@ -2383,10 +2383,10 @@
 					maxDis: 800,
 				};
 				const c = [{
-					reload: 35,
+					reload: 29,
 					offTime: 0,
 					type: 0,
-					life: 120,
+					life: 99,
 					auto: 1,
 					autoShoot: 1,
 					autoDir: 1,
@@ -2396,33 +2396,33 @@
 					canonLength: 38,
 					rand: 0.1,
 					///
-					speed: 0.32,
+					speed: 0.29254,
 					pene: 1.5,
-					damage: 2.6,
+					damage: 3.15152,
 					size: 14,
 					///
-					weight: 0.3,
-					back: 0.1
+					weight: 0.27426,
+					back: 0.14627
 				}];
 				c.push({
-					reload: 36,
+					reload: 30,
 					offTime: 0,
 					type: 2,
-					life: 360,
+					life: 297,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 65,
 					rand: 0.2,
 					///
-					speed: 0.16,
+					speed: 0.14627,
 					pene: 4,
-					damage: 1.4,
+					damage: 1.69697,
 					size: 10,
 					///
 					exitSpeed: 60,
-					weight: 0.3,
-					back: .8
+					weight: 0.27426,
+					back: 1.17015
 				});
 				this.cannons = c;
 			},
@@ -2430,7 +2430,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 20;
+					this.reload = 17;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -2438,13 +2438,13 @@
 					this.canonLength = 60;
 					this.rand = 0.62;
 					///
-					this.speed = 0.27;//.22
+					this.speed = 0.24683;//.22
 					this.pene = 3;
-					this.damage = 1.6;
+					this.damage = 1.93939;
 					this.size = 23;//17
 					///
-					this.weight = 0.3;
-					this.back = 0.8;
+					this.weight = 0.27426;
+					this.back = 1.17015;
 				}
 			},
 			///dev
@@ -2452,7 +2452,7 @@
 				this.screen = 1408;
 				let c = [];
 				c = c.concat(new Array(4).fill(null).map(() => ({
-					reload: 33,
+					reload: 27,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2460,12 +2460,12 @@
 					canonLength: 45,
 					rand: 0.1,
 					///
-					speed: 0.35,
+					speed: 0.31996,
 					pene: .42,
-					damage: 2.2,
+					damage: 2.66667,
 					size: 12,
 					///
-					weight: 0.5,
+					weight: 0.45709,
 					back: 0
 				})));
 				c[1].offx *= -1;
@@ -2483,10 +2483,10 @@
 					maxDis: 800,
 				};
 				let c = [{
-					reload: 35,
+					reload: 29,
 					offTime: 0,
 					type: 0,
-					life: 120,
+					life: 99,
 					auto: 1,
 					autoShoot: 1,
 					autoDir: 1,
@@ -2496,16 +2496,16 @@
 					canonLength: 38,
 					rand: 0.1,
 					///
-					speed: 0.32,
+					speed: 0.29254,
 					pene: 1.8,
-					damage: 2,
+					damage: 2.42424,
 					size: 14,
 					///
-					weight: 0.3,
-					back: 0.1
+					weight: 0.27426,
+					back: 0.14627
 				}];
 				c = c.concat(new Array(4).fill(null).map(() => ({
-					reload: 33,
+					reload: 27,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2513,12 +2513,12 @@
 					canonLength: 45,
 					rand: 0.1,
 					///
-					speed: 0.41,
+					speed: 0.37481,
 					pene: .31,
-					damage: 2.2,
+					damage: 2.66667,
 					size: 12,
 					///
-					weight: 0.5,
+					weight: 0.45709,
 					back: 0
 				})));
 				c[2].offx *= -1;
@@ -2558,24 +2558,24 @@
 				this.boss = true;
 				this.maxDrone = 35;
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 8,
+					reload: 7,
 					offTime: 0,
 					auto: 1,
 					type: 3.1,
-					life: 130,
+					life: 107,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 50,
 					rand: 0.5,
 					///
-					speed: 0.39,
+					speed: 0.35653,
 					pene: 5.5,
-					damage: 4.5,
+					damage: 5.45455,
 					size: 20,
 					///
 					exitSpeed: 35,
-					weight: 0.2,
+					weight: 0.18283,
 					back: 0
 				}));
 				c[1].offdir = Math.PI / 2; c[1].offTime = .5;

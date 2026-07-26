@@ -11,11 +11,23 @@
 */
 (function (exports) {
 
-	// Per *reference tick* (33ms today - massplanchunks WP3 will wrap the consumers below in
-	// lib/tick.js, not change these numbers).
-	exports.FRICTION = 0.964;
-	exports.MOVE_ACCEL_BASE = 0.35;
-	exports.MOVE_ACCEL_PER_UP = 0.020;   // per Movement Speed upgrade point
+	// Per *reference tick* - config.REF_TICK_MS (40ms, massplanchunks WP3), not the server's
+	// actual TICK_MS (25ms). lib/tick.js's SCALE = TICK_MS/REF_TICK_MS is what actually converts
+	// these into a per-server-tick number, via stepBody's dtTicks below.
+	//
+	// These three were tuned by feel at the *old* reference (a measured ~29Hz/33ms tick, HANDOFF
+	// §3's old note) and have been converted once, here, to mean the same real-world motion at
+	// the new 40ms reference - a relabelling, not a retune, but NOT a plain linear rescale
+	// (0.964^(40/33) for FRICTION is exact - drag scaling is - but ACCEL_BASE/PER_UP compound
+	// with FRICTION into a bounded steady-state speed each tick, so scaling both by the same
+	// naive 40/33 changes that steady state by ~17%. The correct factor was solved numerically
+	// (binary search against the exact stepBody recurrence, verified to reproduce the old
+	// 284 u/s base top speed to <1%): 1.462688, not 40/33's 1.212121.
+	// MOVE_LEVEL_FALLOFF is a per-*level* falloff, not per-tick, so it is unaffected by either
+	// tick and keeps its original value.
+	exports.FRICTION = 0.956532;
+	exports.MOVE_ACCEL_BASE = 0.511941;
+	exports.MOVE_ACCEL_PER_UP = 0.029254;   // per Movement Speed upgrade point
 	exports.MOVE_LEVEL_FALLOFF = 155;
 
 	// Per-tick acceleration. `mspeedBonus` is the already-summed float the server keeps in

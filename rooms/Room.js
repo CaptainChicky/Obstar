@@ -41,6 +41,7 @@
 	graph acyclic.
 */
 const config = require('../lib/config.js').config;
+const tick = require('../lib/tick.js');
 const termColors = require('../lib/terminal.js');
 const quadTree = require('../lib/quadTree.js');
 const SlotMap = require('../lib/SlotMap.js');
@@ -53,8 +54,10 @@ const Objects = require('../entities/Objects.js');
 const CONFIG = require('../lib/gameAI.js');
 
 // generate() used to re-arm itself with setTimeout(400). It is a simulation event, so it
-// rides the simulation clock now: one pass every this many fixed steps.
-const GENERATE_EVERY = Math.round(400 / clock.STEP_MS);   // 20 steps = 400ms at 50Hz
+// rides the simulation clock now: one pass every this many fixed steps. These divide by the
+// actual wall-clock step (clock.STEP_MS, 25ms/40Hz - massplanchunks WP3), not a reference tick,
+// so they stay wall-clock-correct with no rescale of their own.
+const GENERATE_EVERY = Math.round(400 / clock.STEP_MS);   // 16 steps = 400ms at 40Hz
 const FIRST_GENERATE = Math.round(300 / clock.STEP_MS);   // Init() used to wait 300ms
 
 /*
@@ -350,12 +353,15 @@ class Room {
 		}
 		///MAP///
 		if (Math.abs(this.map.width - this.newMap.width) > 0.1) {
-			this.map.width += (this.newMap.width - this.map.width) * .1;
+			// A pure exponential convergence toward newMap.width (no separate accel term), so this
+			// is a "smoothing" constant, not a plain perTick one - .11989 is .1 one-time-rescaled
+			// via smoothingOneTime(k)=1-(1-k)^(40/33), same shape as public/motion.js's lerpK.
+			this.map.width += (this.newMap.width - this.map.width) * tick.smoothing(0.11989);
 		} else {
 			this.map.width = this.newMap.width;
 		}
 		if (Math.abs(this.map.height - this.newMap.height) > 0.1) {
-			this.map.height += (this.newMap.height - this.map.height) * .1;
+			this.map.height += (this.newMap.height - this.map.height) * tick.smoothing(0.11989);
 		} else {
 			this.map.height = this.newMap.height;
 		}
@@ -598,8 +604,8 @@ class Room {
 							obj.murder = -1;
 							continue;
 						}
-						obj.x += (murder.x - obj.x) * 0.1;
-						obj.y += (murder.y - obj.y) * 0.1;
+						obj.x += (murder.x - obj.x) * tick.smoothing(0.11989);   // smoothing-category, see the map-lerp comment above
+						obj.y += (murder.y - obj.y) * tick.smoothing(0.11989);
 					}
 					continue;
 				}

@@ -555,7 +555,7 @@
 					///
 					ctx.save();
 					ctx.translate(tank.can.width / 2, tank.can.width / 2);
-					ctx.rotate(Game.timestamp / 130);
+					ctx.rotate(Game.timestamp / 171.6);   // 130 * 33/25: Game.timestamp ticks 1.32x faster now (massplanchunks WP3)
 					ctx.drawImage(
 						tank.can,
 						0, tank.can.width,
@@ -1033,7 +1033,7 @@
 						this.UP.nb.sw,//sw
 						this.UP.nb.sh,//sh
 						0 - this.UP.nb.sw / 2,//x
-						Math.sin(Game.timestamp / 18) * 2 - this.UP.nb.sh / 2 - 45 * Global.RATIO * CONST.RESOLUTION * CONST.RESOLUTION * CONST.OFFCAN / Global.UIRATIO,//y
+						Math.sin(Game.timestamp / 23.76) * 2 - this.UP.nb.sh / 2 - 45 * Global.RATIO * CONST.RESOLUTION * CONST.RESOLUTION * CONST.OFFCAN / Global.UIRATIO,//y
 						this.UP.nb.sw,//w
 						this.UP.nb.sh,//h
 					);

@@ -99,7 +99,8 @@ cookie.
 | `lib/quadTree.js` | 75 | Spatial index for broad-phase collision. |
 | `lib/SlotMap.js` | 128 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. `maxIndex` is the highest allocatable id, not a capacity. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
-| `lib/config.js` | 68 | Live tunables/flags. **`TICK_MS`** lives here — read §4 first. |
+| `lib/config.js` | ~85 | Live tunables/flags. **`TICK_MS`/`REF_TICK_MS`** live here — read §3/§4 first. |
+| `lib/tick.js` | ~55 | `SCALE = TICK_MS/REF_TICK_MS` and the `perTick`/`drag`/`ticks`/`chance`/`quadratic`/`lead`/`smoothing` conversions every per-reference-tick constant is read through (massplanchunks WP3). |
 | `lib/db.js` | ~25 | The one Postgres connection point — `db.enabled`, `db.query()`, `db.check()`. Off unless `config.DB.ON`. |
 | `lib/terminal.js` | 34 | Terminal colour codes (`termColors`). |
 | `lib/constants.js` | 7 | Re-exports `FRICTION` from `public/SHARE/Physics.js`. |
@@ -142,13 +143,20 @@ anywhere in this repo.
 
 The things in this codebase that are *not* obvious from reading the code around them:
 
-- **`TICK_MS` is 33, not 20, and that's deliberate — don't "fix" it.** The old loop never
-  actually ran at the 50 Hz (`20ms`) it claimed; it ran at ~29 Hz, and every gameplay constant
-  (speed, reload, friction) was tuned by feel against that rate. `TICK_MS = 33` (30 Hz)
-  reproduces the speed the game was actually tuned for. Setting it to 20 makes the game run
-  ~1.7× too fast — that's a balance project, not a config change. `SEND_MS` must stay `>=
-  TICK_MS`, or consecutive packets carry an identical world and the client's interpolator reads
-  that as "this entity stopped."
+- **`TICK_MS` (25, 40 Hz) and `REF_TICK_MS` (40) are different numbers on purpose — read
+  `lib/tick.js` and `lib/config.js`'s `TICK_MS` comment before touching either.** The old loop
+  never actually ran at the 50 Hz (`20ms`) it claimed; it ran at ~29 Hz, and every gameplay
+  constant (speed, reload, friction, recoil, knockback) was tuned by feel against that rate.
+  massplanchunks WP3 split "how often the server steps" (`TICK_MS`) from "what tick every raw
+  constant in `entities/`, `lib/gameAI.js` and `public/SHARE/TanksConfig.js` is denominated
+  against" (`REF_TICK_MS`) — the server now steps at diep.io's own real rate (40 Hz) while every
+  constant is still readable as "per 40ms of gameplay," converted to the actual step at its
+  consumption site by `lib/tick.js`'s `perTick()`/`drag()`/`ticks()`/`chance()`/`quadratic()`/
+  `lead()`/`smoothing()`. Changing `TICK_MS` alone is a simulation-cost knob, not a balance
+  change, because of that split — but if you ever add a *new* per-tick constant, get the category
+  right (see `lib/tick.js`'s header) or it silently drifts from real-world-correct. `SEND_MS`
+  must stay `>= TICK_MS`, or consecutive packets carry an identical world and the client's
+  interpolator reads that as "this entity stopped."
 - **Never destructure or cache a value off client `CLIENT` at module load time.** The server side
   no longer has an `RT`-style registry to worry about (below) — this rule is client-only now.
   `CLIENT.Run()` builds `User`/`Instances`/the 2D context after every `public/client/*.js` file has
@@ -201,9 +209,11 @@ The things in this codebase that are *not* obvious from reading the code around 
 ## 4. Server core: timing, rooms, entities, collision
 
 **Timing.** One fixed-timestep clock (`lib/clock.js`) calls every room's `step()` on an
-accumulator, at `config.TICK_MS` (33 ms / 30.3 Hz average) of wall clock — overrun is repaid,
-and a stall beyond the catch-up budget (5 steps) is dropped and logged rather than repaid as a
-burst. Per-socket send loop (`SEND_MS`, 33 ms) is independent of the simulation tick and skips a
+accumulator, at `config.TICK_MS` (25 ms / 40 Hz, diep.io's own real rate — massplanchunks WP3) of
+wall clock — overrun is repaid, and a stall beyond the catch-up budget (5 steps) is dropped and
+logged rather than repaid as a burst. Every raw gameplay constant is denominated against
+`config.REF_TICK_MS` (40 ms) instead, converted to `TICK_MS` at its consumption site by
+`lib/tick.js` — see §3. Per-socket send loop (`SEND_MS`, 33 ms) is independent of the simulation tick and skips a
 send if the world hasn't stepped since the last one. Per-socket slow loop (1 s): heartbeats, AFK
 kick, rate-limit reset. Object respawn (`generate()`) is a simulation event run every
 `400/TICK_MS` steps. The `tps` admin command reports target rate, measured rate, steps, and
@@ -383,7 +393,7 @@ the minimap draws more than your own dot.
 | `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. See §3 and PENDING.md. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. No socket, built via `boot()`. |
+| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: tick-scale invariance (real-world top speed agrees within 2% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33 — massplanchunks WP3) and the FOV formula (WP4). No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, and that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps. |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all four modes. |

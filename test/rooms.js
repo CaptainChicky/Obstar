@@ -458,6 +458,84 @@ function respawnCarryoverTests(rooms) {
 		after.shield);
 }
 
+/*
+	Tick-scale invariance (massplanchunks WP3): TICK_MS is the server's actual step rate,
+	REF_TICK_MS is what public/SHARE/Physics.js's accel/friction are denominated against, and
+	lib/tick.js's SCALE = TICK_MS/REF_TICK_MS converts between them. If that conversion (and the
+	one-time rescale baked into Physics.js's own constants) is right, the real-world top speed
+	must come out the same regardless of which TICK_MS the server actually steps at - this drives
+	Physics.stepBody directly at a few different assumed rates and checks they agree, and that
+	they still match the ~284 u/s this game was tuned for before this pass.
+*/
+function tickScaleTests() {
+	console.log('\ntick-scale invariance (massplanchunks WP3):');
+	const Physics = require(path.join(ROOT, 'public', 'SHARE', 'Physics.js'));
+	const REF_TICK_MS = require(path.join(ROOT, 'lib', 'config.js')).config.REF_TICK_MS;
+
+	// Steady-state speed (u/s) driving Physics.stepBody directly at dtTicks = assumedTickMs /
+	// REF_TICK_MS, as if the server stepped every assumedTickMs - a 5s warmup to clear the
+	// accel/friction transient, then measured over the next 500ms.
+	function steadySpeed(assumedTickMs) {
+		const d = assumedTickMs / REF_TICK_MS;
+		const accel = Physics.moveAccel(0, 0);
+		let vx = 0;
+		const warmupSteps = Math.round(5000 / assumedTickMs);
+		for (let i = 0; i < warmupSteps; i++) {
+			const body = { x: 0, y: 0, vx, vy: 0 };
+			Physics.stepBody(body, accel, 0, d);
+			vx = body.vx;
+		}
+		const measureSteps = Math.round(500 / assumedTickMs);
+		let dist = 0;
+		for (let i = 0; i < measureSteps; i++) {
+			const body = { x: 0, y: 0, vx, vy: 0 };
+			Physics.stepBody(body, accel, 0, d);
+			vx = body.vx; dist += body.x;
+		}
+		return dist / (measureSteps * assumedTickMs / 1000);
+	}
+
+	const at25 = steadySpeed(25);   // today's actual TICK_MS
+	const at33 = steadySpeed(33);   // the old TICK_MS, hypothetically
+	const at16 = steadySpeed(16);   // a much finer step, for good measure
+	const near = (a, b, pct) => Math.abs(a - b) / b < pct;
+
+	check('top speed at TICK_MS 25 and 33 agree within 2%', near(at25, at33, 0.02),
+		at25.toFixed(1) + ' vs ' + at33.toFixed(1) + ' u/s');
+	check('...and TICK_MS 16 agrees too - not just two lucky points', near(at16, at33, 0.02),
+		at16.toFixed(1) + ' vs ' + at33.toFixed(1) + ' u/s');
+	check('...and it still matches the pre-WP3 measured top speed (~284 u/s)',
+		near(at25, 284, 0.02), at25.toFixed(1));
+}
+
+/*
+	FOV (massplanchunks WP4): entities/Player.js's screen formula reads config.FOV_MUL and
+	config.FOV_PER_LEVEL directly, so this pins the formula's shape (multiplicative per level, not
+	the old flat +22/level) rather than duplicating PENDING.md item 19's derivation.
+*/
+function fovTests(rooms) {
+	console.log('\nfield of view (massplanchunks WP4):');
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const room = rooms[0];
+	const me = player(room, 0);
+	// xp 0 >= XPLVL[0] (0) levels a fresh tank up on its very first update() - a pre-existing
+	// quirk, not this test's concern - so the expected screen is computed off me.level as it
+	// actually comes out, not the level assigned going in.
+	me.level = 0;
+	me.update();
+	const base = me.extraView + CLASS[me.class].screen * config.FOV_MUL * Math.pow(config.FOV_PER_LEVEL, me.level);
+	check('screen matches extraView + screen*FOV_MUL*FOV_PER_LEVEL^level', me.screen === base,
+		me.screen + ' vs ' + base);
+	me.level = 30;
+	me.update();
+	const grown = me.extraView + CLASS[me.class].screen * config.FOV_MUL * Math.pow(config.FOV_PER_LEVEL, me.level);
+	check('level 30 screen grows multiplicatively, not by a flat +22/level', me.screen === grown,
+		me.screen + ' vs ' + grown);
+	check('...and it is wider than the low-level screen (FOV_PER_LEVEL > 1)', me.screen > base,
+		me.screen + ' > ' + base);
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -468,6 +546,8 @@ rooms.push(sandboxTests()); console.log('');
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);
+tickScaleTests();
+fovTests(rooms);
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

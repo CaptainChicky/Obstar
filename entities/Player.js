@@ -7,6 +7,7 @@
 */
 const Vec = require('victor');
 const config = require('../lib/config.js').config;
+const tick = require('../lib/tick.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
 const Physics = require('../public/SHARE/Physics.js');
@@ -14,6 +15,11 @@ const KIND = require('../public/SHARE/kinds.js');
 const ACHIEVEMENTS = require('../public/SHARE/AchievementsConfig.js').list;
 const Bullet = require('./Bullet.js');
 const Detector = require('./Detector.js');
+
+// Auto-turret aim lead (shoot()): "how many reference ticks ahead" to predict a moving target -
+// a lookahead duration, one-time-rescaled from 12 (33ms) to 9.9 (40ms) same as every other
+// duration in this pass, then converted to real ticks once at load (massplanchunks WP3).
+const AUTOTURRET_LEAD = tick.lead(9.9);
 
 class Player {
 	constructor(id, x, y, name, team, xpLvl, room) {
@@ -51,7 +57,7 @@ class Player {
 			this.state = {
 				"disconnect": 0,
 			};
-		this.shield = 6000;
+		this.shield = tick.ticks(4950);   // 4950 = 6000 one-time-rescaled from the 33ms reference
 		this.inputs = {
 			"mouse_x": 0,
 			"mouse_y": 0,
@@ -87,7 +93,7 @@ class Player {
 		this.level = 0;
 		this.stillLvl = 0;
 		this.droneCount = 0;
-		this.damage = 7;
+		this.damage = 8.48485;   // one-time-rescaled from 7 (33ms ref); tick.perTick() at each hp -= site
 		this.murder = -1;
 		this.up = {
 			"MSpeed": 0, //0
@@ -125,17 +131,17 @@ class Player {
 			const a = motion.norm().multiply(new Vec(accel, accel));
 			ax = a.x; ay = a.y;
 			if (this.alpha < 1 && !this.dev.invisible) {
-				this.alpha += Math.min(1, CLASS[this.class].alpha * 10);
+				this.alpha += Math.min(1, tick.perTick(CLASS[this.class].alpha * 10));
 			}
 			if (this.shield) {
 				this.shield = 0;
 			}
 		}
 		const body = { x: this.x, y: this.y, vx: this.vec.x, vy: this.vec.y };
-		Physics.stepBody(body, ax, ay, 1);
+		Physics.stepBody(body, ax, ay, tick.SCALE);
 		this.x = body.x; this.y = body.y;
 		this.vec.x = body.vx; this.vec.y = body.vy;
-		this.autoDir += .015;
+		this.autoDir += tick.perTick(0.01818);   // one-time-rescaled from .015 (33ms ref)
 		if (this.x < -this.map.width / 2) {
 			this.x = -this.map.width / 2;
 			this.vec.x = 0;
@@ -171,7 +177,7 @@ class Player {
 		for (let r = 0; r < CLASS[this.class].cannons.length; r++) {
 			if (typeof this.shootTimer[r] === 'undefined') { this.shootTimer[r] = 0; }
 			const can = CLASS[this.class].cannons[r];
-			const reloadMax = Math.round(can.reload * this.up.Reload);
+			const reloadMax = tick.ticks(Math.round(can.reload * this.up.Reload));
 			const reload = this.shootTimer[r];
 			const maxD = CLASS[this.class].maxDrone;
 			let autoDir, shoot;
@@ -182,7 +188,7 @@ class Player {
 					const other = this.DETEC.select;
 					const dis = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
 					if (!other.destroy && other.alpha && dis <= CLASS[this.class].DETEC.maxDis) {
-						autoDir = Math.atan2(other.y + other.vec.y * dis / 12 - this.y, other.x + other.vec.x * dis / 12 - this.x);
+						autoDir = Math.atan2(other.y + other.vec.y * dis / AUTOTURRET_LEAD - this.y, other.x + other.vec.x * dis / AUTOTURRET_LEAD - this.x);
 						this.canDir[r] = autoDir;
 						shoot = 1;
 					} else {
@@ -207,7 +213,7 @@ class Player {
 				if (reload === Math.floor(can.offTime * reloadMax)) {
 					///
 					if (this.alpha < 1 && !this.dev.invisible) {
-						this.alpha += Math.min(1, CLASS[this.class].alpha * 30);
+						this.alpha += Math.min(1, tick.perTick(CLASS[this.class].alpha * 30));
 					}
 					///
 					const dir = can.autoDir ? autoDir : this.dir + can.offdir;
@@ -222,18 +228,21 @@ class Player {
 					Bull.type = (can.type ? can.type : 0);
 					Bull.class = this.class;
 					Bull.pene = this.up.BPene * can.pene;
-					Bull.life = (can.life ? can.life : 130);
+					// 107 = 130 one-time-rescaled from the 33ms reference; -1 is the "permanent
+					// drone" sentinel (Bullet.js checks it directly) and must never go through
+					// tick.ticks(), which would turn it into a 1-real-tick lifetime instead.
+					Bull.life = (can.life === -1) ? -1 : tick.ticks(can.life ? can.life : 107);
 					Bull.damage = this.up.BDamage * can.damage;
 					Bull.size = this.boss ? can.size : can.size * ra;
 					Bull.weight = can.weight;
 					this.room.createBullet(Bull, this)
-					this.vec.add(new Vec(can.back, 0).rotate(dir - Math.PI));
+					this.vec.add(new Vec(tick.perTick(can.back), 0).rotate(dir - Math.PI));
 					if (maxD && can.life === -1) {
 						this.droneCount++;
 					}
 					///
 					this.recoil[parseInt(r)] = 1;
-					setTimeout((x, r) => { x.recoil[r] = 0 }, 33, this, parseInt(r))
+					setTimeout((x, r) => { x.recoil[r] = 0 }, config.TICK_MS, this, parseInt(r))
 				}
 				///
 				if (this.shootTimer[r] === 0) {
@@ -275,9 +284,9 @@ class Player {
 						case "BSpeed": this.up[i] += 0.11; break;
 						case "BDamage": this.up[i] += .2; break;
 						case "BPene": this.up[i] += 1.25; break;
-						case "MSpeed": this.up[i] += 0.020; break;
+						case "MSpeed": this.up[i] += 0.029254; break;   // Physics.MOVE_ACCEL_PER_UP's twin, same one-time rescale
 						case "HpUp": this.maxHp += 110; this.hp = parseInt(this.hp * (this.maxHp / (this.maxHp - 100))); break;
-						case "BodyDam": this.damage += 1.8; break;
+						case "BodyDam": this.damage += 2.18182; break;   // one-time-rescaled from 1.8 (33ms ref)
 					}
 					break;
 				}
@@ -314,27 +323,27 @@ class Player {
 		if (option.type) {
 			switch (option.type) {
 				case 'god':
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(0.6, 0.6)));
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(0.87761), tick.perTick(0.87761))));
 					return;
 			}
 		}
 		if (option.base) {
 			this.alpha = 1;
-			this.destroy = config.DES;
-			this.dead = config.DEAD_DELAY;
+			this.destroy = tick.DES;
+			this.dead = tick.DEAD_DELAY;
 			return;
 		}
 		const oldHp = this.hp;
 		switch (other.kind) {
 			case KIND.PLAYER:
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(0.3, 0.3)));
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(0.43881), tick.perTick(0.43881))));
 				if (option.noDam || this.shield) { break; }
-				this.hp -= other.damage;
-				this.hit = 2;
+				this.hp -= tick.perTick(other.damage);
+				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) {
-					this.dead = config.DEAD_DELAY;
+					this.dead = tick.DEAD_DELAY;
 					this.murder = ["players", other.id];
-					this.destroy = config.DES;
+					this.destroy = tick.DES;
 					other.xp += this.prize;
 					if (this.coinReward) other.coins += this.coinReward;
 					if (!other.bot) {
@@ -344,8 +353,8 @@ class Player {
 				}
 				break;
 			case KIND.OBJECTS:
-				const len = (this.vec.length() < 0.5) ? 2 : .5;
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(len, len)));
+				const len = (this.vec.length() < 0.5) ? 2.92538 : .73134;   // one-time-rescaled from 2 / .5 (stepBody factor)
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(len), tick.perTick(len))));
 				if (this.necro && other.type === 'sqr' && this.droneCount < CLASS[this.class].maxDrone + this.upNb[1]) {
 					this.droneCount++;
 					const Bull = new Bullet(this.id, other.x, other.y, Math.random() * Math.PI * 2, this.up.BSpeed * this.necro.speed, 0, this.room);
@@ -361,12 +370,12 @@ class Player {
 					return;
 				}
 				if (this.shield) { return; }
-				this.hp -= other.damage;
-				this.hit = 2;
+				this.hp -= tick.perTick(other.damage);
+				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) {
-					this.dead = config.DEAD_DELAY;
+					this.dead = tick.DEAD_DELAY;
 					this.murder = ["objs", other.id];
-					this.destroy = config.DES;
+					this.destroy = tick.DES;
 					if (other.type === 'pnt') { this.unlock('died_to_penta'); }
 				}
 				break;
@@ -378,11 +387,15 @@ class Player {
 				if (this.bot) {
 					this.lastBullet = other.origin;
 				}
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(other.weight / 3, other.weight / 3)));
+				// other.weight is rescaled at its TanksConfig source for Bullet's own (hand-rolled
+				// friction) knockback mechanism; the player receiving it decays that impulse
+				// through Physics.stepBody instead, which needs a further x1.6 (the ratio between
+				// the two mechanisms' correct one-time factors, see Physics.js).
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(other.weight / 3 * 1.6), tick.perTick(other.weight / 3 * 1.6))));
 				if (this.shield) { return; }
-				this.hp -= other.damage * Math.max(1, other.pene / 5);
-				this.hit = 2;
-				if (this.hp <= 0) { this.dead = config.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = config.DES; }
+				this.hp -= tick.perTick(other.damage * Math.max(1, other.pene / 5));
+				this.hit = tick.ticks(1.65);
+				if (this.hp <= 0) { this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
 				break;
 		}
 		if (this.alpha < 1 && !this.dev.invisible) {
@@ -421,13 +434,13 @@ class Player {
 			this.x += this.vec.x;
 			this.y += this.vec.y;
 			this.destroy -= 1;
-			this.alpha = (this.destroy - 1) / config.DES;
-			this.size *= 1.04;
-			this.screen = 2194;
+			this.alpha = (this.destroy - 1) / tick.DES;
+			this.size *= tick.drag(1.04869);   // one-time-rescaled from 1.04 (33ms ref)
+			this.screen = config.FOV_MUL * 2194;
 			return;
 		} else {
 			if (this.hp <= 0) {
-				this.destroy = config.DES;
+				this.destroy = tick.DES;
 				this.dead = 1;
 			}
 			if (this.hpregan[0] > this.hp) {
@@ -437,7 +450,10 @@ class Player {
 				this.hpregan[0] = this.hp;
 			}
 			if (this.hp < this.maxHp) {
-				this.hpregan[1] += this.up.HpRegan / 990000;
+				// 673818.75 = 990000 one-time-rescaled (33ms ref) for this quadratic accumulator -
+				// it integrates twice over ticks, so tick.quadratic() (SCALE^2) applies at the
+				// increment, not the hp += below, which just reads the already-scaled result.
+				this.hpregan[1] += tick.quadratic(this.up.HpRegan / 673818.75);
 				this.hp += (parseInt(this.hpregan[1] * this.maxHp * 10)) / 10;
 				this.hp = Math.min(this.maxHp, this.hp);
 			} else {
@@ -446,7 +462,7 @@ class Player {
 		}
 		///
 		if (CLASS[this.class].alpha) {
-			this.alpha = Math.max(0, this.alpha - CLASS[this.class].alpha);
+			this.alpha = Math.max(0, this.alpha - tick.perTick(CLASS[this.class].alpha));
 		} else if (!this.dev.invisible) { this.alpha = 1 }
 		this.motion();
 		if (this.inputs.c) {
@@ -467,13 +483,16 @@ class Player {
 			this.shield--;
 		}
 		if (this.state.disconnect) {
-			this.hp -= this.maxHp / 1000;
+			this.hp -= tick.perTick(this.maxHp / 826.44628);   // 826.44628 = 1000 one-time-rescaled (33ms ref)
 			if (this.hp <= 0) {
-				this.destroy = config.DES;
+				this.destroy = tick.DES;
 			}
 		}
 		this.size = 28 + this.dev.size + Math.floor(this.level / 2.8);
-		this.screen = this.extraView + CLASS[this.class].screen + this.level * 22;
+		// FOV (massplanchunks WP4): diep is 1.39x wider than us at level 1 and grows
+		// multiplicatively at half the tank's own growth rate (PENDING.md item 19), not the old
+		// flat +22/level guess.
+		this.screen = this.extraView + CLASS[this.class].screen * config.FOV_MUL * Math.pow(config.FOV_PER_LEVEL, this.level);
 		if (this.xp !== this.oldXp) {
 			this.oldXp = this.xp;
 			if (this.xp === 666666 && !this.bot) {

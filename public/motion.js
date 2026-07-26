@@ -61,6 +61,16 @@
 	const TELEPORT = 400;   // a jump this big is not motion; see push()
 	const MAX_EXTRAP = 2;   // how far past the newest snapshot sample() will coast
 
+	// The reference tick every server-side gameplay constant is denominated against
+	// (config.REF_TICK_MS, massplanchunks WP3) - 40ms, diep.io's own loop rate. This is
+	// deliberately not NET_TICK/SEND_MS above (the send interval, 33ms, only coincidentally
+	// close): public/client/game.js's input-prediction frame->tick conversion has to agree with
+	// what public/SHARE/Physics.js's per-tick constants are actually denominated in, or
+	// prediction drifts from what the server does. The browser cannot see lib/config.js, so this
+	// is a constant of the balance, not a deployment knob - if server and reference tick ever
+	// need to diverge at runtime, inject this through POST in views/play.ejs instead.
+	const REF_TICK = 40;
+
 	const NET = {
 		interval: NET_TICK,   // EMA of the gap between GameUpdate packets, ms
 		last: 0,          // when the most recent one arrived
@@ -173,4 +183,5 @@
 	exp.Interp = Interp;
 	exp.lerpK = lerpK;
 	exp.NET_TICK = NET_TICK;
+	exp.REF_TICK = REF_TICK;
 })(typeof (exports) === 'undefined' ? function () { this['MOTION'] = {}; return this['MOTION'] }() : exports);

@@ -135,8 +135,22 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 not diep source — one formula in it is internally implausible and is flagged as such below. Every
 "ours" number here was read off the current tree, and every ratio is arithmetic on those two, not
 a feel judgement. Nothing in this section has been changed; it is the scoping data #11 was waiting
-on. Numbers assume today's `TICK_MS: 33` / `FRICTION: 0.964`; if WP3 of massplanchunks.md lands
-first, re-derive against the new step.*
+on. Numbers were computed against the real-world quantities `TICK_MS: 33` / `FRICTION: 0.964`
+implied — top speed, recoil in world units, reload in seconds, etc. — not against the literal
+source constants.
+**massplanchunks.md's WP3 has since landed** (`TICK_MS: 25`, `REF_TICK_MS: 40`,
+`lib/tick.js`): it deliberately preserved every one of those real-world quantities (verified
+numerically — see item 20 below and `test/rooms.js`'s tick-scale invariance case), so **no
+re-derivation is needed here** after all. What changed is only the *source representation*:
+`public/SHARE/Physics.js`'s `FRICTION`/`MOVE_ACCEL_BASE`/`MOVE_ACCEL_PER_UP` and
+`TanksConfig.js`'s `speed`/`back`/`weight` no longer read as `0.964`/`0.35`/`0.31`/etc. — they're
+now denominated per 40ms reference tick, and a naive `×40/33` on the old value is *not* how to
+get there (see item 20's note on the nonlinear correction that actually needed solving). Anyone
+implementing item 11 should read off *real-world* target values (top speed in u/s, recoil in world
+units, reload in seconds) from this section as before, then convert to the current source
+constants via the same nonlinear, mechanism-aware method `lib/tick.js`'s header comment and
+`public/SHARE/Physics.js`'s comment describe — not by pattern-matching the numbers already in the
+tree.*
 
 13. **Decide the unit anchor before touching any number — every other item depends on it.**
     diep denominates everything in grid units (`gu`, `1 gu = 50 du`) and fixes a tank at
@@ -272,9 +286,10 @@ first, re-derive against the new step.*
       bigger). Ours: `screen = 1408` = 50.3 gu, growing `+22/level` = +1.56%/level. So we are
       **1.39× too narrow at level 1** and only 1.09× too narrow by level 30 — the base is wrong
       *and* the per-level term is 3× too fast, in opposite directions. Faithful: base ×1.39,
-      per-level `× Math.pow(1.005, level)` (≈ +7 units/level at level 1, not 22). This puts a real
-      number on massplanchunks.md WP4's guessed `FOV_MUL: 1.3` → **1.39**, and says
-      `FOV_PER_LEVEL` should be multiplicative, not `26`.
+      per-level `× Math.pow(1.005, level)` (≈ +7 units/level at level 1, not 22). **Done** —
+      massplanchunks.md WP4 shipped with these numbers (`config.FOV_MUL: 1.39`,
+      `config.FOV_PER_LEVEL: 1.005`, multiplicative) rather than its own first-drafted guess
+      (`1.3`, flat `+26`/level).
       Note also that diep's FOV is *resolution-dependent* (fixed 0.55 px/du, so an ultrawide
       genuinely sees more) where ours scales to fit. Ours is the fairer design; flagging it only
       so the difference is deliberate.
@@ -286,18 +301,33 @@ first, re-derive against the new step.*
       and ours ~5.4. If the "world feels empty" complaint in massplanchunks.md is being chased,
       **this is the number, not the drift rate.**
 
-20. **diep's loop is 40 ms (25 Hz), not 33 and not 25.** The reload table proves it: every
+20. **Done.** diep's loop is 40 ms (25 Hz), not 33 and not 25 — the reload table proves it: every
     technical reload time is a multiple of 0.04 s and every fractional one appears rounded *up* to
-    a whole 0.04 s in the "Reload Time (0 br)" column. This does not invalidate massplanchunks.md
-    WP3's decision to *step* at 40 Hz — a finer step with the same balance is strictly better than
-    diep — but **WP3's `REF_TICK_MS` should be 40, not 33**, so that diep's per-loop constants
-    (recoil gu, knockback gu, reload loops, `A₀` du/loop²) drop in unconverted and stay readable
-    against the reference forever. Picking 33 means carrying a 33/40 fudge on every number
-    imported from this page.
+    a whole 0.04 s in the "Reload Time (0 br)" column. massplanchunks.md WP3 shipped with
+    `REF_TICK_MS: 40` on that basis (not the `33` first drafted there), so diep's per-loop
+    constants (recoil gu, knockback gu, reload loops, `A₀` du/loop²) drop in unconverted for
+    item 11, without a 33/40 fudge factor.
+    **Turned out to be more than a relabelling.** Naively rescaling every existing constant by the
+    linear `40/33` ratio is *wrong* wherever that constant compounds with a friction/drag term into
+    a bounded steady state (movement accel, bullet cruise speed, knockback, recoil, boss/pet
+    thrust) — it changed real-world top speed by as much as 17-40% depending on the constant,
+    caught by `test/client.js`'s pre-existing input-lead assertions. The correct one-time factor
+    for those had to be solved numerically against the *exact* discrete recurrence (not a
+    continuous approximation): 1.462688 for constants driven through `Physics.stepBody`
+    (movement), 0.914180 for constants applied via a single hand-rolled friction multiply per real
+    tick (bullet cruise speed, boss/pet thrust — each entity's *own* friction/drag constant, not
+    always the shared global one; pets brake at their own rate, traps decay at their own rate).
+    Constants with no drag pairing (damage, alpha, chance thresholds, hp regen, reload/life counts)
+    took the plain linear rescale as originally planned. See `public/SHARE/Physics.js`'s comment
+    and `lib/tick.js`'s header for the worked derivation - anyone doing a future one-time rescale
+    of a friction-paired constant needs the same nonlinear treatment, not the naive ratio.
 
-21. **Auto-turret spin is 2.2× too slow.** diep's `ω = 1 rad/s` exactly (`t_r = 2π s`). Ours:
-    `autoDir += .015`/tick = 0.455 rad/s (`entities/Player.js:134`; base drones at `.012`,
-    `entities/Bullet.js:284`). Faithful value is `TICK_MS/1000` — 0.033 at 33 ms, 0.025 at 25 ms.
+21. **Auto-turret spin is 2.2× too slow.** diep's `ω = 1 rad/s` exactly (`t_r = 2π s`). Ours is
+    still ~0.455 rad/s in real-world terms after WP3 (unchanged on purpose - `entities/Player.js`'s
+    `autoDir += tick.perTick(0.01818)`; base drones similarly in `entities/Bullet.js`). Faithful
+    value is still real-world `1 rad/s` — express it as a per-*reference*-tick constant now
+    (`tick.perTick(1000/40/1000)` ≈ `tick.perTick(0.025)`, since `lib/tick.js` handles the
+    TICK_MS conversion) rather than a raw per-TICK_MS number.
 
 22. **Things that already match — do not "fix" them.** Tank growth (diep `2×1.01^(lvl-1)` gu = ×1.35
     over 30 levels; ours `28 + ⌊lvl/2.8⌋` = ×1.357 — linear vs exponential but the endpoints agree
