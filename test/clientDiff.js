@@ -96,38 +96,14 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-//
-// Rebaselined for PENDING #14 (Instances sparse-array -> SlotMap, Number14PLAN.md): the old
-// per-tick tombstone countdown in Room.js's step() was dead code (`let i = INSTANCE[kind][j];
-// i--` decremented a local copy, never writing back to the array), so an objs/bullets tombstone
-// was in practice only ever freed by createObj/createBullet's allocation scan stepping over it,
-// not by wall-clock ticks. SlotMap.tick() actually decrements every tick, which is real, working
-// KEEP_PLACE expiry - the one intended, documented behaviour change in that plan. Verified by
-// isolation: reverting SlotMap to bug-for-bug replicate the old scan-only decrement reproduces
-// the previous golden (247353/c4eb110d) exactly, confirming this is the sole source of the diff.
-//
-// Rebuilt again for THEPLAN Part 4.2 (shiny/rare polygons): entities/Objects.js's rarity roll
-// consumes extra Math.random() calls per spawn, which shifts every downstream seeded-RNG draw,
-// and a tiered polygon's draw() now writes shadowColor/shadowBlur. Confirmed intentional by
-// checking the captured op stream for NaN/Inf (none) and for the new shadowBlur writes (present).
-//
-// Rebuilt again for THEPLAN Part 4.3 (real minimap): Room.getUi's `map` is no longer always
-// empty, so Ui.map() now actually draws a fillStyle/arc/fill per live player instead of skipping
-// the loop entirely. Confirmed intentional the same way - no NaN/Inf in the captured stream.
-//
-// Rebuilt again for massplanchunks WP1/WP2: real bullet muzzle spawn, the real `mine` bit, and
-// camera lag/tankOff() all change what reaches the canvas and cascade through the seeded RNG.
-//
-// Rebuilt again for massplanchunks WP3 (40Hz simulation via a reference-tick split, lib/tick.js)
-// and WP4 (wider FOV): every bot AI decision this test's seeded RNG drives happens against
-// rescaled movement/bullet constants and a different quadtree cull rect, so op count and hash
-// both move. Confirmed intentional the same way - no NaN/Inf in the captured stream.
-//
-// Rebuilt again for massplanchunks WP6/WP8: Mythic removed (one fewer Math.random() draw per
-// spawn roll, reshuffling the seeded RNG downstream same as WP4.2 above) and every polygon now
-// draws a health bar via drawUi - previously only the beta shapes and a rare tiered one did.
-// Confirmed intentional the same way - no NaN/Inf in the captured stream.
-const GOLDEN = { count: 320658, hash: 'f18e76a4' };
+
+// Rebuilt again for massplanchunks pass 3 WP-B: Obj's health bar now holds at its current alpha
+// for CONST.HP_BAR_HOLD frames after a real hp drop instead of fading immediately once a shape is
+// back at full health, and both fade directions are scaled by Global.dtFrames - same op count
+// (this run drives no keydown, so WP-C's queue path never executes), different globalAlpha values
+// on every damaged-shape drawUi call. Confirmed intentional the same way - no NaN/Inf in the
+// captured stream.
+const GOLDEN = { count: 320658, hash: '33e4964a' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

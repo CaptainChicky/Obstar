@@ -95,6 +95,8 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 
 ## 🟠 Known bug, not yet fixed
 
+- achivements bar is still fucked will revisit this later
+
 25. **`Room.spawnPoint()`'s `while(1)` can hang the server on a small enough map.** The default
     implementation (`rooms/Room.js`) rejects any point within a hardcoded 1100-unit radius of the
     origin plus two 800-unit nests at the quarter-points - written against ffa's 9020-unit map,

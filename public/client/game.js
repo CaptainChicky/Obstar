@@ -410,12 +410,16 @@
 						if (!Ui) { break; }
 						const wireIdx = CONST.UP_ORDER[parseInt(key) - 1];
 						if (Global.inputs.m) {
-							// m+digit: queue that stat all the way to max.
-							const need = 6 - (Ui.upNb[wireIdx] || 0) - Ui.UP.queue[wireIdx];
-							if (need > 0) { Ui.UP.enqueue(wireIdx, need); }
+							// m+digit: fill that stat's bar - spend what's banked right now, queue the
+							// remainder. Passing 6 and letting enqueue() clamp to the per-stat and
+							// lifetime (CONST.MAX_UP_POINTS) caps is deliberate: "fill the bar" is the
+							// intent, and all three caps live in one place now.
+							Ui.UP.enqueue(Ui, wireIdx, 6);
+							Ui.UP.drain(Ui);
 						} else if (Global.inputs.u) {
-							// u+digit: queue one point on that stat.
-							Ui.UP.enqueue(wireIdx, 1);
+							// u+digit: queue one point on that stat, spending it now if affordable.
+							Ui.UP.enqueue(Ui, wireIdx, 1);
+							Ui.UP.drain(Ui);
 						} else if (Ui.still > 0) {
 							// bare digit: spend one point on that stat now.
 							General['WS'].send(PROTO.encode('upgrade', wireIdx));

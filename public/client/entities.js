@@ -279,6 +279,8 @@
 			this.vx = 0;
 			this.hp = 1;
 			this.hpAlpha = 0;
+			this.lastHp = 1;
+			this.hpHold = 0;
 			this.scale = 1;
 			this.size = size;
 			this.dsize = 0;
@@ -376,11 +378,22 @@
 			if (tier.color && this.color !== tier.color) {
 				this.color = tier.color;
 			}
-			if (this.hp < 1) {
-				this.hpAlpha = Math.min(.8, this.hpAlpha + 0.05);
+			// A real drop (epsilon = one wire quantum of CODECS.unit's 1/255) starts/refreshes the
+			// hold; a re-decode of an unchanged hp never trips it. The bar fades out after
+			// CONST.HP_BAR_HOLD frames of no *new* damage, whether or not the shape is back at full
+			// health - see massplanchunks.md WP-B.
+			if (this.hp < this.lastHp - 0.002) {
+				this.hpHold = CONST.HP_BAR_HOLD;
+				this.hpAlpha = Math.min(.8, this.hpAlpha + 0.05 * Global.dtFrames);
+			} else if (this.hpHold > 0) {
+				this.hpHold -= Global.dtFrames;
+				if (this.hpAlpha < .8) {
+					this.hpAlpha = Math.min(.8, this.hpAlpha + 0.05 * Global.dtFrames);
+				}
 			} else {
-				this.hpAlpha = Math.max(0, this.hpAlpha - 0.01);
+				this.hpAlpha = Math.max(0, this.hpAlpha - 0.01 * Global.dtFrames);
 			}
+			this.lastHp = this.hp;
 		}
 		async hit() {
 			if (!this.hitted) {

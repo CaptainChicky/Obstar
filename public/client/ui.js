@@ -193,8 +193,25 @@
 					const mb = Math.round(b + (gray - b) * amt);
 					return "#" + ((1 << 24) + (mr << 16) + (mg << 8) + mb).toString(16).slice(1);
 				}
-				function enqueue(wireIdx, n) {
-					QUEUE[wireIdx] = Math.max(0, Math.min(6, (QUEUE[wireIdx] || 0) + n));
+				// Points already spent, read off the wire's own ups array - Ui.upNb is authoritative
+				// (assigned wholesale from UpdateUp), QUEUE is only what's banked client-side.
+				function spent(Ui) {
+					let n = 0;
+					for (let i = 0; i < QUEUE.length; i++) { n += (Ui.upNb[i] || 0); }
+					return n;
+				}
+				// How many more points this tank can ever spend in its life (CONST.MAX_UP_POINTS,
+				// massplanchunks WP-C), queue included.
+				function budget(Ui) {
+					let q = 0;
+					for (let i = 0; i < QUEUE.length; i++) { q += QUEUE[i]; }
+					return Math.max(0, CONST.MAX_UP_POINTS - spent(Ui) - q);
+				}
+				function enqueue(Ui, wireIdx, n) {
+					const perStat = 6 - (Ui.upNb[wireIdx] || 0) - QUEUE[wireIdx];
+					const add = Math.max(0, Math.min(n, perStat, budget(Ui)));
+					QUEUE[wireIdx] += add;
+					return add;
 				}
 				function clearQueue() {
 					for (let i = 0; i < QUEUE.length; i++) { QUEUE[i] = 0; }
@@ -211,6 +228,7 @@
 							General['WS'].send(PROTO.encode('upgrade', i));
 						}
 					}
+					Ui.still = still;
 				}
 				///
 				function drawAll(tankClass, states, max = 6) {
@@ -441,6 +459,7 @@
 					speed: .03,
 					queue: QUEUE,
 					enqueue: enqueue,
+					budget: budget,
 					clearQueue: clearQueue,
 					drain: drain
 				}
