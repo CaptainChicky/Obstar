@@ -19,6 +19,16 @@ const Detector = require('./Detector.js');
 // Auto-turret aim lead (shoot()): "how many reference ticks ahead" to predict a moving target -
 // a lookahead duration, one-time-rescaled from 12 (33ms) to 9.9 (40ms) same as every other
 // duration in this pass, then converted to real ticks once at load (massplanchunks WP3).
+// massplanchunks WP-D audit flag (not fixed here - see PENDING.md): the formula this feeds,
+// other.vec * dis / AUTOTURRET_LEAD, is NOT tick-scale invariant despite the tick.lead()
+// conversion - verified numerically, the *un*-converted divisor (9.9 flat) tracks TICK_MS
+// 16/25/33/40 to within ~1.5% at steady state, where tick.lead()'s n/SCALE varies the result by
+// over 100% across the same range. Root cause: other.vec is already a real-tick quantity whose
+// magnitude is itself close to TICK_MS-invariant (same reasoning as the two knockback-threshold
+// comments in this file and entities/Objects.js), so dividing by a further SCALE-adjusted
+// constant introduces the step-rate dependency rather than removing it. Left as tick.lead(9.9)
+// for now because changing it also changes today's auto-aim feel at the live TICK_MS (25), which
+// is a balance call, not a pure correctness fix - same reasoning as PENDING #16's `back` column.
 const AUTOTURRET_LEAD = tick.lead(9.9);
 
 class Player {
@@ -356,6 +366,13 @@ class Player {
 				}
 				break;
 			case KIND.OBJECTS:
+				// massplanchunks WP-D audit: the 0.5 threshold is deliberately NOT tick.perTick()'d.
+				// this.vec is a real-tick velocity produced by Physics.stepBody's accel/friction
+				// recurrence, and that recurrence's fixed point (and any point along a friction-only
+				// decay from it, since drag() is what keeps decay real-time-shaped) is itself
+				// near-invariant to TICK_MS - verified numerically (<1.5% drift across TICK_MS
+				// 16/25/33/40) rather than assumed. Wrapping this threshold in tick.perTick() would
+				// make it track REF_TICK_MS instead and be the thing that's actually TICK_MS-sensitive.
 				const len = (this.vec.length() < 0.5) ? 2.92538 : .73134;   // one-time-rescaled from 2 / .5 (stepBody factor)
 				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(len), tick.perTick(len))));
 				if (this.necro && other.type === 'sqr' && this.droneCount < CLASS[this.class].maxDrone + this.upNb[1]) {

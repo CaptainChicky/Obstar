@@ -125,6 +125,11 @@ class Objects {
 		this.room.obj[this.type][this.pos] -= 1;
 	}
 	collision(other, option = {}) {
+		// massplanchunks WP-D audit: same call as entities/Player.js:359's 0.5 threshold - the 0.4
+		// here is deliberately NOT tick.perTick()'d. this.vec is a real-tick velocity kept near its
+		// own accel/friction fixed point by update()'s vec.limit(tick.perTick(maxspeed/2), FRICTION),
+		// and that fixed point (verified numerically) barely moves across TICK_MS 16/25/33/40, so a
+		// bare threshold against it stays meaningful without a runtime conversion.
 		const len = (this.vec.length() * this.weight < 0.4) ? 2.42424 : .48485;   // one-time-rescaled from 2 / .4
 		switch (other.kind) {
 			case KIND.PLAYER:
