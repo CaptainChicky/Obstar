@@ -96,26 +96,14 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-
-// Rebuilt again for massplanchunks pass 3 WP-B: Obj's health bar now holds at its current alpha
-// for CONST.HP_BAR_HOLD frames after a real hp drop instead of fading immediately once a shape is
-// back at full health, and both fade directions are scaled by Global.dtFrames - same op count
-// (this run drives no keydown, so WP-C's queue path never executes), different globalAlpha values
-// on every damaged-shape drawUi call. Confirmed intentional the same way - no NaN/Inf in the
-// captured stream.
-// Rebuilt for massplanchunks pass 3 WP-E, which moves this on purpose in four ways: 4team's four
-// corner bases are drawn at all now (in-world and on the minimap) where nothing was, 2team's strip
-// is sized from the wire's baseSize instead of a hardcoded 600, a base drone is 15 units instead of
-// 20, and there are more of them (2team 20 -> 60, 4team 32 -> 48). Confirmed intentional the same
-// way as every rebaseline above - no NaN/Inf in the captured stream, and test/client.js's
-// no-NaN-to-canvas case still passes.
-// Rebuilt for plan.md WP1 (grid/arena rescale): the grid pitch moved from 20 to World.GU (28)
-// units/square, and every map grows with it (x1.4 per side, D1), so the same play session now
-// spans a different number of grid lines and camera-relative shape positions - fewer ops this
-// time because the wider grid draws fewer lines per frame at an unchanged FOV. Confirmed
-// intentional the same way as every rebaseline above - no NaN/Inf in the captured stream, and
+//
+// Rebuilt again for plan.md WP2 (base geometry): baseSize grew (2team gu(30)->gu(40),
+// 4team gu(45)->gu(67)) and basePosts() in both modes now draws per-drone orbit radii and
+// random phases instead of one shared ring - more ops this time (bigger base strips/squares
+// to draw, plus the base-drone triangle vertices moving every capture). Confirmed intentional
+// the same way as every rebaseline above - no NaN/Inf in the captured stream, and
 // test/client.js's no-NaN-to-canvas case still passes.
-const GOLDEN = { count: 298090, hash: '4f147f1e' };
+const GOLDEN = { count: 307141, hash: '06ef7e1e' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

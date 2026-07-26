@@ -129,9 +129,16 @@ function teamTests() {
 	check('the drones sit in pairs on 15 rings a side',
 		new Set(drones.filter((d) => d.team === 0).map((d) => d.oy)).size === 15,
 		new Set(drones.filter((d) => d.team === 0).map((d) => d.oy)).size + ' distinct centres');
-	check('2team\'s rings are the tighter ones - 15 have to fit down the strip',
-		drones.every((d) => Math.abs(d.orbitR - room.map.height / 15 * 0.3) < 1e-9),
-		drones[0].orbitR);
+	// Radii are randomised per drone now (plan.md WP2) - assert the band around the nominal
+	// (map.height/15 * 0.3) rather than a single shared value, and that they actually vary.
+	{
+		const nominal = room.map.height / 15 * 0.3;
+		check('2team\'s rings are the tighter ones - 15 have to fit down the strip, band-checked',
+			drones.every((d) => d.orbitR >= nominal * 0.45 - 1e-9 && d.orbitR <= nominal * 1.2 + 1e-9),
+			drones[0].orbitR + ' vs nominal ' + nominal);
+		check('...and the radii are not all pinned to one ring',
+			new Set(drones.map((d) => d.orbitR)).size > 1);
+	}
 
 	// Sides are balanced on join, so four players come out two and two.
 	for (let i = 0; i < 3; i++) {
@@ -224,7 +231,9 @@ function fourTeamTests() {
 			const c = room.baseCenter(t);
 			return drones.filter((d) => d.team === t).every((d) => d.ox === c.x && d.oy === c.y);
 		}));
-	check('...and are evenly phased around it, not stacked',
+	// Phases are randomised now (plan.md WP2), not evenly spaced - assert they are not all
+	// stacked on one spot rather than that they are evenly distributed.
+	check('...and are randomly phased around it, not stacked',
 		new Set(drones.filter((d) => d.team === 0).map((d) => Math.round(d.autoDir * 1e6))).size === 12);
 	check('the ring fits inside the square', drones.every((d) => d.orbitR < room.baseSize / 2),
 		drones[0].orbitR + ' vs half-square ' + room.baseSize / 2);

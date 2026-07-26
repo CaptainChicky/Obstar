@@ -9,9 +9,10 @@
 	The one shape difference: a 2-team base is a strip down one side of the map, which lets
 	inEnemyBase() be a single comparison on x. Four bases have to be corners, so a base here is
 	the rules.baseSize square in the map corner (diep's own shape - it used to be a quarter-disc,
-	which made a single orbit centre awkward to place). The guard drones orbit that square's
-	centre. Everything else - joining the thinnest side, friendly fire, base fencing, boss
-	summoning - comes from rooms/Room.js unchanged.
+	which made a single orbit centre awkward to place). The guard drones orbit that one centre,
+	inset from the two borders the corner touches (plan.md WP2), not the square's own centre.
+	Everything else - joining the thinnest side, friendly fire, base fencing, boss summoning -
+	comes from rooms/Room.js unchanged.
 */
 const config = require('../lib/config.js').config;
 const tick = require('../lib/tick.js');
@@ -38,7 +39,7 @@ class FourTeam extends Room {
 			teams: [0, 1, 2, 3],
 			teamPlay: true,
 			respawnPow: 0.8,
-			baseSize: 900,
+			baseSize: gu(67),
 			viewerBullets: false
 		}, controller);
 	}
@@ -52,19 +53,24 @@ class FourTeam extends Room {
 			y: ((team > 1) ? 1 : -1) * this.map.height / 2
 		};
 	}
-	/* The centre of a side's base square - the point its drones orbit, and the anchor every
-		 distance in the type-1.4 AI is measured from. */
+	/* The orbit centre for a side's base - gu(24) in from each of the two map borders the
+		 corner touches (user-measured, plan.md WP2), not the square's own centre. Sits well
+		 inside the 67-gu base, and a drone at its widest orbit still lands ~34gu from the
+		 corner - still inside. */
 	baseCenter(team) {
 		const c = this.corner(team);
 		return {
-			x: c.x - Math.sign(c.x) * this.baseSize / 2,
-			y: c.y - Math.sign(c.y) * this.baseSize / 2
+			x: c.x - Math.sign(c.x) * gu(24),
+			y: c.y - Math.sign(c.y) * gu(24)
 		};
 	}
 	/*
-		Twelve drones per base on one shared ring around the square's centre, evenly phased.
-		The radius keeps the whole ring inside the square with room for the chase leash to pull a
-		drone out and back - 405 units at baseSize 900.
+		Twelve drones per base around one shared orbit centre, each on its own radius rather
+		than a shared ring - gu(8) * (0.45-1.2), i.e. 3.6-9.6gu, mean 6.6gu - and at a random
+		phase rather than evenly spaced, so the group reads clumpy the way basedrones.png does
+		instead of as a formation. crossIn keeps the existing per-drone stagger (so the base
+		doesn't empty out all at once every cross period) plus +-20% jitter so the crossings
+		never re-sync with each other.
 	*/
 	basePosts() {
 		const PER_BASE = 12;
@@ -72,15 +78,15 @@ class FourTeam extends Room {
 		for (const team of this.rules.teams) {
 			const c = this.baseCenter(team);
 			for (let i = 0; i < PER_BASE; i++) {
+				const jitter = 1 + (Math.random() * 2 - 1) * 0.2;
 				posts.push({
 					team: team,
 					x: c.x,
 					y: c.y,
-					orbitR: this.baseSize * 0.45,
-					phase: Math.PI * 2 * i / PER_BASE,
-					// Staggered so the ring does not empty out all at once every cross period.
+					orbitR: gu(8) * (0.45 + Math.random() * 0.75),
+					phase: Math.random() * Math.PI * 2,
 					crossIn: Math.max(1, Math.round(tick.ticks(config.BASE_DRONE_CROSS) *
-						(i + 1) / PER_BASE))
+						(i + 1) / PER_BASE * jitter))
 				});
 			}
 		}
