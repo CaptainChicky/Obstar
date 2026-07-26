@@ -135,22 +135,10 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 not diep source — one formula in it is internally implausible and is flagged as such below. Every
 "ours" number here was read off the current tree, and every ratio is arithmetic on those two, not
 a feel judgement. Nothing in this section has been changed; it is the scoping data #11 was waiting
-on. Numbers were computed against the real-world quantities `TICK_MS: 33` / `FRICTION: 0.964`
-implied — top speed, recoil in world units, reload in seconds, etc. — not against the literal
-source constants.
-**massplanchunks.md's WP3 has since landed** (`TICK_MS: 25`, `REF_TICK_MS: 40`,
-`lib/tick.js`): it deliberately preserved every one of those real-world quantities (verified
-numerically — see item 20 below and `test/rooms.js`'s tick-scale invariance case), so **no
-re-derivation is needed here** after all. What changed is only the *source representation*:
-`public/SHARE/Physics.js`'s `FRICTION`/`MOVE_ACCEL_BASE`/`MOVE_ACCEL_PER_UP` and
-`TanksConfig.js`'s `speed`/`back`/`weight` no longer read as `0.964`/`0.35`/`0.31`/etc. — they're
-now denominated per 40ms reference tick, and a naive `×40/33` on the old value is *not* how to
-get there (see item 20's note on the nonlinear correction that actually needed solving). Anyone
-implementing item 11 should read off *real-world* target values (top speed in u/s, recoil in world
-units, reload in seconds) from this section as before, then convert to the current source
-constants via the same nonlinear, mechanism-aware method `lib/tick.js`'s header comment and
-`public/SHARE/Physics.js`'s comment describe — not by pattern-matching the numbers already in the
-tree.*
+on. Numbers assume the real-world quantities `TICK_MS: 33` / `FRICTION: 0.964` implied (top speed,
+recoil, reload in seconds) — massplanchunks WP3 has since landed (`TICK_MS: 25`,
+`REF_TICK_MS: 40`, `lib/tick.js`) but preserved those real-world quantities exactly, so no
+re-derivation is needed here.*
 
 13. **Decide the unit anchor before touching any number — every other item depends on it.**
     diep denominates everything in grid units (`gu`, `1 gu = 50 du`) and fixes a tank at
@@ -306,28 +294,13 @@ tree.*
     a whole 0.04 s in the "Reload Time (0 br)" column. massplanchunks.md WP3 shipped with
     `REF_TICK_MS: 40` on that basis (not the `33` first drafted there), so diep's per-loop
     constants (recoil gu, knockback gu, reload loops, `A₀` du/loop²) drop in unconverted for
-    item 11, without a 33/40 fudge factor.
-    **Turned out to be more than a relabelling.** Naively rescaling every existing constant by the
-    linear `40/33` ratio is *wrong* wherever that constant compounds with a friction/drag term into
-    a bounded steady state (movement accel, bullet cruise speed, knockback, recoil, boss/pet
-    thrust) — it changed real-world top speed by as much as 17-40% depending on the constant,
-    caught by `test/client.js`'s pre-existing input-lead assertions. The correct one-time factor
-    for those had to be solved numerically against the *exact* discrete recurrence (not a
-    continuous approximation): 1.462688 for constants driven through `Physics.stepBody`
-    (movement), 0.914180 for constants applied via a single hand-rolled friction multiply per real
-    tick (bullet cruise speed, boss/pet thrust — each entity's *own* friction/drag constant, not
-    always the shared global one; pets brake at their own rate, traps decay at their own rate).
-    Constants with no drag pairing (damage, alpha, chance thresholds, hp regen, reload/life counts)
-    took the plain linear rescale as originally planned. See `public/SHARE/Physics.js`'s comment
-    and `lib/tick.js`'s header for the worked derivation - anyone doing a future one-time rescale
-    of a friction-paired constant needs the same nonlinear treatment, not the naive ratio.
+    item 11, without a 33/40 fudge factor. See `lib/tick.js` and `public/SHARE/Physics.js` for how
+    each constant category converts between the two references.
 
 21. **Auto-turret spin is 2.2× too slow.** diep's `ω = 1 rad/s` exactly (`t_r = 2π s`). Ours is
-    still ~0.455 rad/s in real-world terms after WP3 (unchanged on purpose - `entities/Player.js`'s
-    `autoDir += tick.perTick(0.01818)`; base drones similarly in `entities/Bullet.js`). Faithful
-    value is still real-world `1 rad/s` — express it as a per-*reference*-tick constant now
-    (`tick.perTick(1000/40/1000)` ≈ `tick.perTick(0.025)`, since `lib/tick.js` handles the
-    TICK_MS conversion) rather than a raw per-TICK_MS number.
+    still ~0.455 rad/s in real-world terms (`entities/Player.js`'s `autoDir`; base drones
+    similarly in `entities/Bullet.js`) — unchanged by WP3 on purpose. Faithful value is real-world
+    `1 rad/s`, expressed as a per-reference-tick constant through `lib/tick.js`.
 
 22. **Things that already match — do not "fix" them.** Tank growth (diep `2×1.01^(lvl-1)` gu = ×1.35
     over 30 levels; ours `28 + ⌊lvl/2.8⌋` = ×1.357 — linear vs exponential but the endpoints agree
