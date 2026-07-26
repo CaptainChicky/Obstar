@@ -142,20 +142,23 @@ class Player {
 		this.x = body.x; this.y = body.y;
 		this.vec.x = body.vx; this.vec.y = body.vy;
 		this.autoDir += tick.perTick(0.01818);   // one-time-rescaled from .015 (33ms ref)
-		if (this.x < -this.map.width / 2) {
-			this.x = -this.map.width / 2;
+		// Players alone get to leave the drawn arena, up to config.OOB_MARGIN - a measured diep
+		// behaviour (massplanchunks WP5), not a spring: the real wall is just further out than
+		// the visible edge, and still a hard stop.
+		if (this.x < -this.map.width / 2 - config.OOB_MARGIN) {
+			this.x = -this.map.width / 2 - config.OOB_MARGIN;
 			this.vec.x = 0;
 		};
-		if (this.y < -this.map.height / 2) {
-			this.y = -this.map.height / 2;
+		if (this.y < -this.map.height / 2 - config.OOB_MARGIN) {
+			this.y = -this.map.height / 2 - config.OOB_MARGIN;
 			this.vec.y = 0;
 		};
-		if (this.x > this.map.width / 2) {
-			this.x = this.map.width / 2;
+		if (this.x > this.map.width / 2 + config.OOB_MARGIN) {
+			this.x = this.map.width / 2 + config.OOB_MARGIN;
 			this.vec.x = 0;
 		};
-		if (this.y > this.map.height / 2) {
-			this.y = this.map.height / 2;
+		if (this.y > this.map.height / 2 + config.OOB_MARGIN) {
+			this.y = this.map.height / 2 + config.OOB_MARGIN;
 			this.vec.y = 0;
 		};
 	}

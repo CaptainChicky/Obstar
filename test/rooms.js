@@ -536,6 +536,33 @@ function fovTests(rooms) {
 		me.screen + ' > ' + base);
 }
 
+/*
+	Out-of-bounds (massplanchunks WP5): the real wall sits config.OOB_MARGIN past the drawn map
+	edge, a hard stop with no spring - measured against real diep.io, not a placeholder.
+*/
+function oobTests(rooms) {
+	console.log('\nout-of-bounds (massplanchunks WP5):');
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+	const room = rooms[0];
+	const me = player(room, 0);
+
+	me.x = room.map.width / 2 + config.OOB_MARGIN / 2;
+	me.vec.x = 5;
+	me.motion();
+	check('a player short of the true wall is not clamped', me.x > room.map.width / 2,
+		me.x + ' vs edge ' + (room.map.width / 2));
+
+	me.x = room.map.width / 2 + config.OOB_MARGIN + 500;
+	me.vec.x = 5;
+	me.motion();
+	check('the true wall sits exactly OOB_MARGIN past the drawn edge',
+		me.x === room.map.width / 2 + config.OOB_MARGIN,
+		me.x + ' vs ' + (room.map.width / 2 + config.OOB_MARGIN));
+	check('it is a hard stop - velocity zeroes on hit, no push-back', me.vec.x === 0, me.vec.x);
+
+	me.x = 0; me.y = 0; me.vec.x = 0; me.vec.y = 0;
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -548,6 +575,7 @@ respawnCarryoverTests(rooms);
 modeTableTests(rooms);
 tickScaleTests();
 fovTests(rooms);
+oobTests(rooms);
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

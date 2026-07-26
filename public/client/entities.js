@@ -108,24 +108,26 @@
 				const can = document.createElement('CANVAS');
 				const ctx = can.getContext('2d');
 				const R = CONST.RESOLUTION * CONST.OFFCAN;
-				const Hp = 1;
+				// Quantised to the wire's own 1/255 (CODECS.unit) so this only repaints on a real
+				// change, instead of every frame any damaged entity is on screen (WP8's cache-guard
+				// fix - -1 is a sentinel that never equals a real quantised hp, forcing the first draw).
+				let Hp = -1;
 				let Size = 0;
 				const lw = 1.5;
 				const height = 5;
 				can.height = (height + lw * 2 + 4) * R
 
 				function drawHp(hp, size, color) {
-					if (size !== Size || hp !== Hp) {
-						if (size !== Size) {
-							can.width = (size + lw * 2 + 4 + height) * R;
-							Size = size;
-						} else {
-							ctx.setTransform(1, 0, 0, 1, 0, 0)
-							ctx.clearRect(0, 0, can.width, can.height);
-						}
+					const qhp = Math.round(hp * 255);
+					if (size === Size && qhp === Hp) { return; }
+					if (size !== Size) {
+						can.width = (size + lw * 2 + 4 + height) * R;
+						Size = size;
 					} else {
-						return;
+						ctx.setTransform(1, 0, 0, 1, 0, 0)
+						ctx.clearRect(0, 0, can.width, can.height);
 					}
+					Hp = qhp;
 					ctx.setTransform(R, 0, 0, R, can.width / 2, 2);
 					ctx.beginPath();
 					roundRect(ctx, -size / 2 - lw - height / 2, 0, size + lw * 2 + height, height + lw * 2, (height + lw * 2) / 2);
@@ -290,24 +292,26 @@
 				const can = document.createElement('CANVAS');
 				const ctx = can.getContext('2d');
 				const R = CONST.RESOLUTION * CONST.OFFCAN;
-				const Hp = 1;
+				// Quantised to the wire's own 1/255 (CODECS.unit) so this only repaints on a real
+				// change, instead of every frame any damaged shape is on screen (WP8's cache-guard
+				// fix - -1 is a sentinel that never equals a real quantised hp, forcing the first draw).
+				let Hp = -1;
 				let Size = 0;
 				const lw = 1.5;
 				const height = 5;
 				can.height = (height + lw * 2 + 4) * R
 
 				function drawHp(hp, size, color) {
-					if (size !== Size || hp !== Hp) {
-						if (size !== Size) {
-							can.width = (size + lw * 2 + 4 + height) * R;
-							Size = size;
-						} else {
-							ctx.setTransform(1, 0, 0, 1, 0, 0)
-							ctx.clearRect(0, 0, can.width, can.height);
-						}
+					const qhp = Math.round(hp * 255);
+					if (size === Size && qhp === Hp) { return; }
+					if (size !== Size) {
+						can.width = (size + lw * 2 + 4 + height) * R;
+						Size = size;
 					} else {
-						return;
+						ctx.setTransform(1, 0, 0, 1, 0, 0)
+						ctx.clearRect(0, 0, can.width, can.height);
 					}
+					Hp = qhp;
 					ctx.setTransform(R, 0, 0, R, can.width / 2, 2);
 					ctx.beginPath();
 					roundRect(ctx, -size / 2 - lw - height / 2, 0, size + lw * 2 + height, height + lw * 2, (height + lw * 2) / 2);
@@ -327,6 +331,20 @@
 					redraw: drawHp
 				}
 			})();
+			// Every shape shows a health bar (WP8), bars stay invisible at full health via
+			// hpAlpha's fade below - so this is one unconditional attach instead of the two
+			// special cases (alphaPnt/Sqr/Tri always had one; a rarity tier used to lazily grow
+			// one) it replaces.
+			this.drawUi = function (ctx) {
+				ctx.translate(this.dx, this.dy);
+				ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
+				ctx.globalAlpha = this.hpAlpha * this.alpha;
+				this.hpBar.redraw(this.hp, this.size * 1.7, Palette[this.color][0]);
+				ctx.drawImage(this.hpBar.can,
+					-this.hpBar.can.width / 2,
+					(this.size * 1.2) * CONST.OFFCAN * CONST.RESOLUTION
+				)
+			}
 			switch (this.type) {
 				case 'sqr':
 				case 'bull':
@@ -340,16 +358,6 @@
 				case 'alphaSqr':
 				case 'alphaTri':
 					this.rotate = 0.001 * Math.sign(Math.random() - 0.5);
-					this.drawUi = function (ctx) {
-						ctx.translate(this.dx, this.dy);
-						ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
-						ctx.globalAlpha = this.hpAlpha * this.alpha;
-						this.hpBar.redraw(this.hp, this.size * 1.7, Palette[this.color][0]);
-						ctx.drawImage(this.hpBar.can,
-							-this.hpBar.can.width / 2,
-							(this.size * 1.2) * CONST.OFFCAN * CONST.RESOLUTION
-						)
-					}
 					break;
 			}
 		}
@@ -363,22 +371,10 @@
 			this.dir += this.rotate * Global.dtFrames;
 			// Rarity tier (THEPLAN 4.2) - this used to be dead code keyed on `this.shield`,
 			// which no Objects wire field ever sets. RARITY[0].color is null, so an ordinary
-			// (tier 0) polygon never enters either branch below.
+			// (tier 0) polygon never enters the branch below.
 			const tier = RARITY[this.tier || 0];
 			if (tier.color && this.color !== tier.color) {
 				this.color = tier.color;
-			}
-			if (tier.showHp && !this.drawUi) {
-				this.drawUi = function (ctx) {
-					ctx.translate(this.dx, this.dy);
-					ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
-					ctx.globalAlpha = this.hpAlpha * this.alpha;
-					this.hpBar.redraw(this.hp, this.size * 1.7, Palette[this.color][0]);
-					ctx.drawImage(this.hpBar.can,
-						-this.hpBar.can.width / 2,
-						(this.size * 1.2) * CONST.OFFCAN * CONST.RESOLUTION
-					)
-				}
 			}
 			if (this.hp < 1) {
 				this.hpAlpha = Math.min(.8, this.hpAlpha + 0.05);

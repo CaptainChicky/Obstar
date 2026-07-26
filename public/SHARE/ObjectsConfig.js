@@ -16,8 +16,7 @@
 */
 (function (exports) {
 	exports.rarity = [
-		{ id: 0, name: null, chance: 0, hpMul: 1, prizeMul: 1, weight: null, color: null, showHp: false },
-		{ id: 1, name: 'Shiny', chance: 1 / 1000000, hpMul: 2, prizeMul: 3, weight: null, color: 'shiny', showHp: false },
-		{ id: 2, name: 'Mythic', chance: 1 / 5000000, hpMul: 40, prizeMul: 120, weight: 100, color: 'special', showHp: true }
+		{ id: 0, name: null, chance: 0, hpMul: 1, prizeMul: 1, weight: null, color: null },
+		{ id: 1, name: 'Shiny', chance: 1 / 1000000, hpMul: 2, prizeMul: 3, weight: null, color: 'shiny' }
 	];
 })(typeof (exports) === 'undefined' ? function () { this['ObjectsConfig'] = {}; return this['ObjectsConfig']; }() : exports);

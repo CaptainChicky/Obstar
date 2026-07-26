@@ -95,9 +95,9 @@ class Objects {
 				this.hp = 32;
 			}
 		}
-		// Rarity roll (THEPLAN 4.2). Checked rarest-first: each tier is its own independent
-		// chance, so a roll that already won Mythic cannot be re-decided into Shiny by also
-		// checking that (weaker) threshold afterwards.
+		// Rarity roll (THEPLAN 4.2, Mythic removed in massplanchunks WP6). Checked rarest-first:
+		// each tier is its own independent chance, so a roll that already won a rarer tier cannot
+		// be re-decided into a more common one by also checking that (weaker) threshold afterwards.
 		this.tier = 0;
 		for (let i = RARITY.length - 1; i >= 1; i--) {
 			if (Math.random() < RARITY[i].chance) {
@@ -173,7 +173,7 @@ class Objects {
 			return;
 		}
 		this.vec.rotate(tick.perTick(this.rotationVal));
-		this.vec.limit(this.maxspeed / 2, FRICTION)
+		this.vec.limit(tick.perTick(this.maxspeed / 2), FRICTION)
 		this.x += this.vec.x / this.weight;
 		this.y += this.vec.y / this.weight;
 		if (this.DETEC) {

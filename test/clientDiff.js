@@ -122,7 +122,12 @@ const hash = fnv1a(blob);
 // and WP4 (wider FOV): every bot AI decision this test's seeded RNG drives happens against
 // rescaled movement/bullet constants and a different quadtree cull rect, so op count and hash
 // both move. Confirmed intentional the same way - no NaN/Inf in the captured stream.
-const GOLDEN = { count: 275433, hash: '7ed8d55c' };
+//
+// Rebuilt again for massplanchunks WP6/WP8: Mythic removed (one fewer Math.random() draw per
+// spawn roll, reshuffling the seeded RNG downstream same as WP4.2 above) and every polygon now
+// draws a health bar via drawUi - previously only the beta shapes and a rare tiered one did.
+// Confirmed intentional the same way - no NaN/Inf in the captured stream.
+const GOLDEN = { count: 320658, hash: 'f18e76a4' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);
