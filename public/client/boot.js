@@ -141,6 +141,16 @@
 	///
 	CLIENT.preRun = preRun;
 	window.onload = preRun;
+	// Nag on close only while there's a live game to lose: an open socket and a tank that
+	// isn't already dead. A disconnected or dead tab (death screen up) closes silently.
+	// Browsers show their own generic wording - the returned string only triggers that.
+	window.onbeforeunload = e => {
+		const ws = General['WS'];
+		const Ui = General['Ui'];
+		if (!ws || ws.readyState !== WebSocket.OPEN || !Ui || Ui.dead) { return; }
+		e.preventDefault();
+		return e.returnValue = 'Leave the game?';
+	};
 })(typeof (exports) === 'undefined'
 	? (window.CLIENT = window.CLIENT || {})
 	: (module.exports = global.CLIENT = global.CLIENT || {}));

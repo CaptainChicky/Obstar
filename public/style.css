@@ -938,13 +938,15 @@ body {
 }
 
 /* ------------------------------------------------------------------------- *
- * Achievements edge panel (menu-only). Not a .white-box card: hovering
- * anywhere in the rightmost slice of the whole page reveals a dark-to-light
- * gradient strip with your achievement icons, auto-scrolling (public/account.js
- * drives the scroll; wheel/touch input pauses it for a few seconds - see the
- * comment there). The hit-box and the reveal are the same element and the same
- * size on purpose - a hover target that resizes itself is unreliable, since
- * the pointer can end up outside its own new bounds.
+ * Achievements edge panel (menu-only). Not a .white-box card: approaching
+ * the rightmost slice of the whole page reveals a dark-to-light gradient
+ * strip with your achievement icons on a diep-style wheel - a seamless
+ * transform-driven auto-scroll (public/account.js), centred item largest and
+ * furthest left, receding right and fading toward the top/bottom edges.
+ * `pointer-events: none` so the panel never sits on top of the account chip /
+ * Info / Follow buttons underneath it; account.js drives the hover reveal
+ * itself via a window `mousemove` listener instead of `:hover`, since
+ * `pointer-events: none` also disables `:hover` on this element.
  * ------------------------------------------------------------------------- */
 #ach-edge {
 	position: fixed;
@@ -952,46 +954,37 @@ body {
 	right: 0;
 	width: 10%;
 	min-width: 120px;
-	max-width: 220px;
+	max-width: 260px;
 	height: 100%;
 	z-index: 40;
 	overflow: hidden;
+	pointer-events: none;
 	background: linear-gradient(to right, rgba(10, 10, 16, 0) 0%, rgba(10, 10, 16, .6) 100%);
 	opacity: 0;
-	transition: opacity .35s;
-}
-
-#ach-edge:hover {
-	opacity: 1;
 }
 
 #ach-edge-list {
 	position: absolute;
 	inset: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 16px;
-	padding: 30px 0;
-	overflow-y: auto;
+	overflow: hidden;
 }
 
-/* The scroll is driven by JS (auto-scroll + wheel), not meant to be dragged by its
-	 thumb - so the scrollbar itself stays invisible, same as a diep.io-style peek panel. */
-#ach-edge-list::-webkit-scrollbar {
-	width: 0;
-	background: transparent;
+#ach-edge-list .ach-item {
+	position: absolute;
+	right: 0;
+	width: 100%;
+	transform-origin: right center;
 }
 
-#ach-edge-list img {
-	width: 42px;
-	height: 42px;
+#ach-edge-list .ach-item img {
+	display: block;
+	width: 100%;
+	height: auto;
 	border-radius: 6px;
-	flex-shrink: 0;
 	filter: drop-shadow(0 0 4px rgba(0, 0, 0, .5));
 }
 
-#ach-edge-list img.locked {
+#ach-edge-list .ach-item img.locked {
+	filter: drop-shadow(0 0 4px rgba(0, 0, 0, .5)) grayscale(1);
 	opacity: .3;
-	filter: grayscale(1);
 }

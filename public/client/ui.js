@@ -181,6 +181,37 @@
 				let NB;
 				let LOGO;
 				let CLASS = 0;
+				// Indexed the same way Ui.upNb is (wire stat index), not panel order.
+				const QUEUE = [0, 0, 0, 0, 0, 0, 0, 0];
+				function desaturate(hex, amt = 0.55) {
+					const r = parseInt(hex.substring(1, 3), 16);
+					const g = parseInt(hex.substring(3, 5), 16);
+					const b = parseInt(hex.substring(5, 7), 16);
+					const gray = (r + g + b) / 3;
+					const mr = Math.round(r + (gray - r) * amt);
+					const mg = Math.round(g + (gray - g) * amt);
+					const mb = Math.round(b + (gray - b) * amt);
+					return "#" + ((1 << 24) + (mr << 16) + (mg << 8) + mb).toString(16).slice(1);
+				}
+				function enqueue(wireIdx, n) {
+					QUEUE[wireIdx] = Math.max(0, Math.min(6, (QUEUE[wireIdx] || 0) + n));
+				}
+				function clearQueue() {
+					for (let i = 0; i < QUEUE.length; i++) { QUEUE[i] = 0; }
+				}
+				function drain(Ui) {
+					let still = Ui.still;
+					if (!still) { return; }
+					for (let i = 0; i < QUEUE.length && still > 0; i++) {
+						while (QUEUE[i] > 0 && still > 0) {
+							if ((Ui.upNb[i] || 0) >= 6) { QUEUE[i] = 0; break; }
+							QUEUE[i]--;
+							still--;
+							Ui.upNb[i] = (Ui.upNb[i] || 0) + 1;
+							General['WS'].send(PROTO.encode('upgrade', i));
+						}
+					}
+				}
 				///
 				function drawAll(tankClass, states, max = 6) {
 					if (tankClass === CLASS) {
@@ -237,20 +268,24 @@
 							ismouse: 0,
 							isfull: 0,
 							nb: 0,
+							queued: 0,
 							odd: i % 2,
 							name: states[i]
 						});
 						redraw(i, 0, 0);
 					}
 				};
-				function redraw(state, nb, isMouse, colored = 1) {
+				function redraw(state, nb, isMouse, colored = 1, queued = 0) {
 					const data = STATES.up[state]
 					if (!data) { return; }
-					if (data.isfull && nb >= STATES.max) { return; }
-					if (isMouse === data.isMouse && data.nb === Math.min(nb, STATES.max) && data.isfull === ((data.nb === STATES.max) || !colored)) { return; }
+					nb = Math.min(nb, STATES.max);
+					queued = Math.min(queued, STATES.max - nb);
+					if (data.isfull && nb >= STATES.max && data.queued === queued) { return; }
+					if (isMouse === data.isMouse && data.nb === nb && data.isfull === ((nb === STATES.max) || !colored) && data.queued === queued) { return; }
 					data.isMouse = isMouse;
-					data.nb = Math.min(nb, STATES.max);
+					data.nb = nb;
 					data.isfull = (data.nb === STATES.max) || !colored;
+					data.queued = queued;
 					const w = STATES.max * (W + marge);
 					///
 					ctx.setTransform(R, 0, 0, R, data.sx, data.sy);
@@ -274,6 +309,15 @@
 							roundRect(ctx, plusRad * 2 - r + (W + marge) * i, plusRad - h / 2, W, h, r);
 							ctx.closePath();
 							ctx.fill();
+						}
+						if (data.queued) {
+							ctx.fillStyle = desaturate(Palette.up[state]);
+							for (let i = data.nb; i < data.nb + data.queued; i++) {
+								ctx.beginPath();
+								roundRect(ctx, plusRad * 2 - r + (W + marge) * i, plusRad - h / 2, W, h, r);
+								ctx.closePath();
+								ctx.fill();
+							}
 						}
 						/////
 						const plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(Palette.up[state], 1.4) : Palette.up[state];
@@ -315,6 +359,15 @@
 							roundRect(ctx, w + plusRad - 2 - (W + marge) * (i + 1), plusRad - h / 2, W, h, r);
 							ctx.closePath();
 							ctx.fill();
+						}
+						if (data.queued) {
+							ctx.fillStyle = desaturate(Palette.up[state]);
+							for (let i = data.nb; i < data.nb + data.queued; i++) {
+								ctx.beginPath();
+								roundRect(ctx, w + plusRad - 2 - (W + marge) * (i + 1), plusRad - h / 2, W, h, r);
+								ctx.closePath();
+								ctx.fill();
+							}
 						}
 						///
 						const plusC = data.isfull ? '#a8a8a8' : isMouse ? General.color.shade(Palette.up[state], 1.6) : Palette.up[state];
@@ -385,7 +438,11 @@
 					show: 0,
 					isShowing: 0,
 					isMouse: 0,
-					speed: .03
+					speed: .03,
+					queue: QUEUE,
+					enqueue: enqueue,
+					clearQueue: clearQueue,
+					drain: drain
 				}
 			})();
 			this.TNK = (() => {
@@ -952,12 +1009,12 @@
 					this.UP.setNb(this.still);
 				}
 				///
-				if (this.UP.isShowing || Global.inputs.u || parseInt(this.END.offy + .1)) {
+				if (this.UP.isShowing || Global.inputs.u || Global.inputs.m || parseInt(this.END.offy + .1)) {
 					this.UP.show = Math.min(this.dead ? 1 : 1.8, this.UP.show + (this.dead ? this.UP.speed * .6 : this.UP.speed));
 				} else {
 					this.UP.show = Math.max(0, this.UP.show - this.UP.speed);
 				}
-				if (!this.still && !Global.inputs.u && !this.UP.show && !parseInt(this.END.offy + .1)) { return; }
+				if (!this.still && !Global.inputs.u && !Global.inputs.m && !this.UP.show && !parseInt(this.END.offy + .1)) { return; }
 				///
 				this.UP.init(User.class, CLASS[User.class].ups ? CLASS[User.class].ups : TanksConfig.defaultUps, 6);
 				///
@@ -1011,7 +1068,7 @@
 								up.press = 1;
 							}
 						}
-						this.UP.redraw(i, this.upNb[CONST.UP_ORDER[i]], j, this.still)
+						this.UP.redraw(i, this.upNb[CONST.UP_ORDER[i]], j, this.still, this.UP.queue[CONST.UP_ORDER[i]])
 						ctx.drawImage(this.UP.can,
 							up.sx,//sx
 							up.sy,//sy

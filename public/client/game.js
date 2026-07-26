@@ -404,6 +404,34 @@
 						General['WS'].send(PROTO.encode('keydown', key))
 						break;
 					};
+					case '1': case '2': case '3': case '4':
+					case '5': case '6': case '7': case '8': {
+						const Ui = General['Ui'];
+						if (!Ui) { break; }
+						const wireIdx = CONST.UP_ORDER[parseInt(key) - 1];
+						if (Global.inputs.m) {
+							// m+digit: queue that stat all the way to max.
+							const need = 6 - (Ui.upNb[wireIdx] || 0) - Ui.UP.queue[wireIdx];
+							if (need > 0) { Ui.UP.enqueue(wireIdx, need); }
+						} else if (Global.inputs.u) {
+							// u+digit: queue one point on that stat.
+							Ui.UP.enqueue(wireIdx, 1);
+						} else if (Ui.still > 0) {
+							// bare digit: spend one point on that stat now.
+							General['WS'].send(PROTO.encode('upgrade', wireIdx));
+						}
+						break;
+					};
+					case 'u': {
+						// m+u (u pressed while m is held): clear the queue.
+						if (Global.inputs.m && General['Ui']) { General['Ui'].UP.clearQueue(); }
+						break;
+					};
+					case 'm': {
+						// m+u (m pressed while u is held): clear the queue.
+						if (Global.inputs.u && General['Ui']) { General['Ui'].UP.clearQueue(); }
+						break;
+					};
 				}
 			},
 			onkeyup: e => {
@@ -647,6 +675,7 @@
 				General['Ui'].still = data.head.still;
 				General['Ui'].classLvl = data.head.cLvl;
 				General['Ui'].lvl = data.head.level;
+				General['Ui'].UP.drain(General['Ui']);
 			}
 			///User///
 			if (data.User) {
@@ -793,6 +822,7 @@
 				};
 				case 'UpdateUp': {
 					General['Ui'].upNb = decoded.data.ups;
+					General['Ui'].UP.drain(General['Ui']);
 					break;
 				};
 				case 'UiUpdate': {
