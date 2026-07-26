@@ -97,13 +97,13 @@ const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
 //
-// Rebuilt again for plan.md WP2 (base geometry): baseSize grew (2team gu(30)->gu(40),
-// 4team gu(45)->gu(67)) and basePosts() in both modes now draws per-drone orbit radii and
-// random phases instead of one shared ring - more ops this time (bigger base strips/squares
-// to draw, plus the base-drone triangle vertices moving every capture). Confirmed intentional
-// the same way as every rebaseline above - no NaN/Inf in the captured stream, and
-// test/client.js's no-NaN-to-canvas case still passes.
-const GOLDEN = { count: 307141, hash: '06ef7e1e' };
+// Rebuilt again for plan.md WP3+WP4, together (WP3's BASE_DRONE_SIZE fix landed without its own
+// rebaseline, so this capture carries both): the drawn drone triangle changed size (WP3), and
+// the orbit AI is now a kinematic polar path with a spiral, a diameter-cross swoosh, and
+// chase/return states instead of a slow drifting carrot-chase (WP4) - every base drone's
+// position each capture frame is different, hence the jump in op count. Confirmed intentional
+// the same way as every rebaseline above.
+const GOLDEN = { count: 311192, hash: '249668e6' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

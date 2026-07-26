@@ -83,7 +83,7 @@ class FourTeam extends Room {
 					team: team,
 					x: c.x,
 					y: c.y,
-					orbitR: gu(8) * (0.45 + Math.random() * 0.75),
+					orbitR: config.BASE_DRONE_ORBIT_R * (config.BASE_DRONE_ORBIT_R_MIN + Math.random() * (config.BASE_DRONE_ORBIT_R_MAX - config.BASE_DRONE_ORBIT_R_MIN)),
 					phase: Math.random() * Math.PI * 2,
 					crossIn: Math.max(1, Math.round(tick.ticks(config.BASE_DRONE_CROSS) *
 						(i + 1) / PER_BASE * jitter))

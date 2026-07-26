@@ -7,6 +7,7 @@
 */
 const Vec = require('victor');
 const tick = require('../lib/tick.js');
+const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const FRICTION = tick.drag(require('../lib/constants.js').FRICTION);
 const KIND = require('../public/SHARE/kinds.js');
@@ -17,10 +18,29 @@ const Detector = require('./Detector.js');
 // WP3's "chance" category).
 const REAIM_CHANCE = tick.chance(0.0012121);
 const CHARGE_CHANCE = tick.chance(0.0006061);
-// How often a base drone cuts straight across its own orbit (massplanchunks WP-E). A count of
-// reference ticks in config, converted once here - not a per-tick chance like the two above,
-// because the crossing is meant to be a regular ~10s cadence, not a random event.
-const BASE_DRONE_CROSS = tick.ticks(require('../lib/config.js').config.BASE_DRONE_CROSS);
+
+/*
+	Base drone orbit AI (plan.md WP4). All converted once at module load, not per drone per tick.
+
+	BASE_DRONE_ORBIT_SPEED is a linear tangential speed (units/real-tick); dividing it by a
+	drone's own orbR each tick gives that drone's angular rate, so inner drones sweep faster -
+	see the case 1.4 ORBIT branch below.
+
+	BASE_DRONE_HIT_KICK is the total radial displacement a shape hit imparts, derived the same
+	way plan.md WP4.6 derives it by hand (radialV x duration): a 60 degree deflection off the
+	tangent is a radial burst of v_orb * tan(60 deg), applied for BASE_DRONE_HIT_TIME.
+*/
+const BASE_DRONE_CROSS = tick.ticks(config.BASE_DRONE_CROSS);
+const BASE_DRONE_CROSS_TIME = tick.ticks(config.BASE_DRONE_CROSS_TIME);
+const BASE_DRONE_ORBIT_SPEED = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
+const BASE_DRONE_SPIRAL = tick.smoothing(config.BASE_DRONE_SPIRAL);
+const BASE_DRONE_HIT_TICKS = tick.ticks(config.BASE_DRONE_HIT_TIME);
+const BASE_DRONE_HIT_KICK = tick.perTick(1.732 * config.BASE_DRONE_ORBIT_SPEED) * BASE_DRONE_HIT_TICKS;
+const BASE_DRONE_HIT_COOLDOWN = tick.ticks(config.BASE_DRONE_HIT_COOLDOWN);
+
+// Ease-in-out for the diameter cross (plan.md WP4.4) - what makes it read as a swoosh through
+// the centre rather than a constant-speed traverse.
+function smootherstep(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
 
 class Bullet {
 	constructor(origin, x, y, direction, speed, exitSpeed, room) {
@@ -86,6 +106,23 @@ class Bullet {
 					break;
 				case KIND.OBJECTS:
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
+					/*
+						Shape-hit reaction (plan.md WP4.6): a quick radial kick off the current orbit,
+						not a knockback - ORBIT ignores this.vec entirely (it writes position
+						directly), so the vec.add() above is a no-op for a drone in ORBIT. Suppressed
+						mid-swoosh (the drone punches straight through, user-specified) and on
+						cooldown (so a drone resting against a shape doesn't re-trigger every tick).
+						Moves orbRTarget, not orbR, so the spiral (WP4.5) carries it to the new radius
+						over the following ticks instead of snapping back immediately.
+					*/
+					if (this.type === 1.4 && !this.crossing && this.hitCooldown <= 0) {
+						const sign = Math.random() < 0.5 ? -1 : 1;
+						this.orbRTarget = Math.min(
+							this.orbitR * config.BASE_DRONE_ORBIT_R_MAX,
+							Math.max(this.orbitR * config.BASE_DRONE_ORBIT_R_MIN, this.orbRTarget + sign * BASE_DRONE_HIT_KICK)
+						);
+						this.hitCooldown = BASE_DRONE_HIT_COOLDOWN;
+					}
 					if (this.necro && other.type === 'sqr') {
 						const play = this.room.INSTANCE.players.get(this.origin.oId);
 						if (play.droneCount < CLASS[play.class].maxDrone + play.upNb[1]) {
@@ -303,61 +340,107 @@ class Bullet {
 				}
 				break;
 			};
-			//Base drone//
+			/*
+				Base drone (plan.md WP4). A state machine, not a single carrot-chase: the old code
+				steered toward a point walking the ring at 0.364 rad/s while the drone's own top
+				speed topped out at 56.8 u/s - at orbitR 405 the carrot needed 147 u/s, so the drone
+				was 2.6x too slow to ever catch it and instead crawled round at whatever the lag
+				produced. ORBIT below is kinematic (position written directly, not pursued) so it
+				can't fall into that trap; CHASE/RETURN are unchanged pursuit, falling through to
+				the shared motion tail via `break`. ORBIT instead `return`s directly out of update()
+				- see clampToMap().
+			*/
 			case 1.4: {
+				// CHASE/RETURN draw one tick stale, same as every other homing bullet type above -
+				// showDir is only written fresh below for ORBIT, which needs it to actually track
+				// the tangent+radial motion (plan.md WP4.3), not a pursuit direction.
 				this.showDir = this.dir;
-				if (!this.comingDir) {
-					this.comingDir = 0;
-				}
-				if (!this.autoDir) { this.autoDir = 0; }
-				this.autoDir += tick.perTick(0.01455);   // one-time-rescaled from .012 (33ms ref)
-				this.speed = this.maxspeed;
-				/*
-					The diameter cross: every BASE_DRONE_CROSS ticks the steering target flips to
-					the antipodal point of the ring, so the drone drives straight across instead of
-					around. autoDir keeps advancing throughout, so when it arrives it is simply
-					orbiting again from there - "orbit, cross the diameter, continue orbiting" with
-					no state machine. This used to be a random quarter-turn on a per-tick chance,
-					which never produced a clean crossing at all.
-				*/
-				if (--this.crossIn <= 0) {
-					this.crossIn = BASE_DRONE_CROSS;
-					this.comingDir += Math.PI;
-				}
+				if (this.hitCooldown > 0) { this.hitCooldown--; }
 				///
 				if (!this.DETEC) {
-					this.DETEC = new Detector(this, this.x, this.y, 1200, [KIND.PLAYER])
+					this.DETEC = new Detector(this, this.x, this.y, config.BASE_DRONE_DETECT, [KIND.PLAYER])
 					this.DETEC.team = this.team
 				} else {
 					this.DETEC.x = this.x;
 					this.DETEC.y = this.y;
 				}
-				///
-				if (this.DETEC.select) {
-					this.DETEC.enabled = 0;
+				// A live, in-leash target pulls the drone off its ring from any state. The leash is
+				// measured from the base centre, not the drone, so a drone already out chasing
+				// doesn't get an easier time re-engaging than one starting fresh off the ring.
+				if (this.orbitState !== 'CHASE' && this.DETEC.select) {
 					const other = this.DETEC.select;
 					const basedis = Math.sqrt(Math.pow(other.x - this.ox, 2) + Math.pow(other.y - this.oy, 2));
-					if (basedis < 1800 && !other.destroy) {
-						this.dir = Math.atan2(other.y - this.y, other.x - this.x);
-						break;
-					} else {
-						this.DETEC.reset();
-						this.DETEC.enabled = 1;
+					if (basedis < config.BASE_DRONE_LEASH && !other.destroy) {
+						this.orbitState = 'CHASE';
+						this.DETEC.enabled = 0;
 					}
 				}
-				// Orbit radius and leash band come off the drone (seeded from its post by
-				// Room.spawnBaseDrone) rather than being hardcoded, because 2team's fifteen
-				// rings per side are deliberately tighter than 4team's single twelve-drone one.
-				const baseDis = Math.sqrt(Math.pow(this.x - this.ox, 2) + Math.pow(this.y - this.oy, 2))
-				if (baseDis < this.orbitR + this.size) {
-					this.speed = 0.06399;   // one-time-rescaled from .07 (singleAppFactor, see Physics.js)
-					const dir = Math.atan2(this.oy + Math.sin(this.autoDir + this.comingDir) * this.orbitR - this.y,
-						this.ox + Math.cos(this.autoDir + this.comingDir) * this.orbitR - this.x);
-					this.dir = dir;
-					break;
+				if (this.orbitState === 'CHASE') {
+					const other = this.DETEC.select;
+					const basedis = other ? Math.sqrt(Math.pow(other.x - this.ox, 2) + Math.pow(other.y - this.oy, 2)) : Infinity;
+					if (!other || other.destroy || basedis >= config.BASE_DRONE_LEASH) {
+						this.DETEC.reset();
+						this.DETEC.enabled = 1;
+						this.orbitState = this.enterOrbitIfClose() ? 'ORBIT' : 'RETURN';
+					} else {
+						this.dir = Math.atan2(other.y - this.y, other.x - this.x);
+						this.speed = this.maxspeed;
+						break;   // fall through to the shared pursuit motion tail
+					}
 				}
-				this.dir = Math.atan2(this.oy - this.y, this.ox - this.x);
-				break;
+				if (this.orbitState === 'RETURN') {
+					if (this.enterOrbitIfClose()) {
+						this.orbitState = 'ORBIT';
+					} else {
+						this.dir = Math.atan2(this.oy - this.y, this.ox - this.x);
+						this.speed = this.maxspeed;
+						break;   // fall through to the shared pursuit motion tail
+					}
+				}
+				// ORBIT - a kinematic polar path: position is written directly from (orbA, orbR)
+				// rather than steered toward with acceleration, so it can't lag its own target the
+				// way the old carrot-chase did.
+				const fromX = this.x, fromY = this.y;
+				if (!this.crossing) {
+					if (--this.crossIn <= 0) {
+						// Diameter cross (WP4.4): straight chord through the centre to the
+						// antipodal angle, undershooting the far radius so it reads as a swoosh
+						// through the middle rather than arriving exactly back on the ring.
+						this.crossing = true;
+						this.crossElapsed = 0;
+						this.crossFrom = { x: this.x, y: this.y };
+						const toA = this.orbA + Math.PI;
+						const toR = Math.max(1, this.orbRTarget - config.BASE_DRONE_CROSS_UNDERSHOOT);
+						this.crossTo = { x: this.ox + Math.cos(toA) * toR, y: this.oy + Math.sin(toA) * toR };
+						this.crossIn = BASE_DRONE_CROSS;
+					} else {
+						// Spiral-out (WP4.5): relax toward this drone's own target radius between
+						// crossings, so it never quite settles. ORBIT_SPEED is a linear tangential
+						// speed, so dividing by orbR gives inner drones a faster angular rate -
+						// what keeps the whole base churning instead of frozen in formation.
+						this.orbR += (this.orbRTarget - this.orbR) * BASE_DRONE_SPIRAL;
+						this.orbA += BASE_DRONE_ORBIT_SPEED / this.orbR;
+						this.x = this.ox + Math.cos(this.orbA) * this.orbR;
+						this.y = this.oy + Math.sin(this.orbA) * this.orbR;
+					}
+				}
+				if (this.crossing) {
+					this.crossElapsed++;
+					const t = Math.min(1, this.crossElapsed / BASE_DRONE_CROSS_TIME);
+					const e = smootherstep(t);
+					this.x = this.crossFrom.x + (this.crossTo.x - this.crossFrom.x) * e;
+					this.y = this.crossFrom.y + (this.crossTo.y - this.crossFrom.y) * e;
+					if (t >= 1) {
+						this.crossing = false;
+						this.orbA += Math.PI;
+						this.orbR = Math.max(1, this.orbRTarget - config.BASE_DRONE_CROSS_UNDERSHOOT);
+					}
+				}
+				this.vec.x = this.x - fromX;
+				this.vec.y = this.y - fromY;
+				this.showDir = this.dir = Math.atan2(this.vec.y, this.vec.x);
+				this.clampToMap();
+				return;
 			};
 			///////////////trap
 			case 2: {
@@ -475,22 +558,7 @@ class Bullet {
 		this.y += this.vec.y;
 		///
 		if (this.life === -1) {
-			if (this.x < -this.map.width / 2) {
-				this.x = -this.map.width / 2;
-				this.vec.x = 0;
-			};
-			if (this.y < -this.map.height / 2) {
-				this.y = -this.map.height / 2;
-				this.vec.y = 0;
-			};
-			if (this.x > this.map.width / 2) {
-				this.x = this.map.width / 2;
-				this.vec.x = 0;
-			};
-			if (this.y > this.map.height / 2) {
-				this.y = this.map.height / 2;
-				this.vec.y = 0;
-			};
+			this.clampToMap();
 			return;
 		};
 		if (this.life === 0) {
@@ -498,6 +566,31 @@ class Bullet {
 		} else {
 			this.life -= 1;
 		}
+	}
+	// Hard-stop map clamp for a life===-1 bullet (a base drone). Shared by the ordinary motion
+	// tail above and case 1.4 ORBIT's direct-write path (plan.md WP4.2), which returns before
+	// ever reaching that tail.
+	clampToMap() {
+		if (this.x < -this.map.width / 2) { this.x = -this.map.width / 2; this.vec.x = 0; }
+		if (this.y < -this.map.height / 2) { this.y = -this.map.height / 2; this.vec.y = 0; }
+		if (this.x > this.map.width / 2) { this.x = this.map.width / 2; this.vec.x = 0; }
+		if (this.y > this.map.height / 2) { this.y = this.map.height / 2; this.vec.y = 0; }
+	}
+	/*
+		RETURN -> ORBIT transition (plan.md WP4.2/4.3): if the drone is already inside its own
+		ring when a chase ends, seed the polar state from where it actually is and enter ORBIT
+		directly rather than detouring through a RETURN step it doesn't need. Zeroes vec so no
+		leftover chase momentum leaks into the kinematic path.
+	*/
+	enterOrbitIfClose() {
+		const dx = this.x - this.ox, dy = this.y - this.oy;
+		const dis = Math.sqrt(dx * dx + dy * dy);
+		if (dis >= this.orbitR + this.size) { return false; }
+		this.orbA = Math.atan2(dy, dx);
+		this.orbR = dis;
+		this.vec.x = 0;
+		this.vec.y = 0;
+		return true;
 	}
 }
 

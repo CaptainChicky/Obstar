@@ -196,9 +196,19 @@ class Room {
 		bull.team = post.team;
 		bull.ox = post.x;
 		bull.oy = post.y;
+		// orbitR is this drone's own nominal/max radius (immutable after spawn - also the band
+		// entities/Bullet.js's shape-hit reaction clamps orbRTarget into). orbA/orbR/orbRTarget are
+		// the live polar state the type-1.4 ORBIT AI writes position from each tick (plan.md WP4.3).
 		bull.orbitR = post.orbitR;
-		// Seeded, not zeroed: autoDir is the angle the type-1.4 AI steers around the ring, so
-		// starting every drone at 0 would stack a whole base's worth on one point of the circle.
+		bull.orbA = post.phase;
+		bull.orbR = post.orbitR;
+		bull.orbRTarget = post.orbitR;
+		bull.orbitState = 'ORBIT';
+		bull.crossing = false;
+		bull.hitCooldown = 0;
+		// Seeded, not zeroed: autoDir is kept only for the phase-distribution test in
+		// test/rooms.js now that orbA is the AI's own angle - starting every drone at 0 would
+		// stack a whole base's worth on one point of the circle regardless of which field reads it.
 		bull.autoDir = post.phase;
 		bull.crossIn = post.crossIn || tick.ticks(config.BASE_DRONE_CROSS);
 		bull.alone = 1;

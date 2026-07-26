@@ -64,7 +64,7 @@ class TwoTeam extends Room {
 						team: team,
 						x: side * (this.map.width / 2 - gu(24)),
 						y: spacing * (i + 0.5) - this.map.height / 2,
-						orbitR: nominalR * (0.45 + Math.random() * 0.75),
+						orbitR: nominalR * (config.BASE_DRONE_ORBIT_R_MIN + Math.random() * (config.BASE_DRONE_ORBIT_R_MAX - config.BASE_DRONE_ORBIT_R_MIN)),
 						phase: Math.random() * Math.PI * 2,
 						// Staggered across the side's whole roster, so a base's drones cut across
 						// their rings one after another instead of all on the same tick.
