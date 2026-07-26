@@ -505,8 +505,14 @@ function baseDroneTests() {
 
 	const post = room.dronePosts[0];
 	const drone = room.INSTANCE.bullets.get(post.slot);
-	check('a base drone is 15 units, the 32/60 scale against our 28-unit tank radius',
+	check('a base drone collision radius is 9.2 units, drawing a 28-unit (1 gu) triangle side',
 		drone.size === config.BASE_DRONE_SIZE, drone.size);
+	{
+		const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
+		const drawnSide = config.BASE_DRONE_SIZE * 3.05;
+		check('the drawn drone side (size * 1.7 * 1.79) is within 5% of gu(1)',
+			Math.abs(drawnSide - World.gu(1)) / World.gu(1) < 0.05, drawnSide);
+	}
 	check('its pene IS its health pool, not a spend-down budget',
 		drone.pene === config.BASE_DRONE_HP, drone.pene);
 	check('it hits for the scale-consistent body damage', drone.damage === config.BASE_DRONE_DAMAGE,
