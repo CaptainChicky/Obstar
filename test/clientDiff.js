@@ -97,13 +97,19 @@ const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
 //
-// Rebuilt again for plan.md WP3+WP4, together (WP3's BASE_DRONE_SIZE fix landed without its own
-// rebaseline, so this capture carries both): the drawn drone triangle changed size (WP3), and
-// the orbit AI is now a kinematic polar path with a spiral, a diameter-cross swoosh, and
-// chase/return states instead of a slow drifting carrot-chase (WP4) - every base drone's
-// position each capture frame is different, hence the jump in op count. Confirmed intentional
-// the same way as every rebaseline above.
-const GOLDEN = { count: 311192, hash: '249668e6' };
+// Rebuilt again for plan.md WP4.5 (the correction pass over WP4): base drone motion is now a
+// steered field (heading/speed rate-limited, position their integral) instead of a
+// position-authoritative polar path, orbit speed dropped 1.5x instead of 2x, and the 4team/2team
+// orbit centres moved to sit in the middle of the base instead of low and outboard in it - every
+// base drone's position each capture frame is different again, hence the op-count move (down
+// this time - the field controller draws a materially different path). Confirmed intentional.
+//
+// Rebuilt again for plan.md WP4.5's energy-level pass: radius is quantised into five discrete
+// levels instead of a continuous random band, drone-vs-drone separation makes drones peel apart
+// instead of overlapping, and the diameter cross is now a planned quintic Hermite S instead of a
+// steered pursuit of an antipodal aim point - every base drone's path is different again, hence
+// the op-count move (up this time). Confirmed intentional.
+const GOLDEN = { count: 289292, hash: 'eeec5da6' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

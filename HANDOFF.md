@@ -227,14 +227,61 @@ all). `Ffa` is 30 lines because `Room`'s defaults *are* ffa.
 **Base drones** are `Bullet`s of `type 1.4` with `life = -1`, and their **`pene` *is* their health
 pool** (`collision()` decrements it) — which is why `config.BASE_DRONE_HP` is written there and
 not to an `hp` field. A mode declares them by overriding **`basePosts()`**, which returns one
-`{team, x, y, orbitR, phase}` per drone where `x,y` is the *orbit centre*; the constructor calls it
-once, stores the list as `this.dronePosts`, and spawns one drone per post via
-**`spawnBaseDrone(post)`**. **`tickBaseDrones()`** runs from `step()` and refills a post
-`config.BASE_DRONE_RESPAWN` ticks after its drone dies. There is exactly one drone AI — the
-`type 1.4` branch in `entities/Bullet.js` — and it reads `orbitR`/`phase` off the entity, so the
-only per-mode difference is the orbit radius (2team's fifteen rings a side are tighter than
-4team's single twelve-drone ring). `basePosts()` returning `[]` costs a mode one length check per
-tick. Adding a gamemode = a subclass +
+`{team, x, y, orbitR, phase}` per drone (optionally `spin`, `crossIn`) where `x,y` is the *orbit
+centre*; the constructor calls it once, stores the list as `this.dronePosts`, and spawns one drone
+per post via **`spawnBaseDrone(post)`**. **`tickBaseDrones()`** runs from `step()` and refills a
+post `config.BASE_DRONE_RESPAWN` ticks after its drone dies.
+
+There is exactly one drone AI — the `type 1.4` branch in `entities/Bullet.js` — and it is a
+*steered field*, not a state machine walking a polar path (plan.md WP4, corrected and extended by
+WP4.5): every drone carries `head`/`spd`, both rate-limited (`BASE_DRONE_TURN`/`BASE_DRONE_ACCEL`)
+toward a per-state desired direction/target speed, and position is their integral outside a cross,
+so every transition between orbiting and chasing an enemy is continuous by construction — nothing
+can turn the drone instantly or stop it dead. `chasing` is the one real branch; ORBIT/RETURN share
+one "orbit field" driven off position relative to the base centre (`ox,oy`), so a drone far from
+its ring just leans harder toward it and curls back on — there is no separate RETURN state to enter
+or an explicit snap back into ORBIT. `orbitState` is written every tick purely for tests/the admin
+dump; nothing branches on it.
+
+**Radius is quantised into five shared "energy levels"** (plan.md WP4.5.1, `rooms/Room.js`'s
+`levelR()`/`levelPlan()`), not a continuous random band: a drone is always *at*
+`levelR(1..5) = BASE_DRONE_ORBIT_R + (level - BASE_DRONE_LEVEL_HOME) * BASE_DRONE_LEVEL_GAP`, one
+`BASE_DRONE_LEVEL_GAP` (one drone-side) apart, level 3 the home level. Both team modes read this one
+table now — 2team's old per-mode `nominalR` derivation is gone. Each orbit centre owns one
+saturation ledger (`{caps, count, crossing}`, built once by `levelPlan()` off
+`BASE_DRONE_LEVEL_WEIGHTS`, a `Binomial(4,½)` centred on level 3) shared by reference across every
+post at that centre, so a level switch or a cross on one drone is visible to its orbit-mates
+immediately. The **only** place a drone's target radius (`orbRTarget`) ever moves is
+`entities/Bullet.js`'s module-level `levelSwitch()`, one level at a time, from three triggers that
+all funnel through it: a shape hit, drone-vs-drone proximity (`rooms/Room.js`'s pair loop sets
+`tooClose` when two same-side drones are within `BASE_DRONE_SEPARATION` — deliberately less than
+`BASE_DRONE_LEVEL_GAP`, so it can only ever fire between two drones sharing a level), and drifting
+back toward home on a timer. `BASE_DRONE_LEAN_SCALE` is pinned so a one-level radius error leans
+the orbit field by exactly 60°, so all three triggers produce the same visible turn.
+
+**The diameter cross is a planned two-segment quintic Hermite curve, not a steered pursuit**
+(plan.md WP4.5.4) — a turn-limited pursuit of an antipodal aim point cannot be made to pass through
+a *specific* point, so the orbit centre is instead a knot on an authored path with position,
+velocity **and** acceleration matched to the orbit field at both outer seams (`C²`, not just
+`C¹`), which is what lets the hand-off in and out of a cross be exact rather than approximate. Both
+segments are evaluated by the module-level `quinticHermite()` helper; `entities/Bullet.js` writes
+`x`/`y`/`vec`/`head`/`spd` directly from the curve during a cross, bypassing the turn/accel limiter
+entirely (the curve's own curvature bounds the motion instead). A cross always lands at level 1,
+ignoring the saturation cap on the way in (deliberately — a swoosh always ends at the lowest level),
+then the drift-home trigger walks it back up over the next few seconds. Only one drone per orbit
+centre may be mid-cross at a time (`levels.crossing`); a blocked drone's countdown does not reset,
+so it starts the instant the current one lands rather than losing its place. `BASE_DRONE_CROSS_ARC`
+is a measured constant (path length over straight-line distance), not guessed — `test/rooms.js`
+prints the current measurement every run.
+
+The only per-mode difference now is the orbit centre — which both team modes derive from
+`baseSize` rather than a literal inset, so a base resize can't leave the drones sitting off-centre
+again — and how many drones share one centre (2team's fifteen paired centres vs. 4team's single
+twelve-drone centre), which only matters for `levelPlan()`'s cap/occupancy numbers. A base
+drone is transparent to its own side in every state (`rooms/Room.js`'s pair loop skips a same-team
+pair outright when either side is a drone — no damage, no knockback, no jitter) but always tangible
+to enemies and to polygons regardless of team. `basePosts()` returning `[]` costs a mode one length
+check per tick. Adding a gamemode = a subclass +
 one line in `rooms/index.js` (`Controller`'s whitelist, its `server` map, and the tests all derive
 from that one table). The wire enum in `SocketSchema.js`
 (`toBUFFER.gamemode`/`toSTRING.gamemode`) does **not** derive from `rooms/index.js` — the client

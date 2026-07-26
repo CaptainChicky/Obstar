@@ -53,38 +53,47 @@ class FourTeam extends Room {
 			y: ((team > 1) ? 1 : -1) * this.map.height / 2
 		};
 	}
-	/* The orbit centre for a side's base - gu(24) in from each of the two map borders the
-		 corner touches (user-measured, plan.md WP2), not the square's own centre. Sits well
-		 inside the 67-gu base, and a drone at its widest orbit still lands ~34gu from the
-		 corner - still inside. */
+	/* The orbit centre for a side's base - the centre of the baseSize square itself (plan.md
+		 WP4.5.5). This used to be a literal gu(24) inset, which read as "the centre" only by
+		 coincidence: it was measured back when baseSize was gu(45) (whose centre is gu(22.5)),
+		 and WP2 carried the literal across to the gu(67) resize instead of the intent, leaving
+		 the drones orbiting low and outboard in the square rather than centred in it. Deriving it
+		 from baseSize means it can't go stale again. Fit check: centre is gu(33.5) in, the
+		 outermost energy level (plan.md WP4.5.1) is levelR(5) = gu(10), so the outermost drone
+		 reaches gu(33.5-10) = gu(23.5) from either border - inside the gu(67) square with room to
+		 spare. */
 	baseCenter(team) {
 		const c = this.corner(team);
 		return {
-			x: c.x - Math.sign(c.x) * gu(24),
-			y: c.y - Math.sign(c.y) * gu(24)
+			x: c.x - Math.sign(c.x) * this.baseSize / 2,
+			y: c.y - Math.sign(c.y) * this.baseSize / 2
 		};
 	}
 	/*
-		Twelve drones per base around one shared orbit centre, each on its own radius rather
-		than a shared ring - gu(8) * (0.45-1.2), i.e. 3.6-9.6gu, mean 6.6gu - and at a random
-		phase rather than evenly spaced, so the group reads clumpy the way basedrones.png does
-		instead of as a formation. crossIn keeps the existing per-drone stagger (so the base
-		doesn't empty out all at once every cross period) plus +-20% jitter so the crossings
-		never re-sync with each other.
+		Twelve drones per base around one shared orbit centre, on five discrete energy levels now
+		(plan.md WP4.5.1) rather than a continuous random band - levelPlan(12) gives caps
+		[1,3,5,3,1] and starts the base at [1,3,4,3,1] drones on levels 1..5, all sharing one
+		saturation ledger (`levels`) since they orbit the same centre. Phases are still random
+		rather than evenly spaced, so the group reads clumpy the way basedrones.png does instead of
+		as a formation. crossIn keeps the existing per-drone stagger (so the base doesn't empty out
+		all at once every cross period) plus +-20% jitter so the crossings never re-sync.
 	*/
 	basePosts() {
 		const PER_BASE = 12;
 		const posts = [];
 		for (const team of this.rules.teams) {
 			const c = this.baseCenter(team);
+			const plan = this.levelPlan(PER_BASE);
+			const levels = { caps: plan.caps, count: [0, 0, 0, 0, 0], crossing: 0 };
 			for (let i = 0; i < PER_BASE; i++) {
 				const jitter = 1 + (Math.random() * 2 - 1) * 0.2;
 				posts.push({
 					team: team,
 					x: c.x,
 					y: c.y,
-					orbitR: config.BASE_DRONE_ORBIT_R * (config.BASE_DRONE_ORBIT_R_MIN + Math.random() * (config.BASE_DRONE_ORBIT_R_MAX - config.BASE_DRONE_ORBIT_R_MIN)),
+					level: plan.initial[i],
 					phase: Math.random() * Math.PI * 2,
+					levels: levels,
 					crossIn: Math.max(1, Math.round(tick.ticks(config.BASE_DRONE_CROSS) *
 						(i + 1) / PER_BASE * jitter))
 				});

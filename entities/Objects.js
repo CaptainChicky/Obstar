@@ -7,6 +7,7 @@
 */
 const Vec = require('victor');
 const tick = require('../lib/tick.js');
+const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const FRICTION = tick.drag(require('../lib/constants.js').FRICTION);
 const KIND = require('../public/SHARE/kinds.js');
@@ -157,7 +158,11 @@ class Objects {
 						return;
 					}
 				}
-				this.hp -= tick.perTick(((option.pene > 1) ? option.pene : option.pene / 2) * other.damage);
+				// A base drone's `pene` is a health pool, not a penetration value (rooms/Room.js's
+				// spawnBaseDrone), so reading it as one here dealt 2000 x damage and vaporised any shape on
+				// contact - plan.md WP4.5.2a.
+				const pene = (other.type === 1.4) ? config.BASE_DRONE_PENE : option.pene;
+				this.hp -= tick.perTick(((pene > 1) ? pene : pene / 2) * other.damage);
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.destroy = tick.DES; }
 				if (this.type[0] === 'B') {

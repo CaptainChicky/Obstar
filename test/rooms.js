@@ -129,15 +129,14 @@ function teamTests() {
 	check('the drones sit in pairs on 15 rings a side',
 		new Set(drones.filter((d) => d.team === 0).map((d) => d.oy)).size === 15,
 		new Set(drones.filter((d) => d.team === 0).map((d) => d.oy)).size + ' distinct centres');
-	// Radii are randomised per drone now (plan.md WP2) - assert the band around the nominal
-	// (map.height/15 * 0.3) rather than a single shared value, and that they actually vary.
+	// Radius is quantised into five shared energy levels now (plan.md WP4.5.1), not a per-mode
+	// random band - every drone sits exactly on room.levelR(its level), and a pair's two levels
+	// are not both the same (levelPlan(2)'s initial occupancy is one drone each on two levels).
 	{
-		const nominal = room.map.height / 15 * 0.3;
-		check('2team\'s rings are the tighter ones - 15 have to fit down the strip, band-checked',
-			drones.every((d) => d.orbitR >= nominal * 0.45 - 1e-9 && d.orbitR <= nominal * 1.2 + 1e-9),
-			drones[0].orbitR + ' vs nominal ' + nominal);
-		check('...and the radii are not all pinned to one ring',
-			new Set(drones.map((d) => d.orbitR)).size > 1);
+		check('every 2team drone sits exactly on its own energy level\'s radius',
+			drones.every((d) => Math.abs(d.orbRTarget - room.levelR(d.level)) < 1e-9));
+		check('...and levels are not all pinned to one ring',
+			new Set(drones.map((d) => d.level)).size > 1);
 	}
 
 	// Sides are balanced on join, so four players come out two and two.
@@ -207,6 +206,7 @@ function teamTests() {
 */
 function fourTeamTests() {
 	console.log('rooms (4team):');
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
 	const room = makeRoom('4team');
 
 	check('four sides', room.rules.teams.length === 4, room.rules.teams.join(','));
@@ -235,8 +235,9 @@ function fourTeamTests() {
 	// stacked on one spot rather than that they are evenly distributed.
 	check('...and are randomly phased around it, not stacked',
 		new Set(drones.filter((d) => d.team === 0).map((d) => Math.round(d.autoDir * 1e6))).size === 12);
-	check('the ring fits inside the square', drones.every((d) => d.orbitR < room.baseSize / 2),
-		drones[0].orbitR + ' vs half-square ' + room.baseSize / 2);
+	check('the outermost energy level fits inside the square',
+		room.levelR(config.BASE_DRONE_LEVELS) < room.baseSize / 2,
+		room.levelR(config.BASE_DRONE_LEVELS) + ' vs half-square ' + room.baseSize / 2);
 
 	// Four more players, balanced: one per side.
 	for (let i = 0; i < 3; i++) {
@@ -588,6 +589,638 @@ function baseDroneTests() {
 }
 
 /*
+	Base drone corrections (plan.md WP4.5). Everything WP4's audit found wrong in a browser:
+	same-team transparency, the cross plowing through shapes rather than phasing through them,
+	the steered-motion rewrite (no state can turn or stop the drone instantly), and the orbit
+	centre sitting in the middle of the base rather than low and outboard in it.
+*/
+function baseDroneWP45Tests() {
+	console.log('\nbase drone corrections (plan.md WP4.5):');
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
+	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
+	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+
+	// 4.5.2b - tunnelling headroom: the fastest thing a drone ever does (the cross dash) must
+	// still be slower than its own size plus the smallest polygon radius, or a fast enough drone
+	// could step clean through a shape between collision checks.
+	check('no tunnelling: a cross-speed step stays under drone size + smallest polygon radius',
+		tick.perTick(config.BASE_DRONE_CROSS_SPEED) < config.BASE_DRONE_SIZE + 20,
+		tick.perTick(config.BASE_DRONE_CROSS_SPEED) + ' vs ' + (config.BASE_DRONE_SIZE + 20));
+
+	// 4.5.2a - shape damage is sane: a base drone's `pene` is a 2000-point health pool, not a
+	// penetration value: reading it as one used to one-shot every shape a drone brushed.
+	{
+		const room = makeRoom('2team');
+		const post = room.dronePosts[0];
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		const sq = new Objects('sqr', -1, { GM: room.gm, sId: room.id, oId: 500 }, room.map, room);
+		const hpBefore = sq.hp;
+		sq.collision(drone, { pene: drone.pene });
+		const dropExpected = tick.perTick(0.5 * config.BASE_DRONE_DAMAGE);
+		check('a base drone grinds a shape down (pene/2 * damage), not one-shots it (pene * damage)',
+			Math.abs((hpBefore - sq.hp) - dropExpected) < 1e-6,
+			(hpBefore - sq.hp) + ' vs ' + dropExpected);
+		check('...nowhere near enough to vaporise it in one tick', (hpBefore - sq.hp) < sq.maxHp / 2,
+			(hpBefore - sq.hp) + ' of ' + sq.maxHp);
+	}
+
+	// 4.5.2 - the cross ploughs through shapes, it does not phase through them: damage and shove
+	// still happen mid-swoosh, only the drone's own 60-degree deflection reaction is suppressed.
+	{
+		const room = makeRoom('2team');
+		const post = room.dronePosts[0];
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		drone.crossing = true;
+		drone.switchCooldown = 0;
+		const targetBefore = drone.orbRTarget;
+		const sq = new Objects('sqr', -1, { GM: room.gm, sId: room.id, oId: 501 }, room.map, room);
+		const hpBefore = sq.hp, vecBefore = sq.vec.length();
+		sq.collision(drone, { pene: drone.pene });
+		check('mid-swoosh, a drone still damages a shape it touches', sq.hp < hpBefore, sq.hp + ' vs ' + hpBefore);
+		check('...and still shoves it', sq.vec.length() !== vecBefore, sq.vec.length() + ' vs ' + vecBefore);
+		drone.collision(sq, {});
+		check('...but the drone\'s own shape-hit reaction (orbRTarget) does not fire mid-swoosh',
+			drone.orbRTarget === targetBefore, drone.orbRTarget + ' vs ' + targetBefore);
+	}
+
+	// 4.5.1 - team transparency, exercised through the real collision pair loop in rooms/Room.js's
+	// step(), not just entities/Bullet.js's own noDam branch: the skip this pass adds runs before
+	// that branch is ever reached, so it has to be proven at the pair-loop level.
+	{
+		function plantBullet(room, team, x, y) {
+			const b = new Bullet({ GM: room.gm, sId: room.id, oId: 0 }, x, y, 0, 0, 0, room);
+			b.team = team; b.alone = 1; b.life = -1;
+			b.pene = 100; b.damage = 5; b.size = 10; b.map = room.map;
+			room.INSTANCE.bullets.add((id) => { b.id = { GM: room.gm, sId: room.id, oId: id }; return b; });
+			return b;
+		}
+		function plantPlayer(room, team, x, y) {
+			const p = room.INSTANCE.players.add((id) => new Player(
+				{ GM: room.gm, sId: room.id, oId: id }, x, y, 'mate', team, room.XPLVL, room));
+			p.shield = 0; p.alpha = 1;
+			return p;
+		}
+		// Every pair below is planted at the map centre, not at the drone's own (in-base) spawn
+		// point: standing inside a base you don't own is a separate, pre-existing rule (the base
+		// fence, tested in baseDroneTests()) that kills a player/bullet outright on its own turn
+		// in the pair loop, before pairwise collision is ever reached - it would confound this
+		// test rather than exercise it. Midfield (0,0) is safe for every side (see teamTests'/
+		// fourTeamTests' "midfield is safe" checks), so this isolates the one thing being tested:
+		// the WP4.5.1 same-team skip.
+		function isolatedRoom() {
+			const room = makeRoom('2team');
+			player(room, 0).destroy = 1;   // the tester seat - inert, out of everyone's way
+			return room;
+		}
+
+		{
+			const room = isolatedRoom();
+			const drone = room.INSTANCE.bullets.get(room.dronePosts[0].slot);
+			drone.x = 0; drone.y = 0;
+			const mate = plantBullet(room, drone.team, 0, 0);
+			const droneBefore = drone.pene, vecBefore = mate.vec.length();
+			room.step();
+			check('a same-team bullet does not damage a base drone, nor it them, via the real pair loop',
+				drone.pene === droneBefore && mate.pene === 100,
+				drone.pene + '/' + droneBefore + ', ' + mate.pene);
+			check('...nor does it shove the bullet (no knockback either)', mate.vec.length() === vecBefore);
+		}
+		{
+			const room = isolatedRoom();
+			const drone = room.INSTANCE.bullets.get(room.dronePosts[0].slot);
+			drone.x = 0; drone.y = 0;
+			plantBullet(room, drone.team ? 0 : 1, 0, 0);
+			const droneBefore = drone.pene;
+			room.step();
+			check('an enemy bullet damages a base drone - the pair is not skipped',
+				drone.pene < droneBefore, drone.pene + ' vs ' + droneBefore);
+		}
+		{
+			const room = isolatedRoom();
+			const drone = room.INSTANCE.bullets.get(room.dronePosts[0].slot);
+			drone.x = 0; drone.y = 0;
+			const mate = plantPlayer(room, drone.team, 0, 0);
+			// A fresh Player can gain a little hp on its very first update() regardless of any
+			// collision (the same auto-level-at-xp-0 quirk fovTests documents), so "not damaged"
+			// is checked as "hp did not drop", not exact equality.
+			const mateBefore = mate.hp, droneBefore = drone.pene;
+			room.step();
+			check('a same-team tank does not damage a base drone, nor it them',
+				mate.hp >= mateBefore && drone.pene === droneBefore,
+				mate.hp + '/' + mateBefore + ', ' + drone.pene + '/' + droneBefore);
+		}
+		{
+			const room = isolatedRoom();
+			const drone = room.INSTANCE.bullets.get(room.dronePosts[0].slot);
+			drone.x = 0; drone.y = 0;
+			const foe = plantPlayer(room, drone.team ? 0 : 1, 0, 0);
+			const foeBefore = foe.hp, droneBefore = drone.pene;
+			room.step();
+			check('an enemy tank and a base drone trade damage, in every state',
+				foe.hp < foeBefore && drone.pene < droneBefore,
+				foe.hp + '/' + foeBefore + ', ' + drone.pene + '/' + droneBefore);
+		}
+		{
+			// A base drone is one of its own side's bullets - the same-team skip must cover a
+			// drone-vs-drone pair from the same base too, not just an ordinary bullet.
+			const room = isolatedRoom();
+			const postA = room.dronePosts[0];
+			const postB = room.dronePosts.find((p) => p !== postA && p.team === postA.team);
+			const droneA = room.INSTANCE.bullets.get(postA.slot);
+			const droneB = room.INSTANCE.bullets.get(postB.slot);
+			droneA.x = 0; droneA.y = 0; droneB.x = 0; droneB.y = 0;
+			const aBefore = droneA.pene, bBefore = droneB.pene;
+			room.step();
+			check('two same-team base drones do not damage each other',
+				droneA.pene === aBefore && droneB.pene === bBefore,
+				droneA.pene + '/' + aBefore + ', ' + droneB.pene + '/' + bBefore);
+		}
+	}
+
+	// 4.5.3/4.5.4 - orbit rate is now uniform (a linear cruise speed), not radius-dependent the
+	// way an angular rate would be: measure at two different energy levels and expect the same
+	// speed (plan.md WP4.5.1 replaces the old continuous radius band with five discrete levels).
+	{
+		const room = makeRoom('4team');
+		const narrow = room.dronePosts.reduce((a, b) => (a.level < b.level ? a : b));
+		const wide = room.dronePosts.reduce((a, b) => (a.level > b.level ? a : b));
+		const nominal = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
+		for (const post of [narrow, wide]) {
+			const drone = room.INSTANCE.bullets.get(post.slot);
+			drone.crossIn = 1e9;   // a natural cross starting mid-measurement would skew the average
+			let dist = 0;
+			for (let i = 0; i < 40; i++) {
+				const x0 = drone.x, y0 = drone.y;
+				drone.update();
+				dist += Math.sqrt(Math.pow(drone.x - x0, 2) + Math.pow(drone.y - y0, 2));
+			}
+			const measured = dist / 40;
+			check('cruise speed is within 5% of nominal at level ' + post.level +
+				' - uniform, not angular', Math.abs(measured - nominal) / nominal < 0.05,
+				measured + ' vs ' + nominal);
+		}
+	}
+
+	// ---- WP4.5.1: the shared five-level radius table --------------------------------------------
+	{
+		const room = makeRoom('ffa');
+		let steps = true;
+		for (let n = 1; n < config.BASE_DRONE_LEVELS; n++) {
+			if (Math.abs((room.levelR(n + 1) - room.levelR(n)) - config.BASE_DRONE_LEVEL_GAP) > 1e-9) { steps = false; }
+		}
+		check('levelR steps by exactly LEVEL_GAP between adjacent levels', steps);
+		check('levelR(HOME) is the nominal ORBIT_R', room.levelR(config.BASE_DRONE_LEVEL_HOME) === config.BASE_DRONE_ORBIT_R,
+			room.levelR(config.BASE_DRONE_LEVEL_HOME) + ' vs ' + config.BASE_DRONE_ORBIT_R);
+		const drawnSide = config.BASE_DRONE_SIZE * 3.05;
+		check('LEVEL_GAP is within 5% of the drawn drone side (one drone-side apart)',
+			Math.abs(config.BASE_DRONE_LEVEL_GAP - drawnSide) / drawnSide < 0.05, drawnSide);
+	}
+
+	// ---- WP4.5.2: LEAN_SCALE really is a 60-degree turn ------------------------------------------
+	{
+		const leanRad = Math.atan(config.BASE_DRONE_LEVEL_GAP / config.BASE_DRONE_LEAN_SCALE);
+		const degOff = Math.abs(leanRad - config.BASE_DRONE_HIT_TURN) * 180 / Math.PI;
+		check('a one-level radius error leans the orbit field by exactly 60 degrees (within 0.5deg)',
+			degOff < 0.5, degOff.toFixed(3) + ' degrees off');
+	}
+
+	// ---- WP4.5.3: SEPARATION is 5 units of drawn overlap, strictly under one LEVEL_GAP -----------
+	{
+		const touchAt = 2 * 1.7 * config.BASE_DRONE_SIZE;
+		check('SEPARATION is 5 units of drawn triangle-vertex overlap',
+			Math.abs(touchAt - config.BASE_DRONE_SEPARATION - 5) < 0.1,
+			(touchAt - config.BASE_DRONE_SEPARATION).toFixed(2) + ' vs 5');
+		check('...and strictly under one LEVEL_GAP - two drones on different levels can never trigger it',
+			config.BASE_DRONE_SEPARATION < config.BASE_DRONE_LEVEL_GAP,
+			config.BASE_DRONE_SEPARATION + ' vs ' + config.BASE_DRONE_LEVEL_GAP);
+	}
+
+	// ---- WP4.5.1: levelPlan() - caps and largest-remainder initial occupancy ---------------------
+	{
+		const room = makeRoom('ffa');
+		function counts(plan) {
+			const c = [0, 0, 0, 0, 0];
+			plan.initial.forEach((lvl) => c[lvl - 1]++);
+			return c;
+		}
+		const p12 = room.levelPlan(12), c12 = counts(p12);
+		check('levelPlan(12) caps are [1,3,5,3,1]', p12.caps.join(',') === '1,3,5,3,1', p12.caps.join(','));
+		check('levelPlan(12) initial occupancy is [1,3,4,3,1]', c12.join(',') === '1,3,4,3,1', c12.join(','));
+		check('...initial is a flat, count-length list', p12.initial.length === 12, p12.initial.length);
+		check('...sum(caps) >= count', p12.caps.reduce((a, b) => a + b, 0) >= 12);
+		check('...every initial count is within its own cap', c12.every((n, i) => n <= p12.caps[i]));
+
+		const p2 = room.levelPlan(2), c2 = counts(p2);
+		check('levelPlan(2) caps are [1,1,1,1,1]', p2.caps.join(',') === '1,1,1,1,1', p2.caps.join(','));
+		check('levelPlan(2) initial occupancy is [0,1,1,0,0]', c2.join(',') === '0,1,1,0,0', c2.join(','));
+	}
+
+	// ---- WP4.5.1: live occupancy matches the ledger, fresh out of the constructor ----------------
+	{
+		for (const gm of ['4team', '2team']) {
+			const room = makeRoom(gm);
+			const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.alone);
+			const ledgers = new Set(drones.map((d) => d.levels));
+			let matches = true, withinCap = true;
+			for (const ledger of ledgers) {
+				const counted = [0, 0, 0, 0, 0];
+				for (const d of drones) { if (d.levels === ledger) { counted[d.level - 1]++; } }
+				if (!counted.every((n, i) => n === ledger.count[i])) { matches = false; }
+				if (!counted.every((n, i) => n <= ledger.caps[i])) { withinCap = false; }
+			}
+			check(gm + ": every ledger's live count matches its drones' actual levels", matches);
+			check(gm + ': no ledger exceeds its own caps at spawn', withinCap);
+		}
+	}
+
+	// ---- WP4.5.1: a dead drone releases its level claim exactly once ------------------------------
+	{
+		const room = makeRoom('2team');
+		const post = room.dronePosts[0];
+		const ledger = post.levels;
+		const centrePosts = room.dronePosts.filter((p) => p.levels === ledger);
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		drone.destroy = tick.DES;
+		let neverNegative = true;
+		const wait = tick.ticks(config.BASE_DRONE_RESPAWN);
+		for (let i = 0; i < wait + 10; i++) {
+			room.step();
+			if (ledger.count.some((c) => c < 0)) { neverNegative = false; }
+		}
+		const liveCount = centrePosts.reduce((n, p) => n + (room.INSTANCE.bullets.get(p.slot) ? 1 : 0), 0);
+		const ledgerSum = ledger.count.reduce((a, b) => a + b, 0);
+		check("a killed drone's release is exactly one-shot - the ledger tracks live drones after respawn",
+			ledgerSum === liveCount, ledgerSum + ' vs ' + liveCount);
+		check('...and the count never went negative (a double-decrement or a missed release)', neverNegative);
+	}
+
+	// ---- WP4.5.2: a level switch moves exactly one level, respecting caps -------------------------
+	// Driven through the real shape-hit trigger (entities/Bullet.js's KIND.OBJECTS collision arm),
+	// which is levelSwitch()'s one public door - not a private helper this test can call directly.
+	{
+		const room = makeRoom('2team');
+		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+		const post = room.dronePosts[0];
+		const shape = { kind: KIND.OBJECTS, x: 0, y: 0, type: 'sqr', destroy: 0 };
+		function freshDrone(level, caps, occupied) {
+			const drone = room.INSTANCE.bullets.get(post.slot);
+			drone.level = level;
+			drone.levels = { caps: caps, count: occupied.slice(), crossing: 0 };
+			drone.switchCooldown = 0;
+			drone.crossing = false;
+			drone.orbRTarget = room.levelR(level);
+			return drone;
+		}
+		{
+			const d = freshDrone(5, [5, 5, 5, 5, 5], [0, 0, 0, 0, 1]);
+			d.collision(shape, {});
+			check('from level 5, the only outcome is level 4', d.level === 4, d.level);
+		}
+		{
+			const d = freshDrone(1, [5, 5, 5, 5, 5], [1, 0, 0, 0, 0]);
+			d.collision(shape, {});
+			check('from level 1, the only outcome is level 2', d.level === 2, d.level);
+		}
+		{
+			// Level 3 with level 2 already saturated - only the level-4 side is open.
+			const d = freshDrone(3, [5, 1, 5, 5, 5], [0, 1, 1, 0, 0]);
+			d.collision(shape, {});
+			check('with one neighbour saturated, the open side is chosen deterministically',
+				d.level === 4, d.level);
+		}
+		{
+			// Level 3 with both level 2 and level 4 saturated - nothing can move.
+			const d = freshDrone(3, [5, 1, 5, 1, 5], [0, 1, 1, 1, 0]);
+			const before = d.level, cdBefore = d.switchCooldown;
+			d.collision(shape, {});
+			check('with both neighbours saturated, nothing moves', d.level === before, d.level);
+			check('...and the cooldown is left untouched, so the caller retries', d.switchCooldown === cdBefore);
+		}
+	}
+
+	// ---- WP4.5.2: drift home ------------------------------------------------------------------
+	{
+		const room = makeRoom('2team');
+		const post = room.dronePosts[0];
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		const relax = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
+		function setup(level, caps, occupied) {
+			drone.level = level;
+			drone.levels = { caps: caps, count: occupied.slice(), crossing: 0 };
+			drone.orbRTarget = room.levelR(level);
+			drone.levelTimer = relax;
+			drone.switchCooldown = 0;
+			drone.crossing = false;
+			drone.chasing = false;
+			drone.crossIn = 1e9;   // never cross during this test
+		}
+		setup(1, [5, 5, 5, 5, 5], [1, 0, 0, 0, 0]);
+		for (let i = 0; i < 2 * relax + 20; i++) { drone.update(); }
+		check('left alone off HOME, a drone drifts back up to HOME over a few seconds',
+			drone.level === config.BASE_DRONE_LEVEL_HOME, drone.level);
+
+		setup(1, [5, 1, 5, 5, 5], [1, 1, 0, 0, 0]);   // level 2 already at its cap
+		for (let i = 0; i < 2 * relax + 20; i++) { drone.update(); }
+		check('...but stays put if the next level up is saturated, retrying instead of stalling forever',
+			drone.level === 1, drone.level);
+	}
+
+	// ---- WP4.5.3: anti-overlap fires through the real pair loop -----------------------------------
+	// Both drones are placed AT their shared level's radius from their shared centre (ox,oy), only
+	// offset angularly - not at a fixed literal x/y - so orbRTarget matches their actual radius
+	// exactly for both. Placing one of them at a different literal offset (an earlier draft of this
+	// test did) gives it a radius error the orbit field then leans hard to correct, pulling it past
+	// the other regardless of SEPARATION - a test artifact, not the mechanism under test.
+	// Places a drone exactly on its own ring, heading exactly tangential to it - not just x/y, or
+	// its stale spawn-time heading (built for its original phase, an unrelated angle) would need
+	// several ticks to turn into the new position's true tangent, and which way that transient
+	// settling happens to bend is exactly the kind of incidental randomness that made an earlier
+	// draft of this test flaky.
+	function placeOnRing(drone, r, angle) {
+		drone.x = drone.ox + r * Math.cos(angle);
+		drone.y = drone.oy + r * Math.sin(angle);
+		const spin = drone.spin || 1;
+		drone.head = Math.atan2(Math.cos(angle) * spin, -Math.sin(angle) * spin);
+		const spd = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
+		drone.spd = spd;
+		drone.vec.x = Math.cos(drone.head) * spd;
+		drone.vec.y = Math.sin(drone.head) * spd;
+		drone.pvec.x = drone.vec.x; drone.pvec.y = drone.vec.y;
+	}
+	{
+		const cd = tick.ticks(config.BASE_DRONE_SWITCH_COOLDOWN);
+		{
+			const room = makeRoom('2team');
+			const postA = room.dronePosts[0];
+			const postB = room.dronePosts.find((p) => p !== postA && p.team === postA.team);
+			const a = room.INSTANCE.bullets.get(postA.slot);
+			const b = room.INSTANCE.bullets.get(postB.slot);
+			// Same level, sharing one ledger (so the saturation caps this test isn't about can't get
+			// in the way), and a chord distance of 20 apart along the ring - inside SEPARATION (26.3).
+			const r = room.levelR(3);
+			a.level = b.level = 3;
+			a.levels = { caps: [5, 5, 5, 5, 5], count: [0, 0, 2, 0, 0], crossing: 0 };
+			b.levels = a.levels;
+			a.orbRTarget = b.orbRTarget = r;
+			a.switchCooldown = b.switchCooldown = 0;
+			a.crossing = b.crossing = false; a.chasing = b.chasing = false;
+			a.crossIn = b.crossIn = 1e9;   // a real cross would swamp this short-window check
+			placeOnRing(a, r, 0);
+			placeOnRing(b, r, 2 * Math.asin(10 / r));   // chord ~20
+			const aPeneBefore = a.pene, bPeneBefore = b.pene;
+			room.step();
+			// The same-team base-drone pair is skipped whole by rooms/Room.js's step() (4.5.5) - no
+			// collision() call happens at all for this pair, so this single step's pass cannot have
+			// touched pene or added any impulse; only the drone's own orbit-field motion moves vec
+			// on every subsequent tick, which is why this check runs once, right after the flag was
+			// set, rather than across the whole run below.
+			check('two overlapping same-team drones take no damage or knockback from the pair itself',
+				a.pene === aPeneBefore && b.pene === bPeneBefore);
+			let switched = (a.level !== 3 || b.level !== 3);
+			for (let i = 1; i < cd + 10 && !switched; i++) {
+				room.step();
+				if (a.level !== 3 || b.level !== 3) { switched = true; }
+			}
+			check('...and at least one of them peels onto a different level within the cooldown', switched);
+		}
+		{
+			const room = makeRoom('2team');
+			const postA = room.dronePosts[0];
+			const postB = room.dronePosts.find((p) => p !== postA && p.team === postA.team);
+			const a = room.INSTANCE.bullets.get(postA.slot);
+			const b = room.INSTANCE.bullets.get(postB.slot);
+			const r = room.levelR(3);
+			a.level = b.level = 3;
+			a.orbRTarget = b.orbRTarget = r;
+			a.switchCooldown = b.switchCooldown = 0;
+			a.crossing = b.crossing = false; a.chasing = b.chasing = false;
+			a.crossIn = b.crossIn = 1e9;
+			placeOnRing(a, r, 0);
+			placeOnRing(b, r, 2 * Math.asin(20 / r));   // chord ~40, outside SEPARATION (26.3)
+			let switched = false;
+			for (let i = 0; i < cd + 10; i++) {
+				room.step();
+				if (a.level !== 3 || b.level !== 3) { switched = true; }
+			}
+			check('drones more than SEPARATION apart never trigger the anti-overlap switch', !switched);
+		}
+	}
+
+	// ---- WP4.5.4: the cross is a real crossing - passes through the centre by construction --------
+	{
+		const room = makeRoom('4team');
+		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		// A freshly spawned drone's vec starts at (0,0) until its first real tick - warm it up to
+		// steady cruise before triggering, or the cross's frozen entry velocity (V0) would freeze a
+		// bogus near-zero speed instead of the real cruise one.
+		drone.crossIn = 1e9;
+		for (let i = 0; i < 60; i++) { drone.update(); }
+		const r0 = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
+		const entryUx = (drone.x - drone.ox) / r0, entryUy = (drone.y - drone.oy) / r0;
+		drone.crossIn = 1;
+		drone.update();
+		check('a cross actually starts on schedule', drone.crossing === true);
+		let minDist = Infinity, maxDist = 0, ticks = 0;
+		const GUARD = 300;
+		while (drone.crossing && ticks < GUARD) {
+			drone.update();
+			ticks++;
+			const d = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
+			minDist = Math.min(minDist, d);
+			maxDist = Math.max(maxDist, d);
+		}
+		check('the minimum distance from the orbit centre is under 2 units - it passes THROUGH the centre',
+			minDist < 2, minDist);
+		check('...and ends by running out its planned ticks, not a timeout', ticks < GUARD, ticks + ' of ' + GUARD);
+		const exitR = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
+		const exitUx = (drone.x - drone.ox) / (exitR || 1), exitUy = (drone.y - drone.oy) / (exitR || 1);
+		const dot = entryUx * exitUx + entryUy * exitUy;
+		check('...lands on the opposite side of the centre from where it started',
+			dot < -0.98, dot);
+		check('...at radius levelR(1), +-2 units', Math.abs(exitR - room.levelR(1)) < 2,
+			exitR + ' vs ' + room.levelR(1));
+		check('...the S never bulges past the outermost level, so it never leaves the base square',
+			maxDist <= room.levelR(config.BASE_DRONE_LEVELS) + 1e-6, maxDist + ' vs ' + room.levelR(config.BASE_DRONE_LEVELS));
+		check('level === 1 on exit', drone.level === 1, drone.level);
+		// Real room.step()s, not isolated drone.update() calls: the rest of the base's drones also
+		// have their own drift-home timers running, and this drone's own climb can be blocked for a
+		// couple of cycles if the level immediately above happens to be at cap when it tries (the
+		// saturation-respecting, deliberately-not-guaranteed-fast climb documented in plan.md
+		// WP4.5.2) - stepping the whole base is what lets that congestion clear the way it would in
+		// a real room, rather than freezing every other drone's own levels artificially.
+		const relax = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
+		for (let i = 0; i < 8 * relax; i++) { room.step(); }
+		const backR = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
+		check('...and within a several-second window the drone is back at HOME',
+			Math.abs(backR - room.levelR(config.BASE_DRONE_LEVEL_HOME)) / room.levelR(config.BASE_DRONE_LEVEL_HOME) < 0.05,
+			backR + ' vs ' + room.levelR(config.BASE_DRONE_LEVEL_HOME));
+	}
+
+	// ---- WP4.5.4: nothing has a corner in it - bounded acceleration and jerk everywhere ------------
+	{
+		const room = makeRoom('4team');
+		const drone = room.INSTANCE.bullets.get(room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME).slot);
+		const TURN = tick.perTick(config.BASE_DRONE_TURN);
+		const MINSPD = 0.5 * tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
+		const OUT_ACCEL = tick.perTick(config.BASE_DRONE_ACCEL) + tick.perTick(config.BASE_DRONE_ORBIT_SPEED) * TURN + 1e-9;
+		const OUT_JERK = 2 * OUT_ACCEL + 1e-6;
+		let prevHead = drone.head, prevVx = drone.vec.x, prevVy = drone.vec.y, prevAx = 0, prevAy = 0, first = true, firstA = true;
+		let sharpOut = false, sharpIn = false, slow = false, hardAccelOut = false, hardAccelIn = false, hardJerkOut = false;
+		let peakAccelIn = 0, peakJerkIn = 0, peakTurnIn = 0;
+		// The in-cross turn bound is pinned empirically, not to a flat 2xTURN: segment B's tail
+		// blends velocity from the dash speed down to cruise while completing a ~90 degree
+		// reorientation, and a quintic Hermite velocity blend transiently undershoots below the
+		// cruise endpoint there - low speed inflates angular rate (omega = v_perp/v) even though the
+		// physical path itself is smooth (position/velocity/acceleration all stay continuous - see
+		// the accel/jerk checks below). Measured at the tuned BASE_DRONE_CROSS_ARC fixpoint this
+		// peaks around 15 degrees/tick; raising CROSS_ARC does not fix it (it is not monotonic in
+		// this range, and blows well past the ~2.0s cross duration plan.md derives long before it
+		// would help) so this is pinned like the accel/jerk peaks above rather than asserted against
+		// the outside-cross TURN figure.
+		const sample = () => {
+			const dHead = Math.atan2(Math.sin(drone.head - prevHead), Math.cos(drone.head - prevHead));
+			if (drone.crossing) {
+				if (Math.abs(dHead) > peakTurnIn) { peakTurnIn = Math.abs(dHead); }
+				if (Math.abs(dHead) > 30 * Math.PI / 180) { sharpIn = true; }
+			} else if (Math.abs(dHead) > TURN + 1e-9) { sharpOut = true; }
+			if (Math.hypot(drone.vec.x, drone.vec.y) < MINSPD - 1e-9 && !drone.crossing) { slow = true; }
+			const ax = drone.vec.x - prevVx, ay = drone.vec.y - prevVy;
+			const accelMag = Math.hypot(ax, ay);
+			if (!first) {
+				if (drone.crossing) {
+					if (accelMag > peakAccelIn) { peakAccelIn = accelMag; }
+					if (accelMag > OUT_ACCEL * 25) { hardAccelIn = true; }
+				} else if (accelMag > OUT_ACCEL) { hardAccelOut = true; }
+			}
+			if (!firstA) {
+				const jx = ax - prevAx, jy = ay - prevAy;
+				const jerkMag = Math.hypot(jx, jy);
+				if (drone.crossing) {
+					if (jerkMag > peakJerkIn) { peakJerkIn = jerkMag; }
+				} else if (jerkMag > OUT_JERK) { hardJerkOut = true; }
+			}
+			prevHead = drone.head; prevAx = ax; prevAy = ay; prevVx = drone.vec.x; prevVy = drone.vec.y;
+			first = false; firstA = false;
+		};
+		for (let i = 0; i < 800; i++) { drone.update(); sample(); }   // a natural cross cycle or two
+		for (let i = 0; i < 150; i++) {   // a forced chase, target circling the base
+			drone.chasing = true; drone.crossing = false;
+			drone.DETEC.select = { x: drone.ox + 50 * Math.cos(i * 0.1), y: drone.oy + 50 * Math.sin(i * 0.1), destroy: 0 };
+			drone.update(); sample();
+		}
+		drone.chasing = false; drone.crossing = false; drone.DETEC.select = 0;
+		drone.x = drone.ox + drone.orbRTarget * 5; drone.y = drone.oy;   // a forced long return
+		for (let i = 0; i < 150; i++) { drone.update(); sample(); }
+		check('head never turns faster than BASE_DRONE_TURN per tick outside a cross', !sharpOut);
+		check('...and during one, stays within the empirically-pinned bound (see comment above)', !sharpIn,
+			'peak ' + (peakTurnIn * 180 / Math.PI).toFixed(2) + ' degrees/tick');
+		check('speed never drops below half cruise outside a cross - no dead stop anywhere', !slow);
+		check('acceleration stays within the turn/accel-slew bound outside a cross', !hardAccelOut);
+		check('jerk stays bounded outside a cross', !hardJerkOut);
+		check('acceleration during a cross stays within a generous multiple of the outside-cross bound ' +
+			'(the curve is unrated but still bounded by construction)', !hardAccelIn,
+			'peak ' + peakAccelIn.toFixed(4) + ' vs ' + (OUT_ACCEL * 25).toFixed(4));
+		console.log('  note measured in-cross peak accel/jerk per tick: ' + peakAccelIn.toFixed(4) +
+			' / ' + peakJerkIn.toFixed(4) + ' (outside-cross accel bound ' + OUT_ACCEL.toFixed(4) + ')');
+	}
+
+	// ---- WP4.5.4: arc length, and the CROSS_ARC fixpoint -------------------------------------------
+	{
+		const room = makeRoom('4team');
+		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		drone.crossIn = 1e9;
+		for (let i = 0; i < 60; i++) { drone.update(); }   // warm vec up to steady cruise first
+		const r0 = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
+		drone.crossIn = 1;
+		drone.update();
+		let arcLength = 0, prevX = drone.x, prevY = drone.y, ticks = 0;
+		while (drone.crossing && ticks < 300) {
+			drone.update();
+			arcLength += Math.hypot(drone.x - prevX, drone.y - prevY);
+			prevX = drone.x; prevY = drone.y;
+			ticks++;
+		}
+		const ratio = arcLength / (r0 + room.levelR(1));
+		console.log('  note measured CROSS_ARC (arcLength / (r0+R1)): ' + ratio.toFixed(4) +
+			' (config.BASE_DRONE_CROSS_ARC is ' + config.BASE_DRONE_CROSS_ARC + ')');
+		check('measured arc length / (r0+R1) is within 5% of config.BASE_DRONE_CROSS_ARC - the fixpoint',
+			Math.abs(ratio - config.BASE_DRONE_CROSS_ARC) / config.BASE_DRONE_CROSS_ARC < 0.05,
+			ratio.toFixed(4) + ' vs ' + config.BASE_DRONE_CROSS_ARC);
+	}
+
+	// ---- WP4.5.4: one crosser per orbit centre -----------------------------------------------------
+	{
+		const room = makeRoom('4team');
+		const posts = room.dronePosts.filter((p) => p.team === 0);
+		const drones = posts.map((p) => room.INSTANCE.bullets.get(p.slot));
+		for (const d of drones) { d.crossIn = 1e9; d.chasing = false; }
+		for (let i = 0; i < 60; i++) { for (const d of drones) { d.update(); } }   // warm up first
+		for (const d of drones) { d.crossIn = 1; }
+		const ledger = drones[0].levels;
+		let maxConcurrent = 0;
+		const crossedOnce = drones.map(() => false);
+		for (let i = 0; i < 1200; i++) {
+			for (let k = 0; k < drones.length; k++) {
+				drones[k].update();
+				if (drones[k].crossing) { crossedOnce[k] = true; }
+			}
+			if (ledger.crossing > maxConcurrent) { maxConcurrent = ledger.crossing; }
+		}
+		check('never more than one drone at a centre is mid-cross at once', maxConcurrent <= 1, maxConcurrent);
+		check('every drone at the centre eventually got its turn to cross (none starved)',
+			crossedOnce.every((c) => c), crossedOnce.filter((c) => !c).length + ' never crossed');
+	}
+
+	// ---- WP4.5.4: peak speed and tunnelling, empirical -----------------------------------------
+	{
+		const room = makeRoom('4team');
+		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		drone.crossIn = 1e9;
+		for (let i = 0; i < 60; i++) { drone.update(); }   // warm vec up to steady cruise first
+		drone.crossIn = 1;
+		drone.update();
+		let maxSpeed = 0, ticks = 0;
+		while (drone.crossing && ticks < 300) {
+			drone.update();
+			maxSpeed = Math.max(maxSpeed, Math.hypot(drone.vec.x, drone.vec.y));
+			ticks++;
+		}
+		const bound = config.BASE_DRONE_SIZE + 20;
+		check('the empirical peak cross speed also stays under drone size + smallest polygon radius',
+			maxSpeed < bound, maxSpeed.toFixed(2) + ' vs ' + bound);
+	}
+
+	// ---- WP4.5.1: 2team ring spacing - the invariant nominalR used to enforce implicitly ----------
+	{
+		const room = makeRoom('2team');
+		const widest2 = 2 * room.levelR(config.BASE_DRONE_LEVELS);
+		check('adjacent 2team orbit centres never let the widest rings touch',
+			room.map.height / 15 > widest2, (room.map.height / 15) + ' vs ' + widest2);
+	}
+
+	// 4.5.5 - orbit centres sit at the centre of the base area, derived from baseSize so a future
+	// resize can't leave them stale the way the literal gu(24) inset did.
+	{
+		const four = makeRoom('4team');
+		check('4team\'s orbit centre is the corner square\'s own middle, derived from baseSize',
+			four.rules.teams.every((t) => {
+				const c = four.corner(t), mid = four.baseCenter(t);
+				return Math.abs(mid.x - (c.x - Math.sign(c.x) * four.baseSize / 2)) < 1e-9 &&
+					Math.abs(mid.y - (c.y - Math.sign(c.y) * four.baseSize / 2)) < 1e-9;
+			}));
+		const two = makeRoom('2team');
+		const drones = [...two.INSTANCE.bullets.live()].filter((b) => b.alone);
+		check('2team\'s orbit centres sit at the strip\'s mid-width, derived from baseSize',
+			drones.every((d) => Math.abs(Math.abs(d.ox) - (two.map.width / 2 - two.baseSize / 2)) < 1e-9));
+	}
+}
+
+/*
 	Tick-scale invariance (massplanchunks WP3): TICK_MS is the server's actual step rate,
 	REF_TICK_MS is what public/SHARE/Physics.js's accel/friction are denominated against, and
 	lib/tick.js's SCALE = TICK_MS/REF_TICK_MS converts between them. If that conversion (and the
@@ -853,6 +1486,7 @@ respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);
 baseDroneTests();
+baseDroneWP45Tests();
 tickScaleTests();
 fovTests(rooms);
 oobTests(rooms);

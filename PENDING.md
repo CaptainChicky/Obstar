@@ -419,7 +419,22 @@ re-derivation is needed here.*
     see item 6), and `CONST.HP_BAR_HOLD`, a pure feel knob that was never measured against
     anything. Shape drift is still on this list unchanged.
     **Base drones are off it** — count, size, speed, respawn, damage and orbit behaviour all ship
-    measured in massplanchunks WP-E (`config.BASE_DRONE_*`). Two things about them stay open:
+    measured in massplanchunks WP-E (`config.BASE_DRONE_*`), corrected in plan.md WP4.5 (motion is
+    now a rate-limited steered field rather than a position-authoritative polar path; orbit speed
+    is 1.5× the pre-drone baseline, not 2×; a same-team pair is explicitly skipped in the collision
+    loop rather than relying on scattered `noDam` checks). The 4team/2team orbit centre is also no
+    longer a measured literal — it is derived from `baseSize` (`FourTeam.baseCenter()`,
+    `TwoTeam.basePosts()`), since the old `gu(24)` inset was measured back when `baseSize` was
+    `gu(45)` (whose centre is `gu(22.5)`) and had gone stale across the later `gu(67)`/`gu(40)`
+    resize, leaving the drones low and outboard in the square instead of centred in it.
+    **WP4.5's energy-level pass measured/derived the rest of the geometry too**: radius is
+    quantised into five shared levels one `BASE_DRONE_LEVEL_GAP` (a drone-side) apart rather than a
+    continuous random band; the drone-vs-drone separation threshold (`BASE_DRONE_SEPARATION`) is
+    derived from the drawn triangle's own vertex geometry (`2×1.7×BASE_DRONE_SIZE − 5`); the
+    diameter-cross swoosh is a planned quintic Hermite whose path-length-over-straight-line ratio
+    (`BASE_DRONE_CROSS_ARC`) is a measured fixpoint, not a guess (`test/rooms.js` prints the current
+    measurement every run so a future retune can re-derive it). Two things about the drones stay
+    open:
     - **The HP scale.** `BASE_DRONE_HP: 2000` is the wiki's number on *diep's* HP scale, and ours
       is not diep's — our base tank is 150 HP against diep's unmeasured `MH₀`, and a maxed level-30
       tank here is 900. If `MH₀` is 50, diep's base drone is ~7.1× a maxed tank, which on our scale

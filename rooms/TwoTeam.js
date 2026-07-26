@@ -40,32 +40,38 @@ class TwoTeam extends Room {
 	/*
 		Fifteen orbit centres down each side's base strip, each hosting a PAIR of drones - the
 		wiki's "30 Base Drones in total ... spread evenly in pairs", which counts one side, so
-		60 in the room. Each drone gets its own radius and a random phase rather than sitting at
-		fixed opposite points, so a pair reads clumpy rather than as a rigid diameter (plan.md
-		WP2) - same treatment as 4team's single ring.
+		60 in the room. Each pair sits on its own share of the same five discrete energy levels
+		4team uses (plan.md WP4.5.1: levelPlan(2) gives caps [1,1,1,1,1] and starts the pair on
+		levels 2 and 3) rather than a per-mode nominalR band - a level is an absolute size in the
+		user's spec, not something that scales per mode, so the old `spacing * 0.3` nominal radius
+		is gone. Random phases, same clumpy-not-rigid treatment as 4team's single ring.
 
 		The centre spacing comes off the map height, not a literal, so resizing the map cannot
 		make adjacent centres overlap: at the current 11200-tall map the spacing is 746.7 units =
-		26.7gu, within spitting distance of 4team's 24gu orbit-centre inset - good corroboration
-		that the centre count is right. The per-drone radius band tops out at 9.6gu, so adjacent
-		groups still never touch. Everything else about the drones (speed, cross period, leash,
-		detector range) is shared, and lives in entities/Bullet.js's one type-1.4 AI.
+		26.7gu, comfortably clear of 2*levelR(5) = 560 (checked in test/rooms.js). The across-strip
+		position is derived from baseSize (plan.md WP4.5.5, same fix as 4team's baseCenter())
+		rather than a literal gu(24) inset, so the drones sit centred across the strip's width
+		instead of at whatever inset a past base resize happened to leave behind. Everything else
+		about the drones (speed, cross period, leash, detector range) is shared, and lives in
+		entities/Bullet.js's one type-1.4 AI.
 	*/
 	basePosts() {
 		const CENTRES = 15, PER_CENTRE = 2;
 		const spacing = this.map.height / CENTRES;
-		const nominalR = spacing * 0.3;
 		const posts = [];
 		for (const team of this.rules.teams) {
 			const side = team ? 1 : -1;
 			for (let i = 0; i < CENTRES; i++) {
+				const plan = this.levelPlan(PER_CENTRE);
+				const levels = { caps: plan.caps, count: [0, 0, 0, 0, 0], crossing: 0 };
 				for (let d = 0; d < PER_CENTRE; d++) {
 					posts.push({
 						team: team,
-						x: side * (this.map.width / 2 - gu(24)),
+						x: side * (this.map.width / 2 - this.baseSize / 2),
 						y: spacing * (i + 0.5) - this.map.height / 2,
-						orbitR: nominalR * (config.BASE_DRONE_ORBIT_R_MIN + Math.random() * (config.BASE_DRONE_ORBIT_R_MAX - config.BASE_DRONE_ORBIT_R_MIN)),
+						level: plan.initial[d],
 						phase: Math.random() * Math.PI * 2,
+						levels: levels,
 						// Staggered across the side's whole roster, so a base's drones cut across
 						// their rings one after another instead of all on the same tick.
 						crossIn: Math.max(1, Math.round(tick.ticks(config.BASE_DRONE_CROSS) *

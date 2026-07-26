@@ -65,6 +65,10 @@ const FIRST_GENERATE = Math.round(300 / clock.STEP_MS);   // Init() used to wait
 // reference ticks in config, converted to real ticks once here rather than per post per tick.
 const BASE_DRONE_RESPAWN = tick.ticks(config.BASE_DRONE_RESPAWN);
 
+// A base drone is one of its own side's bullets, for the team-transparency skip below (plan.md
+// WP4.5.1) - type 1.4 with life -1 is otherwise indistinguishable from any other homing bullet.
+const isBaseDrone = (e) => e.kind === KIND.BULLET && e.type === 1.4;
+
 /*
 	Every knob a gamemode can turn without writing code. A subclass spreads its own values
 	over these in its constructor, so a mode only states what it changes.
@@ -165,11 +169,63 @@ class Room {
 	*/
 	build() { }
 	/*
+		The shared five-level radius table (plan.md WP4.5.1). levelR(n) = ORBIT_R + (n - HOME) *
+		LEVEL_GAP, so level 3 (home) sits at the nominal ORBIT_R and levels 1/2/4/5 sit one/two
+		drone-sides in or out of it. Both team modes read this one table - there is no per-mode
+		radius derivation any more.
+	*/
+	levelR(level) {
+		return config.BASE_DRONE_ORBIT_R + (level - config.BASE_DRONE_LEVEL_HOME) * config.BASE_DRONE_LEVEL_GAP;
+	}
+	/*
+		Plans how `count` drones at one orbit centre are distributed across the five levels
+		(plan.md WP4.5.1), off BASE_DRONE_LEVEL_WEIGHTS ([1,4,6,4,1], a Binomial(4,1/2) centred on
+		level 3):
+
+		  caps    - the saturation limit per level, checked before every voluntary move into a
+		            level: cap[i] = max(1, ceil(count * w[i] / sum(w))). ceil guarantees
+		            sum(caps) >= count, so a level plan can never be unsatisfiable.
+		  initial - where the drones start, as a flat list of `count` level numbers (ready to zip
+		            against a post loop index-by-index): largest-remainder apportionment of `count`
+		            over the same weights, ties broken by smaller |level - HOME| then by the lower
+		            level. levelPlan(12).initial is [1,2,2,2,3,3,3,3,4,4,4,5] - four 1s/5s/2s/4s'
+		            worth collapse into the same per-level counts a caller can re-derive by
+		            counting occurrences.
+	*/
+	levelPlan(count) {
+		const W = config.BASE_DRONE_LEVEL_WEIGHTS;
+		const total = W.reduce((a, b) => a + b, 0);
+		const caps = W.map((w) => Math.max(1, Math.ceil(count * w / total)));
+		const exact = W.map((w) => count * w / total);
+		const floors = exact.map((x) => Math.floor(x));
+		const remainder = count - floors.reduce((a, b) => a + b, 0);
+		const order = floors.map((_, i) => i).sort((a, b) => {
+			const fa = exact[a] - floors[a], fb = exact[b] - floors[b];
+			if (fb !== fa) { return fb - fa; }
+			const da = Math.abs((a + 1) - config.BASE_DRONE_LEVEL_HOME);
+			const db = Math.abs((b + 1) - config.BASE_DRONE_LEVEL_HOME);
+			if (da !== db) { return da - db; }
+			return a - b;
+		});
+		const counts = floors.slice();
+		for (let k = 0; k < remainder; k++) { counts[order[k]]++; }
+		const initial = [];
+		for (let lvl = 1; lvl <= counts.length; lvl++) {
+			for (let n = 0; n < counts[lvl - 1]; n++) { initial.push(lvl); }
+		}
+		return { caps, initial };
+	}
+	/*
 		Where this mode's base drones live, as a flat list of one post per drone:
-		{team, x, y, orbitR, phase}, where x,y is the ORBIT CENTRE (not the drone's start point),
-		orbitR the orbit radius and phase its starting angle around it. Optionally `crossIn`, the
-		drone's first diameter-cross countdown, which a mode staggers so a base's drones do not all
-		cross at once.
+		{team, x, y, level, phase, levels}, where x,y is the ORBIT CENTRE (not the drone's start
+		point), level its starting energy level (1..BASE_DRONE_LEVELS, plan.md WP4.5.1) and phase
+		its starting angle around it. `levels` is the per-centre saturation ledger
+		({caps, count:[0,0,0,0,0], crossing:0}) from levelPlan() - the SAME object reference on
+		every post sharing a centre, so a level switch or a cross on one drone is visible to its
+		orbit-mates immediately. Optionally `crossIn`, the drone's first diameter-cross countdown,
+		which a mode staggers so a base's drones do not all cross at once, and optionally `spin`
+		(+-1, default 1) - which way round the centre the drone circles, read by
+		entities/Bullet.js's orbit field (plan.md WP4.5.4).
 
 		Called exactly once, from the constructor. Free-for-all has no bases, so this is the empty
 		list and every base-drone code path below costs one length check per tick.
@@ -178,16 +234,17 @@ class Room {
 	/*
 		Builds one base drone at `post` and files it in INSTANCE.bullets, returning its slot id
 		(or -1 if the store had no room). Base drones are Bullets of type 1.4 with life -1 - see
-		entities/Bullet.js's type-1.4 branch for the orbit/chase AI, which reads the orbitR and
-		phase seeded here off the entity rather than off any hardcoded radius.
+		entities/Bullet.js's type-1.4 branch for the orbit/chase/cross AI, which reads the level
+		and phase seeded here rather than any hardcoded radius.
 
 		`pene` IS a bullet's health pool (collision() decrements it), so BASE_DRONE_HP goes there.
 	*/
 	spawnBaseDrone(post) {
+		const r = this.levelR(post.level);
 		const bull = new Bullet(
 			{ "GM": this.gm, "sId": this.id, "oId": -1 },
-			post.x + Math.cos(post.phase) * post.orbitR,
-			post.y + Math.sin(post.phase) * post.orbitR,
+			post.x + Math.cos(post.phase) * r,
+			post.y + Math.sin(post.phase) * r,
 			0,
 			0,
 			undefined,
@@ -196,19 +253,37 @@ class Room {
 		bull.team = post.team;
 		bull.ox = post.x;
 		bull.oy = post.y;
-		// orbitR is this drone's own nominal/max radius (immutable after spawn - also the band
-		// entities/Bullet.js's shape-hit reaction clamps orbRTarget into). orbA/orbR/orbRTarget are
-		// the live polar state the type-1.4 ORBIT AI writes position from each tick (plan.md WP4.3).
-		bull.orbitR = post.orbitR;
-		bull.orbA = post.phase;
-		bull.orbR = post.orbitR;
-		bull.orbRTarget = post.orbitR;
+		// Radius is quantised into five shared energy levels (plan.md WP4.5.1) - orbRTarget is
+		// the live target radius the type-1.4 orbit field steers toward each tick, and it only
+		// ever moves in whole BASE_DRONE_LEVEL_GAP steps via entities/Bullet.js's levelSwitch(),
+		// never continuously. `levels` is the per-centre saturation ledger, shared by reference
+		// with every other post at this centre; claiming this slot's level here is what
+		// tickBaseDrones()'s release-on-death code below has to undo exactly once.
+		bull.level = post.level;
+		bull.levels = post.levels;
+		bull.levels.count[bull.level - 1]++;
+		bull.orbRTarget = r;
 		bull.orbitState = 'ORBIT';
 		bull.crossing = false;
-		bull.hitCooldown = 0;
+		bull.chasing = false;
+		bull.switchCooldown = 0;
+		bull.levelTimer = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
+		bull.tooClose = 0;
+		bull.spin = post.spin || 1;
+		// head/spd are the steered-motion state (plan.md WP4.5.4): seeded tangential at spawn (not
+		// radial, or the first second would look like a launch straight out of the centre), and at
+		// cruise so the drone doesn't ramp up from a standing start.
+		bull.head = post.phase + bull.spin * Math.PI / 2;
+		bull.spd = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
+		// Last tick's vec (plan.md WP4.5.4) - the swoosh's entry acceleration seam reads this, so
+		// it has to exist before the first tick ever runs. Seeded to match vec's own pre-steering
+		// value (0,0) rather than assumed, so a drone that somehow crossed on its very first tick
+		// would still get an honest (zero) entry acceleration rather than a guessed one.
+		bull.pvec = { x: bull.vec.x, y: bull.vec.y };
 		// Seeded, not zeroed: autoDir is kept only for the phase-distribution test in
-		// test/rooms.js now that orbA is the AI's own angle - starting every drone at 0 would
-		// stack a whole base's worth on one point of the circle regardless of which field reads it.
+		// test/rooms.js now that head is the AI's own steered angle - starting every drone at 0
+		// would stack a whole base's worth on one point of the circle regardless of which field
+		// reads it.
 		bull.autoDir = post.phase;
 		bull.crossIn = post.crossIn || tick.ticks(config.BASE_DRONE_CROSS);
 		bull.alone = 1;
@@ -230,11 +305,22 @@ class Room {
 		Refills empty posts. A post whose drone is alive resets its own countdown, so the timer
 		only ever runs while the post is actually empty - i.e. a drone that dies is replaced
 		BASE_DRONE_RESPAWN ticks later, not on a free-running clock.
+
+		A drone that dies mid-life also has to release its claim on the level ledger exactly once
+		(plan.md WP4.5.1) - `levelReleased` guards that, and is sound rather than lucky: SlotMap's
+		KEEP_PLACE is 20 ticks, so a destroyed drone is still reachable through post.slot for 20
+		ticks after destroy is set, and this runs on every one of them, so the release can never be
+		missed by the slot being recycled first.
 	*/
 	tickBaseDrones() {
 		if (!this.dronePosts.length) { return; }
 		for (const post of this.dronePosts) {
 			const drone = this.INSTANCE.bullets.get(post.slot);
+			if (drone && drone.destroy && !drone.levelReleased) {
+				drone.levels.count[drone.level - 1]--;
+				if (drone.crossing) { drone.levels.crossing--; }
+				drone.levelReleased = true;
+			}
 			if (drone && !drone.destroy) {
 				post.respawnIn = BASE_DRONE_RESPAWN;
 				continue;
@@ -576,6 +662,22 @@ class Room {
 					if (objKind === KIND.DETECTOR && otherKind === KIND.DETECTOR) { continue; }
 					if (obj.id.oId === other.id.oId && objKind === otherKind) { continue; }
 					const dis = Math.sqrt(Math.pow(other.x - obj.x, 2) + Math.pow(other.y - obj.y, 2));
+					// Base drones make an effort not to overlap (plan.md WP4.5.3): flagged here, acted on next tick
+					// by entities/Bullet.js's type-1.4 branch, which takes the same 60-degree level switch a shape
+					// hit does. This is deliberately NOT a collision - the same-team skip below still runs, so the
+					// pair exchanges no damage, no knockback and no jitter. Set on both sides: whichever of the two
+					// is in ORBIT and off cooldown next tick is the one that moves.
+					if (isBaseDrone(obj) && isBaseDrone(other) && dis < config.BASE_DRONE_SEPARATION) {
+						obj.tooClose = 1; other.tooClose = 1;
+					}
+					// A base drone is transparent to its own side (plan.md WP4.5.1): the pair is skipped whole,
+					// so there is no damage, no knockback, no separation jitter and no detector hit - rather than
+					// relying on three separate noDam early-breaks in entities/ to each stay in the right place.
+					// Polygons are deliberately not covered: a drone collides with shapes regardless of team.
+					if (this.rules.teamPlay && obj.team === other.team &&
+						(isBaseDrone(obj) || isBaseDrone(other)) &&
+						(objKind === KIND.PLAYER || objKind === KIND.BULLET) &&
+						(otherKind === KIND.PLAYER || otherKind === KIND.BULLET)) { continue; }
 					if ((isNaN(other.getPlace) || isNaN(obj.getPlace)) && (!this.rules.teamPlay || other.team !== obj.team)) {
 						if (obj.DETEC && obj.DETEC.enabled) {
 							if (dis <= obj.DETEC.size + other.size) {
