@@ -99,7 +99,7 @@ cookie.
 | `lib/quadTree.js` | 75 | Spatial index for broad-phase collision. |
 | `lib/SlotMap.js` | 128 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. `maxIndex` is the highest allocatable id, not a capacity. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
-| `lib/config.js` | ~85 | Live tunables/flags. **`TICK_MS`/`REF_TICK_MS`** live here — read §3/§4 first. |
+| `lib/config.js` | ~100 | Live tunables/flags. **`TICK_MS`/`REF_TICK_MS`** live here — read §3/§4 first. Also `FOV_*`, `OOB_MARGIN`, `BASE_DRONE_*` and `BASE_BULLET_MARGIN` (§4). |
 | `lib/tick.js` | ~55 | `SCALE = TICK_MS/REF_TICK_MS` and the `perTick`/`drag`/`ticks`/`chance`/`quadratic`/`lead`/`smoothing` conversions every per-reference-tick constant is read through (massplanchunks WP3). |
 | `lib/db.js` | ~25 | The one Postgres connection point — `db.enabled`, `db.query()`, `db.check()`. Off unless `config.DB.ON`. |
 | `lib/terminal.js` | 34 | Terminal colour codes (`termColors`). |
@@ -220,8 +220,20 @@ kick, rate-limit reset. Object respawn (`generate()`) is a simulation event run 
 drops — a stall also prints a throttled `[clock]` line to stderr.
 
 **Rooms.** `rooms/Room.js` is the whole simulation; each gamemode is a subclass passing a block
-of tunables to `super()` and overriding named hooks (table at the top of `Room.js` lists all
-twelve). `Ffa` is 30 lines because `Room`'s defaults *are* ffa. Adding a gamemode = a subclass +
+of tunables to `super()` and overriding named hooks (table at the top of `Room.js` lists them
+all). `Ffa` is 30 lines because `Room`'s defaults *are* ffa.
+
+**Base drones** are `Bullet`s of `type 1.4` with `life = -1`, and their **`pene` *is* their health
+pool** (`collision()` decrements it) — which is why `config.BASE_DRONE_HP` is written there and
+not to an `hp` field. A mode declares them by overriding **`basePosts()`**, which returns one
+`{team, x, y, orbitR, phase}` per drone where `x,y` is the *orbit centre*; the constructor calls it
+once, stores the list as `this.dronePosts`, and spawns one drone per post via
+**`spawnBaseDrone(post)`**. **`tickBaseDrones()`** runs from `step()` and refills a post
+`config.BASE_DRONE_RESPAWN` ticks after its drone dies. There is exactly one drone AI — the
+`type 1.4` branch in `entities/Bullet.js` — and it reads `orbitR`/`phase` off the entity, so the
+only per-mode difference is the orbit radius (2team's fifteen rings a side are tighter than
+4team's single twelve-drone ring). `basePosts()` returning `[]` costs a mode one length check per
+tick. Adding a gamemode = a subclass +
 one line in `rooms/index.js` (`Controller`'s whitelist, its `server` map, and the tests all derive
 from that one table). The wire enum in `SocketSchema.js`
 (`toBUFFER.gamemode`/`toSTRING.gamemode`) does **not** derive from `rooms/index.js` — the client
@@ -257,6 +269,11 @@ Five tables, read top to bottom:
 
 `writeFields()`/`readFields()` walk `SCHEMA` against `TYPE`/`CODEC`. **Adding a field is two
 edits** (`TYPE`, `SCHEMA`), plus a `CODEC` entry if it needs a transform.
+
+`GameUpdate`'s head carries `timestamp, width, height, screen, xp, level, still, cLvl, baseSize`.
+`baseSize` is the room's own `this.baseSize` (the strip's width in 2team, the square's side in
+4team, `0` where a mode has no bases) — the client used to re-derive 2team's strip from a
+hardcoded `600` in `render.js` and could not draw 4team's at all.
 
 **Input validation.** `checkLength` does `min <= value && value <= max` and is enforced on
 every schema-driven message. Unknown type byte → `ERR_PACKET_TYPE` kick. Truncated payload →
@@ -311,6 +328,24 @@ Key namespaces, all attached to a `General` object:
 - `Loop()`/`Draw()` — render loop (`game.js`); `socket.onopen` sends `PROTO.encode('init',
   POST)` (`boot.js`).
 - `Interp`/`NET` — entity motion, from `public/motion.js` (§7).
+
+**The upgrade queue** (`ui.js`'s `UP` namespace; keys handled in `game.js`'s `onkeydown`) lets a
+point be banked ahead of the packet that grants it. `M`+digit spends whatever `Ui.still` covers
+right now — one `upgrade` packet per point, immediately, not on the next `UpdateUp` — and queues
+the rest of that stat's room up to its own 6-point cap; this is the *corrected* semantics; `M`+
+digit originally only queued, so the bar visibly lagged a keypress even when points were already
+banked. `U`+digit queues exactly one point (also spent immediately if one is banked); a bare
+digit spends one point now and never queues. `M`+`U` (either held while the other is pressed)
+clears the client-side queue. `UP.drain()` re-runs the queue against `Ui.still` on every `still`
+update (`GameUpdate`'s head and `UpdateUp`) as well as on each keypress, so a queued point spends
+the instant it's affordable rather than waiting on a UI tick. All three caps — 6 per stat,
+`Ui.still` availability, and the lifetime `CONST.MAX_UP_POINTS` (28) — collapse into one place,
+`UP.enqueue()`'s `budget()` helper, which subtracts points already spent (`Ui.upNb`, wire-
+authoritative) and already queued from 28. The server enforces the same lifetime cap a different
+way — `entities/Player.js`'s `upgrade()` gates on `this.level - this.stillLvl`, so a point can
+never be spent ahead of a level-up — which is why `CONST.MAX_UP_POINTS` is a hand-mirrored
+constant (assuming a 30-level cap) rather than something the server tells the client directly;
+see PENDING.md.
 
 `window.colorPattern` is a global `[light, dark]` pair map for two-tone tank fills. CSS lives in
 four places: `public/style.css`, `LeaderBoard.css`, `fontStyle.css`, and a large inline
@@ -393,7 +428,7 @@ the minimap draws more than your own dot.
 | `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. See §3 and PENDING.md. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: tick-scale invariance (real-world top speed agrees within 2% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33 — massplanchunks WP3) and the FOV formula (WP4). No socket, built via `boot()`. |
+| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 2% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33 — WP3) and the FOV formula (WP4). No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, and that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps. |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all four modes. |

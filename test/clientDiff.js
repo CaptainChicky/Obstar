@@ -103,7 +103,13 @@ const hash = fnv1a(blob);
 // (this run drives no keydown, so WP-C's queue path never executes), different globalAlpha values
 // on every damaged-shape drawUi call. Confirmed intentional the same way - no NaN/Inf in the
 // captured stream.
-const GOLDEN = { count: 320658, hash: '33e4964a' };
+// Rebuilt for massplanchunks pass 3 WP-E, which moves this on purpose in four ways: 4team's four
+// corner bases are drawn at all now (in-world and on the minimap) where nothing was, 2team's strip
+// is sized from the wire's baseSize instead of a hardcoded 600, a base drone is 15 units instead of
+// 20, and there are more of them (2team 20 -> 60, 4team 32 -> 48). Confirmed intentional the same
+// way as every rebaseline above - no NaN/Inf in the captured stream, and test/client.js's
+// no-NaN-to-canvas case still passes.
+const GOLDEN = { count: 331102, hash: '097e4e0e' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

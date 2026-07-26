@@ -191,25 +191,47 @@
 				ctx.strokeStyle = 'black';
 				ctx.stroke();
 				ctx.globalAlpha = 1;
-				switch (POST.gm) {
-					case '2team': {
-						ctx.fillStyle = Palette.red[0];
-						ctx.globalAlpha = 0.2;
-						ctx.fillRect(
-							-(-Game.width / 2 + posx) * Global.RATIO + Global.canW / 2,
-							-(Game.height / 2 + posy) * Global.RATIO + Global.canH / 2,
-							-600 * Global.RATIO,
-							Game.height * Global.RATIO
-						);
-						ctx.fillStyle = Palette.green[0];
-						ctx.fillRect(
-							-(Game.width / 2 + posx) * Global.RATIO + Global.canW / 2,
-							-(Game.height / 2 + posy) * Global.RATIO + Global.canH / 2,
-							600 * Global.RATIO,
-							Game.height * Global.RATIO
-						);
-						break;
+				// Team bases. Game.baseSize rides GameUpdate's head (massplanchunks WP-E) rather
+				// than being re-derived from a literal here, which used to agree with 2team's 600
+				// only by coincidence and would have desynced the moment anyone tuned it. 0 means
+				// the mode has no bases, so ffa/boss/sandbox fall through drawing nothing.
+				// Team id is the colour index directly - SocketSchema's toSTRING.color is
+				// ['green','red','yellow','blue'] and FourTeam.corner() orders teams 0 top-left,
+				// 1 top-right, 2 bottom-left, 3 bottom-right - so there is no per-viewer remap.
+				const bs = Game.baseSize;
+				const left = -(Game.width / 2 + posx) * Global.RATIO + Global.canW / 2;
+				const top = -(Game.height / 2 + posy) * Global.RATIO + Global.canH / 2;
+				if (bs) {
+					ctx.globalAlpha = 0.2;
+					switch (POST.gm) {
+						case '2team': {
+							ctx.fillStyle = Palette.green[0];
+							ctx.fillRect(left, top, bs * Global.RATIO, Game.height * Global.RATIO);
+							ctx.fillStyle = Palette.red[0];
+							ctx.fillRect(left + Game.width * Global.RATIO, top,
+								-bs * Global.RATIO, Game.height * Global.RATIO);
+							break;
+						}
+						case '4team': {
+							const s = bs * Global.RATIO;
+							const w = Game.width * Global.RATIO, h = Game.height * Global.RATIO;
+							const corners = [
+								[left, top],                    // 0 green,  top-left
+								[left + w - s, top],            // 1 red,    top-right
+								[left, top + h - s],            // 2 yellow, bottom-left
+								[left + w - s, top + h - s]     // 3 blue,   bottom-right
+							];
+							const teamC = [Palette.green, Palette.red, Palette.yellow, Palette.blue];
+							for (let t = 0; t < corners.length; t++) {
+								ctx.fillStyle = teamC[t][0];
+								ctx.fillRect(corners[t][0], corners[t][1], s, s);
+							}
+							break;
+						}
 					}
+					// The 2team case used to set globalAlpha and never put it back, so 0.2 leaked
+					// out of background() into whatever drew next.
+					ctx.globalAlpha = 1;
 				}
 			};
 		})();

@@ -33,6 +33,15 @@
 			this.still = 0;
 			this.dead = 0;
 			///
+			/*
+				The minimap frame, rasterized once and blitted - except that the base overlay on it
+				is sized from Game.baseSize/Game.width (massplanchunks WP-E), and neither is known
+				when initUi() runs: Run() builds the HUD before any GameUpdate head has been
+				applied, so both are still at their config.js defaults here. So this keeps the
+				"draw once, blit after" idiom but exposes redraw(), which map() calls every frame
+				and which does nothing unless the base fraction it was last drawn with has actually
+				changed - the same shape as User.hpBar.redraw.
+			*/
 			this.MAP = (() => {
 				const can = document.createElement('CANVAS');
 				const ctx = can.getContext('2d');
@@ -43,52 +52,87 @@
 				const m = ctx.measureText('Obstar.io').width + 20;
 				can.height = can.width = (size + lw) * R + 4;
 				can.width += m * R;
+				let drawnFrac = -1;
 				//
-				ctx.setTransform(R, 0, 0, R, 2 + lw / 2 * R, 2 + lw / 2 * R);
-				ctx.font = '700 24px Catamaran';
-				ctx.fillStyle = '#eeeeee';
-				ctx.strokeStyle = '#222222';
-				ctx.textBaseline = 'middle';
-				ctx.lineWidth = 4;
-				ctx.strokeText('Obstar.io', 0, 12);
-				ctx.fillText('Obstar.io', 0, 12);
-				ctx.translate(m, 0);
-				switch (POST.gm) {
-					case '2team': {
-						ctx.beginPath();
-						roundRect(ctx, 0, 0, size, size, 0);
-						ctx.closePath();
-						ctx.strokeStyle = '#222222';
-						ctx.lineJoin = 'round';
-						ctx.lineWidth = lw;
-						ctx.stroke();
-						ctx.clip();
-						ctx.fillStyle = '#f4f4f4';
-						ctx.fillRect(0, 0, size, size);
-						ctx.fillStyle = Palette.green[0];
-						ctx.fillRect(0, 0, size / 12, size);
-						ctx.fillStyle = Palette.red[0];
-						ctx.fillRect(size, 0, -size / 12, size);
-						break;
+				function redraw(frac) {
+					if (frac === drawnFrac) { return; }
+					drawnFrac = frac;
+					ctx.setTransform(1, 0, 0, 1, 0, 0);
+					ctx.clearRect(0, 0, can.width, can.height);
+					ctx.setTransform(R, 0, 0, R, 2 + lw / 2 * R, 2 + lw / 2 * R);
+					ctx.font = '700 24px Catamaran';
+					ctx.fillStyle = '#eeeeee';
+					ctx.strokeStyle = '#222222';
+					ctx.textBaseline = 'middle';
+					ctx.lineWidth = 4;
+					ctx.strokeText('Obstar.io', 0, 12);
+					ctx.fillText('Obstar.io', 0, 12);
+					ctx.translate(m, 0);
+					// save/restore because the '2team' arm clips: harmless when this ran exactly
+					// once, permanent on the second call without it.
+					ctx.save();
+					switch (POST.gm) {
+						case '2team': {
+							ctx.beginPath();
+							roundRect(ctx, 0, 0, size, size, 0);
+							ctx.closePath();
+							ctx.strokeStyle = '#222222';
+							ctx.lineJoin = 'round';
+							ctx.lineWidth = lw;
+							ctx.stroke();
+							ctx.clip();
+							ctx.fillStyle = '#f4f4f4';
+							ctx.fillRect(0, 0, size, size);
+							ctx.fillStyle = Palette.green[0];
+							ctx.fillRect(0, 0, size * frac, size);
+							ctx.fillStyle = Palette.red[0];
+							ctx.fillRect(size, 0, -size * frac, size);
+							break;
+						}
+						case '4team': {
+							ctx.beginPath();
+							roundRect(ctx, 0, 0, size, size, 0);
+							ctx.closePath();
+							ctx.strokeStyle = '#222222';
+							ctx.lineJoin = 'round';
+							ctx.lineWidth = lw;
+							ctx.stroke();
+							ctx.clip();
+							ctx.fillStyle = '#f4f4f4';
+							ctx.fillRect(0, 0, size, size);
+							// Same corner order as render.js and FourTeam.corner(): 0 top-left,
+							// 1 top-right, 2 bottom-left, 3 bottom-right, team id = colour index.
+							const s = size * frac;
+							const teamC = [Palette.green, Palette.red, Palette.yellow, Palette.blue];
+							const at = [[0, 0], [size - s, 0], [0, size - s], [size - s, size - s]];
+							for (let t = 0; t < at.length; t++) {
+								ctx.fillStyle = teamC[t][0];
+								ctx.fillRect(at[t][0], at[t][1], s, s);
+							}
+							break;
+						}
+						default: {
+							ctx.fillStyle = '#ececec';
+							ctx.beginPath();
+							roundRect(ctx, 0, 0, size, size, 0);
+							ctx.closePath();
+							ctx.strokeStyle = '#333333';
+							ctx.lineJoin = 'round';
+							ctx.lineWidth = lw;
+							ctx.stroke();
+							ctx.fill();
+							break;
+						}
 					}
-					default: {
-						ctx.fillStyle = '#ececec';
-						ctx.beginPath();
-						roundRect(ctx, 0, 0, size, size, 0);
-						ctx.closePath();
-						ctx.strokeStyle = '#333333';
-						ctx.lineJoin = 'round';
-						ctx.lineWidth = lw;
-						ctx.stroke();
-						ctx.fill();
-						break;
-					}
+					ctx.restore();
 				}
+				redraw(0);
 				return {
 					size: size,
 					can: can,
 					lw: lw / 2 * R,
-					cursSize: 3
+					cursSize: 3,
+					redraw: redraw
 				};
 			})();
 			this.ST = (() => {
@@ -972,6 +1016,10 @@
 			})();
 			/////
 			this.map = function () {
+				// Base overlay as a fraction of the map, so the minimap tracks a live mapResize
+				// as well as the initial baseSize. No-op on every frame but the ones where it
+				// actually changed - see the note on MAP above.
+				this.MAP.redraw(Game.baseSize && Game.width ? Game.baseSize / Game.width : 0);
 				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW, 0);
 				ctx.translate(-15, 15);
 				ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);

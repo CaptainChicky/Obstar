@@ -141,7 +141,7 @@ function sizes() {
 
 	const head = {
 		timestamp: 4242, width: 8000, height: 6000, screen: 1600, xp: 987654,
-		level: 12.5, still: 3, cLvl: 1
+		level: 12.5, still: 3, cLvl: 1, baseSize: 600
 	};
 	const main = Object.assign({}, aPlayer, { name: 'me', canDir: [0, 1, -1] });
 	const instances = [aPlayer, anObject, aBullet].map(r => new Int8Array(server.encode('Instance', r)));
@@ -190,7 +190,7 @@ function roundTrips() {
 	// Server -> client. The transforms these exercise (bit arrays, angles, 0..1 ratios, the
 	// packed xp magnitude) are the ones that used to be written out four separate times.
 	const packet = server.encode('GameUpdate', {
-		head: { timestamp: 1, width: 8000, height: 6000, screen: 1600, xp: 5, level: 2, still: 0, cLvl: 0 },
+		head: { timestamp: 1, width: 8000, height: 6000, screen: 1600, xp: 5, level: 2, still: 0, cLvl: 0, baseSize: 600 },
 		main: Object.assign({}, aPlayer),
 		instances: [new Int8Array(server.encode('Instance', aPlayer))]
 	});
@@ -198,6 +198,10 @@ function roundTrips() {
 	check('GameUpdate head comes back intact',
 		g.data.head.timestamp === 1 && g.data.head.width === 8000 && g.data.head.screen === 1600,
 		JSON.stringify(g.data.head));
+	// massplanchunks WP-E: the client used to re-derive 2team's base strip from a hardcoded 600
+	// and could not draw 4team's at all, so the room's own baseSize now rides the head.
+	check('the head carries the room\'s baseSize', g.data.head.baseSize === 600,
+		g.data.head.baseSize);
 	check('the own-tank record carries no xp field (the head already has it)',
 		g.data.User.xp === undefined);
 	check('states decodes back to the bit array that went in',
@@ -219,7 +223,7 @@ function roundTrips() {
 	check('entity xp comes back as a scoreboard string', inst.xp === '123 k', inst.xp);
 	check('a polygon shape decodes as `type`, not `shape`',
 		client.decode(server.encode('GameUpdate', {
-			head: { timestamp: 0, width: 0, height: 0, screen: 0, xp: 0, level: 0, still: 0, cLvl: 0 },
+			head: { timestamp: 0, width: 0, height: 0, screen: 0, xp: 0, level: 0, still: 0, cLvl: 0, baseSize: 0 },
 			main: aPlayer,
 			instances: [new Int8Array(server.encode('Instance', anObject))]
 		})).data.Instances.Objects[17].type === 'sqr');
@@ -229,7 +233,7 @@ function roundTrips() {
 	// round trip. tier 5 = binary 101, i.e. states[1..3] = [1,0,1].
 	const tieredObject = Object.assign({}, anObject, { states: [1, 1, 0, 1, 0, 0, 0] });
 	const tieredStates = client.decode(server.encode('GameUpdate', {
-		head: { timestamp: 0, width: 0, height: 0, screen: 0, xp: 0, level: 0, still: 0, cLvl: 0 },
+		head: { timestamp: 0, width: 0, height: 0, screen: 0, xp: 0, level: 0, still: 0, cLvl: 0, baseSize: 0 },
 		main: aPlayer,
 		instances: [new Int8Array(server.encode('Instance', tieredObject))]
 	})).data.Instances.Objects[17].states;

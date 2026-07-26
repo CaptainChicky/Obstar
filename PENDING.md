@@ -86,6 +86,20 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
    - Level 1 vs. level 30 with Movement Speed maxed: confirm the tank no longer rubber-bands
      differently at the two speeds (`public/client/game.js`'s prediction constants now match
      `entities/Player.js`'s exactly instead of a stale, unscaled guess).
+   - **Base drones and bases (massplanchunks WP-E).** Nothing here is covered by a browser-free
+     test beyond placement and arithmetic:
+     - 4team: each corner base is a coloured **square**, in-world and on the minimap; 2team's
+       strips match `baseSize` rather than the old hardcoded 600.
+     - 4team: 12 small triangles orbit each base centre together, each cutting straight across
+       the ring roughly every 10 s. 2team: 15 evenly spaced pairs down each side on visibly
+       tighter rings, same ~10 s cadence.
+     - Walk your own tank through your own base drones: no damage, no knockback, no shove — they
+       phase through. Shoot through them with your own bullets: nothing happens to either.
+     - Fire into an enemy base: bullets die about a grid square and a half past the line, not on
+       it. Standing in one still kills you in about a second.
+     - Kill a base drone (poke in and out with something high-DPS): it dies, and a new one is
+       orbiting that post ~1 s later. This is the one that most needs eyes on it — see item 23 on
+       whether `BASE_DRONE_HP`/`BASE_DRONE_DAMAGE` are on the right scale at all.
 7. Chat over a real client connection — admin commands are now proven end-to-end over a real
    socket against Postgres (connect/disconnect, permission gating, `broadcast`, `tps` all
    confirmed live), but chat hasn't been exercised the same way.
@@ -192,6 +206,12 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
     **The reference numbers now exist** — `physics.html` has been read against the whole tree and
     the mismatches are itemised in items 13–24 below. Still deferred, but no longer unscoped.
 
+10. **The comment-bloat sweep.** Comments should carry architecture and load-bearing "why", not
+    history. `test/clientDiff.js`'s rebaseline trail, `lib/config.js`'s TICK_MS essay, the
+    `THEPLAN 4.1` / `PENDING #14` / `HANDOFF 5.8` back-references scattered through `entities/`,
+    `rooms/` and `public/client/`, and `rooms/Room.js`'s respawn narrative are all deletable. Its
+    own pass — folding it into a feature diff buries the real change.
+
 12. **Forward velocity inheritance on bullets** — a real diep/arras feel difference, deliberately
     not taken while fixing the muzzle alignment above, because it changes damage-relevant physics
     rather than what gets drawn. `entities/Bullet.js`'s constructor gives a bullet
@@ -232,6 +252,10 @@ re-derivation is needed here.*
     it is the tank that is 1.4× too big for it. Shrinking the tank to a 40-unit diameter is the
     other consistent option and costs no FOV change; it just makes every existing world constant
     (recoil, knockback, sizes, map) 1.4× wrong instead.
+
+    **`config.BASE_BULLET_MARGIN` (30) moves with this decision** — it is `1.5 × the 20-unit grid
+    pitch`, measured as how far an enemy bullet visibly penetrates a base before dying. If the
+    pitch is widened to 28, that constant becomes 42.
 
 14. **Movement: right shape, wrong stiffness, and level/stat scaling is the wrong *form*.**
 
@@ -384,9 +408,22 @@ re-derivation is needed here.*
 
 23. **Not covered by `physics.html` at all — still needs measuring in a real client.** Bullet base
     speeds and lifetimes (the page defines `V_b = ρ/t_b` but lists no values), bullet spread
-    (`rand`), shape HP/XP/drift, `MH₀`, drone orbit behaviour, camera lag, out-of-bounds depth and
-    push, base-drone stats. This is the same list massplanchunks.md WP13 asks for; the page closes
-    the FOV and camera-adjacent parts of it (item 19) and nothing else.
+    (`rand`), shape HP/XP/drift, `MH₀`, camera lag (`CONST.CAM_SMOOTH` is still a placeholder —
+    see item 6), and `CONST.HP_BAR_HOLD`, a pure feel knob that was never measured against
+    anything. Shape drift is still on this list unchanged.
+    **Base drones are off it** — count, size, speed, respawn, damage and orbit behaviour all ship
+    measured in massplanchunks WP-E (`config.BASE_DRONE_*`). Two things about them stay open:
+    - **The HP scale.** `BASE_DRONE_HP: 2000` is the wiki's number on *diep's* HP scale, and ours
+      is not diep's — our base tank is 150 HP against diep's unmeasured `MH₀`, and a maxed level-30
+      tank here is 900. If `MH₀` is 50, diep's base drone is ~7.1× a maxed tank, which on our scale
+      would be ~6400, not 2000. 2000 ships because it lands on "very durable but killable", which is
+      the design intent; the 6400 alternative is blocked on the same `MH₀` measurement item 17 wants.
+    - **`BASE_DRONE_DAMAGE: 2.97`** is derived (`8.48485 × 7/20`, our tank body damage scaled by the
+      wiki's 7-per-loop against diep's 20-per-loop tank body), not observed. It is a ~30× buff over
+      the old `0.1` — at 40 Hz that is ~74 HP/s from a single drone, so a swarm of twelve kills a
+      900 HP tank in about a second. Playtest it before treating it as settled.
+    - `CONST.MAX_UP_POINTS` joins the list of constants hand-mirrored between client and server,
+      next to the input-prediction note in item 24.
 
 24. **Close-quarters bullet truth — the dimensional bug is fixed; the rest of the error budget is
     still open.** `public/client/game.js`'s input prediction used to scale a per-tick acceleration

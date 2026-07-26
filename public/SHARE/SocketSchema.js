@@ -174,7 +174,12 @@
 				'xp': 'uint32',
 				'level': 'float32',
 				'still': 'uint8',
-				'cLvl': 'uint8'
+				'cLvl': 'uint8',
+				// The size of one team's base in world units, straight off rooms/Room.js's
+				// this.baseSize - the strip's width in 2team, the square's side in 4team, 0 in any
+				// mode without bases. The client used to re-derive 2team's strip from a hardcoded
+				// 600 and could not draw 4team's at all.
+				'baseSize': 'uint16'
 			},
 			///////////
 			'CONSTRUCTOR': 'uint8',
@@ -282,6 +287,7 @@
 				'level',
 				'still',
 				'cLvl',
+				'baseSize',
 			],
 			///////////
 			'Players': [

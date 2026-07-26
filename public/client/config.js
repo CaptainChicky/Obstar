@@ -137,6 +137,10 @@
 		realScreen: 1920,
 		width: 1,
 		height: 1,
+		// One team base's size in world units, from GameUpdate's head - the strip's width in
+		// 2team, the square's side in 4team. 0 means the mode has no bases, which is what
+		// render.js/ui.js check rather than testing POST.gm again.
+		baseSize: 0,
 	};
 	///
 	CLIENT.CONST = CONST;

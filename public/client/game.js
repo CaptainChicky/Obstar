@@ -674,6 +674,7 @@
 			Game.timestamp = data.head.timestamp;
 			Game.width = data.head.width;
 			Game.height = data.head.height;
+			Game.baseSize = data.head.baseSize;
 			if (General['Ui']) {
 				General['Ui'].xp = data.head.xp;
 				General['Ui'].still = data.head.still;

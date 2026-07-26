@@ -8,11 +8,13 @@
 
 	The one shape difference: a 2-team base is a strip down one side of the map, which lets
 	inEnemyBase() be a single comparison on x. Four bases have to be corners, so a base here is
-	a quarter-disc of radius rules.baseSize centred on the map corner, and the guard drones sit
-	on its arc facing the middle. Everything else - joining the thinnest side, friendly fire,
-	base fencing, boss summoning - comes from rooms/Room.js unchanged.
+	the rules.baseSize square in the map corner (diep's own shape - it used to be a quarter-disc,
+	which made a single orbit centre awkward to place). The guard drones orbit that square's
+	centre. Everything else - joining the thinnest side, friendly fire, base fencing, boss
+	summoning - comes from rooms/Room.js unchanged.
 */
-const Bullet = require('../entities/Bullet.js');
+const config = require('../lib/config.js').config;
+const tick = require('../lib/tick.js');
 const Room = require('./Room.js');
 
 class FourTeam extends Room {
@@ -46,42 +48,39 @@ class FourTeam extends Room {
 			y: ((team > 1) ? 1 : -1) * this.map.height / 2
 		};
 	}
-	/* A fence of immortal guard drones along the arc of each base, facing the middle. */
-	build() {
-		this.droneQt = 8;
+	/* The centre of a side's base square - the point its drones orbit, and the anchor every
+		 distance in the type-1.4 AI is measured from. */
+	baseCenter(team) {
+		const c = this.corner(team);
+		return {
+			x: c.x - Math.sign(c.x) * this.baseSize / 2,
+			y: c.y - Math.sign(c.y) * this.baseSize / 2
+		};
+	}
+	/*
+		Twelve drones per base on one shared ring around the square's centre, evenly phased.
+		The radius keeps the whole ring inside the square with room for the chase leash to pull a
+		drone out and back - 405 units at baseSize 900.
+	*/
+	basePosts() {
+		const PER_BASE = 12;
+		const posts = [];
 		for (const team of this.rules.teams) {
-			const c = this.corner(team);
-			// The quarter turn that faces the centre of the map from this corner.
-			const from = Math.atan2(-Math.sign(c.y), -Math.sign(c.x)) - Math.PI / 4;
-			for (let i = 0; i < this.droneQt; i++) {
-				const a = from + (Math.PI / 2) * (i + 0.5) / this.droneQt;
-				const bull = new Bullet(
-					{ "GM": this.gm, "sId": this.id, "oId": -1 },
-					c.x + Math.cos(a) * this.baseSize,
-					c.y + Math.sin(a) * this.baseSize,
-					0,
-					0,
-					undefined,
-					this
-				);
-				bull.team = team;
-				bull.ox = bull.x;
-				bull.oy = bull.y;
-				bull.alone = 1;
-				bull.life = -1;
-				bull.type = 1.4;
-				bull.maxspeed = .75;
-				bull.pene = 200;
-				bull.damage = .1;
-				bull.weight = 2;
-				bull.size = 20;
-				bull.map = this.map;
-				this.INSTANCE.bullets.add((id) => {
-					bull.id = { "GM": this.gm, "sId": this.id, "oId": id };
-					return bull;
+			const c = this.baseCenter(team);
+			for (let i = 0; i < PER_BASE; i++) {
+				posts.push({
+					team: team,
+					x: c.x,
+					y: c.y,
+					orbitR: this.baseSize * 0.45,
+					phase: Math.PI * 2 * i / PER_BASE,
+					// Staggered so the ring does not empty out all at once every cross period.
+					crossIn: Math.max(1, Math.round(tick.ticks(config.BASE_DRONE_CROSS) *
+						(i + 1) / PER_BASE))
 				});
 			}
 		}
+		return posts;
 	}
 	/* Bots dealt round-robin across the four sides, starting from a random one. */
 	botRoster() {
@@ -99,27 +98,41 @@ class FourTeam extends Room {
 	botBudget(humanCount) {
 		return Infinity;
 	}
-	/* Set foot in anyone else's corner and you die there. */
-	inEnemyBase(obj) {
+	/*
+		Set foot in anyone else's corner square and you die there. `margin` pushes the two inner
+		faces (the ones facing the middle of the map) deeper into the base, for anything allowed
+		to cross the line before it counts - see rooms/Room.js's step().
+
+		Depth is measured inward from the map edge on each axis, so it is 0 at the corner itself
+		and grows toward the middle. Deliberately unbounded on the outward side: a bullet sitting
+		in the out-of-bounds margin past the corner has a negative depth and is still inside the
+		base, where a literal four-sided box test would let it through.
+	*/
+	inEnemyBase(obj, margin = 0) {
 		// Anything not on a side - a boss, team 9 - belongs to no base and is fenced out of
 		// none, matching TwoTeam, whose switch simply has no arm for it.
 		if (this.rules.teams.indexOf(obj.team) < 0) { return false; }
 		for (const team of this.rules.teams) {
 			if (team === obj.team) { continue; }
 			const c = this.corner(team);
-			if (Math.pow(obj.x - c.x, 2) + Math.pow(obj.y - c.y, 2) < this.baseSize * this.baseSize) {
+			const dx = (c.x > 0) ? c.x - obj.x : obj.x - c.x;
+			const dy = (c.y > 0) ? c.y - obj.y : obj.y - c.y;
+			if (dx < this.baseSize - margin && dy < this.baseSize - margin) {
 				return true;
 			}
 		}
 		return false;
 	}
-	/* You always come back inside your own corner, clear of your own guard drones. */
+	/* You always come back inside your own square, a tank diameter clear of the map walls. */
 	spawnPoint(tank) {
 		const c = this.corner(tank.team);
-		const from = Math.atan2(-Math.sign(c.y), -Math.sign(c.x)) - Math.PI / 4;
-		const a = from + (Math.PI / 2) * Math.random();
-		const r = this.baseSize * (0.15 + 0.7 * Math.random());
-		return { x: c.x + Math.cos(a) * r, y: c.y + Math.sin(a) * r };
+		// entities/Player.js's size is a radius, so a level-0 tank is 56 units across.
+		const inset = 56;
+		const depth = () => inset + Math.random() * (this.baseSize - inset * 2);
+		return {
+			x: c.x - Math.sign(c.x) * depth(),
+			y: c.y - Math.sign(c.y) * depth()
+		};
 	}
 	entityColor(player) {
 		return player.team;

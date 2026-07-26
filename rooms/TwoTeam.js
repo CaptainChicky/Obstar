@@ -8,7 +8,8 @@
 	or be targeted by each other's drones, each side spawns in and is fenced out of a base
 	strip, and ten guard drones sit in front of each base from the moment the room opens.
 */
-const Bullet = require('../entities/Bullet.js');
+const config = require('../lib/config.js').config;
+const tick = require('../lib/tick.js');
 const Room = require('./Room.js');
 
 class TwoTeam extends Room {
@@ -32,39 +33,41 @@ class TwoTeam extends Room {
 			viewerBullets: false
 		}, controller);
 	}
-	/* A row of immortal guard drones in front of each base. */
-	build() {
-		this.droneQt = 10;
+	/*
+		Fifteen orbit centres down each side's base strip, each hosting a PAIR of drones on
+		opposite points of its ring - the wiki's "30 Base Drones in total ... spread evenly in
+		pairs", which counts one side, so 60 in the room.
+
+		The ring radius comes off the centre spacing rather than a literal, so resizing the map
+		cannot make adjacent rings overlap: at the current 8000-tall map the spacing is 533 and
+		the rings are ~160 across. That is deliberately tighter than 4team's single twelve-drone
+		ring (E4) - fifteen of these have to fit down the strip without touching. Everything else
+		about the drones (speed, cross period, leash, detector range) is shared, and lives in
+		entities/Bullet.js's one type-1.4 AI.
+	*/
+	basePosts() {
+		const CENTRES = 15, PER_CENTRE = 2;
+		const spacing = this.map.height / CENTRES;
+		const posts = [];
 		for (const team of this.rules.teams) {
 			const side = team ? 1 : -1;
-			for (let i = 1; i <= this.droneQt; i++) {
-				const bull = new Bullet(
-					{ "GM": this.gm, "sId": this.id, "oId": -1 },
-					side * (this.map.width / 2 - this.baseSize / 2),
-					this.map.height * i / (this.droneQt + 1) - this.map.height / 2,
-					0,
-					0,
-					undefined,
-					this
-				);
-				bull.team = team;
-				bull.ox = bull.x;
-				bull.oy = bull.y
-				bull.alone = 1;
-				bull.life = -1;
-				bull.type = 1.4;
-				bull.maxspeed = .75;
-				bull.pene = 200;
-				bull.damage = .1;
-				bull.weight = 2;
-				bull.size = 20;
-				bull.map = this.map;
-				this.INSTANCE.bullets.add((id) => {
-					bull.id = { "GM": this.gm, "sId": this.id, "oId": id };
-					return bull;
-				});
+			for (let i = 0; i < CENTRES; i++) {
+				for (let d = 0; d < PER_CENTRE; d++) {
+					posts.push({
+						team: team,
+						x: side * (this.map.width / 2 - this.baseSize / 2),
+						y: spacing * (i + 0.5) - this.map.height / 2,
+						orbitR: spacing * 0.3,
+						phase: Math.PI * d,
+						// Staggered across the side's whole roster, so a base's drones cut across
+						// their rings one after another instead of all on the same tick.
+						crossIn: Math.max(1, Math.round(tick.ticks(config.BASE_DRONE_CROSS) *
+							(i * PER_CENTRE + d + 1) / (CENTRES * PER_CENTRE)))
+					});
+				}
 			}
 		}
+		return posts;
 	}
 	/* Three bots, alternating sides, starting from one side or the other at random. */
 	botRoster() {
@@ -79,12 +82,16 @@ class TwoTeam extends Room {
 	botBudget(humanCount) {
 		return Infinity;
 	}
-	/* Cross the strip in front of the other side's base and you die on the spot. */
-	inEnemyBase(obj) {
+	/*
+		Cross the strip in front of the other side's base and you die on the spot - `margin` past
+		it, for anything allowed to penetrate first (bullets). Only this line moves; the far side
+		of the strip is the map wall.
+	*/
+	inEnemyBase(obj, margin = 0) {
 		const edge = this.map.width / 2 - this.baseSize;
 		switch (obj.team) {
-			case 0: return obj.x > edge;
-			case 1: return obj.x < -edge;
+			case 0: return obj.x > edge + margin;
+			case 1: return obj.x < -edge - margin;
 		}
 		return false;
 	}

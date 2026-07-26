@@ -8,11 +8,12 @@
 	of tunables and overrides a handful of small hooks:
 
 		HOOK                    BASE DEFAULT                   WHY IT EXISTS
-		build()                 nothing                        team modes stand up base guards
+		build()                 nothing                        anything a mode needs pre-tick
+		basePosts()             no posts                       team modes orbit drones on their base
 		botRoster()             rules.botCount bots, one team  team modes split bots across sides
 		botBudget(humans)       rules.botCount - humans        team modes restock every side
 		spawnPoint(tank)        anywhere, clear of the nests   team modes spawn you in your base
-		inEnemyBase(obj)        false                          team modes kill you in a foreign base
+		inEnemyBase(obj,margin) false                          team modes kill you in a foreign base
 		entityColor(p)          1 - everyone else is red       team modes colour by team
 		mainColor(p)            0 - you are blue               team modes colour by team
 		bulletColor(b)          traps 9, else the bullet team  team modes colour traps by team
@@ -59,6 +60,10 @@ const CONFIG = require('../lib/gameAI.js');
 // so they stay wall-clock-correct with no rescale of their own.
 const GENERATE_EVERY = Math.round(400 / clock.STEP_MS);   // 16 steps = 400ms at 40Hz
 const FIRST_GENERATE = Math.round(300 / clock.STEP_MS);   // Init() used to wait 300ms
+
+// How long a base drone post stays empty after its drone dies (massplanchunks WP-E). A count of
+// reference ticks in config, converted to real ticks once here rather than per post per tick.
+const BASE_DRONE_RESPAWN = tick.ticks(config.BASE_DRONE_RESPAWN);
 
 /*
 	Every knob a gamemode can turn without writing code. A subclass spreads its own values
@@ -139,6 +144,17 @@ class Room {
 		// Counts down to the next generate() pass. Init() sets it; step() decrements it.
 		this.generateIn = FIRST_GENERATE;
 		this.build();
+		/*
+			Base drones (massplanchunks WP-E). The post list has to outlive construction because
+			tickBaseDrones() respawns into it, which is why this is a stored list rather than
+			something build() does and forgets. A mode without bases returns [] and pays nothing -
+			tickBaseDrones() leaves on the length check.
+		*/
+		this.dronePosts = this.basePosts();
+		for (const post of this.dronePosts) {
+			post.respawnIn = BASE_DRONE_RESPAWN;
+			post.slot = this.spawnBaseDrone(post);
+		}
 		// A one-shot delay, not a self-re-arming chain: at the end of it the room joins the
 		// shared fixed-step clock (lib/clock.js) and every tick after this one comes from there.
 		setTimeout((it) => { it.Init(); clock.add(it); }, this.rules.bootDelay, this);
@@ -148,6 +164,76 @@ class Room {
 		drones. Runs before Init(), which is what fills the map with polygons.
 	*/
 	build() { }
+	/*
+		Where this mode's base drones live, as a flat list of one post per drone:
+		{team, x, y, orbitR, phase}, where x,y is the ORBIT CENTRE (not the drone's start point),
+		orbitR the orbit radius and phase its starting angle around it. Optionally `crossIn`, the
+		drone's first diameter-cross countdown, which a mode staggers so a base's drones do not all
+		cross at once.
+
+		Called exactly once, from the constructor. Free-for-all has no bases, so this is the empty
+		list and every base-drone code path below costs one length check per tick.
+	*/
+	basePosts() { return []; }
+	/*
+		Builds one base drone at `post` and files it in INSTANCE.bullets, returning its slot id
+		(or -1 if the store had no room). Base drones are Bullets of type 1.4 with life -1 - see
+		entities/Bullet.js's type-1.4 branch for the orbit/chase AI, which reads the orbitR and
+		phase seeded here off the entity rather than off any hardcoded radius.
+
+		`pene` IS a bullet's health pool (collision() decrements it), so BASE_DRONE_HP goes there.
+	*/
+	spawnBaseDrone(post) {
+		const bull = new Bullet(
+			{ "GM": this.gm, "sId": this.id, "oId": -1 },
+			post.x + Math.cos(post.phase) * post.orbitR,
+			post.y + Math.sin(post.phase) * post.orbitR,
+			0,
+			0,
+			undefined,
+			this
+		);
+		bull.team = post.team;
+		bull.ox = post.x;
+		bull.oy = post.y;
+		bull.orbitR = post.orbitR;
+		// Seeded, not zeroed: autoDir is the angle the type-1.4 AI steers around the ring, so
+		// starting every drone at 0 would stack a whole base's worth on one point of the circle.
+		bull.autoDir = post.phase;
+		bull.crossIn = post.crossIn || tick.ticks(config.BASE_DRONE_CROSS);
+		bull.alone = 1;
+		bull.life = -1;
+		bull.type = 1.4;
+		bull.maxspeed = .75;
+		bull.pene = config.BASE_DRONE_HP;
+		bull.damage = config.BASE_DRONE_DAMAGE;
+		bull.weight = 2;
+		bull.size = config.BASE_DRONE_SIZE;
+		bull.map = this.map;
+		const made = this.INSTANCE.bullets.add((id) => {
+			bull.id = { "GM": this.gm, "sId": this.id, "oId": id };
+			return bull;
+		});
+		return made ? made.id.oId : -1;
+	}
+	/*
+		Refills empty posts. A post whose drone is alive resets its own countdown, so the timer
+		only ever runs while the post is actually empty - i.e. a drone that dies is replaced
+		BASE_DRONE_RESPAWN ticks later, not on a free-running clock.
+	*/
+	tickBaseDrones() {
+		if (!this.dronePosts.length) { return; }
+		for (const post of this.dronePosts) {
+			const drone = this.INSTANCE.bullets.get(post.slot);
+			if (drone && !drone.destroy) {
+				post.respawnIn = BASE_DRONE_RESPAWN;
+				continue;
+			}
+			if (--post.respawnIn > 0) { continue; }
+			post.respawnIn = BASE_DRONE_RESPAWN;
+			post.slot = this.spawnBaseDrone(post);
+		}
+	}
 	Init() {
 		for (let i = 0; i < this.rules.preGenerate; i++) {
 			this.generate();
@@ -351,6 +437,8 @@ class Room {
 			this.generateIn = GENERATE_EVERY;
 			this.generate();
 		}
+		///BASE DRONES///
+		this.tickBaseDrones();
 		///MAP///
 		if (Math.abs(this.map.width - this.newMap.width) > 0.1) {
 			// A pure exponential convergence toward newMap.width (no separate accel term), so this
@@ -444,7 +532,11 @@ class Room {
 					continue;
 				}
 				if (obj.destroy >= 1) { continue; }
-				if ((kind === 'players' || kind === 'bullets') && this.inEnemyBase(obj)) {
+				// A player dies exactly on the base line; a bullet is allowed to penetrate
+				// config.BASE_BULLET_MARGIN past it first, which is what real diep does and what
+				// stops enemy fire visibly evaporating on an invisible wall (massplanchunks WP-E).
+				if ((kind === 'players' || kind === 'bullets') &&
+					this.inEnemyBase(obj, kind === 'bullets' ? config.BASE_BULLET_MARGIN : 0)) {
 					obj.collision(0, { base: 1 });
 					continue;
 				}
@@ -621,8 +713,15 @@ class Room {
 			}
 		}
 	}
-	/* Team modes fence each side out of the other's base. Anything in there dies. */
-	inEnemyBase(obj) {
+	/*
+		Team modes fence each side out of the other's base. Anything in there dies.
+
+		`margin` shrinks the fenced region inward from the base line, so a caller can let
+		something cross the line before it counts as inside - see the bullet case in step().
+		Only the line itself moves, never the map-edge side of the base: a base drone orbiting
+		near its own base's inner edge must still never be "in" a base it owns.
+	*/
+	inEnemyBase(obj, margin = 0) {
 		return false;
 	}
 	respawn(id, force = 0, bot = 0) {
@@ -720,7 +819,10 @@ class Room {
 			screen: RAW.main.screen,
 			xp: RAW.main.xp,
 			still: RAW.main.dead ? 0 : RAW.main.level - RAW.main.stillLvl,
-			cLvl: RAW.main.dead ? 0 : parseInt((RAW.main.level) / 10)
+			cLvl: RAW.main.dead ? 0 : parseInt((RAW.main.level) / 10),
+			// 0 in ffa/boss/sandbox, which have no bases - the client reads that as "draw none"
+			// rather than needing to know which gamemodes have them.
+			baseSize: this.baseSize || 0
 		};
 		///
 		const lvl = RAW.main.level, xp = RAW.main.xp, arr = RAW.main.XPLVL;

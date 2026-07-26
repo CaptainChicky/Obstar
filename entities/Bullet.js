@@ -17,6 +17,10 @@ const Detector = require('./Detector.js');
 // WP3's "chance" category).
 const REAIM_CHANCE = tick.chance(0.0012121);
 const CHARGE_CHANCE = tick.chance(0.0006061);
+// How often a base drone cuts straight across its own orbit (massplanchunks WP-E). A count of
+// reference ticks in config, converted once here - not a per-tick chance like the two above,
+// because the crossing is meant to be a regular ~10s cadence, not a random event.
+const BASE_DRONE_CROSS = tick.ticks(require('../lib/config.js').config.BASE_DRONE_CROSS);
 
 class Bullet {
 	constructor(origin, x, y, direction, speed, exitSpeed, room) {
@@ -69,7 +73,15 @@ class Bullet {
 						return;
 					}
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
-					this.pene -= tick.perTick(Math.max(1, this.pene / 5));
+					// An ordinary bullet spends its own pene against itself, target-independent.
+					// A base drone cannot: its pene IS a 2000-point health pool, so pene/5 would
+					// be 400 a tick and it would die in five ticks of touching the player it is
+					// attacking. It takes the player's body damage instead - the same model as a
+					// tank taking body damage, which is what makes poking in and out with
+					// something high-DPS the way to kill one.
+					this.pene -= (this.type === 1.4)
+						? tick.perTick(other.damage)
+						: tick.perTick(Math.max(1, this.pene / 5));
 					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.OBJECTS:
@@ -91,7 +103,11 @@ class Bullet {
 							return;
 						}
 					}
-					this.pene -= tick.perTick(Math.max(this.pene / 2, 1));
+					// Same trap as the KIND.PLAYER arm above, and worse (pene/2, not pene/5): a
+					// base drone's pene is health, not a spend-down budget.
+					this.pene -= (this.type === 1.4)
+						? tick.perTick(other.damage)
+						: tick.perTick(Math.max(this.pene / 2, 1));
 					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.BULLET:
@@ -102,7 +118,13 @@ class Bullet {
 						return;
 					} else {
 					}
-					if (option.noDam || this.type === 1.4) { break; }
+					// Base drones used to be exempt here, which is most of what made them
+					// immortal. Same-team protection is unaffected: rooms/Room.js sets noDam on
+					// both sides of any same-team, non-Objects pair when rules.teamPlay is on
+					// (both team modes), and that check runs before this decrement and before
+					// every vec.add() above - so friendly fire and friendly knockback both stay
+					// off for a drone and its own side.
+					if (option.noDam) { break; }
 					this.pene -= tick.perTick(option.pene);
 					if (this.pene <= 0) { this.destroy = tick.DES; }
 					break;
@@ -290,7 +312,18 @@ class Bullet {
 				if (!this.autoDir) { this.autoDir = 0; }
 				this.autoDir += tick.perTick(0.01455);   // one-time-rescaled from .012 (33ms ref)
 				this.speed = this.maxspeed;
-				this.pene = 200;
+				/*
+					The diameter cross: every BASE_DRONE_CROSS ticks the steering target flips to
+					the antipodal point of the ring, so the drone drives straight across instead of
+					around. autoDir keeps advancing throughout, so when it arrives it is simply
+					orbiting again from there - "orbit, cross the diameter, continue orbiting" with
+					no state machine. This used to be a random quarter-turn on a per-tick chance,
+					which never produced a clean crossing at all.
+				*/
+				if (--this.crossIn <= 0) {
+					this.crossIn = BASE_DRONE_CROSS;
+					this.comingDir += Math.PI;
+				}
 				///
 				if (!this.DETEC) {
 					this.DETEC = new Detector(this, this.x, this.y, 1200, [KIND.PLAYER])
@@ -312,14 +345,14 @@ class Bullet {
 						this.DETEC.enabled = 1;
 					}
 				}
+				// Orbit radius and leash band come off the drone (seeded from its post by
+				// Room.spawnBaseDrone) rather than being hardcoded, because 2team's fifteen
+				// rings per side are deliberately tighter than 4team's single twelve-drone one.
 				const baseDis = Math.sqrt(Math.pow(this.x - this.ox, 2) + Math.pow(this.y - this.oy, 2))
-				if (baseDis < 320) {
+				if (baseDis < this.orbitR + this.size) {
 					this.speed = 0.06399;   // one-time-rescaled from .07 (singleAppFactor, see Physics.js)
-					if (Math.random() < REAIM_CHANCE) {
-						this.comingDir += Math.PI / 2;
-					}
-					const dir = Math.atan2(this.oy + Math.sin(this.autoDir + this.comingDir) * 300 - this.y,
-						this.ox + Math.cos(this.autoDir + this.comingDir) * 300 - this.x);
+					const dir = Math.atan2(this.oy + Math.sin(this.autoDir + this.comingDir) * this.orbitR - this.y,
+						this.ox + Math.cos(this.autoDir + this.comingDir) * this.orbitR - this.x);
 					this.dir = dir;
 					break;
 				}

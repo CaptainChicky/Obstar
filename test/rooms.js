@@ -116,14 +116,22 @@ function teamTests() {
 	check('map is the 2team map', room.map.width === 8000 && room.map.height === 8000,
 		room.map.width + 'x' + room.map.height);
 
-	// build() runs before the first tick, so the guard drones are there from the start.
+	// basePosts() is consumed by the constructor, so the drones are there from the start.
+	// 15 orbit centres a side, two drones on each (massplanchunks WP-E) - the wiki's "30 in
+	// total, spread evenly in pairs", which counts one side.
 	const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.alone);
-	check('both bases are guarded', drones.length === 20, drones.length + ' drones');
-	check('the guards are split evenly', drones.filter((d) => d.team === 0).length === 10,
+	check('both bases are guarded', drones.length === 60, drones.length + ' drones');
+	check('the guards are split evenly', drones.filter((d) => d.team === 0).length === 30,
 		drones.filter((d) => d.team === 0).length + ' on team 0');
 	const leftGuards = drones.filter((d) => d.x < 0);
 	check('each side guards its own half',
-		leftGuards.length === 10 && leftGuards.every((d) => d.team === 0));
+		leftGuards.length === 30 && leftGuards.every((d) => d.team === 0));
+	check('the drones sit in pairs on 15 rings a side',
+		new Set(drones.filter((d) => d.team === 0).map((d) => d.oy)).size === 15,
+		new Set(drones.filter((d) => d.team === 0).map((d) => d.oy)).size + ' distinct centres');
+	check('2team\'s rings are the tighter ones - 15 have to fit down the strip',
+		drones.every((d) => Math.abs(d.orbitR - room.map.height / 15 * 0.3) < 1e-9),
+		drones[0].orbitR);
 
 	// Sides are balanced on join, so four players come out two and two.
 	for (let i = 0; i < 3; i++) {
@@ -196,9 +204,9 @@ function fourTeamTests() {
 	check('friendly fire is off', room.rules.teamPlay === true);
 
 	const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.alone);
-	check('every base is guarded', drones.length === 32, drones.length + ' drones');
+	check('every base is guarded', drones.length === 48, drones.length + ' drones');
 	check('the guards are split evenly across four sides',
-		[0, 1, 2, 3].every((t) => drones.filter((d) => d.team === t).length === 8),
+		[0, 1, 2, 3].every((t) => drones.filter((d) => d.team === t).length === 12),
 		[0, 1, 2, 3].map((t) => drones.filter((d) => d.team === t).length).join('/'));
 	// Each side's guards must sit in that side's corner and nowhere else.
 	const placed = drones.every((d) => {
@@ -206,6 +214,17 @@ function fourTeamTests() {
 		return Math.sign(d.x) === Math.sign(c.x) && Math.sign(d.y) === Math.sign(c.y);
 	});
 	check('each side guards its own corner', placed);
+	// All twelve share one orbit centre - the square's middle - which is what the diameter
+	// cross needs (massplanchunks WP-E).
+	check('a base\'s twelve drones share one orbit centre, the square\'s middle',
+		[0, 1, 2, 3].every((t) => {
+			const c = room.baseCenter(t);
+			return drones.filter((d) => d.team === t).every((d) => d.ox === c.x && d.oy === c.y);
+		}));
+	check('...and are evenly phased around it, not stacked',
+		new Set(drones.filter((d) => d.team === 0).map((d) => Math.round(d.autoDir * 1e6))).size === 12);
+	check('the ring fits inside the square', drones.every((d) => d.orbitR < room.baseSize / 2),
+		drones[0].orbitR + ' vs half-square ' + room.baseSize / 2);
 
 	// Four more players, balanced: one per side.
 	for (let i = 0; i < 3; i++) {
@@ -456,6 +475,98 @@ function respawnCarryoverTests(rooms) {
 	after.motion();
 	check('...and clears immediately given the carried-over held key', after.shield === 0,
 		after.shield);
+}
+
+/*
+	Base drones (massplanchunks WP-E). Three separate things used to make these immortal - the
+	type-1.4 AI re-set pene every tick, bullet-vs-bullet collision exempted type 1.4 outright, and
+	the pene/5 self-consumption against a player would have killed a 2000-HP drone in five ticks of
+	contact anyway. All three are covered here, plus placement, respawn and the base fence's
+	bullet margin.
+*/
+function baseDroneTests() {
+	console.log('\nbase drones (massplanchunks WP-E):');
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+	const room = makeRoom('2team');
+
+	const post = room.dronePosts[0];
+	const drone = room.INSTANCE.bullets.get(post.slot);
+	check('a base drone is 15 units, the 32/60 scale against our 28-unit tank radius',
+		drone.size === config.BASE_DRONE_SIZE, drone.size);
+	check('its pene IS its health pool, not a spend-down budget',
+		drone.pene === config.BASE_DRONE_HP, drone.pene);
+	check('it hits for the scale-consistent body damage', drone.damage === config.BASE_DRONE_DAMAGE,
+		drone.damage);
+
+	// The AI used to do `this.pene = 200` every tick, which no amount of damage could outrun.
+	drone.pene = 500;
+	drone.update();
+	check('update() no longer re-sets pene - the drone is actually killable', drone.pene === 500,
+		drone.pene);
+	drone.pene = config.BASE_DRONE_HP;
+
+	// Same-team protection has to survive removing the blanket type-1.4 exemption, and it is
+	// rooms/Room.js's noDam flag that carries it - including the knockback, since every vec.add()
+	// sits after the noDam break.
+	const mate = { kind: KIND.BULLET, origin: { oId: 999 }, x: drone.x + 1, y: drone.y, type: 0 };
+	const peneBefore = drone.pene, speedBefore = drone.vec.length();
+	drone.collision(mate, { noDam: 1, pene: 50 });
+	check('a same-team bullet damages a base drone not at all', drone.pene === peneBefore,
+		drone.pene);
+	check('...and does not shove it either', drone.vec.length() === speedBefore);
+	drone.collision(mate, { pene: 50 });
+	check('an enemy bullet does damage it now - they used to be exempt outright',
+		drone.pene < peneBefore, drone.pene);
+
+	// Against a player the drone must take the PLAYER's body damage, not pene/5 of its own pool:
+	// at pene 2000 the old formula was 400 a tick, i.e. dead in five ticks of contact.
+	drone.pene = config.BASE_DRONE_HP;
+	drone.collision({ kind: KIND.PLAYER, id: { oId: 0 }, damage: 8.48485, x: drone.x + 1, y: drone.y }, {});
+	check('touching a player costs it that player\'s body damage, not a fifth of its own health',
+		drone.pene > config.BASE_DRONE_HP - 20, drone.pene);
+
+	// Respawn: the post empties, then refills a wall-clock second later.
+	// Note the post's slot id is NOT a stable identity here: SlotMap recycles an id once its
+	// tombstone expires, so the replacement drone can legitimately land back on the same index.
+	// What matters is that the post is empty for about a second and occupied after it.
+	const wait = tick.ticks(config.BASE_DRONE_RESPAWN);
+	room.INSTANCE.bullets.get(post.slot).destroy = 1;
+	room.step();
+	check('a killed drone leaves its post empty', !room.INSTANCE.bullets.get(post.slot));
+	for (let i = 0; i < wait - 3; i++) { room.step(); }
+	check('...and stays empty for the respawn delay', !room.INSTANCE.bullets.get(post.slot));
+	for (let i = 0; i < 5; i++) { room.step(); }
+	const back = room.INSTANCE.bullets.get(post.slot);
+	check('...but a new one is orbiting that post about a second later',
+		!!back && back.type === 1.4 && back.pene === config.BASE_DRONE_HP,
+		back && back.pene);
+
+	// The base fence: a player dies on the line, a bullet gets BASE_BULLET_MARGIN past it.
+	const M = config.BASE_BULLET_MARGIN;
+	const edge = room.map.width / 2 - room.baseSize;
+	check('a player dies exactly at the base line', room.inEnemyBase({ team: 0, x: edge + 1 }, 0) === true);
+	check('an enemy bullet survives just short of the margin',
+		room.inEnemyBase({ team: 0, x: edge + M - 1 }, M) === false);
+	check('...and dies just past it', room.inEnemyBase({ team: 0, x: edge + M + 1 }, M) === true);
+
+	// Drones live inside a base by definition - the inset must not start fencing them out.
+	const four = makeRoom('4team');
+	for (const r of [room, four]) {
+		const guards = [...r.INSTANCE.bullets.live()].filter((b) => b.alone);
+		check(r.gm + ': no base drone is ever fenced out of its own base',
+			guards.every((d) => r.inEnemyBase(d, M) === false && r.inEnemyBase(d, 0) === false));
+	}
+
+	// 4team's base is a square now, not a quarter-disc: a point on the diagonal at 0.9*baseSize
+	// from the corner is outside a disc of that radius but inside the square.
+	const c = four.corner(1);
+	const diag = { team: 0, x: c.x - Math.sign(c.x) * 0.9 * four.baseSize, y: c.y - Math.sign(c.y) * 0.9 * four.baseSize };
+	check('4team bases are squares - the corner diagonal is inside, where a disc would miss it',
+		four.inEnemyBase(diag) === true);
+	check('...and a point past the square on one axis only is outside',
+		four.inEnemyBase({ team: 0, x: c.x - Math.sign(c.x) * (four.baseSize + 10), y: c.y }) === false);
 }
 
 /*
@@ -714,6 +825,7 @@ rooms.push(sandboxTests()); console.log('');
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);
+baseDroneTests();
 tickScaleTests();
 fovTests(rooms);
 oobTests(rooms);
