@@ -9,12 +9,15 @@
 	level the rest of the game can never reach.
 
 	mapSize has a floor: Room.js's default spawnPoint() rejects anywhere within a hardcoded
-	1100-unit radius of the origin (plus two 800-unit nests at the quarter-points), written
-	against ffa's 9020-unit map where that is a small carve-out. Below roughly 1960 units wide
-	no point on the map can ever be 1100 from the origin, and spawnPoint()'s `while(1)` spins
-	forever. 3000 stays comfortably clear of that (1/9th ffa's area - still a small arena) while
-	leaving the corners reachable on the first few tries.
+	1540-unit radius of the origin (plus two 1120-unit nests at the quarter-points, x1.4 under the
+	grid rescale - plan.md WP1), written against ffa's gu(451)-unit map where that is a small
+	carve-out. Below roughly 2744 units wide no point on the map can ever be 1540 from the origin,
+	and spawnPoint()'s `while(1)` spins forever. gu(150) = 4200 stays clear of that (~1/9th ffa's
+	area - still a small arena) while leaving the corners reachable on the first few tries - the
+	margin is thinner in square terms than it used to be, though (PENDING #25).
 */
+const World = require('../public/SHARE/World.js');
+const gu = World.gu;
 const Room = require('./Room.js');
 
 class Sandbox extends Room {
@@ -22,13 +25,15 @@ class Sandbox extends Room {
 		super(id, {
 			gm: 'sandbox',
 			maxXp: 25000,
-			mapSize: { width: 3000, height: 3000 },
+			mapSize: { width: gu(150), height: gu(150) },
 			// maxPlayer becomes SlotMap's maxIndex (lib/SlotMap.js) - the highest allocatable
 			// id, not a headcount - so 0 is what caps this room at one player.
 			maxPlayer: 0,
-			preGenerate: 60,
+			preGenerate: 120,
 			bootDelay: 100,
-			objCaps: { sqr: { max0: 25, max1: 3 }, tri: { max0: 10, max1: 2 }, pnt: { max0: 3, max1: 1 } },
+			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
+			// rescale (plan.md D1) - FOV didn't grow, so the map's area did.
+			objCaps: { sqr: { max0: 49, max1: 6 }, tri: { max0: 20, max1: 4 }, pnt: { max0: 6, max1: 2 } },
 			betaPentRng: 0.98,
 			botCount: 0,
 			botIdStart: 10,

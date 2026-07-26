@@ -54,7 +54,7 @@ function ffaTests() {
 
 	check('level cap comes from the mode', room.XPLVL[room.XPLVL.length - 1] === 25000,
 		room.XPLVL[room.XPLVL.length - 1]);
-	check('map is the ffa map', room.map.width === 9020 && room.map.height === 9020,
+	check('map is the ffa map', room.map.width === 12628 && room.map.height === 12628,
 		room.map.width + 'x' + room.map.height);
 	check('map is not resizing by default', room.newMap.width === room.map.width &&
 		room.newMap.height === room.map.height);
@@ -97,8 +97,8 @@ function ffaTests() {
 	for (let i = 0; i < 200; i++) {
 		const p = room.spawnPoint(me);
 		const d = (x, y) => Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2));
-		if (d(0, 0) <= 1100 || d(room.map.width / 4, room.map.height / 4) <= 800 ||
-			d(-room.map.width / 4, -room.map.height / 4) <= 800) { clear = false; }
+		if (d(0, 0) <= 1540 || d(room.map.width / 4, room.map.height / 4) <= 1120 ||
+			d(-room.map.width / 4, -room.map.height / 4) <= 1120) { clear = false; }
 		if (Math.abs(p.x) > room.map.width / 2 || Math.abs(p.y) > room.map.height / 2) { clear = false; }
 	}
 	check('spawns land on the map and clear of the nests', clear);
@@ -113,7 +113,7 @@ function teamTests() {
 
 	check('level cap comes from the mode', room.XPLVL[room.XPLVL.length - 1] === 30000,
 		room.XPLVL[room.XPLVL.length - 1]);
-	check('map is the 2team map', room.map.width === 8000 && room.map.height === 8000,
+	check('map is the 2team map', room.map.width === 11200 && room.map.height === 11200,
 		room.map.width + 'x' + room.map.height);
 
 	// basePosts() is consumed by the constructor, so the drones are there from the start.
@@ -141,14 +141,17 @@ function teamTests() {
 	for (let i = 0; i < 4; i++) { sides[player(room, i).team]++; }
 	check('joins are balanced across the sides', sides[0] === 2 && sides[1] === 2, sides.join('/'));
 
+	// edge is the base line on either side (matches TwoTeam.inEnemyBase's own calc) - x values
+	// below are 500 past/short of it, map-relative so they follow the grid rescale (plan.md WP1).
+	const edge = room.map.width / 2 - room.baseSize;
 	const zero = { team: 0 }, one = { team: 1 };
-	check('team 0 dies in team 1\'s base', room.inEnemyBase({ team: 0, x: 3500 }) === true);
-	check('team 0 is safe in its own', room.inEnemyBase({ team: 0, x: -3500 }) === false);
-	check('team 1 dies in team 0\'s base', room.inEnemyBase({ team: 1, x: -3500 }) === true);
-	check('team 1 is safe in its own', room.inEnemyBase({ team: 1, x: 3500 }) === false);
+	check('team 0 dies in team 1\'s base', room.inEnemyBase({ team: 0, x: edge + 500 }) === true);
+	check('team 0 is safe in its own', room.inEnemyBase({ team: 0, x: -(edge + 500) }) === false);
+	check('team 1 dies in team 0\'s base', room.inEnemyBase({ team: 1, x: -(edge + 500) }) === true);
+	check('team 1 is safe in its own', room.inEnemyBase({ team: 1, x: edge + 500 }) === false);
 	check('midfield is safe for both', room.inEnemyBase({ team: 0, x: 0 }) === false &&
 		room.inEnemyBase({ team: 1, x: 0 }) === false);
-	check('the boss belongs to neither base', room.inEnemyBase({ team: 9, x: 3500 }) === false);
+	check('the boss belongs to neither base', room.inEnemyBase({ team: 9, x: edge + 500 }) === false);
 
 	// You respawn inside your own base, which is the one place you are guaranteed not to be
 	// standing in an enemy one.
@@ -347,7 +350,7 @@ function sandboxTests() {
 
 	check('level cap matches ffa - "k" tops out at the real max level', room.XPLVL[room.XPLVL.length - 1] === 25000,
 		room.XPLVL[room.XPLVL.length - 1]);
-	check('the arena is small', room.map.width === 3000 && room.map.height === 3000,
+	check('the arena is small', room.map.width === 4200 && room.map.height === 4200,
 		room.map.width + 'x' + room.map.height);
 	check('no bots', room.rules.botCount === 0 && room.botRoster().length === 0);
 
@@ -795,8 +798,17 @@ function fovTests(rooms) {
 function oobTests(rooms) {
 	console.log('\nout-of-bounds (massplanchunks WP5):');
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+	const gu = require(path.join(ROOT, 'public', 'SHARE', 'World.js')).gu;
 	const room = rooms[0];
 	const me = player(room, 0);
+
+	// The user's actual requirement (plan.md WP1): a level-0 tank's outer edge stops <= 5 grid
+	// squares past the drawn map edge. Nothing else pins this identity directly. fovTests (just
+	// above) leaves this same player at level 30, so force it back to level 0 for its base size.
+	me.level = 0;
+	me.update();
+	check('OOB_MARGIN + tank size == gu(5)', config.OOB_MARGIN + me.size === gu(5),
+		config.OOB_MARGIN + ' + ' + me.size + ' vs ' + gu(5));
 
 	me.x = room.map.width / 2 + config.OOB_MARGIN / 2;
 	me.vec.x = 5;

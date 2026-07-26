@@ -15,6 +15,8 @@
 */
 const config = require('../lib/config.js').config;
 const tick = require('../lib/tick.js');
+const World = require('../public/SHARE/World.js');
+const gu = World.gu;
 const Room = require('./Room.js');
 
 class FourTeam extends Room {
@@ -22,10 +24,12 @@ class FourTeam extends Room {
 		super(id, {
 			gm: '4team',
 			maxXp: 30000,
-			mapSize: { width: 9000, height: 9000 },
-			preGenerate: 1000,
+			mapSize: { width: gu(450), height: gu(450) },
+			preGenerate: 2000,
 			bootDelay: 1,
-			objCaps: { sqr: { max0: 200, max1: 20 }, tri: { max0: 70, max1: 14 }, pnt: { max0: 22, max1: 16 } },
+			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
+			// rescale (plan.md D1) - FOV didn't grow, so the map's area did.
+			objCaps: { sqr: { max0: 392, max1: 39 }, tri: { max0: 137, max1: 27 }, pnt: { max0: 43, max1: 31 } },
 			betaPentRng: 0.99,
 			bossRng: 0.9999,
 			maxBoss: 1,

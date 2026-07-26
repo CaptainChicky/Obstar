@@ -504,7 +504,7 @@
 			///
 			ctx.setTransform(1, 0, 0, 1, 0, 0);
 			ctx.clearRect(0, 0, Global.canW, Global.canH);
-			General['background'](User.camx, User.camy, 20);
+			General['background'](User.camx, User.camy, World.GU);
 			///
 			const sx = -User.camx * Global.RATIO + (Global.canW / 2), sy = -User.camy * Global.RATIO + (Global.canH / 2);
 			for (const c in Instances) {

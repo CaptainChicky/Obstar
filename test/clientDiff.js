@@ -109,7 +109,13 @@ const hash = fnv1a(blob);
 // 20, and there are more of them (2team 20 -> 60, 4team 32 -> 48). Confirmed intentional the same
 // way as every rebaseline above - no NaN/Inf in the captured stream, and test/client.js's
 // no-NaN-to-canvas case still passes.
-const GOLDEN = { count: 331102, hash: '097e4e0e' };
+// Rebuilt for plan.md WP1 (grid/arena rescale): the grid pitch moved from 20 to World.GU (28)
+// units/square, and every map grows with it (x1.4 per side, D1), so the same play session now
+// spans a different number of grid lines and camera-relative shape positions - fewer ops this
+// time because the wider grid draws fewer lines per frame at an unchanged FOV. Confirmed
+// intentional the same way as every rebaseline above - no NaN/Inf in the captured stream, and
+// test/client.js's no-NaN-to-canvas case still passes.
+const GOLDEN = { count: 298090, hash: '4f147f1e' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

@@ -12,6 +12,8 @@
 	the board still ranks players against each other rather than being permanently topped by
 	whatever is currently rampaging.
 */
+const World = require('../public/SHARE/World.js');
+const gu = World.gu;
 const Room = require('./Room.js');
 
 class BossMode extends Room {
@@ -19,10 +21,12 @@ class BossMode extends Room {
 		super(id, {
 			gm: 'boss',
 			maxXp: 35000,
-			mapSize: { width: 7000, height: 7000 },   // tighter than ffa: the fight finds you
-			preGenerate: 600,
+			mapSize: { width: gu(350), height: gu(350) },   // tighter than ffa: the fight finds you
+			preGenerate: 1200,
 			bootDelay: 100,
-			objCaps: { sqr: { max0: 180, max1: 16 }, tri: { max0: 70, max1: 12 }, pnt: { max0: 22, max1: 14 } },
+			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
+			// rescale (plan.md D1) - FOV didn't grow, so the map's area did.
+			objCaps: { sqr: { max0: 353, max1: 31 }, tri: { max0: 137, max1: 24 }, pnt: { max0: 43, max1: 27 } },
 			betaPentRng: 0.98,
 			bossRng: 0.9,      // ~10% of spawn passes roll for a boss, vs 0.9999 in 2team
 			maxBoss: 3,

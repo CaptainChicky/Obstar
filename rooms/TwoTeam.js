@@ -10,6 +10,8 @@
 */
 const config = require('../lib/config.js').config;
 const tick = require('../lib/tick.js');
+const World = require('../public/SHARE/World.js');
+const gu = World.gu;
 const Room = require('./Room.js');
 
 class TwoTeam extends Room {
@@ -17,10 +19,12 @@ class TwoTeam extends Room {
 		super(id, {
 			gm: '2team',
 			maxXp: 30000,
-			mapSize: { width: 8000, height: 8000 },
-			preGenerate: 1000,
+			mapSize: { width: gu(400), height: gu(400) },
+			preGenerate: 2000,
 			bootDelay: 1,
-			objCaps: { sqr: { max0: 160, max1: 18 }, tri: { max0: 60, max1: 12 }, pnt: { max0: 18, max1: 15 } },
+			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
+			// rescale (plan.md D1) - FOV didn't grow, so the map's area did.
+			objCaps: { sqr: { max0: 314, max1: 35 }, tri: { max0: 118, max1: 24 }, pnt: { max0: 35, max1: 29 } },
 			betaPentRng: 0.99,
 			bossRng: 0.9999,
 			maxBoss: 1,
@@ -99,7 +103,7 @@ class TwoTeam extends Room {
 	spawnPoint(tank) {
 		return {
 			x: tank.team ? this.map.width / 2 - this.baseSize * Math.random() : -this.map.width / 2 + this.baseSize * Math.random(),
-			y: 200 + Math.random() * (this.map.height - 400) - this.map.height / 2
+			y: gu(10) + Math.random() * (this.map.height - gu(20)) - this.map.height / 2
 		};
 	}
 	entityColor(player) {

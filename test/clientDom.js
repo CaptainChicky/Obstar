@@ -175,6 +175,7 @@ function boot(POST, opts) {
 	sandbox.WS_LINK = window.WS_LINK;
 	// kinds.js before TanksConfig.js, same as play.ejs: TanksConfig reads KIND at load time.
 	load('public/SHARE/kinds.js');
+	load('public/SHARE/World.js');
 	load('public/SHARE/TanksConfig.js');
 	load('public/SHARE/PetsConfig.js');
 	load('public/SHARE/AchievementsConfig.js');

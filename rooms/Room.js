@@ -122,7 +122,7 @@ class Room {
 			"Bpnt": { '1': 0, 'max1': 3 },
 			"Bsqr": { '1': 0, 'max1': 2 },
 			"Btri": { '1': 0, 'max1': 2 },
-			"bull": { '1': 0, 'max1': 20 }
+			"bull": { '1': 0, 'max1': 39 }   // 20 x1.96, same density-hold as objCaps (plan.md WP1)
 		};
 		this.baseSize = this.rules.baseSize;
 		this.leader = [];
@@ -293,15 +293,15 @@ class Room {
 			switch (type) {
 				case 'sqr':
 				case 'Bsqr':
-					ppp = [this.map.width / 4, this.map.height / 4, 350];
+					ppp = [this.map.width / 4, this.map.height / 4, 490];   // 350 x1.4, grid rescale (plan.md WP1)
 					break;
 				case 'tri':
 				case 'Btri':
-					ppp = [-this.map.width / 4, -this.map.height / 4, 350];
+					ppp = [-this.map.width / 4, -this.map.height / 4, 490]; // 350 x1.4, grid rescale (plan.md WP1)
 					break;
 				case 'pnt':
 				case 'Bpnt':
-					ppp = [0, 0, 450];
+					ppp = [0, 0, 630];   // 450 x1.4, grid rescale (plan.md WP1)
 					break;
 			}
 		}
@@ -786,15 +786,17 @@ class Room {
 	}
 	/* Free-for-all drops you anywhere clear of the three polygon nests. */
 	spawnPoint(tank) {
+		// Carve-out radii below are x1.4 under the grid rescale (plan.md WP1): edge inset
+		// 200 -> 280, origin nest 1100 -> 1540, quarter-point nests 800 -> 1120 each.
 		while (1) {
-			const x = 200 + Math.random() * (this.map.width - 400) - this.map.width / 2;
-			const y = 200 + Math.random() * (this.map.height - 400) - this.map.height / 2;
+			const x = 280 + Math.random() * (this.map.width - 560) - this.map.width / 2;
+			const y = 280 + Math.random() * (this.map.height - 560) - this.map.height / 2;
 			let dis = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-			if (dis > 1100) {
+			if (dis > 1540) {
 				dis = Math.sqrt(Math.pow(this.map.width / 4 - x, 2) + Math.pow(this.map.height / 4 - y, 2))
-				if (dis > 800) {
+				if (dis > 1120) {
 					dis = Math.sqrt(Math.pow(-this.map.width / 4 - x, 2) + Math.pow(-this.map.height / 4 - y, 2))
-					if (dis > 800) {
+					if (dis > 1120) {
 						return { x: x, y: y };
 					}
 				}

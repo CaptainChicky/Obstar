@@ -112,16 +112,17 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 - achivements bar is still fucked will revisit this later
 
 25. **`Room.spawnPoint()`'s `while(1)` can hang the server on a small enough map.** The default
-    implementation (`rooms/Room.js`) rejects any point within a hardcoded 1100-unit radius of the
-    origin plus two 800-unit nests at the quarter-points - written against ffa's 9020-unit map,
-    where that's a small carve-out. Below roughly 1960 units wide, no point on the map can ever be
-    1100 units from the origin, so the loop never finds an accepted point and spins forever, on
+    implementation (`rooms/Room.js`) rejects any point within a hardcoded 1540-unit radius of the
+    origin plus two 1120-unit nests at the quarter-points - written against ffa's gu(451)-unit map,
+    where that's a small carve-out (radii x1.4 under the grid rescale, plan.md WP1 - was 1100/800
+    against a 9020-unit map). Below roughly 2744 units wide, no point on the map can ever be 1540
+    units from the origin, so the loop never finds an accepted point and spins forever, on
     the simulation thread, taking the whole room (every player in it) down with it. Currently
-    survived only because `rooms/Sandbox.js` documents the floor in a comment and stays at 3000
-    (comfortably clear); nothing stops a future mode, an admin `mapResize`, or a typo'd config from
-    landing under 1960 and hitting it for real. Fix is either a loop iteration cap that falls back
-    to a cheaper placement, or deriving the rejection radii from `mapSize` instead of hardcoding
-    them against ffa's map.
+    survived only because `rooms/Sandbox.js` documents the floor in a comment and stays at gu(150)
+    = 4200 (comfortably clear, though the margin is thinner in square terms than before); nothing
+    stops a future mode, an admin `mapResize`, or a typo'd config from landing under 2744 and
+    hitting it for real. Fix is either a loop iteration cap that falls back to a cheaper placement,
+    or deriving the rejection radii from `mapSize` instead of hardcoding them against ffa's map.
 
 27. **A bullet's own thrust does not scale correctly with `TICK_MS` — found by massplanchunks
     WP-D's independent re-audit of the WP3 rescale, proven with `test/rooms.js`'s new (reporting,
@@ -234,7 +235,13 @@ recoil, reload in seconds) — massplanchunks WP3 has since landed (`TICK_MS: 25
 `REF_TICK_MS: 40`, `lib/tick.js`) but preserved those real-world quantities exactly, so no
 re-derivation is needed here.*
 
-13. **Decide the unit anchor before touching any number — every other item depends on it.**
+13. **DECIDED and IMPLEMENTED (plan.md WP1): 1 gu = 28 units, the client grid pitch now matches.**
+    `public/SHARE/World.js` is the one place this is written down (`World.GU`/`World.gu()`), read by
+    both `lib/config.js` (`OOB_MARGIN` -> `gu(4)` = 112, `BASE_BULLET_MARGIN` -> `gu(1.5)` = 42) and
+    every `rooms/*.js` map size (each mode keeps its square count - ffa/4team/2team/boss/sandbox
+    land at gu(451)/gu(450)/gu(400)/gu(350)/gu(150)). The rest of this item is kept below as the
+    derivation record.
+
     diep denominates everything in grid units (`gu`, `1 gu = 50 du`) and fixes a tank at
     `Z = 2 × 1.01^(lvl-1)` gu **diameter**. We have two rulers and they disagree by 1.4×:
     - by the **tank** (`entities/Player.js`'s `size` is a radius — `rooms/Room.js:474` tests

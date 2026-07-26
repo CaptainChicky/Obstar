@@ -39,6 +39,7 @@ const globals = require('globals');
 const PAGE_GLOBALS = {
 	POST: 'readonly',   // server-injected JSON blob (key, gm, name, pet, ws)
 	WS_LINK: 'readonly',   // public/SHARE/ws_link.js
+	World: 'readonly',   // public/SHARE/World.js - grid pitch (GU/gu())
 	TanksConfig: 'readonly',   // public/SHARE/TanksConfig.js
 	PetsConfig: 'readonly',   // public/SHARE/PetsConfig.js
 	AchievementsConfig: 'readonly',   // public/SHARE/AchievementsConfig.js
