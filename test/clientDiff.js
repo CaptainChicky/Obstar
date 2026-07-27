@@ -109,7 +109,14 @@ const hash = fnv1a(blob);
 // instead of overlapping, and the diameter cross is now a planned quintic Hermite S instead of a
 // steered pursuit of an antipodal aim point - every base drone's path is different again, hence
 // the op-count move (up this time). Confirmed intentional.
-const GOLDEN = { count: 289292, hash: 'eeec5da6' };
+//
+// Rebuilt again for plan.md WP4.5's motion-half rewrite: chase/return are a real dash now (a
+// separate, much tighter turn limiter at a much higher speed), a voluntary ('home') level switch
+// flies its own planned quintic arc instead of an instant orbRTarget write, the diameter cross is
+// a four-segment 8/84/8 curve with a strictly straight middle instead of the old two-segment S,
+// and a base drone may now stray into the OOB band while chasing - every base drone's path is
+// different again, hence the op-count move (up this time). Confirmed intentional.
+const GOLDEN = { count: 291391, hash: '130d0210' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

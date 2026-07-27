@@ -98,7 +98,10 @@ class TwoTeam extends Room {
 	/*
 		Cross the strip in front of the other side's base and you die on the spot - `margin` past
 		it, for anything allowed to penetrate first (bullets). Only this line moves; the far side
-		of the strip is the map wall.
+		of the strip is the map wall. A bare half-plane in x with no y bound at all, so it is
+		still unbounded past the map's y edges too - rooms/Room.js's step() bounds it to the drawn
+		arena (inArena() && inEnemyBase(), plan.md WP4.5.4), so the dark OOB band is neutral
+		ground and this method's own shape stays exactly as it is here.
 	*/
 	inEnemyBase(obj, margin = 0) {
 		const edge = this.map.width / 2 - this.baseSize;

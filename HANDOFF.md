@@ -234,14 +234,24 @@ post `config.BASE_DRONE_RESPAWN` ticks after its drone dies.
 
 There is exactly one drone AI — the `type 1.4` branch in `entities/Bullet.js` — and it is a
 *steered field*, not a state machine walking a polar path (plan.md WP4, corrected and extended by
-WP4.5): every drone carries `head`/`spd`, both rate-limited (`BASE_DRONE_TURN`/`BASE_DRONE_ACCEL`)
-toward a per-state desired direction/target speed, and position is their integral outside a cross,
-so every transition between orbiting and chasing an enemy is continuous by construction — nothing
-can turn the drone instantly or stop it dead. `chasing` is the one real branch; ORBIT/RETURN share
-one "orbit field" driven off position relative to the base centre (`ox,oy`), so a drone far from
-its ring just leans harder toward it and curls back on — there is no separate RETURN state to enter
-or an explicit snap back into ORBIT. `orbitState` is written every tick purely for tests/the admin
-dump; nothing branches on it.
+WP4.5): every drone carries `head`/`spd`, both rate-limited toward a per-state desired
+direction/target speed, and position is their integral outside a cross or a planned level-switch
+arc (below), so every transition between orbiting and chasing an enemy is continuous by
+construction — nothing can turn the drone instantly or stop it dead. `chasing`, `crossing` and
+`switching` are the three real branches; ORBIT/RETURN share one "orbit field" driven off position
+relative to the base centre (`ox,oy`), so a drone far from its ring just leans harder toward it and
+curls back on — there is no separate RETURN state to enter or an explicit snap back into ORBIT.
+`orbitState` is written every tick purely for tests/the admin dump; nothing branches on it.
+
+**Chase and return are a real dash** (plan.md WP4.5.1): `BASE_DRONE_CHASE_SPEED` is a level-0
+tank's own measured top speed (PENDING #14), so a base drone never falls behind anything, catches
+everything slower and can't run down a genuinely fast tank; it uses its own, much tighter turn
+limit (`BASE_DRONE_CHASE_TURN`) while `chasing`, since the same limiter that governs a leisurely
+orbit would give a 285 u/s drone a turn radius wide enough to circle a strafing target instead of
+hitting it. A return is a chase back to the ring at the same speed — no separate constant — the
+orbit field's own target speed blends from cruise to dash as a smoothstep of how far off its ring
+the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone visibly sprints back and eases onto
+its ring rather than snapping or ringing around the target radius.
 
 **Radius is quantised into five shared "energy levels"** (plan.md WP4.5.1, `rooms/Room.js`'s
 `levelR()`/`levelPlan()`), not a continuous random band: a drone is always *at*
@@ -256,23 +266,49 @@ immediately. The **only** place a drone's target radius (`orbRTarget`) ever move
 all funnel through it: a shape hit, drone-vs-drone proximity (`rooms/Room.js`'s pair loop sets
 `tooClose` when two same-side drones are within `BASE_DRONE_SEPARATION` — deliberately less than
 `BASE_DRONE_LEVEL_GAP`, so it can only ever fire between two drones sharing a level), and drifting
-back toward home on a timer. `BASE_DRONE_LEAN_SCALE` is pinned so a one-level radius error leans
-the orbit field by exactly 60°, so all three triggers produce the same visible turn.
+back toward home on a timer.
 
-**The diameter cross is a planned two-segment quintic Hermite curve, not a steered pursuit**
-(plan.md WP4.5.4) — a turn-limited pursuit of an antipodal aim point cannot be made to pass through
-a *specific* point, so the orbit centre is instead a knot on an authored path with position,
-velocity **and** acceleration matched to the orbit field at both outer seams (`C²`, not just
-`C¹`), which is what lets the hand-off in and out of a cross be exact rather than approximate. Both
-segments are evaluated by the module-level `quinticHermite()` helper; `entities/Bullet.js` writes
-`x`/`y`/`vec`/`head`/`spd` directly from the curve during a cross, bypassing the turn/accel limiter
-entirely (the curve's own curvature bounds the motion instead). A cross always lands at level 1,
-ignoring the saturation cap on the way in (deliberately — a swoosh always ends at the lowest level),
-then the drift-home trigger walks it back up over the next few seconds. Only one drone per orbit
-centre may be mid-cross at a time (`levels.crossing`); a blocked drone's countdown does not reset,
-so it starts the instant the current one lands rather than losing its place. `BASE_DRONE_CROSS_ARC`
-is a measured constant (path length over straight-line distance), not guessed — `test/rooms.js`
-prints the current measurement every run.
+**A level switch has two distinct mechanisms by trigger now** (plan.md WP4.5.2): a shape hit or a
+drone-proximity overlap (`mode 'random'`) still just write `orbRTarget` immediately and let the
+orbit field's own lean do the rest — `BASE_DRONE_LEAN_SCALE` is pinned so a one-level radius error
+leans the field by exactly 60°, unchanged, still a sharp reactive peel. The drift-home timer
+(`mode 'home'`) — which also fires repeatedly to climb a post-swoosh drone back up from level 1 —
+instead plans the whole move as a single quintic Hermite (`planSwitchArc()`), a shallow
+`BASE_DRONE_SWITCH_ARC` (10%) sweep of the ring landing exactly tangential at the new radius. While
+it flies, `this.switching` is a third exclusive state alongside `chasing`/`crossing`: position,
+head and speed come from the curve, the cross trigger is suppressed without losing its place in the
+queue, and a chase (but not a cross) interrupts it cleanly. The two mechanisms are deliberately
+different reads of "move a level" — one is a reaction, sharp on purpose; the other is a drone
+choosing to move, and reads as an unmistakably smoother arc beside it.
+
+**The diameter cross is a planned four-segment quintic Hermite curve, not a steered pursuit**
+(plan.md WP4.5.3) — a turn-limited pursuit of an antipodal aim point cannot be made to pass through
+a *specific* point, so the orbit centre is instead a point the path runs straight over rather than a
+knot it bends through: five knots (entry, 8%-along, centre, 92%-along, exit) with the middle three
+collinear in position **and** both endpoint velocities **and** accelerations, so the perpendicular
+component of the quintic is identically zero there — the drone drives dead straight for the middle
+84% of the diameter, at up to `BASE_DRONE_CROSS_SPEED`. The two 8% ends are tweens matched (`C²`) to
+the orbit field at both outer seams, offset by `BASE_DRONE_CROSS_LEAD` so the drone's own actual
+entry position isn't sitting perpendicular on the line it has to join — without that offset no
+smooth curve could join it. All four segments are evaluated by the module-level `quinticHermite()`
+helper; `entities/Bullet.js` writes `x`/`y`/`vec`/`head`/`spd` directly from the curve during a
+cross, bypassing the turn/accel limiter entirely (the curve's own curvature bounds the motion
+instead). A cross always lands at level 1, ignoring the saturation cap on the way in (deliberately —
+a swoosh always ends at the lowest level), then the drift-home trigger walks it back up over the
+next few seconds via the planned arc above. Only one drone per orbit centre may be mid-cross at a
+time (`levels.crossing`); a blocked drone's countdown does not reset, so it starts the instant the
+current one lands rather than losing its place. `BASE_DRONE_CROSS_BLEND_ARC` is a measured constant
+(a tween's own path length over its chord, not the whole path — the straight middle needs no factor
+at all), not guessed — `test/rooms.js` prints the current entry/exit measurements every run.
+
+**"In an enemy base" also means inside the drawn arena now** (plan.md WP4.5.4): both team modes'
+`inEnemyBase()` are still deliberately unbounded outward on their own, but `rooms/Room.js`'s
+`inArena()` bounds that at the one call site in `step()`, so the ~5-square dark OOB band around a
+base is neutral ground — a fast tank can lap an enemy base through it without dying. Base drones get
+the same `config.OOB_MARGIN` allowance `entities/Player.js`'s own clamp gives a tank
+(`Bullet.clampToMap()`), so a chasing drone can follow a target out there exactly as far as the
+target can run; a natural orbit/cross/switch-arc geometry never comes near that clamp (pinned by
+`test/rooms.js`), so it only ever fires mid-chase.
 
 The only per-mode difference now is the orbit centre — which both team modes derive from
 `baseSize` rather than a literal inset, so a base resize can't leave the drones sitting off-centre

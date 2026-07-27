@@ -50,7 +50,12 @@ const BASE_DRONE_CROSS = tick.ticks(config.BASE_DRONE_CROSS);
 const BASE_DRONE_ORBIT_SPEED = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
 const BASE_DRONE_CHASE_SPEED = tick.perTick(config.BASE_DRONE_CHASE_SPEED);
 const BASE_DRONE_CROSS_SPEED = tick.perTick(config.BASE_DRONE_CROSS_SPEED);
+const BASE_DRONE_CROSS_SEAM_SPEED = tick.perTick(config.BASE_DRONE_CROSS_SEAM_SPEED);
 const BASE_DRONE_TURN = tick.perTick(config.BASE_DRONE_TURN);
+// Used in place of BASE_DRONE_TURN whenever a drone is chasing (plan.md WP4.5.1) - a dash needs
+// its own, much tighter turn radius or a "faster chase" would only make the AI worse (see
+// lib/config.js's comment).
+const BASE_DRONE_CHASE_TURN = tick.perTick(config.BASE_DRONE_CHASE_TURN);
 const BASE_DRONE_ACCEL = tick.perTick(config.BASE_DRONE_ACCEL);
 const BASE_DRONE_SWITCH_COOLDOWN = tick.ticks(config.BASE_DRONE_SWITCH_COOLDOWN);
 const BASE_DRONE_LEVEL_RELAX = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
@@ -85,11 +90,20 @@ function quinticHermite(s, T, pa, va, aa, pb, vb, ab) {
 
 /*
 	The one radial mechanism (plan.md WP4.5.2): move a drone exactly one energy level, toward a
-	random open neighbour (`mode` 'random' - a shape hit or drone-proximity trigger) or the one
-	neighbour toward BASE_DRONE_LEVEL_HOME (`mode` 'home' - the drift-home trigger). A neighbour is
+	random open neighbour (`mode` 'random' - a shape hit or drone-proximity trigger, UNCHANGED: the
+	orbit field's own swift lean via BASE_DRONE_LEAN_SCALE/HIT_TURN does the rest, exactly as
+	before) or the one neighbour toward BASE_DRONE_LEVEL_HOME (`mode` 'home' - the drift-home
+	trigger, which also fires repeatedly to climb a post-swoosh drone back to HOME). A neighbour is
 	a candidate only if it is not already at its per-centre saturation cap (drone.levels.caps/
 	count, from rooms/Room.js's levelPlan()). Does nothing - and leaves the cooldown alone, so the
-	caller retries later - if every open neighbour is saturated.
+	caller retries later - if every open neighbour is saturated, or ('home' only) the drone is not
+	currently on its own ring: a planned arc only makes sense from there, and a drone still driving
+	back from a chase has a huge radius error that would plan an arc off nonsense state.
+
+	A successful 'home' switch plans the whole move as a single quintic Hermite (planSwitchArc,
+	below) instead of just writing orbRTarget - position/velocity/head/spd come from that curve
+	(case 1.4's `this.switching` branch) until it lands. A 'random' switch is untouched: it writes
+	orbRTarget immediately and lets the orbit field's own lean produce the existing sharp turn.
 */
 function levelSwitch(drone, mode) {
 	const levels = drone.levels;
@@ -102,19 +116,56 @@ function levelSwitch(drone, mode) {
 	}
 	let next = 0;
 	if (mode === 'home') {
+		const cx = drone.x - drone.ox, cy = drone.y - drone.oy;
+		const r = Math.sqrt(cx * cx + cy * cy) || 1;
+		if (Math.abs(r - drone.orbRTarget) > config.BASE_DRONE_LEVEL_GAP / 2) { return false; }
 		const towardHome = drone.level < config.BASE_DRONE_LEVEL_HOME ? drone.level + 1 :
 			drone.level > config.BASE_DRONE_LEVEL_HOME ? drone.level - 1 : 0;
 		if (candidates.indexOf(towardHome) >= 0) { next = towardHome; }
 	} else if (candidates.length) {
 		next = candidates[Math.floor(Math.random() * candidates.length)];
 	}
-	if (!next) { return; }
+	if (!next) { return false; }
 	levels.count[drone.level - 1]--;
 	levels.count[next - 1]++;
 	drone.level = next;
 	drone.orbRTarget = drone.room.levelR(next);
 	drone.switchCooldown = BASE_DRONE_SWITCH_COOLDOWN;
 	drone.levelTimer = BASE_DRONE_LEVEL_RELAX;
+	if (mode === 'home') { planSwitchArc(drone, drone.orbRTarget); }
+	return true;
+}
+
+/*
+	Builds a 'home' switch's planned arc (plan.md WP4.5.2): a shallow quintic-Hermite sweep of
+	BASE_DRONE_SWITCH_ARC (10%) of the circle, landing at the new level's radius exactly tangential
+	and at cruise speed - the same seam trick the cross's exit already uses, so the hand-off back to
+	the orbit field is exact (the field computes zero dHead/dSpd on the first post-arc tick).
+*/
+function planSwitchArc(drone, r1) {
+	const cx = drone.x - drone.ox, cy = drone.y - drone.oy;
+	const r0 = Math.sqrt(cx * cx + cy * cy) || 1;
+	const theta0 = Math.atan2(cy, cx);
+	const dtheta = 2 * Math.PI * config.BASE_DRONE_SWITCH_ARC * drone.spin;
+	const theta1 = theta0 + dtheta;
+	const u1x = Math.cos(theta1), u1y = Math.sin(theta1);
+	const tx = -u1y * drone.spin, ty = u1x * drone.spin;
+
+	const P1x = drone.ox + u1x * r1, P1y = drone.oy + u1y * r1;
+	const V1x = tx * BASE_DRONE_ORBIT_SPEED, V1y = ty * BASE_DRONE_ORBIT_SPEED;
+	const a1mag = BASE_DRONE_ORBIT_SPEED * BASE_DRONE_ORBIT_SPEED / r1;
+	const A1x = -u1x * a1mag, A1y = -u1y * a1mag;
+
+	drone.switchP0x = drone.x; drone.switchP0y = drone.y;
+	drone.switchV0x = drone.vec.x; drone.switchV0y = drone.vec.y;
+	drone.switchA0x = drone.vec.x - drone.pvec.x; drone.switchA0y = drone.vec.y - drone.pvec.y;
+	drone.switchP1x = P1x; drone.switchP1y = P1y;
+	drone.switchV1x = V1x; drone.switchV1y = V1y;
+	drone.switchA1x = A1x; drone.switchA1y = A1y;
+	const meanR = (r0 + r1) / 2;
+	drone.switchDur = Math.max(3, Math.round(Math.hypot(meanR * Math.abs(dtheta), r1 - r0) / BASE_DRONE_ORBIT_SPEED));
+	drone.switchT = 0;
+	drone.switching = true;
 }
 
 class Bullet {
@@ -182,14 +233,16 @@ class Bullet {
 				case KIND.OBJECTS:
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
 					/*
-						Shape-hit reaction (plan.md WP4.5.2, trigger (a)): one 60-degree level switch,
-						same mechanism a drone-proximity or drift-home trigger uses - not a knockback;
-						ORBIT ignores this.vec entirely (it writes position directly), so the
-						vec.add() above is a no-op for a drone in ORBIT. Suppressed mid-swoosh (the
-						drone punches straight through, user-specified) and on cooldown (so a drone
-						resting against a shape doesn't re-trigger every tick).
+						Shape-hit reaction (plan.md WP4.5.2, trigger (a)): one 60-degree REACTIVE
+						('random') level switch, same mechanism a drone-proximity trigger uses - not a
+						knockback; ORBIT ignores this.vec entirely (it writes position directly), so
+						the vec.add() above is a no-op for a drone in ORBIT. Suppressed mid-swoosh (the
+						drone punches straight through, user-specified), mid-'home'-arc (it still
+						takes the damage/shove above, just not also a reactive jerk on top of the arc
+						it's already flying) and on cooldown (so a drone resting against a shape
+						doesn't re-trigger every tick).
 					*/
-					if (this.type === 1.4 && !this.crossing && this.switchCooldown <= 0) {
+					if (this.type === 1.4 && !this.crossing && !this.switching && this.switchCooldown <= 0) {
 						levelSwitch(this, 'random');
 					}
 					if (this.necro && other.type === 'sqr') {
@@ -410,22 +463,25 @@ class Bullet {
 				break;
 			};
 			/*
-				Base drone (plan.md WP4, rewritten in WP4.5, rewritten again in WP4.5's energy-level
-				pass). Outside a cross, heading (`head`) and speed (`spd`) are authoritative and
-				rate-limited (BASE_DRONE_TURN/BASE_DRONE_ACCEL); position is their integral - every
-				state below only has to produce a desired direction and a target speed, and the
+				Base drone (plan.md WP4, rewritten in WP4.5, rewritten again by WP4.5's dash/arc/
+				swoosh/dark-band pass). Outside a cross or a 'home' switch arc, heading (`head`) and
+				speed (`spd`) are authoritative and rate-limited (BASE_DRONE_TURN or
+				BASE_DRONE_CHASE_TURN while chasing / BASE_DRONE_ACCEL); position is their integral -
+				every state below only has to produce a desired direction and a target speed, and the
 				shared steering tail slews toward both and writes position, so a transition between
-				them is continuous by construction. A cross (below) is the one exception: position
-				comes from a planned quintic Hermite curve instead, matched to this same steering
-				field at both seams, so the hand-off in and out of it is exact.
+				them is continuous by construction. A cross and a 'home' level-switch arc are the two
+				exceptions: position comes from a planned quintic Hermite curve instead, matched to
+				this same steering field at both seams, so the hand-off in and out of either is exact.
 
-				`this.chasing` and `this.crossing` are the two real branches; ORBIT/RETURN are one
-				"orbit field" driven off (x,y) relative to the base centre (ox,oy) - a drone far from
-				its ring just leans harder toward it (BASE_DRONE_LEAN_MAX) and curls onto it as the
-				error shrinks, so there is no separate RETURN state. Radius itself only ever moves in
-				whole BASE_DRONE_LEVEL_GAP steps via levelSwitch() (module scope, above) - the field
-				here just steers toward whichever radius the level table currently names.
-				`this.orbitState` is written purely for tests/admin - nothing branches on it.
+				`this.chasing`, `this.crossing` and `this.switching` are the three real branches;
+				ORBIT/RETURN are one "orbit field" driven off (x,y) relative to the base centre
+				(ox,oy) - a drone far from its ring leans harder toward it (BASE_DRONE_LEAN_MAX) and
+				curls onto it as the error shrinks, so there is no separate RETURN state, though its
+				cruise-to-dash speed blend (below) does make a long return a real sprint again
+				(plan.md WP4.5.1). Radius itself only ever moves in whole BASE_DRONE_LEVEL_GAP steps
+				via levelSwitch() (module scope, above) - the field here just steers toward whichever
+				radius the level table currently names. `this.orbitState` is written purely for
+				tests/admin - nothing branches on it.
 			*/
 			case 1.4: {
 				if (this.switchCooldown > 0) { this.switchCooldown--; }
@@ -439,14 +495,17 @@ class Bullet {
 				}
 				// A live, in-leash target pulls the drone into CHASE from any state but a cross
 				// (plan.md WP4.5.4 - abandoning a planned curve mid-flight is the one thing that can
-				// reintroduce a velocity discontinuity). The leash is measured from the base centre,
-				// not the drone, so a drone already out chasing doesn't get an easier time
+				// reintroduce a velocity discontinuity). A 'home' switch arc IS interrupted by a
+				// chase (plan.md WP4.5.2) - only C1-lossy, not C0, since head/spd come from the curve
+				// every tick right up to the interrupting one. The leash is measured from the base
+				// centre, not the drone, so a drone already out chasing doesn't get an easier time
 				// re-engaging than one starting fresh off the ring.
 				if (!this.chasing && !this.crossing && this.DETEC.select) {
 					const other = this.DETEC.select;
 					const basedis = Math.sqrt(Math.pow(other.x - this.ox, 2) + Math.pow(other.y - this.oy, 2));
 					if (basedis < config.BASE_DRONE_LEASH && !other.destroy) {
 						this.chasing = true;
+						this.switching = false;
 						this.DETEC.enabled = 0;
 					}
 				}
@@ -462,9 +521,11 @@ class Bullet {
 				// Level-switch triggers (plan.md WP4.5.2): (b) drone-vs-drone proximity (`tooClose`,
 				// set by rooms/Room.js's pair loop) and (c) drifting home, both funnelled through the
 				// one levelSwitch() a shape hit (this class's KIND.OBJECTS collision arm) also uses.
-				// Suppressed mid-cross/mid-chase - a drone busy on the planned curve or running down
-				// prey doesn't also drift levels.
-				if (!this.crossing && !this.chasing) {
+				// Suppressed mid-cross/mid-chase/mid-switch - a drone busy on a planned curve or
+				// running down prey doesn't also drift levels, and a 'home' arc already in flight
+				// does not re-fire (a reactive `tooClose` noticed mid-arc is cleared without acting -
+				// it re-flags next tick if still true once the arc lands).
+				if (!this.crossing && !this.chasing && !this.switching) {
 					if (this.tooClose) {
 						this.tooClose = 0;
 						if (this.switchCooldown <= 0) { levelSwitch(this, 'random'); }
@@ -480,66 +541,94 @@ class Bullet {
 				} else {
 					this.tooClose = 0;
 				}
-				// The diameter cross (plan.md WP4.5.4): triggered here, evaluated below. Suppressed
-				// while chasing - crossIn only ever counts down in this branch - and gated by
-				// `levels.crossing` (4.5.4's "one crosser per orbit centre"): a drone whose crossIn
-				// has expired only actually starts when nobody else at its centre is mid-swoosh, and
-				// does not reset crossIn while it waits, so a blocked drone starts the instant the
-				// current one lands instead of losing its place in the queue.
-				if (!this.chasing && !this.crossing && --this.crossIn <= 0 && this.levels.crossing === 0) {
+				// The diameter cross (plan.md WP4.5.3): triggered here, evaluated below. Suppressed
+				// while chasing/switching - crossIn only ever counts down in this branch, so a
+				// 'home' arc in flight keeps its place in the queue exactly the way `levels.crossing`
+				// already makes a blocked drone keep its place - and gated by `levels.crossing`
+				// (4.5.3's "one crosser per orbit centre"): a drone whose crossIn has expired only
+				// actually starts when nobody else at its centre is mid-swoosh.
+				if (!this.chasing && !this.crossing && !this.switching && --this.crossIn <= 0 && this.levels.crossing === 0) {
 					this.crossing = true;
 					this.crossT = 0;
 					const cx = this.x - this.ox, cy = this.y - this.oy;
 					const r0 = Math.sqrt(cx * cx + cy * cy) || 1;
-					const ux = cx / r0, uy = cy / r0;
-					const tx = -uy * this.spin, ty = ux * this.spin;
+					const phi = Math.atan2(cy, cx);
 					const R1 = this.room.levelR(1);
-					// Freeze the entry frame (plan.md WP4.5.4's "setup at trigger"): segment A runs
-					// P0->centre, segment B centre->P1, with the centre a knot on the path (Ac=0,
-					// pure straight-line motion through it) and P1/V1/A1 exactly what the orbit field
-					// itself produces there, so both hand-offs are exact, not approximate.
-					this.crossP0x = this.x; this.crossP0y = this.y;
-					this.crossV0x = this.vec.x; this.crossV0y = this.vec.y;
-					this.crossA0x = this.vec.x - this.pvec.x; this.crossA0y = this.vec.y - this.pvec.y;
-					this.crossVcx = -ux * BASE_DRONE_CROSS_SPEED; this.crossVcy = -uy * BASE_DRONE_CROSS_SPEED;
-					this.crossP1x = this.ox - ux * R1; this.crossP1y = this.oy - uy * R1;
-					this.crossV1x = -tx * BASE_DRONE_ORBIT_SPEED; this.crossV1y = -ty * BASE_DRONE_ORBIT_SPEED;
+					const D = r0 + R1;
+					const f = config.BASE_DRONE_CROSS_BLEND_FRAC;
+					// The diameter's own line is offset from the drone's actual angle by `lead`
+					// (plan.md WP4.5.3's load-bearing insight): without it, the drone's actual
+					// position A would sit ON the line, moving perpendicular to it, and no smooth
+					// curve can join a line it already sits on 8% along from a perpendicular start.
+					const lead = 2 * Math.PI * config.BASE_DRONE_CROSS_LEAD * this.spin;
+					const phiLine = phi + lead;
+					const ux = Math.cos(phiLine), uy = Math.sin(phiLine);
+					const dx = -ux, dy = -uy;   // direction of travel along the line
+					const Ax = this.x, Ay = this.y;
+					const L8x = this.ox + ux * (r0 - f * D), L8y = this.oy + uy * (r0 - f * D);
+					const Cx = this.ox, Cy = this.oy;
+					const L92x = this.ox + dx * ((1 - f) * D - r0), L92y = this.oy + dy * ((1 - f) * D - r0);
+					// B is on level 1, `lead` further round from the diameter's own antipodal angle
+					// - the same offset applied again at the exit, which is what makes the remaining
+					// two 8%s (84 + 8 + 8 = 100) work at both ends instead of only one.
+					const phiB = phiLine + Math.PI + lead;
+					const uBx = Math.cos(phiB), uBy = Math.sin(phiB);
+					const Bx = this.ox + uBx * R1, By = this.oy + uBy * R1;
+					const tBx = -uBy * this.spin, tBy = uBx * this.spin;
 					const a1mag = BASE_DRONE_ORBIT_SPEED * BASE_DRONE_ORBIT_SPEED / R1;
-					this.crossA1x = ux * a1mag; this.crossA1y = uy * a1mag;
-					const vMean = (BASE_DRONE_ORBIT_SPEED + BASE_DRONE_CROSS_SPEED) / 2;
-					this.crossTA = Math.max(2, Math.round(config.BASE_DRONE_CROSS_ARC * r0 / vMean));
-					this.crossTB = Math.max(2, Math.round(config.BASE_DRONE_CROSS_ARC * R1 / vMean));
+					// Five knots, four segments (plan.md WP4.5.3): A->L8 and L92->B are the tweens
+					// (position/velocity/acceleration all match the orbit field at A and B); L8->C
+					// and C->L92 have position AND both endpoint velocities AND both endpoint
+					// accelerations collinear with `d`, so the perpendicular component of the
+					// quintic is identically zero there - the drone drives dead straight for 84% of
+					// the diameter, with the centre itself a point the straight run passes OVER
+					// (at fraction r0/D along it), not a knot the path is bent through.
+					this.crossKnots = [
+						{ x: Ax, y: Ay, vx: this.vec.x, vy: this.vec.y, ax: this.vec.x - this.pvec.x, ay: this.vec.y - this.pvec.y },
+						{ x: L8x, y: L8y, vx: dx * BASE_DRONE_CROSS_SEAM_SPEED, vy: dy * BASE_DRONE_CROSS_SEAM_SPEED, ax: 0, ay: 0 },
+						{ x: Cx, y: Cy, vx: dx * BASE_DRONE_CROSS_SPEED, vy: dy * BASE_DRONE_CROSS_SPEED, ax: 0, ay: 0 },
+						{ x: L92x, y: L92y, vx: dx * BASE_DRONE_CROSS_SEAM_SPEED, vy: dy * BASE_DRONE_CROSS_SEAM_SPEED, ax: 0, ay: 0 },
+						{ x: Bx, y: By, vx: tBx * BASE_DRONE_ORBIT_SPEED, vy: tBy * BASE_DRONE_ORBIT_SPEED, ax: -uBx * a1mag, ay: -uBy * a1mag }
+					];
+					// Durations: the two straight segments are exact (a scalar quintic with zero
+					// acceleration at both ends has mean speed exactly length/T - no fudge factor
+					// needed); the two tweens use the one measured BASE_DRONE_CROSS_BLEND_ARC
+					// overhead-over-chord factor.
+					const vMean0 = (Math.hypot(this.vec.x, this.vec.y) + BASE_DRONE_CROSS_SEAM_SPEED) / 2;
+					const vMean1 = (BASE_DRONE_CROSS_SEAM_SPEED + BASE_DRONE_ORBIT_SPEED) / 2;
+					this.crossTs = [
+						Math.max(3, Math.round(config.BASE_DRONE_CROSS_BLEND_ARC * Math.hypot(L8x - Ax, L8y - Ay) / vMean0)),
+						Math.max(2, Math.round(Math.hypot(Cx - L8x, Cy - L8y) / ((BASE_DRONE_CROSS_SEAM_SPEED + BASE_DRONE_CROSS_SPEED) / 2))),
+						Math.max(2, Math.round(Math.hypot(L92x - Cx, L92y - Cy) / ((BASE_DRONE_CROSS_SPEED + BASE_DRONE_CROSS_SEAM_SPEED) / 2))),
+						Math.max(3, Math.round(config.BASE_DRONE_CROSS_BLEND_ARC * Math.hypot(Bx - L92x, By - L92y) / vMean1))
+					];
 					this.levels.crossing++;
 				}
 				///
 				if (this.crossing) {
 					this.crossT++;
-					let seg;
-					if (this.crossT <= this.crossTA) {
-						const s = this.crossT / this.crossTA;
-						seg = {
-							x: quinticHermite(s, this.crossTA, this.crossP0x, this.crossV0x, this.crossA0x, this.ox, this.crossVcx, 0),
-							y: quinticHermite(s, this.crossTA, this.crossP0y, this.crossV0y, this.crossA0y, this.oy, this.crossVcy, 0)
-						};
-					} else {
-						const s = Math.min(1, (this.crossT - this.crossTA) / this.crossTB);
-						seg = {
-							x: quinticHermite(s, this.crossTB, this.ox, this.crossVcx, 0, this.crossP1x, this.crossV1x, this.crossA1x),
-							y: quinticHermite(s, this.crossTB, this.oy, this.crossVcy, 0, this.crossP1y, this.crossV1y, this.crossA1y)
-						};
+					let idx = 0, elapsed = 0;
+					while (idx < this.crossTs.length - 1 && this.crossT > elapsed + this.crossTs[idx]) {
+						elapsed += this.crossTs[idx]; idx++;
 					}
+					const T = this.crossTs[idx];
+					const s = Math.min(1, (this.crossT - elapsed) / T);
+					const k0 = this.crossKnots[idx], k1 = this.crossKnots[idx + 1];
+					const segX = quinticHermite(s, T, k0.x, k0.vx, k0.ax, k1.x, k1.vx, k1.ax);
+					const segY = quinticHermite(s, T, k0.y, k0.vy, k0.ay, k1.y, k1.vy, k1.ay);
 					// Position, velocity AND head/spd all come from the curve - writing head/spd
 					// (rather than leaving them stale) is what makes the exit seamless, since the
 					// shared steering tail resumes from exactly the state the curve ended in.
-					this.x = seg.x.p; this.y = seg.y.p;
-					this.vec.x = seg.x.v; this.vec.y = seg.y.v;
+					this.x = segX.p; this.y = segY.p;
+					this.vec.x = segX.v; this.vec.y = segY.v;
 					this.head = Math.atan2(this.vec.y, this.vec.x);
 					this.spd = Math.hypot(this.vec.x, this.vec.y);
 					this.showDir = this.dir = this.head;
 					this.orbitState = 'CROSS';
-					if (this.crossT >= this.crossTA + this.crossTB) {
+					const total = this.crossTs[0] + this.crossTs[1] + this.crossTs[2] + this.crossTs[3];
+					if (this.crossT >= total) {
 						// Lands at level 1 by construction, ignoring saturation deliberately (plan.md
-						// WP4.5.4) - a swoosh always ends at the lowest level, so count[0] may
+						// WP4.5.3) - a swoosh always ends at the lowest level, so count[0] may
 						// transiently exceed caps[0]; only voluntary switches into level 1 respect
 						// the cap, so the excess only ever drains.
 						this.crossing = false;
@@ -555,8 +644,30 @@ class Bullet {
 					this.clampToMap();
 					return;
 				}
+				// A 'home' level switch's planned arc (plan.md WP4.5.2) - built once by
+				// planSwitchArc() at trigger, evaluated the same way the cross is: position/velocity/
+				// head/spd come from the curve until it lands, then control returns to the field
+				// below with zero error (V1/A1 were built to match what the field itself produces at
+				// the landing point).
+				if (this.switching) {
+					this.switchT++;
+					const s = Math.min(1, this.switchT / this.switchDur);
+					const segX = quinticHermite(s, this.switchDur, this.switchP0x, this.switchV0x, this.switchA0x, this.switchP1x, this.switchV1x, this.switchA1x);
+					const segY = quinticHermite(s, this.switchDur, this.switchP0y, this.switchV0y, this.switchA0y, this.switchP1y, this.switchV1y, this.switchA1y);
+					this.x = segX.p; this.y = segY.p;
+					this.vec.x = segX.v; this.vec.y = segY.v;
+					this.head = Math.atan2(this.vec.y, this.vec.x);
+					this.spd = Math.hypot(this.vec.x, this.vec.y);
+					this.showDir = this.dir = this.head;
+					this.orbitState = 'ORBIT';
+					if (this.switchT >= this.switchDur) { this.switching = false; }
+					this.pvec.x = this.vec.x; this.pvec.y = this.vec.y;
+					this.clampToMap();
+					return;
+				}
 				///
 				let dx, dy, targetSpeed;
+				const turnLimit = this.chasing ? BASE_DRONE_CHASE_TURN : BASE_DRONE_TURN;
 				if (this.chasing) {
 					const other = this.DETEC.select;
 					dx = other.x - this.x;
@@ -578,7 +689,13 @@ class Bullet {
 						Math.min(config.BASE_DRONE_LEAN_MAX, err / config.BASE_DRONE_LEAN_SCALE));
 					dx = tx + ux * lean;
 					dy = ty + uy * lean;
-					targetSpeed = BASE_DRONE_ORBIT_SPEED;
+					// Speed is a smoothstep blend from cruise toward the dash speed, keyed on how far
+					// off its ring the drone is (plan.md WP4.5.1) - a return is a chase back to the
+					// ring, so it runs at the same speed, easing to cruise as it arrives rather than
+					// snapping or ringing around the target radius.
+					const e = Math.min(1, Math.abs(err) / config.BASE_DRONE_RETURN_ERR);
+					const k = e * e * (3 - 2 * e);
+					targetSpeed = BASE_DRONE_ORBIT_SPEED + (BASE_DRONE_CHASE_SPEED - BASE_DRONE_ORBIT_SPEED) * k;
 				}
 				// Descriptive only (tests/admin dump) - nothing above or below branches on this.
 				{
@@ -588,9 +705,12 @@ class Bullet {
 				// Shared steering tail: slew heading and speed toward the state's desired
 				// direction/target speed, then integrate. Every state above funnels through this,
 				// which is what makes every transition C1 with no state able to stop or snap it.
+				// CHASE gets its own, much tighter turnLimit (BASE_DRONE_CHASE_TURN) - see
+				// lib/config.js's comment for why a faster dash needs a tighter limiter, not a
+				// looser one.
 				const desired = Math.atan2(dy, dx);
 				let dHead = Math.atan2(Math.sin(desired - this.head), Math.cos(desired - this.head));
-				dHead = Math.max(-BASE_DRONE_TURN, Math.min(BASE_DRONE_TURN, dHead));
+				dHead = Math.max(-turnLimit, Math.min(turnLimit, dHead));
 				this.head += dHead;
 				let dSpd = targetSpeed - this.spd;
 				dSpd = Math.max(-BASE_DRONE_ACCEL, Math.min(BASE_DRONE_ACCEL, dSpd));
@@ -730,13 +850,19 @@ class Bullet {
 		}
 	}
 	// Hard-stop map clamp for a life===-1 bullet (a base drone). Shared by the ordinary motion
-	// tail above and case 1.4's steering tail (plan.md WP4.5.4), which returns before ever
-	// reaching that tail.
+	// tail above and case 1.4's steering tail (plan.md WP4.5.3), which returns before ever
+	// reaching that tail. Carries the same config.OOB_MARGIN allowance entities/Player.js's
+	// motion() gives a tank (plan.md WP4.5.4(b)) - the dark band outside the drawn arena is
+	// neutral ground now (rooms/Room.js's inArena()), so a base drone has to be able to follow a
+	// target out there exactly as far as a player may run. In practice only a chasing drone ever
+	// reaches it: a natural orbit/cross/switch-arc geometry never comes near the map edge (pinned
+	// by test/rooms.js) - a clamp firing mid-curve would desync position from the curve.
 	clampToMap() {
-		if (this.x < -this.map.width / 2) { this.x = -this.map.width / 2; this.vec.x = 0; }
-		if (this.y < -this.map.height / 2) { this.y = -this.map.height / 2; this.vec.y = 0; }
-		if (this.x > this.map.width / 2) { this.x = this.map.width / 2; this.vec.x = 0; }
-		if (this.y > this.map.height / 2) { this.y = this.map.height / 2; this.vec.y = 0; }
+		const mx = this.map.width / 2 + config.OOB_MARGIN, my = this.map.height / 2 + config.OOB_MARGIN;
+		if (this.x < -mx) { this.x = -mx; this.vec.x = 0; }
+		if (this.y < -my) { this.y = -my; this.vec.y = 0; }
+		if (this.x > mx) { this.x = mx; this.vec.x = 0; }
+		if (this.y > my) { this.y = my; this.vec.y = 0; }
 	}
 }
 

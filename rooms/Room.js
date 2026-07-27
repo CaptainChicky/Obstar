@@ -266,6 +266,7 @@ class Room {
 		bull.orbitState = 'ORBIT';
 		bull.crossing = false;
 		bull.chasing = false;
+		bull.switching = false;
 		bull.switchCooldown = 0;
 		bull.levelTimer = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
 		bull.tooClose = 0;
@@ -631,7 +632,11 @@ class Room {
 				// A player dies exactly on the base line; a bullet is allowed to penetrate
 				// config.BASE_BULLET_MARGIN past it first, which is what real diep does and what
 				// stops enemy fire visibly evaporating on an invisible wall (massplanchunks WP-E).
-				if ((kind === 'players' || kind === 'bullets') &&
+				// The base only kills inside the drawn arena (plan.md WP4.5.4) - inEnemyBase()
+				// alone is unbounded outward, so something sitting in the dark OOB band past a
+				// corner would otherwise still count as "in" the base; inArena() is the one place
+				// that bound is written.
+				if ((kind === 'players' || kind === 'bullets') && this.inArena(obj) &&
 					this.inEnemyBase(obj, kind === 'bullets' ? config.BASE_BULLET_MARGIN : 0)) {
 					obj.collision(0, { base: 1 });
 					continue;
@@ -832,9 +837,26 @@ class Room {
 		something cross the line before it counts as inside - see the bullet case in step().
 		Only the line itself moves, never the map-edge side of the base: a base drone orbiting
 		near its own base's inner edge must still never be "in" a base it owns.
+
+		Both team modes' own inEnemyBase() are deliberately unbounded OUTWARD (4team measures
+		depth inward from the map edge, so a point past a corner has negative depth and still
+		counts as inside; 2team is a bare half-plane in x with no y bound at all) - step() is what
+		bounds that to the drawn arena now (plan.md WP4.5.4), via inArena() below, so the
+		signature/semantics here don't change.
 	*/
 	inEnemyBase(obj, margin = 0) {
 		return false;
+	}
+	/*
+		The drawn arena - what the coloured base square is clipped to (plan.md WP4.5.4). The OOB
+		band outside it (config.OOB_MARGIN, ~5 squares once a tank's own radius is counted - see
+		entities/Player.js's motion()) is neutral ground for everything: "in an enemy base" means
+		"in an enemy base AND inside the drawn arena" now, so a fast tank (or a base drone chasing
+		one - entities/Bullet.js's clampToMap() carries the same OOB_MARGIN allowance) can
+		circumnavigate a base by going around the dark grey border without dying to it.
+	*/
+	inArena(obj) {
+		return Math.abs(obj.x) <= this.map.width / 2 && Math.abs(obj.y) <= this.map.height / 2;
 	}
 	respawn(id, force = 0, bot = 0) {
 		const tank = this.INSTANCE.players.get(id);

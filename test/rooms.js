@@ -602,12 +602,16 @@ function baseDroneWP45Tests() {
 	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
 	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
 
-	// 4.5.2b - tunnelling headroom: the fastest thing a drone ever does (the cross dash) must
-	// still be slower than its own size plus the smallest polygon radius, or a fast enough drone
-	// could step clean through a shape between collision checks.
+	// 4.5.2b - tunnelling headroom: the fastest thing a drone ever does (the cross dash, and now
+	// the chase/return dash too - plan.md WP4.5.1) must still be slower than its own size plus the
+	// smallest polygon radius, or a fast enough drone could step clean through a shape between
+	// collision checks.
 	check('no tunnelling: a cross-speed step stays under drone size + smallest polygon radius',
 		tick.perTick(config.BASE_DRONE_CROSS_SPEED) < config.BASE_DRONE_SIZE + 20,
 		tick.perTick(config.BASE_DRONE_CROSS_SPEED) + ' vs ' + (config.BASE_DRONE_SIZE + 20));
+	check('...and neither does a chase/return-speed step',
+		tick.perTick(config.BASE_DRONE_CHASE_SPEED) < config.BASE_DRONE_SIZE + 20,
+		tick.perTick(config.BASE_DRONE_CHASE_SPEED) + ' vs ' + (config.BASE_DRONE_SIZE + 20));
 
 	// 4.5.2a - shape damage is sane: a base drone's `pene` is a 2000-point health pool, not a
 	// penetration value: reading it as one used to one-shot every shape a drone brushed.
@@ -778,12 +782,14 @@ function baseDroneWP45Tests() {
 			Math.abs(config.BASE_DRONE_LEVEL_GAP - drawnSide) / drawnSide < 0.05, drawnSide);
 	}
 
-	// ---- WP4.5.2: LEAN_SCALE really is a 60-degree turn ------------------------------------------
+	// ---- WP4.5.2: LEAN_SCALE really is a 60-degree turn - the REACTIVE ('random') path only -----
+	// ('home' switches no longer read LEAN_SCALE at all - they fly BASE_DRONE_SWITCH_ARC's planned
+	// arc instead, tested separately below.)
 	{
 		const leanRad = Math.atan(config.BASE_DRONE_LEVEL_GAP / config.BASE_DRONE_LEAN_SCALE);
 		const degOff = Math.abs(leanRad - config.BASE_DRONE_HIT_TURN) * 180 / Math.PI;
-		check('a one-level radius error leans the orbit field by exactly 60 degrees (within 0.5deg)',
-			degOff < 0.5, degOff.toFixed(3) + ' degrees off');
+		check('a one-level radius error leans the orbit field by exactly 60 degrees (within 0.5deg) ' +
+			'- pins the reactive (shape-hit/proximity) path', degOff < 0.5, degOff.toFixed(3) + ' degrees off');
 	}
 
 	// ---- WP4.5.3: SEPARATION is 5 units of drawn overlap, strictly under one LEVEL_GAP -----------
@@ -900,12 +906,23 @@ function baseDroneWP45Tests() {
 		}
 	}
 
-	// ---- WP4.5.2: drift home ------------------------------------------------------------------
+	// ---- WP4.5.2: drift home, re-timed - a 'home' switch now flies a real planned arc, not an ----
+	// instant write, so the climb budget has to cover BASE_DRONE_LEVEL_RELAX's wait AND the arc's
+	// own flight time for every hop (plan.md WP4.5.2's "2*(relax+arc)" figure).
 	{
 		const room = makeRoom('2team');
 		const post = room.dronePosts[0];
 		const drone = room.INSTANCE.bullets.get(post.slot);
 		const relax = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
+		const vOrb = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
+		// Mirrors planSwitchArc()'s own T formula (entities/Bullet.js) so the budget below is a
+		// real bound, not a guess.
+		function switchTicks(r0, r1) {
+			const meanR = (r0 + r1) / 2, dtheta = 2 * Math.PI * config.BASE_DRONE_SWITCH_ARC;
+			return Math.max(3, Math.round(Math.hypot(meanR * dtheta, Math.abs(r1 - r0)) / vOrb));
+		}
+		const budget = relax + switchTicks(room.levelR(1), room.levelR(2)) +
+			relax + switchTicks(room.levelR(2), room.levelR(3)) + 100;   // +100 ticks slack
 		function setup(level, caps, occupied) {
 			drone.level = level;
 			drone.levels = { caps: caps, count: occupied.slice(), crossing: 0 };
@@ -914,17 +931,58 @@ function baseDroneWP45Tests() {
 			drone.switchCooldown = 0;
 			drone.crossing = false;
 			drone.chasing = false;
+			drone.switching = false;
 			drone.crossIn = 1e9;   // never cross during this test
 		}
 		setup(1, [5, 5, 5, 5, 5], [1, 0, 0, 0, 0]);
-		for (let i = 0; i < 2 * relax + 20; i++) { drone.update(); }
-		check('left alone off HOME, a drone drifts back up to HOME over a few seconds',
+		for (let i = 0; i < budget; i++) { drone.update(); }
+		check('left alone off HOME, a drone drifts back up to HOME within its (relax+arc)*2 budget',
 			drone.level === config.BASE_DRONE_LEVEL_HOME, drone.level);
+		for (let i = 0; i < 50 && !drone.switching; i++) { drone.update(); }
+		check('...and then stops moving levels', drone.level === config.BASE_DRONE_LEVEL_HOME, drone.level);
 
 		setup(1, [5, 1, 5, 5, 5], [1, 1, 0, 0, 0]);   // level 2 already at its cap
-		for (let i = 0; i < 2 * relax + 20; i++) { drone.update(); }
+		for (let i = 0; i < budget; i++) { drone.update(); }
 		check('...but stays put if the next level up is saturated, retrying instead of stalling forever',
 			drone.level === 1, drone.level);
+	}
+
+	// ---- WP4.5.2: the reactive ('random') path is an unchanged regression guard -------------------
+	// Driven through the real shape-hit trigger (collision() against a KIND.OBJECTS shape) - the
+	// same public door the cap test above uses - not a private call to levelSwitch().
+	{
+		const room = makeRoom('2team');
+		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+		const post = room.dronePosts[0];
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		const shape = { kind: KIND.OBJECTS, x: 0, y: 0, type: 'sqr', destroy: 0 };
+		drone.level = 3;
+		drone.levels = { caps: [5, 5, 5, 5, 5], count: [0, 0, 1, 0, 0], crossing: 0 };
+		placeOnRing(drone, room.levelR(3), 0);
+		drone.orbRTarget = room.levelR(3);
+		drone.switchCooldown = 0;
+		drone.crossing = false; drone.chasing = false; drone.switching = false;
+		const targetBefore = drone.orbRTarget;
+		const initHead = drone.head;
+		drone.collision(shape, {});
+		check('a random switch writes orbRTarget immediately, with no planned arc entered',
+			drone.orbRTarget !== targetBefore && drone.orbRTarget === room.levelR(drone.level) && !drone.switching,
+			drone.orbRTarget + ' vs ' + targetBefore);
+		// The turn limiter still caps every single tick at BASE_DRONE_TURN, so the 60-degree lean
+		// (LEAN_SCALE's identity, tested above) shows up as a fast CUMULATIVE swing away from the
+		// pre-switch tangent, not an instant jump. It is not a guaranteed exact 60 degrees - the
+		// radius error the lean is chasing shrinks as the drone corrects, so the swing peaks and
+		// reverses - but it is unmistakably sharper than a 'home' arc's own ~10.6-degree sweep, which
+		// is the actual regression this guards: routing 'random' through the smooth arc by mistake
+		// would flatten this peak by 4x or more.
+		let peakTurn = 0;
+		for (let i = 0; i < 20; i++) {
+			drone.update();
+			const d = Math.abs(Math.atan2(Math.sin(drone.head - initHead), Math.cos(drone.head - initHead)));
+			if (d > peakTurn) { peakTurn = d; }
+		}
+		check('...and the reactive lean swings well past a home arc\'s own sweep - still a sharp peel',
+			peakTurn > 20 * Math.PI / 180, (peakTurn * 180 / Math.PI).toFixed(1) + ' degrees');
 	}
 
 	// ---- WP4.5.3: anti-overlap fires through the real pair loop -----------------------------------
@@ -1037,26 +1095,27 @@ function baseDroneWP45Tests() {
 		check('...and ends by running out its planned ticks, not a timeout', ticks < GUARD, ticks + ' of ' + GUARD);
 		const exitR = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
 		const exitUx = (drone.x - drone.ox) / (exitR || 1), exitUy = (drone.y - drone.oy) / (exitR || 1);
-		const dot = entryUx * exitUx + entryUy * exitUy;
-		check('...lands on the opposite side of the centre from where it started',
-			dot < -0.98, dot);
+		// It lands 2*CROSS_LEAD past the entry's own raw antipode, not exactly opposite it - lead is
+		// applied once to offset the diameter's own line off the drone's actual position, then again
+		// at the landing point (entities/Bullet.js's case 1.4 trigger comment) - the "5-8% ahead" spec
+		// (plan.md WP4.5.3), asserted here as geometry rather than as the old antipodal dot product.
+		const entryAngle = Math.atan2(entryUy, entryUx), exitAngle = Math.atan2(exitUy, exitUx);
+		const lead = 2 * Math.PI * config.BASE_DRONE_CROSS_LEAD * (drone.spin || 1);
+		const expectedExitAngle = entryAngle + Math.PI + 2 * lead;
+		const angleErr = Math.atan2(Math.sin(exitAngle - expectedExitAngle), Math.cos(exitAngle - expectedExitAngle));
+		check('...lands 2*CROSS_LEAD past the antipode of where it started, within 10%',
+			Math.abs(angleErr) < 0.1 * Math.abs(2 * lead), (angleErr * 180 / Math.PI).toFixed(2) + ' degrees off');
 		check('...at radius levelR(1), +-2 units', Math.abs(exitR - room.levelR(1)) < 2,
 			exitR + ' vs ' + room.levelR(1));
 		check('...the S never bulges past the outermost level, so it never leaves the base square',
 			maxDist <= room.levelR(config.BASE_DRONE_LEVELS) + 1e-6, maxDist + ' vs ' + room.levelR(config.BASE_DRONE_LEVELS));
 		check('level === 1 on exit', drone.level === 1, drone.level);
-		// Real room.step()s, not isolated drone.update() calls: the rest of the base's drones also
-		// have their own drift-home timers running, and this drone's own climb can be blocked for a
-		// couple of cycles if the level immediately above happens to be at cap when it tries (the
-		// saturation-respecting, deliberately-not-guaranteed-fast climb documented in plan.md
-		// WP4.5.2) - stepping the whole base is what lets that congestion clear the way it would in
-		// a real room, rather than freezing every other drone's own levels artificially.
-		const relax = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
-		for (let i = 0; i < 8 * relax; i++) { room.step(); }
-		const backR = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
-		check('...and within a several-second window the drone is back at HOME',
-			Math.abs(backR - room.levelR(config.BASE_DRONE_LEVEL_HOME)) / room.levelR(config.BASE_DRONE_LEVEL_HOME) < 0.05,
-			backR + ' vs ' + room.levelR(config.BASE_DRONE_LEVEL_HOME));
+		// The climb back to HOME after this (WP4.5.2's drift-home retry loop, congestion and all) is
+		// already covered in isolation by the "drift home, re-timed" tests above, with a controlled
+		// ledger instead of this real room's live occupancy - a live 12-drone base can leave HOME
+		// saturated for longer than any fixed window here promises (the saturation-respecting climb
+		// is deliberately not guaranteed-fast, plan.md WP4.5.2), so it is not re-asserted against a
+		// timer in this live room.
 	}
 
 	// ---- WP4.5.4: nothing has a corner in it - bounded acceleration and jerk everywhere ------------
@@ -1064,43 +1123,61 @@ function baseDroneWP45Tests() {
 		const room = makeRoom('4team');
 		const drone = room.INSTANCE.bullets.get(room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME).slot);
 		const TURN = tick.perTick(config.BASE_DRONE_TURN);
+		const CHASE_TURN = tick.perTick(config.BASE_DRONE_CHASE_TURN);
 		const MINSPD = 0.5 * tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
-		const OUT_ACCEL = tick.perTick(config.BASE_DRONE_ACCEL) + tick.perTick(config.BASE_DRONE_ORBIT_SPEED) * TURN + 1e-9;
+		// The fastest non-curve state is CHASE now (plan.md WP4.5.1), not cruise - its own tighter
+		// CHASE_TURN paired with its own much higher speed is the bound that actually has to hold.
+		const OUT_ACCEL = tick.perTick(config.BASE_DRONE_ACCEL) +
+			tick.perTick(config.BASE_DRONE_CHASE_SPEED) * CHASE_TURN + 1e-9;
 		const OUT_JERK = 2 * OUT_ACCEL + 1e-6;
 		let prevHead = drone.head, prevVx = drone.vec.x, prevVy = drone.vec.y, prevAx = 0, prevAy = 0, first = true, firstA = true;
 		let sharpOut = false, sharpIn = false, slow = false, hardAccelOut = false, hardAccelIn = false, hardJerkOut = false;
 		let peakAccelIn = 0, peakJerkIn = 0, peakTurnIn = 0;
+		// A 'home' switch arc is a third exempt state alongside crossing (plan.md WP4.5.8), but
+		// measured against real geometry across the whole level table it never actually approaches
+		// either outside-curve bound - its own sweep is a shallow ~10 degrees over ~70 ticks, well
+		// under TURN's per-tick allowance - so it is sampled and its own peaks are printed for the
+		// record, without a separate generous multiplier the way the cross needs one.
+		let peakAccelSwitch = 0, peakJerkSwitch = 0, peakTurnSwitch = 0;
 		// The in-cross turn bound is pinned empirically, not to a flat 2xTURN: segment B's tail
 		// blends velocity from the dash speed down to cruise while completing a ~90 degree
 		// reorientation, and a quintic Hermite velocity blend transiently undershoots below the
 		// cruise endpoint there - low speed inflates angular rate (omega = v_perp/v) even though the
 		// physical path itself is smooth (position/velocity/acceleration all stay continuous - see
-		// the accel/jerk checks below). Measured at the tuned BASE_DRONE_CROSS_ARC fixpoint this
-		// peaks around 15 degrees/tick; raising CROSS_ARC does not fix it (it is not monotonic in
-		// this range, and blows well past the ~2.0s cross duration plan.md derives long before it
+		// the accel/jerk checks below). Measured at the tuned BASE_DRONE_CROSS_BLEND_ARC fixpoint this
+		// peaks around 15 degrees/tick; raising CROSS_BLEND_ARC does not fix it (it is not monotonic
+		// in this range, and blows well past the ~3.0s cross duration plan.md derives long before it
 		// would help) so this is pinned like the accel/jerk peaks above rather than asserted against
 		// the outside-cross TURN figure.
 		const sample = () => {
 			const dHead = Math.atan2(Math.sin(drone.head - prevHead), Math.cos(drone.head - prevHead));
+			const turnLimit = drone.chasing ? CHASE_TURN : TURN;
 			if (drone.crossing) {
 				if (Math.abs(dHead) > peakTurnIn) { peakTurnIn = Math.abs(dHead); }
 				if (Math.abs(dHead) > 30 * Math.PI / 180) { sharpIn = true; }
-			} else if (Math.abs(dHead) > TURN + 1e-9) { sharpOut = true; }
-			if (Math.hypot(drone.vec.x, drone.vec.y) < MINSPD - 1e-9 && !drone.crossing) { slow = true; }
+			} else {
+				if (drone.switching && Math.abs(dHead) > peakTurnSwitch) { peakTurnSwitch = Math.abs(dHead); }
+				if (Math.abs(dHead) > turnLimit + 1e-9) { sharpOut = true; }
+			}
+			if (Math.hypot(drone.vec.x, drone.vec.y) < MINSPD - 1e-9 && !drone.crossing && !drone.chasing) { slow = true; }
 			const ax = drone.vec.x - prevVx, ay = drone.vec.y - prevVy;
 			const accelMag = Math.hypot(ax, ay);
 			if (!first) {
 				if (drone.crossing) {
 					if (accelMag > peakAccelIn) { peakAccelIn = accelMag; }
 					if (accelMag > OUT_ACCEL * 25) { hardAccelIn = true; }
-				} else if (accelMag > OUT_ACCEL) { hardAccelOut = true; }
+				} else {
+					if (drone.switching && accelMag > peakAccelSwitch) { peakAccelSwitch = accelMag; }
+					if (accelMag > OUT_ACCEL) { hardAccelOut = true; }
+				}
 			}
 			if (!firstA) {
 				const jx = ax - prevAx, jy = ay - prevAy;
 				const jerkMag = Math.hypot(jx, jy);
 				if (drone.crossing) {
 					if (jerkMag > peakJerkIn) { peakJerkIn = jerkMag; }
-				} else if (jerkMag > OUT_JERK) { hardJerkOut = true; }
+				} else if (drone.switching && jerkMag > peakJerkSwitch) { peakJerkSwitch = jerkMag; }
+				if (!drone.crossing && jerkMag > OUT_JERK) { hardJerkOut = true; }
 			}
 			prevHead = drone.head; prevAx = ax; prevAy = ay; prevVx = drone.vec.x; prevVy = drone.vec.y;
 			first = false; firstA = false;
@@ -1114,10 +1191,30 @@ function baseDroneWP45Tests() {
 		drone.chasing = false; drone.crossing = false; drone.DETEC.select = 0;
 		drone.x = drone.ox + drone.orbRTarget * 5; drone.y = drone.oy;   // a forced long return
 		for (let i = 0; i < 150; i++) { drone.update(); sample(); }
-		check('head never turns faster than BASE_DRONE_TURN per tick outside a cross', !sharpOut);
+		// A forced 'home' switch, isolated - the natural window above depends on a staggered spawn
+		// crossIn eventually clearing this drone off HOME, which is not reliable inside any fixed
+		// sample budget (WP4.5.2's climb is deliberately not guaranteed-fast under congestion), so
+		// this drives one directly the way the drift-home tests above do.
+		drone.chasing = false; drone.crossing = false; drone.switching = false; drone.crossIn = 1e9;
+		drone.levels = { caps: [5, 5, 5, 5, 5], count: [0, 0, 4, 1, 0], crossing: 0 };
+		drone.level = 4;
+		drone.orbRTarget = room.levelR(4);
+		drone.switchCooldown = 0;
+		placeOnRing(drone, room.levelR(4), 0);
+		drone.levelTimer = 1;
+		// placeOnRing() teleports head/vec directly - reset the sampler's own state to match, or its
+		// first sample compares against the previous segment's stale heading/velocity, which is a
+		// test-harness discontinuity, not a real one.
+		prevHead = drone.head; prevVx = drone.vec.x; prevVy = drone.vec.y; first = true; firstA = true;
+		for (let i = 0; i < 300; i++) {
+			drone.update(); sample();
+			if (!drone.switching && i > 2) { break; }
+		}
+		check('head never turns faster than BASE_DRONE_TURN (or CHASE_TURN while chasing) outside a cross',
+			!sharpOut);
 		check('...and during one, stays within the empirically-pinned bound (see comment above)', !sharpIn,
 			'peak ' + (peakTurnIn * 180 / Math.PI).toFixed(2) + ' degrees/tick');
-		check('speed never drops below half cruise outside a cross - no dead stop anywhere', !slow);
+		check('speed never drops below half cruise outside a cross or a chase - no dead stop anywhere', !slow);
 		check('acceleration stays within the turn/accel-slew bound outside a cross', !hardAccelOut);
 		check('jerk stays bounded outside a cross', !hardJerkOut);
 		check('acceleration during a cross stays within a generous multiple of the outside-cross bound ' +
@@ -1125,31 +1222,50 @@ function baseDroneWP45Tests() {
 			'peak ' + peakAccelIn.toFixed(4) + ' vs ' + (OUT_ACCEL * 25).toFixed(4));
 		console.log('  note measured in-cross peak accel/jerk per tick: ' + peakAccelIn.toFixed(4) +
 			' / ' + peakJerkIn.toFixed(4) + ' (outside-cross accel bound ' + OUT_ACCEL.toFixed(4) + ')');
+		console.log('  note measured in-switch peak turn/accel/jerk per tick: ' +
+			(peakTurnSwitch * 180 / Math.PI).toFixed(2) + ' deg / ' + peakAccelSwitch.toFixed(4) + ' / ' +
+			peakJerkSwitch.toFixed(4) + ' (both comfortably under the outside-cross bounds above)');
 	}
 
-	// ---- WP4.5.4: arc length, and the CROSS_ARC fixpoint -------------------------------------------
+	// ---- WP4.5.3: arc length, and the CROSS_BLEND_ARC fixpoint -------------------------------------
+	// BASE_DRONE_CROSS_ARC (the old two-segment curve's whole-path factor) is gone - the straight
+	// 84% needs no factor at all now (mean-speed-over-chord is exact for a zero-accel-at-both-ends
+	// quintic). BASE_DRONE_CROSS_BLEND_ARC replaces it, scoped to the two short entry/exit tweens.
 	{
 		const room = makeRoom('4team');
 		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
 		const drone = room.INSTANCE.bullets.get(post.slot);
 		drone.crossIn = 1e9;
 		for (let i = 0; i < 60; i++) { drone.update(); }   // warm vec up to steady cruise first
-		const r0 = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
 		drone.crossIn = 1;
 		drone.update();
-		let arcLength = 0, prevX = drone.x, prevY = drone.y, ticks = 0;
+		const knots = drone.crossKnots;
+		const chordEntry = Math.hypot(knots[1].x - knots[0].x, knots[1].y - knots[0].y);
+		const chordExit = Math.hypot(knots[4].x - knots[3].x, knots[4].y - knots[3].y);
+		let arcEntry = 0, arcExit = 0, prevX = drone.x, prevY = drone.y, ticks = 0;
 		while (drone.crossing && ticks < 300) {
 			drone.update();
-			arcLength += Math.hypot(drone.x - prevX, drone.y - prevY);
-			prevX = drone.x; prevY = drone.y;
 			ticks++;
+			let elapsed = 0, idx = 0;
+			while (idx < drone.crossTs.length - 1 && drone.crossT > elapsed + drone.crossTs[idx]) {
+				elapsed += drone.crossTs[idx]; idx++;
+			}
+			const d = Math.hypot(drone.x - prevX, drone.y - prevY);
+			if (idx === 0) { arcEntry += d; } else if (idx === 3) { arcExit += d; }
+			prevX = drone.x; prevY = drone.y;
 		}
-		const ratio = arcLength / (r0 + room.levelR(1));
-		console.log('  note measured CROSS_ARC (arcLength / (r0+R1)): ' + ratio.toFixed(4) +
-			' (config.BASE_DRONE_CROSS_ARC is ' + config.BASE_DRONE_CROSS_ARC + ')');
-		check('measured arc length / (r0+R1) is within 5% of config.BASE_DRONE_CROSS_ARC - the fixpoint',
-			Math.abs(ratio - config.BASE_DRONE_CROSS_ARC) / config.BASE_DRONE_CROSS_ARC < 0.05,
-			ratio.toFixed(4) + ' vs ' + config.BASE_DRONE_CROSS_ARC);
+		const entryRatio = arcEntry / chordEntry, exitRatio = arcExit / chordExit;
+		console.log('  note measured CROSS_BLEND_ARC (entry/exit tween path length / chord): ' +
+			entryRatio.toFixed(4) + ' / ' + exitRatio.toFixed(4) +
+			' (config.BASE_DRONE_CROSS_BLEND_ARC is ' + config.BASE_DRONE_CROSS_BLEND_ARC + ')');
+		check('the entry tween\'s measured overhead is within 8% of config.BASE_DRONE_CROSS_BLEND_ARC - the fixpoint',
+			Math.abs(entryRatio - config.BASE_DRONE_CROSS_BLEND_ARC) / config.BASE_DRONE_CROSS_BLEND_ARC < 0.08,
+			entryRatio.toFixed(4) + ' vs ' + config.BASE_DRONE_CROSS_BLEND_ARC);
+		check('...and so is the exit tween\'s', Math.abs(exitRatio - config.BASE_DRONE_CROSS_BLEND_ARC) /
+			config.BASE_DRONE_CROSS_BLEND_ARC < 0.08, exitRatio.toFixed(4) + ' vs ' + config.BASE_DRONE_CROSS_BLEND_ARC);
+		check('...and the two agree with each other within 5% - both tweens are the same shape',
+			Math.abs(entryRatio - exitRatio) / ((entryRatio + exitRatio) / 2) < 0.05,
+			entryRatio.toFixed(4) + ' vs ' + exitRatio.toFixed(4));
 	}
 
 	// ---- WP4.5.4: one crosser per orbit centre -----------------------------------------------------
@@ -1163,7 +1279,11 @@ function baseDroneWP45Tests() {
 		const ledger = drones[0].levels;
 		let maxConcurrent = 0;
 		const crossedOnce = drones.map(() => false);
-		for (let i = 0; i < 1200; i++) {
+		// All 12 arm on the same tick above, so the one-crosser-per-centre mutex serialises them into
+		// a queue - each full cross plus its own re-arm is ~120-150 real ticks, so 12 of them take up
+		// to ~1500 ticks just for the first round (measured: last of 12 starts at tick 1381). 1200 was
+		// short by exactly one drone's turn - not a bug, an under-sized budget.
+		for (let i = 0; i < 1700; i++) {
 			for (let k = 0; k < drones.length; k++) {
 				drones[k].update();
 				if (drones[k].crossing) { crossedOnce[k] = true; }

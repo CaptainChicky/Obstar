@@ -100,6 +100,16 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
      - Kill a base drone (poke in and out with something high-DPS): it dies, and a new one is
        orbiting that post ~1 s later. This is the one that most needs eyes on it — see item 23 on
        whether `BASE_DRONE_HP`/`BASE_DRONE_DAMAGE` are on the right scale at all.
+     - Walk into an enemy base: the drones run you down fast (`BASE_DRONE_CHASE_SPEED`, a level-0
+       tank's own top speed), and a drone knocked off its ring visibly sprints back and settles
+       rather than ringing around the target radius. A drone drifting home (including a post-swoosh
+       climb back to level 3) leans onto the next ring over a long, gentle arc, visibly different
+       from a shape-hit/proximity peel's sharp ~60° jerk.
+     - **Drive around the outside of an enemy base through the dark grey border** — you should not
+       die out there, and should be able to get the whole way round, including a 4team corner. You
+       do get chased into it (the drones follow, `Room.inArena() && inEnemyBase()`), so whether you
+       survive the lap is a race between your own top speed and `BASE_DRONE_CHASE_SPEED` — that race
+       being close is the point (plan.md WP4.5.4(c)).
 7. Chat over a real client connection — admin commands are now proven end-to-end over a real
    socket against Postgres (connect/disconnect, permission gating, `broadcast`, `tps` all
    confirmed live), but chat hasn't been exercised the same way.
@@ -430,11 +440,25 @@ re-derivation is needed here.*
     **WP4.5's energy-level pass measured/derived the rest of the geometry too**: radius is
     quantised into five shared levels one `BASE_DRONE_LEVEL_GAP` (a drone-side) apart rather than a
     continuous random band; the drone-vs-drone separation threshold (`BASE_DRONE_SEPARATION`) is
-    derived from the drawn triangle's own vertex geometry (`2×1.7×BASE_DRONE_SIZE − 5`); the
-    diameter-cross swoosh is a planned quintic Hermite whose path-length-over-straight-line ratio
-    (`BASE_DRONE_CROSS_ARC`) is a measured fixpoint, not a guess (`test/rooms.js` prints the current
-    measurement every run so a future retune can re-derive it). Two things about the drones stay
-    open:
+    derived from the drawn triangle's own vertex geometry (`2×1.7×BASE_DRONE_SIZE − 5`).
+    **WP4.5's follow-on motion-half pass** (plan.md WP4.5.1-4.5.4) replaced the rest with measured
+    numbers too: chase/return are a real dash now, derived from item 14's own 284 u/s level-0 top
+    speed (`BASE_DRONE_CHASE_SPEED`) rather than guessed, with its own tighter turn limit
+    (`BASE_DRONE_CHASE_TURN`) so the drone can actually turn inside a target at that speed — items
+    14 and this one are mutually load-bearing now, worth saying out loud since a future retune of
+    either has to check the other. A voluntary ('home') level switch flies its own shallow planned
+    quintic arc (`BASE_DRONE_SWITCH_ARC`, the user's own "10% of the circle"); a reactive one (shape
+    hit, drone-proximity) is untouched, still the sharp `BASE_DRONE_LEAN_SCALE` lean. The diameter
+    cross is a four-segment 8/84/8 construction now, not a two-segment S — a strictly straight
+    middle 84% of the diameter with an 8%-each tween at both ends
+    (`BASE_DRONE_CROSS_BLEND_FRAC`/`BASE_DRONE_CROSS_LEAD`), whose tween path-length-over-chord
+    ratio (`BASE_DRONE_CROSS_BLEND_ARC`) is a measured fixpoint, not a guess (`test/rooms.js` prints
+    the current entry/exit measurements every run so a future retune can re-derive it; the old
+    whole-path `BASE_DRONE_CROSS_ARC` is gone — the straight segments need no factor at all). "In an
+    enemy base" is now also bounded to the drawn arena (`Room.inArena()`), so the ~5-square dark OOB
+    band around a base is neutral ground a base drone may follow a target into, exactly as far as a
+    player may run (`config.OOB_MARGIN`, shared with `entities/Player.js`'s own allowance). Two
+    things about the drones stay open:
     - **The HP scale.** `BASE_DRONE_HP: 2000` is the wiki's number on *diep's* HP scale, and ours
       is not diep's — our base tank is 150 HP against diep's unmeasured `MH₀`, and a maxed level-30
       tank here is 900. If `MH₀` is 50, diep's base drone is ~7.1× a maxed tank, which on our scale

@@ -123,9 +123,13 @@ class FourTeam extends Room {
 		to cross the line before it counts - see rooms/Room.js's step().
 
 		Depth is measured inward from the map edge on each axis, so it is 0 at the corner itself
-		and grows toward the middle. Deliberately unbounded on the outward side: a bullet sitting
-		in the out-of-bounds margin past the corner has a negative depth and is still inside the
-		base, where a literal four-sided box test would let it through.
+		and grows toward the middle. Deliberately unbounded on the outward side: a point in the
+		out-of-bounds margin past the corner has a negative depth and still tests as inside the
+		base here, where a literal four-sided box test would let it through. That outward-
+		unbounded depth used to reach into and past the dark OOB band, which is what let the base
+		kill a tank driving around the outside of a corner - rooms/Room.js's step() now bounds it
+		to the drawn arena (inArena() && inEnemyBase(), plan.md WP4.5.4), so the dark band is
+		neutral ground and this method's own unbounded-outward shape stays exactly as it is here.
 	*/
 	inEnemyBase(obj, margin = 0) {
 		// Anything not on a side - a boss, team 9 - belongs to no base and is fenced out of
