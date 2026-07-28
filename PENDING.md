@@ -115,9 +115,24 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
      - Drones do not stick to the arena edge. Drive a fast tank into an enemy base's outboard
        corner and look behind you: a chasing/returning drone should follow, turn, and keep moving —
        never park itself flat against the boundary and sit there motionless (plan.md WP4.5.2's
-       `clampToMap()` fix). Then leave, die, and come back: the base must chase you again — before
-       this fix, a base that killed you once could stop chasing anything at all for the rest of the
-       round.
+       `clampToMap()` fix, rewritten again by WP4.5.12). Then leave, die, and come back: the base
+       must chase you again — before this fix, a base that killed you once could stop chasing
+       anything at all for the rest of the round.
+     - **Walk into an enemy base in a maxed tank and confirm you die in ~1 s to a full base, and in
+       about thirteen seconds to a single drone that has caught you alone — not the instant you are
+       touched** (plan.md WP4.5.11). Until that fix any contact was a one-tick kill at any HP, so
+       this is the first time `BASE_DRONE_DAMAGE` is actually observable; judge it against the
+       wiki's "low damage, delivered extremely quickly" and see item 23.
+     - **Bait a base out to the arena corner through the dark band, then die or leave: every drone
+       turns for home on the tick the chase drops** (plan.md WP4.5.16). Watch one drone — it should
+       be visibly closer to its base on the very next frame, and closer again on every frame after
+       that. Not after a beat, not after a wide arc, not after peeling along the wall first.
+       Nothing ever sits still against the arena edge; not one drone, not for one frame.
+     - **Watch a returning drone all the way in**: one clean curve that eases onto its ring
+       (plan.md WP4.5.13). It must never slow to a crawl and peel off through the base centre
+       halfway home — that was a diameter cross firing mid-return (plan.md WP4.5.14).
+     - **Stand next to the Summoner inside a base's detect range in a team mode**: nothing happens
+       until the Summoner hits a drone, and then the whole base engages it (plan.md WP4.5.17).
 7. Chat over a real client connection — admin commands are now proven end-to-end over a real
    socket against Postgres (connect/disconnect, permission gating, `broadcast`, `tps` all
    confirmed live), but chat hasn't been exercised the same way.
@@ -427,12 +442,23 @@ re-derivation is needed here.*
       genuinely sees more) where ours scales to fit. Ours is the fairer design; flagging it only
       so the difference is deliberate.
     - **Arena.** diep sizes it per room: `AL = ⌊√N_P × 50⌋` gu (244 gu at our `maxPlayer: 24`).
-      Ours is a fixed 9020 units = **322 gu, 1.32× larger** — and never changes with occupancy.
+      Ours is fixed and never changes with occupancy. **Re-stated after plan.md WP1's rescale**: the
+      world's unit dimensions moved with the grid pitch (D1: `×1.4` on every grid-denominated
+      distance), so each mode kept the *square count* it already had and the gap in squares is
+      unchanged in kind but restated — ffa/4team/2team land at **451/450/400 gu**, i.e.
+      **1.85× diep's 244 gu**, up from the 1.32× this item used to record against the old 20-unit
+      pitch (9020 units read as 322 gu only because the client was drawing a 20-unit square over a
+      world the tank measured at 28). Resizing toward diep is still open and still this item's;
+      WP1 deliberately did not touch it.
     - **Shapes.** diep's count is `12,5 × N_P`, which with the arena rule is a *constant*
-      1 shape per 200 gu² at any player count. Ours works out to 1 per 261 gu² (397 shapes over
-      322 gu²) — 0.76× the density. Combined with the narrow FOV, a diep screen holds ~13.7 shapes
-      and ours ~5.4. If the "world feels empty" complaint in massplanchunks.md is being chased,
-      **this is the number, not the drift rate.**
+      1 shape per 200 gu² at any player count. Ours was 1 per 261 gu² — 0.76× the density; combined
+      with the narrow FOV, a diep screen held ~13.7 shapes and ours ~5.4. **Held constant across
+      WP1's rescale, not improved**: the map grew 1.96× in area while FOV (Category B, tank-
+      denominated) deliberately did not move, so every `objCaps` figure went `×1.96` in the same
+      pass purely to stop the per-screen count halving. The ratio to diep is therefore where it
+      was. If the "world feels empty" complaint in massplanchunks.md is being chased, **this is
+      still the number, not the drift rate** — and the lever is the arena bullet above, since our
+      squares-per-screen is now the thing that is 1.85× off.
 
 20. **Done.** diep's loop is 40 ms (25 Hz), not 33 and not 25 — the reload table proves it: every
     technical reload time is a multiple of 0.04 s and every fractional one appears rounded *up* to
@@ -533,9 +559,10 @@ re-derivation is needed here.*
       FROM `head`/`spd` every tick, so the zero was overwritten before it was ever read — a drone at
       the map edge just got teleported back onto the boundary once a tick, forever, while `spd` sat
       at full chase speed (measured: 15 consecutive identical-position ticks parked, or a chasing
-      drone pinned dead at the exact corner indefinitely if its target was beyond the edge). Fixed by
+      drone pinned dead at the exact corner indefinitely if its target was beyond the edge). ~~Fixed by
       rewriting `head`/`spd` from the clamped velocity outside a cross/switch arc, and by dropping a
-      chase whose target sits beyond the drone's own clamp box. (B) The shared `levels.threat` was
+      chase whose target sits beyond the drone's own clamp box.~~ **Both halves of that fix are
+      superseded by plan.md WP4.5.12/4.5.15** — see the WP4.5.11–17 list below. (B) The shared `levels.threat` was
       written and never cleared, so acquisition silently became "has ever been seen" instead of "is
       currently visible", and a target that died while being chased (`respawn()` swaps in a brand-new
       `Player`, so the old one's `destroy` stays 1 forever) permanently latched the whole centre out
@@ -569,6 +596,51 @@ re-derivation is needed here.*
       rotated round-robin) is kept — it is still a reasonable design — but it is not worth what the
       old number sold it as, and a future perf pass should start in the broad phase, not in
       `entities/Bullet.js`, which a profiler cannot see at 0.8% of a tick.**
+    - **Contact damage, the chase/return recovery and the `basedrones.txt` alignment (plan.md
+      WP4.5.11–4.5.17), all reproduced headlessly before the fix.**
+      - **Contact damage is measured and correct now.** `entities/Player.js` read a base drone's
+        `pene` — its 2000-point *health pool* — as an ordinary bullet's penetration value, so the
+        `pene/5` multiplier was **400** and a single drone dealt 742.5 HP in one 25 ms tick: any
+        tank died the instant it was touched, at any HP. It reads `BASE_DRONE_PENE` now, the same
+        substitution `entities/Objects.js` already made for shapes. The resulting feel is the wiki's
+        "low damage, delivered extremely quickly": **74 HP/s** from one drone (~13.6 s to kill a
+        ~1010 HP maxed tank) and **~891 HP/s** from a full 4team base (**~1.1 s**).
+        `BASE_DRONE_DAMAGE` was deliberately *not* retuned — see the open bullet below, which is
+        now about playtesting a correct number rather than an inflated one.
+      - **`clampToMap()` slides instead of stopping.** The WP4.5.2 version rebuilt `spd` from the
+        *clamped* velocity, which works against one wall but sets `spd` to exactly 0 at a **corner**
+        while leaving `head` pointed into it — measured **14 consecutive byte-identical position
+        ticks**, the user's "stuck on the edge of the arena". It projects the heading onto the
+        pressing wall now and never writes `spd`; pressed into a corner it takes `orbitDesired()`'s
+        answer and heads home.
+      - **The "target is past my own clamp box" chase drop is deleted.** It could never fire —
+        `DETEC.type` is `[KIND.PLAYER]` and `entities/Player.js`'s `motion()` clamps a Player to
+        *exactly* that same box, so the strict `>` never held at equality. Widening it to `>=` would
+        make a player standing on the OOB wall permanently un-chaseable, the opposite of the wiki's
+        "impossible to linger around a base"; a drone works the wall beside them instead.
+      - **The return's turn limiter blends with its speed.** Both now ride the same smoothstep `k`,
+        so `v/ω` holds at 34–60 units in every state. They used not to: a returning drone ran the
+        400 u/s dash under the orbit limiter's 2.5 rad/s — a 160-unit turn radius against a
+        224-unit home ring — which is what made a long return swing wide and overshoot.
+      - **A diameter cross is gated on ring proximity.** `planCross()` builds its entry seam from
+        the centripetal acceleration of the circle the drone is *currently* flying, which is
+        meaningless for one sprinting radially home; measured, crosses launching from `r = 1300`
+        against a `168…280` level table. `crossIn` still counts down off-ring, so a cross is
+        deferred, never lost.
+      - **The return starts on the tick the pursuit ends.** The chase-drop block snaps `head` onto
+        the orbit field's own direction (`orbitDesired()`, one expression shared with the steering
+        tail and the clamp's corner fallback) instead of slewing to it. Without it a drone flew up
+        to a 180° turn's worth *further out* first — measured, `r` climbing 1384 → 1439 over the
+        first 20 ticks after a drop, and against the map clamp it did that turn pressed on the
+        boundary. This is the user's absolute requirement (no lingering anywhere after a chase
+        drops, not for one tick) and `test/rooms.js` holds a whole baited 4team base to it.
+      - **Polygon bosses are ignored until provoked** (`basedrones.txt`): the Summoner is a polygon
+        boss and the whole base used to rush it on sight. Provocation (a boss body hit or a boss
+        bullet hit on any of that centre's drones) is recorded on the shared per-centre ledger and
+        expires after `BASE_DRONE_PROVOKE_MEMORY` (10 s).
+      - **The chase is and stays pure pursuit** — aim at where the target *is*, every tick. A lead-
+        pursuit draft was withdrawn by the user's explicit instruction; do not re-propose it off
+        `basedrones.txt`.
 
     Two things about the drones stay open:
     - **The HP scale.** `BASE_DRONE_HP: 2000` is the wiki's number on *diep's* HP scale, and ours
@@ -579,7 +651,9 @@ re-derivation is needed here.*
     - **`BASE_DRONE_DAMAGE: 2.97`** is derived (`8.48485 × 7/20`, our tank body damage scaled by the
       wiki's 7-per-loop against diep's 20-per-loop tank body), not observed. It is a ~30× buff over
       the old `0.1` — at 40 Hz that is ~74 HP/s from a single drone, so a swarm of twelve kills a
-      900 HP tank in about a second. Playtest it before treating it as settled.
+      900 HP tank in about a second. Playtest it before treating it as settled. (Those are the
+      numbers a player actually experiences now: until plan.md WP4.5.11 the multiplier bug above
+      meant nobody had ever felt this constant at all, only the 400× version of it.)
     - `CONST.MAX_UP_POINTS` joins the list of constants hand-mirrored between client and server,
       next to the input-prediction note in item 24.
 

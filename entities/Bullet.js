@@ -321,6 +321,24 @@ function estimateCrossTicks(r0, R1) {
 }
 
 /*
+	The orbit field's desired direction at a drone's current position (plan.md WP4.5.16):
+	tangential, with a radial lean toward orbRTarget that saturates at BASE_DRONE_LEAN_MAX. Never
+	normalised - only its angle is ever read. Factored out of case 1.4's steering tail because the
+	chase-drop block and clampToMap()'s corner fallback need the SAME vector to snap `head` onto,
+	and three copies of this expression would eventually disagree.
+*/
+function orbitDesired(drone) {
+	const ex = drone.x - drone.ox, ey = drone.y - drone.oy;
+	const r = Math.sqrt(ex * ex + ey * ey) || 1;
+	const ux = ex / r, uy = ey / r;
+	const tx = -uy * drone.spin, ty = ux * drone.spin;
+	const err = drone.orbRTarget - r;   // + = must move outward
+	const lean = Math.max(-config.BASE_DRONE_LEAN_MAX,
+		Math.min(config.BASE_DRONE_LEAN_MAX, err / config.BASE_DRONE_LEAN_SCALE));
+	return { dx: tx + ux * lean, dy: ty + uy * lean, r, err };
+}
+
+/*
 	The radial mechanism (plan.md WP4.5.0): move a drone
 	exactly one energy level.
 
@@ -489,6 +507,13 @@ class Bullet {
 					if (this.origin.oId === other.id.oId) {
 						return;
 					}
+					// The wiki's "body damage" half of a polygon boss provoking a base (plan.md
+					// WP4.5.17) - recorded on the shared per-centre ledger, so the whole base engages
+					// it, not just the drone that got hit.
+					if (this.type === 1.4 && other.boss) {
+						this.levels.provoked = other.id.oId;
+						this.levels.provokedAt = this.room.timestamp;
+					}
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
 					// An ordinary bullet spends its own pene against itself, target-independent.
 					// A base drone cannot: its pene IS a 2000-point health pool, so pene/5 would
@@ -555,6 +580,16 @@ class Bullet {
 					// every vec.add() above - so friendly fire and friendly knockback both stay
 					// off for a drone and its own side.
 					if (option.noDam) { break; }
+					// The wiki's "drone damage" half of a polygon boss provoking a base (plan.md
+					// WP4.5.17) - one map lookup on the tick a base drone is actually shot, which is
+					// not a hot path.
+					if (this.type === 1.4) {
+						const shooter = this.room.INSTANCE.players.get(other.origin.oId);
+						if (shooter && shooter.boss) {
+							this.levels.provoked = shooter.id.oId;
+							this.levels.provokedAt = this.room.timestamp;
+						}
+					}
 					this.pene -= tick.perTick(option.pene);
 					if (this.pene <= 0) { this.destroy = tick.DES; }
 					break;
@@ -774,8 +809,18 @@ class Bullet {
 					// WP4.5.2B) is the room timestamp of this sighting - this is the ONLY writer of either
 					// field, so rooms/Room.js's tickDroneCentres() is what expires them again.
 				if (this.DETEC.enabled && this.DETEC.select) {
-					this.levels.threat = this.DETEC.select;
+					const t = this.DETEC.select;
+					// Polygon bosses are ignored until they start it (plan.md WP4.5.17,
+					// basedrones.txt: base drones "usually don't target Polygon-based Bosses ...
+					// unless those provoke them first via body damage or drone damage"). Gated HERE,
+					// at the one place a target enters the shared ledger, so the whole centre agrees
+					// rather than each drone re-deciding. `fallen` is the hook for the Fallen bosses,
+					// which the wiki says ARE engaged on sight - nothing sets it today because we
+					// only ship the Summoner.
+					if (!t.boss || t.fallen || this.levels.provoked === t.id.oId) {
+						this.levels.threat = t;
 						this.levels.threatAt = this.room.timestamp;
+					}
 				}
 				// A live, in-leash target pulls the drone into CHASE from any state but a cross
 				// (plan.md WP4.5.0 - abandoning a planned curve mid-flight is the one thing that can
@@ -801,18 +846,35 @@ class Bullet {
 				if (this.chasing) {
 					const other = this.DETEC.select;
 					const basedis = other ? Math.sqrt(Math.pow(other.x - this.ox, 2) + Math.pow(other.y - this.oy, 2)) : Infinity;
-					// A target past the drone's own clamp box (plan.md WP4.5.2A) is unreachable by
-					// construction - clampToMap() will never let the drone actually reach it, so
-					// chasing it is what produced the permanent pin at the corner (this.head locked
-					// pointing into the wall, never slewing, because the desired direction never
-					// changes). A base drone may still follow a live target exactly as far into the
-					// dark OOB band as a player may run (plan.md WP4.5.0) - this only drops a chase
-					// aimed PAST that same allowance.
-					const mx = this.map.width / 2 + config.OOB_MARGIN, my = this.map.height / 2 + config.OOB_MARGIN;
-					const outOfBox = other && (Math.abs(other.x) > mx || Math.abs(other.y) > my);
-					if (!other || other.destroy || basedis >= config.BASE_DRONE_LEASH || outOfBox) {
+					// A base drone follows a live target exactly as far into the dark OOB band as a
+					// player may run (plan.md WP4.5.0); only death or the leash ends a chase. There
+					// used to be an extra "target is past the drone's own clamp box" term here
+					// (plan.md WP4.5.2A) - it could never fire (DETEC.type is [KIND.PLAYER] and
+					// entities/Player.js's motion() clamps a Player to EXACTLY that same box, so the
+					// strict > never held at equality), and the corner pin it was added for was
+					// clampToMap()'s doing, fixed there instead (plan.md WP4.5.12/4.5.15). Widening
+					// it to >= would make a player standing on the OOB wall permanently
+					// un-chaseable, which is the opposite of the wiki's "impossible to linger
+					// around a base".
+					if (!other || other.destroy || basedis >= config.BASE_DRONE_LEASH) {
 						this.chasing = false;
 						this.DETEC.reset();
+						// The return starts on THIS tick (plan.md WP4.5.16 - the user's requirement is
+						// that a drone heads home the instant a pursuit ends and lingers nowhere, least
+						// of all at the arena edge). `head` is still pointing at wherever the chase left
+						// it, so without this the drone flies up to a 180-degree turn's worth FURTHER
+						// OUT before it is even moving homeward - measured, r climbing 1384 -> 1439 over
+						// the first 20 ticks after a drop - and against the map clamp it does that turn
+						// pressed on the boundary. A chase ending is already a hard state change, so the
+						// heading changes with it rather than being slewed to over the next half second.
+						// Snapping onto the FIELD's direction rather than "at the orbit centre" is what
+						// makes it correct in both directions: a chase that ended inside the ring turns
+						// outward, one that ended far outside turns near-radially in (the lean saturates
+						// at BASE_DRONE_LEAN_MAX, atan(8) = 83 degrees, i.e. 7 degrees off pure radial).
+						// Deliberately discontinuous in `head`; `spd` is untouched, so the drone leaves
+						// at whatever dash speed it was chasing at.
+						const f = orbitDesired(this);
+						this.head = Math.atan2(f.dy, f.dx);
 					}
 				}
 				// Level-switch triggers (plan.md WP4.5.0): (a) a latched shape-hit reaction
@@ -861,7 +923,18 @@ class Bullet {
 				// at one, so a busy 4team base doesn't serialise every drone's ~10s cadence through a
 				// single lane): a drone whose crossIn has expired only actually starts when its
 				// centre has a free lane.
-				if (!this.chasing && !this.crossing && !this.switching && --this.crossIn <= 0 && this.levels.crossing < this.levels.crossCap) {
+				// ... and only from its own ring (plan.md WP4.5.14): planCross() builds the entry seam
+				// from the centripetal acceleration of the circle the drone is currently flying, which
+				// is meaningless for one sprinting radially home off a chase - measured, crosses
+				// launching from r=1300 against a 168-280 level table, which is most of what "some
+				// drones don't return properly" was. Same tolerance levelSwitch() uses for its own
+				// planned arcs. `crossIn` still counts down while off-ring (it goes negative and keeps
+				// its place in the queue exactly the way a blocked `crossCap` lane already does), so
+				// nothing is lost, only deferred.
+				const crossR = Math.sqrt((this.x - this.ox) * (this.x - this.ox) + (this.y - this.oy) * (this.y - this.oy));
+				if (!this.chasing && !this.crossing && !this.switching && --this.crossIn <= 0 &&
+					this.levels.crossing < this.levels.crossCap &&
+					Math.abs(crossR - this.orbRTarget) <= config.BASE_DRONE_LEVEL_GAP / 2) {
 					planCross(this);
 					this.levels.crossing++;
 				}
@@ -927,29 +1000,27 @@ class Bullet {
 					return;
 				}
 				///
-				let dx, dy, targetSpeed, r = 0;
-				const turnLimit = this.chasing ? BASE_DRONE_CHASE_TURN : BASE_DRONE_TURN;
+				let dx, dy, targetSpeed, turnLimit, r = 0;
 				if (this.chasing) {
+					// Pure pursuit, deliberately: aim at where the target IS, this tick. No lead, no
+					// interception, no destination prediction (plan.md WP4.5).
 					const other = this.DETEC.select;
 					dx = other.x - this.x;
 					dy = other.y - this.y;
 					targetSpeed = BASE_DRONE_CHASE_SPEED;
+					turnLimit = BASE_DRONE_CHASE_TURN;
 				} else {
 					// The orbit field: tangential, with a radial lean toward orbRTarget. Never
 					// normalised - only its angle feeds the turn limiter below, so a saturated lean
 					// just steers straighter at the ring, it never changes target speed. Radius
 					// (orbRTarget) itself only ever moves in discrete LEVEL_GAP steps, via
 					// levelSwitch() above and in collision() - this field just steers toward
-					// whichever target the level table currently says.
-					const ex = this.x - this.ox, ey = this.y - this.oy;
-					r = Math.sqrt(ex * ex + ey * ey) || 1;
-					const ux = ex / r, uy = ey / r;
-					const tx = -uy * this.spin, ty = ux * this.spin;
-					const err = this.orbRTarget - r;   // + = must move outward
-					const lean = Math.max(-config.BASE_DRONE_LEAN_MAX,
-						Math.min(config.BASE_DRONE_LEAN_MAX, err / config.BASE_DRONE_LEAN_SCALE));
-					dx = tx + ux * lean;
-					dy = ty + uy * lean;
+					// whichever target the level table currently says. Lives in orbitDesired() at
+					// module scope (plan.md WP4.5.16) because the chase-drop block above and
+					// clampToMap()'s corner fallback snap `head` onto this same vector.
+					const f = orbitDesired(this);
+					dx = f.dx; dy = f.dy; r = f.r;
+					const err = f.err;
 					// Speed is a smoothstep blend from cruise toward the dash speed, keyed on how far
 					// off its ring the drone is (plan.md WP4.5.1) - a return is a chase back to the
 					// ring, so it runs at the same speed, easing to cruise as it arrives rather than
@@ -957,6 +1028,12 @@ class Bullet {
 					const e = Math.min(1, Math.abs(err) / config.BASE_DRONE_RETURN_ERR);
 					const k = e * e * (3 - 2 * e);
 					targetSpeed = BASE_DRONE_ORBIT_SPEED + (BASE_DRONE_CHASE_SPEED - BASE_DRONE_ORBIT_SPEED) * k;
+					// Speed and turn rate blend on the SAME k (plan.md WP4.5.13). They used not to: a
+					// returning drone ran at the 400 u/s dash under the 2.5 rad/s ORBIT limiter, i.e. a
+					// 160-unit turn radius against a 224-unit home ring, which is what made a long
+					// return swing wide and overshoot. Blended, the turn radius (v/omega) holds at
+					// 34-60 units in every state.
+					turnLimit = BASE_DRONE_TURN + (BASE_DRONE_CHASE_TURN - BASE_DRONE_TURN) * k;
 				}
 				// Descriptive only (tests/admin dump) - nothing above or below branches on this.
 				// Shares the orbit branch's own `r` rather than recomputing it (plan.md WP4.5.0);
@@ -967,7 +1044,8 @@ class Bullet {
 				// which is what makes every transition C1 with no state able to stop or snap it.
 				// CHASE gets its own, much tighter turnLimit (BASE_DRONE_CHASE_TURN) - see
 				// lib/config.js's comment for why a faster dash needs a tighter limiter, not a
-				// looser one.
+				// looser one - and a RETURN blends up toward it on the same k as its speed
+				// (plan.md WP4.5.13), so the two can never come apart.
 				const desired = Math.atan2(dy, dx);
 				let dHead = Math.atan2(Math.sin(desired - this.head), Math.cos(desired - this.head));
 				dHead = Math.max(-turnLimit, Math.min(turnLimit, dHead));
@@ -1124,26 +1202,42 @@ class Bullet {
 	// teleported the drone back onto the boundary once a tick, forever, while spd sat at full
 	// chase speed (measured: 15 consecutive identical-position ticks at a corner, and a chasing
 	// drone pinned dead at (-6412,-6412) indefinitely if the thing it's chasing is beyond the
-	// clamp). Rewriting head/spd from the CLAMPED vec below is what actually turns that into a
-	// slide along the wall instead of a press into it.
+	// clamp). Steering the HEADING along the wall below is what actually turns that into a slide
+	// along the wall instead of a press into it.
 	clampToMap(steered = false) {
 		const mx = this.map.width / 2 + config.OOB_MARGIN, my = this.map.height / 2 + config.OOB_MARGIN;
-		let clamped = false;
-		if (this.x < -mx) { this.x = -mx; this.vec.x = 0; clamped = true; }
-		if (this.y < -my) { this.y = -my; this.vec.y = 0; clamped = true; }
-		if (this.x > mx) { this.x = mx; this.vec.x = 0; clamped = true; }
-		if (this.y > my) { this.y = my; this.vec.y = 0; clamped = true; }
-		// Only the steered branch - a cross or a 'home'/'sort' switch arc gets its position from a
-		// planned table (planCross()/planSwitchArc()), so rewriting head/spd here would desync it
-		// from the curve it's still flying. Safe in practice either way: a natural orbit/cross/
-		// switch-arc geometry never comes near the map edge (pinned by test/rooms.js), so this only
-		// ever actually fires for a chasing (or long-returning) drone.
-		if (steered && clamped) {
-			this.spd = Math.hypot(this.vec.x, this.vec.y);
-			// A corner clamps both axes to zero at once - leave head alone and let the turn
-			// limiter slew it next tick, rather than adopting an undefined atan2(0,0) heading.
-			if (this.spd > 1e-6) { this.head = Math.atan2(this.vec.y, this.vec.x); }
+		// Which wall, not just "some wall" (plan.md WP4.5.12) - the steered branch below has to know
+		// which component is actually pressing outward.
+		let cx = 0, cy = 0;
+		if (this.x < -mx) { this.x = -mx; cx = -1; } else if (this.x > mx) { this.x = mx; cx = 1; }
+		if (this.y < -my) { this.y = -my; cy = -1; } else if (this.y > my) { this.y = my; cy = 1; }
+		if (!cx && !cy) { return; }
+		if (!steered) {
+			// Unchanged: an ordinary life=-1 bullet, and case 1.4's cross / switch-arc branches,
+			// take their position from elsewhere next tick, so zeroing vec is all this ever did.
+			if (cx) { this.vec.x = 0; }
+			if (cy) { this.vec.y = 0; }
+			return;
 		}
+		// Steered (case 1.4's ORBIT/CHASE/RETURN tail only): `spd` is authoritative and `vec` is
+		// rederived from head/spd at the top of the next pass, so the OLD code's spd = hypot(clamped
+		// vec) set spd to exactly 0 at a corner and the drone froze there for up to 14 ticks while
+		// `head` slewed away at the leisurely orbit turn rate (plan.md WP4.5.12). Project the HEADING
+		// onto the wall instead and leave `spd` alone: the drone slides along the boundary at full
+		// speed and the turn limiter takes it from there. Deliberately discontinuous in `head` - it
+		// IS a collision, and it is strictly better than the freeze it replaces.
+		let hx = Math.cos(this.head), hy = Math.sin(this.head);
+		if (cx && hx * cx > 0) { hx = 0; }
+		if (cy && hy * cy > 0) { hy = 0; }
+		if (!hx && !hy) {
+			// Pressed exactly into a corner - there is no along-the-wall direction left, so take the
+			// one direction that is always valid and always what we want anyway: the orbit field's
+			// own answer to "which way is home" (plan.md WP4.5.16 - one expression in the file).
+			const f = orbitDesired(this);
+			hx = f.dx; hy = f.dy;
+			if (!hx && !hy) { hx = -cx || 1; hy = -cy || 0; }
+		}
+		this.head = Math.atan2(hy, hx);
 	}
 }
 

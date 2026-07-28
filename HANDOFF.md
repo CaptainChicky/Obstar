@@ -260,6 +260,60 @@ around a strafing target instead of into it. A return is a chase back to the rin
 — no separate constant — the orbit field's own target speed blends from cruise to dash as a
 smoothstep of how far off its ring the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone
 visibly sprints back and eases onto its ring rather than snapping or ringing around the radius.
+**The turn limiter blends on that same `k`** (plan.md WP4.5.13): speed and turn rate are one
+decision, so `v/ω` holds at 34–60 units in every state. They used not to, and a returning drone ran
+the 400 u/s dash under the orbit limiter's 2.5 rad/s — a 160-unit turn radius against a 224-unit
+home ring — which is what made a long return swing wide and overshoot.
+
+**The chase itself is pure pursuit, and stays that way**: aim at where the target *is*, this tick
+(`entities/Bullet.js`'s `dx = other.x - this.x`). No lead, no interception, no destination
+prediction — that is the user's explicit instruction, not an oversight, so do not re-propose lead
+pursuit off `basedrones.txt`. A chase ends on exactly two conditions, target death and
+`BASE_DRONE_LEASH`; there is no "target is out of bounds" drop (plan.md WP4.5.15 deleted one that
+could never fire — `DETEC.type` is `[KIND.PLAYER]` and `entities/Player.js`'s `motion()` clamps a
+Player to *exactly* the drone's own clamp box, so its strict `>` never held at equality). A drone
+follows a live target as far into the dark OOB band as a player may run, and slides along the wall
+beside it.
+
+**When a pursuit ends, the return starts on that tick** (plan.md WP4.5.16). The drop block snaps
+`head` straight onto the orbit field's own desired direction (`orbitDesired()`, module scope in
+`entities/Bullet.js` — the single expression in the tree that answers "which way is home", also used
+by `clampToMap()`'s corner fallback and by the steering tail itself). This is a deliberate
+discontinuity in `head`; `spd` is untouched, so the drone leaves at whatever dash speed it was
+chasing at. Without it the drone spent up to a 180° turn's worth of ticks flying *further out*
+before it was even moving homeward — measured, `r` climbing 1384 → 1439 over the first 20 ticks —
+and against the map clamp it did that turn pressed on the boundary, which is exactly the user's
+"hangs at the arena edge". Snapping onto the *field* rather than "at the orbit centre" is what makes
+it right in both directions: a chase that ended inside the ring turns outward, one that ended far
+outside turns near-radially in. The requirement this delivers is absolute — **no drone lingers
+anywhere after a chase drops, not for one tick** — and `test/rooms.js` holds a whole baited 4team
+base to it.
+
+**A diameter cross only ever launches from the drone's own ring** (plan.md WP4.5.14). `planCross()`
+builds its entry seam from the centripetal acceleration of the circle the drone is *currently*
+flying, which is meaningless for one sprinting radially home off a chase — measured, crosses firing
+from `r = 1300` against a `168…280` level table, which is most of what "a select few drones don't
+return properly" was. `crossIn` still counts down while off-ring (it goes negative and keeps its
+place in the queue, exactly the way a blocked `crossCap` lane does), so a cross is deferred, never
+lost.
+
+**Polygon bosses are ignored until they start it** (plan.md WP4.5.17, `basedrones.txt`). Base drones
+engage the Fallen bosses on sight but not the polygon ones — Guardian, Summoner, Defender — "unless
+those provoke them first via body damage or drone damage". Our only boss is the Summoner, a polygon
+boss on `rules.bossTeam`, so without this the whole base rushed it the moment it drifted into detect
+range. The gate sits at the one place a target enters the shared per-centre ledger, so the whole
+centre agrees; provocation is recorded there too (`provoked`/`provokedAt`, set from
+`entities/Bullet.js`'s `collision()` on either a boss body hit or a boss bullet hit) and expires
+after `BASE_DRONE_PROVOKE_MEMORY`. `t.fallen` is the hook for the Fallen bosses; nothing sets it
+today because we only ship the Summoner.
+
+**Contact damage reads `BASE_DRONE_PENE`, never the drone's own `pene`** (plan.md WP4.5.11). A base
+drone's `pene` is its 2000-point health pool, so `entities/Player.js`'s ordinary-bullet
+`pene / 5` penetration multiplier evaluated to **400** and one drone killed any tank in a single
+25 ms tick. `entities/Objects.js` already made the same substitution for shapes; `entities/Player.js`
+does now too. The resulting feel is the wiki's "low damage, delivered extremely quickly": one drone
+in contact is 74 HP/s (~13.6 s to kill a maxed tank), a full 4team base of twelve is ~891 HP/s
+(~1.1 s). `BASE_DRONE_DAMAGE` itself is correct as it stands and was **not** retuned.
 
 **Radius is quantised into five shared "energy levels"** (plan.md WP4.5.0, `rooms/Room.js`'s
 `levelR()`/`levelPlan()`), not a continuous random band: a drone is always *at*
@@ -410,10 +464,25 @@ derives `vec` FROM `head`/`spd` every tick, so the zeroed component was overwrit
 ever read — the clamp only ever teleported a drone back onto the map boundary once a tick, forever,
 while `spd` stayed pinned at full chase speed (measured: 15 consecutive identical-position ticks
 parked at a corner, or a chasing drone frozen dead at the exact corner indefinitely if its target
-sat beyond the edge — the user's literal "get stuck on the edge of the arena"). Fixed by rewriting
-`head`/`spd` from the clamped velocity outside a cross/switch arc (so a drone slides along the wall
-instead of pressing into it) and by dropping a chase whose target sits beyond the drone's own clamp
-box. Separately, `levels.threat` (above) was written and never cleared, so acquisition silently
+sat beyond the edge — the user's literal "get stuck on the edge of the arena").
+
+**`clampToMap()` slides; it never stops** (plan.md WP4.5.12, superseding the first half of the fix
+described above). WP4.5.2's version rewrote `head`/`spd` *from the clamped velocity* outside a
+cross/switch arc, which slides fine against one wall but sets `spd` to exactly `hypot(0, 0) = 0` at
+a **corner**, where both components are zeroed — and it deliberately left `head` alone there rather
+than adopt an undefined `atan2(0,0)`. The drone then drove back into the same corner every tick
+while `head` slewed away at the leisurely orbit turn rate: measured, **14 consecutive byte-identical
+position ticks**. The clamp now projects the **heading** onto whichever wall is actually pressing
+outward and never writes `spd` at all; pressed exactly into a corner, where no along-the-wall
+direction survives, it takes `orbitDesired()`'s answer and heads home. `head` therefore jumps
+discontinuously (up to 90°) on a wall contact — that is correct, it *is* a collision, and it is
+strictly better than the freeze it replaces. The `vec` writes are gone from the steered path on
+purpose: case 1.4's tail copies `vec` into `pvec` before calling this and rebuilds `vec` from
+`head`/`spd` on its next pass, so nothing downstream ever read them. The second half of WP4.5.2's
+fix — dropping a chase whose target sat beyond the drone's own clamp box — was **deleted**
+(plan.md WP4.5.15): it could never fire, and the pin it was credited with was always this.
+
+Separately, `levels.threat` (above) was written and never cleared, so acquisition silently
 became "has ever been seen" rather than "is currently visible", and a target that died mid-chase
 (`respawn()` swaps in a brand-new `Player`, leaving the old one's `destroy` at 1 forever) could
 permanently latch a whole centre out of ever chasing again; fixed with the `threatAt` stamp,
@@ -430,9 +499,10 @@ of holding a stale reference to it.
 base is neutral ground — a fast tank can lap an enemy base through it without dying. Base drones get
 the same `config.OOB_MARGIN` allowance `entities/Player.js`'s own clamp gives a tank
 (`Bullet.clampToMap()`), so a chasing drone can follow a target out there exactly as far as the
-target can run — but not past it, which is what the clamp-box chase-drop above enforces; a natural
-orbit/cross/switch-arc geometry never comes near that clamp (pinned by `test/rooms.js`), so it only
-ever fires mid-chase or on a long return.
+target can run — and, since both are clamped to the *same* box, it works the wall right beside it
+and keeps dealing damage rather than being turned back (plan.md WP4.5.15: a base is "impossible to
+linger around"). A natural orbit/cross/switch-arc geometry never comes near that clamp (pinned by
+`test/rooms.js`), so it only ever fires mid-chase or on a long return.
 
 The only per-mode difference now is the orbit centre — which both team modes derive from
 `baseSize` rather than a literal inset, so a base resize can't leave the drones sitting off-centre
@@ -496,7 +566,10 @@ edits** (`TYPE`, `SCHEMA`), plus a `CODEC` entry if it needs a transform.
 `GameUpdate`'s head carries `timestamp, width, height, screen, xp, level, still, cLvl, baseSize`.
 `baseSize` is the room's own `this.baseSize` (the strip's width in 2team, the square's side in
 4team, `0` where a mode has no bases) — the client used to re-derive 2team's strip from a
-hardcoded `600` in `render.js` and could not draw 4team's at all.
+hardcoded `600` in `render.js` and could not draw 4team's at all. Both figures are exact grid-square
+counts against the shared pitch now (plan.md WP1/WP2): **2team `gu(40)`, 4team `gu(67)`**, the
+user's measurements off real diep, up from `gu(30)`/`gu(45)` — pinned as `gu()` multiples by
+`test/rooms.js`'s grid-anchor block, so a future re-pitch moves them with the grid or fails.
 
 **Input validation.** `checkLength` does `min <= value && value <= max` and is enforced on
 every schema-driven message. Unknown type byte → `ERR_PACKET_TYPE` kick. Truncated payload →

@@ -113,6 +113,13 @@ async function combinedTests() {
 	check('play.ejs loads them in dependency order',
 		at.every(function (i, n) { return n === 0 || i > at[n - 1]; }), at.join(','));
 	check('the client loads after motion.js', play.body.indexOf('/client/runtime.js') > play.body.indexOf('./motion.js'));
+	// World.js is the one grid-pitch constant, shared with the server (plan.md WP1/WP5) -
+	// public/client/game.js reads World.GU when it draws the background, so the tag has to be in the
+	// page and it has to come before the client does.
+	check('play.ejs loads the shared grid-pitch module',
+		play.body.indexOf("'./SHARE/World.js'") >= 0);
+	check('...before the client that reads World.GU',
+		play.body.indexOf("'./SHARE/World.js'") < play.body.indexOf('/client/game.js'));
 
 	const shared = await request(PORT, 'GET', '/SHARE/ws_link.js');
 	check('static client files are served', shared.status === 200 && shared.body.includes('WS_LINK'), 'status ' + shared.status);

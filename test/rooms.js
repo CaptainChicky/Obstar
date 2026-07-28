@@ -16,6 +16,7 @@
 		node test/rooms.js        (npm test runs this and smoke.js)
 */
 const path = require('path');
+const fs = require('fs');
 const ROOT = path.join(__dirname, '..');
 
 const controller = require(path.join(ROOT, 'lib', 'boot.js'))();
@@ -546,6 +547,20 @@ function baseDroneTests() {
 	check('touching a player costs it that player\'s body damage, not a fifth of its own health',
 		drone.pene > config.BASE_DRONE_HP - 20, drone.pene);
 
+	// ...and now the other direction of the same trap - plan.md WP4.5.11. The drone's 2000-point
+	// `pene` is health, not penetration; read as penetration by entities/Player.js it multiplied
+	// contact damage by 400 and killed any tank in one tick.
+	{
+		const victim = player(room, 0);
+		victim.hp = victim.maxHp = 1000; victim.shield = 0; victim.dev.ghost = 0;
+		victim.collision(drone, {});
+		const perTick = 1000 - victim.hp;
+		check('a base drone does one tick of body damage, not 400 of them',
+			perTick > 1 && perTick < 3, perTick);
+		check('...so a maxed tank survives a lone drone for over ten seconds',
+			1000 / (perTick * (1000 / config.TICK_MS)) > 10);
+	}
+
 	// Respawn: the post empties, then refills a wall-clock second later.
 	// Note the post's slot id is NOT a stable identity here: SlotMap recycles an id once its
 	// tombstone expires, so the replacement drone can legitimately land back on the same index.
@@ -691,6 +706,7 @@ function baseDroneAiTests() {
 		return {
 			caps: caps, count: count.slice(), crossing: 0, crossCap: 1,
 			target: caps.slice(), targets: {}, threat: null,
+			provoked: 0, provokedAt: 0,
 			scoutIdx: 0, scoutTimer: 1e9, sortTimer: 1e9
 		};
 	}
@@ -899,11 +915,22 @@ function baseDroneAiTests() {
 			const drone = room.INSTANCE.bullets.get(room.dronePosts[0].slot);
 			drone.x = 0; drone.y = 0;
 			const foe = plantPlayer(room, drone.team ? 0 : 1, 0, 0);
+			// One step first, to burn off the fresh-Player auto-level-at-xp-0 hp bump the same-team
+			// case above documents: a drone's contact damage is ~1.9 hp a tick now that it is read
+			// against BASE_DRONE_PENE rather than its 2000-point health pool (plan.md WP4.5.11), and
+			// that bump is bigger than it. Both are put back on the centre line for the measured step.
+			room.step();
+			drone.x = 0; drone.y = 0; foe.x = 0; foe.y = 0;
 			const foeBefore = foe.hp, droneBefore = drone.pene;
 			room.step();
 			check('an enemy tank and a base drone trade damage, in every state',
 				foe.hp < foeBefore && drone.pene < droneBefore,
 				foe.hp + '/' + foeBefore + ', ' + drone.pene + '/' + droneBefore);
+			// ...and the drone's share of it is one tick of body damage, not 400 of them - the
+			// entities/Player.js half of the pene-is-health trap (plan.md WP4.5.11), through the real
+			// pair loop rather than a direct collision() call.
+			check('...and the tank\'s share is survivable - a base drone is not an instant kill',
+				(foeBefore - foe.hp) < 5, (foeBefore - foe.hp).toFixed(3) + ' hp in one tick');
 		}
 		{
 			// A base drone is one of its own side's bullets - the same-team skip must cover a
@@ -930,6 +957,12 @@ function baseDroneAiTests() {
 		const narrow = room.dronePosts.reduce((a, b) => (a.level < b.level ? a : b));
 		const wide = room.dronePosts.reduce((a, b) => (a.level > b.level ? a : b));
 		const nominal = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
+		// The cruise rate itself, in real-world terms (plan.md WP4.5.0/WP5): 85.25 u/s, 1.5x the old
+		// carrot-chase's actual 56.8 - not WP4's 114, which overshot at 2x. Asserted against the
+		// number rather than only against "measured == config", so a retune has to be deliberate.
+		check('cruise is 85.25 u/s in real-world terms',
+			Math.abs(nominal * (1000 / config.TICK_MS) - 85.25) < 0.05,
+			(nominal * (1000 / config.TICK_MS)).toFixed(2) + ' u/s');
 		for (const post of [narrow, wide]) {
 			const drone = room.INSTANCE.bullets.get(post.slot);
 			drone.crossIn = 1e9;   // a natural cross starting mid-measurement would skew the average
@@ -1821,16 +1854,31 @@ function baseDroneAiTests() {
 		// cycle. Not a tick.perTick() conversion - this bound is calibrated against what THIS
 		// measurement actually produces, the same way TURN_BOUND above is.
 		const IN_ACCEL = 2.5;
+		let prevChasing = drone.chasing;
 		const sample = () => {
 			const dHead = Math.atan2(Math.sin(drone.head - prevHead), Math.cos(drone.head - prevHead));
-			const turnLimit = drone.chasing ? CHASE_TURN : TURN;
+			// A RETURN blends its turn limit up toward CHASE_TURN on the same smoothstep k as its
+			// speed (plan.md WP4.5.13), so the bound outside a chase is that blend, not a flat
+			// BASE_DRONE_TURN. Measured from the POST-update position with a one-tick slack: |err|
+			// moves at most CHASE_SPEED per tick, i.e. at most ~0.007 rad/tick of blend, comfortably
+			// inside the 0.01 allowance (BASE_DRONE_TURN itself is 0.0625 rad/tick).
+			const e = Math.min(1, Math.abs(drone.orbRTarget -
+				Math.hypot(drone.x - drone.ox, drone.y - drone.oy)) / config.BASE_DRONE_RETURN_ERR);
+			const k = e * e * (3 - 2 * e);
+			const turnLimit = drone.chasing ? CHASE_TURN : TURN + (CHASE_TURN - TURN) * k + 0.01;
 			if (drone.crossing) {
 				if (Math.abs(dHead) > peakTurnIn) { peakTurnIn = Math.abs(dHead); }
 				if (Math.abs(dHead) > IN_TURN) { sharpIn = true; }
+			} else if (prevChasing && !drone.chasing) {
+				// The one deliberate discontinuity in `head` outside a curve (plan.md WP4.5.16): on
+				// the tick a pursuit ends the drone snaps onto the orbit field's direction rather
+				// than slewing to it over the next half second, which is what stops it flying
+				// further out - and, against the map clamp, hanging at the arena edge - first.
 			} else {
 				if (drone.switching && Math.abs(dHead) > peakTurnSwitch) { peakTurnSwitch = Math.abs(dHead); }
 				if (Math.abs(dHead) > turnLimit + 1e-9) { sharpOut = true; }
 			}
+			prevChasing = drone.chasing;
 			if (Math.hypot(drone.vec.x, drone.vec.y) < MINSPD - 1e-9 && !drone.crossing && !drone.chasing) { slow = true; }
 			const ax = drone.vec.x - prevVx, ay = drone.vec.y - prevVy;
 			const accelMag = Math.hypot(ax, ay);
@@ -1958,36 +2006,51 @@ function baseDroneAiTests() {
 			check('...and has moved at least 200 units by tick 40', moved >= 200, moved.toFixed(1));
 		}
 
-		// (2) Chasing a target beyond the drone's own clamp box: dropped, not held forever - this is
-		// the user's literal "get stuck on the edge of the arena".
+		// (2) Chasing a target parked ON the clamp box - the furthest out a player can actually get.
+		// The chase is now DELIBERATELY held (plan.md WP4.5.15): a base drone follows a live target
+		// exactly as far into the dark OOB band as a player may run, slides along the wall beside it
+		// and keeps dealing damage, because the wiki's base is "impossible to linger around". The
+		// "target past my own clamp box" drop that used to be asserted here was a guard that could
+		// never fire in the first place - DETEC.type is [KIND.PLAYER] and entities/Player.js's
+		// motion() clamps a Player to EXACTLY this same box, so the strict > never held at equality -
+		// and the corner pin it was blamed for was clampToMap()'s doing (plan.md WP4.5.12).
 		{
 			const drone = room.INSTANCE.bullets.get(post.slot);
+			const sx = Math.sign(drone.ox) || 1, sy = Math.sign(drone.oy) || 1;
+			const cx = sx * mx, cy = sy * my;   // the OOB corner nearest THIS drone's own base
 			drone.crossIn = 1e9; drone.crossing = false; drone.switching = false;
-			drone.x = -mx; drone.y = -my;
-			drone.head = Math.atan2(-1, -1);
+			// Started just inside the corner so the first tick is a real approach into the wall, not
+			// a clamp against a position the drone was already sitting on.
+			drone.x = cx - sx * 40; drone.y = cy - sy * 40;
+			drone.head = Math.atan2(sy, sx);   // pointing straight out at the corner
 			drone.spd = tick.perTick(config.BASE_DRONE_CHASE_SPEED);
 			drone.vec.x = Math.cos(drone.head) * drone.spd;
 			drone.vec.y = Math.sin(drone.head) * drone.spd;
 			drone.chasing = true;
 			drone.DETEC.enabled = 0;
-			drone.DETEC.select = { x: -mx - 400, y: -my - 400, destroy: 0 };
+			drone.DETEC.select = { x: cx, y: cy, destroy: 0 };
 			drone.levels.threat = drone.DETEC.select;
 			drone.levels.threatAt = room.timestamp;
-			const start = { x: drone.x, y: drone.y };
-			let droppedAt = -1;
-			for (let i = 0; i < 10 && droppedAt < 0; i++) {
+			let frozen = 0, prev = { x: drone.x, y: drone.y };
+			for (let i = 0; i < 40; i++) {
 				drone.crossIn = 1e9;
 				drone.update();
-				if (!drone.chasing) { droppedAt = i; }
+				if (drone.x === prev.x && drone.y === prev.y) { frozen++; }
+				prev = { x: drone.x, y: drone.y };
 			}
-			check('a chase toward a target outside the clamp box is dropped within 2 ticks, not held forever',
-				droppedAt >= 0 && droppedAt <= 1, droppedAt);
-			// Once dropped, this is the same corner-escape geometry test (1) already measured (bounded
-			// by BASE_DRONE_TURN, not by this fix) - give it the same budget rather than re-asserting a
-			// tighter bound here.
-			for (let i = 0; i < 30; i++) { drone.crossIn = 1e9; drone.update(); }
-			check('...and the drone actually leaves the corner afterwards, rather than staying pinned',
-				Math.hypot(drone.x - start.x, drone.y - start.y) > 0);
+			check('a target standing on the OOB wall is still chased - a base is not lingerable',
+				drone.chasing);
+			check('...and the drone works the wall beside it instead of freezing against it',
+				frozen === 0, frozen + ' frozen ticks');
+			// And the moment that target dies the drone is already on its way home, on that same
+			// tick - not after a half-second of slewing (plan.md WP4.5.16).
+			drone.DETEC.select.destroy = 1;
+			const before = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
+			drone.crossIn = 1e9;
+			drone.update();
+			const after = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
+			check('...and the tick its target dies it is already closer to its own orbit centre',
+				!drone.chasing && after < before, after.toFixed(1) + ' vs ' + before.toFixed(1));
 		}
 
 		// (3) The clamp never fires mid-curve - the existing comment's own claim, pinned for real
@@ -2391,6 +2454,190 @@ function baseDroneAiTests() {
 		check('2team\'s orbit centres sit at the strip\'s mid-width, derived from baseSize',
 			drones.every((d) => Math.abs(Math.abs(d.ox) - (two.map.width / 2 - two.baseSize / 2)) < 1e-9));
 	}
+
+	// ---- WP4.5.12: the map clamp slides, it does not stop -----------------------------------------
+	// The old clamp rebuilt `spd` from the CLAMPED vec, so a corner (both components zeroed) set it
+	// to exactly 0 while `head` was deliberately left alone - the drone sat byte-identical for up to
+	// 14 ticks, driving back into the same corner every tick, while head slewed away at the leisurely
+	// orbit turn rate. It projects the HEADING onto the wall now and never touches `spd` at all.
+	// Exercised directly against clampToMap(), the one function that changed; the behaviour it buys a
+	// drone in flight is measured in the wall-chase and bait-and-return blocks below.
+	{
+		const room = makeRoom('4team');
+		const d = room.INSTANCE.bullets.get(room.dronePosts[0].slot);
+		const mx = room.map.width / 2 + config.OOB_MARGIN, my = room.map.height / 2 + config.OOB_MARGIN;
+		const sx = Math.sign(d.ox) || 1, sy = Math.sign(d.oy) || 1;
+		const V = tick.perTick(config.BASE_DRONE_CHASE_SPEED);
+
+		// Pressed into the corner nearest its own base, heading straight out of it: both components
+		// press outward, which is exactly the case the old clamp turned into spd = hypot(0, 0) = 0.
+		d.x = sx * (mx + 5); d.y = sy * (my + 5);
+		d.head = Math.atan2(sy, sx); d.spd = V;
+		d.clampToMap(true);
+		check('the map clamp never touches a steered drone\'s speed', d.spd === V, d.spd + ' vs ' + V);
+		check('...and a corner press turns it back toward its orbit instead of into the wall',
+			Math.cos(d.head) * sx < 0 && Math.sin(d.head) * sy < 0,
+			(d.head * 180 / Math.PI).toFixed(1) + ' deg');
+		check('...from exactly on the boundary, not somewhere past it',
+			d.x === sx * mx && d.y === sy * my, d.x + ',' + d.y);
+
+		// One wall only: the heading is projected ALONG it, at full speed - a slide, not a stop.
+		d.x = sx * (mx + 5); d.y = d.oy;
+		d.head = Math.atan2(sy * 0.5, sx); d.spd = V;
+		d.clampToMap(true);
+		check('...and a single-wall press slides along it, keeping every unit of its speed',
+			d.spd === V && Math.abs(Math.cos(d.head)) < 1e-9 && Math.sign(Math.sin(d.head)) === sy,
+			(d.head * 180 / Math.PI).toFixed(1) + ' deg at ' + d.spd.toFixed(2));
+	}
+
+	// ---- WP4.5.12/13/14/16: a pursuit ends, the drone goes home NOW and keeps going home ---------
+	// The user's requirement stated directly, and the assertion this whole group is judged on: the
+	// moment a chase drops the drone turns for its orbit on that very tick and flies straight back,
+	// lingering nowhere and specifically not at the arena edge. Bait a whole 4team base out to the
+	// OOB corner, take the bait away, and hold every drone to (a) strictly closing on its ring from
+	// the FIRST tick after the drop and every tick after, (b) never holding a byte-identical
+	// position for two consecutive ticks, (c) on its ring inside 250 ticks. Measured before the
+	// fixes: (a) failed on tick 0 and kept failing for ~25 ticks, (b) 14 consecutive frozen ticks,
+	// (c) worst case 268. None of the three passes with only part of the group applied.
+	{
+		const room = makeRoom('4team');
+		const bait = player(room, 0);
+		const centre = room.droneCentres.find((c) => c.posts[0].team !== bait.team);
+		const post = centre.posts[0];
+		bait.shield = 0; bait.dev.ghost = 0;
+		// The bait exists to be chased, not to fight: twelve drones in contact for 400 ticks would
+		// grind themselves to death on its body damage and confound "did it come home" with "is it
+		// still alive". Player.damage is set once in the constructor, so this sticks.
+		bait.damage = 0;
+		const bx = Math.sign(post.x) * (room.map.width / 2 + config.OOB_MARGIN);
+		const by = Math.sign(post.y) * (room.map.height / 2 + config.OOB_MARGIN);
+		const hold = () => { bait.x = bx; bait.y = by; bait.hp = bait.maxHp = 1e9; };
+		for (let t = 0; t < 400; t++) { hold(); room.step(); }
+		hold();
+		const drones = centre.posts.map((p) => room.INSTANCE.bullets.get(p.slot));
+		check('a bait at the arena corner pulls the whole base out',
+			drones.every((d) => d && d.chasing),
+			drones.filter((d) => d && d.chasing).length + ' of ' + drones.length + ' chasing');
+
+		// Bait gone. The map centre is 6500+ units from a 4team base centre, well past
+		// BASE_DRONE_LEASH, so every chase drops on the very next tick.
+		bait.x = 0; bait.y = 0;
+		const errOf = (d) => Math.abs(Math.hypot(d.x - d.ox, d.y - d.oy) - d.orbRTarget);
+		const state = drones.map((d) => ({
+			d, settled: -1, run: 0, worstRun: 0, grewOn: -1,
+			err: errOf(d), level: d.level, px: d.x, py: d.y
+		}));
+		for (let t = 0; t < 250; t++) {
+			room.step();
+			for (const s of state) {
+				if (s.settled >= 0) { continue; }
+				const d = s.d, err = errOf(d);
+				// A reactive level switch (a shape clipped, or another returning drone too close, on
+				// the way home) moves the target ring out from under us - a legitimate one-tick jump
+				// in the error, not a failure to return.
+				if (err > s.err + 1e-9 && d.level === s.level && s.grewOn < 0) { s.grewOn = t; }
+				if (d.x === s.px && d.y === s.py) { s.run++; s.worstRun = Math.max(s.worstRun, s.run); }
+				else { s.run = 0; }
+				s.err = err; s.level = d.level; s.px = d.x; s.py = d.y;
+				if (err <= config.BASE_DRONE_LEVEL_GAP) { s.settled = t; }
+			}
+		}
+		const worstSettle = Math.max(...state.map((s) => (s.settled < 0 ? 1e9 : s.settled)));
+		const worstRun = Math.max(...state.map((s) => s.worstRun));
+		const grew = state.filter((s) => s.grewOn >= 0);
+		check('every drone closes on its ring from the FIRST tick after its chase drops',
+			grew.length === 0,
+			grew.length + ' of ' + state.length + ' moved away, earliest on tick ' +
+			Math.min(...grew.map((s) => s.grewOn)));
+		check('...and none of them ever freezes in place on the way home', worstRun <= 1,
+			worstRun + ' consecutive identical-position ticks');
+		check('...and every one is back on its ring within 250 ticks', worstSettle < 250, worstSettle);
+	}
+
+	// ---- WP4.5.14: a diameter cross only ever launches from the drone's own ring -----------------
+	// planCross() takes the entry seam from the centripetal acceleration of the circle the drone is
+	// ACTUALLY flying, which is meaningless for one sprinting radially home off a chase - measured,
+	// crosses launching from r=1300 against a 168-280 level table.
+	{
+		const room = makeRoom('4team');
+		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
+		const d = room.INSTANCE.bullets.get(post.slot);
+		d.chasing = false; d.crossing = false; d.switching = false;
+		d.x = d.ox + d.orbRTarget * 6; d.y = d.oy;   // far off-ring, as a long return is
+		d.crossIn = 1;                               // ...and due a cross this very tick
+		d.update();
+		check('a cross does not fire from far off the ring - it waits until the drone is home',
+			!d.crossing, 'r = ' + Math.hypot(d.x - d.ox, d.y - d.oy).toFixed(0) +
+			', ring = ' + d.orbRTarget);
+		// The deferral is not a cancellation: crossIn keeps counting down (negative) and the cross
+		// fires the moment the drone is back on its ring, exactly the way a blocked crossCap lane
+		// already keeps its place in the queue.
+		let firedAt = -1;
+		for (let i = 0; i < 400 && firedAt < 0; i++) {
+			d.update();
+			if (d.crossing) { firedAt = i; }
+		}
+		check('...but it is only deferred - the cross fires once the drone is back on its ring',
+			firedAt >= 0, firedAt);
+	}
+
+	// ---- WP4.5.17: polygon bosses are ignored until they start it --------------------------------
+	// basedrones.txt: base drones defend against the Fallen bosses on sight but "usually don't
+	// target Polygon-based Bosses, such as the Guardian, the Summoner, and the Defender, unless
+	// those provoke them first via body damage or drone damage". Our only boss is the Summoner.
+	{
+		const room = makeRoom('4team');
+		if (!room.bosses.length) { room.createBoss(); }
+		const boss = room.bosses[0];
+		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
+		const post = centre.posts[0];
+		// Parked inside BASE_DRONE_DETECT but outside the base square itself, the same offset the
+		// scout test uses - inside the square the base fence would kill it outright each tick, which
+		// is a separate pre-existing rule and would confound "was it ignored" with "did it survive".
+		// Its gun is stubbed out so nothing it fires can provoke the base by accident: the point of
+		// the test is that mere PRESENCE is not provocation. Its motion() is left alone - the
+		// Summoner's own AI is what populates `detected`, which its update() reads - and its
+		// position is re-pinned every tick instead.
+		boss.shoot = function () { };
+		const bossHold = () => { boss.x = post.x + room.baseSize * 0.75; boss.y = post.y; };
+		const budget = centre.posts.length * config.BASE_DRONE_SCAN + 40;
+		let chasedUnprovoked = false;
+		for (let t = 0; t < budget; t++) {
+			bossHold();
+			room.step();
+			if (centre.posts.some((p) => {
+				const d = room.INSTANCE.bullets.get(p.slot);
+				return d && d.chasing;
+			})) { chasedUnprovoked = true; }
+		}
+		check('a polygon boss sitting in detect range is not a threat - the base ignores it',
+			!chasedUnprovoked && centre.levels.threat === null && !centre.levels.provoked,
+			'threat ' + (centre.levels.threat ? 'set' : 'null') + ', chased ' + chasedUnprovoked);
+
+		// Body damage is provocation (the wiki's own wording), recorded on the shared per-centre
+		// ledger so the WHOLE base engages, not just the drone that got hit.
+		const hit = room.INSTANCE.bullets.get(post.slot);
+		hit.collision(boss, {});
+		check('...until it hits a drone, which provokes the whole centre, not just that drone',
+			centre.levels.provoked === boss.id.oId, centre.levels.provoked + ' vs ' + boss.id.oId);
+		let chasedAt = -1;
+		for (let t = 0; t < budget && chasedAt < 0; t++) {
+			bossHold();
+			room.step();
+			if (centre.posts.some((p) => {
+				const d = room.INSTANCE.bullets.get(p.slot);
+				return d && d.chasing;
+			})) { chasedAt = t; }
+		}
+		check('...and then the base does engage it', chasedAt >= 0, chasedAt);
+
+		// The anger is a memory, not a permanent grudge - a boss that wanders off and stops hitting
+		// anything goes back to being ignored.
+		centre.levels.provokedAt = room.timestamp - tick.ticks(config.BASE_DRONE_PROVOKE_MEMORY) - 1;
+		room.tickDroneCentres();
+		check('...and forgets again once BASE_DRONE_PROVOKE_MEMORY has passed with no new damage',
+			centre.levels.provoked === 0, centre.levels.provoked);
+	}
 }
 
 /*
@@ -2616,6 +2863,66 @@ function fovTests(rooms) {
 	Out-of-bounds (massplanchunks WP5): the real wall sits config.OOB_MARGIN past the drawn map
 	edge, a hard stop with no spring - measured against real diep.io, not a placeholder.
 */
+/*
+	The unit anchor (plan.md WP1/WP5). 1 grid square = 1 diep grid unit (gu) = 28 world units, and
+	the whole point of public/SHARE/World.js is that the server and the client read that ONE number
+	- a client drawing a 20-unit grid over a 28-unit world is exactly the mismatch PENDING #13 was.
+	Every Category-A distance below is asserted as an exact gu() multiple rather than as the literal
+	it happens to evaluate to today, so a future re-pitch moves them all together or fails here.
+*/
+function gridAnchorTests() {
+	console.log('\nthe grid anchor (plan.md WP1):');
+	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+
+	check('one grid square is 28 world units', World.GU === 28, World.GU);
+	check('gu(n) is n of them', World.gu(1) === World.GU && World.gu(5) === 5 * World.GU,
+		World.gu(1) + '/' + World.gu(5));
+	// The client has no bundler and no require(): World.js is a plain <script> that assigns onto
+	// the same `exports`-or-global shim every other public/SHARE module uses, so "server and client
+	// read the same GU" is provable by reading the file the browser is actually served.
+	const src = fs.readFileSync(path.join(ROOT, 'public', 'SHARE', 'World.js'), 'utf8');
+	const literals = (src.match(/28/g) || []).length;
+	check('the served module is the same source the server require()s - one pitch, one file',
+		literals > 0 && src.indexOf('exports.GU') >= 0, literals + ' occurrences of the pitch');
+	// A level-0 tank is 2.0 gu across, which is the anchor 28 was derived from (diep's own
+	// Z = 2 x 1.01^(lvl-1) gu). Drawn diameter is 2*size, not 2*size + LINEWIDTH - the linewidth
+	// half is a client-side stroke, see public/client/drawings.js.
+	check('a level-0 tank is 2 grid squares across', Math.abs(2 * 28 - World.gu(2)) < 1e-9);
+
+	// Category-A map/base sizes, exact (plan.md WP1.3/WP2): every arena keeps the square count it
+	// had before the rescale, so these are square counts, not unit counts.
+	// The WP1.3 table, in squares: every arena kept the square count it had at the old 20-unit pitch
+	// and grew x1.4 in world units with it, which is what D1 decided. Sandbox and boss ride the same
+	// gu() helper; only the four modes with their own tuned figure are pinned here.
+	const squares = { ffa: 451, '4team': 450, '2team': 400, boss: 350 };
+	for (const gm in squares) {
+		const r = makeRoom(gm);
+		check(gm + '\'s map is gu(' + squares[gm] + ') square',
+			r.map.width === World.gu(squares[gm]) && r.map.height === World.gu(squares[gm]),
+			r.map.width + 'x' + r.map.height + ' vs ' + World.gu(squares[gm]));
+	}
+	const two = makeRoom('2team'), four = makeRoom('4team'), ffa = makeRoom('ffa');
+	check('2team\'s base strip is exactly gu(40) wide - the measured diep figure',
+		two.baseSize === World.gu(40), two.baseSize + ' vs ' + World.gu(40));
+	check('4team\'s base square is exactly gu(67) on a side - the measured diep figure',
+		four.baseSize === World.gu(67), four.baseSize + ' vs ' + World.gu(67));
+	check('ffa has no base to size', !ffa.baseSize || ffa.dronePosts.length === 0,
+		ffa.dronePosts.length + ' drone posts');
+
+	// The two follow-on constants PENDING #13 named, both re-derived against the 28-unit pitch
+	// rather than left at their 20-unit-era literals.
+	check('BASE_BULLET_MARGIN is gu(1.5)', config.BASE_BULLET_MARGIN === World.gu(1.5),
+		config.BASE_BULLET_MARGIN + ' vs ' + World.gu(1.5));
+	check('BASE_DRONE_LEVEL_GAP is gu(1) - one grid square, one drone-side',
+		config.BASE_DRONE_LEVEL_GAP === World.gu(1), config.BASE_DRONE_LEVEL_GAP);
+	check('BASE_DRONE_ORBIT_R is gu(8)', config.BASE_DRONE_ORBIT_R === World.gu(8),
+		config.BASE_DRONE_ORBIT_R);
+	check('BASE_DRONE_DETECT/LEASH are gu(60)/gu(90)',
+		config.BASE_DRONE_DETECT === World.gu(60) && config.BASE_DRONE_LEASH === World.gu(90),
+		config.BASE_DRONE_DETECT + '/' + config.BASE_DRONE_LEASH);
+}
+
 function oobTests(rooms) {
 	console.log('\nout-of-bounds (massplanchunks WP5):');
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
@@ -2748,6 +3055,7 @@ rooms.push(sandboxTests()); console.log('');
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);
+gridAnchorTests();
 baseDroneTests();
 baseDroneAiTests();
 tickScaleTests();

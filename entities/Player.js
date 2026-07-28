@@ -413,7 +413,12 @@ class Player {
 				// the two mechanisms' correct one-time factors, see Physics.js).
 				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(other.weight / 3 * 1.6), tick.perTick(other.weight / 3 * 1.6))));
 				if (this.shield) { return; }
-				this.hp -= tick.perTick(other.damage * Math.max(1, other.pene / 5));
+				// A base drone's `pene` is a health pool, not a penetration value (rooms/Room.js's
+				// spawnBaseDrone), so reading it as one dealt 400x damage and killed any tank in a
+				// single tick - plan.md WP4.5.11. Same substitution entities/Objects.js:164 already
+				// makes.
+				const pene = (other.type === 1.4) ? config.BASE_DRONE_PENE : other.pene;
+				this.hp -= tick.perTick(other.damage * Math.max(1, pene / 5));
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
 				break;

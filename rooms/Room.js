@@ -72,6 +72,9 @@ const BASE_DRONE_RESPAWN = tick.ticks(config.BASE_DRONE_RESPAWN);
 const BASE_DRONE_SORT_PERIOD = tick.ticks(config.BASE_DRONE_SORT_PERIOD);
 const BASE_DRONE_SCAN = config.BASE_DRONE_SCAN;
 const BASE_DRONE_CROSS_TICKS = tick.ticks(config.BASE_DRONE_CROSS);
+// How long an orbit centre stays angry at a polygon boss that hurt one of its drones (plan.md
+// WP4.5.17), in reference ticks like its neighbours above.
+const BASE_DRONE_PROVOKE_MEMORY = tick.ticks(config.BASE_DRONE_PROVOKE_MEMORY);
 
 // A base drone is one of its own side's bullets, for the team-transparency skip below (plan.md
 // WP4.5.0) - type 1.4 with life -1 is otherwise indistinguishable from any other homing bullet.
@@ -288,6 +291,10 @@ class Room {
 			caps, initial, target, crossCap,
 			count: [0, 0, 0, 0, 0], crossing: 0,
 			targets: {}, threat: null, threatAt: 0,
+			// Polygon-boss provocation (plan.md WP4.5.17): the oId of the boss that has most
+			// recently hurt one of this centre's drones, and when. Per CENTRE, not per drone, for
+			// the same reason `threat` is - the whole base agrees on who it is angry at.
+			provoked: 0, provokedAt: 0,
 			scoutIdx: 0, scoutTimer: 0, sortTimer: 0
 		};
 	}
@@ -314,6 +321,11 @@ class Room {
 			if (levels.threat && (levels.threat.destroy ||
 				this.timestamp - levels.threatAt > BASE_DRONE_SCAN * centre.posts.length * 2)) {
 				levels.threat = null;
+			}
+			// A polygon boss that wandered off and stopped hitting anything goes back to being
+			// ignored (plan.md WP4.5.17) - the anger is a memory, not a permanent grudge.
+			if (levels.provoked && this.timestamp - levels.provokedAt > BASE_DRONE_PROVOKE_MEMORY) {
+				levels.provoked = 0;
 			}
 			if (--levels.sortTimer <= 0) {
 				levels.sortTimer = BASE_DRONE_SORT_PERIOD;
