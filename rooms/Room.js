@@ -86,6 +86,11 @@ const isBaseDrone = (e) => e.kind === KIND.BULLET && e.type === 1.4;
 // the same single-threaded event loop tick, never concurrently, so there is nothing to race.
 const COLLIDE_SCRATCH = [];
 
+// rejectSample()'s hard cap (plan.md WP-SPAWN, PENDING #25). ffa's acceptance rate is ~0.9, so 128
+// consecutive rejections is ~10^-133 - the cap exists to bound the unsatisfiable case, not the
+// unlucky one.
+const SPAWN_TRIES = 128;
+
 /*
 	Every knob a gamemode can turn without writing code. A subclass spreads its own values
 	over these in its constructor, so a mode only states what it changes.
@@ -1135,24 +1140,53 @@ class Room {
 		}
 		return Math.min(xp, parseInt(Math.pow(xp / (mXp / Math.pow(mXp * .6, 1 / pow)), pow)));
 	}
+	/*
+		Rejection sampling with a hard iteration cap, shared with entities/Objects.js's polygon
+		placement (this.room.rejectSample) - both used to spin on `while (1)` (plan.md WP-SPAWN,
+		PENDING #25).
+
+		The carve-out radii callers pass in are absolute, not a fraction of the map: a nest is a
+		fixed-size cluster (see createObj()'s ppp radii), so scaling them with mapSize would carve
+		a huge hole out of a big map. That is what makes the loop unsatisfiable on a small enough
+		one - below roughly 2744 units wide, no point on the map is 1540 from the origin at all -
+		and this ran on the simulation thread, so an unsatisfiable loop took the whole room down.
+
+		`circles` is [[x, y, r], ...]. Returns the first point outside all of them, or - if the
+		cap runs out - the best candidate seen, scored by normalised distance to its own tightest
+		circle. Normalised, so "just outside a 1120 nest" doesn't beat "just outside a 1540 one".
+	*/
+	rejectSample(inset, circles, tries = SPAWN_TRIES) {
+		// A map narrower than 2*inset would invert the range below and place points off the map.
+		const ix = Math.min(inset, this.map.width / 8);
+		const iy = Math.min(inset, this.map.height / 8);
+		let best = null, bestScore = -Infinity;
+		for (let n = 0; n < tries; n++) {
+			const x = ix + Math.random() * (this.map.width - ix * 2) - this.map.width / 2;
+			const y = iy + Math.random() * (this.map.height - iy * 2) - this.map.height / 2;
+			let score = Infinity;
+			for (let c = 0; c < circles.length; c++) {
+				const dx = x - circles[c][0], dy = y - circles[c][1];
+				const s = Math.hypot(dx, dy) / circles[c][2];
+				if (s < score) { score = s; }
+			}
+			if (score > 1) { return { x: x, y: y }; }
+			if (score > bestScore) { bestScore = score; best = { x: x, y: y }; }
+		}
+		return best;
+	}
+	/* The three polygon nests, as [x, y, radius] keep-out circles. */
+	spawnKeepOut() {
+		// Radii are x1.4 under the grid rescale (was 1100 / 800 against the old 20-unit pitch):
+		// origin nest 1540, quarter-point nests 1120 each.
+		return [
+			[0, 0, 1540],
+			[this.map.width / 4, this.map.height / 4, 1120],
+			[-this.map.width / 4, -this.map.height / 4, 1120]
+		];
+	}
 	/* Free-for-all drops you anywhere clear of the three polygon nests. */
 	spawnPoint(tank) {
-		// Carve-out radii below are x1.4 under the grid rescale (plan.md WP1): edge inset
-		// 200 -> 280, origin nest 1100 -> 1540, quarter-point nests 800 -> 1120 each.
-		while (1) {
-			const x = 280 + Math.random() * (this.map.width - 560) - this.map.width / 2;
-			const y = 280 + Math.random() * (this.map.height - 560) - this.map.height / 2;
-			let dis = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-			if (dis > 1540) {
-				dis = Math.sqrt(Math.pow(this.map.width / 4 - x, 2) + Math.pow(this.map.height / 4 - y, 2))
-				if (dis > 1120) {
-					dis = Math.sqrt(Math.pow(-this.map.width / 4 - x, 2) + Math.pow(-this.map.height / 4 - y, 2))
-					if (dis > 1120) {
-						return { x: x, y: y };
-					}
-				}
-			}
-		}
+		return this.rejectSample(280, this.spawnKeepOut());
 	}
 	getBuffer(id) {
 		const RAW = this.BUFFER[id];

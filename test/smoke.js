@@ -233,6 +233,102 @@ function serverTests(gamemode, port, done) {
 	})();
 }
 
+/*
+	Regression: a same-IP connection past config.MAX_IP (2) used to crash the whole process, not
+	just get kicked. loop()'s constructor calls this.gameloop() before the caller's
+	`socket.main = new loop(socket)` assignment runs, so a kick fired reentrantly from that first
+	call (clients[id] already 'ERR_DOUBLE_IP', set synchronously since the DB is off by default)
+	found `socket.main` still undefined and never zeroed `run` - the kicked socket's loops stayed
+	armed after controller.disconnect() deleted its clients[] entry, and the next fire's
+	getBuffer() returned the string 'Waiting', which reached talk()'s encode() call and crashed
+	reading '.head.timestamp' off it. A real third connection from the same machine reproduces the
+	whole chain directly, so this drives it against a real forked server rather than unit-testing
+	the fix in isolation.
+*/
+function doubleIpTest(port, done) {
+	console.log('\ndouble-IP kick does not crash the server:');
+	const child = fork(path.join(ROOT, 'server.js'), ['--game-only'], {
+		cwd: ROOT,
+		env: Object.assign({}, process.env, { PORT: String(port) }),
+		silent: true
+	});
+
+	let childOutput = '';
+	child.stdout.on('data', function (d) { childOutput += d; });
+	child.stderr.on('data', function (d) { childOutput += d; });
+
+	let finished = false, crashedEarly = false;
+	function finish(err) {
+		if (finished) { return; }
+		finished = true;
+		child.kill();
+		if (err) {
+			check('double-IP kick test run', false, err);
+			if (childOutput.trim()) {
+				console.log('  --- server output ---');
+				console.log('  ' + childOutput.trim().split('\n').join('\n  '));
+			}
+		}
+		done();
+	}
+
+	child.on('exit', function (code) {
+		if (!finished) { crashedEarly = true; finish('server.js exited early with code ' + code); }
+	});
+
+	const deadline = Date.now() + BOOT_TIMEOUT;
+	(function probe() {
+		if (Date.now() > deadline) { return finish('server never accepted a connection'); }
+		const ws = new WebSocket('ws://localhost:' + port);
+		ws.on('error', function () {
+			ws.terminate();
+			setTimeout(probe, 200);
+		});
+		ws.on('open', function () {
+			ws.terminate();
+			runScenario();
+		});
+	})();
+
+	function connectOne(i) {
+		return new Promise((resolve) => {
+			const ws = new WebSocket('ws://localhost:' + port);
+			let gotUpdate = false, gotKick = false;
+			ws.on('open', function () {
+				ws.send(clientProto.encode('init', {
+					key: '0'.repeat(25), gm: 'sandbox', name: 'dbl' + i, pet: -1
+				}));
+			});
+			ws.on('message', function (packet) {
+				const type = Buffer.from(packet).readUInt8(0);
+				if (type === 1) { gotKick = true; }   // 'kick'
+				if (type === 5) { gotUpdate = true; }   // 'GameUpdate'
+			});
+			setTimeout(function () { resolve({ ws: ws, gotUpdate: gotUpdate, gotKick: gotKick }); }, 500);
+		});
+	}
+
+	function runScenario() {
+		(async function () {
+			const a = await connectOne(0);
+			const b = await connectOne(1);
+			// A third same-machine connection is over config.MAX_IP (2) and must be kicked, not
+			// served - this is the ERR_DOUBLE_IP path the crash lived in.
+			const c = await connectOne(2);
+			check('first connection streamed a GameUpdate', a.gotUpdate);
+			check('second connection streamed a GameUpdate', b.gotUpdate);
+			check('third (over MAX_IP) was kicked, not served', c.gotKick && !c.gotUpdate,
+				'kicked=' + c.gotKick + ' update=' + c.gotUpdate);
+			// The actual regression: give the kicked socket's zombie timers (SEND_MS is tens of
+			// ms) several more chances to fire and crash the process before declaring it safe.
+			await new Promise((r) => setTimeout(r, 1000));
+			check('the server process is still alive well after the kick', !crashedEarly);
+			for (const s of [a, b, c]) { try { s.ws.terminate(); } catch (e) { } }
+			finish();
+		})();
+	}
+}
+
 console.log('obstar smoke test\n');
 protocolTests();
 
@@ -241,8 +337,11 @@ const modes = [['ffa', PORT], ['2team', PORT + 1], ['4team', PORT + 2], ['boss',
 ['sandbox', PORT + 4]];
 (function next() {
 	if (!modes.length) {
-		console.log('\n' + passed + ' passed, ' + failed + ' failed');
-		return process.exit(failed ? 1 : 0);
+		console.log('');
+		return doubleIpTest(PORT + 5, function () {
+			console.log('\n' + passed + ' passed, ' + failed + ' failed');
+			process.exit(failed ? 1 : 0);
+		});
 	}
 	const mode = modes.shift();
 	console.log('');

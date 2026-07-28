@@ -31,7 +31,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: 17,
+						offx: 18,
 						offdir: 0,
 						open: 0,
 					},
@@ -39,7 +39,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: -17,
+						offx: -18,
 						offdir: 0,
 						open: 0
 					}
@@ -134,13 +134,18 @@
 					shape: 0,
 				}
 			},
+			// offx signs below follow the server's firing order, not the drawn left/right picture
+			// (plan.md WP-CANNON) - the recoil bitfield is index-keyed end to end
+			// (entities/Player.js's this.recoil[r] -> SocketSchema.js's bits -> drawings.js's
+			// param.recoils[i]), so a client index has to mirror its server counterpart exactly or
+			// the barrel that visibly kicks is the mirror of the one the bullet left from.
 			"Twin Flank": {
 				cannons: [
 					{
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: 17,
+						offx: -18,
 						offdir: 0,
 						open: 0,
 					},
@@ -148,7 +153,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: -17,
+						offx: 18,
 						offdir: 0,
 						open: 0
 					},
@@ -156,7 +161,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: 17,
+						offx: -18,
 						offdir: Math.PI,
 						open: 0,
 					},
@@ -164,7 +169,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: -17,
+						offx: 18,
 						offdir: Math.PI,
 						open: 0
 					}
@@ -621,13 +626,15 @@
 					shape: 0,
 				}
 			},
+			// offx signs mirror the server's firing order, same reasoning as Twin Flank above
+			// (plan.md WP-CANNON).
 			"Triple Twin": {
 				cannons: [
 					{
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: 17,
+						offx: -18,
 						offdir: 0,
 						open: 0,
 					},
@@ -635,7 +642,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: -17,
+						offx: 18,
 						offdir: 0,
 						open: 0
 					},
@@ -643,7 +650,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: 17,
+						offx: -18,
 						offdir: Math.PI * 2 / 3,
 						open: 0,
 					},
@@ -651,7 +658,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: -17,
+						offx: 18,
 						offdir: Math.PI * 2 / 3,
 						open: 0
 					},
@@ -659,7 +666,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: 17,
+						offx: -18,
 						offdir: Math.PI * 4 / 3,
 						open: 0,
 					},
@@ -667,7 +674,7 @@
 						type: 0,
 						height: 60,
 						width: 27,
-						offx: -17,
+						offx: 18,
 						offdir: Math.PI * 4 / 3,
 						open: 0
 					}
@@ -1348,6 +1355,12 @@
 				}
 			},
 			///boss
+			// height 44 draws the barrel a little SHORT of the server's spawn radius
+			// (canonLength: 50 * .93 = 46.5) instead of a little past it like every other class -
+			// left alone on purpose. See PENDING.md's boss balance-call item: the server's 50 is a
+			// floor (a boss's body radius is 64 - rooms/Room.js - and shortening it draws drones
+			// spawning inside their own boss), so closing the gap means growing the drawn barrel
+			// instead, which is a visible silhouette change on a boss and a human call, not a sync.
 			Summoner: {
 				cannons: [
 					{
@@ -2566,6 +2579,12 @@
 					///
 					offdir: 0,
 					offx: 0,
+					// 50 is a floor, not a drawn-length choice: rooms/Room.js gives the Summoner boss
+					// size: 64, and a drone's own trailing edge already sits only ~1 unit clear of
+					// the body at this spawn radius (entities/Player.js's spawn math) - shortening
+					// this spawns drones intersecting their own boss. Don't shrink it to close the
+					// client's drawn-height gap (PENDING.md's boss balance-call item) - grow the
+					// client instead, and only on a human call.
 					canonLength: 50,
 					rand: 0.5,
 					///

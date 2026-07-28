@@ -96,7 +96,15 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-const GOLDEN = { count: 286153, hash: '9f007a58' };
+// - plan.md WP-CANNON (PENDING #26): client cannon offx re-paired to the server's index order
+//   (Twin/Twin Flank/Triple Twin). Summoner's height was also raised (44 -> 51) in the same pass
+//   and then reverted on human review (PENDING.md's balance-call item) - the hash didn't move
+//   either time, so nothing here depends on that number specifically.
+// - plan.md WP-SPAWN (PENDING #25): rejectSample()'s draw count per spawn differs from the old
+//   `while (1)` rejection loops it replaced, which shifts every Math.random() call downstream of
+//   the first spawn/placement (bot classes, shape positions, ...) - this is why the op count
+//   moved by tens of thousands even though neither change touches how many entities exist.
+const GOLDEN = { count: 325583, hash: 'f65c3b13' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

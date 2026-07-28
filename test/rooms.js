@@ -2956,6 +2956,90 @@ function oobTests(rooms) {
 }
 
 /*
+	rejectSample() (plan.md WP-SPAWN, PENDING #25): the old spawnPoint()/Objects placement loops
+	were `while (1)`, unsatisfiable and thus a sim-thread hang on a small enough map. "Does it
+	terminate" can't be asserted directly - a regression would hang the suite instead of failing
+	it - so this pins the cap and the fallback with an explicit small `tries`, which can never hang
+	regardless of the implementation.
+*/
+function spawnSamplerTests() {
+	console.log('\nspawn sampler (plan.md WP-SPAWN):');
+	const room = rooms[0];   // ffa
+
+	// 1. The cap exists and the fallback returns a real, on-map point even when nothing qualifies.
+	{
+		const p = room.rejectSample(280, [[0, 0, 1e9]], 5);
+		check('an unsatisfiable circle still returns a point (the cap, not a hang)',
+			!!p && Number.isFinite(p.x) && Number.isFinite(p.y), p);
+		check('...and it lands on the map',
+			!!p && Math.abs(p.x) <= room.map.width / 2 && Math.abs(p.y) <= room.map.height / 2,
+			p && (p.x + ',' + p.y));
+	}
+
+	// 2. The fallback is best-effort, not arbitrary: with enough draws the best-scoring
+	// candidate against an unsatisfiable origin circle lands well out toward the map edge.
+	{
+		const p = room.rejectSample(280, [[0, 0, 1e9]], 400);
+		check('the fallback maximises clearance, not just "some point"',
+			Math.hypot(p.x, p.y) > room.map.width / 4, Math.hypot(p.x, p.y));
+	}
+
+	// 3. A map far below the ~2744-unit floor neither hangs nor places you off it.
+	{
+		const sandbox = rooms[4];
+		const savedMap = sandbox.map;
+		sandbox.map = { width: 1200, height: 1200 };
+		let ok = true;
+		for (let i = 0; i < 200; i++) {
+			const p = sandbox.spawnPoint(player(sandbox, 0));
+			if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y) ||
+				Math.abs(p.x) > 600 || Math.abs(p.y) > 600) { ok = false; break; }
+		}
+		sandbox.map = savedMap;
+		check('a too-small map does not hang spawnPoint() and stays on the map', ok);
+	}
+
+	// 4. createObj() on the same too-small map returns instead of hanging.
+	{
+		const sandbox = rooms[4];
+		const savedMap = sandbox.map;
+		sandbox.map = { width: 1200, height: 1200 };
+		const before = sandbox.INSTANCE.objs.size;
+		for (let i = 0; i < 50; i++) { sandbox.createObj('sqr', 0); }
+		const after = [...sandbox.INSTANCE.objs.live()].slice(-50);
+		sandbox.map = savedMap;
+		check('createObj() on a too-small map gained 50 live entries', sandbox.INSTANCE.objs.size - before === 50,
+			sandbox.INSTANCE.objs.size - before);
+		check('...and every one landed finite and on the (shrunk) map',
+			after.every((o) => Number.isFinite(o.x) && Number.isFinite(o.y) &&
+				Math.abs(o.x) <= 600 && Math.abs(o.y) <= 600));
+	}
+
+	// 5. ffa's own carve-out is unchanged by the refactor - spawnKeepOut() must still agree with
+	// the hardcoded 1540/1120 the earlier ffa test pinned.
+	{
+		const circles = room.spawnKeepOut();
+		check('spawnKeepOut() still returns the 1540/1120 nest radii',
+			circles[0][2] === 1540 && circles[1][2] === 1120 && circles[2][2] === 1120,
+			JSON.stringify(circles));
+	}
+
+	// 6. 'bull' placement (now direct polar sampling, not rejection) still lands in its annulus.
+	{
+		const before = room.INSTANCE.objs.size;
+		for (let i = 0; i < 50; i++) { room.createObj('bull', 0); }
+		const after = [...room.INSTANCE.objs.live()].slice(-50);
+		check('bull placement still landed 50 new objects', room.INSTANCE.objs.size - before === 50,
+			room.INSTANCE.objs.size - before);
+		check('...every one in the 650..700 annulus with pos === 1',
+			after.every((o) => {
+				const r = Math.hypot(o.x, o.y);
+				return r >= 650 && r <= 700 && o.pos === 1;
+			}));
+	}
+}
+
+/*
 	The broad phase (plan.md WP4.5.4): the insert()/queryCircle() rewrite is what the rest of the
 	pass's speed-up depends on, so it is verified directly here rather than trusted - "queryCircle
 	agrees with a brute-force scan" is the one test that makes every other 4.5.4 change safe.
@@ -3061,6 +3145,7 @@ baseDroneAiTests();
 tickScaleTests();
 fovTests(rooms);
 oobTests(rooms);
+spawnSamplerTests();
 broadPhaseTests();
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');

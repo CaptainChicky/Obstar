@@ -33,34 +33,31 @@ class Objects {
 		this.marge = 200;
 		this.weight = 1;   // a mass divisor (this.x += vec.x/weight below), not a per-tick rate - not rescaled
 		switch (pos) {
-			case -1:
-				while (1) {
-					this.x = this.marge + Math.random() * (map.width - this.marge * 2) - map.width / 2;
-					this.y = this.marge + Math.random() * (map.height - this.marge * 2) - map.height / 2;
-					let dis = Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2))
-					if (dis > 1000) {
-						dis = Math.sqrt(Math.pow(map.width / 4 - this.x, 2) + Math.pow(map.height / 4 - this.y, 2))
-						if (dis > 700) {
-							dis = Math.sqrt(Math.pow(-map.width / 4 - this.x, 2) + Math.pow(-map.height / 4 - this.y, 2))
-							if (dis > 700) {
-								break;
-							}
-						}
-					}
-				}
+			case -1: {
+				// Same bounded sampler rooms/Room.js's spawnPoint() uses - this was the second
+				// unbounded `while (1)` (plan.md WP-SPAWN, PENDING #25) and the one that runs
+				// hundreds of times per room rather than once per death.
+				const p = room.rejectSample(this.marge, [
+					[0, 0, 1000],
+					[map.width / 4, map.height / 4, 700],
+					[-map.width / 4, -map.height / 4, 700]
+				]);
+				this.x = p.x;
+				this.y = p.y;
 				this.pos = 0;
 				break;
-			case 'bull':
-				while (1) {
-					this.x = Math.random() * 1400 - 700
-					this.y = Math.random() * 1400 - 700
-					const dis = Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2))
-					if (dis < 700 && dis > 650) {
-						break;
-					}
-				}
+			}
+			case 'bull': {
+				// A 650..700 annulus around the origin, sampled directly. The rejection loop this
+				// replaces drew from a 1400-unit square and accepted ~11% of draws - it always
+				// terminated, but it is the same shape as the two real hangs above.
+				const dir = Math.random() * Math.PI * 2;
+				const rad = 650 + Math.random() * 50;
+				this.x = Math.cos(dir) * rad;
+				this.y = Math.sin(dir) * rad;
 				this.pos = 1;
 				break;
+			}
 			default:
 				const dir = Math.random() * Math.PI * 2;
 				this.x = Math.min(map.width / 2 - this.marge,

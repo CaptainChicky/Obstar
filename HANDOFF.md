@@ -169,8 +169,12 @@ The things in this codebase that are *not* obvious from reading the code around 
   prediction all call into it rather than keeping their own copy. `public/SHARE/TanksConfig.js`'s
   client (drawn) and server (spawn) cannon tables are cross-checked index-by-index by
   `test/tanks.js`, which fails `npm test` on drift instead of relying on a comment asking the next
-  editor to keep two hand-authored tables in sync (see PENDING.md item 26 for what that check
-  has already caught and still has open as a human balance call).
+  editor to keep two hand-authored tables in sync. What it caught (plan.md WP-CANNON, PENDING
+  #26): the Sprayer rotation (the original bug the test was built for), and — missed until the
+  whitelist was made to prove its own entries still applied — Twin Flank/Triple Twin's client
+  `offx` mirrored against the server's, so the recoil bitfield animated the barrel that did *not*
+  fire — fixed. Summoner's drawn barrel is still short of its own spawn point on purpose (closing
+  it means growing a boss's silhouette, a human call); see PENDING.md's balance-call item.
 - **Entities hold `this.room` and rooms hold `this.controller` — reached directly, not through a
   registry.** `Player`/`Bullet`/`Objects` take a trailing `room` constructor argument;
   `rooms/Room.js` takes a trailing `controller` argument. The dependency graph was never actually
@@ -721,10 +725,10 @@ the minimap draws more than your own dot.
 | Suite | What it covers |
 |---|---|
 | `test/proto.js` | Wire protocol: golden bytes, self-sizing, round trips, input validation, Unicode, `UiUpdate.map` and Objects rarity-tier bits. |
-| `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. See §3 and PENDING.md. |
+| `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. `offdir` is compared mod 2π (`sameAngle()`), not with a literal `!==`, so two float64 expressions for the same rotation don't need a whitelist entry to excuse a false positive. The whitelist's size is pinned (`WHITELIST.length === 8`) and every entry's *reason* is re-verified live each run, not just its presence — a deviation that stops reproducing fails loud instead of the entry sitting in the file forever. See §3 and PENDING.md. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 2% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33 — WP3) and the FOV formula (WP4). No socket, built via `boot()`. |
+| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 2% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33 — WP3), the FOV formula (WP4), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, and that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps. |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all four modes. |

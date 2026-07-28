@@ -54,43 +54,49 @@ const WHITELIST = [
 			"(drawings.js never draws it) and it can't be selected to shoot, so the server " +
 			"correspondingly has no cannons."
 	})),
-	// Twin / Twin Flank / Triple Twin: client offx is +-17, server is +-18 on every one of
-	// these three independently-written classes. The same 1-unit gap recurring identically
-	// across unrelated code looks like a deliberate server-side spawn nudge (keep the bullet
-	// clear of the tank body) that never made it back into the client's draw, rather than a
-	// typo - but that is a guess, not a confirmed intent, so it is recorded here rather than
-	// changed. Flagged in PENDING.md for a human balance pass.
-	...[['Twin', 2], ['Twin Flank', 4], ['Triple Twin', 6]].flatMap(([name, n]) =>
-		new Array(n).fill(null).map((_, i) => ({
-			class: name, index: i, kind: 'geom', reason:
-				'offx is client +-17 vs server +-18 on every cannon of this class - see the ' +
-				'Twin/Twin Flank/Triple Twin note above WHITELIST.'
-		}))),
-	{ class: 'Fortress', index: 5, kind: 'geom', reason:
-		"client computes this cannon's offdir as Math.PI*5/3, the server as " +
-		"Math.PI*4/3+Math.PI/3 - the same angle, but the two expressions round to adjacent " +
-		"float64 values, so a literal !== flags a 1-ULP difference that has no visual or " +
-		"gameplay effect. The real fix is to normalize both sides mod 2*PI before comparing; " +
-		"noted as a test follow-up in PENDING.md rather than done here." },
-	{ class: 'Summoner', index: 3, kind: 'geom', reason:
-		"offdir is client -PI/2 vs server 3*PI/2 - the same rotation mod 2*PI, not a real " +
-		"mismatch (same test limitation as Fortress[5] above). The height/canonLength gap on " +
-		"this index is the same open balance question as indices 0-2, see below." },
-	...[0, 1, 2].map(i => ({
+	// Twin / Twin Flank / Triple Twin's offx swap and Fortress[5]/Summoner[3]'s angle-
+	// representation false positives were whitelisted here once (plan.md WP-CANNON, PENDING #26)
+	// - both fixed and removed. Twin Flank/Triple Twin's was a real bug (the client's offx sign
+	// was mirrored against the server's, so the recoil bitfield animated the wrong barrel); the
+	// angle false positives are gone now that offdir is compared with sameAngle() below instead
+	// of a literal !==.
+	...[0, 1, 2, 3].map(i => ({
 		class: 'Summoner', index: i, kind: 'geom', reason:
 			"height 44 vs canonLength 50 (gap -2.50): every other class in the table has the " +
-			"drawn barrel a little *longer* than the spawn radius (band 0-12) so bullets " +
-			"appear at the tip; Summoner is the one class where it runs the other way, drawn " +
-			"shorter than the spawn point. Fixing it means either drawing the barrel longer " +
-			"or shortening the server's canonLength, both of which change this boss's visual " +
-			"proportions or bullet range - a balance call, not a mechanical sync. Flagged in " +
-			"PENDING.md for a human decision."
+			"drawn barrel a little *longer* than the spawn radius (band 0-12) so bullets appear " +
+			"at the tip; Summoner is the one class where it runs the other way, drawn shorter " +
+			"than the spawn point. canonLength: 50 is a floor (a boss's body radius is 64 - " +
+			"rooms/Room.js - and shortening it spawns drones inside their own boss), so closing " +
+			"the gap means growing the drawn barrel instead, a visible silhouette change on a " +
+			"boss - a human balance call, not a mechanical sync. Left deliberately unfixed " +
+			"(PENDING.md); flagged there as a pattern to re-check for any future boss class too, " +
+			"not just this one."
 	})),
 ];
+/* Marks a WHITELIST entry as having actually excused something this run, so the size pin below
+	 can't hide a mismatch by whitelisting more than is needed. */
+const consumed = new Set();
+function findEntry(className, index, kind) {
+	return WHITELIST.find(w => w.class === className && w.index === index && w.kind === kind);
+}
 function whitelisted(className, index, kind) {
-	return WHITELIST.some(w => w.class === className && w.index === index && w.kind === kind);
+	const entry = findEntry(className, index, kind);
+	if (entry) { consumed.add(entry); }
+	return !!entry;
 }
 console.log('tanks whitelist: ' + WHITELIST.length + ' entries\n');
+check('the whitelist has not grown', WHITELIST.length === 12, WHITELIST.length);
+
+/* offdir is an angle: -PI/2 and 3*PI/2 are the same barrel, and two float64 expressions for the
+	 same rotation (Fortress[5]) differ by an ULP. A literal !== calls both a mismatch and used to
+	 need a whitelist entry a correct comparison doesn't (PENDING #26, plan.md WP-CANNON). */
+const TAU = Math.PI * 2;
+function sameAngle(a, b) {
+	let d = (a - b) % TAU;
+	if (d > Math.PI) { d -= TAU; }
+	if (d < -Math.PI) { d += TAU; }
+	return Math.abs(d) <= 1e-9;
+}
 
 /* Every cannon's drawn tip length is deliberately a little past the spawn radius, so bullets
 	 appear at the muzzle rather than short of it. The measured median gap across the table is
@@ -158,16 +164,27 @@ function geometry(names) {
 	console.log('\nbarrel geometry, index by index:');
 	for (const name of names) {
 		for (const [cc, sc, i] of pairs(name)) {
-			if (whitelisted(name, i, 'geom')) {
+			const offdirOk = sameAngle(cc.offdir, sc.offdir);
+			const offxOk = cc.offx === sc.offx;
+			const gap = cc.height - sc.canonLength * 0.93;
+			const gapOk = gap >= GAP_MIN && gap <= GAP_MAX;
+			// Evaluated above even when whitelisted, not skipped outright - a stale entry that
+			// no longer excuses anything real should fail loud, not sit invisibly in the file
+			// forever (that's how the Twin Flank sign flip went unnoticed).
+			const entry = findEntry(name, i, 'geom');
+			if (entry) {
+				consumed.add(entry);
+				if (offdirOk && offxOk && gapOk) {
+					check(name + '[' + i + '] no longer needs its whitelist entry', false);
+				}
 				continue;
 			}
-			check(name + '[' + i + '] offdir agrees', cc.offdir === sc.offdir,
+			check(name + '[' + i + '] offdir agrees', offdirOk,
 				'client ' + cc.offdir + ' vs server ' + sc.offdir);
-			check(name + '[' + i + '] offx agrees', cc.offx === sc.offx,
+			check(name + '[' + i + '] offx agrees', offxOk,
 				'client ' + cc.offx + ' vs server ' + sc.offx);
-			const gap = cc.height - sc.canonLength * 0.93;
 			check(name + '[' + i + '] height is a plausible muzzle-tip lead over canonLength*.93',
-				gap >= GAP_MIN && gap <= GAP_MAX,
+				gapOk,
 				'height ' + cc.height + ', canonLength*.93 ' + (sc.canonLength * 0.93).toFixed(2) +
 				', gap ' + gap.toFixed(2));
 		}
@@ -208,6 +225,15 @@ const names = classSet();
 cannonCounts(names);
 geometry(names);
 order(names);
+
+// count/order entries report their own staleness here; geom entries already did it inline above
+// (they need the recomputed comparison, not just "was this looked up").
+console.log('\nwhitelist entries:');
+for (const entry of WHITELIST) {
+	if (entry.kind === 'geom') { continue; }
+	check(entry.class + ' (' + entry.kind + ') whitelist entry was consulted this run',
+		consumed.has(entry));
+}
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

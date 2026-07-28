@@ -5,6 +5,10 @@ Short-form companion to [HANDOFF.md](HANDOFF.md). Everything mechanical (the ref
 decisions already made but not yet built, and things nobody has verified yet. No status prose,
 just the list.
 
+*Items 25 and 26 have moved to [plan.md](plan.md) (WP-SPAWN / WP-CANNON) and are not repeated here.
+Numbering is never reused — `lib/config.js`, `lib/tick.js`, `public/SHARE/Physics.js`,
+`entities/Player.js` and `rooms/Sandbox.js` all cite items by number.*
+
 ---
 
 *The game is being remade from scratch: the DB will be emptied and rebuilt, and nothing
@@ -20,24 +24,6 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
    can draw walls/structures; team-ownership state on capturable structures synced over the
    wire. New `kind`s go in `public/SHARE/kinds.js`, which `TanksConfig.js`'s `DETEC` filters
    now reference by constant (#16 done) rather than hardcoding — nothing to keep in sync by hand.
-
-## 🟣 Needs a human balance call (flagged by `test/tanks.js`)
-
-26. `test/tanks.js` cross-checks `public/SHARE/TanksConfig.js`'s client (drawn) and server (spawn)
-    cannon tables and whitelists a handful of real, deliberate deviations that aren't bugs but
-    aren't confirmed-intentional either — full reasoning is in the `WHITELIST` table in that file,
-    not duplicated here:
-    - Twin, Twin Flank, and Triple Twin's cannons are all drawn `offx` ±17 but spawn bullets at
-      ±18 - too consistent across three independently-written classes to be a typo, but never
-      confirmed as an intentional spawn nudge either.
-    - Summoner is the only class in the table where the drawn barrel is *shorter* than the spawn
-      point (by 2.5 units) rather than the usual few-unit muzzle-tip lead - fixing it means either
-      lengthening the drawn barrel or shortening the spawn radius, both of which change this
-      boss's visuals or bullet range.
-    - Minor test gap, low priority: the whitelist's `offdir` comparison is a literal `!==` and
-      doesn't normalize angles mod 2π, so two float64 expressions for the same angle
-      (Fortress/Summoner) read as a mismatch and need a whitelist entry that a correct comparison
-      wouldn't require. Only ever a false positive, never a false negative.
 
 ## 🟢 Untested — real risk, nobody has watched these happen
 
@@ -140,22 +126,30 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
     mistake here shows up as a kicked player, not a crash.
 9. Load: multiple busy rooms at once on one process (everything so far is one room alone).
 
+## 🟣 Needs a human balance call
+
+29. **Summoner's drawn barrel is short of its own spawn point, and fixing it is a visible boss
+    silhouette change — left alone on purpose.** `public/SHARE/TanksConfig.js`: client `height: 44`
+    vs server `canonLength: 50` (spawn radius `50 * .93 = 46.5`) is a **-2.5** gap; every other
+    class in the table draws its barrel a little *past* the spawn radius (band 0-12, median 4.2)
+    so bullets appear at the muzzle tip, and Summoner is the one class that runs the other way.
+    The server's 50 is a floor, not a free number to shrink: a boss's body radius is 64
+    (`rooms/Room.js`), and a drone's own trailing edge already sits only ~1 unit clear of the body
+    at that spawn radius (`entities/Player.js`'s spawn math) — shortening `canonLength` spawns
+    drones intersecting their own boss. So the only way to close the gap is to grow the *drawn*
+    barrel (44 → ~51 gets the table's own median gap), which makes the boss's barrels visibly
+    longer (drawn tip 1.26× → 1.46× the body radius) — a silhouette call for a human to make
+    in-browser (`boss` mode, or the `summonRandBoss` admin command), not a mechanical sync.
+    `test/tanks.js` whitelists all four `Summoner` cannons (`geom`) for exactly this reason so the
+    gap doesn't silently regress into something else while it's open.
+    **The same check applies to every future boss, not just this one.** `lib/gameAI.js`'s
+    `CONFIG.BOSS` list has exactly one entry (Summoner) today, but item 2's Domination/Maze work
+    and any other boss added later will have the same tension the moment its body is drawn at a
+    non-default `size` (`rooms/Room.js`'s `createBoss()` hardcodes `64` for all bosses today) —
+    check the drawn-height-vs-spawn-radius gap deliberately for any new boss cannon table instead
+    of assuming the ordinary 0-12 band applies.
+
 ## 🟠 Known bug, not yet fixed
-
-- achivements bar is still fucked will revisit this later
-
-25. **`Room.spawnPoint()`'s `while(1)` can hang the server on a small enough map.** The default
-    implementation (`rooms/Room.js`) rejects any point within a hardcoded 1540-unit radius of the
-    origin plus two 1120-unit nests at the quarter-points - written against ffa's gu(451)-unit map,
-    where that's a small carve-out (radii x1.4 under the grid rescale, plan.md WP1 - was 1100/800
-    against a 9020-unit map). Below roughly 2744 units wide, no point on the map can ever be 1540
-    units from the origin, so the loop never finds an accepted point and spins forever, on
-    the simulation thread, taking the whole room (every player in it) down with it. Currently
-    survived only because `rooms/Sandbox.js` documents the floor in a comment and stays at gu(150)
-    = 4200 (comfortably clear, though the margin is thinner in square terms than before); nothing
-    stops a future mode, an admin `mapResize`, or a typo'd config from landing under 2744 and
-    hitting it for real. Fix is either a loop iteration cap that falls back to a cheaper placement,
-    or deriving the rejection radii from `mapSize` instead of hardcoding them against ffa's map.
 
 27. **A bullet's own thrust does not scale correctly with `TICK_MS` — found by massplanchunks
     WP-D's independent re-audit of the WP3 rescale, proven with `test/rooms.js`'s new (reporting,
@@ -228,6 +222,13 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
     check it against - the 36 outliers aren't 36 separate typos, they're the same missing category
     showing up in the one place a script could see it numerically. Re-deriving `speed` is exactly
     the re-derivation item 27 already scopes; nothing further to do here independently.
+
+28. **`entities/Objects.js`'s polygon-placement carve-outs weren't rescaled by the ×1.4 grid
+    pass.** `rooms/Room.js`'s spawn keep-out circles moved 1100→1540 / 800→1120 under plan.md
+    WP1's grid rescale (`spawnKeepOut()`); `Objects.js`'s `case -1:` placement (plan.md WP-SPAWN)
+    still passes the pre-rescale 1000/700/700 into the same sampler, so non-nest shapes now spawn
+    proportionally nearer the nests than the pre-rescale layout intended. Cosmetic-ish — a
+    farming-density change to make deliberately, not fold into a hang fix.
 
 ## 🟡 Explicitly deferred (told not to do this pass)
 

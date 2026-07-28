@@ -200,6 +200,13 @@ function attach(httpServer, controller) {
 	}
 
 	function loop(socket) {
+		// Assigned here, not left to the caller's `socket.main = new loop(socket)` - the
+		// constructor calls this.gameloop() below before that outer assignment ever runs, and if
+		// clients[id] is already an ERR_* string (askConnection ran synchronously - DB is off by
+		// default), that first gameloop() call kicks its own still-under-construction socket
+		// reentrantly. kick() only zeroes run through `socket.main`, so without this line it finds
+		// socket.main still undefined, does nothing, and the loops it meant to stop stay armed.
+		socket.main = this;
 		this.socket = socket;
 		this.strikes = 0;
 		this.dead = 0;
@@ -240,13 +247,18 @@ function attach(httpServer, controller) {
 				}
 				default: {
 					const buff = controller.getBuffer(socket.id);
-					if (!buff) {
+					// controller.getBuffer() returns the string 'Waiting' (truthy, not an object)
+					// when clients[id] doesn't resolve to a real connection - a disconnected/kicked
+					// id that a lingering timer still reaches, in the ordinary case. !buff alone
+					// let that string past into talk()'s encode() call, which then reads .head off
+					// a string and crashes reading 'timestamp' off the undefined that produces.
+					if (!buff || typeof buff !== 'object') {
 						ms = IDLE_MS;
-					} else if (typeof buff === 'object' && buff.head.timestamp === this.sentStamp) {
+					} else if (buff.head.timestamp === this.sentStamp) {
 						ms = RETRY_MS;          // world has not stepped since the last packet; see above
 						this.sendDue = 0;       // ...and re-anchor rather than keep the drifted phase
 					} else {
-						if (typeof buff === 'object') { this.sentStamp = buff.head.timestamp; }
+						this.sentStamp = buff.head.timestamp;
 						talk(this.socket, 'GameUpdate', buff);
 					}
 					const mess = controller.chat.get(socket.id);

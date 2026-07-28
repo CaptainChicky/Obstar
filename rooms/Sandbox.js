@@ -8,13 +8,15 @@
 	maxXp is kept at ffa's 25000 so the level cap stays 30 - a sandbox has no reason to see a
 	level the rest of the game can never reach.
 
-	mapSize has a floor: Room.js's default spawnPoint() rejects anywhere within a hardcoded
-	1540-unit radius of the origin (plus two 1120-unit nests at the quarter-points, x1.4 under the
-	grid rescale - plan.md WP1), written against ffa's gu(451)-unit map where that is a small
-	carve-out. Below roughly 2744 units wide no point on the map can ever be 1540 from the origin,
-	and spawnPoint()'s `while(1)` spins forever. gu(150) = 4200 stays clear of that (~1/9th ffa's
-	area - still a small arena) while leaving the corners reachable on the first few tries - the
-	margin is thinner in square terms than it used to be, though (PENDING #25).
+	mapSize has no hard floor any more, only degradation: Room.js's default spawnPoint() rejects
+	anywhere within a hardcoded 1540-unit radius of the origin (plus two 1120-unit nests at the
+	quarter-points, x1.4 under the grid rescale - plan.md WP1), written against ffa's gu(451)-unit
+	map where that is a small carve-out. Below roughly 2744 units wide no point on the map can ever
+	be 1540 from the origin - Room.rejectSample() (plan.md WP-SPAWN) bounds the search instead of
+	looping forever, and falls back to the best (furthest-from-a-nest) point it found, so a map
+	that small spawns you *near* a nest rather than hanging the room. gu(150) = 4200 stays clear of
+	that (~1/9th ffa's area - still a small arena) while leaving the corners reachable on the first
+	few tries.
 */
 const World = require('../public/SHARE/World.js');
 const gu = World.gu;
