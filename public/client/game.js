@@ -20,7 +20,7 @@
 	const Obj = CLIENT.Obj;
 	const Bullet = CLIENT.Bullet;
 	const CLASS = CLIENT.CLASS;
-	// One *reference* tick (public/motion.js's REF_TICK, 40ms - massplanchunks WP3) expressed in
+	// One *reference* tick (public/motion.js's REF_TICK, 40ms) expressed in
 	// 60fps-equivalent frames, so the per-reference-tick server constants below (Physics.js) can
 	// be applied per-frame scaled by Global.dtFrames. Deliberately not MOTION.NET_TICK (the send
 	// interval, 33ms) - that only coincidentally used to equal the tick server constants were
@@ -189,9 +189,8 @@
 				Physics.stepBody(this.predic, Math.cos(ddir) * llen, Math.sin(ddir) * llen, tickLen);
 				let tolen = Math.sqrt(Math.pow(this.predic.x, 2) + Math.pow(this.predic.y, 2));
 				tolen += (-tolen) * General['lerpK'](CONST.SMOOTH);
-				// The lighter, correct drag (0.964 vs the old 0.95) lets the lead grow further
-				// before this decay catches it, so cap it explicitly - a lead should read as
-				// "slightly ahead", never as a teleport when the server position lands.
+				// The decay alone does not bound the lead, so cap it explicitly - a lead should
+				// read as "slightly ahead", never as a teleport when the server position lands.
 				tolen = Math.min(tolen, CONST.SIZE * 2);
 				ddir = Math.atan2(this.predic.y, this.predic.x);
 				this.predic.x = Math.cos(ddir) * tolen;
@@ -482,7 +481,7 @@
 		// Register each handler on its window.on* slot by name. The old form was
 		// `for(let i in General['Interact']){ window[i] = General['Interact'][i] }` - a dynamic
 		// write to arbitrary global names, exactly the pattern the linter cannot check and that
-		// put `states[7]`-class typos on window unnoticed (HANDOFF 8.12.2). These are the same
+		// put `states[7]`-class typos on window unnoticed. These are the same
 		// six assignments, spelled out.
 		window.onresize = General['Interact'].onresize;
 		window.onmousemove = General['Interact'].onmousemove;
@@ -559,7 +558,7 @@
 				Global.frameAt = t;
 			}
 			// Game.timestamp increments once per server tick, which is 25/33 as long a wall-clock
-			// moment as it used to be (massplanchunks WP3) - 1.515152 = 2 * 25/33 keeps this
+			// moment as it used to be - 1.515152 = 2 * 25/33 keeps this
 			// spinning at its old real-world rate instead of 1.32x faster.
 			rnbcolor[0] = 'hsl(' + (Game.timestamp * 1.515152) % 360 + ',78%,56%)';
 			rnbcolor[1] = 'hsl(' + (Game.timestamp * 1.515152) % 360 + ',50%,38%)';
@@ -756,7 +755,7 @@
 										case 'Players': {
 											if (obj.states[0]) inst[OBJ].hit();
 											inst[OBJ].shield = obj.states[1];
-											// states[6] is the bot flag; creation used to read states[7], one past
+											// states[6] is the bot flag - one past
 											// the end of the record, so a new tank's bot flag was always undefined.
 											inst[OBJ].bot = obj.states[6];
 											break;

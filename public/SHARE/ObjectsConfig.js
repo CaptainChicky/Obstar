@@ -1,5 +1,5 @@
 /*
-	Rarity tiers for farmable polygons (THEPLAN Part 4.2).
+	Rarity tiers for farmable polygons.
 
 	entities/Objects.js rolls a tier once per polygon at spawn (independent per-tier chance,
 	checked rarest-first so a lucky roll cannot be "downgraded" to a more common tier) and

@@ -1,5 +1,5 @@
 /*
-	Achievement registry (HANDOFF Part 2). One flat ordered list, shared between server
+	Achievement registry. One flat ordered list, shared between server
 	(entities/Player.js calls unlock(id) against this list) and client (the achievements panel
 	in public/account.js renders it, locked/unlocked, in this order). Same dual-mode footer as
 	TanksConfig.js / kinds.js so both sides require() / global exactly one copy.

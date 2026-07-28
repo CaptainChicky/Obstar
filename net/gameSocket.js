@@ -10,7 +10,7 @@
 	one port in one process (and still split them onto two when asked).
 
 	Timing. `gameloop` sends a GameUpdate about every 30ms and `longloop` a heartbeat every
-	second. Neither is tied to the room simulation, and that is deliberate (HANDOFF 8.8): the
+	second. Neither is tied to the room simulation, and that is deliberate: the
 	rooms run at a fixed 50Hz on the shared clock in lib/clock.js, and a send is just a
 	snapshot of whatever the simulation had reached when the timer fired. Nothing has to divide
 	evenly, and a slow send cannot slow the simulation down.

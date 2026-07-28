@@ -2,7 +2,7 @@
 	Drawn achievement badge: a semicircle cap fused to a rectangle, built now so both the
 	achievements wheel (public/account.js) and, later, the in-game toast feed
 	(public/client/ui.js's MES) can hand back the same canvas for an entry regardless of
-	whether it's a bitmap icon or a drawn badge (plan.md Part 4). Not wired into either call
+	whether it's a bitmap icon or a drawn badge. Not wired into either call
 	site's fallback logic yet - AchievementsConfig entries opt in later via an optional
 	`badge: {color, border}` field; today every entry lacks one, so nothing regresses.
 
@@ -48,7 +48,7 @@
 		: Promise.resolve();
 
 	// One path, outer silhouette only - the arc's flat side IS the rectangle's left edge, so
-	// there is no seam to stroke across (see plan.md Part 4). Inset by lw/2 so a centred
+	// there is no seam to stroke across. Inset by lw/2 so a centred
 	// stroke's outer edge lands exactly on the nominal H-tall / (R+wRect)-wide box instead of
 	// bleeding lw/2 past it on every side.
 	function pathFor(ctx, wRect, lw) {

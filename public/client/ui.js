@@ -35,7 +35,7 @@
 			///
 			/*
 				The minimap frame, rasterized once and blitted - except that the base overlay on it
-				is sized from Game.baseSize/Game.width (massplanchunks WP-E), and neither is known
+				is sized from Game.baseSize/Game.width, and neither is known
 				when initUi() runs: Run() builds the HUD before any GameUpdate head has been
 				applied, so both are still at their config.js defaults here. So this keeps the
 				"draw once, blit after" idiom but exposes redraw(), which map() calls every frame
@@ -73,7 +73,7 @@
 					ctx.save();
 					switch (POST.gm) {
 						/*
-							Fill first, stroke last (plan.md WP4.5.3): a stroke drawn before a clip'd
+							Fill first, stroke last: a stroke drawn before a clip'd
 							fill has its inner half painted straight over by the fill. That reorder was
 							correct and stays - it is what makes the width agree across all three arms
 							- but it doubled the VISIBLE frame from 6 units to the full 12-unit
@@ -259,8 +259,7 @@
 					for (let i = 0; i < QUEUE.length; i++) { n += (Ui.upNb[i] || 0); }
 					return n;
 				}
-				// How many more points this tank can ever spend in its life (CONST.MAX_UP_POINTS,
-				// massplanchunks WP-C), queue included.
+				// How many more points this tank can ever spend in its life (CONST.MAX_UP_POINTS), queue included.
 				function budget(Ui) {
 					let q = 0;
 					for (let i = 0; i < QUEUE.length; i++) { q += QUEUE[i]; }
@@ -690,7 +689,7 @@
 					///
 					ctx.save();
 					ctx.translate(tank.can.width / 2, tank.can.width / 2);
-					ctx.rotate(Game.timestamp / 171.6);   // 130 * 33/25: Game.timestamp ticks 1.32x faster now (massplanchunks WP3)
+					ctx.rotate(Game.timestamp / 171.6);   // 130 * 33/25: Game.timestamp ticks 1.32x faster now
 					ctx.drawImage(
 						tank.can,
 						0, tank.can.width,
@@ -970,7 +969,7 @@
 								});
 							}
 							newImg.src = './pic/img_mess/' + mes[1];
-							// Guest-side achievement persistence (HANDOFF Part 2.2): the icon
+							// Guest-side achievement persistence: the icon
 							// filename is unique per entry in AchievementsConfig, so the toast
 							// itself is enough to recover which achievement fired - no separate
 							// wire message needed. A signed-in account's unlocks are already
@@ -1044,7 +1043,7 @@
 				ctx.globalAlpha = 0.5;
 				ctx.scale(CONST.OFFCAN * CONST.RESOLUTION, CONST.OFFCAN * CONST.RESOLUTION);
 				/*
-					Everyone else, from Room.getUi's `map` (THEPLAN 4.3) - drawn first so your own
+					Everyone else, from Room.getUi's `map` - drawn first so your own
 					cursor (below) is never hidden under someone else's dot. `dot.x`/`dot.y` are 0..1
 					fractions of the current map size (CODECS.unit, TYPE.UiUpdate.map), so they use
 					the same -0.5 recentring as User.x/Game.width does for your own dot, just spelled

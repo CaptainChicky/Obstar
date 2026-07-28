@@ -19,7 +19,7 @@ class Ffa extends Room {
 			preGenerate: 1000,
 			bootDelay: 100,
 			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
-			// rescale (plan.md D1) - FOV didn't grow, so the map's area did.
+			// rescale - FOV didn't grow, so the map's area did.
 			objCaps: { sqr: { max0: 431, max1: 35 }, tri: { max0: 157, max1: 24 }, pnt: { max0: 49, max1: 29 } },
 			betaPentRng: 0.98,
 			botCount: 10,

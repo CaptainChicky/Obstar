@@ -1,24 +1,17 @@
 /*
-	The canvas-call differential, rebuilt (HANDOFF §6, §12.2).
+	The canvas-call differential: a self-differential over the client's own render output.
 
-	The original differential replayed captured packets through the pre-split monolith
-	(public/new2Init.js) AND the new public/client/ files and asserted their canvas-op streams
-	were byte-identical - 180298 operations, zero differences. That proved the *split* changed
-	no behaviour. It cannot guard work done *after* the split, for two reasons: the monolith is
-	deleted, and it has since diverged from the client on purpose - motion was rewritten to
-	snapshot interpolation (§6.1), strict-mode fixes landed (§8.12), and §12.1 removed dead code.
-	So the monolith is no longer a zero-diff reference for today's tree.
+	The full ordered canvas-op stream of the current client is pinned as a golden hash below, so
+	any edit that changes what reaches the canvas changes the hash and fails. That makes it a
+	guard for changes that are meant to be behaviour-preserving (idiom sweeps, refactors), not a
+	correctness check - a deliberate visual change is expected to fail it and be rebaselined.
 
-	What guards a *behaviour-preserving* change to the client now - the §12.2 idiom sweep
-	(var->let/const, ==->===, for..in) - is a SELF-differential: the full ordered canvas-op
-	stream of the current client is pinned as a golden hash here; any edit that changes what
-	reaches the canvas changes the hash and fails. It is deterministic by construction -
-	test/clientDom.js seeds Math.random and Date.now (opts.deterministic), performance.now is
-	already a frame counter, and the packet corpus is a real room stepped under a seeded RNG plus
-	a fixed set of hand-built UI packets. Same inputs, same ops, every run and every machine.
+	Deterministic by construction: test/clientDom.js seeds Math.random and Date.now
+	(opts.deterministic), performance.now is a frame counter, and the packet corpus is a real room
+	stepped under a seeded RNG plus a fixed set of hand-built UI packets. Same inputs, same ops,
+	every run and every machine.
 
-	Rebuild the golden after an INTENTIONAL behaviour change (e.g. §12.3, which reorders
-	iteration): run with OBSTAR_DIFF_CAPTURE=1, paste the printed hash into GOLDEN below.
+	After an INTENTIONAL behaviour change, rebuild the golden and paste it into GOLDEN below:
 
 		node test/clientDiff.js
 		OBSTAR_DIFF_CAPTURE=1 node test/clientDiff.js    # print the current hash, don't assert
@@ -104,7 +97,7 @@ const hash = fnv1a(blob);
 //   `while (1)` rejection loops it replaced, which shifts every Math.random() call downstream of
 //   the first spawn/placement (bot classes, shape positions, ...) - this is why the op count
 //   moved by tens of thousands even though neither change touches how many entities exist.
-const GOLDEN = { count: 325583, hash: 'f65c3b13' };
+const GOLDEN = { count: 323591, hash: 'bfda4735' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

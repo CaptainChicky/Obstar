@@ -67,7 +67,7 @@ class Detector {
 			}
 		}
 	}
-	// Clears `select` too (plan.md WP4.5.2C) - previously left pointing at the last thing it ever
+	// Clears `select` too - previously left pointing at the last thing it ever
 	// found, which meant every "forget this target and re-scan" call site was silently only half
 	// working: collision() only ever OVERWRITES select on a fresh, closer find, so a stale
 	// reference survived reset() indefinitely and got re-read (and, for a base drone's scout,

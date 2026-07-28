@@ -62,7 +62,7 @@
 	const MAX_EXTRAP = 2;   // how far past the newest snapshot sample() will coast
 
 	// The reference tick every server-side gameplay constant is denominated against
-	// (config.REF_TICK_MS, massplanchunks WP3) - 40ms, diep.io's own loop rate. This is
+	// (config.REF_TICK_MS) - 40ms, diep.io's own loop rate. This is
 	// deliberately not NET_TICK/SEND_MS above (the send interval, 33ms, only coincidentally
 	// close): public/client/game.js's input-prediction frame->tick conversion has to agree with
 	// what public/SHARE/Physics.js's per-tick constants are actually denominated in, or
@@ -123,7 +123,7 @@
 		push(x, y, t) {
 			// Nothing in the game covers this much ground in one packet - the fastest bullet does
 			// about 40 units a tick. A jump this size is a respawn, or an entity id being reused
-			// for a different entity (see HANDOFF "Entity storage": slots are recycled, and an
+			// for a different entity (slots are recycled, and an
 			// index can mean a different entity between frames). Lerping through it draws a streak
 			// across the map, so cut instead.
 			if (Math.abs(x - this.x1) > TELEPORT || Math.abs(y - this.y1) > TELEPORT) {

@@ -135,7 +135,7 @@
 				}
 			},
 			// offx signs below follow the server's firing order, not the drawn left/right picture
-			// (plan.md WP-CANNON) - the recoil bitfield is index-keyed end to end
+			// - the recoil bitfield is index-keyed end to end
 			// (entities/Player.js's this.recoil[r] -> SocketSchema.js's bits -> drawings.js's
 			// param.recoils[i]), so a client index has to mirror its server counterpart exactly or
 			// the barrel that visibly kicks is the mirror of the one the bullet left from.
@@ -627,7 +627,7 @@
 				}
 			},
 			// offx signs mirror the server's firing order, same reasoning as Twin Flank above
-			// (plan.md WP-CANNON).
+			//.
 			"Triple Twin": {
 				cannons: [
 					{

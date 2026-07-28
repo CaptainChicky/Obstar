@@ -1,5 +1,5 @@
 /*
-	Account chip + auth modal + achievements panel (HANDOFF Part 1.5 / 2.3).
+	Account chip + auth modal + achievements panel.
 
 	Runs on the menu page only, right after shop.js (so window.Mess already exists). Rather
 	than firing a second /userData request, it hangs a hook - window.onUserData - that
@@ -99,7 +99,7 @@
 		const name = document.createElement('SPAN');
 		name.className = 'name';
 		// Mirrors #coin-data (public/queue.js) rather than moving it - the chip is just a
-		// second, natural-feeling place to see the same balance (THEPLAN Part 1.5).
+		// second, natural-feeling place to see the same balance.
 		const coins = document.createElement('SPAN');
 		coins.className = 'chip-coins';
 		coins.textContent = (data && typeof data.coins === 'number') ? data.coins : 0;
@@ -165,7 +165,7 @@
 	}
 
 	// The one seam between "how an achievement is stored" and "what the wheel puts on
-	// screen" (plan.md Part 4): AchievementsConfig entries with a `badge` field render as a
+	// screen": AchievementsConfig entries with a `badge` field render as a
 	// drawn AchievementBadge canvas, everything else keeps today's <img>. No entry sets
 	// `badge` yet, so this always takes the img branch for now.
 	function makeAchNode(entry, opts) {

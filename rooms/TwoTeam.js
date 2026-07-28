@@ -23,7 +23,7 @@ class TwoTeam extends Room {
 			preGenerate: 2000,
 			bootDelay: 1,
 			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
-			// rescale (plan.md D1) - FOV didn't grow, so the map's area did.
+			// rescale - FOV didn't grow, so the map's area did.
 			objCaps: { sqr: { max0: 314, max1: 35 }, tri: { max0: 118, max1: 24 }, pnt: { max0: 35, max1: 29 } },
 			betaPentRng: 0.99,
 			bossRng: 0.9999,
@@ -41,7 +41,7 @@ class TwoTeam extends Room {
 		Fifteen orbit centres down each side's base strip, each hosting a PAIR of drones - the
 		wiki's "30 Base Drones in total ... spread evenly in pairs", which counts one side, so
 		60 in the room. Each pair sits on its own share of the same five discrete energy levels
-		4team uses (plan.md WP4.5.1: levelPlan(2) gives caps [1,1,1,1,1] and starts the pair on
+		4team uses (levelPlan(2) gives caps [1,1,1,1,1] and starts the pair on
 		levels 2 and 3) rather than a per-mode nominalR band - a level is an absolute size in the
 		user's spec, not something that scales per mode, so the old `spacing * 0.3` nominal radius
 		is gone. Random phases, same clumpy-not-rigid treatment as 4team's single ring.
@@ -49,7 +49,7 @@ class TwoTeam extends Room {
 		The centre spacing comes off the map height, not a literal, so resizing the map cannot
 		make adjacent centres overlap: at the current 11200-tall map the spacing is 746.7 units =
 		26.7gu, comfortably clear of 2*levelR(5) = 560 (checked in test/rooms.js). The across-strip
-		position is derived from baseSize (plan.md WP4.5.5, same fix as 4team's baseCenter())
+		position is derived from baseSize (the same derivation as 4team's baseCenter())
 		rather than a literal gu(24) inset, so the drones sit centred across the strip's width
 		instead of at whatever inset a past base resize happened to leave behind. Everything else
 		about the drones (speed, cross period, leash, detector range) is shared, and lives in
@@ -63,7 +63,7 @@ class TwoTeam extends Room {
 			const side = team ? 1 : -1;
 			for (let i = 0; i < CENTRES; i++) {
 				const plan = this.levelPlan(PER_CENTRE);
-				// The whole returned object IS the ledger now (plan.md WP4.5.3a/4.5.7) - see
+				// The whole returned object IS the ledger now - see
 				// FourTeam.js's basePosts() for why this centre's posts share it by reference
 				// straight from levelPlan() rather than rebuilding a subset of it.
 				const levels = plan;
@@ -103,7 +103,7 @@ class TwoTeam extends Room {
 		it, for anything allowed to penetrate first (bullets). Only this line moves; the far side
 		of the strip is the map wall. A bare half-plane in x with no y bound at all, so it is
 		still unbounded past the map's y edges too - rooms/Room.js's step() bounds it to the drawn
-		arena (inArena() && inEnemyBase(), plan.md WP4.5.4), so the dark OOB band is neutral
+		arena (inArena() && inEnemyBase()), so the dark OOB band is neutral
 		ground and this method's own shape stays exactly as it is here.
 	*/
 	inEnemyBase(obj, margin = 0) {

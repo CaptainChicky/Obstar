@@ -2933,7 +2933,11 @@ function oobTests(rooms) {
 	// The user's actual requirement (plan.md WP1): a level-0 tank's outer edge stops <= 5 grid
 	// squares past the drawn map edge. Nothing else pins this identity directly. fovTests (just
 	// above) leaves this same player at level 30, so force it back to level 0 for its base size.
+	// xp must go under XPLVL[0] (0) too: update() levels up before it sizes the tank, and size is
+	// exponential in level now (PENDING #22), so a stray level costs this identity 1%.
 	me.level = 0;
+	const savedXp = me.xp;
+	me.xp = -1;
 	me.update();
 	check('OOB_MARGIN + tank size == gu(5)', config.OOB_MARGIN + me.size === gu(5),
 		config.OOB_MARGIN + ' + ' + me.size + ' vs ' + gu(5));
@@ -2953,6 +2957,124 @@ function oobTests(rooms) {
 	check('it is a hard stop - velocity zeroes on hit, no push-back', me.vec.x === 0, me.vec.x);
 
 	me.x = 0; me.y = 0; me.vec.x = 0; me.vec.y = 0;
+	me.xp = savedXp;
+}
+
+/*
+	Tank growth (PENDING #22). diep fixes a tank at Z = 2 x 1.01^(lvl-1) gu DIAMETER on 1-based
+	levels; ours are 0-based and `size` is a radius, so at 1 gu = 28 units the same curve is
+	28 x 1.01^level. The linear stand-in this replaced agreed at both endpoints - which is why it
+	survived this long - but stepped in whole units every 2.8 levels in between, so the assertion
+	that matters is monotonicity per level, not the endpoints.
+*/
+function growthTests(rooms) {
+	console.log('\ntank growth (PENDING #22):');
+	const gu = require(path.join(ROOT, 'public', 'SHARE', 'World.js')).gu;
+	const room = rooms[0];
+	const me = player(room, 0);
+	const saved = { level: me.level, xp: me.xp, size: me.size };
+	me.xp = -1;   // update() levels up before it sizes; hold the level being tested
+
+	const sizes = [];
+	for (let lvl = 0; lvl <= 30; lvl++) {
+		me.level = lvl;
+		me.update();
+		sizes.push(me.size);
+	}
+
+	check('a level-0 tank is exactly gu(1) in radius - the anchor 28 came from',
+		sizes[0] === gu(1), sizes[0] + ' vs ' + gu(1));
+	check('size is 28 x 1.01^level at every level, not floor(level/2.8)',
+		sizes.every((s, lvl) => Math.abs(s - 28 * Math.pow(1.01, lvl)) < 1e-9), sizes[14]);
+	check('growth is strictly monotonic - every level is bigger than the one below it',
+		sizes.every((s, i) => i === 0 || s > sizes[i - 1]));
+	// The old linear curve's own endpoints, which diep's exponential still has to land on.
+	check('level 30 is ~1.35x a fresh spawn, the endpoint the linear version agreed with',
+		Math.abs(sizes[30] / sizes[0] - Math.pow(1.01, 30)) < 1e-9 &&
+		Math.abs(sizes[30] - 38) < 0.5, sizes[30]);
+	// dev.size is an admin offset, so it has to stay additive on top of the curve, not inside it.
+	me.dev.size = 10;
+	me.level = 0;
+	me.update();
+	check('the admin size offset still adds on top of the curve', me.size === gu(1) + 10, me.size);
+	me.dev.size = 0;
+
+	me.level = saved.level; me.xp = saved.xp; me.update(); me.size = saved.size;
+}
+
+/*
+	The `c` auto-spin. It has to start from wherever the barrel is actually pointing and turn from
+	there - it used to assign a counter that had been free-running since spawn, so engaging it
+	teleported the barrel to that counter's current phase before spinning. `autoDir` still exists
+	and still free-runs: it is the auto-turret idle spin and the drone orbit phase, which nothing
+	about this toggle should reach into.
+*/
+function autoSpinTests(rooms) {
+	console.log('\nthe `c` auto-spin:');
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const room = rooms[0];
+	const me = player(room, 0);
+	const saved = { dir: me.dir, c: me.inputs.c, spinning: me.spinning };
+	const step = tick.perTick(0.01818);
+
+	me.inputs.c = 0; me.spinning = 0;
+	me.autoDir = 3;   // deliberately nowhere near the barrel, which is the old bug's symptom
+	me.dir = 1.234;
+	me.inputs.c = 1;
+	me.update();
+	check('the spin starts from the barrel, not from the free-running counter',
+		Math.abs(me.dir - (1.234 + step)) < 1e-9, me.dir);
+	const first = me.dir;
+	me.update();
+	check('...and turns at the same rate the auto-turret idles at',
+		Math.abs(me.dir - (first + step)) < 1e-9, me.dir - first);
+
+	me.inputs.c = 0;
+	me.update();
+	const parked = me.dir;
+	me.update();
+	check('releasing leaves the tank where the spin left it', me.dir === parked, me.dir);
+
+	me.dir = -2.5;
+	me.inputs.c = 1;
+	me.update();
+	check('re-engaging picks up the new facing, not where the last spin ended',
+		Math.abs(me.dir - (-2.5 + step)) < 1e-9, me.dir);
+
+	me.inputs.c = saved.c; me.spinning = saved.spinning; me.dir = saved.dir;
+}
+
+/*
+	Max Health's own heal (PENDING #17). A point adds 110 maxHp and heals current hp by the same
+	proportion, so the health FRACTION survives the upgrade. It used to scale by
+	maxHp/(maxHp - 100) *after* the += 110 - a stale 100 against a 110 step - so every point
+	silently under-healed. Pinned as a ratio, not against a literal, so a retune of the step keeps
+	the property.
+*/
+function healthUpgradeTests(rooms) {
+	console.log('\nMax Health upgrade (PENDING #17):');
+	const room = rooms[0];
+	const me = player(room, 0);
+	const saved = { hp: me.hp, maxHp: me.maxHp, level: me.level, stillLvl: me.stillLvl, upNb: me.upNb.slice() };
+	const HP_UP = 6;   // entities/Player.js's `up` key order
+
+	me.level = 6; me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
+	me.maxHp = 150; me.hp = 75;
+	me.upgrade(HP_UP);
+	check('one point adds 110 maxHp', me.maxHp === 260, me.maxHp);
+	check('...and heals current hp by that same proportion', me.hp === parseInt(75 * (260 / 150)), me.hp);
+	check('...so a tank on half health is still on half health afterwards',
+		Math.abs(me.hp / me.maxHp - 0.5) < 0.005, me.hp / me.maxHp);
+
+	me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
+	me.maxHp = 150; me.hp = 150;
+	for (let i = 0; i < 6; i++) { me.upgrade(HP_UP); }
+	check('six points is +660 maxHp', me.maxHp === 810, me.maxHp);
+	check('...and a full-health tank is still at full health, not six under-heals down',
+		me.hp === me.maxHp, me.hp + '/' + me.maxHp);
+
+	me.hp = saved.hp; me.maxHp = saved.maxHp; me.level = saved.level;
+	me.stillLvl = saved.stillLvl; me.upNb = saved.upNb;
 }
 
 /*
@@ -3036,6 +3158,28 @@ function spawnSamplerTests() {
 				const r = Math.hypot(o.x, o.y);
 				return r >= 650 && r <= 700 && o.pos === 1;
 			}));
+	}
+
+	// 7. entities/Objects.js's own carve-outs (PENDING #28) rode the same x1.4 grid rescale as
+	// spawnKeepOut()'s. Captured off a stub room rather than inferred from where shapes land, so a
+	// regression names the wrong number instead of showing up as a density drift nobody can see.
+	{
+		const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
+		let seen = null;
+		const stub = {
+			rejectSample: (inset, circles) => { seen = { inset: inset, circles: circles }; return { x: 0, y: 0 }; }
+		};
+		const probe = new Objects('sqr', -1, { GM: 'ffa', sId: 0, oId: 0 }, room.map, stub);
+		check('a non-nest shape goes through the shared sampler', !!seen && probe.pos === 0);
+		check('...carving out 1400/980/980, the x1.4 twins of spawnKeepOut()\'s 1540/1120',
+			!!seen && seen.circles[0][2] === 1400 && seen.circles[1][2] === 980 && seen.circles[2][2] === 980,
+			seen && JSON.stringify(seen.circles.map((c) => c[2])));
+		check('...centred on the nests createObj() actually places into',
+			!!seen && seen.circles[0][0] === 0 && seen.circles[1][0] === room.map.width / 4 &&
+			seen.circles[2][0] === -room.map.width / 4,
+			seen && JSON.stringify(seen.circles));
+		check('...and inset from the map edge by the same 280 spawnPoint() uses',
+			!!seen && seen.inset === 280, seen && seen.inset);
 	}
 }
 
@@ -3145,6 +3289,9 @@ baseDroneAiTests();
 tickScaleTests();
 fovTests(rooms);
 oobTests(rooms);
+growthTests(rooms);
+autoSpinTests(rooms);
+healthUpgradeTests(rooms);
 spawnSamplerTests();
 broadPhaseTests();
 

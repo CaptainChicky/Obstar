@@ -36,11 +36,11 @@
 		MOUSE_OUT: 3,
 		// A damaged shape's health bar holds this many 60Hz frames (dtFrames-scaled) after its
 		// last real hp drop before it starts fading out again, regardless of whether it has
-		// healed back to full. Feel knob, not a measured diep number - massplanchunks WP-B.
+		// healed back to full. Feel knob, not a measured diep number.
 		HP_BAR_HOLD: 180,
 		// Lifetime upgrade-point budget a tank can ever spend: 30 XPLVL levels minus the two
 		// stillLvl++ levels (18, 27) entities/Player.js takes a point back at. Hand-mirrored
-		// server constant - massplanchunks WP-C.
+		// server constant.
 		MAX_UP_POINTS: 28,
 		UP_ORDER: [
 			7,

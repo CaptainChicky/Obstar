@@ -4,7 +4,7 @@
 	public/new2Init.js was one 3352-line IIFE, so everything in it could see everything else
 	by closure. Splitting it by namespace means those names have to travel some other way;
 	this object is how. It is the client-side twin of lib/runtime.js, and it follows the same
-	rule as the one in HANDOFF 2.1, for the same reason:
+	rule, for the same reason:
 
 		- a file may alias a name off CLIENT at load time only if an *earlier* file in the
 			views/play.ejs load order already put it there (CONST, Global, General, the entity

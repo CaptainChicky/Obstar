@@ -30,17 +30,19 @@ class Objects {
 		this.alpha = 1;
 		this.hit = 0;
 		this.spawnRad = 400;
-		this.marge = 200;
+		this.marge = 280;   // inset from the map edge - the same one rooms/Room.js's spawnPoint() uses
 		this.weight = 1;   // a mass divisor (this.x += vec.x/weight below), not a per-tick rate - not rescaled
 		switch (pos) {
 			case -1: {
-				// Same bounded sampler rooms/Room.js's spawnPoint() uses - this was the second
-				// unbounded `while (1)` (plan.md WP-SPAWN, PENDING #25) and the one that runs
-				// hundreds of times per room rather than once per death.
+				// Carve-outs around the three polygon nests, at the same 28-unit grid pitch the
+				// nests themselves are placed on (rooms/Room.js's createObj() ppp radii). Slightly
+				// tighter than spawnKeepOut()'s circles on purpose - a shape may sit closer to a
+				// nest than a fresh player spawn may. The sampler is bounded, and has to be: it
+				// runs hundreds of times per room rather than once per death.
 				const p = room.rejectSample(this.marge, [
-					[0, 0, 1000],
-					[map.width / 4, map.height / 4, 700],
-					[-map.width / 4, -map.height / 4, 700]
+					[0, 0, 1400],
+					[map.width / 4, map.height / 4, 980],
+					[-map.width / 4, -map.height / 4, 980]
 				]);
 				this.x = p.x;
 				this.y = p.y;
@@ -48,9 +50,7 @@ class Objects {
 				break;
 			}
 			case 'bull': {
-				// A 650..700 annulus around the origin, sampled directly. The rejection loop this
-				// replaces drew from a 1400-unit square and accepted ~11% of draws - it always
-				// terminated, but it is the same shape as the two real hangs above.
+				// A 650..700 annulus around the origin, sampled directly rather than by rejection.
 				const dir = Math.random() * Math.PI * 2;
 				const rad = 650 + Math.random() * 50;
 				this.x = Math.cos(dir) * rad;
@@ -93,7 +93,7 @@ class Objects {
 				this.hp = 32;
 			}
 		}
-		// Rarity roll (THEPLAN 4.2, Mythic removed in massplanchunks WP6). Checked rarest-first:
+		// Rarity roll. Checked rarest-first:
 		// each tier is its own independent chance, so a roll that already won a rarer tier cannot
 		// be re-decided into a more common one by also checking that (weaker) threshold afterwards.
 		this.tier = 0;
@@ -123,7 +123,7 @@ class Objects {
 		this.room.obj[this.type][this.pos] -= 1;
 	}
 	collision(other, option = {}) {
-		// massplanchunks WP-D audit: same call as entities/Player.js:359's 0.5 threshold - the 0.4
+		// Same call as entities/Player.js's own 0.5 threshold - the 0.4
 		// here is deliberately NOT tick.perTick()'d. this.vec is a real-tick velocity kept near its
 		// own accel/friction fixed point by update()'s vec.limit(tick.perTick(maxspeed/2), FRICTION),
 		// and that fixed point (verified numerically) barely moves across TICK_MS 16/25/33/40, so a
@@ -157,7 +157,7 @@ class Objects {
 				}
 				// A base drone's `pene` is a health pool, not a penetration value (rooms/Room.js's
 				// spawnBaseDrone), so reading it as one here dealt 2000 x damage and vaporised any shape on
-				// contact - plan.md WP4.5.2a.
+				// contact
 				const pene = (other.type === 1.4) ? config.BASE_DRONE_PENE : option.pene;
 				this.hp -= tick.perTick(((pene > 1) ? pene : pene / 2) * other.damage);
 				this.hit = tick.ticks(1.65);

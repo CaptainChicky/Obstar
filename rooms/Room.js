@@ -2,7 +2,7 @@
 	Room - the shared simulation behind every gamemode.
 
 	Ffa and TwoTeam used to be two ~750-line files that were roughly 90% the same code and
-	had already drifted apart in a dozen places (HANDOFF.md 5.8). Everything genuinely shared
+	had already drifted apart in a dozen places. Everything genuinely shared
 	- the tick, the quadtree, collision, spawning, the leaderboard, the per-player view
 	builder - now lives here exactly once. A gamemode is a subclass that hands super() a block
 	of tunables and overrides a handful of small hooks:
@@ -55,38 +55,37 @@ const Objects = require('../entities/Objects.js');
 const Detector = require('../entities/Detector.js');
 const CONFIG = require('../lib/gameAI.js');
 
-// generate() used to re-arm itself with setTimeout(400). It is a simulation event, so it
-// rides the simulation clock now: one pass every this many fixed steps. These divide by the
-// actual wall-clock step (clock.STEP_MS, 25ms/40Hz - massplanchunks WP3), not a reference tick,
+// generate() is a simulation event, so it rides the simulation clock: one pass every this many fixed steps. These divide by the
+// actual wall-clock step (clock.STEP_MS, 25ms/40Hz), not a reference tick,
 // so they stay wall-clock-correct with no rescale of their own.
 const GENERATE_EVERY = Math.round(400 / clock.STEP_MS);   // 16 steps = 400ms at 40Hz
-const FIRST_GENERATE = Math.round(300 / clock.STEP_MS);   // Init() used to wait 300ms
+const FIRST_GENERATE = Math.round(300 / clock.STEP_MS);   // 12 steps = 300ms at 40Hz
 
-// How long a base drone post stays empty after its drone dies (massplanchunks WP-E). A count of
+// How long a base drone post stays empty after its drone dies. A count of
 // reference ticks in config, converted to real ticks once here rather than per post per tick.
 const BASE_DRONE_RESPAWN = tick.ticks(config.BASE_DRONE_RESPAWN);
-// How often each orbit centre's binomial sorter and detection scout run (plan.md WP4.5.0).
+// How often each orbit centre's binomial sorter and detection scout run.
 // The sorter's period is denominated in reference ticks like every other gameplay-feel constant;
 // the scout's is a raw real-tick count (a cost knob, the same category as GENERATE_EVERY above),
 // so it is read straight off config with no tick.ticks() conversion.
 const BASE_DRONE_SORT_PERIOD = tick.ticks(config.BASE_DRONE_SORT_PERIOD);
 const BASE_DRONE_SCAN = config.BASE_DRONE_SCAN;
 const BASE_DRONE_CROSS_TICKS = tick.ticks(config.BASE_DRONE_CROSS);
-// How long an orbit centre stays angry at a polygon boss that hurt one of its drones (plan.md
-// WP4.5.17), in reference ticks like its neighbours above.
+// How long an orbit centre stays angry at a polygon boss that hurt one of its drones, in reference
+// ticks like its neighbours above.
 const BASE_DRONE_PROVOKE_MEMORY = tick.ticks(config.BASE_DRONE_PROVOKE_MEMORY);
 
-// A base drone is one of its own side's bullets, for the team-transparency skip below (plan.md
-// WP4.5.0) - type 1.4 with life -1 is otherwise indistinguishable from any other homing bullet.
+// A base drone is one of its own side's bullets, for the team-transparency skip below - type 1.4
+// with life -1 is otherwise indistinguishable from any other homing bullet.
 const isBaseDrone = (e) => e.kind === KIND.BULLET && e.type === 1.4;
 
-// Caller-owned scratch array for the collision pass's quadTree.queryCircle() calls (plan.md
-// WP4.5.4) - reused and cleared (length = 0) before every query rather than allocated fresh, since
+// Caller-owned scratch array for the collision pass's quadTree.queryCircle() calls - reused and
+// cleared (length = 0) before every query rather than allocated fresh, since
 // this runs once per live entity per tick. Module-scope, not per-Room: every room's step() runs on
 // the same single-threaded event loop tick, never concurrently, so there is nothing to race.
 const COLLIDE_SCRATCH = [];
 
-// rejectSample()'s hard cap (plan.md WP-SPAWN, PENDING #25). ffa's acceptance rate is ~0.9, so 128
+// rejectSample()'s hard cap. ffa's acceptance rate is ~0.9, so 128
 // consecutive rejections is ~10^-133 - the cap exists to bound the unsatisfiable case, not the
 // unlucky one.
 const SPAWN_TRIES = 128;
@@ -148,7 +147,7 @@ class Room {
 			"Bpnt": { '1': 0, 'max1': 3 },
 			"Bsqr": { '1': 0, 'max1': 2 },
 			"Btri": { '1': 0, 'max1': 2 },
-			"bull": { '1': 0, 'max1': 39 }   // 20 x1.96, same density-hold as objCaps (plan.md WP1)
+			"bull": { '1': 0, 'max1': 39 }   // 20 x1.96, same density-hold as objCaps
 		};
 		this.baseSize = this.rules.baseSize;
 		this.leader = [];
@@ -171,7 +170,7 @@ class Room {
 		this.generateIn = FIRST_GENERATE;
 		this.build();
 		/*
-			Base drones (massplanchunks WP-E). The post list has to outlive construction because
+			Base drones. The post list has to outlive construction because
 			tickBaseDrones() respawns into it, which is why this is a stored list rather than
 			something build() does and forgets. A mode without bases returns [] and pays nothing -
 			tickBaseDrones() leaves on the length check.
@@ -180,7 +179,7 @@ class Room {
 		/*
 			One entry per orbit centre, identified by shared `levels` ledger reference (posts at the
 			same centre all carry the SAME levels object) - built once so the per-centre binomial
-			sorter and detection scout (plan.md WP4.5.0) aren't re-deriving the grouping every
+			sorter and detection scout aren't re-deriving the grouping every
 			pass. A mode with no bases costs one empty-array iteration.
 		*/
 		this.droneCentres = [];
@@ -210,7 +209,7 @@ class Room {
 	*/
 	build() { }
 	/*
-		The shared five-level radius table (plan.md WP4.5.1). levelR(n) = ORBIT_R + (n - HOME) *
+		The shared five-level radius table. levelR(n) = ORBIT_R + (n - HOME) *
 		LEVEL_GAP, so level 3 (home) sits at the nominal ORBIT_R and levels 1/2/4/5 sit one/two
 		drone-sides in or out of it. Both team modes read this one table - there is no per-mode
 		radius derivation any more.
@@ -220,7 +219,7 @@ class Room {
 	}
 	/*
 		Plans how `count` drones at one orbit centre are distributed across the five levels
-		(plan.md WP4.5.1), off BASE_DRONE_LEVEL_WEIGHTS ([1,4,6,4,1], a Binomial(4,1/2) centred on
+, off BASE_DRONE_LEVEL_WEIGHTS ([1,4,6,4,1], a Binomial(4,1/2) centred on
 		level 3):
 
 		  caps    - the saturation limit per level, checked before every voluntary move into a
@@ -237,7 +236,7 @@ class Room {
 		Largest-remainder apportionment of `count` drones over BASE_DRONE_LEVEL_WEIGHTS
 		([1,4,6,4,1], a Binomial(4,1/2) centred on level 3), ties broken by smaller |level - HOME|
 		then by the lower level - the same binomial shape levelPlan() below uses for a POST count,
-		but callable standalone for a LIVE count (plan.md WP4.5.0). The per-centre sorter
+		but callable standalone for a LIVE count. The per-centre sorter
 		(tickDroneCentres()/sortDroneCentre() below) needs this for whatever the live drone count
 		happens to be right now, which is not always the post count - a dead drone is off the
 		ledger for BASE_DRONE_RESPAWN before its post refills.
@@ -268,7 +267,7 @@ class Room {
 		index-by-index - levelPlan(12).initial is [1,2,2,2,3,3,3,3,4,4,4,5]), target (the same
 		largest-remainder counts levelTargets() returns - levelPlan(12).target is [1,3,4,3,1] -
 		seeded here for the post count, re-derived by the sorter for the live count as it moves),
-		and crossCap (plan.md WP4.5.0 - how many of this centre's drones may be mid-swoosh at once,
+		and crossCap (how many of this centre's drones may be mid-swoosh at once,
 		sized from measured demand: meanCrossTicks is BASE_DRONE_CROSS_TICKS-durations averaged
 		over the five levels weighted by BASE_DRONE_LEVEL_WEIGHTS, since that is the steady-state
 		distribution a cross actually launches from, so a centre with more drones or a longer
@@ -296,7 +295,7 @@ class Room {
 			caps, initial, target, crossCap,
 			count: [0, 0, 0, 0, 0], crossing: 0,
 			targets: {}, threat: null, threatAt: 0,
-			// Polygon-boss provocation (plan.md WP4.5.17): the oId of the boss that has most
+			// Polygon-boss provocation: the oId of the boss that has most
 			// recently hurt one of this centre's drones, and when. Per CENTRE, not per drone, for
 			// the same reason `threat` is - the whole base agrees on who it is angry at.
 			provoked: 0, provokedAt: 0,
@@ -304,12 +303,12 @@ class Room {
 		};
 	}
 	/*
-		Per-centre maintenance run once a tick from step() (plan.md WP4.5.0) - the binomial
+		Per-centre maintenance run once a tick from step() - the binomial
 		sorter and the detection scout. Both are per-ORBIT-CENTRE, not per-drone: putting either in
 		entities/Bullet.js's per-drone update() would make them N times more work (N drones sharing
 		a centre) for the same answer.
 
-		Also expires the shared threat (plan.md WP4.5.2B): `levels.threat` used to be written
+		Also expires the shared threat: `levels.threat` used to be written
 		(case 1.4's first block, alongside `threatAt` now) and never cleared, so acquisition quietly
 		became "has ever been seen" instead of "is currently visible", and a target that died while
 		being tracked (respawn() swaps in a brand-new Player, so the old one's `destroy` stays 1
@@ -328,7 +327,7 @@ class Room {
 				levels.threat = null;
 			}
 			// A polygon boss that wandered off and stopped hitting anything goes back to being
-			// ignored (plan.md WP4.5.17) - the anger is a memory, not a permanent grudge.
+			// ignored - the anger is a memory, not a permanent grudge.
 			if (levels.provoked && this.timestamp - levels.provokedAt > BASE_DRONE_PROVOKE_MEMORY) {
 				levels.provoked = 0;
 			}
@@ -343,7 +342,7 @@ class Room {
 		}
 	}
 	/*
-		The binomial sorter (plan.md WP4.5.0): compare live occupancy against the live-count
+		The binomial sorter: compare live occupancy against the live-count
 		target and walk a random number of surplus drones one level each toward the NEAREST deficit,
 		on the gradual arc (Bullet.sortSwitch(), cap-free). Moving one unit of surplus one step
 		toward the nearest deficit strictly decreases sum(|count-target|) by 2 and no move increases
@@ -397,7 +396,7 @@ class Room {
 		}
 	}
 	/*
-		The detection scout (plan.md WP4.5.0): rotate which single drone at this centre has its
+		The detection scout: rotate which single drone at this centre has its
 		DETEC enabled, round-robin, skipping any drone currently chasing (its own detector state is
 		managed independently - see entities/Bullet.js's case 1.4) or dead/respawning. Measured: base
 		drones were 46% of a 4team tick and 93% of that was the wide quadtree query each drone's own
@@ -424,14 +423,14 @@ class Room {
 	/*
 		Where this mode's base drones live, as a flat list of one post per drone:
 		{team, x, y, level, phase, levels}, where x,y is the ORBIT CENTRE (not the drone's start
-		point), level its starting energy level (1..BASE_DRONE_LEVELS, plan.md WP4.5.1) and phase
+		point), level its starting energy level (1..BASE_DRONE_LEVELS) and phase
 		its starting angle around it. `levels` is the per-centre saturation ledger
 		({caps, count:[0,0,0,0,0], crossing:0}) from levelPlan() - the SAME object reference on
 		every post sharing a centre, so a level switch or a cross on one drone is visible to its
 		orbit-mates immediately. Optionally `crossIn`, the drone's first diameter-cross countdown,
 		which a mode staggers so a base's drones do not all cross at once, and optionally `spin`
 		(+-1, default 1) - which way round the centre the drone circles, read by
-		entities/Bullet.js's orbit field (plan.md WP4.5.0).
+		entities/Bullet.js's orbit field.
 
 		Called exactly once, from the constructor. Free-for-all has no bases, so this is the empty
 		list and every base-drone code path below costs one length check per tick.
@@ -459,7 +458,7 @@ class Room {
 		bull.team = post.team;
 		bull.ox = post.x;
 		bull.oy = post.y;
-		// Radius is quantised into five shared energy levels (plan.md WP4.5.1) - orbRTarget is
+		// Radius is quantised into five shared energy levels - orbRTarget is
 		// the live target radius the type-1.4 orbit field steers toward each tick, and it only
 		// ever moves in whole BASE_DRONE_LEVEL_GAP steps via entities/Bullet.js's levelSwitch(),
 		// never continuously. `levels` is the per-centre saturation ledger, shared by reference
@@ -476,26 +475,26 @@ class Room {
 		bull.switchCooldown = 0;
 		bull.levelTimer = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
 		bull.tooClose = 0;
-		// Post-swoosh climb back to home (plan.md WP4.5.0) - set on a cross's exit, cleared when
+		// Post-swoosh climb back to home - set on a cross's exit, cleared when
 		// the drone reaches BASE_DRONE_LEVEL_HOME. Never true at spawn.
 		bull.homing = 0;
-		// Detection is centralised per orbit centre (plan.md WP4.5.0): every drone owns its own
+		// Detection is centralised per orbit centre: every drone owns its own
 		// Detector (created here, not lazily in entities/Bullet.js's case 1.4, so
 		// tickDroneCentres()'s scout rotation always has one to enable/disable), but only the
 		// current scout's is enabled at a time - rotateScout() above turns this on.
 		bull.DETEC = new Detector(bull, bull.x, bull.y, config.BASE_DRONE_DETECT, [KIND.PLAYER]);
 		bull.DETEC.team = post.team;
 		bull.DETEC.enabled = 0;
-		// Latches a shape hit / proximity reaction that arrives while the drone is busy (plan.md
-		// WP4.5.0), so it is paid the moment the drone is free instead of being dropped.
+		// Latches a shape hit / proximity reaction that arrives while the drone is busy, so it is paid
+		// the moment the drone is free instead of being dropped.
 		bull.reactPending = 0;
 		bull.spin = post.spin || 1;
-		// head/spd are the steered-motion state (plan.md WP4.5.0): seeded tangential at spawn (not
+		// head/spd are the steered-motion state: seeded tangential at spawn (not
 		// radial, or the first second would look like a launch straight out of the centre), and at
 		// cruise so the drone doesn't ramp up from a standing start.
 		bull.head = post.phase + bull.spin * Math.PI / 2;
 		bull.spd = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
-		// Last tick's vec (plan.md WP4.5.0) - the swoosh's entry acceleration seam reads this, so
+		// Last tick's vec - the swoosh's entry acceleration seam reads this, so
 		// it has to exist before the first tick ever runs. Seeded to match vec's own pre-steering
 		// value (0,0) rather than assumed, so a drone that somehow crossed on its very first tick
 		// would still get an honest (zero) entry acceleration rather than a guessed one.
@@ -527,7 +526,7 @@ class Room {
 		BASE_DRONE_RESPAWN ticks later, not on a free-running clock.
 
 		A drone that dies mid-life also has to release its claim on the level ledger exactly once
-		(plan.md WP4.5.1) - `levelReleased` guards that, and is sound rather than lucky: SlotMap's
+ - `levelReleased` guards that, and is sound rather than lucky: SlotMap's
 		KEEP_PLACE is 20 ticks, so a destroyed drone is still reachable through post.slot for 20
 		ticks after destroy is set, and this runs on every one of them, so the release can never be
 		missed by the slot being recycled first.
@@ -609,15 +608,15 @@ class Room {
 			switch (type) {
 				case 'sqr':
 				case 'Bsqr':
-					ppp = [this.map.width / 4, this.map.height / 4, 490];   // 350 x1.4, grid rescale (plan.md WP1)
+					ppp = [this.map.width / 4, this.map.height / 4, 490];   // 350 x1.4, grid rescale
 					break;
 				case 'tri':
 				case 'Btri':
-					ppp = [-this.map.width / 4, -this.map.height / 4, 490]; // 350 x1.4, grid rescale (plan.md WP1)
+					ppp = [-this.map.width / 4, -this.map.height / 4, 490]; // 350 x1.4, grid rescale
 					break;
 				case 'pnt':
 				case 'Bpnt':
-					ppp = [0, 0, 630];   // 450 x1.4, grid rescale (plan.md WP1)
+					ppp = [0, 0, 630];   // 450 x1.4, grid rescale
 					break;
 			}
 		}
@@ -732,10 +731,8 @@ class Room {
 		let stop = 1;
 		let playerCount = 0;
 		for (const i of this.INSTANCE.players.live()) {
-			// A boss is not a bot - it has its own AI, not CONFIG.BOTS - so it used to satisfy
-			// this "is anyone still here?" test and keep an empty room ticking forever. Latent in
-			// 2team, where a boss is a once-in-ten-thousand-rolls event; certain in 'boss' mode,
-			// which keeps three of them alive at all times.
+			// A boss is not a bot - it has its own AI, not CONFIG.BOTS - so it has to be excluded
+			// explicitly, or an empty 'boss' room (three bosses, always alive) ticks forever.
 			if (!i.bot && !i.boss) {
 				playerCount++;
 				stop = 0;
@@ -851,8 +848,8 @@ class Room {
 				if (obj.destroy >= 1) { continue; }
 				// A player dies exactly on the base line; a bullet is allowed to penetrate
 				// config.BASE_BULLET_MARGIN past it first, which is what real diep does and what
-				// stops enemy fire visibly evaporating on an invisible wall (massplanchunks WP-E).
-				// The base only kills inside the drawn arena (plan.md WP4.5.0) - inEnemyBase()
+				// stops enemy fire visibly evaporating on an invisible wall.
+				// The base only kills inside the drawn arena - inEnemyBase()
 				// alone is unbounded outward, so something sitting in the dark OOB band past a
 				// corner would otherwise still count as "in" the base; inArena() is the one place
 				// that bound is written.
@@ -861,7 +858,7 @@ class Room {
 					obj.collision(0, { base: 1 });
 					continue;
 				}
-				// Allocation-free circle query (plan.md WP4.5.4) - was qt.query(closure, {x,y,r}),
+				// Allocation-free circle query - was qt.query(closure, {x,y,r}),
 				// which allocated a {x,y,w,h} object per node visited and a {x,y,w:0,h:0} object per
 				// point tested, and called a closure defined fresh inside this very loop on every
 				// visit. queryCircle() is the same AABB/circle test written inline against
@@ -880,14 +877,14 @@ class Room {
 					if (other.destroy >= 1) { continue; }
 					if (objKind === KIND.DETECTOR && otherKind === KIND.DETECTOR) { continue; }
 					if (obj.id.oId === other.id.oId && objKind === otherKind) { continue; }
-					// Math.sqrt(a*a + b*b), not Math.pow(a,2) (plan.md WP4.5.4) - Math.pow is the
+					// Math.sqrt(a*a + b*b), not Math.pow(a,2) - Math.pow is the
 					// slower path in V8 for an integer exponent, and this runs once per candidate
 					// pair on the hottest loop in the room. Math.hypot is in turn slower than this,
 					// measured - not "improved" to it; see other copies of this expression elsewhere
 					// in the tree, none of which are on a hot path, so none of them are touched.
 					const ddx = other.x - obj.x, ddy = other.y - obj.y;
 					const dis = Math.sqrt(ddx * ddx + ddy * ddy);
-					// Base drones make an effort not to overlap (plan.md WP4.5.0): flagged here, acted on next tick
+					// Base drones make an effort not to overlap: flagged here, acted on next tick
 					// by entities/Bullet.js's type-1.4 branch, which takes the same 60-degree level switch a shape
 					// hit does. This is deliberately NOT a collision - the same-team skip below still runs, so the
 					// pair exchanges no damage, no knockback and no jitter. Exactly ONE side of the pair yields, not
@@ -897,7 +894,7 @@ class Room {
 					if (isBaseDrone(obj) && isBaseDrone(other) && dis < config.BASE_DRONE_SEPARATION) {
 						if (obj.id.oId < other.id.oId) { obj.tooClose = 1; } else { other.tooClose = 1; }
 					}
-					// A base drone is transparent to its own side (plan.md WP4.5.0): the pair is skipped whole,
+					// A base drone is transparent to its own side: the pair is skipped whole,
 					// so there is no damage, no knockback, no separation jitter and no detector hit - rather than
 					// relying on three separate noDam early-breaks in entities/ to each stay in the right place.
 					// Polygons are deliberately not covered: a drone collides with shapes regardless of team.
@@ -1063,14 +1060,14 @@ class Room {
 		Both team modes' own inEnemyBase() are deliberately unbounded OUTWARD (4team measures
 		depth inward from the map edge, so a point past a corner has negative depth and still
 		counts as inside; 2team is a bare half-plane in x with no y bound at all) - step() is what
-		bounds that to the drawn arena now (plan.md WP4.5.0), via inArena() below, so the
+		bounds that to the drawn arena now, via inArena() below, so the
 		signature/semantics here don't change.
 	*/
 	inEnemyBase(obj, margin = 0) {
 		return false;
 	}
 	/*
-		The drawn arena - what the coloured base square is clipped to (plan.md WP4.5.0). The OOB
+		The drawn arena - what the coloured base square is clipped to. The OOB
 		band outside it (config.OOB_MARGIN, ~5 squares once a tank's own radius is counted - see
 		entities/Player.js's motion()) is neutral ground for everything: "in an enemy base" means
 		"in an enemy base AND inside the drawn arena" now, so a fast tank (or a base drone chasing
@@ -1096,18 +1093,14 @@ class Room {
 		///
 		newTank.xp = force ? tank.xp : this.respawnXp(tank.xp);
 		newTank.coins = tank.coins || 0;
-		// respawn() swaps in a brand new Player, so anything the constructor defaults to
-		// zero/empty has to be carried across by hand or it quietly resets on every death:
-		//   - inputs: a key held through the moment of death stays held physically, but the
-		//     client only re-sends 'keydown' on an actual state change (net/gameSocket.js), so
-		//     a fresh {w:0,...} here means motion()/shoot() see no input at all next tick -
-		//     which also means shield (spawn protection) never clears, since that only happens
-		//     inside motion()/shoot() - so anyone who died while holding a key stayed invisible
-		//     to every Detector-based AI (bots, bosses) until they released and pressed again.
-		//   - userKey/unlocked/killCounts: without these, Controller.disconnect()'s achievement
-		//     write-back (tank.userKey && Object.keys(tank.unlocked).length) silently no-ops for
-		//     the rest of the session after a single death, and kill-count achievements
-		//     (kawaii_smash) would restart counting from zero every life.
+		// A respawn swaps in a brand new Player, so anything the constructor defaults to zero or
+		// empty has to be carried across by hand:
+		//   - inputs: the client only sends 'keydown' on an actual state change, so a key held
+		//     through the moment of death would never be re-announced. It also gates `shield`
+		//     (spawn protection), which only clears once motion()/shoot() see real input.
+		//   - userKey/unlocked/killCounts: Controller.disconnect()'s achievement write-back is
+		//     gated on userKey plus a non-empty `unlocked`, and kill-count achievements count
+		//     across a whole session, not one life.
 		newTank.inputs = Object.assign({}, tank.inputs);
 		newTank.userKey = tank.userKey;
 		newTank.unlocked = Object.assign({}, tank.unlocked);
@@ -1130,7 +1123,7 @@ class Room {
 		How much xp survives a death: a fractional power of what you had, floored at nothing and
 		capped at 60% of the level-30 requirement. The Math.min matters - below roughly a
 		thousand xp the curve returns *more* than it was given, so without it dying early is a
-		reward. (TwoTeam was missing it; see HANDOFF.md 5.8.)
+		reward.
 	*/
 	respawnXp(xp) {
 		const mXp = this.XPLVL[this.XPLVL.length - 1];
@@ -1142,8 +1135,8 @@ class Room {
 	}
 	/*
 		Rejection sampling with a hard iteration cap, shared with entities/Objects.js's polygon
-		placement (this.room.rejectSample) - both used to spin on `while (1)` (plan.md WP-SPAWN,
-		PENDING #25).
+		placement (this.room.rejectSample). The cap is the whole point: neither caller may loop
+		until it succeeds.
 
 		The carve-out radii callers pass in are absolute, not a fraction of the map: a nest is a
 		fixed-size cluster (see createObj()'s ppp radii), so scaling them with mapSize would carve
@@ -1176,9 +1169,7 @@ class Room {
 	}
 	/* The three polygon nests, as [x, y, radius] keep-out circles. */
 	spawnKeepOut() {
-		// Radii are x1.4 under the grid rescale (was 1100 / 800 against the old 20-unit pitch):
-		// origin nest 1540, quarter-point nests 1120 each.
-		return [
+				return [
 			[0, 0, 1540],
 			[this.map.width / 4, this.map.height / 4, 1120],
 			[-this.map.width / 4, -this.map.height / 4, 1120]
@@ -1226,7 +1217,11 @@ class Room {
 			y: RAW.main.y,
 			vx: RAW.main.vec.x,
 			vy: RAW.main.vec.y,
-			dir: RAW.main.inputs.c ? RAW.main.autoDir : RAW.main.dir,
+			// While the `c` spin is on, send its own phase rather than this.dir: a mousemove can
+			// land between the tick that spun the tank and this encode, and the client draws this
+			// field verbatim (User.realDir/followDir) - so reading it here would splice one frame
+			// of mouse aim into the spin.
+			dir: RAW.main.inputs.c ? RAW.main.spinDir : RAW.main.dir,
 			size: RAW.main.size,
 			alpha: RAW.main.alpha,
 			hp: RAW.main.hp / RAW.main.maxHp,

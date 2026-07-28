@@ -191,8 +191,8 @@
 				ctx.strokeStyle = 'black';
 				ctx.stroke();
 				ctx.globalAlpha = 1;
-				// Team bases. Game.baseSize rides GameUpdate's head (massplanchunks WP-E) rather
-				// than being re-derived from a literal here, which used to agree with 2team's 600
+				// Team bases. Game.baseSize rides GameUpdate's head rather
+				// than being re-derived from a literal here, which cannot track 2team's own
 				// only by coincidence and would have desynced the moment anyone tuned it. 0 means
 				// the mode has no bases, so ffa/boss/sandbox fall through drawing nothing.
 				// Team id is the colour index directly - SocketSchema's toSTRING.color is

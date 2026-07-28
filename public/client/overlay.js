@@ -7,7 +7,7 @@
 	'use strict';
 	const General = CLIENT.General;
 	/*
-		Cosmetics console (HANDOFF Part 3). The console opens for anyone (Ctrl+Shift+L,
+		Cosmetics console. The console opens for anyone (Ctrl+Shift+L,
 		game.js:320) - always did, since there was never a client-side gate on it, only on
 		whether a typed command did anything server-side. Rather than gate the console itself,
 		a recognised *cosmetic* command (color/uiscale/palette/fps/help/clear) is handled and

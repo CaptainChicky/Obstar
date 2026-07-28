@@ -16,20 +16,20 @@ const ACHIEVEMENTS = require('../public/SHARE/AchievementsConfig.js').list;
 const Bullet = require('./Bullet.js');
 const Detector = require('./Detector.js');
 
-// Auto-turret aim lead (shoot()): "how many reference ticks ahead" to predict a moving target -
-// a lookahead duration, one-time-rescaled from 12 (33ms) to 9.9 (40ms) same as every other
-// duration in this pass, then converted to real ticks once at load (massplanchunks WP3).
-// massplanchunks WP-D audit flag (not fixed here - see PENDING.md): the formula this feeds,
-// other.vec * dis / AUTOTURRET_LEAD, is NOT tick-scale invariant despite the tick.lead()
-// conversion - verified numerically, the *un*-converted divisor (9.9 flat) tracks TICK_MS
-// 16/25/33/40 to within ~1.5% at steady state, where tick.lead()'s n/SCALE varies the result by
-// over 100% across the same range. Root cause: other.vec is already a real-tick quantity whose
-// magnitude is itself close to TICK_MS-invariant (same reasoning as the two knockback-threshold
-// comments in this file and entities/Objects.js), so dividing by a further SCALE-adjusted
-// constant introduces the step-rate dependency rather than removing it. Left as tick.lead(9.9)
-// for now because changing it also changes today's auto-aim feel at the live TICK_MS (25), which
-// is a balance call, not a pure correctness fix - same reasoning as PENDING #16's `back` column.
+// Auto-turret aim lead (shoot()): "how many reference ticks ahead" to predict a moving target,
+// converted to real ticks once at load.
+// Known open finding (PENDING.md): the formula this feeds, other.vec * dis / AUTOTURRET_LEAD, is
+// NOT tick-scale invariant *because* of the tick.lead() conversion - other.vec is already a
+// real-tick quantity whose magnitude is close to TICK_MS-invariant on its own (same reasoning as
+// the knockback-threshold comments below and in entities/Objects.js), so dividing by a further
+// SCALE-adjusted constant introduces the step-rate dependency instead of removing it. Unwrapping
+// it changes today's auto-aim feel, which makes it a balance call rather than a bug fix.
 const AUTOTURRET_LEAD = tick.lead(9.9);
+
+// Idle spin rate, per reference tick: an auto-turret with nothing to shoot at (shoot()), and the
+// `c` auto-spin toggle (update()). One constant, because they are meant to look like the same
+// motion - PENDING #21 retunes both together or neither.
+const SPIN_RATE = 0.01818;
 
 class Player {
 	constructor(id, x, y, name, team, xpLvl, room) {
@@ -43,7 +43,7 @@ class Player {
 			size: 0,
 			stick: 0
 		};
-		// Achievements (HANDOFF Part 2): id -> 1 once unlocked, guards unlock() against firing
+		// Achievements: id -> 1 once unlocked, guards unlock() against firing
 		// twice; Controller.disconnect() reads this once per life and persists it into
 		// acc.userdata.ach. killCounts backs the kill-tally achievements (registerKill below).
 		this.unlocked = {};
@@ -63,6 +63,12 @@ class Player {
 		this.hp = this.maxHp;
 		this.prize = 100;
 		this.autoDir = 0;
+		// The `c` auto-spin's own phase. Seeded from wherever the barrel is pointing the moment the
+		// toggle goes on and turned from there, so engaging it reads as the tank starting to spin
+		// rather than snapping onto some counter that has been running since you spawned. `spinning`
+		// is the edge detector, not a duplicate of inputs.c.
+		this.spinDir = 0;
+		this.spinning = 0;
 		this.dead = 0,
 			this.state = {
 				"disconnect": 0,
@@ -151,9 +157,9 @@ class Player {
 		Physics.stepBody(body, ax, ay, tick.SCALE);
 		this.x = body.x; this.y = body.y;
 		this.vec.x = body.vx; this.vec.y = body.vy;
-		this.autoDir += tick.perTick(0.01818);   // one-time-rescaled from .015 (33ms ref)
+		this.autoDir += tick.perTick(SPIN_RATE);
 		// Players alone get to leave the drawn arena, up to config.OOB_MARGIN - a measured diep
-		// behaviour (massplanchunks WP5), not a spring: the real wall is just further out than
+		// behaviour, not a spring: the real wall is just further out than
 		// the visible edge, and still a hard stop.
 		if (this.x < -this.map.width / 2 - config.OOB_MARGIN) {
 			this.x = -this.map.width / 2 - config.OOB_MARGIN;
@@ -298,7 +304,10 @@ class Player {
 						case "BDamage": this.up[i] += .2; break;
 						case "BPene": this.up[i] += 1.25; break;
 						case "MSpeed": this.up[i] += 0.029254; break;   // Physics.MOVE_ACCEL_PER_UP's twin, same one-time rescale
-						case "HpUp": this.maxHp += 110; this.hp = parseInt(this.hp * (this.maxHp / (this.maxHp - 100))); break;
+						// The ratio comes off the OLD maxHp, so the point heals you by exactly the
+						// fraction it added. Reading the old value can't drift out of sync with the
+						// step the way the literal it replaces did.
+						case "HpUp": this.hp = parseInt(this.hp * ((this.maxHp + 110) / this.maxHp)); this.maxHp += 110; break;
 						case "BodyDam": this.damage += 2.18182; break;   // one-time-rescaled from 1.8 (33ms ref)
 					}
 					break;
@@ -366,7 +375,7 @@ class Player {
 				}
 				break;
 			case KIND.OBJECTS:
-				// massplanchunks WP-D audit: the 0.5 threshold is deliberately NOT tick.perTick()'d.
+				// The 0.5 threshold is deliberately NOT tick.perTick()'d.
 				// this.vec is a real-tick velocity produced by Physics.stepBody's accel/friction
 				// recurrence, and that recurrence's fixed point (and any point along a friction-only
 				// decay from it, since drag() is what keeps decay real-time-shaped) is itself
@@ -415,7 +424,7 @@ class Player {
 				if (this.shield) { return; }
 				// A base drone's `pene` is a health pool, not a penetration value (rooms/Room.js's
 				// spawnBaseDrone), so reading it as one dealt 400x damage and killed any tank in a
-				// single tick - plan.md WP4.5.11. Same substitution entities/Objects.js:164 already
+				// single tick. Same substitution entities/Objects.js:164 already
 				// makes.
 				const pene = (other.type === 1.4) ? config.BASE_DRONE_PENE : other.pene;
 				this.hp -= tick.perTick(other.damage * Math.max(1, pene / 5));
@@ -491,7 +500,15 @@ class Player {
 		} else if (!this.dev.invisible) { this.alpha = 1 }
 		this.motion();
 		if (this.inputs.c) {
-			this.dir = this.autoDir;
+			if (!this.spinning) {
+				this.spinning = 1;
+				this.spinDir = this.dir;
+			}
+			this.spinDir += tick.perTick(SPIN_RATE);
+			this.dir = this.spinDir;
+		} else if (this.spinning) {
+			// Release leaves the tank facing where the spin left it; the next mousemove takes over.
+			this.spinning = 0;
 		}
 		this.shoot();
 		///
@@ -513,9 +530,13 @@ class Player {
 				this.destroy = tick.DES;
 			}
 		}
-		this.size = 28 + this.dev.size + Math.floor(this.level / 2.8);
-		// FOV (massplanchunks WP4): diep is 1.39x wider than us at level 1 and grows
-		// multiplicatively at half the tank's own growth rate (PENDING.md item 19), not the old
+		// diep fixes a tank at Z = 2 x 1.01^(lvl-1) gu DIAMETER with its levels 1-based; ours are
+		// 0-based and `size` is a radius, so at 1 gu = 28 units that is exactly 28 x 1.01^level.
+		// Continuous, not floored - `size` is a float32 on the wire and every consumer (collision
+		// radii, render's size/CONST.SIZE ratio) is fractional already.
+		this.size = 28 * Math.pow(1.01, this.level) + this.dev.size;
+		// FOV: diep is 1.39x wider than us at level 1 and grows
+		// multiplicatively at half the tank's own growth rate, not the old
 		// flat +22/level guess.
 		this.screen = this.extraView + CLASS[this.class].screen * config.FOV_MUL * Math.pow(config.FOV_PER_LEVEL, this.level);
 		if (this.xp !== this.oldXp) {

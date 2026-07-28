@@ -10,9 +10,9 @@
 
 	mapSize has no hard floor any more, only degradation: Room.js's default spawnPoint() rejects
 	anywhere within a hardcoded 1540-unit radius of the origin (plus two 1120-unit nests at the
-	quarter-points, x1.4 under the grid rescale - plan.md WP1), written against ffa's gu(451)-unit
+	quarter-points, x1.4 under the grid rescale), written against ffa's gu(451)-unit
 	map where that is a small carve-out. Below roughly 2744 units wide no point on the map can ever
-	be 1540 from the origin - Room.rejectSample() (plan.md WP-SPAWN) bounds the search instead of
+	be 1540 from the origin - Room.rejectSample() bounds the search instead of
 	looping forever, and falls back to the best (furthest-from-a-nest) point it found, so a map
 	that small spawns you *near* a nest rather than hanging the room. gu(150) = 4200 stays clear of
 	that (~1/9th ffa's area - still a small arena) while leaving the corners reachable on the first
@@ -34,7 +34,7 @@ class Sandbox extends Room {
 			preGenerate: 120,
 			bootDelay: 100,
 			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
-			// rescale (plan.md D1) - FOV didn't grow, so the map's area did.
+			// rescale - FOV didn't grow, so the map's area did.
 			objCaps: { sqr: { max0: 49, max1: 6 }, tri: { max0: 20, max1: 4 }, pnt: { max0: 6, max1: 2 } },
 			betaPentRng: 0.98,
 			botCount: 0,

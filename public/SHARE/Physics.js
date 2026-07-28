@@ -11,12 +11,12 @@
 */
 (function (exports) {
 
-	// Per *reference tick* - config.REF_TICK_MS (40ms, massplanchunks WP3), not the server's
+	// Per *reference tick* - config.REF_TICK_MS (40ms), not the server's
 	// actual TICK_MS (25ms). lib/tick.js's SCALE = TICK_MS/REF_TICK_MS is what actually converts
 	// these into a per-server-tick number, via stepBody's dtTicks below.
 	//
-	// These three were tuned by feel at the *old* reference (a measured ~29Hz/33ms tick, HANDOFF
-	// §3's old note) and have been converted once, here, to mean the same real-world motion at
+	// These three were tuned by feel at the *old* reference (a measured ~29Hz/33ms tick) and have been
+	// converted once, here, to mean the same real-world motion at
 	// the new 40ms reference - a relabelling, not a retune, but NOT a plain linear rescale
 	// (0.964^(40/33) for FRICTION is exact - drag scaling is - but ACCEL_BASE/PER_UP compound
 	// with FRICTION into a bounded steady-state speed each tick, so scaling both by the same

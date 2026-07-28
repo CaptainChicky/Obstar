@@ -10,7 +10,7 @@
 	inEnemyBase() be a single comparison on x. Four bases have to be corners, so a base here is
 	the rules.baseSize square in the map corner (diep's own shape - it used to be a quarter-disc,
 	which made a single orbit centre awkward to place). The guard drones orbit that one centre,
-	inset from the two borders the corner touches (plan.md WP2), not the square's own centre.
+	inset from the two borders the corner touches, not the square's own centre.
 	Everything else - joining the thinnest side, friendly fire, base fencing, boss summoning -
 	comes from rooms/Room.js unchanged.
 */
@@ -29,7 +29,7 @@ class FourTeam extends Room {
 			preGenerate: 2000,
 			bootDelay: 1,
 			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
-			// rescale (plan.md D1) - FOV didn't grow, so the map's area did.
+			// rescale - FOV didn't grow, so the map's area did.
 			objCaps: { sqr: { max0: 392, max1: 39 }, tri: { max0: 137, max1: 27 }, pnt: { max0: 43, max1: 31 } },
 			betaPentRng: 0.99,
 			bossRng: 0.9999,
@@ -53,15 +53,11 @@ class FourTeam extends Room {
 			y: ((team > 1) ? 1 : -1) * this.map.height / 2
 		};
 	}
-	/* The orbit centre for a side's base - the centre of the baseSize square itself (plan.md
-		 WP4.5.5). This used to be a literal gu(24) inset, which read as "the centre" only by
-		 coincidence: it was measured back when baseSize was gu(45) (whose centre is gu(22.5)),
-		 and WP2 carried the literal across to the gu(67) resize instead of the intent, leaving
-		 the drones orbiting low and outboard in the square rather than centred in it. Deriving it
-		 from baseSize means it can't go stale again. Fit check: centre is gu(33.5) in, the
-		 outermost energy level (plan.md WP4.5.1) is levelR(5) = gu(10), so the outermost drone
-		 reaches gu(33.5-10) = gu(23.5) from either border - inside the gu(67) square with room to
-		 spare. */
+	/* The orbit centre for a side's base - the centre of the baseSize square itself, derived from
+		 baseSize rather than written as an inset so it cannot go stale across a base resize. Fit
+		 check: the centre is gu(33.5) in and the outermost energy level is levelR(5) = gu(10), so
+		 the outermost drone reaches gu(23.5) from either border - inside the gu(67) square with
+		 room to spare. */
 	baseCenter(team) {
 		const c = this.corner(team);
 		return {
@@ -71,7 +67,7 @@ class FourTeam extends Room {
 	}
 	/*
 		Twelve drones per base around one shared orbit centre, on five discrete energy levels now
-		(plan.md WP4.5.1) rather than a continuous random band - levelPlan(12) gives caps
+ rather than a continuous random band - levelPlan(12) gives caps
 		[1,3,5,3,1] and starts the base at [1,3,4,3,1] drones on levels 1..5, all sharing one
 		saturation ledger (`levels`) since they orbit the same centre. Phases are still random
 		rather than evenly spaced, so the group reads clumpy the way basedrones.png does instead of
@@ -84,7 +80,7 @@ class FourTeam extends Room {
 		for (const team of this.rules.teams) {
 			const c = this.baseCenter(team);
 			const plan = this.levelPlan(PER_BASE);
-			// The whole returned object IS the ledger now (plan.md WP4.5.3a/4.5.7 - caps/target/
+			// The whole returned object IS the ledger now (caps/target/
 			// crossCap/count/crossing/targets/threat/scoutIdx/scoutTimer/sortTimer all live on it),
 			// so this base's twelve posts share it by reference straight from levelPlan() rather
 			// than each mode rebuilding a subset of the same fields by hand.
@@ -132,7 +128,7 @@ class FourTeam extends Room {
 		base here, where a literal four-sided box test would let it through. That outward-
 		unbounded depth used to reach into and past the dark OOB band, which is what let the base
 		kill a tank driving around the outside of a corner - rooms/Room.js's step() now bounds it
-		to the drawn arena (inArena() && inEnemyBase(), plan.md WP4.5.4), so the dark band is
+		to the drawn arena (inArena() && inEnemyBase()), so the dark band is
 		neutral ground and this method's own unbounded-outward shape stays exactly as it is here.
 	*/
 	inEnemyBase(obj, margin = 0) {

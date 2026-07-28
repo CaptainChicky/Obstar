@@ -28,9 +28,7 @@
 			this.y = y;
 			this.name = { name: "", color: 0 };
 			// vx/vy are on the wire (SCHEMA.GameUpdate.Players) and assigned straight out of the
-			// packet, so they stay. The smoothed dvx/dvy that used to be derived from them are
-			// gone with the velocity lead they fed - see draw().
-			this.vx = 0;
+						this.vx = 0;
 			this.vy = 0;
 			this.dx = x;
 			this.dy = y;
@@ -334,9 +332,7 @@
 				}
 			})();
 			// Every shape shows a health bar (WP8), bars stay invisible at full health via
-			// hpAlpha's fade below - so this is one unconditional attach instead of the two
-			// special cases (alphaPnt/Sqr/Tri always had one; a rarity tier used to lazily grow
-			// one) it replaces.
+			// hpAlpha's fade below, so this is one unconditional attach.
 			this.drawUi = function (ctx) {
 				ctx.translate(this.dx, this.dy);
 				ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
@@ -371,9 +367,8 @@
 			this.dsize += (this.size - this.dsize) * k;
 			this.dalpha += (this.alpha - this.dalpha) * k;
 			this.dir += this.rotate * Global.dtFrames;
-			// Rarity tier (THEPLAN 4.2) - this used to be dead code keyed on `this.shield`,
-			// which no Objects wire field ever sets. RARITY[0].color is null, so an ordinary
-			// (tier 0) polygon never enters the branch below.
+			// Rarity tier. RARITY[0].color is null, so an ordinary (tier 0) polygon never enters
+			// the branch below.
 			const tier = RARITY[this.tier || 0];
 			if (tier.color && this.color !== tier.color) {
 				this.color = tier.color;
@@ -381,7 +376,7 @@
 			// A real drop (epsilon = one wire quantum of CODECS.unit's 1/255) starts/refreshes the
 			// hold; a re-decode of an unchanged hp never trips it. The bar fades out after
 			// CONST.HP_BAR_HOLD frames of no *new* damage, whether or not the shape is back at full
-			// health - see massplanchunks.md WP-B.
+			// health.md WP-B.
 			if (this.hp < this.lastHp - 0.002) {
 				this.hpHold = CONST.HP_BAR_HOLD;
 				this.hpAlpha = Math.min(.8, this.hpAlpha + 0.05 * Global.dtFrames);
@@ -409,7 +404,7 @@
 		draw(ctx) {
 			ctx.translate(this.dx, this.dy);
 			ctx.globalAlpha = this.dalpha;
-			// A tiered polygon gets an outline glow (THEPLAN 4.2). Nothing wraps entity draw()
+			// A tiered polygon gets an outline glow. Nothing wraps entity draw()
 			// calls in ctx.save()/restore(), so shadowBlur must be reset before returning down
 			// every path here, or it bleeds onto whatever draws next.
 			if (this.tier) {

@@ -177,7 +177,7 @@
 				'cLvl': 'uint8',
 				// The size of one team's base in world units, straight off rooms/Room.js's
 				// this.baseSize - the strip's width in 2team, the square's side in 4team, 0 in any
-				// mode without bases. The client used to re-derive 2team's strip from a hardcoded
+				// mode without bases. Sent rather than re-derived client-side from a hardcoded
 				// 600 and could not draw 4team's at all.
 				'baseSize': 'uint16'
 			},
@@ -606,7 +606,7 @@
 
 		This used to read `return(min<=data<=max)`, which JavaScript parses as `(min<=data)<=max`:
 		a boolean coerced to 0/1 and compared against max, true for every max >= 1. Every length
-		check in the protocol passed unconditionally, so nothing was ever validated. See HANDOFF §4.
+		check in the protocol passed unconditionally, so nothing was ever validated.
 	*/
 	function checkLength(value, min, max) {
 		return (min <= value && value <= max);
