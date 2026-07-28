@@ -63,7 +63,10 @@ class TwoTeam extends Room {
 			const side = team ? 1 : -1;
 			for (let i = 0; i < CENTRES; i++) {
 				const plan = this.levelPlan(PER_CENTRE);
-				const levels = { caps: plan.caps, count: [0, 0, 0, 0, 0], crossing: 0 };
+				// The whole returned object IS the ledger now (plan.md WP4.5.3a/4.5.7) - see
+				// FourTeam.js's basePosts() for why this centre's posts share it by reference
+				// straight from levelPlan() rather than rebuilding a subset of it.
+				const levels = plan;
 				for (let d = 0; d < PER_CENTRE; d++) {
 					posts.push({
 						team: team,

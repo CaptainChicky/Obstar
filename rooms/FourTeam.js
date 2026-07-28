@@ -84,7 +84,11 @@ class FourTeam extends Room {
 		for (const team of this.rules.teams) {
 			const c = this.baseCenter(team);
 			const plan = this.levelPlan(PER_BASE);
-			const levels = { caps: plan.caps, count: [0, 0, 0, 0, 0], crossing: 0 };
+			// The whole returned object IS the ledger now (plan.md WP4.5.3a/4.5.7 - caps/target/
+			// crossCap/count/crossing/targets/threat/scoutIdx/scoutTimer/sortTimer all live on it),
+			// so this base's twelve posts share it by reference straight from levelPlan() rather
+			// than each mode rebuilding a subset of the same fields by hand.
+			const levels = plan;
 			for (let i = 0; i < PER_BASE; i++) {
 				const jitter = 1 + (Math.random() * 2 - 1) * 0.2;
 				posts.push({

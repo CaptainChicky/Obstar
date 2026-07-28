@@ -47,7 +47,7 @@
 				const ctx = can.getContext('2d');
 				const R = CONST.RESOLUTION * CONST.OFFCAN;
 				const size = 150;
-				const lw = 12;
+				const lw = 6;
 				ctx.font = '700 24px Catamaran';
 				const m = ctx.measureText('Obstar.io').width + 20;
 				can.height = can.width = (size + lw) * R + 4;
@@ -72,14 +72,22 @@
 					// once, permanent on the second call without it.
 					ctx.save();
 					switch (POST.gm) {
+						/*
+							Fill first, stroke last (plan.md WP4.5.3): a stroke drawn before a clip'd
+							fill has its inner half painted straight over by the fill. That reorder was
+							correct and stays - it is what makes the width agree across all three arms
+							- but it doubled the VISIBLE frame from 6 units to the full 12-unit
+							lineWidth, which nobody measured at the time: 8% of the minimap's width, on
+							a panel blitted at globalAlpha 0.25. Fixed by halving lw itself (12 -> 6)
+							rather than reverting the ordering. Clip only around the fill (a local
+							save/restore around it), then stroke the same path unclipped and full-width
+							on top, so the frame reads at its real (now thin) width in every arm.
+						*/
 						case '2team': {
 							ctx.beginPath();
 							roundRect(ctx, 0, 0, size, size, 0);
 							ctx.closePath();
-							ctx.strokeStyle = '#222222';
-							ctx.lineJoin = 'round';
-							ctx.lineWidth = lw;
-							ctx.stroke();
+							ctx.save();
 							ctx.clip();
 							ctx.fillStyle = '#f4f4f4';
 							ctx.fillRect(0, 0, size, size);
@@ -87,16 +95,18 @@
 							ctx.fillRect(0, 0, size * frac, size);
 							ctx.fillStyle = Palette.red[0];
 							ctx.fillRect(size, 0, -size * frac, size);
+							ctx.restore();
+							ctx.strokeStyle = '#222222';
+							ctx.lineJoin = 'round';
+							ctx.lineWidth = lw;
+							ctx.stroke();
 							break;
 						}
 						case '4team': {
 							ctx.beginPath();
 							roundRect(ctx, 0, 0, size, size, 0);
 							ctx.closePath();
-							ctx.strokeStyle = '#222222';
-							ctx.lineJoin = 'round';
-							ctx.lineWidth = lw;
-							ctx.stroke();
+							ctx.save();
 							ctx.clip();
 							ctx.fillStyle = '#f4f4f4';
 							ctx.fillRect(0, 0, size, size);
@@ -109,18 +119,23 @@
 								ctx.fillStyle = teamC[t][0];
 								ctx.fillRect(at[t][0], at[t][1], s, s);
 							}
+							ctx.restore();
+							ctx.strokeStyle = '#222222';
+							ctx.lineJoin = 'round';
+							ctx.lineWidth = lw;
+							ctx.stroke();
 							break;
 						}
 						default: {
-							ctx.fillStyle = '#ececec';
 							ctx.beginPath();
 							roundRect(ctx, 0, 0, size, size, 0);
 							ctx.closePath();
+							ctx.fillStyle = '#ececec';
+							ctx.fill();
 							ctx.strokeStyle = '#333333';
 							ctx.lineJoin = 'round';
 							ctx.lineWidth = lw;
 							ctx.stroke();
-							ctx.fill();
 							break;
 						}
 					}

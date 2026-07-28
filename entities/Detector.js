@@ -67,9 +67,19 @@ class Detector {
 			}
 		}
 	}
+	// Clears `select` too (plan.md WP4.5.2C) - previously left pointing at the last thing it ever
+	// found, which meant every "forget this target and re-scan" call site was silently only half
+	// working: collision() only ever OVERWRITES select on a fresh, closer find, so a stale
+	// reference survived reset() indefinitely and got re-read (and, for a base drone's scout,
+	// re-published into the shared levels.threat - see rooms/Room.js's tickDroneCentres()) before
+	// anything had a chance to confirm it was still valid. The one caller that must NOT clear
+	// select this way is a chasing base drone, which deliberately never calls reset() while
+	// chasing (entities/Bullet.js's case 1.4) precisely so its target survives across ticks with
+	// DETEC.enabled = 0 - see that file's comment.
 	reset() {
 		this.dis = this.size;
-		this.construc = this.type.length
+		this.construc = this.type.length;
+		this.select = 0;
 		if (this.all) {
 			this.selectAll = {
 				[KIND.OBJECTS]: [],

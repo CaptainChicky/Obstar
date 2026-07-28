@@ -97,26 +97,47 @@ const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
 //
-// Rebuilt again for plan.md WP4.5 (the correction pass over WP4): base drone motion is now a
-// steered field (heading/speed rate-limited, position their integral) instead of a
-// position-authoritative polar path, orbit speed dropped 1.5x instead of 2x, and the 4team/2team
-// orbit centres moved to sit in the middle of the base instead of low and outboard in it - every
-// base drone's position each capture frame is different again, hence the op-count move (down
-// this time - the field controller draws a materially different path). Confirmed intentional.
+// Rebuilt again for plan.md WP4.5.1/2/3: the chase/return dash is pinned to the fastest tank this
+// game can build (400 u/s, up from a level-0 tank's 285) with its own tighter turn limiter; the
+// diameter cross is rebuilt as arc -> C2 blend -> exact straight at constant speed -> C2 blend ->
+// arc, precomputed into a per-tick table, replacing the four-segment 8/84/8 curve (the blend
+// fraction went 0.08 -> 0.20 and the lead 0.08 -> 0.05, so both the shape and its duration moved);
+// and a reactive level switch can no longer be vetoed by a saturated ring, so drones peel off
+// shapes far more often than they used to. Every base drone's path is different again, hence the
+// op-count move (down this time). Confirmed intentional.
 //
-// Rebuilt again for plan.md WP4.5's energy-level pass: radius is quantised into five discrete
-// levels instead of a continuous random band, drone-vs-drone separation makes drones peel apart
-// instead of overlapping, and the diameter cross is now a planned quintic Hermite S instead of a
-// steered pursuit of an antipodal aim point - every base drone's path is different again, hence
-// the op-count move (up this time). Confirmed intentional.
+// Rebuilt again for plan.md WP4.5's accelerate-into-the-centre/binomial-sorter/scout pass: the
+// swoosh's speed profile is one continuous ramp up to the orbit centre and down from it now (not a
+// constant-speed straight), the C2 blends are ~2x longer (BLEND_FRAC 0.20->0.70, now a fraction of
+// each end's own radius; LEAD 0.05->0.125), a per-centre binomial sorter now nudges idle drones
+// toward BASE_DRONE_LEVEL_WEIGHTS every second instead of only a general drift-home timer, and
+// detection is now one scout per centre on a rotation instead of every drone querying every tick.
+// Every base drone's path is different again. Confirmed intentional.
 //
-// Rebuilt again for plan.md WP4.5's motion-half rewrite: chase/return are a real dash now (a
-// separate, much tighter turn limiter at a much higher speed), a voluntary ('home') level switch
-// flies its own planned quintic arc instead of an instant orbRTarget write, the diameter cross is
-// a four-segment 8/84/8 curve with a strictly straight middle instead of the old two-segment S,
-// and a base drone may now stray into the OOB band while chasing - every base drone's path is
-// different again, hence the op-count move (up this time). Confirmed intentional.
-const GOLDEN = { count: 291391, hash: '130d0210' };
+// Rebuilt again for plan.md WP4.5.8: the minimap frame's stroke used to be drawn BEFORE the
+// clip'd background/team fills, so the fill painted straight over the stroke's inner half,
+// leaving only ~6 of the 12-unit lineWidth actually visible (invisible in practice at the 0.25
+// blit alpha) - regressed in Firefox, silently fine in Chrome. Fixed by clipping only around the
+// fill (a local save/restore) and stroking the same path, unclipped and full-width, after it, in
+// all three gamemode arms. Confirmed intentional - op count moves by +8 (2 save + 2 restore calls
+// added per team-mode room, ffa/boss unaffected).
+//
+// Rebuilt again for the current plan.md WP4.5 (the plateau swoosh/chase-bug/minimap/broad-phase
+// pass - this text replaces the WP4.5 plan section quoted by the two entries above, which is now
+// superseded, though the op-count history they explain still applies): the minimap's lineWidth
+// halves again (12 -> 6, WP4.5.3 - this pass's own fix, distinct from the fill/stroke reorder
+// above which is what made 12 units visible in the first place); crossVAt's speed profile is a
+// plateau now, not a single-point peak (WP4.5.1), which moves every drone's per-tick position
+// during a cross; entities/Bullet.js's clampToMap() and the chase-drop test both changed
+// (WP4.5.2A), and rooms/Room.js's tickDroneCentres() now expires a stale threat (WP4.5.2B) -
+// between them, chasing/returning drones near a map edge take a different path than before; and
+// the collision pass now walks qt.queryCircle() instead of qt.query(closure,...) with a rewritten
+// insert() (WP4.5.4) - the SET of candidate pairs is unchanged (queryCircle is tested directly
+// against a brute-force scan) but visitation ORDER is not, which is enough to shift which
+// tie-break/Math.random() call fires on which tick for any entity whose path depends on one.
+// Every base drone's path is different again, and the op count moves up (from more drones actually
+// reaching and sliding along map edges instead of freezing there). Confirmed intentional.
+const GOLDEN = { count: 286153, hash: '9f007a58' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

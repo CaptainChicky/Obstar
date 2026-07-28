@@ -589,18 +589,111 @@ function baseDroneTests() {
 }
 
 /*
-	Base drone corrections (plan.md WP4.5). Everything WP4's audit found wrong in a browser:
-	same-team transparency, the cross plowing through shapes rather than phasing through them,
-	the steered-motion rewrite (no state can turn or stop the drone instantly), and the orbit
-	centre sitting in the middle of the base rather than low and outboard in it.
+	The fastest sustained speed any reachable build can hold (plan.md WP4.5.1), by replaying
+	entities/Player.js's own motion() + shoot() recurrence rather than trusting a number in a
+	comment: thrust is +x and the facing is swept, so each class rides its own recoil optimally;
+	drone cannons (life -1, capped by maxDrone) contribute no sustained recoil because the drones
+	stay alive; auto turrets do not aim where a rider needs them; a class is only counted from the
+	level its tier unlocks at (upClass's parseInt((1+level)/10) > tier), and never below level 12,
+	which is the first level that can buy 6 Movement Speed AND 6 Reload (upNb refuses at 6,
+	entities/Player.js:285). Returns u/s. This is what BASE_DRONE_CHASE_SPEED is pinned to, so a
+	cannon retune that changes the ceiling fails this test instead of silently outrunning the drones.
 */
-function baseDroneWP45Tests() {
+function fastestTankSpeed() {
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const Physics = require(path.join(ROOT, 'public', 'SHARE', 'Physics.js'));
+	const T = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js'));
+	const MAXUP = 6, TOUS = 1000 / config.REF_TICK_MS;
+	const minLevel = { Basic: 0 };
+	for (let i = 0; i < T.tree.length; i++) {
+		const unlock = 10 * (i + 1) - 1;
+		for (let pass = 0; pass < T.tree.length; pass++) {
+			for (const from in T.tree[i]) {
+				if (!(from in minLevel)) { continue; }
+				for (const to of T.tree[i][from]) {
+					const cand = Math.max(unlock, minLevel[from]);
+					if (!(to in minLevel) || minLevel[to] > cand) { minLevel[to] = cand; }
+				}
+			}
+		}
+	}
+	const run = (cls, level, dir, ticks = 3000) => {
+		const accel = Physics.moveAccel(MAXUP * 0.029254, level);
+		const upReload = 1 - MAXUP * 0.092;
+		const body = { x: 0, y: 0, vx: 0, vy: 0 }, timer = [];
+		let sum = 0, n = 0;
+		for (let t = 0; t < ticks; t++) {
+			Physics.stepBody(body, accel, 0, tick.SCALE);
+			for (let r = 0; r < cls.cannons.length; r++) {
+				if (typeof timer[r] === 'undefined') { timer[r] = 0; }
+				const can = cls.cannons[r];
+				if (can.autoShoot || can.autoDir) { continue; }
+				if (can.life === -1 && cls.maxDrone) { continue; }
+				const reloadMax = tick.ticks(Math.round(can.reload * upReload));
+				const reload = timer[r];
+				if (reload === Math.floor(can.offTime * reloadMax)) {
+					const rd = dir + (can.offdir || 0) - Math.PI;
+					body.vx += tick.perTick(can.back) * Math.cos(rd);
+					body.vy += tick.perTick(can.back) * Math.sin(rd);
+				}
+				if (timer[r] === 0) { timer[r] += 1; continue; }
+				if (reload > 0 && reload < reloadMax) { timer[r] += 1; }
+				else if (reload >= reloadMax) { timer[r] = 0; }
+			}
+			if (t > ticks / 2) { sum += body.vx * TOUS; n++; }
+		}
+		return sum / n;
+	};
+	let best = 0, who = '';
+	for (const name of T.list) {
+		const cls = T.class[name];
+		if (!cls || !cls.cannons || !cls.cannons.length || !(name in minLevel)) { continue; }
+		// Only the LOWEST level a class can be reached at is tested: Physics.moveAccel subtracts
+		// level / MOVE_LEVEL_FALLOFF and nothing else in this recurrence depends on level, so a
+		// class's speed decreases strictly with level. Sweeping all 45 costs 30x the time and
+		// returns the same answer (checked).
+		const level = Math.max(minLevel[name], 12);
+		for (let k = 0; k < 36; k++) {
+			const v = run(cls, level, k * Math.PI / 18);
+			if (v > best) { best = v; who = name + ' L' + level; }
+		}
+	}
+	return { speed: best, build: who };
+}
+
+/*
+	Base drone AI corrections (plan.md WP4/WP4.5/WP4.5.x - not WP4.5-specific any more, hence the
+	name; distinct from baseDroneTests() above, which covers the WP-E core - immortality, placement,
+	respawn, the base fence). Everything WP4's audit found wrong in a browser: same-team
+	transparency, the cross plowing through shapes rather than phasing through them, the
+	steered-motion rewrite (no state can turn or stop the drone instantly), the orbit centre sitting
+	in the middle of the base rather than low and outboard in it, the plateau swoosh, the
+	clamp/stale-target chase bugs, and the broad-phase rewrite.
+*/
+function baseDroneAiTests() {
 	console.log('\nbase drone corrections (plan.md WP4.5):');
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
 	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
 	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
 	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+
+	// A hand-built per-centre ledger for tests that want to isolate a single drone's mechanics
+	// rather than spawn a real base (plan.md WP4.5.0 added target/targets/threat/crossCap/
+	// scoutIdx/scoutTimer/sortTimer to what rooms/Room.js's levelPlan() hands back - a literal
+	// missing them would make a forced cross silently refuse to start, since
+	// `levels.crossing < levels.crossCap` is `0 < undefined` = false). crossCap defaults to 1 -
+	// plenty for a single isolated drone; sortTimer/scoutTimer start high so the per-centre
+	// maintenance pass (driven from a real room's step(), not from a bare drone.update() these
+	// tests mostly use) never fires unexpectedly mid-test.
+	function makeLevels(caps, count) {
+		return {
+			caps: caps, count: count.slice(), crossing: 0, crossCap: 1,
+			target: caps.slice(), targets: {}, threat: null,
+			scoutIdx: 0, scoutTimer: 1e9, sortTimer: 1e9
+		};
+	}
 
 	// 4.5.2b - tunnelling headroom: the fastest thing a drone ever does (the cross dash, and now
 	// the chase/return dash too - plan.md WP4.5.1) must still be slower than its own size plus the
@@ -612,6 +705,92 @@ function baseDroneWP45Tests() {
 	check('...and neither does a chase/return-speed step',
 		tick.perTick(config.BASE_DRONE_CHASE_SPEED) < config.BASE_DRONE_SIZE + 20,
 		tick.perTick(config.BASE_DRONE_CHASE_SPEED) + ' vs ' + (config.BASE_DRONE_SIZE + 20));
+	// plan.md WP4.5.1: CHASE_SPEED is now pinned to the fastest tank in the game (400 u/s), well
+	// past the cross's own 370 u/s - so the bound above is being checked against the real maximum.
+	check('CHASE_SPEED is the larger of the two - the tunnelling bound is checked against the real max',
+		tick.perTick(config.BASE_DRONE_CHASE_SPEED) > tick.perTick(config.BASE_DRONE_CROSS_SPEED),
+		tick.perTick(config.BASE_DRONE_CHASE_SPEED) + ' vs ' + tick.perTick(config.BASE_DRONE_CROSS_SPEED));
+
+	// ---- WP4.5.1: the chase is exactly as fast as the fastest tank this game can build ------------
+	{
+		const fastest = fastestTankSpeed();
+		const chaseUs = tick.perTick(config.BASE_DRONE_CHASE_SPEED) * (1000 / config.TICK_MS);
+		console.log('  note fastest sustainable build in this game: ' + fastest.speed.toFixed(1) +
+			' u/s (' + fastest.build + '); BASE_DRONE_CHASE_SPEED is ' + chaseUs.toFixed(1) + ' u/s');
+		// The whole point of measuring rather than hard-coding: a cannon or stat retune that raises
+		// the ceiling fails HERE instead of quietly leaving base drones outrunnable (or absurd). Do
+		// not pin the class, the level or the number - only the agreement.
+		check('BASE_DRONE_CHASE_SPEED is within 5% of the fastest sustainable build in this game',
+			Math.abs(chaseUs - fastest.speed) / fastest.speed < 0.05,
+			chaseUs.toFixed(1) + ' vs ' + fastest.speed.toFixed(1) + ' u/s (' + fastest.build + ')');
+	}
+
+	// ---- WP4.5.1: a chase and a return actually run at that speed ---------------------------------
+	{
+		const room = makeRoom('4team');
+		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		const V_CHASE = tick.perTick(config.BASE_DRONE_CHASE_SPEED);
+		const V_ORB = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
+		drone.crossIn = 1e9;
+		drone.update();
+
+		// A chase. The target is stationary and parked toward the map centre, well inside
+		// BASE_DRONE_LEASH of the base centre so the chase is never abandoned mid-measurement, and
+		// far enough that 60 ticks of dashing cannot reach it.
+		const sx = drone.ox > 0 ? -1 : 1, sy = drone.oy > 0 ? -1 : 1;
+		// Acquisition is centralised through levels.threat now (plan.md WP4.5.0) - set both so this
+		// test doesn't depend on whether `drone` happens to be its centre's current scout.
+		drone.levels.threat = drone.DETEC.select = { x: drone.ox + sx * 1400, y: drone.oy + sy * 1400, destroy: 0 };
+		let lastTwenty = [];
+		for (let i = 0; i < 60; i++) {
+			drone.update();
+			if (i >= 40) { lastTwenty.push(Math.hypot(drone.vec.x, drone.vec.y)); }
+		}
+		const chaseSpd = lastTwenty.reduce((a, b) => a + b, 0) / lastTwenty.length;
+		check('a chase settles at BASE_DRONE_CHASE_SPEED, within 5%',
+			drone.chasing && Math.abs(chaseSpd - V_CHASE) / V_CHASE < 0.05,
+			chaseSpd.toFixed(3) + ' vs ' + V_CHASE.toFixed(3) + (drone.chasing ? '' : ' (not chasing!)'));
+
+		// A return. A return is a chase back to the ring, so it dashes at the same speed - and then
+		// has to SETTLE onto the ring rather than ring around it, which is what the third assertion
+		// catches if CHASE_TURN or RETURN_ERR is ever retuned against the new speed.
+		drone.chasing = false; drone.DETEC.select = 0; drone.DETEC.reset(); drone.DETEC.enabled = 1;
+		drone.levels.threat = null;
+		drone.crossing = false; drone.switching = false; drone.crossIn = 1e9;
+		drone.x = drone.ox + sx * drone.orbRTarget * 5; drone.y = drone.oy;
+		let peak = 0, arrivedAt = -1;
+		for (let i = 0; i < 400 && arrivedAt < 0; i++) {
+			drone.update();
+			drone.DETEC.select = 0;   // no chase may hijack the return under test
+			peak = Math.max(peak, Math.hypot(drone.vec.x, drone.vec.y));
+			if (Math.abs(Math.hypot(drone.x - drone.ox, drone.y - drone.oy) - drone.orbRTarget) < 5) { arrivedAt = i; }
+		}
+		check('a long return peaks at BASE_DRONE_CHASE_SPEED too, within 5%',
+			Math.abs(peak - V_CHASE) / V_CHASE < 0.05, peak.toFixed(3) + ' vs ' + V_CHASE.toFixed(3));
+		check('...and arrives on its ring inside 400 ticks', arrivedAt >= 0, arrivedAt + ' ticks');
+		let worstErr = 0;
+		for (let i = 0; i < 200; i++) {
+			drone.update();
+			drone.DETEC.select = 0;
+			worstErr = Math.max(worstErr, Math.abs(Math.hypot(drone.x - drone.ox, drone.y - drone.oy) - drone.orbRTarget));
+		}
+		check('...then settles onto it without ringing around it (never more than LEVEL_GAP/2 off)',
+			worstErr <= config.BASE_DRONE_LEVEL_GAP / 2,
+			worstErr.toFixed(2) + ' vs ' + (config.BASE_DRONE_LEVEL_GAP / 2));
+
+		// And steady state is untouched by any of it - cruise is still cruise.
+		let slowest = Infinity, fastestSpd = 0;
+		for (let i = 0; i < 200; i++) {
+			drone.update();
+			drone.DETEC.select = 0;
+			const s = Math.hypot(drone.vec.x, drone.vec.y);
+			slowest = Math.min(slowest, s); fastestSpd = Math.max(fastestSpd, s);
+		}
+		check('a settled drone still cruises at BASE_DRONE_ORBIT_SPEED, within 3%',
+			Math.abs(slowest - V_ORB) / V_ORB < 0.03 && Math.abs(fastestSpd - V_ORB) / V_ORB < 0.03,
+			slowest.toFixed(3) + '-' + fastestSpd.toFixed(3) + ' vs ' + V_ORB.toFixed(3));
+	}
 
 	// 4.5.2a - shape damage is sane: a base drone's `pene` is a 2000-point health pool, not a
 	// penetration value: reading it as one used to one-shot every shape a drone brushed.
@@ -672,7 +851,7 @@ function baseDroneWP45Tests() {
 		// in the pair loop, before pairwise collision is ever reached - it would confound this
 		// test rather than exercise it. Midfield (0,0) is safe for every side (see teamTests'/
 		// fourTeamTests' "midfield is safe" checks), so this isolates the one thing being tested:
-		// the WP4.5.1 same-team skip.
+		// the WP4.5.0 same-team skip.
 		function isolatedRoom() {
 			const room = makeRoom('2team');
 			player(room, 0).destroy = 1;   // the tester seat - inert, out of everyone's way
@@ -782,7 +961,7 @@ function baseDroneWP45Tests() {
 			Math.abs(config.BASE_DRONE_LEVEL_GAP - drawnSide) / drawnSide < 0.05, drawnSide);
 	}
 
-	// ---- WP4.5.2: LEAN_SCALE really is a 60-degree turn - the REACTIVE ('random') path only -----
+	// ---- WP4.5.0: LEAN_SCALE really is a 60-degree turn - the REACTIVE ('random') path only -----
 	// ('home' switches no longer read LEAN_SCALE at all - they fly BASE_DRONE_SWITCH_ARC's planned
 	// arc instead, tested separately below.)
 	{
@@ -792,7 +971,7 @@ function baseDroneWP45Tests() {
 			'- pins the reactive (shape-hit/proximity) path', degOff < 0.5, degOff.toFixed(3) + ' degrees off');
 	}
 
-	// ---- WP4.5.3: SEPARATION is 5 units of drawn overlap, strictly under one LEVEL_GAP -----------
+	// ---- WP4.5.0: SEPARATION is 5 units of drawn overlap, strictly under one LEVEL_GAP -----------
 	{
 		const touchAt = 2 * 1.7 * config.BASE_DRONE_SIZE;
 		check('SEPARATION is 5 units of drawn triangle-vertex overlap',
@@ -862,9 +1041,12 @@ function baseDroneWP45Tests() {
 		check('...and the count never went negative (a double-decrement or a missed release)', neverNegative);
 	}
 
-	// ---- WP4.5.2: a level switch moves exactly one level, respecting caps -------------------------
-	// Driven through the real shape-hit trigger (entities/Bullet.js's KIND.OBJECTS collision arm),
-	// which is levelSwitch()'s one public door - not a private helper this test can call directly.
+	// ---- WP4.5.0: a level switch moves exactly one level, respecting caps for a VOLUNTARY move ----
+	// but no longer for a REACTION, which now always fires. Driven through the real shape-hit
+	// trigger (entities/Bullet.js's KIND.OBJECTS collision arm) followed by one update() - since
+	// WP4.5.0, collision() only LATCHES reactPending; case 1.4's own trigger block is what actually
+	// calls levelSwitch(), on the drone's next free/off-cooldown tick. Together that pair is
+	// levelSwitch()'s one public door - not a private helper this test can call directly.
 	{
 		const room = makeRoom('2team');
 		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
@@ -873,42 +1055,70 @@ function baseDroneWP45Tests() {
 		function freshDrone(level, caps, occupied) {
 			const drone = room.INSTANCE.bullets.get(post.slot);
 			drone.level = level;
-			drone.levels = { caps: caps, count: occupied.slice(), crossing: 0 };
+			drone.levels = makeLevels(caps, occupied);
 			drone.switchCooldown = 0;
 			drone.crossing = false;
+			drone.chasing = false;
+			drone.switching = false;
+			drone.crossIn = 1e9;   // never cross during this test
+			drone.levelTimer = 1e9;   // never drift-home during this test - isolates the reaction
+			drone.tooClose = 0;
+			drone.reactPending = 0;
 			drone.orbRTarget = room.levelR(level);
 			return drone;
 		}
+		// The reaction latches on collision() and is paid out on the very next update() (case 1.4's
+		// trigger block) - a real "react" is always these two calls together now.
+		function react(d) { d.collision(shape, {}); d.update(); }
 		{
 			const d = freshDrone(5, [5, 5, 5, 5, 5], [0, 0, 0, 0, 1]);
-			d.collision(shape, {});
+			react(d);
 			check('from level 5, the only outcome is level 4', d.level === 4, d.level);
 		}
 		{
 			const d = freshDrone(1, [5, 5, 5, 5, 5], [1, 0, 0, 0, 0]);
-			d.collision(shape, {});
+			react(d);
 			check('from level 1, the only outcome is level 2', d.level === 2, d.level);
 		}
 		{
 			// Level 3 with level 2 already saturated - only the level-4 side is open.
 			const d = freshDrone(3, [5, 1, 5, 5, 5], [0, 1, 1, 0, 0]);
-			d.collision(shape, {});
+			react(d);
 			check('with one neighbour saturated, the open side is chosen deterministically',
 				d.level === 4, d.level);
 		}
 		{
-			// Level 3 with both level 2 and level 4 saturated - nothing can move.
+			// Level 3 with both level 2 and level 4 saturated - a REACTION still moves it (plan.md
+			// WP4.5.0, "this should always be happening no matter what"): saturation is a preference
+			// for a voluntary move, not a veto on a reaction any more.
 			const d = freshDrone(3, [5, 1, 5, 1, 5], [0, 1, 1, 1, 0]);
-			const before = d.level, cdBefore = d.switchCooldown;
-			d.collision(shape, {});
-			check('with both neighbours saturated, nothing moves', d.level === before, d.level);
-			check('...and the cooldown is left untouched, so the caller retries', d.switchCooldown === cdBefore);
+			const before = d.level;
+			react(d);
+			check('with both neighbours saturated, a reaction still moves it - the cap is no longer a veto',
+				d.level !== before && (d.level === 2 || d.level === 4), d.level);
+			check('...and the cooldown actually advanced - the move really happened, not just latched',
+				d.switchCooldown > 0, d.switchCooldown);
+		}
+		{
+			// Through the VOLUNTARY ('home') door instead of a reaction (plan.md WP4.5.0): 'home'
+			// mode is now ONLY ever reached via a post-swoosh `homing` climb, and that climb ignores
+			// the cap entirely on purpose ("a scripted return must not be able to stall behind a
+			// full level 2") - so, unlike the old general drift-home, a saturated neighbour is NOT a
+			// veto here any more. HOME (level 3) itself is at its cap already; the drone climbs from
+			// level 2 toward it regardless.
+			const d = freshDrone(2, [5, 5, 1, 5, 5], [0, 1, 1, 0, 0]);
+			placeOnRing(d, room.levelR(2), 0);
+			d.homing = 1;
+			d.levelTimer = 1;
+			d.update();
+			check("a homing 'home' move is not vetoed by a saturated neighbour either (cap-free while homing)",
+				d.level === 3, d.level);
 		}
 	}
 
-	// ---- WP4.5.2: drift home, re-timed - a 'home' switch now flies a real planned arc, not an ----
+	// ---- WP4.5.0: drift home, re-timed - a 'home' switch now flies a real planned arc, not an ----
 	// instant write, so the climb budget has to cover BASE_DRONE_LEVEL_RELAX's wait AND the arc's
-	// own flight time for every hop (plan.md WP4.5.2's "2*(relax+arc)" figure).
+	// own flight time for every hop (plan.md WP4.5.0's "2*(relax+arc)" figure).
 	{
 		const room = makeRoom('2team');
 		const post = room.dronePosts[0];
@@ -918,14 +1128,18 @@ function baseDroneWP45Tests() {
 		// Mirrors planSwitchArc()'s own T formula (entities/Bullet.js) so the budget below is a
 		// real bound, not a guess.
 		function switchTicks(r0, r1) {
-			const meanR = (r0 + r1) / 2, dtheta = 2 * Math.PI * config.BASE_DRONE_SWITCH_ARC;
-			return Math.max(3, Math.round(Math.hypot(meanR * dtheta, Math.abs(r1 - r0)) / vOrb));
+			// Mirrors planSwitchArc()'s own dtheta formula (plan.md WP4.5.0) - a LEAN off the
+			// tangent now, not a fraction of the circumference, so the sweep is derived from r0
+			// (the ring the arc launches from), not a mean radius.
+			const meanR = (r0 + r1) / 2;
+			const dtheta = config.BASE_DRONE_LEVEL_GAP / (Math.tan(config.BASE_DRONE_SWITCH_LEAN) * r0);
+			return Math.max(3, Math.round(Math.hypot(meanR * Math.abs(dtheta), Math.abs(r1 - r0)) / vOrb));
 		}
 		const budget = relax + switchTicks(room.levelR(1), room.levelR(2)) +
 			relax + switchTicks(room.levelR(2), room.levelR(3)) + 100;   // +100 ticks slack
 		function setup(level, caps, occupied) {
 			drone.level = level;
-			drone.levels = { caps: caps, count: occupied.slice(), crossing: 0 };
+			drone.levels = makeLevels(caps, occupied);
 			drone.orbRTarget = room.levelR(level);
 			drone.levelTimer = relax;
 			drone.switchCooldown = 0;
@@ -933,6 +1147,9 @@ function baseDroneWP45Tests() {
 			drone.chasing = false;
 			drone.switching = false;
 			drone.crossIn = 1e9;   // never cross during this test
+			// The general drift-home timer is gone (plan.md WP4.5.0) - only a post-swoosh `homing`
+			// drone climbs on this timer now, so this test simulates that state directly.
+			drone.homing = 1;
 		}
 		setup(1, [5, 5, 5, 5, 5], [1, 0, 0, 0, 0]);
 		for (let i = 0; i < budget; i++) { drone.update(); }
@@ -941,15 +1158,20 @@ function baseDroneWP45Tests() {
 		for (let i = 0; i < 50 && !drone.switching; i++) { drone.update(); }
 		check('...and then stops moving levels', drone.level === config.BASE_DRONE_LEVEL_HOME, drone.level);
 
+		// A homing climb ignores the saturation cap entirely now (plan.md WP4.5.0 - "a scripted
+		// return must not be able to stall behind a full level 2"), the opposite of the old general
+		// drift-home's behaviour: level 2 sitting AT its cap of 1 must not stop this climb.
 		setup(1, [5, 1, 5, 5, 5], [1, 1, 0, 0, 0]);   // level 2 already at its cap
 		for (let i = 0; i < budget; i++) { drone.update(); }
-		check('...but stays put if the next level up is saturated, retrying instead of stalling forever',
-			drone.level === 1, drone.level);
+		check("...and a homing climb is NOT blocked by a saturated next level (cap-free while homing)",
+			drone.level === config.BASE_DRONE_LEVEL_HOME, drone.level);
 	}
 
-	// ---- WP4.5.2: the reactive ('random') path is an unchanged regression guard -------------------
-	// Driven through the real shape-hit trigger (collision() against a KIND.OBJECTS shape) - the
-	// same public door the cap test above uses - not a private call to levelSwitch().
+	// ---- WP4.5.0: the reactive ('random') path is an unchanged regression guard -------------------
+	// Driven through the real shape-hit trigger (collision() against a KIND.OBJECTS shape) followed
+	// by one update() - collision() only latches reactPending now (WP4.5.0), and case 1.4's own
+	// trigger block is what pays it out, on the very next tick since switchCooldown is 0. That pair
+	// is the same public door the cap test above uses - not a private call to levelSwitch().
 	{
 		const room = makeRoom('2team');
 		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
@@ -957,17 +1179,16 @@ function baseDroneWP45Tests() {
 		const drone = room.INSTANCE.bullets.get(post.slot);
 		const shape = { kind: KIND.OBJECTS, x: 0, y: 0, type: 'sqr', destroy: 0 };
 		drone.level = 3;
-		drone.levels = { caps: [5, 5, 5, 5, 5], count: [0, 0, 1, 0, 0], crossing: 0 };
+		drone.levels = makeLevels([5, 5, 5, 5, 5], [0, 0, 1, 0, 0]);
 		placeOnRing(drone, room.levelR(3), 0);
 		drone.orbRTarget = room.levelR(3);
 		drone.switchCooldown = 0;
 		drone.crossing = false; drone.chasing = false; drone.switching = false;
+		drone.crossIn = 1e9; drone.levelTimer = 1e9;   // isolate the reaction under test
+		drone.tooClose = 0; drone.reactPending = 0;
 		const targetBefore = drone.orbRTarget;
 		const initHead = drone.head;
 		drone.collision(shape, {});
-		check('a random switch writes orbRTarget immediately, with no planned arc entered',
-			drone.orbRTarget !== targetBefore && drone.orbRTarget === room.levelR(drone.level) && !drone.switching,
-			drone.orbRTarget + ' vs ' + targetBefore);
 		// The turn limiter still caps every single tick at BASE_DRONE_TURN, so the 60-degree lean
 		// (LEAN_SCALE's identity, tested above) shows up as a fast CUMULATIVE swing away from the
 		// pre-switch tangent, not an instant jump. It is not a guaranteed exact 60 degrees - the
@@ -981,11 +1202,14 @@ function baseDroneWP45Tests() {
 			const d = Math.abs(Math.atan2(Math.sin(drone.head - initHead), Math.cos(drone.head - initHead)));
 			if (d > peakTurn) { peakTurn = d; }
 		}
+		check('a random switch writes orbRTarget on its very next tick (the latch is paid off cooldown), with no planned arc entered',
+			drone.orbRTarget !== targetBefore && drone.orbRTarget === room.levelR(drone.level) && !drone.switching,
+			drone.orbRTarget + ' vs ' + targetBefore);
 		check('...and the reactive lean swings well past a home arc\'s own sweep - still a sharp peel',
 			peakTurn > 20 * Math.PI / 180, (peakTurn * 180 / Math.PI).toFixed(1) + ' degrees');
 	}
 
-	// ---- WP4.5.3: anti-overlap fires through the real pair loop -----------------------------------
+	// ---- WP4.5.0: anti-overlap fires through the real pair loop -----------------------------------
 	// Both drones are placed AT their shared level's radius from their shared centre (ox,oy), only
 	// offset angularly - not at a fixed literal x/y - so orbRTarget matches their actual radius
 	// exactly for both. Placing one of them at a different literal offset (an earlier draft of this
@@ -1019,7 +1243,7 @@ function baseDroneWP45Tests() {
 			// in the way), and a chord distance of 20 apart along the ring - inside SEPARATION (26.3).
 			const r = room.levelR(3);
 			a.level = b.level = 3;
-			a.levels = { caps: [5, 5, 5, 5, 5], count: [0, 0, 2, 0, 0], crossing: 0 };
+			a.levels = makeLevels([5, 5, 5, 5, 5], [0, 0, 2, 0, 0]);
 			b.levels = a.levels;
 			a.orbRTarget = b.orbRTarget = r;
 			a.switchCooldown = b.switchCooldown = 0;
@@ -1041,7 +1265,20 @@ function baseDroneWP45Tests() {
 				room.step();
 				if (a.level !== 3 || b.level !== 3) { switched = true; }
 			}
-			check('...and at least one of them peels onto a different level within the cooldown', switched);
+			// EXACTLY one of the pair peels, not both (plan.md WP4.5.0): rooms/Room.js's pair loop
+			// flags one deterministic side now. Before 4.5.3 this could only be asserted as "at least
+			// one", because the mechanism relied on the other side's switch *failing* - which is the
+			// very bug 4.5.3 fixed, so with a reaction that always fires, both would move (possibly
+			// onto the same level, still overlapping) if both were still flagged.
+			check('...and EXACTLY one of them peels onto a different level within the cooldown',
+				switched && (a.level !== 3) !== (b.level !== 3), a.level + '/' + b.level);
+			// The peel is radial, at a 60-degree lean off the tangent, so one LEVEL_GAP (28) of
+			// separation takes ~15 ticks to open up; 25 is comfortable and still inside the switch
+			// cooldown, so neither can have reacted a second time by then.
+			for (let i = 0; i < 25; i++) { room.step(); }
+			const apart = Math.hypot(a.x - b.x, a.y - b.y);
+			check('...and once it has, they are more than SEPARATION apart - they stop stacking',
+				apart > config.BASE_DRONE_SEPARATION, apart.toFixed(2) + ' vs ' + config.BASE_DRONE_SEPARATION);
 		}
 		{
 			const room = makeRoom('2team');
@@ -1066,59 +1303,491 @@ function baseDroneWP45Tests() {
 		}
 	}
 
-	// ---- WP4.5.4: the cross is a real crossing - passes through the centre by construction --------
+	/*
+		---- WP4.5.0: a reaction ALWAYS moves the drone -----------------------------------------------
+
+		The regression test, stated as the measurement that found the bug. Before this pass,
+		levelSwitch(drone, 'random') kept a neighbour as a candidate only if it was under its
+		per-centre cap - and in a real base the ledger is full: levelPlan(12) gives caps [1,3,5,3,1]
+		against an initial occupancy of [1,3,4,3,1], one free slot in the entire centre. Measured on
+		a live 4team room, 24 of 48 base drones had NO open neighbour at all and simply ignored every
+		shape they hit. This drives every drone in a real room through the real public door (latch,
+		then one tick) and expects 48 of 48.
+	*/
 	{
+		const room = makeRoom('4team');
+		const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.alone && b.type === 1.4);
+		let moved = 0;
+		for (const d of drones) {
+			d.crossIn = 1e9; d.levelTimer = 1e9;      // isolate the reaction from cross/drift-home
+			d.update();                                // one tick to build DETEC and settle state
+			d.chasing = false; d.crossing = false; d.switching = false;
+			d.switchCooldown = 0;
+			d.tooClose = 0;
+			const before = d.level;
+			d.reactPending = 1;
+			d.update();
+			if (d.level !== before) { moved++; }
+		}
+		check('every base drone in a live 4team room reacts to a hit - saturation is no longer a veto',
+			moved === drones.length, moved + ' of ' + drones.length + ' moved');
+		// The ledger may now transiently exceed a cap (a cross's landing on level 1 already could),
+		// but it must still account for exactly the live drones at each centre.
+		const ledgers = new Set(drones.map((d) => d.levels));
+		let balanced = true;
+		for (const ledger of ledgers) {
+			const live = drones.filter((d) => d.levels === ledger).length;
+			if (ledger.count.reduce((a, b) => a + b, 0) !== live) { balanced = false; }
+		}
+		check("...and every centre's ledger still sums to its own live drone count", balanced);
+	}
+
+	/*
+		---- WP4.5.0: a reaction that cannot be paid now is LATCHED, not dropped ----------------------
+		The three ways a drone can be busy when a shape hits it, plus the deliberate exception.
+	*/
+	{
+		const room = makeRoom('4team');
+		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+		const shape = { kind: KIND.OBJECTS, x: 0, y: 0, type: 'sqr', destroy: 0 };
+		const cd = tick.ticks(config.BASE_DRONE_SWITCH_COOLDOWN);
+		function idleDrone(level) {
+			const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
+			const d = room.INSTANCE.bullets.get(post.slot);
+			d.crossIn = 1e9; d.levelTimer = 1e9;
+			d.update();
+			d.DETEC.select = 0;
+			d.homing = 0;
+			d.chasing = false; d.crossing = false; d.switching = false;
+			d.level = level;
+			d.levels = makeLevels([9, 9, 9, 9, 9], [0, 0, 0, 0, 0]);
+			d.levels.count[level - 1] = 1;
+			d.orbRTarget = room.levelR(level);
+			d.switchCooldown = 0; d.tooClose = 0; d.reactPending = 0;
+			placeOnRing(d, room.levelR(level), 0);
+			return d;
+		}
+		{
+			// (i) a hit taken while the switch cooldown is still running
+			const d = idleDrone(3);
+			d.switchCooldown = 10;
+			const before = d.level;
+			d.collision(shape, {});
+			check('a hit taken on cooldown latches instead of being dropped', d.reactPending === 1);
+			let paidAt = -1;
+			for (let i = 0; i < cd + 5 && paidAt < 0; i++) { d.update(); if (d.level !== before) { paidAt = i; } }
+			check('...and is paid the moment the cooldown clears', paidAt >= 0, paidAt + ' ticks');
+		}
+		{
+			// (ii) a hit taken mid-'home'-arc - the drone is flying a planned curve and cannot peel
+			// off it, so the reaction waits for the arc to land rather than being thrown away.
+			const d = idleDrone(4);
+			// The general drift-home timer is gone (plan.md WP4.5.0) - only a post-swoosh `homing`
+			// drone climbs on this timer now, so simulate that state directly to drive the drone
+			// into the same 'home' planned arc this test is actually about.
+			d.homing = 1;
+			d.levelTimer = 1;
+			d.update();                       // fires the drift-home switch, entering `switching`
+			check("a drift-home switch really did enter its planned arc (test precondition)", d.switching === true);
+			d.switchCooldown = 0;
+			const before = d.level;
+			d.collision(shape, {});
+			check("a hit taken mid-'home'-arc latches", d.reactPending === 1);
+			let paidAt = -1;
+			for (let i = 0; i < 300 && paidAt < 0; i++) { d.update(); if (d.level !== before) { paidAt = i; } }
+			check('...and is paid on the tick the arc lands', paidAt >= 0 && !d.switching, paidAt + ' ticks');
+		}
+		{
+			// (iii) mid-swoosh is the ONE deliberate exception: the drone ploughs straight through,
+			// and the cross's own landing on level 1 IS its level change - so nothing is latched, and
+			// the exit clears anything that was.
+			const d = idleDrone(3);
+			d.crossIn = 1;
+			d.update();
+			check('a cross really did start (test precondition)', d.crossing === true);
+			d.collision(shape, {});
+			check('a hit taken mid-swoosh latches nothing - the drone ploughs through', !d.reactPending);
+			let guard = 0;
+			while (d.crossing && guard++ < 500) { d.update(); }
+			check('...and reactPending is 0 once the cross exits', !d.reactPending, d.reactPending);
+			check('...having landed on level 1, which IS its level change', d.level === 1, d.level);
+		}
+		{
+			// (iv) a tooClose noticed mid-chase becomes a pending reaction rather than a lost flag -
+			// this is the case that used to be silently cleared by the old `else { tooClose = 0 }`.
+			const d = idleDrone(3);
+			// Acquisition is centralised through levels.threat now (plan.md WP4.5.0) - set both so
+			// this test doesn't depend on whether `d` happens to be its centre's current scout.
+			d.levels.threat = d.DETEC.select = { x: d.ox + (d.ox > 0 ? -1 : 1) * 600, y: d.oy, destroy: 0 };
+			d.update();
+			check('a chase really did start (test precondition)', d.chasing === true);
+			d.tooClose = 1;
+			d.update();
+			check('a tooClose raised mid-chase becomes a pending reaction, not a dropped flag',
+				d.reactPending === 1 && !d.tooClose, d.reactPending + '/' + d.tooClose);
+		}
+	}
+
+	/*
+		---- WP4.5.0: the hit still lands on the tick the drone KILLS the shape -----------------------
+		The user's "it should do this even if it kills the shape". rooms/Room.js's pair loop runs
+		other.collision(this) BEFORE this arm, so the polygon can die on the same tick - the reaction
+		must not be lost with it. Driven through the real room step, with a nearly-dead polygon
+		parked on the drone's own ring.
+	*/
+	{
+		const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
 		const room = makeRoom('4team');
 		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
 		const drone = room.INSTANCE.bullets.get(post.slot);
-		// A freshly spawned drone's vec starts at (0,0) until its first real tick - warm it up to
-		// steady cruise before triggering, or the cross's frozen entry velocity (V0) would freeze a
-		// bogus near-zero speed instead of the real cruise one.
-		drone.crossIn = 1e9;
-		for (let i = 0; i < 60; i++) { drone.update(); }
-		const r0 = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
-		const entryUx = (drone.x - drone.ox) / r0, entryUy = (drone.y - drone.oy) / r0;
-		drone.crossIn = 1;
-		drone.update();
-		check('a cross actually starts on schedule', drone.crossing === true);
-		let minDist = Infinity, maxDist = 0, ticks = 0;
-		const GUARD = 300;
-		while (drone.crossing && ticks < GUARD) {
-			drone.update();
-			ticks++;
-			const d = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
-			minDist = Math.min(minDist, d);
-			maxDist = Math.max(maxDist, d);
+		drone.crossIn = 1e9; drone.levelTimer = 1e9;
+		drone.switchCooldown = 0; drone.reactPending = 0; drone.tooClose = 0;
+		const beforeLevel = drone.level;
+		// One tick ahead of the drone along its own ring, so they meet within a few ticks.
+		const ang = Math.atan2(drone.y - drone.oy, drone.x - drone.ox) + (drone.spin || 1) * 0.06;
+		const r = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
+		const sq = room.INSTANCE.objs.add((id) => {
+			const o = new Objects('sqr', -1, { GM: room.gm, sId: room.id, oId: id }, room.map, room);
+			o.x = drone.ox + Math.cos(ang) * r; o.y = drone.oy + Math.sin(ang) * r;
+			o.hp = 0.01;   // one touch kills it
+			return o;
+		});
+		let sawSwitch = false, died = false;
+		for (let i = 0; i < 120; i++) {
+			room.step();
+			if (sq.destroy) { died = true; }
+			if (drone.level !== beforeLevel) { sawSwitch = true; }
+			if (died && sawSwitch) { break; }
 		}
-		check('the minimum distance from the orbit centre is under 2 units - it passes THROUGH the centre',
-			minDist < 2, minDist);
-		check('...and ends by running out its planned ticks, not a timeout', ticks < GUARD, ticks + ' of ' + GUARD);
-		const exitR = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
-		const exitUx = (drone.x - drone.ox) / (exitR || 1), exitUy = (drone.y - drone.oy) / (exitR || 1);
-		// It lands 2*CROSS_LEAD past the entry's own raw antipode, not exactly opposite it - lead is
-		// applied once to offset the diameter's own line off the drone's actual position, then again
-		// at the landing point (entities/Bullet.js's case 1.4 trigger comment) - the "5-8% ahead" spec
-		// (plan.md WP4.5.3), asserted here as geometry rather than as the old antipodal dot product.
-		const entryAngle = Math.atan2(entryUy, entryUx), exitAngle = Math.atan2(exitUy, exitUx);
-		const lead = 2 * Math.PI * config.BASE_DRONE_CROSS_LEAD * (drone.spin || 1);
-		const expectedExitAngle = entryAngle + Math.PI + 2 * lead;
-		const angleErr = Math.atan2(Math.sin(exitAngle - expectedExitAngle), Math.cos(exitAngle - expectedExitAngle));
-		check('...lands 2*CROSS_LEAD past the antipode of where it started, within 10%',
-			Math.abs(angleErr) < 0.1 * Math.abs(2 * lead), (angleErr * 180 / Math.PI).toFixed(2) + ' degrees off');
-		check('...at radius levelR(1), +-2 units', Math.abs(exitR - room.levelR(1)) < 2,
-			exitR + ' vs ' + room.levelR(1));
-		check('...the S never bulges past the outermost level, so it never leaves the base square',
-			maxDist <= room.levelR(config.BASE_DRONE_LEVELS) + 1e-6, maxDist + ' vs ' + room.levelR(config.BASE_DRONE_LEVELS));
-		check('level === 1 on exit', drone.level === 1, drone.level);
-		// The climb back to HOME after this (WP4.5.2's drift-home retry loop, congestion and all) is
-		// already covered in isolation by the "drift home, re-timed" tests above, with a controlled
-		// ledger instead of this real room's live occupancy - a live 12-drone base can leave HOME
-		// saturated for longer than any fixed window here promises (the saturation-respecting climb
-		// is deliberately not guaranteed-fast, plan.md WP4.5.2), so it is not re-asserted against a
-		// timer in this live room.
+		check('a drone that kills a shape on contact still takes its level change from the hit',
+			died && sawSwitch, 'died=' + died + ' switched=' + sawSwitch);
 	}
 
-	// ---- WP4.5.4: nothing has a corner in it - bounded acceleration and jerk everywhere ------------
+	/*
+		---- WP4.5.0: the swoosh - arc -> C2 blend -> exact straight -> C2 blend -> level 1 ----------
+
+		Speeds here are measured from POSITION DELTAS, never from `vec`: position is what the curve
+		actually writes and what a player sees, so a curve that wrote a plausible `vec` alongside a
+		wrong position would pass a vec-based test and fail this one.
+
+		Nothing below re-derives planCross()'s own construction and then tests it against itself.
+		The straight's two endpoints come straight out of the flown path: `Te-1`/`Te+Ts-1` are the
+		first ticks whose accumulated arc length reaches the straight's start/end (plan.md WP4.5.1's
+		single continuous polyline replaced the old per-piece tables, so a tick boundary no longer
+		lands exactly on a knot the way it used to - it can land up to one tick's arc-step into the
+		neighbouring blend). That is why the straightness/centre-on-line checks below tolerate a
+		small (sub-0.1-unit) slack instead of asserting floating-point exactness: real curvature
+		would show up as multiple units of deviation, not a fraction of one.
+	*/
+	{
+		const room = makeRoom('4team');
+		const V_ORB = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
+		const V_CROSS = tick.perTick(config.BASE_DRONE_CROSS_SPEED);
+		const R1 = room.levelR(1);
+		const FRAC = config.BASE_DRONE_CROSS_BLEND_FRAC;
+		const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+
+		// Plans and flies one whole cross from `level` at `spin`, recording position every tick.
+		function flyCross(level, spin) {
+			const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
+			const drone = room.INSTANCE.bullets.get(post.slot);
+			drone.crossIn = 1e9;
+			drone.update();                 // one tick to build DETEC, so it can be silenced below
+			drone.DETEC.select = 0;         // no chase: a chase would abandon the state under test
+			drone.chasing = false; drone.crossing = false; drone.switching = false;
+			drone.spin = spin;
+			drone.level = level;
+			drone.levels = makeLevels([9, 9, 9, 9, 9], [0, 0, 0, 0, 0]);
+			drone.levels.count[level - 1] = 1;
+			drone.orbRTarget = room.levelR(level);
+			drone.levelTimer = 1e9;         // no drift-home mid-measurement
+			drone.switchCooldown = 0;
+			drone.tooClose = 0; drone.reactPending = 0;
+			// placeOnRing() leaves the drone exactly on its ring at cruise with pvec == vec, which
+			// is the same steady state 60 warm-up ticks used to produce - planCross() reads vec
+			// directly for its C1 seam, so a cold (0,0) vec would freeze a bogus entry velocity.
+			placeOnRing(drone, room.levelR(level), 0.7);
+			const P0 = { x: drone.x, y: drone.y };
+			const r0 = Math.hypot(P0.x - drone.ox, P0.y - drone.oy);
+			const entryAngle = Math.atan2(P0.y - drone.oy, P0.x - drone.ox);
+			drone.crossIn = 1;
+			drone.update();                 // this tick both plans the cross AND applies its tick 0
+			const started = drone.crossing === true;
+			const segs = started ? drone.crossSegs.slice() : [0, 0, 0];
+			const ticks = started ? drone.crossTicks.slice() : [0, 0, 0];
+			const tbl = drone.crossTbl;
+			const pts = [{ x: drone.x, y: drone.y }];
+			let guard = 0;
+			while (drone.crossing && guard++ < 500) {
+				drone.update();
+				pts.push({ x: drone.x, y: drone.y });
+			}
+			// Per-tick velocity/accel/jerk, all from the flown positions. v[i] is the step INTO
+			// pts[i], so v[0] is the very first cross tick's own step out of P0.
+			const v = [], sp = [];
+			let prev = P0;
+			for (const p of pts) { v.push({ x: p.x - prev.x, y: p.y - prev.y }); sp.push(Math.hypot(p.x - prev.x, p.y - prev.y)); prev = p; }
+			let peakTurn = 0, peakAccel = 0, peakJerk = 0, maxR = 0, maxDx = 0, maxDy = 0;
+			for (let i = 0; i < pts.length; i++) {
+				maxR = Math.max(maxR, Math.hypot(pts[i].x - drone.ox, pts[i].y - drone.oy));
+				maxDx = Math.max(maxDx, Math.abs(pts[i].x - drone.ox));
+				maxDy = Math.max(maxDy, Math.abs(pts[i].y - drone.oy));
+				if (i >= 1) { peakTurn = Math.max(peakTurn, Math.abs(wrap(Math.atan2(v[i].y, v[i].x) - Math.atan2(v[i - 1].y, v[i - 1].x)))); }
+				if (i >= 1) { peakAccel = Math.max(peakAccel, Math.hypot(v[i].x - v[i - 1].x, v[i].y - v[i - 1].y)); }
+				if (i >= 2) {
+					const jx = (v[i].x - v[i - 1].x) - (v[i - 1].x - v[i - 2].x);
+					const jy = (v[i].y - v[i - 1].y) - (v[i - 1].y - v[i - 2].y);
+					peakJerk = Math.max(peakJerk, Math.hypot(jx, jy));
+				}
+			}
+			const Te = ticks[0], Ts = ticks[1];
+			// The exact geometric endpoints (plan.md WP4.5.7), not the nearest flown tick - a tick
+			// boundary can land up to one tick's arc-step into the neighbouring blend now that the
+			// speed profile is one continuous polyline, which would otherwise leak a fraction of a
+			// unit of blend curvature into "how straight is the straight" and "how long is it".
+			const Lin = drone.crossLin, Lout = drone.crossLout;
+			const lineLen = Math.hypot(Lout.x - Lin.x, Lout.y - Lin.y) || 1;
+			const d = { x: (Lout.x - Lin.x) / lineLen, y: (Lout.y - Lin.y) / lineLen };
+			const perp = (p) => Math.abs((p.x - Lin.x) * -d.y + (p.y - Lin.y) * d.x);
+			const along = (p) => (p.x - Lin.x) * d.x + (p.y - Lin.y) * d.y;
+			const C = { x: drone.ox, y: drone.oy };
+			const exitR = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
+			// plan.md WP4.5.1/4.5.7: the speed profile is a PLATEAU now, spanning the whole path
+			// rather than three independently-timed pieces - so "where is the plateau" and "how close
+			// does the flown path actually get to the centre" are found from the flown data directly,
+			// not assumed to fall on a blend/straight seam.
+			let peakSpdIdx = 0, centreIdx = 0, centreDist = Infinity;
+			for (let i = 0; i < pts.length; i++) {
+				if (sp[i] > sp[peakSpdIdx]) { peakSpdIdx = i; }
+				const dc = Math.hypot(pts[i].x - C.x, pts[i].y - C.y);
+				if (dc < centreDist) { centreDist = dc; centreIdx = i; }
+			}
+			// The plateau (plan.md WP4.5.1): cumulative arc length per tick, and the tick indices
+			// bracketing the held peak - first tick whose cumulative arc reaches RAMP of the whole
+			// path (rampIdx), and the LAST tick whose cumulative arc is still within (1-RAMP) of it
+			// (holdIdx). peakSpdIdx already picks the FIRST tick at the max (strict > above), which
+			// is exactly "first reached" for the check below.
+			const cumArc = [];
+			{ let c = 0; for (const s of sp) { c += s; cumArc.push(c); } }
+			const pathL = segs[0] + segs[1] + segs[2];
+			const RAMP = config.BASE_DRONE_CROSS_RAMP;
+			const rampArc = RAMP * pathL, holdArc = (1 - RAMP) * pathL;
+			let rampIdx = cumArc.findIndex((c) => c >= rampArc - 1e-6);
+			if (rampIdx < 0) { rampIdx = cumArc.length - 1; }
+			let holdIdx = 0;
+			for (let i = 0; i < cumArc.length; i++) { if (cumArc[i] <= holdArc + 1e-6) { holdIdx = i; } }
+			return {
+				drone, started, segs, ticks, tbl, pts, sp, P0, r0, entryAngle, Te, Ts, Tx: ticks[2],
+				cumArc, pathL, rampIdx, holdIdx,
+				Lin, Lout, d, perp, along, lineLen, peakTurn, peakAccel, peakJerk, maxR, maxDx, maxDy,
+				exitR, peakSpdIdx, centreIdx,
+				centrePerp: perp(C), centreAlong: along(C), centreToEnd: lineLen - along(C),
+				straightSp: sp.slice(Te, Te + Ts),
+				entrySp: sp.slice(0, Te),
+				exitSp: sp.slice(Te + Ts),
+				exitVec: { x: drone.vec.x, y: drone.vec.y },
+				exitAngle: Math.atan2(drone.y - drone.oy, drone.x - drone.ox)
+			};
+		}
+
+		// --- the detailed pass, from the home level ------------------------------------------------
+		{
+			const R = flyCross(config.BASE_DRONE_LEVEL_HOME, 1);
+			check('a cross actually starts on schedule', R.started);
+			check('...and ends by running out its planned ticks, not a timeout', R.pts.length === R.tbl.length,
+				R.pts.length + ' flown vs ' + R.tbl.length + ' planned');
+			check('the per-tick table is exactly its three segments long - the shape solver terminated',
+				R.tbl.length === R.ticks[0] + R.ticks[1] + R.ticks[2], R.tbl.length + ' vs ' + R.ticks.join('+'));
+			check("...and its first tick is within one cross-speed step of the drone's position at trigger",
+				Math.hypot(R.tbl[0].x - R.P0.x, R.tbl[0].y - R.P0.y) <= V_CROSS + 1e-9,
+				Math.hypot(R.tbl[0].x - R.P0.x, R.tbl[0].y - R.P0.y).toFixed(3) + ' vs ' + V_CROSS.toFixed(3));
+
+			// The straight really is straight, and really does run over the centre. A sampled minimum
+			// distance to the centre is NOT asserted and never really held: at ~9.25 units per tick the
+			// nearest sample can sit half a step (4.7 units) off a path that runs exactly over it.
+			let worstPerp = 0;
+			for (let i = R.Te; i < R.Te + R.Ts; i++) { worstPerp = Math.max(worstPerp, R.perp(R.pts[i])); }
+			check('the straight segment is straight (within one tick-boundary\'s worth of slack)',
+				worstPerp < 0.1, worstPerp.toExponential(2));
+			// Lin/Lout are the exact geometric points now (drone.crossLin/crossLout), and C is pure
+			// geometry too (Lin-C and Lout-C are scalar multiples of the same unit vector by
+			// construction) - so unlike worstPerp above, this is provably exact, not tick-sampled.
+			check('...and the orbit centre lies exactly ON that line',
+				R.centrePerp < 1e-6, R.centrePerp.toExponential(2));
+			check('...strictly BETWEEN its two ends - it really crosses the centre',
+				R.centreAlong > 0 && R.centreToEnd > 0, R.centreAlong.toFixed(1) + ' / ' + R.centreToEnd.toFixed(1));
+			// plan.md WP4.5.0: BLEND_FRAC is a fraction of EACH END'S OWN RADIUS now, not of the
+			// chord, so the straight's length is (1-FRAC)*(r0+R1) - and there is no ceiling on FRAC
+			// to assert any more (the "strictly BETWEEN its two ends" check just above is what used
+			// to need one).
+			check('...and is (1 - CROSS_BLEND_FRAC) of the whole chord, within 1%',
+				Math.abs(R.lineLen - (1 - FRAC) * (R.r0 + R1)) / ((1 - FRAC) * (R.r0 + R1)) < 0.01,
+				R.lineLen.toFixed(1) + ' vs ' + ((1 - FRAC) * (R.r0 + R1)).toFixed(1));
+
+			// plan.md WP4.5.1: the speed profile is a PLATEAU now, held from CROSS_RAMP of the path to
+			// (1-CROSS_RAMP) of it - there is no single peak tick any more, so "where is the peak" is
+			// replaced by "is the plateau speed reached by RAMP and still held at 1-RAMP". A VALUE
+			// check at rampIdx/holdIdx, not an index comparison against R.peakSpdIdx: RK2 asymptotically
+			// approaches the true maximum from below across the whole held plateau (successive samples
+			// differ by fractions of a unit in the 9th digit), so the STRICT first-tick-at-the-exact-
+			// max can land many ticks after the profile is already at the plateau in every way that
+			// matters - measured, within 0.1% by rampIdx but not bit-identical to the eventual max
+			// until much later. The value check is what the plateau actually promises; the index one
+			// was testing floating-point convergence noise instead.
+			const vPeak = R.sp[R.peakSpdIdx];
+			check('the plateau speed is reached by CROSS_RAMP of the cumulative arc (within 1%)',
+				Math.abs(R.sp[R.rampIdx] - vPeak) / vPeak < 0.01,
+				R.sp[R.rampIdx].toFixed(3) + ' vs peak ' + vPeak.toFixed(3));
+			check('...and is still held (within 1%) at (1-CROSS_RAMP) of the arc',
+				Math.abs(R.sp[R.holdIdx] - vPeak) / vPeak < 0.01,
+				R.sp[R.holdIdx].toFixed(3) + ' vs peak ' + vPeak.toFixed(3));
+			// Not 0.1%: vPeak is SOLVED so the walk lands on a whole tick, which is measured to land
+			// within ~1% of nominal at every level (it can now land slightly UNDER nominal too, not
+			// just over - see lib/config.js's BASE_DRONE_CROSS_SPEED comment) - a tighter bound here
+			// would be testing the rounding, not the construction. Already two-sided via Math.abs().
+			check('vPeak lands within 1% of nominal BASE_DRONE_CROSS_SPEED',
+				Math.abs(vPeak - V_CROSS) / V_CROSS < 0.01, vPeak.toFixed(3) + ' vs ' + V_CROSS.toFixed(3));
+			// Speed rises to the plateau and falls from it - non-strict now (plan.md WP4.5.1: the held
+			// middle is flat by construction, not strictly monotone), in three pieces: non-decreasing
+			// up to rampIdx, flat within 0.5% across the hold, non-increasing from holdIdx down to
+			// cruise. The strict-monotonicity intent from the old single-ramp build is preserved
+			// instead by the two seam-speed checks right below (both exactly cruise, no slack).
+			// The very last table entry is the curve's exit knot B, WRITTEN exactly rather than
+			// sampled from the walk (planCross()'s own comment) - so the position delta into it is
+			// not a smooth continuation of the walk's own arc-length stepping, and is excluded from
+			// the monotonicity/continuity checks below on purpose; the landing checks further down
+			// (exitVec, exactly tangential, etc.) already cover that hand-off directly.
+			let riseMono = true, flatHold = true, fallMono = true;
+			for (let i = 1; i <= R.rampIdx; i++) { if (R.sp[i] < R.sp[i - 1] - 1e-9) { riseMono = false; } }
+			for (let i = R.rampIdx; i <= R.holdIdx; i++) {
+				if (Math.abs(R.sp[i] - vPeak) / vPeak > 0.005) { flatHold = false; }
+			}
+			for (let i = R.holdIdx + 1; i < R.sp.length - 1; i++) { if (R.sp[i] > R.sp[i - 1] + 1e-9) { fallMono = false; } }
+			check('speed rises (non-decreasing) from cruise up to the plateau', riseMono);
+			check('...holds flat across the plateau (within 0.5%)', flatHold);
+			check('...and falls (non-increasing) from the plateau back to cruise (excl. the written landing tick)', fallMono);
+			check('the first tick is within 0.1% of cruise', Math.abs(R.sp[0] - V_ORB) / V_ORB < 0.001,
+				R.sp[0].toFixed(4) + ' vs ' + V_ORB.toFixed(4));
+			check('the last tick is cruise exactly (the written exit velocity, not the sampled position delta)',
+				Math.abs(Math.hypot(R.exitVec.x, R.exitVec.y) - V_ORB) < 1e-9,
+				Math.hypot(R.exitVec.x, R.exitVec.y).toFixed(6));
+			// No corner in ACCEL VALUE at either knee (dv/ds = 0 at both, by construction - see
+			// crossVAt's own comment): consecutive per-tick speed deltas never jump by more than the
+			// pinned ratio anywhere in the table. Re-pinned from a measured run (plan.md WP4.5.7 - do
+			// not guess): unlike the old single-ramp build, a chunk of this table now sits on the FLAT
+			// plateau, where consecutive deltas are both near zero and their ratio is dominated by
+			// floating-point/RK2 noise rather than any real corner - measured up to ~26 there, so the
+			// bound is pinned well above that noise floor rather than the old build's tight 4x, which
+			// assumed every sample was on a genuinely curving part of the path. Stops one short of the
+			// end for the same written-not-sampled reason as above.
+			let worstJumpRatio = 0;
+			for (let i = 2; i < R.sp.length - 1; i++) {
+				const d0 = Math.abs(R.sp[i - 1] - R.sp[i - 2]), d1 = Math.abs(R.sp[i] - R.sp[i - 1]);
+				if (d0 > 1e-9) { worstJumpRatio = Math.max(worstJumpRatio, d1 / d0); }
+			}
+			check('acceleration has no corner at either knee - no consecutive-delta jump over 40x',
+				worstJumpRatio <= 40 + 1e-6, worstJumpRatio.toFixed(2));
+
+			// Nothing has a corner in ACCEL VALUE. plan.md WP4.5.1 re-pins both bounds from a measured
+			// run: the plateau's knees sit deep inside the still-tight entry/exit blends
+			// (BASE_DRONE_CROSS_BLEND_FRAC puts ~80% of the path in the two C2 joins), so turn rises
+			// from the old single-ramp build's 5.63 rad/s to a measured 8.46, and accel from 0.79 to
+			// 1.95 - both asserted here with headroom, not tuned to just clear.
+			const TURN_BOUND = 10 * config.TICK_MS / 1000;
+			const ACCEL_BOUND = 2.5;
+			check('no corner: the peak in-cross turn rate stays under 10 rad/s', R.peakTurn < TURN_BOUND,
+				(R.peakTurn * 1000 / config.TICK_MS).toFixed(2) + ' rad/s');
+			check('...and the peak in-cross acceleration under 2.5 ref-units/tick^2', R.peakAccel < ACCEL_BOUND,
+				R.peakAccel.toFixed(4) + ' vs ' + ACCEL_BOUND.toFixed(4));
+			// The measured duration at every level (plan.md WP4.5.1's own sweep table, RAMP=0.25):
+			// 80/86/93/100/106 ticks at levels 1-5, about 25% quicker than the old single-ramp build's
+			// 107/116/125/134/143 - pinned here for the home level (3); the every-level loop below
+			// pins all five.
+			check('duration at the home level is 93 ticks (2.33s) - the plateau is ~25% quicker',
+				Math.abs(R.tbl.length - 93) <= 1, R.tbl.length);
+
+			// The landing, and the bulge that is now gone: the entry curls inward immediately, so the
+			// maximum radius over the whole cross is exactly r0 - the old "never past levelR(5)"
+			// allowance is not needed any more.
+			check('the landing radius is levelR(1) +-0.5', Math.abs(R.exitR - R1) < 0.5, R.exitR.toFixed(3) + ' vs ' + R1);
+			check('...at cruise speed, within 2%', Math.abs(Math.hypot(R.exitVec.x, R.exitVec.y) - V_ORB) / V_ORB < 0.02,
+				Math.hypot(R.exitVec.x, R.exitVec.y).toFixed(3) + ' vs ' + V_ORB.toFixed(3));
+			check('...and exactly tangential, so the orbit field resumes with zero error',
+				Math.abs((R.exitVec.x * Math.cos(R.exitAngle) + R.exitVec.y * Math.sin(R.exitAngle)) /
+					Math.hypot(R.exitVec.x, R.exitVec.y)) < 0.02);
+			// It lands 2*CROSS_LEAD past the entry's own raw antipode, not exactly opposite it - lead
+			// is applied once to offset the line off the drone's actual position, then again at the
+			// landing point (planCross()'s own comment) - the user's "5-8% ahead circumferentially".
+			const lead = 2 * Math.PI * config.BASE_DRONE_CROSS_LEAD * R.drone.spin;
+			const angleErr = wrap(R.exitAngle - (R.entryAngle + Math.PI + 2 * lead));
+			check('...lands 2*CROSS_LEAD past the antipode of where it started, within 10%',
+				Math.abs(angleErr) < 0.1 * Math.abs(2 * lead), (angleErr * 180 / Math.PI).toFixed(2) + ' degrees off');
+			check('level === 1 on exit', R.drone.level === 1, R.drone.level);
+			// The climb back to HOME after this (WP4.5.0's drift-home retry loop, congestion and all) is
+			// already covered in isolation by the "drift home, re-timed" tests above, with a controlled
+			// ledger instead of this real room's live occupancy.
+		}
+
+		// --- the same invariants over every level and both spins ----------------------------------
+		{
+			const CROSS_BUDGET = tick.ticks(config.BASE_DRONE_CROSS);
+			// plan.md WP4.5.1's own sweep at RAMP=0.25 (lib/config.js's BASE_DRONE_CROSS_RAMP
+			// comment carries the full table) - ~25% quicker than the previous single-ramp build's
+			// 107/116/125/134/143.
+			const EXPECT_TICKS = [80, 86, 93, 100, 106];
+			let straight = true, peaked = true, bracketed = true, landed = true, lengths = true;
+			let noBulge = true, inSquare = true, sane = true, underBudget = true, duration = true;
+			const shape = [];
+			for (let level = 1; level <= config.BASE_DRONE_LEVELS; level++) {
+				for (const spin of [1, -1]) {
+					const R = flyCross(level, spin);
+					let worst = 0;
+					for (let i = R.Te; i < R.Te + R.Ts; i++) { worst = Math.max(worst, R.perp(R.pts[i])); }
+					if (!(worst < 0.1)) { straight = false; }
+					// plan.md WP4.5.1: a PLATEAU now, not a single peak tick - a VALUE check at
+					// rampIdx/holdIdx (see the detailed pass above for why not an index comparison
+					// against R.peakSpdIdx - RK2 converges to the exact max asymptotically across the
+					// whole plateau).
+					const vPk = R.sp[R.peakSpdIdx];
+					if (!(Math.abs(R.sp[R.rampIdx] - vPk) / vPk < 0.01)) { peaked = false; }
+					if (!(Math.abs(R.sp[R.holdIdx] - vPk) / vPk < 0.01)) { peaked = false; }
+					for (let i = 1; i <= R.rampIdx && peaked; i++) { if (R.sp[i] < R.sp[i - 1] - 1e-9) { peaked = false; } }
+					for (let i = R.holdIdx + 1; i < R.sp.length - 1 && peaked; i++) { if (R.sp[i] > R.sp[i - 1] + 1e-9) { peaked = false; } }
+					if (!(R.centreAlong > 0 && R.centreToEnd > 0 && R.centrePerp < 0.01)) { bracketed = false; }
+					if (!(Math.abs(R.exitR - R1) < 0.5 && R.drone.level === 1)) { landed = false; }
+					if (!(R.tbl.length === R.ticks[0] + R.ticks[1] + R.ticks[2] && R.pts.length === R.tbl.length)) { lengths = false; }
+					// The entry curls INWARD from the first tick, so the whole cross stays inside the
+					// ring it started on - plan.md WP4.5.0's "the radial bulge is gone".
+					if (!(R.maxR <= R.r0 + 1)) { noBulge = false; }
+					if (!(R.maxDx <= room.baseSize / 2 && R.maxDy <= room.baseSize / 2)) { inSquare = false; }
+					// plan.md WP4.5.1 re-pins both from the measured sweep (turn 8.46, accel 1.95 at
+					// RAMP=0.25, up from the old single-ramp build's 5.63/0.79).
+					if (!(R.peakTurn < 10 * config.TICK_MS / 1000 && R.peakAccel < 2.5)) { sane = false; }
+					if (!(R.tbl.length < CROSS_BUDGET)) { underBudget = false; }
+					if (!(Math.abs(R.tbl.length - EXPECT_TICKS[level - 1]) <= 1)) { duration = false; }
+					if (spin === 1) {
+						shape.push('L' + level + ' ' + R.segs.join('/') + ' = ' +
+							(R.tbl.length * config.TICK_MS / 1000).toFixed(2) + 's, turn ' +
+							(R.peakTurn * 1000 / config.TICK_MS).toFixed(2) + ' rad/s, accel ' + R.peakAccel.toFixed(3));
+					}
+				}
+			}
+			check('every level x both spins: the straight is straight to floating point', straight);
+			check('...the peak is a held plateau (first reached by RAMP, still held at 1-RAMP), non-decreasing/flat/non-increasing either side', peaked);
+			check('...with the orbit centre on it and bracketed by its two ends', bracketed);
+			check('...landing on level 1 at levelR(1) +-0.5', landed);
+			check('...with a table exactly as long as its own three segments, flown to the last tick', lengths);
+			check('...never bulging past the ring it left (maxR <= r0 + 1)', noBulge);
+			check('...and never leaving the base square', inSquare);
+			check('...with no corner in it at any level (turn < 10 rad/s, accel < 2.5)', sane);
+			check('...and finishing well inside one BASE_DRONE_CROSS period', underBudget);
+			check('...and matching the measured duration table (80/86/93/100/106 ticks) within 1 tick', duration);
+			console.log('  note swoosh entry/straight/exit ticks per level (spin +1):');
+			for (const line of shape) { console.log('       ' + line); }
+		}
+	}
+
+	// ---- WP4.5.0: nothing has a corner in it - bounded acceleration and jerk everywhere ------------
 	{
 		const room = makeRoom('4team');
 		const drone = room.INSTANCE.bullets.get(room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME).slot);
@@ -1133,28 +1802,31 @@ function baseDroneWP45Tests() {
 		let prevHead = drone.head, prevVx = drone.vec.x, prevVy = drone.vec.y, prevAx = 0, prevAy = 0, first = true, firstA = true;
 		let sharpOut = false, sharpIn = false, slow = false, hardAccelOut = false, hardAccelIn = false, hardJerkOut = false;
 		let peakAccelIn = 0, peakJerkIn = 0, peakTurnIn = 0;
-		// A 'home' switch arc is a third exempt state alongside crossing (plan.md WP4.5.8), but
+		// A 'home' switch arc is a third exempt state alongside crossing (plan.md WP4.5.0), but
 		// measured against real geometry across the whole level table it never actually approaches
 		// either outside-curve bound - its own sweep is a shallow ~10 degrees over ~70 ticks, well
 		// under TURN's per-tick allowance - so it is sampled and its own peaks are printed for the
 		// record, without a separate generous multiplier the way the cross needs one.
 		let peakAccelSwitch = 0, peakJerkSwitch = 0, peakTurnSwitch = 0;
-		// The in-cross turn bound is pinned empirically, not to a flat 2xTURN: segment B's tail
-		// blends velocity from the dash speed down to cruise while completing a ~90 degree
-		// reorientation, and a quintic Hermite velocity blend transiently undershoots below the
-		// cruise endpoint there - low speed inflates angular rate (omega = v_perp/v) even though the
-		// physical path itself is smooth (position/velocity/acceleration all stay continuous - see
-		// the accel/jerk checks below). Measured at the tuned BASE_DRONE_CROSS_BLEND_ARC fixpoint this
-		// peaks around 15 degrees/tick; raising CROSS_BLEND_ARC does not fix it (it is not monotonic
-		// in this range, and blows well past the ~3.0s cross duration plan.md derives long before it
-		// would help) so this is pinned like the accel/jerk peaks above rather than asserted against
-		// the outside-cross TURN figure.
+		// The in-cross bounds are the swoosh's own measured geometry (plan.md WP4.5.1: <= 8.46 rad/s
+		// and <= 1.95 ref-units/tick^2 across levels 1-5 at BASE_DRONE_CROSS_RAMP=0.25, up from the
+		// previous single-ramp build's 5.63/0.79 - the plateau's two knees sit deep inside the still-
+		// tight entry/exit C2 blends, which is what costs the extra turn/accel), not a generous
+		// multiple of the outside-cross figure. The curve is exempt from the turn/accel limiter, but
+		// still bounded well inside BASE_DRONE_ACCEL's own scale. The swoosh's speed is a plateau now
+		// (plan.md WP4.5.1) - ramp up over the first RAMP of the path, hold peak across the middle,
+		// ramp down over the last RAMP - not one continuous ramp to a single peak at the centre.
+		const IN_TURN = 10 * config.TICK_MS / 1000;      // 10 rad/s, in radians per real tick
+		// Measured (drone.vec-delta based, real-tick units): up to ~1.95 across a natural cross
+		// cycle. Not a tick.perTick() conversion - this bound is calibrated against what THIS
+		// measurement actually produces, the same way TURN_BOUND above is.
+		const IN_ACCEL = 2.5;
 		const sample = () => {
 			const dHead = Math.atan2(Math.sin(drone.head - prevHead), Math.cos(drone.head - prevHead));
 			const turnLimit = drone.chasing ? CHASE_TURN : TURN;
 			if (drone.crossing) {
 				if (Math.abs(dHead) > peakTurnIn) { peakTurnIn = Math.abs(dHead); }
-				if (Math.abs(dHead) > 30 * Math.PI / 180) { sharpIn = true; }
+				if (Math.abs(dHead) > IN_TURN) { sharpIn = true; }
 			} else {
 				if (drone.switching && Math.abs(dHead) > peakTurnSwitch) { peakTurnSwitch = Math.abs(dHead); }
 				if (Math.abs(dHead) > turnLimit + 1e-9) { sharpOut = true; }
@@ -1165,7 +1837,7 @@ function baseDroneWP45Tests() {
 			if (!first) {
 				if (drone.crossing) {
 					if (accelMag > peakAccelIn) { peakAccelIn = accelMag; }
-					if (accelMag > OUT_ACCEL * 25) { hardAccelIn = true; }
+					if (accelMag > IN_ACCEL) { hardAccelIn = true; }
 				} else {
 					if (drone.switching && accelMag > peakAccelSwitch) { peakAccelSwitch = accelMag; }
 					if (accelMag > OUT_ACCEL) { hardAccelOut = true; }
@@ -1189,19 +1861,26 @@ function baseDroneWP45Tests() {
 			drone.update(); sample();
 		}
 		drone.chasing = false; drone.crossing = false; drone.DETEC.select = 0;
+		// Isolate the return, or a naturally-expiring crossIn can trigger a swoosh while the drone is
+		// still 5 ring-radii out - planCross()'s entry blend assumes a near-circular starting state,
+		// so a cross launched from a fast, far-off-ring position (not what it's designed for) produces
+		// a much sharper curve than any cross that actually starts from a settled ring. That is a real
+		// interaction, not a test bug, but this section is specifically about the RETURN's own bound.
+		drone.crossIn = 1e9;
 		drone.x = drone.ox + drone.orbRTarget * 5; drone.y = drone.oy;   // a forced long return
 		for (let i = 0; i < 150; i++) { drone.update(); sample(); }
 		// A forced 'home' switch, isolated - the natural window above depends on a staggered spawn
 		// crossIn eventually clearing this drone off HOME, which is not reliable inside any fixed
-		// sample budget (WP4.5.2's climb is deliberately not guaranteed-fast under congestion), so
+		// sample budget (WP4.5.0's climb is deliberately not guaranteed-fast under congestion), so
 		// this drives one directly the way the drift-home tests above do.
 		drone.chasing = false; drone.crossing = false; drone.switching = false; drone.crossIn = 1e9;
-		drone.levels = { caps: [5, 5, 5, 5, 5], count: [0, 0, 4, 1, 0], crossing: 0 };
+		drone.levels = makeLevels([5, 5, 5, 5, 5], [0, 0, 4, 1, 0]);
 		drone.level = 4;
 		drone.orbRTarget = room.levelR(4);
 		drone.switchCooldown = 0;
 		placeOnRing(drone, room.levelR(4), 0);
 		drone.levelTimer = 1;
+		drone.homing = 1;   // 'home' mode is only ever reached via a homing climb now (plan.md WP4.5.0)
 		// placeOnRing() teleports head/vec directly - reset the sampler's own state to match, or its
 		// first sample compares against the previous segment's stale heading/velocity, which is a
 		// test-harness discontinuity, not a real one.
@@ -1212,63 +1891,216 @@ function baseDroneWP45Tests() {
 		}
 		check('head never turns faster than BASE_DRONE_TURN (or CHASE_TURN while chasing) outside a cross',
 			!sharpOut);
-		check('...and during one, stays within the empirically-pinned bound (see comment above)', !sharpIn,
-			'peak ' + (peakTurnIn * 180 / Math.PI).toFixed(2) + ' degrees/tick');
+		check('...and during one, stays under 8 rad/s - the swoosh has no corner in it', !sharpIn,
+			'peak ' + (peakTurnIn * 1000 / config.TICK_MS).toFixed(2) + ' rad/s');
 		check('speed never drops below half cruise outside a cross or a chase - no dead stop anywhere', !slow);
 		check('acceleration stays within the turn/accel-slew bound outside a cross', !hardAccelOut);
 		check('jerk stays bounded outside a cross', !hardJerkOut);
-		check('acceleration during a cross stays within a generous multiple of the outside-cross bound ' +
-			'(the curve is unrated but still bounded by construction)', !hardAccelIn,
-			'peak ' + peakAccelIn.toFixed(4) + ' vs ' + (OUT_ACCEL * 25).toFixed(4));
-		console.log('  note measured in-cross peak accel/jerk per tick: ' + peakAccelIn.toFixed(4) +
-			' / ' + peakJerkIn.toFixed(4) + ' (outside-cross accel bound ' + OUT_ACCEL.toFixed(4) + ')');
+		check('acceleration during a cross stays bounded - inside BASE_DRONE_ACCEL\'s own scale, even ' +
+			'though the curve is exempt from the limiter', !hardAccelIn,
+			'peak ' + peakAccelIn.toFixed(4) + ' vs ' + IN_ACCEL.toFixed(4));
+		console.log('  note measured in-cross peak turn/accel/jerk per tick: ' +
+			(peakTurnIn * 1000 / config.TICK_MS).toFixed(2) + ' rad/s / ' + peakAccelIn.toFixed(4) +
+			' / ' + peakJerkIn.toFixed(4) + ' (bounds ' + IN_TURN.toFixed(4) + ' rad, ' + IN_ACCEL.toFixed(4) + ')');
 		console.log('  note measured in-switch peak turn/accel/jerk per tick: ' +
 			(peakTurnSwitch * 180 / Math.PI).toFixed(2) + ' deg / ' + peakAccelSwitch.toFixed(4) + ' / ' +
 			peakJerkSwitch.toFixed(4) + ' (both comfortably under the outside-cross bounds above)');
 	}
 
-	// ---- WP4.5.3: arc length, and the CROSS_BLEND_ARC fixpoint -------------------------------------
-	// BASE_DRONE_CROSS_ARC (the old two-segment curve's whole-path factor) is gone - the straight
-	// 84% needs no factor at all now (mean-speed-over-chord is exact for a zero-accel-at-both-ends
-	// quintic). BASE_DRONE_CROSS_BLEND_ARC replaces it, scoped to the two short entry/exit tweens.
+	// (The BASE_DRONE_CROSS_BLEND_ARC fixpoint test that used to sit here is deleted with the
+	// constant itself - plan.md WP4.5.0 solves a blend's shape parameter by fixed point at plan
+	// time, so there is no measured overhead factor left to re-measure and paste back.)
+
+	// ---- WP4.5.2(A): clampToMap() actually stops/redirects a drone, not just teleports it ---------
+	// Before this fix, clampToMap() zeroed this.vec.x/y on the clamped axis, but case 1.4's own
+	// steering tail derives vec FROM head/spd at the top of every tick, so the zeroed component was
+	// overwritten before it was ever read - the clamp just moved the drone back onto the boundary
+	// once a tick, forever, while spd sat at full chase speed. Reproduced headlessly, both halves.
 	{
+		const room = makeRoom('4team');
+		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
+		const mx = room.map.width / 2 + config.OOB_MARGIN, my = room.map.height / 2 + config.OOB_MARGIN;
+
+		// (1) Parked at the corner, not chasing: a slide, not a multi-tick freeze.
+		{
+			const drone = room.INSTANCE.bullets.get(post.slot);
+			drone.crossIn = 1e9;
+			drone.update();
+			drone.chasing = false; drone.crossing = false; drone.switching = false;
+			drone.DETEC.select = 0; drone.levels.threat = null;
+			drone.x = -mx; drone.y = -my;
+			drone.head = Math.atan2(-1, -1);   // pointing straight out of the corner
+			drone.spd = tick.perTick(config.BASE_DRONE_CHASE_SPEED);
+			drone.vec.x = Math.cos(drone.head) * drone.spd;
+			drone.vec.y = Math.sin(drone.head) * drone.spd;
+			drone.pvec.x = drone.vec.x; drone.pvec.y = drone.vec.y;
+			// A drone starting EXACTLY on the corner's diagonal still takes a turn-rate-bounded
+			// number of ticks to rotate off it before either axis's velocity survives the clamp -
+			// that delay is geometry (BASE_DRONE_TURN), present with or without this fix, and is not
+			// what the fix changes. What the fix actually buys: the escape is BOUNDED (not the
+			// "stuck forever" of the chasing case below) and, once moving, it is a continuous slide -
+			// it never freezes again.
+			let firstMoveIdx = -1, refroze = false, prev = { x: drone.x, y: drone.y };
+			const start = { x: drone.x, y: drone.y };
+			for (let i = 0; i < 40; i++) {
+				drone.crossIn = 1e9;   // keep a natural cross from interrupting this measurement
+				drone.update();
+				const moved = Math.abs(drone.x - prev.x) > 1e-9 || Math.abs(drone.y - prev.y) > 1e-9;
+				if (moved && firstMoveIdx < 0) { firstMoveIdx = i; }
+				if (!moved && firstMoveIdx >= 0) { refroze = true; }
+				prev = { x: drone.x, y: drone.y };
+			}
+			const moved = Math.hypot(drone.x - start.x, drone.y - start.y);
+			check('a drone parked at the corner escapes within 20 ticks - bounded, not stuck forever',
+				firstMoveIdx >= 0 && firstMoveIdx < 20, firstMoveIdx);
+			check('...and once moving, never freezes again - a continuous slide, not a one-off nudge',
+				!refroze);
+			check('...and has moved at least 200 units by tick 40', moved >= 200, moved.toFixed(1));
+		}
+
+		// (2) Chasing a target beyond the drone's own clamp box: dropped, not held forever - this is
+		// the user's literal "get stuck on the edge of the arena".
+		{
+			const drone = room.INSTANCE.bullets.get(post.slot);
+			drone.crossIn = 1e9; drone.crossing = false; drone.switching = false;
+			drone.x = -mx; drone.y = -my;
+			drone.head = Math.atan2(-1, -1);
+			drone.spd = tick.perTick(config.BASE_DRONE_CHASE_SPEED);
+			drone.vec.x = Math.cos(drone.head) * drone.spd;
+			drone.vec.y = Math.sin(drone.head) * drone.spd;
+			drone.chasing = true;
+			drone.DETEC.enabled = 0;
+			drone.DETEC.select = { x: -mx - 400, y: -my - 400, destroy: 0 };
+			drone.levels.threat = drone.DETEC.select;
+			drone.levels.threatAt = room.timestamp;
+			const start = { x: drone.x, y: drone.y };
+			let droppedAt = -1;
+			for (let i = 0; i < 10 && droppedAt < 0; i++) {
+				drone.crossIn = 1e9;
+				drone.update();
+				if (!drone.chasing) { droppedAt = i; }
+			}
+			check('a chase toward a target outside the clamp box is dropped within 2 ticks, not held forever',
+				droppedAt >= 0 && droppedAt <= 1, droppedAt);
+			// Once dropped, this is the same corner-escape geometry test (1) already measured (bounded
+			// by BASE_DRONE_TURN, not by this fix) - give it the same budget rather than re-asserting a
+			// tighter bound here.
+			for (let i = 0; i < 30; i++) { drone.crossIn = 1e9; drone.update(); }
+			check('...and the drone actually leaves the corner afterwards, rather than staying pinned',
+				Math.hypot(drone.x - start.x, drone.y - start.y) > 0);
+		}
+
+		// (3) The clamp never fires mid-curve - the existing comment's own claim, pinned for real
+		// over a real room's early ticks (crossing/switching are the two states where position comes
+		// from a planned table, not the steered field the clamp is designed to redirect).
+		{
+			const room2 = makeRoom('4team');
+			const mx2 = room2.map.width / 2 + config.OOB_MARGIN, my2 = room2.map.height / 2 + config.OOB_MARGIN;
+			let clampedMidCurve = false;
+			for (let i = 0; i < 2000 && !clampedMidCurve; i++) {
+				room2.step();
+				for (const p2 of room2.dronePosts) {
+					const d = room2.INSTANCE.bullets.get(p2.slot);
+					if (!d || d.destroy || (!d.crossing && !d.switching)) { continue; }
+					if (Math.abs(d.x) >= mx2 - 1e-6 || Math.abs(d.y) >= my2 - 1e-6) { clampedMidCurve = true; }
+				}
+			}
+			check('the clamp never actually fires while a drone is crossing or switching, over 2000 real ticks',
+				!clampedMidCurve);
+		}
+	}
+
+	// ---- WP4.5.2(B)/(C): a stale detected target no longer latches a base out of ever chasing again
+	{
+		const Detector = require(path.join(ROOT, 'entities', 'Detector.js'));
+		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+		// (C) The direct unit fix: reset() forgets select, not just dis/construc.
+		const det = new Detector({ id: { oId: 0 }, kind: KIND.PLAYER }, 0, 0, 100, [KIND.PLAYER]);
+		det.select = { fake: 1 };
+		det.reset();
+		check('Detector.reset() clears select, not just dis/construc', det.select === 0, det.select);
+	}
+	{
+		// (B) A destroyed threat is cleared the moment tickDroneCentres() sees it - directly, not via
+		// a full step() (which could immediately re-populate it and mask the assertion in a race).
+		const room = makeRoom('4team');
+		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
+		centre.levels.threat = { x: 0, y: 0, destroy: 1 };
+		centre.levels.threatAt = room.timestamp;
+		room.tickDroneCentres();
+		check('a destroyed threat is cleared the instant tickDroneCentres() runs',
+			centre.levels.threat === null);
+	}
+	{
+		// (B) A threat nobody has re-sighted for two full scout rotations expires on its own, with no
+		// destroy flag involved - isolated to tickDroneCentres() itself (no step(), so no live player
+		// can accidentally re-populate it and no drone update() runs either).
+		const room = makeRoom('4team');
+		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
+		const oneRotation = config.BASE_DRONE_SCAN * centre.posts.length;
+		centre.levels.threat = { x: 0, y: 0, destroy: 0 };
+		centre.levels.threatAt = room.timestamp;
+		let clearedAt = -1;
+		for (let i = 1; i <= oneRotation * 2 + 5 && clearedAt < 0; i++) {
+			room.timestamp++;
+			room.tickDroneCentres();
+			if (centre.levels.threat === null) { clearedAt = i; }
+		}
+		check('a threat unseen for two scout rotations expires within the window',
+			clearedAt > 0 && clearedAt <= oneRotation * 2 + 1, clearedAt + ' vs window ' + (oneRotation * 2));
+		check('...and not before one full scout rotation has passed',
+			clearedAt > oneRotation, clearedAt + ' vs ' + oneRotation);
+	}
+	{
+		// (B) The regression this whole fix targets: a dead reference latched into levels.threat (the
+		// respawn() scenario - a fresh Player object means the old one's destroy stays 1 forever) must
+		// not stop a LIVE enemy inside DETECT/LEASH from being chased.
+		const room = makeRoom('4team');
+		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
+		const anchor = room.INSTANCE.bullets.get(centre.posts[0].slot);
+		centre.levels.threat = { x: anchor.ox, y: anchor.oy, destroy: 1 };
+		centre.levels.threatAt = room.timestamp;
+		const me = player(room, 0);
+		me.team = anchor.team === 0 ? 1 : 0;
+		me.shield = 0;
+		me.alpha = 1;
+		me.x = anchor.ox + 1478 * Math.cos(0.4);
+		me.y = anchor.oy + 1478 * Math.sin(0.4);
+		let chased = false;
+		for (let i = 0; i < 700 && !chased; i++) {
+			room.step();
+			for (const p of centre.posts) {
+				const d = room.INSTANCE.bullets.get(p.slot);
+				if (d && d.chasing) { chased = true; }
+			}
+		}
+		check('a stale dead threat does not stop a live enemy inside DETECT/LEASH from being chased',
+			chased);
+	}
+	{
+		// (C) The one dependency the fix must not break: a CHASING drone deliberately keeps its own
+		// DETEC.select alive across ticks with DETEC.enabled = 0 - reset() is never called while
+		// chasing, so this must survive the select-clearing fix unchanged.
 		const room = makeRoom('4team');
 		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
 		const drone = room.INSTANCE.bullets.get(post.slot);
 		drone.crossIn = 1e9;
-		for (let i = 0; i < 60; i++) { drone.update(); }   // warm vec up to steady cruise first
-		drone.crossIn = 1;
 		drone.update();
-		const knots = drone.crossKnots;
-		const chordEntry = Math.hypot(knots[1].x - knots[0].x, knots[1].y - knots[0].y);
-		const chordExit = Math.hypot(knots[4].x - knots[3].x, knots[4].y - knots[3].y);
-		let arcEntry = 0, arcExit = 0, prevX = drone.x, prevY = drone.y, ticks = 0;
-		while (drone.crossing && ticks < 300) {
-			drone.update();
-			ticks++;
-			let elapsed = 0, idx = 0;
-			while (idx < drone.crossTs.length - 1 && drone.crossT > elapsed + drone.crossTs[idx]) {
-				elapsed += drone.crossTs[idx]; idx++;
-			}
-			const d = Math.hypot(drone.x - prevX, drone.y - prevY);
-			if (idx === 0) { arcEntry += d; } else if (idx === 3) { arcExit += d; }
-			prevX = drone.x; prevY = drone.y;
-		}
-		const entryRatio = arcEntry / chordEntry, exitRatio = arcExit / chordExit;
-		console.log('  note measured CROSS_BLEND_ARC (entry/exit tween path length / chord): ' +
-			entryRatio.toFixed(4) + ' / ' + exitRatio.toFixed(4) +
-			' (config.BASE_DRONE_CROSS_BLEND_ARC is ' + config.BASE_DRONE_CROSS_BLEND_ARC + ')');
-		check('the entry tween\'s measured overhead is within 8% of config.BASE_DRONE_CROSS_BLEND_ARC - the fixpoint',
-			Math.abs(entryRatio - config.BASE_DRONE_CROSS_BLEND_ARC) / config.BASE_DRONE_CROSS_BLEND_ARC < 0.08,
-			entryRatio.toFixed(4) + ' vs ' + config.BASE_DRONE_CROSS_BLEND_ARC);
-		check('...and so is the exit tween\'s', Math.abs(exitRatio - config.BASE_DRONE_CROSS_BLEND_ARC) /
-			config.BASE_DRONE_CROSS_BLEND_ARC < 0.08, exitRatio.toFixed(4) + ' vs ' + config.BASE_DRONE_CROSS_BLEND_ARC);
-		check('...and the two agree with each other within 5% - both tweens are the same shape',
-			Math.abs(entryRatio - exitRatio) / ((entryRatio + exitRatio) / 2) < 0.05,
-			entryRatio.toFixed(4) + ' vs ' + exitRatio.toFixed(4));
+		const target = { x: drone.ox + 500, y: drone.oy, destroy: 0 };
+		drone.levels.threat = drone.DETEC.select = target;
+		drone.levels.threatAt = room.timestamp;
+		drone.chasing = true;
+		drone.DETEC.enabled = 0;
+		for (let i = 0; i < 20; i++) { drone.crossIn = 1e9; drone.update(); }
+		check('a chasing drone keeps its own DETEC.select across ticks (DETEC.enabled stays 0)',
+			drone.DETEC.select === target);
 	}
 
-	// ---- WP4.5.4: one crosser per orbit centre -----------------------------------------------------
+	// ---- WP4.5.0: cross concurrency is sized from measured demand, not fixed at one --------------
+	// A 4team centre's twelve drones now share up to `crossCap` lanes (plan.md WP4.5.0 - sized from
+	// estimateCrossTicks() so each drone still crosses roughly every BASE_DRONE_CROSS regardless of
+	// how many share its centre), not a single mutex serialising every drone through one lane the
+	// way the previous pass did.
 	{
 		const room = makeRoom('4team');
 		const posts = room.dronePosts.filter((p) => p.team === 0);
@@ -1277,12 +2109,17 @@ function baseDroneWP45Tests() {
 		for (let i = 0; i < 60; i++) { for (const d of drones) { d.update(); } }   // warm up first
 		for (const d of drones) { d.crossIn = 1; }
 		const ledger = drones[0].levels;
+		check("crossCap matches the formula, not a pasted number",
+			ledger.crossCap === Math.max(1, Math.ceil(drones.length *
+				config.BASE_DRONE_LEVEL_WEIGHTS.reduce((sum, w, i) =>
+					sum + w * Bullet.estimateCrossTicks(room.levelR(i + 1), room.levelR(1)), 0) /
+				config.BASE_DRONE_LEVEL_WEIGHTS.reduce((a, b) => a + b, 0) / tick.ticks(config.BASE_DRONE_CROSS))),
+			ledger.crossCap);
 		let maxConcurrent = 0;
 		const crossedOnce = drones.map(() => false);
-		// All 12 arm on the same tick above, so the one-crosser-per-centre mutex serialises them into
-		// a queue - each full cross plus its own re-arm is ~120-150 real ticks, so 12 of them take up
-		// to ~1500 ticks just for the first round (measured: last of 12 starts at tick 1381). 1200 was
-		// short by exactly one drone's turn - not a bug, an under-sized budget.
+		// All 12 arm on the same tick above, so a centre whose crossCap is 4 still queues the other
+		// eight - each full cross plus its own re-arm is ~120-150 real ticks, so even at up to 4
+		// concurrent lanes the full roster takes multiple rounds to each get a turn.
 		for (let i = 0; i < 1700; i++) {
 			for (let k = 0; k < drones.length; k++) {
 				drones[k].update();
@@ -1290,12 +2127,228 @@ function baseDroneWP45Tests() {
 			}
 			if (ledger.crossing > maxConcurrent) { maxConcurrent = ledger.crossing; }
 		}
-		check('never more than one drone at a centre is mid-cross at once', maxConcurrent <= 1, maxConcurrent);
+		check('the number simultaneously mid-cross never exceeds the centre\'s own crossCap',
+			maxConcurrent <= ledger.crossCap, maxConcurrent + ' vs ' + ledger.crossCap);
+		check('...and more than one really did overlap - the cap is generalized, not still pinned at one',
+			maxConcurrent > 1, maxConcurrent);
 		check('every drone at the centre eventually got its turn to cross (none starved)',
 			crossedOnce.every((c) => c), crossedOnce.filter((c) => !c).length + ' never crossed');
 	}
 
-	// ---- WP4.5.4: peak speed and tunnelling, empirical -----------------------------------------
+	// ---- WP4.5.0: the binomial sorter converges from any perturbed state -------------------------
+	// "Moving one unit of surplus one step toward the nearest deficit strictly decreases
+	// sum(|count-target|) by 2 and no move increases it" (plan.md WP4.5.0) - a path-graph
+	// transportation argument, checked directly here rather than trusted, since it is exactly the
+	// property that keeps the "nearest deficit" rule from quietly being "simplified" into "toward
+	// home" (which does not converge to the binomial).
+	{
+		const room = makeRoom('4team');
+		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
+		const n = centre.posts.length;
+		const target = room.levelTargets(n);
+		const sumAbsErr = (levels) => levels.count.reduce((s, c, i) => s + Math.abs(c - target[i]), 0);
+		const scatter = () => {
+			// Randomly relevel every drone at the centre, fixing up levels.count to match, and reset
+			// every drone to eligible (on-ring, off cooldown, idle) so the sorter is free to act.
+			centre.levels.count = [0, 0, 0, 0, 0];
+			for (const post of centre.posts) {
+				const d = room.INSTANCE.bullets.get(post.slot);
+				const lvl = 1 + Math.floor(Math.random() * config.BASE_DRONE_LEVELS);
+				d.level = lvl;
+				d.orbRTarget = room.levelR(lvl);
+				placeOnRing(d, room.levelR(lvl), Math.random() * Math.PI * 2);
+				d.crossing = false; d.chasing = false; d.switching = false; d.homing = false;
+				d.switchCooldown = 0; d.crossIn = 1e9; d.tooClose = 0; d.reactPending = 0;
+				centre.levels.count[lvl - 1]++;
+			}
+		};
+		let converged = 0, monotone = true, idempotentAtTarget = true, respectsBusy = true, boundedMove = true;
+		for (let trial = 0; trial < 200; trial++) {
+			scatter();
+			let prevErr = sumAbsErr(centre.levels);
+			let guard = 0;
+			while (sumAbsErr(centre.levels) > 0 && guard++ < 200) {
+				room.sortDroneCentre(centre);
+				const err = sumAbsErr(centre.levels);
+				if (err > prevErr) { monotone = false; }
+				prevErr = err;
+				// Let any drone a move just put onto a planned arc actually FLY it (up to ~76 ticks -
+				// eligible() excludes a mid-switch drone, so without this a drone the sorter just
+				// moved would stay artificially "busy" forever in this tight loop, unlike real
+				// gameplay where BASE_DRONE_SORT_PERIOD gives ticks to pass between sort calls.
+				for (let s = 0; s < 80; s++) {
+					let anySwitching = false;
+					for (const post of centre.posts) {
+						const d = room.INSTANCE.bullets.get(post.slot);
+						if (d.switching) { anySwitching = true; d.update(); }
+					}
+					if (!anySwitching) { break; }
+				}
+			}
+			if (sumAbsErr(centre.levels) === 0) { converged++; }
+			if (centre.levels.count.reduce((a, b) => a + b, 0) !== n) { respectsBusy = false; }   // ledger sum invariant, opportunistic re-check
+		}
+		check('the sorter converges to the live-count binomial target from 200 random perturbations',
+			converged === 200, converged + '/200');
+		check('...and sum(|count-target|) never increases from one pass to the next', monotone);
+
+		// Idempotent at the target: starting already-sorted, passes move nothing.
+		{
+			scatter();
+			// Force the ledger directly onto target rather than relying on the sorter to get there -
+			// independent of the convergence test above. sortDroneCentre() only ever reads
+			// levels.count against the target it's comparing to, so this alone is enough to check
+			// "at target, nothing moves further" without needing every individual drone's own
+			// `.level` to match count exactly.
+			centre.levels.count = target.slice();
+			for (let pass = 0; pass < 100; pass++) { room.sortDroneCentre(centre); }
+			for (let i = 0; i < 5; i++) { idempotentAtTarget = idempotentAtTarget && (centre.levels.count[i] === target[i]); }
+		}
+		check('...and is idempotent once at the target - passes move nothing further', idempotentAtTarget);
+
+		// Respects busy drones: mark every drone at the centre busy, scatter the counts off target,
+		// and confirm a pass moves nobody (the sorter can find surplus/deficit but no eligible mover).
+		{
+			scatter();
+			for (const post of centre.posts) {
+				const d = room.INSTANCE.bullets.get(post.slot);
+				d.crossing = true;   // busy in a way eligible() checks for
+			}
+			const before = centre.levels.count.slice();
+			room.sortDroneCentre(centre);
+			respectsBusy = respectsBusy && before.every((c, i) => c === centre.levels.count[i]);
+		}
+		check('...and respects busy drones - a fully-busy centre has nobody eligible to move', respectsBusy);
+
+		// Assigns real per-drone levels (and keeps levels.count in sync) to an exact counts array -
+		// unlike the ledger-only pokes above, this keeps sortDroneCentre()'s own pool lookup (which
+		// reads each drone's actual `.level`) consistent with what the ledger claims.
+		function setLevels(counts) {
+			centre.levels.count = [0, 0, 0, 0, 0];
+			let idx = 0;
+			for (let lvl = 1; lvl <= config.BASE_DRONE_LEVELS; lvl++) {
+				for (let k = 0; k < counts[lvl - 1]; k++) {
+					const d = room.INSTANCE.bullets.get(centre.posts[idx++].slot);
+					d.level = lvl;
+					d.orbRTarget = room.levelR(lvl);
+					placeOnRing(d, room.levelR(lvl), Math.random() * Math.PI * 2);
+					d.crossing = false; d.chasing = false; d.switching = false; d.homing = false;
+					d.switchCooldown = 0; d.crossIn = 1e9; d.tooClose = 0; d.reactPending = 0;
+					centre.levels.count[lvl - 1]++;
+				}
+			}
+		}
+		// Moves at least one and at most the surplus: from a fixed one-off-target state (one level 3
+		// over target, its level-4 neighbour one under - HOME always has a neighbour on both sides),
+		// repeated independent trials never move more than that level's actual surplus (exactly 1).
+		{
+			const lvl = 3;
+			const counts = target.slice();
+			counts[lvl - 1] += 1;
+			counts[lvl] -= 1;   // borrow from level 4 (index 3) to fund the level-3 surplus
+			let allBounded = true;
+			for (let trial = 0; trial < 500; trial++) {
+				setLevels(counts);
+				const before = centre.levels.count.slice();
+				room.sortDroneCentre(centre);
+				const moved = before[lvl - 1] - centre.levels.count[lvl - 1];
+				if (moved < 0 || moved > 1) { allBounded = false; }   // surplus here is always exactly 1
+			}
+			boundedMove = allBounded;
+		}
+		check('...and moves at least one and at most the surplus per pass', boundedMove);
+	}
+
+	// ---- WP4.5.0: a post-swoosh drone climbs to HOME and only then releases to the sorter --------
+	{
+		const room = makeRoom('4team');
+		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
+		const drone = room.INSTANCE.bullets.get(post.slot);
+		drone.crossIn = 1e9;
+		drone.update();
+		drone.DETEC.select = 0;
+		drone.crossIn = 1;
+		drone.update();
+		let guard = 0;
+		while (drone.crossing && guard++ < 500) { drone.update(); }
+		check('a cross sets homing on exit, landed on level 1', drone.homing === 1 && drone.level === 1,
+			'homing=' + drone.homing + ' level=' + drone.level);
+		let reachedHomeAt = -1;
+		for (let i = 0; i < 2 * (tick.ticks(config.BASE_DRONE_LEVEL_RELAX) + 80) && reachedHomeAt < 0; i++) {
+			drone.update();
+			if (drone.level === config.BASE_DRONE_LEVEL_HOME) { reachedHomeAt = i; }
+		}
+		check('...and climbs to HOME within 2*(relax+arc) ticks', reachedHomeAt >= 0, reachedHomeAt);
+		check('...clearing `homing` exactly there', drone.homing === 0, drone.homing);
+
+		// homing ignores the saturation cap on the climb - make level 2 structurally unsatisfiable
+		// (cap 0, so `openHi` can never be true no matter what count says) without hand-editing the
+		// shared ledger's live count array, which real neighbouring drones still depend on. A
+		// non-homing 'home' move from level 1 would be vetoed forever by this; a homing one must not.
+		const post2 = room.dronePosts.find((p) => p !== post && p.team === post.team);
+		const d2 = room.INSTANCE.bullets.get(post2.slot);
+		d2.levels.caps[1] = 0;   // level 2 (index 1) - impossible to ever read as "open"
+		d2.level = 1; d2.orbRTarget = room.levelR(1);
+		placeOnRing(d2, room.levelR(1), 1.3);
+		d2.crossing = false; d2.chasing = false; d2.switching = false; d2.crossIn = 1e9;
+		d2.switchCooldown = 0; d2.levelTimer = 1; d2.homing = 1;   // simulate having just landed the cross
+		let reached2 = -1;
+		for (let i = 0; i < 2 * (tick.ticks(config.BASE_DRONE_LEVEL_RELAX) + 80) && reached2 < 0; i++) {
+			d2.update();
+			if (d2.level === config.BASE_DRONE_LEVEL_HOME) { reached2 = i; }
+		}
+		check('homing ignores a saturated intermediate level - the climb still completes', reached2 >= 0, reached2);
+	}
+
+	// ---- WP4.5.0: the detection scout - a scan-period invariant, not a timing test -----------------
+	{
+		const room = makeRoom('4team');
+		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
+		const lastScoutTick = new Map();
+		let worstGap = 0, everMultiEnabled = false;
+		for (let t = 0; t < 400; t++) {
+			room.step();
+			let enabledCount = 0;
+			for (const post of centre.posts) {
+				const d = room.INSTANCE.bullets.get(post.slot);
+				if (d && d.DETEC && d.DETEC.enabled) {
+					enabledCount++;
+					const gap = t - (lastScoutTick.has(post) ? lastScoutTick.get(post) : 0);
+					if (gap > worstGap) { worstGap = gap; }
+					lastScoutTick.set(post, t);
+				}
+			}
+			if (enabledCount > 1) { everMultiEnabled = true; }
+		}
+		check('at most one drone per centre has its detector enabled on any given tick',
+			!everMultiEnabled);
+		check('every drone at the centre gets a scout turn at least once per drones*BASE_DRONE_SCAN ticks',
+			worstGap <= centre.posts.length * config.BASE_DRONE_SCAN + config.BASE_DRONE_SCAN,
+			worstGap + ' vs ' + (centre.posts.length * config.BASE_DRONE_SCAN));
+
+		// Detection still works: a player standing inside BASE_DRONE_DETECT is chased within a few
+		// scout rotations, not silently missed because it isn't the enabled drone's turn. Offset
+		// purely along X, past the base square's own half-width (room.baseSize/2) - inside the
+		// square the base fence kills the player outright each tick (a separate, pre-existing rule),
+		// which would confound "was it seen" with "did it survive to be seen".
+		const post = centre.posts[0];
+		const target = room.INSTANCE.players.add((id) => new Player(
+			{ GM: room.gm, sId: room.id, oId: id }, post.x + room.baseSize * 0.75, post.y, 'foe', 1, room.XPLVL, room));
+		target.shield = 0; target.alpha = 1;
+		let chasedAt = -1;
+		const budget = centre.posts.length * config.BASE_DRONE_SCAN + 20;
+		for (let t = 0; t < budget && chasedAt < 0; t++) {
+			room.step();
+			for (const p of centre.posts) {
+				const d = room.INSTANCE.bullets.get(p.slot);
+				if (d && d.chasing) { chasedAt = t; }
+			}
+		}
+		check('detection still works - a player in range is chased well within a full scout rotation',
+			chasedAt >= 0 && chasedAt <= budget, chasedAt + ' vs budget ' + budget);
+	}
+
+	// ---- WP4.5.1: peak speed and tunnelling, empirical -----------------------------------------
 	{
 		const room = makeRoom('4team');
 		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
@@ -1595,6 +2648,96 @@ function oobTests(rooms) {
 	me.x = 0; me.y = 0; me.vec.x = 0; me.vec.y = 0;
 }
 
+/*
+	The broad phase (plan.md WP4.5.4): the insert()/queryCircle() rewrite is what the rest of the
+	pass's speed-up depends on, so it is verified directly here rather than trusted - "queryCircle
+	agrees with a brute-force scan" is the one test that makes every other 4.5.4 change safe.
+*/
+function broadPhaseTests() {
+	console.log('\nquadtree broad phase (plan.md WP4.5.4):');
+	const quadTree = require(path.join(ROOT, 'lib', 'quadTree.js'));
+	const SlotMap = require(path.join(ROOT, 'lib', 'SlotMap.js'));
+
+	// queryCircle matches a brute-force scan exactly, at 50 random circles over several hundred
+	// random points.
+	{
+		const W = 4000, H = 4000;
+		const qt = new quadTree(-W / 2, -H / 2, W, H, 6);
+		const pts = [];
+		for (let i = 0; i < 400; i++) {
+			// data is the plain index i, not the point object itself - queryCircle's own results
+			// are {x,y,size,data} wrappers, so passing the point object as data here would make
+			// got.map(p => p.data) yield point OBJECTS while want stays plain indices.
+			const p = { x: -W / 2 + Math.random() * W, y: -H / 2 + Math.random() * H, size: 10 };
+			pts.push(p);
+			qt.insert(p.x, p.y, p.size, i);
+		}
+		let allMatch = true, mismatchDetail = '';
+		for (let t = 0; t < 50 && allMatch; t++) {
+			const cx = -W / 2 + Math.random() * W, cy = -H / 2 + Math.random() * H;
+			const r = 50 + Math.random() * 400;
+			const got = qt.queryCircle(cx, cy, r, []).map((p) => p.data).sort((a, b) => a - b);
+			const want = [];
+			for (let i = 0; i < pts.length; i++) { if (Math.hypot(pts[i].x - cx, pts[i].y - cy) <= r) { want.push(i); } }
+			want.sort((a, b) => a - b);
+			const same = got.length === want.length && got.every((v, i) => v === want[i]);
+			if (!same) { allMatch = false; mismatchDetail = 'got ' + got.length + ' vs want ' + want.length + ' at trial ' + t; }
+		}
+		check('queryCircle matches a brute-force scan exactly, at 50 random circles', allMatch, mismatchDetail);
+	}
+
+	// A point exactly on an internal node boundary comes back once, not twice - the old all-four-
+	// children insert() duplicated it (checkIn is inclusive on both edges).
+	{
+		const qt = new quadTree(0, 0, 256, 256, 2);
+		qt.insert(10, 10, 1, 'a');
+		qt.insert(200, 10, 1, 'b');
+		qt.insert(10, 200, 1, 'c');   // a 3rd point over max=2 forces the split, boundary at (128,128)
+		qt.insert(128, 128, 1, 'boundary');
+		const got = qt.queryCircle(128, 128, 1, []);
+		check('a point exactly on an internal node boundary comes back exactly once',
+			got.filter((p) => p.data === 'boundary').length === 1,
+			got.filter((p) => p.data === 'boundary').length);
+	}
+
+	// Subdivision terminates even when many entities share one exact coordinate (the w > 64 guard) -
+	// a plain "the call completes and finds everything" assertion; without the guard this hangs.
+	{
+		const qt = new quadTree(-1000, -1000, 2000, 2000, 4);
+		for (let i = 0; i < 500; i++) { qt.insert(0, 0, 1, i); }
+		const got = qt.queryCircle(0, 0, 1, []);
+		check('inserting 500 coincident points terminates and all 500 are found (the w > 64 guard)',
+			got.length === 500, got.length);
+	}
+
+	// SlotMap's ascending-order guarantee survives the sorted-key cache across an add/delete/add
+	// churn cycle (plan.md WP4.5.4).
+	{
+		const sm = new SlotMap();
+		for (let i = 0; i < 10; i++) { sm.add((id) => ({ id })); }
+		const before = [...sm.live()].map((e) => e.id);   // builds the cache
+		check('SlotMap.live() yields ascending ids', before.every((v, i) => i === 0 || v > before[i - 1]),
+			before.join(','));
+		sm.delete(2);
+		sm.add((id) => ({ id }));   // reuses the freed low id
+		sm.delete(9);
+		const after = [...sm.live()].map((e) => e.id);
+		check('...and still ascending after an add/delete/add churn cycle (cache invalidated correctly)',
+			after.every((v, i) => i === 0 || v > after[i - 1]), after.join(','));
+		const afterEntries = [...sm.entries()].map(([id]) => id);
+		check('...and entries() agrees with live()', JSON.stringify(afterEntries) === JSON.stringify(after));
+		// A respawn-style set() on an already-live id must NOT need a cache rebuild to be seen -
+		// live()/entries() always re-read the value fresh, but this pins that the KEY itself is
+		// unaffected (no duplicate, no drop) across a value-only set().
+		const liveId = after[0];
+		sm.set(liveId, { id: liveId, replaced: true });
+		const afterSet = [...sm.live()];
+		check('a value-only set() on an already-live id changes neither the key set nor its order',
+			afterSet.filter((e) => e.id === liveId)[0].replaced === true &&
+			afterSet.map((e) => e.id).join(',') === after.join(','));
+	}
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -1606,10 +2749,11 @@ respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);
 baseDroneTests();
-baseDroneWP45Tests();
+baseDroneAiTests();
 tickScaleTests();
 fovTests(rooms);
 oobTests(rooms);
+broadPhaseTests();
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

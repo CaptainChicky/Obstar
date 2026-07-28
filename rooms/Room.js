@@ -52,6 +52,7 @@ const clock = require('../lib/clock.js');
 const Player = require('../entities/Player.js');
 const Bullet = require('../entities/Bullet.js');
 const Objects = require('../entities/Objects.js');
+const Detector = require('../entities/Detector.js');
 const CONFIG = require('../lib/gameAI.js');
 
 // generate() used to re-arm itself with setTimeout(400). It is a simulation event, so it
@@ -64,10 +65,23 @@ const FIRST_GENERATE = Math.round(300 / clock.STEP_MS);   // Init() used to wait
 // How long a base drone post stays empty after its drone dies (massplanchunks WP-E). A count of
 // reference ticks in config, converted to real ticks once here rather than per post per tick.
 const BASE_DRONE_RESPAWN = tick.ticks(config.BASE_DRONE_RESPAWN);
+// How often each orbit centre's binomial sorter and detection scout run (plan.md WP4.5.0).
+// The sorter's period is denominated in reference ticks like every other gameplay-feel constant;
+// the scout's is a raw real-tick count (a cost knob, the same category as GENERATE_EVERY above),
+// so it is read straight off config with no tick.ticks() conversion.
+const BASE_DRONE_SORT_PERIOD = tick.ticks(config.BASE_DRONE_SORT_PERIOD);
+const BASE_DRONE_SCAN = config.BASE_DRONE_SCAN;
+const BASE_DRONE_CROSS_TICKS = tick.ticks(config.BASE_DRONE_CROSS);
 
 // A base drone is one of its own side's bullets, for the team-transparency skip below (plan.md
-// WP4.5.1) - type 1.4 with life -1 is otherwise indistinguishable from any other homing bullet.
+// WP4.5.0) - type 1.4 with life -1 is otherwise indistinguishable from any other homing bullet.
 const isBaseDrone = (e) => e.kind === KIND.BULLET && e.type === 1.4;
+
+// Caller-owned scratch array for the collision pass's quadTree.queryCircle() calls (plan.md
+// WP4.5.4) - reused and cleared (length = 0) before every query rather than allocated fresh, since
+// this runs once per live entity per tick. Module-scope, not per-Room: every room's step() runs on
+// the same single-threaded event loop tick, never concurrently, so there is nothing to race.
+const COLLIDE_SCRATCH = [];
 
 /*
 	Every knob a gamemode can turn without writing code. A subclass spreads its own values
@@ -155,6 +169,25 @@ class Room {
 			tickBaseDrones() leaves on the length check.
 		*/
 		this.dronePosts = this.basePosts();
+		/*
+			One entry per orbit centre, identified by shared `levels` ledger reference (posts at the
+			same centre all carry the SAME levels object) - built once so the per-centre binomial
+			sorter and detection scout (plan.md WP4.5.0) aren't re-deriving the grouping every
+			pass. A mode with no bases costs one empty-array iteration.
+		*/
+		this.droneCentres = [];
+		{
+			const seen = new Map();
+			for (const post of this.dronePosts) {
+				let centre = seen.get(post.levels);
+				if (!centre) {
+					centre = { levels: post.levels, posts: [] };
+					seen.set(post.levels, centre);
+					this.droneCentres.push(centre);
+				}
+				centre.posts.push(post);
+			}
+		}
 		for (const post of this.dronePosts) {
 			post.respawnIn = BASE_DRONE_RESPAWN;
 			post.slot = this.spawnBaseDrone(post);
@@ -192,10 +225,18 @@ class Room {
 		            worth collapse into the same per-level counts a caller can re-derive by
 		            counting occurrences.
 	*/
-	levelPlan(count) {
+	/*
+		Largest-remainder apportionment of `count` drones over BASE_DRONE_LEVEL_WEIGHTS
+		([1,4,6,4,1], a Binomial(4,1/2) centred on level 3), ties broken by smaller |level - HOME|
+		then by the lower level - the same binomial shape levelPlan() below uses for a POST count,
+		but callable standalone for a LIVE count (plan.md WP4.5.0). The per-centre sorter
+		(tickDroneCentres()/sortDroneCentre() below) needs this for whatever the live drone count
+		happens to be right now, which is not always the post count - a dead drone is off the
+		ledger for BASE_DRONE_RESPAWN before its post refills.
+	*/
+	levelTargets(count) {
 		const W = config.BASE_DRONE_LEVEL_WEIGHTS;
 		const total = W.reduce((a, b) => a + b, 0);
-		const caps = W.map((w) => Math.max(1, Math.ceil(count * w / total)));
 		const exact = W.map((w) => count * w / total);
 		const floors = exact.map((x) => Math.floor(x));
 		const remainder = count - floors.reduce((a, b) => a + b, 0);
@@ -209,11 +250,159 @@ class Room {
 		});
 		const counts = floors.slice();
 		for (let k = 0; k < remainder; k++) { counts[order[k]]++; }
+		return counts;
+	}
+	/*
+		Builds a whole per-centre ledger for `count` drones (plan.md WP4.5.1, extended by
+		WP4.5.0): caps (the saturation limit per level, cap[i] = max(1, ceil(count*w[i]/
+		sum(w))) - ceil guarantees sum(caps) >= count, so a level plan can never be unsatisfiable),
+		initial (a flat list of `count` level numbers, ready to zip against a post loop
+		index-by-index - levelPlan(12).initial is [1,2,2,2,3,3,3,3,4,4,4,5]), target (the same
+		largest-remainder counts levelTargets() returns - levelPlan(12).target is [1,3,4,3,1] -
+		seeded here for the post count, re-derived by the sorter for the live count as it moves),
+		and crossCap (plan.md WP4.5.0 - how many of this centre's drones may be mid-swoosh at once,
+		sized from measured demand: meanCrossTicks is BASE_DRONE_CROSS_TICKS-durations averaged
+		over the five levels weighted by BASE_DRONE_LEVEL_WEIGHTS, since that is the steady-state
+		distribution a cross actually launches from, so a centre with more drones or a longer
+		swoosh gets more concurrent lanes rather than serialising every drone's ~10s cadence
+		through one). TwoTeam.js/FourTeam.js's basePosts() use this object directly as the shared
+		`levels` ledger rather than rebuilding a subset of it - see rooms/TwoTeam.js.
+	*/
+	levelPlan(count) {
+		const W = config.BASE_DRONE_LEVEL_WEIGHTS;
+		const total = W.reduce((a, b) => a + b, 0);
+		const caps = W.map((w) => Math.max(1, Math.ceil(count * w / total)));
+		const target = this.levelTargets(count);
 		const initial = [];
-		for (let lvl = 1; lvl <= counts.length; lvl++) {
-			for (let n = 0; n < counts[lvl - 1]; n++) { initial.push(lvl); }
+		for (let lvl = 1; lvl <= target.length; lvl++) {
+			for (let n = 0; n < target[lvl - 1]; n++) { initial.push(lvl); }
 		}
-		return { caps, initial };
+		const R1 = this.levelR(1);
+		let wSum = 0, tSum = 0;
+		for (let lvl = 1; lvl <= config.BASE_DRONE_LEVELS; lvl++) {
+			tSum += W[lvl - 1] * Bullet.estimateCrossTicks(this.levelR(lvl), R1);
+			wSum += W[lvl - 1];
+		}
+		const crossCap = Math.max(1, Math.ceil(count * (tSum / wSum) / BASE_DRONE_CROSS_TICKS));
+		return {
+			caps, initial, target, crossCap,
+			count: [0, 0, 0, 0, 0], crossing: 0,
+			targets: {}, threat: null, threatAt: 0,
+			scoutIdx: 0, scoutTimer: 0, sortTimer: 0
+		};
+	}
+	/*
+		Per-centre maintenance run once a tick from step() (plan.md WP4.5.0) - the binomial
+		sorter and the detection scout. Both are per-ORBIT-CENTRE, not per-drone: putting either in
+		entities/Bullet.js's per-drone update() would make them N times more work (N drones sharing
+		a centre) for the same answer.
+
+		Also expires the shared threat (plan.md WP4.5.2B): `levels.threat` used to be written
+		(case 1.4's first block, alongside `threatAt` now) and never cleared, so acquisition quietly
+		became "has ever been seen" instead of "is currently visible", and a target that died while
+		being tracked (respawn() swaps in a brand-new Player, so the old one's `destroy` stays 1
+		forever) permanently latched the whole centre out of ever chasing again - measured, 15s of a
+		live enemy sitting inside both DETECT and LEASH with nothing reacting. Cleared here, per
+		CENTRE rather than per drone (the same reason the sorter/scout live here), either the instant
+		the threat is confirmed dead or after two full scout rotations with no re-sighting
+		(BASE_DRONE_SCAN * posts.length * 2 ticks) - a bigger base scans any one drone less often, so
+		it earns a proportionally longer memory before "not re-seen" means "gone".
+	*/
+	tickDroneCentres() {
+		for (const centre of this.droneCentres) {
+			const levels = centre.levels;
+			if (levels.threat && (levels.threat.destroy ||
+				this.timestamp - levels.threatAt > BASE_DRONE_SCAN * centre.posts.length * 2)) {
+				levels.threat = null;
+			}
+			if (--levels.sortTimer <= 0) {
+				levels.sortTimer = BASE_DRONE_SORT_PERIOD;
+				this.sortDroneCentre(centre);
+			}
+			if (--levels.scoutTimer <= 0) {
+				levels.scoutTimer = BASE_DRONE_SCAN;
+				this.rotateScout(centre);
+			}
+		}
+	}
+	/*
+		The binomial sorter (plan.md WP4.5.0): compare live occupancy against the live-count
+		target and walk a random number of surplus drones one level each toward the NEAREST deficit,
+		on the gradual arc (Bullet.sortSwitch(), cap-free). Moving one unit of surplus one step
+		toward the nearest deficit strictly decreases sum(|count-target|) by 2 and no move increases
+		it (transportation on a path graph), so this provably converges from any perturbed state in
+		at most half that sum's worth of moves - test/rooms.js checks the convergence directly
+		rather than trusting the argument. `target` is memoised per live count on the ledger
+		(`levels.targets[n]`) so a steady base doesn't re-run the largest-remainder apportionment
+		every second.
+	*/
+	sortDroneCentre(centre) {
+		const levels = centre.levels;
+		const n = levels.count.reduce((a, b) => a + b, 0);
+		if (!n) { return; }
+		let target = levels.targets[n];
+		if (!target) { target = levels.targets[n] = this.levelTargets(n); }
+		const surplus = levels.count.map((c, i) => c - target[i]);
+		const order = surplus.map((_, i) => i);
+		for (let i = order.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			const t = order[i]; order[i] = order[j]; order[j] = t;
+		}
+		const eligible = (d) => !d.crossing && !d.chasing && !d.switching && !d.homing && d.switchCooldown <= 0;
+		for (const i of order) {
+			if (surplus[i] <= 0) { continue; }
+			// Scan outward from level i for the NEAREST deficit, either direction; a tie picks at
+			// random. No deficit anywhere means the ledger is over-full (only death/respawn fixes
+			// that) - skip.
+			let dir = 0;
+			for (let d = 1; d < config.BASE_DRONE_LEVELS && !dir; d++) {
+				const lo = i - d, hi = i + d;
+				const loOpen = lo >= 0 && surplus[lo] < 0;
+				const hiOpen = hi < config.BASE_DRONE_LEVELS && surplus[hi] < 0;
+				if (loOpen && hiOpen) { dir = Math.random() < 0.5 ? -1 : 1; }
+				else if (loOpen) { dir = -1; }
+				else if (hiOpen) { dir = 1; }
+			}
+			if (!dir) { continue; }
+			const level = i + 1;
+			const pool = [];
+			for (const post of centre.posts) {
+				const drone = this.INSTANCE.bullets.get(post.slot);
+				if (drone && !drone.destroy && drone.level === level && eligible(drone)) { pool.push(drone); }
+			}
+			if (!pool.length) { continue; }
+			const k = 1 + Math.floor(Math.random() * Math.min(surplus[i], pool.length));
+			for (let moved = 0; moved < k && pool.length;) {
+				const idx = Math.floor(Math.random() * pool.length);
+				const drone = pool.splice(idx, 1)[0];
+				if (Bullet.sortSwitch(drone, dir)) { moved++; }
+			}
+		}
+	}
+	/*
+		The detection scout (plan.md WP4.5.0): rotate which single drone at this centre has its
+		DETEC enabled, round-robin, skipping any drone currently chasing (its own detector state is
+		managed independently - see entities/Bullet.js's case 1.4) or dead/respawning. Measured: base
+		drones were 46% of a 4team tick and 93% of that was the wide quadtree query each drone's own
+		Detector forced every tick regardless of whether anything was there to find - at most one
+		enabled detector per centre at a time is what actually pays for that.
+	*/
+	rotateScout(centre) {
+		const posts = centre.posts;
+		if (!posts.length) { return; }
+		const levels = centre.levels;
+		for (let tries = 0; tries < posts.length; tries++) {
+			levels.scoutIdx = (levels.scoutIdx + 1) % posts.length;
+			const scout = this.INSTANCE.bullets.get(posts[levels.scoutIdx].slot);
+			if (!scout || scout.destroy) { continue; }
+			for (const post of posts) {
+				const drone = this.INSTANCE.bullets.get(post.slot);
+				if (drone && !drone.destroy && drone.DETEC && !drone.chasing) {
+					drone.DETEC.enabled = (drone === scout) ? 1 : 0;
+				}
+			}
+			return;
+		}
 	}
 	/*
 		Where this mode's base drones live, as a flat list of one post per drone:
@@ -225,7 +414,7 @@ class Room {
 		orbit-mates immediately. Optionally `crossIn`, the drone's first diameter-cross countdown,
 		which a mode staggers so a base's drones do not all cross at once, and optionally `spin`
 		(+-1, default 1) - which way round the centre the drone circles, read by
-		entities/Bullet.js's orbit field (plan.md WP4.5.4).
+		entities/Bullet.js's orbit field (plan.md WP4.5.0).
 
 		Called exactly once, from the constructor. Free-for-all has no bases, so this is the empty
 		list and every base-drone code path below costs one length check per tick.
@@ -270,13 +459,26 @@ class Room {
 		bull.switchCooldown = 0;
 		bull.levelTimer = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
 		bull.tooClose = 0;
+		// Post-swoosh climb back to home (plan.md WP4.5.0) - set on a cross's exit, cleared when
+		// the drone reaches BASE_DRONE_LEVEL_HOME. Never true at spawn.
+		bull.homing = 0;
+		// Detection is centralised per orbit centre (plan.md WP4.5.0): every drone owns its own
+		// Detector (created here, not lazily in entities/Bullet.js's case 1.4, so
+		// tickDroneCentres()'s scout rotation always has one to enable/disable), but only the
+		// current scout's is enabled at a time - rotateScout() above turns this on.
+		bull.DETEC = new Detector(bull, bull.x, bull.y, config.BASE_DRONE_DETECT, [KIND.PLAYER]);
+		bull.DETEC.team = post.team;
+		bull.DETEC.enabled = 0;
+		// Latches a shape hit / proximity reaction that arrives while the drone is busy (plan.md
+		// WP4.5.0), so it is paid the moment the drone is free instead of being dropped.
+		bull.reactPending = 0;
 		bull.spin = post.spin || 1;
-		// head/spd are the steered-motion state (plan.md WP4.5.4): seeded tangential at spawn (not
+		// head/spd are the steered-motion state (plan.md WP4.5.0): seeded tangential at spawn (not
 		// radial, or the first second would look like a launch straight out of the centre), and at
 		// cruise so the drone doesn't ramp up from a standing start.
 		bull.head = post.phase + bull.spin * Math.PI / 2;
 		bull.spd = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
-		// Last tick's vec (plan.md WP4.5.4) - the swoosh's entry acceleration seam reads this, so
+		// Last tick's vec (plan.md WP4.5.0) - the swoosh's entry acceleration seam reads this, so
 		// it has to exist before the first tick ever runs. Seeded to match vec's own pre-steering
 		// value (0,0) rather than assumed, so a drone that somehow crossed on its very first tick
 		// would still get an honest (zero) entry acceleration rather than a guessed one.
@@ -536,6 +738,7 @@ class Room {
 		}
 		///BASE DRONES///
 		this.tickBaseDrones();
+		this.tickDroneCentres();
 		///MAP///
 		if (Math.abs(this.map.width - this.newMap.width) > 0.1) {
 			// A pure exponential convergence toward newMap.width (no separate accel term), so this
@@ -632,7 +835,7 @@ class Room {
 				// A player dies exactly on the base line; a bullet is allowed to penetrate
 				// config.BASE_BULLET_MARGIN past it first, which is what real diep does and what
 				// stops enemy fire visibly evaporating on an invisible wall (massplanchunks WP-E).
-				// The base only kills inside the drawn arena (plan.md WP4.5.4) - inEnemyBase()
+				// The base only kills inside the drawn arena (plan.md WP4.5.0) - inEnemyBase()
 				// alone is unbounded outward, so something sitting in the dark OOB band past a
 				// corner would otherwise still count as "in" the base; inArena() is the one place
 				// that bound is written.
@@ -641,22 +844,16 @@ class Room {
 					obj.collision(0, { base: 1 });
 					continue;
 				}
-				const collide = qt.query(function (rect, circle) {
-					const distX = Math.abs(circle.x - rect.x - rect.w / 2);
-					const distY = Math.abs(circle.y - rect.y - rect.h / 2);
-
-					if (distX > (rect.w / 2 + circle.r)) { return false; }
-					if (distY > (rect.h / 2 + circle.r)) { return false; }
-
-					if (distX <= (rect.w / 2)) { return true; }
-					if (distY <= (rect.h / 2)) { return true; }
-
-					const dx = distX - rect.w / 2;
-					const dy = distY - rect.h / 2;
-					return (dx * dx + dy * dy <= (circle.r * circle.r));
-				}, { 'x': obj.x, 'y': obj.y, 'r': (obj.DETEC && obj.DETEC.enabled ? obj.DETEC.size : obj.size) * 2 })
-				for (const i in collide) {
-					const other = collide[i].data;
+				// Allocation-free circle query (plan.md WP4.5.4) - was qt.query(closure, {x,y,r}),
+				// which allocated a {x,y,w,h} object per node visited and a {x,y,w:0,h:0} object per
+				// point tested, and called a closure defined fresh inside this very loop on every
+				// visit. queryCircle() is the same AABB/circle test written inline against
+				// primitives, filtering points by squared distance (no Math.sqrt) straight into the
+				// caller-owned COLLIDE_SCRATCH array, so this whole pass allocates nothing.
+				COLLIDE_SCRATCH.length = 0;
+				qt.queryCircle(obj.x, obj.y, (obj.DETEC && obj.DETEC.enabled ? obj.DETEC.size : obj.size) * 2, COLLIDE_SCRATCH);
+				for (let ci = 0; ci < COLLIDE_SCRATCH.length; ci++) {
+					const other = COLLIDE_SCRATCH[ci].data;
 					if (other.getPlace === 0 || obj.getPlace === 0) {
 						continue;
 					}
@@ -666,16 +863,24 @@ class Room {
 					if (other.destroy >= 1) { continue; }
 					if (objKind === KIND.DETECTOR && otherKind === KIND.DETECTOR) { continue; }
 					if (obj.id.oId === other.id.oId && objKind === otherKind) { continue; }
-					const dis = Math.sqrt(Math.pow(other.x - obj.x, 2) + Math.pow(other.y - obj.y, 2));
-					// Base drones make an effort not to overlap (plan.md WP4.5.3): flagged here, acted on next tick
+					// Math.sqrt(a*a + b*b), not Math.pow(a,2) (plan.md WP4.5.4) - Math.pow is the
+					// slower path in V8 for an integer exponent, and this runs once per candidate
+					// pair on the hottest loop in the room. Math.hypot is in turn slower than this,
+					// measured - not "improved" to it; see other copies of this expression elsewhere
+					// in the tree, none of which are on a hot path, so none of them are touched.
+					const ddx = other.x - obj.x, ddy = other.y - obj.y;
+					const dis = Math.sqrt(ddx * ddx + ddy * ddy);
+					// Base drones make an effort not to overlap (plan.md WP4.5.0): flagged here, acted on next tick
 					// by entities/Bullet.js's type-1.4 branch, which takes the same 60-degree level switch a shape
 					// hit does. This is deliberately NOT a collision - the same-team skip below still runs, so the
-					// pair exchanges no damage, no knockback and no jitter. Set on both sides: whichever of the two
-					// is in ORBIT and off cooldown next tick is the one that moves.
+					// pair exchanges no damage, no knockback and no jitter. Exactly ONE side of the pair yields, not
+					// both: now that a reactive switch cannot fail (WP4.5.0), flagging both would move both -
+					// possibly onto the same level, still overlapping. Which one yields is arbitrary (lower slot
+					// id); that it is exactly one is not.
 					if (isBaseDrone(obj) && isBaseDrone(other) && dis < config.BASE_DRONE_SEPARATION) {
-						obj.tooClose = 1; other.tooClose = 1;
+						if (obj.id.oId < other.id.oId) { obj.tooClose = 1; } else { other.tooClose = 1; }
 					}
-					// A base drone is transparent to its own side (plan.md WP4.5.1): the pair is skipped whole,
+					// A base drone is transparent to its own side (plan.md WP4.5.0): the pair is skipped whole,
 					// so there is no damage, no knockback, no separation jitter and no detector hit - rather than
 					// relying on three separate noDam early-breaks in entities/ to each stay in the right place.
 					// Polygons are deliberately not covered: a drone collides with shapes regardless of team.
@@ -841,14 +1046,14 @@ class Room {
 		Both team modes' own inEnemyBase() are deliberately unbounded OUTWARD (4team measures
 		depth inward from the map edge, so a point past a corner has negative depth and still
 		counts as inside; 2team is a bare half-plane in x with no y bound at all) - step() is what
-		bounds that to the drawn arena now (plan.md WP4.5.4), via inArena() below, so the
+		bounds that to the drawn arena now (plan.md WP4.5.0), via inArena() below, so the
 		signature/semantics here don't change.
 	*/
 	inEnemyBase(obj, margin = 0) {
 		return false;
 	}
 	/*
-		The drawn arena - what the coloured base square is clipped to (plan.md WP4.5.4). The OOB
+		The drawn arena - what the coloured base square is clipped to (plan.md WP4.5.0). The OOB
 		band outside it (config.OOB_MARGIN, ~5 squares once a tank's own radius is counted - see
 		entities/Player.js's motion()) is neutral ground for everything: "in an enemy base" means
 		"in an enemy base AND inside the drawn arena" now, so a fast tank (or a base drone chasing

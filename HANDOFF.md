@@ -227,9 +227,10 @@ all). `Ffa` is 30 lines because `Room`'s defaults *are* ffa.
 **Base drones** are `Bullet`s of `type 1.4` with `life = -1`, and their **`pene` *is* their health
 pool** (`collision()` decrements it) — which is why `config.BASE_DRONE_HP` is written there and
 not to an `hp` field. A mode declares them by overriding **`basePosts()`**, which returns one
-`{team, x, y, orbitR, phase}` per drone (optionally `spin`, `crossIn`) where `x,y` is the *orbit
-centre*; the constructor calls it once, stores the list as `this.dronePosts`, and spawns one drone
-per post via **`spawnBaseDrone(post)`**. **`tickBaseDrones()`** runs from `step()` and refills a
+`{team, x, y, level, phase, levels}` per drone (optionally `spin`, `crossIn`) where `x,y` is the
+*orbit centre*, `level` its starting energy level and `levels` the per-centre saturation ledger
+shared by reference across every post at that centre; the constructor calls it once, stores the list
+as `this.dronePosts`, and spawns one drone per post via **`spawnBaseDrone(post)`**. **`tickBaseDrones()`** runs from `step()` and refills a
 post `config.BASE_DRONE_RESPAWN` ticks after its drone dies.
 
 There is exactly one drone AI — the `type 1.4` branch in `entities/Bullet.js` — and it is a
@@ -243,72 +244,195 @@ relative to the base centre (`ox,oy`), so a drone far from its ring just leans h
 curls back on — there is no separate RETURN state to enter or an explicit snap back into ORBIT.
 `orbitState` is written every tick purely for tests/the admin dump; nothing branches on it.
 
-**Chase and return are a real dash** (plan.md WP4.5.1): `BASE_DRONE_CHASE_SPEED` is a level-0
-tank's own measured top speed (PENDING #14), so a base drone never falls behind anything, catches
-everything slower and can't run down a genuinely fast tank; it uses its own, much tighter turn
-limit (`BASE_DRONE_CHASE_TURN`) while `chasing`, since the same limiter that governs a leisurely
-orbit would give a 285 u/s drone a turn radius wide enough to circle a strafing target instead of
-hitting it. A return is a chase back to the ring at the same speed — no separate constant — the
-orbit field's own target speed blends from cruise to dash as a smoothstep of how far off its ring
-the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone visibly sprints back and eases onto
-its ring rather than snapping or ringing around the target radius.
+**Chase and return are a real dash** (plan.md WP4.5.0): `BASE_DRONE_CHASE_SPEED` is **the fastest
+sustained speed any build in this game can hold** — 400 u/s, measured rather than asserted by
+`test/rooms.js`'s `fastestTankSpeed()`, which replays `entities/Player.js`'s own `motion()`/
+`shoot()` recurrence over every reachable class at 6 Movement Speed and 6 Reload (the ceiling is a
+Fighter at level 29 riding its own rear-pair recoil, 399.2 u/s). It is pinned to exactly that
+ceiling on purpose: nothing can outrun a base drone on straight-line speed, and nothing is outrun
+absurdly either, so lapping an enemy base in the fastest tank in the game is still winnable — on
+the head start and the `BASE_DRONE_LEASH` boundary, not on top speed. If a lap ever reads unfair,
+move `BASE_DRONE_LEASH`/`BASE_DRONE_DETECT`, **not** the chase speed, which is pinned to a
+measurement and fails `npm test` if a cannon retune moves the ceiling out from under it. A chasing
+drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 6.67 rad/s), since the
+limiter that governs a leisurely orbit would give a 400 u/s drone a turn radius wide enough to arc
+around a strafing target instead of into it. A return is a chase back to the ring at the same speed
+— no separate constant — the orbit field's own target speed blends from cruise to dash as a
+smoothstep of how far off its ring the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone
+visibly sprints back and eases onto its ring rather than snapping or ringing around the radius.
 
-**Radius is quantised into five shared "energy levels"** (plan.md WP4.5.1, `rooms/Room.js`'s
+**Radius is quantised into five shared "energy levels"** (plan.md WP4.5.0, `rooms/Room.js`'s
 `levelR()`/`levelPlan()`), not a continuous random band: a drone is always *at*
 `levelR(1..5) = BASE_DRONE_ORBIT_R + (level - BASE_DRONE_LEVEL_HOME) * BASE_DRONE_LEVEL_GAP`, one
 `BASE_DRONE_LEVEL_GAP` (one drone-side) apart, level 3 the home level. Both team modes read this one
 table now — 2team's old per-mode `nominalR` derivation is gone. Each orbit centre owns one
-saturation ledger (`{caps, count, crossing}`, built once by `levelPlan()` off
-`BASE_DRONE_LEVEL_WEIGHTS`, a `Binomial(4,½)` centred on level 3) shared by reference across every
-post at that centre, so a level switch or a cross on one drone is visible to its orbit-mates
-immediately. The **only** place a drone's target radius (`orbRTarget`) ever moves is
-`entities/Bullet.js`'s module-level `levelSwitch()`, one level at a time, from three triggers that
-all funnel through it: a shape hit, drone-vs-drone proximity (`rooms/Room.js`'s pair loop sets
-`tooClose` when two same-side drones are within `BASE_DRONE_SEPARATION` — deliberately less than
-`BASE_DRONE_LEVEL_GAP`, so it can only ever fire between two drones sharing a level), and drifting
-back toward home on a timer.
+saturation ledger — `{caps, count, crossing, target, targets, crossCap, threat, scoutIdx,
+scoutTimer, sortTimer}`, the whole thing built once by `levelPlan()` (plan.md WP4.5.3a/4.5.7) and
+handed back by reference, so both team modes' `basePosts()` just alias it as `levels` instead of
+each rebuilding a subset of its fields by hand — off `BASE_DRONE_LEVEL_WEIGHTS`, a `Binomial(4,½)`
+centred on level 3, shared across every post at that centre, so a level switch, a cross or a sort
+pass on one drone is visible to its orbit-mates immediately. The **only** place a drone's target
+radius (`orbRTarget`) ever moves is `entities/Bullet.js`'s module-level `levelSwitch()`, one level
+at a time, from four triggers that all funnel through it: a shape hit, a drone-vs-drone proximity
+overlap (`rooms/Room.js`'s pair loop sets `tooClose` on **exactly one** side when two same-side
+drones are within `BASE_DRONE_SEPARATION` — deliberately less than `BASE_DRONE_LEVEL_GAP`, so it
+can only ever fire between two drones sharing a level), the per-centre binomial sorter's restoring
+move, and a post-swoosh drone's scripted climb back to level 3 (`homing`) — the last two replace
+what used to be a single "drift back toward home on a timer" trigger; see below.
 
-**A level switch has two distinct mechanisms by trigger now** (plan.md WP4.5.2): a shape hit or a
-drone-proximity overlap (`mode 'random'`) still just write `orbRTarget` immediately and let the
+**A reactive switch cannot fail; the two gradual movers no longer wait either** (plan.md
+WP4.5.0/4.5.3). `levelSwitch(drone, 'random')` — a shape hit or an overlap — always moves the
+drone, preferring an open neighbour and otherwise taking whichever is least over-full, exactly as
+before. `levelSwitch(drone, 'sort')` — the binomial sorter's directed move — is cap-free by
+construction: the sorter only ever aims a drone at a level it has already established is in
+deficit, so there is nothing left to veto. `levelSwitch(drone, 'home')` is now exclusively the
+post-swoosh `homing` climb (the old general drift-home timer is gone — see below), and it is
+cap-free too, but *only* while `drone.homing` is set: a scripted return must not be able to stall
+behind a full level 2. The ledger may therefore transiently exceed a cap — exactly as a swoosh's
+landing on level 1 already could — and the excess drains back out through the sorter a second
+later; the invariant that still holds (and that `test/rooms.js` asserts) is that each centre's
+`count` sums to its own live drone count. A reaction that arrives while the drone is busy —
+mid-arc, mid-chase, or on `BASE_DRONE_SWITCH_COOLDOWN` — is **latched** in `reactPending` and paid
+the moment it is free, rather than dropped. Mid-swoosh is the one deliberate exception: the drone
+ploughs straight through, and the cross's own landing on level 1 *is* its level change, so the exit
+clears the latch. This is what fixed the user-reported "base drones don't seem to turn 60° into
+another energy level when they hit a shape all the time" — measured before the fix, 24 of 48
+drones in a live 4team room had no open neighbour at all and silently ignored every shape they
+touched.
+
+**A level switch is one of two motions now, chosen by trigger** (plan.md WP4.5.3c): a shape hit or
+a drone-proximity overlap (`mode 'random'`) still just writes `orbRTarget` immediately and lets the
 orbit field's own lean do the rest — `BASE_DRONE_LEAN_SCALE` is pinned so a one-level radius error
-leans the field by exactly 60°, unchanged, still a sharp reactive peel. The drift-home timer
-(`mode 'home'`) — which also fires repeatedly to climb a post-swoosh drone back up from level 1 —
-instead plans the whole move as a single quintic Hermite (`planSwitchArc()`), a shallow
-`BASE_DRONE_SWITCH_ARC` (10%) sweep of the ring landing exactly tangential at the new radius. While
-it flies, `this.switching` is a third exclusive state alongside `chasing`/`crossing`: position,
-head and speed come from the curve, the cross trigger is suppressed without losing its place in the
-queue, and a chase (but not a cross) interrupts it cleanly. The two mechanisms are deliberately
-different reads of "move a level" — one is a reaction, sharp on purpose; the other is a drone
-choosing to move, and reads as an unmistakably smoother arc beside it.
+leans the field by exactly 60°, unchanged, still a sharp reactive peel. Both other triggers — the
+sorter's `mode 'sort'` and the homing climb's `mode 'home'` — fly the same gradual quintic Hermite
+(`planSwitchArc()`), which now sweeps an angle derived from **`BASE_DRONE_SWITCH_LEAN`** (10°, in
+radians) instead of a fixed fraction of the ring's circumference (the old `BASE_DRONE_SWITCH_ARC`,
+deleted): `dtheta = LEVEL_GAP / (tan(SWITCH_LEAN) * r0) * spin`, so the swept angle shrinks as the
+ring grows and every gradual switch takes the *same* 76 ticks (1.90 s) regardless of which ring it
+happens on, instead of a different sweep time per ring (51–84 ticks under the old
+fraction-of-circumference rule). While it flies, `this.switching` is a third exclusive state
+alongside `chasing`/`crossing`: position, head and speed come from the curve, the cross trigger is
+suppressed without losing its place in the queue, and a chase (but not a cross) interrupts it
+cleanly. The two motions are still deliberately different reads of "move a level" — one is a
+reaction, sharp on purpose; the other is a drone choosing (or being nudged) to move, and reads as
+an unmistakably smoother arc beside it.
 
-**The diameter cross is a planned four-segment quintic Hermite curve, not a steered pursuit**
-(plan.md WP4.5.3) — a turn-limited pursuit of an antipodal aim point cannot be made to pass through
-a *specific* point, so the orbit centre is instead a point the path runs straight over rather than a
-knot it bends through: five knots (entry, 8%-along, centre, 92%-along, exit) with the middle three
-collinear in position **and** both endpoint velocities **and** accelerations, so the perpendicular
-component of the quintic is identically zero there — the drone drives dead straight for the middle
-84% of the diameter, at up to `BASE_DRONE_CROSS_SPEED`. The two 8% ends are tweens matched (`C²`) to
-the orbit field at both outer seams, offset by `BASE_DRONE_CROSS_LEAD` so the drone's own actual
-entry position isn't sitting perpendicular on the line it has to join — without that offset no
-smooth curve could join it. All four segments are evaluated by the module-level `quinticHermite()`
-helper; `entities/Bullet.js` writes `x`/`y`/`vec`/`head`/`spd` directly from the curve during a
-cross, bypassing the turn/accel limiter entirely (the curve's own curvature bounds the motion
-instead). A cross always lands at level 1, ignoring the saturation cap on the way in (deliberately —
-a swoosh always ends at the lowest level), then the drift-home trigger walks it back up over the
-next few seconds via the planned arc above. Only one drone per orbit centre may be mid-cross at a
-time (`levels.crossing`); a blocked drone's countdown does not reset, so it starts the instant the
-current one lands rather than losing its place. `BASE_DRONE_CROSS_BLEND_ARC` is a measured constant
-(a tween's own path length over its chord, not the whole path — the straight middle needs no factor
-at all), not guessed — `test/rooms.js` prints the current entry/exit measurements every run.
+**The general drift-home timer is gone; two purpose-built movers replace it** (plan.md
+WP4.5.3b/d). A per-centre **binomial sorter** (`rooms/Room.js`'s `sortDroneCentre()`, run from
+`tickDroneCentres()` once per `BASE_DRONE_SORT_PERIOD`, 25 ref ticks = 1.0 s) compares the centre's
+live occupancy against `levelPlan().target` — the same largest-remainder apportionment over
+`BASE_DRONE_LEVEL_WEIGHTS` used to seed the ledger, recomputed for whatever the *live* drone count
+happens to be right now and memoised in `levels.targets` — and, for every level with a surplus,
+moves *some random number* of eligible drones (alive, not crossing/chasing/switching/homing, and
+within half a `LEVEL_GAP` of their own ring) one level toward the **nearest** level with a deficit
+via `mode 'sort'`. "Nearest deficit" rather than "toward home" is what makes it provably converge:
+the five levels are a path graph, so this is transportation on a line — each move strictly
+decreases `Σ|count − target|` by 2, so the sorter reaches the target in bounded time from any
+perturbed state (`test/rooms.js` asserts this from randomised states, not just the common case). It
+is the distribution's *only* ongoing restoring force now. Separately, **a drone fresh off a cross
+climbs 1 → 2 → 3 and stops**: the cross's exit sets `drone.homing = 1` alongside the existing
+`level = 1`; while `homing`, the drone is invisible to the sorter (it isn't part of the
+distribution's slack yet) and its `'home'` switches ignore the saturation cap; `homing` clears the
+instant `level === BASE_DRONE_LEVEL_HOME`. Running both the sorter and a general "drift to 3"
+trigger at once would fight over the same drone — the sorter pushing surplus drones out to
+1/2/4/5, the timer immediately pulling them back — so the general trigger is deleted outright, not
+merely superseded.
 
-**"In an enemy base" also means inside the drawn arena now** (plan.md WP4.5.4): both team modes'
+**The diameter cross's geometry is unchanged — arc → C² blend → a straight line through the
+centre → C² blend → level 1 — but its speed profile and the size of the two blends are not**
+(plan.md WP4.5.1/4.5.2), precomputed into a per-tick table, not a steered pursuit: a turn-limited
+pursuit of an antipodal aim point cannot be made to pass through a *specific* point, so the orbit
+centre is a point the path runs straight over. **The speed profile is a plateau** (plan.md WP4.5.1,
+replacing an earlier single-ramp-to-the-centre build): `v(s)` climbs by `smoothstep` from
+`ORBIT_SPEED` at the ring up to peak over the path's first `BASE_DRONE_CROSS_RAMP` (25%), holds
+peak across the middle, then falls by the mirrored `smoothstep` back to `ORBIT_SPEED` over the last
+25% — a real held stretch at peak (the orbit centre sits somewhere inside it, not at a special
+point of its own), not a single point touched once. `dv/ds = 0` at all four of s=0, s=ramp,
+s=L-ramp and s=L, so both knees stay corner-free in *acceleration value* (the seams' own curvature
+term is untouched), but the two knees land deep inside the still-tight entry/exit C² blends
+(`BASE_DRONE_CROSS_BLEND_FRAC` puts ~80% of the path there), so peak turn rate and peak
+acceleration are both *higher* than a single-ramp build would produce — 8.46 rad/s and 1.95
+ref-units/tick², pinned in `test/rooms.js` with headroom (10 rad/s / 2.5) — in exchange for a dive
+that is ~25% quicker (**2.00–2.65 s**, down from 2.67–3.58 s) and an actual plateau instead of a
+momentary peak. `vPeak` is *solved*, not scaled, so the traversal lands on a whole tick with both
+seam speeds exactly at `ORBIT_SPEED` — measured within ~1% of nominal `BASE_DRONE_CROSS_SPEED` at
+every level (it can now land slightly *under* nominal too, not just over, since rounding the
+duration up to a whole tick costs speed over a much longer stretch of path than a single-point peak
+did). `BASE_DRONE_CROSS_SPEED`'s comment reflects this: it is *the nominal peak, held from
+`BASE_DRONE_CROSS_RAMP` of the path to `1 - BASE_DRONE_CROSS_RAMP` of it*, not a point or a
+constant run. **The two blends are ~2× longer**:
+`BASE_DRONE_CROSS_BLEND_FRAC` (0.70, up from 0.20) is now a fraction of **each end's own radius**
+rather than of the chord — which is also what removes the old `f < min(r0,R1)/D` geometric cap,
+since the orbit centre now stays on the straight at fraction `r0/(r0+R1)` along it for any `f < 1`
+— and `BASE_DRONE_CROSS_LEAD` (0.125, up from 0.05) rotates the line further round the orbit to
+give the blend more arc to sweep before it joins. Together the blends are now ~80% of the path
+(were ~50%); see above for what that costs the plateau's turn/accel bounds and buys it in dive time.
+`planCross()` builds the whole
+table once at trigger and `case 1.4` just indexes it, writing `x`/`y`/`vec`/`head`/`spd` straight
+from it and bypassing the turn/accel limiter. The entry curls inward from the first tick, so a
+cross never bulges past the ring it left. A cross always lands at level 1, ignoring the saturation
+cap on the way in (deliberately — a swoosh always ends at the lowest level); the `homing` climb
+above is what walks it back up afterwards, not a drift timer. **Cross concurrency is now sized
+from measured demand instead of fixed at one** (plan.md WP4.5.7): each centre's ledger carries a
+`crossCap`, computed once when the ledger is built (`Bullet.estimateCrossTicks(r0, R1)`, the same
+duration solve `planCross()` uses, weighted by `BASE_DRONE_LEVEL_WEIGHTS` and averaged over the
+five levels — `crossCap = max(1, ceil(n · meanCrossTicks / BASE_DRONE_CROSS_TICKS))`) — a fixed
+cap of 1 left a 12-drone 4team centre's per-drone crossing cadence far behind a 10 s target once the
+swoosh got longer than the original single-piece design. A 4team base's twelve drones get
+`crossCap = 3` (moves on its own whenever `BASE_DRONE_CROSS_RAMP` does, since `estimateCrossTicks()`
+routes through the same `crossVAt()` the live cross uses — it was 4 under the superseded
+single-ramp-to-the-centre profile, not a hand-retuned number); a 2team pair still gets
+`crossCap = 1` — two drones sharing one lane were never the problem. The
+trigger's guard is `this.levels.crossing < this.levels.crossCap` now, not `=== 0`; a blocked
+drone's countdown still does not reset, so it starts the instant a lane frees up rather than
+losing its place.
+
+**Enemy detection is one scout per orbit centre now, not every drone every tick** (plan.md
+WP4.5.4) — kept on its own merits (a real, if smaller, saving), not for the reason first given: an
+early measurement claimed base drones were 46% of a 4team tick and 93% of that was this query, but
+that profile settled the room for only 600 steps before measuring, on a room needing ~6500 to reach
+its real polygon count, so it was measuring base drones against a fifteenth of the entities they
+actually share the world with. Re-measured properly (§4 "Collision" below): the whole base-drone AI
+is ~0.8% of a tick. `rooms/Room.js`'s `tickDroneCentres()` rotates exactly one drone's
+`DETEC.enabled` per centre, round-robin, every `BASE_DRONE_SCAN` (5, a raw real-tick count, not
+ref-tick-converted) ticks; every other drone at that centre has its detector disabled, so its query
+radius collapses from `1680*2` to `size*2`. A found target is written to the shared `levels.threat`
+on the ledger, alongside a `levels.threatAt` timestamp (plan.md WP4.5.2B — see below), which every
+drone at that centre reads when *deciding to start* a chase — so detection latency is at most
+`BASE_DRONE_SCAN` ticks (0.125 s), during which the fastest thing in the game covers 50 units
+against a 1680-unit detect radius. A drone that is already chasing keeps its own `DETEC.select` and
+its own per-tick leash check exactly as before; nothing about the chase itself changed. `DETEC` is
+now constructed once in `spawnBaseDrone()` (disabled) rather than lazily on first detection.
+
+**Three base-drone bugs, all reproduced headlessly and fixed (plan.md WP4.5.2).**
+`Bullet.clampToMap()` used to zero the clamped axis of `vec`, but case 1.4's own steering tail
+derives `vec` FROM `head`/`spd` every tick, so the zeroed component was overwritten before it was
+ever read — the clamp only ever teleported a drone back onto the map boundary once a tick, forever,
+while `spd` stayed pinned at full chase speed (measured: 15 consecutive identical-position ticks
+parked at a corner, or a chasing drone frozen dead at the exact corner indefinitely if its target
+sat beyond the edge — the user's literal "get stuck on the edge of the arena"). Fixed by rewriting
+`head`/`spd` from the clamped velocity outside a cross/switch arc (so a drone slides along the wall
+instead of pressing into it) and by dropping a chase whose target sits beyond the drone's own clamp
+box. Separately, `levels.threat` (above) was written and never cleared, so acquisition silently
+became "has ever been seen" rather than "is currently visible", and a target that died mid-chase
+(`respawn()` swaps in a brand-new `Player`, leaving the old one's `destroy` at 1 forever) could
+permanently latch a whole centre out of ever chasing again; fixed with the `threatAt` stamp,
+expired after two scout rotations with no re-sighting or the instant the threat is confirmed dead.
+And `Detector.reset()` left `select` pointing at the last thing it ever found instead of clearing
+it, so every "forget this target and re-scan" call site in the tree (nine of them) was silently
+only half working — fixed at the source, all nine callers audited; the one visible behaviour change
+is that bots/bosses (`lib/gameAI.js`) now genuinely forget a target they can no longer see instead
+of holding a stale reference to it.
+
+**"In an enemy base" also means inside the drawn arena now** (plan.md WP4.5.0): both team modes'
 `inEnemyBase()` are still deliberately unbounded outward on their own, but `rooms/Room.js`'s
 `inArena()` bounds that at the one call site in `step()`, so the ~5-square dark OOB band around a
 base is neutral ground — a fast tank can lap an enemy base through it without dying. Base drones get
 the same `config.OOB_MARGIN` allowance `entities/Player.js`'s own clamp gives a tank
 (`Bullet.clampToMap()`), so a chasing drone can follow a target out there exactly as far as the
-target can run; a natural orbit/cross/switch-arc geometry never comes near that clamp (pinned by
-`test/rooms.js`), so it only ever fires mid-chase.
+target can run — but not past it, which is what the clamp-box chase-drop above enforces; a natural
+orbit/cross/switch-arc geometry never comes near that clamp (pinned by `test/rooms.js`), so it only
+ever fires mid-chase or on a long return.
 
 The only per-mode difference now is the orbit centre — which both team modes derive from
 `baseSize` rather than a literal inset, so a base resize can't leave the drones sitting off-centre
@@ -324,9 +448,24 @@ from that one table). The wire enum in `SocketSchema.js`
 can't `require()` server modules — so a new mode needs a key added to both tables in the same
 order; `test/rooms.js` cross-checks all three lists against each other.
 
-**Collision.** Per tick: rebuild a `quadTree`, insert every live entity, `query()` with an AABB
-overlap test, then `a.collision(b, {dis})` per candidate pair. Each entity class implements its
-own `collision()`, switching on `other.kind`.
+**Collision.** Per tick: rebuild a `quadTree`, insert every live entity, then `a.collision(b, {dis})`
+per candidate pair. Each entity class implements its own `collision()`, switching on `other.kind`.
+The candidate query itself is `quadTree.queryCircle()` now, not `query(closure, {x,y,r})` (plan.md
+WP4.5.4) — a profiler found the broad phase (this query plus the pair-loop body right after it) is
+~40% of a tick, `entities/` update methods barely register by comparison, and the old `query()` paid
+for it three times over: a closure defined fresh inside the loop, an allocated `{x,y,w,h}`/
+`{x,y,w:0,h:0}` object per node/point visited, and (once a leaf split) a leaf handing back its own
+`this.points` *unfiltered* rather than the array it had just built to filter them. `queryCircle()`
+is the same AABB/circle test against primitives, squared-distance point filtering (no `Math.sqrt`),
+writing into a caller-owned scratch array so the whole pass allocates nothing; `lib/quadTree.js`'s
+`insert()` was rewritten alongside it to pick the single quadrant a point belongs in rather than
+recursing into all four (which also fixed a duplicate-candidate bug at internal node boundaries, a
+side effect rather than the point of the change) — the two land together because the query rewrite
+alone buys almost nothing until `Room.js` actually calls it. Measured: 3510 µs → 1504 µs (−57%) on
+a settled 4team room, 4239 µs → 2166 µs (−49%) on 2team. `lib/SlotMap.js`'s `live()`/`entries()`
+also cache their sorted key array now (invalidated on anything that changes the key set) instead of
+re-deriving `[...map.keys()].sort()` on every call. `query()` itself is untouched and kept — the
+per-viewer rectangle buffer query later in `step()` is its one remaining caller.
 
 ---
 

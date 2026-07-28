@@ -83,6 +83,8 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
      first-pass defaults; confirm they still turn up often enough to notice in a normal session).
    - The minimap shows other players' dots, not just your own, moving smoothly (`Room.getUi`'s
      `map`, `Ui.map()` in `public/client/ui.js`).
+   - The minimap has a thin dark frame, about half what it showed before this pass, in every mode
+     (`public/client/ui.js`'s `MAP.lw`, 12 → 6 — plan.md WP4.5.3).
    - Level 1 vs. level 30 with Movement Speed maxed: confirm the tank no longer rubber-bands
      differently at the two speeds (`public/client/game.js`'s prediction constants now match
      `entities/Player.js`'s exactly instead of a stale, unscaled guess).
@@ -109,7 +111,13 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
        die out there, and should be able to get the whole way round, including a 4team corner. You
        do get chased into it (the drones follow, `Room.inArena() && inEnemyBase()`), so whether you
        survive the lap is a race between your own top speed and `BASE_DRONE_CHASE_SPEED` — that race
-       being close is the point (plan.md WP4.5.4(c)).
+       being close is the point (plan.md WP4.5.0).
+     - Drones do not stick to the arena edge. Drive a fast tank into an enemy base's outboard
+       corner and look behind you: a chasing/returning drone should follow, turn, and keep moving —
+       never park itself flat against the boundary and sit there motionless (plan.md WP4.5.2's
+       `clampToMap()` fix). Then leave, die, and come back: the base must chase you again — before
+       this fix, a base that killed you once could stop chasing anything at all for the rest of the
+       round.
 7. Chat over a real client connection — admin commands are now proven end-to-end over a real
    socket against Postgres (connect/disconnect, permission gating, `broadcast`, `tps` all
    confirmed live), but chat hasn't been exercised the same way.
@@ -295,6 +303,28 @@ re-derivation is needed here.*
     (`len = 0.556`, `FRICTION = 0.9422` at 25 ms; `len = 1.449`, `FRICTION = 0.9091` at diep's own
     40 ms), with `len = base × 1.07^MSpeedPts / 1.015^level`.
 
+    **The 284 u/s above is a level-0, no-upgrade tank walking — not this game's ceiling.** plan.md
+    WP4.5.0 needed the real maximum (it is what `BASE_DRONE_CHASE_SPEED` is pinned to), so
+    `test/rooms.js`'s `fastestTankSpeed()` measures it by replaying `entities/Player.js`'s own
+    `motion()` + `shoot()` recurrence over every reachable class at 6 Movement Speed and 6 Reload,
+    firing continuously with the recoil aimed along the direction of travel:
+
+    | build | sustained |
+    |---|---|
+    | **Fighter, level 29** (rear pair, `back 2.04776` on a 22-tick reload) | **399.2 u/s** |
+    | Machine Gun, level 12 | 394.1 |
+    | Booster, level 29 | 393.8 |
+    | Triangle, level 19 | 389.9 |
+    | Twin, level 12 | 372.8 |
+    | walking only, level 0, no upgrades | 284.0 |
+
+    So riding your own recoil is worth ~1.4× a plain walk, and **~400 u/s is the ceiling any build
+    in this game can hold.** The level penalty (`Physics.moveAccel` subtracts `level /
+    MOVE_LEVEL_FALLOFF`) is why each class is fastest at the lowest level it unlocks at, and why no
+    higher-level build beats these. The helper is a live test, not a recorded number — a cannon or
+    stat retune that moves the ceiling fails `test/rooms.js` rather than silently drifting from
+    item 23's base-drone chase speed.
+
 15. **Reload is uniformly 1.4–2.0× too slow, and the reload *stat* may be far off.**
     diep quantizes reload to whole 40 ms loops with `RT = ⌈X₀ / …⌉` — confirmed by the reference's
     own table, where every non-integer technical time rounds up exactly (`7,5 x → 0,32 s`,
@@ -441,24 +471,106 @@ re-derivation is needed here.*
     quantised into five shared levels one `BASE_DRONE_LEVEL_GAP` (a drone-side) apart rather than a
     continuous random band; the drone-vs-drone separation threshold (`BASE_DRONE_SEPARATION`) is
     derived from the drawn triangle's own vertex geometry (`2×1.7×BASE_DRONE_SIZE − 5`).
-    **WP4.5's follow-on motion-half pass** (plan.md WP4.5.1-4.5.4) replaced the rest with measured
-    numbers too: chase/return are a real dash now, derived from item 14's own 284 u/s level-0 top
-    speed (`BASE_DRONE_CHASE_SPEED`) rather than guessed, with its own tighter turn limit
-    (`BASE_DRONE_CHASE_TURN`) so the drone can actually turn inside a target at that speed — items
-    14 and this one are mutually load-bearing now, worth saying out loud since a future retune of
-    either has to check the other. A voluntary ('home') level switch flies its own shallow planned
-    quintic arc (`BASE_DRONE_SWITCH_ARC`, the user's own "10% of the circle"); a reactive one (shape
-    hit, drone-proximity) is untouched, still the sharp `BASE_DRONE_LEAN_SCALE` lean. The diameter
-    cross is a four-segment 8/84/8 construction now, not a two-segment S — a strictly straight
-    middle 84% of the diameter with an 8%-each tween at both ends
-    (`BASE_DRONE_CROSS_BLEND_FRAC`/`BASE_DRONE_CROSS_LEAD`), whose tween path-length-over-chord
-    ratio (`BASE_DRONE_CROSS_BLEND_ARC`) is a measured fixpoint, not a guess (`test/rooms.js` prints
-    the current entry/exit measurements every run so a future retune can re-derive it; the old
-    whole-path `BASE_DRONE_CROSS_ARC` is gone — the straight segments need no factor at all). "In an
-    enemy base" is now also bounded to the drawn arena (`Room.inArena()`), so the ~5-square dark OOB
-    band around a base is neutral ground a base drone may follow a target into, exactly as far as a
-    player may run (`config.OOB_MARGIN`, shared with `entities/Player.js`'s own allowance). Two
-    things about the drones stay open:
+    **WP4.5's follow-on motion-half pass** (plan.md WP4.5.0-4.5.2, superseding what was at the time
+    numbered WP4.5.1-4.5.4) replaced the rest with measured
+    numbers too: chase/return are a real dash now, with their own tighter turn limit
+    (`BASE_DRONE_CHASE_TURN`) so the drone can actually turn inside a target at that speed. A
+    gradual level switch flies its own planned quintic arc, now a `BASE_DRONE_SWITCH_LEAN`
+    (10°, replacing `BASE_DRONE_SWITCH_ARC`'s fraction-of-circumference) off the tangent so the
+    sweep takes the same time at every ring, whichever of the sorter or the post-swoosh `homing`
+    climb triggers it; a reactive one (shape hit, drone-proximity) is untouched, still the sharp
+    `BASE_DRONE_LEAN_SCALE` lean. "In an enemy base"
+    is now also bounded to the drawn arena (`Room.inArena()`), so the ~5-square dark OOB band around
+    a base is neutral ground a base drone may follow a target into, exactly as far as a player may
+    run (`config.OOB_MARGIN`, shared with `entities/Player.js`'s own allowance).
+    **That pass then rebuilt the dash, the swoosh and the reaction (now plan.md WP4.5.0/4.5.1/4.5.2):**
+    - `BASE_DRONE_CHASE_SPEED` is **400 u/s** — item 14's own `fastestTankSpeed()` measurement of
+      the fastest build this game can hold (399.2, Fighter L29), not a level-0 tank's 284. The user's
+      spec is *exactly* that ceiling, not past it: nothing outruns a base drone on straight-line
+      speed, and lapping a base in the fastest tank is still winnable on the head start and the
+      `BASE_DRONE_LEASH` boundary rather than on top speed. Items 14 and this one are mutually
+      load-bearing — a retune of either has to check the other, and `test/rooms.js` fails if they
+      drift apart.
+    - The diameter cross is **arc → C² blend → a straight line through the orbit centre → C² blend →
+      level 1**, precomputed once per swoosh into a per-tick table (`planCross()`). Its speed
+      profile is a **plateau now** (plan.md WP4.5.1, superseding the ramp-to-the-centre profile
+      described just below): ramp up to peak over the first `BASE_DRONE_CROSS_RAMP` (25%) of the
+      path, hold peak across the middle, ramp back down over the last 25% — not a single point
+      touched at the orbit centre. ~~One continuous ramp — accelerate the whole way in to the
+      centre, decelerate the whole way back out — with peak acceleration down to ~0.47
+      ref-units/tick² from the original three-piece profile's ~1.9~~ is the superseded description;
+      the plateau's two knees sit deep inside the still-tight entry/exit blends, so peak turn rises
+      to **8.46 rad/s** and peak acceleration to **1.95** (both still comfortably inside
+      `test/rooms.js`'s pinned 10 rad/s / 2.5 bounds) — a real trade against the previous pass's
+      smoother-but-single-point peak, made because the plateau is what the user actually asked for
+      and because it also makes the dive **~25% quicker: 2.00–2.65 s, down from 2.67–3.58 s**.
+      `BASE_DRONE_CROSS_BLEND_FRAC` 0.20 → 0.70 (now a fraction of each end's own radius, not the
+      chord — which is what let it move at all) and `BASE_DRONE_CROSS_LEAD` 0.05 → 0.125 are
+      unchanged by the plateau pass; they are what stretched the two blends to ~2× their old length
+      (~80% of the path) in the first place. **`BASE_DRONE_CROSS_SEAM_SPEED` and
+      `BASE_DRONE_CROSS_BLEND_ARC` are deleted** — a blend's shape parameter is solved by fixed
+      point at plan time, so there is no measured-and-pasted-back constant left in the cross at all.
+    - **A per-centre binomial sorter is the ongoing restoring force now, not a drift-home timer.**
+      Once a second, each orbit centre compares its live occupancy against `levelPlan().target` and
+      walks a random number of surplus drones one level toward the nearest deficit level, via the
+      same gradual arc; a post-swoosh drone instead runs a scripted `homing` climb (1 → 2 → 3,
+      cap-free) and is excluded from the sorter until it arrives. The general drift-home timer that
+      used to pull every off-level drone back to 3 is deleted — left in beside the sorter, the two
+      would fight over the same drone.
+    - **Cross concurrency (`crossCap`) is sized from measured demand, not fixed at 1.** A 4team
+      centre's twelve drones each wanting a cross every ~10 s outran a single lane once the swoosh
+      got longer; `crossCap` is now derived per centre from `Bullet.estimateCrossTicks()` — **3** for
+      a 4team base's twelve drones (was 4 under the superseded ramp-to-the-centre profile — the
+      plateau's shorter mean cross duration is what moves it down on its own, not a manual retune),
+      1 (unchanged) for a 2team pair.
+    - **A reactive level switch can no longer fail.** A saturated ring only vetoes a *voluntary*
+      move; a reaction (shape hit, drone-proximity) always moves the drone, and one that arrives
+      while it is busy is latched in `reactPending` and paid the moment it is free. Measured before
+      the fix: 24 of 48 base drones in a live 4team room had no open neighbour at all and ignored
+      every shape they hit. Exactly one side of an overlapping pair is flagged now, not both.
+    - **Three chase bugs, all reproduced headlessly and fixed (plan.md WP4.5.2).** (A)
+      `clampToMap()` used to zero the clamped axis of `vec`, but case 1.4's own tail derives `vec`
+      FROM `head`/`spd` every tick, so the zero was overwritten before it was ever read — a drone at
+      the map edge just got teleported back onto the boundary once a tick, forever, while `spd` sat
+      at full chase speed (measured: 15 consecutive identical-position ticks parked, or a chasing
+      drone pinned dead at the exact corner indefinitely if its target was beyond the edge). Fixed by
+      rewriting `head`/`spd` from the clamped velocity outside a cross/switch arc, and by dropping a
+      chase whose target sits beyond the drone's own clamp box. (B) The shared `levels.threat` was
+      written and never cleared, so acquisition silently became "has ever been seen" instead of "is
+      currently visible", and a target that died while being chased (`respawn()` swaps in a brand-new
+      `Player`, so the old one's `destroy` stays 1 forever) permanently latched the whole centre out
+      of ever chasing again — measured, 15 s of a live enemy sitting inside both `DETECT` and `LEASH`
+      with nothing reacting. Fixed with a `threatAt` timestamp, expired after two scout rotations
+      with no re-sighting or the instant the threat is confirmed dead. (C) `Detector.reset()` left
+      `select` pointing at the last thing it ever found, so every "forget this target and re-scan"
+      call site across the tree (nine of them) was silently only half working. Fixed at the source;
+      audited all nine callers, one behaviour change worth knowing about — bots/bosses (`lib/gameAI.js`)
+      now genuinely forget a target they can no longer see instead of holding a stale reference.
+    - **Where the compute actually goes, measured correctly this time (plan.md WP4.5.4) — the
+      previous number here was wrong, not just outdated.** The prior measurement settled a 4team
+      room for only 600 steps before profiling; a 4team room actually needs ~6500 steps to reach its
+      eventual polygon count, so that profile ran on a room with ~100 of its eventual 715 polygons —
+      base drones read as a third of all entities in the world instead of a fifteenth, and every
+      number downstream of that (the 46%/93% split, the 1419/762 µs, the −36%/−48%) was measuring a
+      room that never exists in play. Re-measured on a properly settled room (7000 steps, interleaved
+      A/B, median of 12 blocks): **base drones are 6.2% of a tick (290 µs of 4685 µs in 4team)**, of
+      which all 48 drones' own `Bullet.update()` is **1.6%** and the per-centre sorter/scout
+      maintenance is **0.14%**. A CPU profile attributes **~40% of a tick to the broad phase**
+      (quadtree query + the collision pair-loop body) and just **0.8%** to the whole base-drone AI —
+      steering, orbit field, sorter, swoosh planning, level switching, all of it. **The real win is in
+      `lib/quadTree.js`/`rooms/Room.js`, not `entities/Bullet.js`:** a new allocation-free
+      `queryCircle()` (squared-distance filtering, no closures, no per-node/per-point object
+      allocation) plus an `insert()` that picks a single quadrant instead of recursing into all four
+      (fixing a duplicate-candidate bug at internal boundaries as a side effect) took a settled 4team
+      tick from 3510 µs to **1504 µs (−57%)** and 2team from 4239 µs to **2166 µs (−49%)**, verified
+      against a brute-force point scan before anything else changed. `SlotMap`'s sorted-key-array
+      caching and two pair-loop micro-fixes (indexed `for`, `Math.sqrt` over `Math.pow`) contribute
+      the last few percent on top. **The detection scout (one enabled `Detector` per orbit centre,
+      rotated round-robin) is kept — it is still a reasonable design — but it is not worth what the
+      old number sold it as, and a future perf pass should start in the broad phase, not in
+      `entities/Bullet.js`, which a profiler cannot see at 0.8% of a tick.**
+
+    Two things about the drones stay open:
     - **The HP scale.** `BASE_DRONE_HP: 2000` is the wiki's number on *diep's* HP scale, and ours
       is not diep's — our base tank is 150 HP against diep's unmeasured `MH₀`, and a maxed level-30
       tank here is 900. If `MH₀` is 50, diep's base drone is ~7.1× a maxed tank, which on our scale
