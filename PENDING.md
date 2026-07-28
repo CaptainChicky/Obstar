@@ -5,10 +5,6 @@ Short-form companion to [HANDOFF.md](HANDOFF.md). Everything mechanical (the ref
 decisions already made but not yet built, and things nobody has verified yet. No status prose,
 just the list.
 
-*Items 25 and 26 have moved to [plan.md](plan.md) (WP-SPAWN / WP-CANNON) and are not repeated here.
-Numbering is never reused — `lib/config.js`, `lib/tick.js`, `public/SHARE/Physics.js`,
-`entities/Player.js` and `rooms/Sandbox.js` all cite items by number.*
-
 ---
 
 *The game is being remade from scratch: the DB will be emptied and rebuilt, and nothing
