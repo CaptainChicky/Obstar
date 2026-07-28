@@ -952,15 +952,33 @@ body {
 	position: fixed;
 	top: 0;
 	right: 0;
-	width: 10%;
-	min-width: 120px;
-	max-width: 260px;
+	/* PANEL_W ~= 375 = ITEM_MAX_W (280) + RIGHT_GAP (25) + FADE_LEAD (70), see account.js -
+	   wide enough that a 280px item plus its 25px gap sits fully inside the dark end below. */
+	width: clamp(320px, 30vw, 400px);
 	height: 100%;
 	z-index: 40;
 	overflow: hidden;
 	pointer-events: none;
-	background: linear-gradient(to right, rgba(10, 10, 16, 0) 0%, rgba(10, 10, 16, .6) 100%);
+	background: linear-gradient(to right,
+		rgba(10, 10, 16, 0) 0%,
+		rgba(10, 10, 16, .06) 22%,
+		rgba(10, 10, 16, .16) 40%,
+		rgba(10, 10, 16, .30) 58%,
+		rgba(10, 10, 16, .45) 76%,
+		rgba(10, 10, 16, .58) 100%);
 	opacity: 0;
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+	#ach-edge::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		backdrop-filter: blur(6px);
+		-webkit-backdrop-filter: blur(6px);
+		mask-image: linear-gradient(to right, transparent 0%, #000 70%);
+		-webkit-mask-image: linear-gradient(to right, transparent 0%, #000 70%);
+	}
 }
 
 #ach-edge-list {
@@ -972,14 +990,18 @@ body {
 #ach-edge-list .ach-item {
 	position: absolute;
 	right: 0;
-	width: 100%;
+	height: 56px;
+	display: flex;
+	justify-content: flex-end;
 	transform-origin: right center;
 }
 
-#ach-edge-list .ach-item img {
+#ach-edge-list .ach-item img,
+#ach-edge-list .ach-item canvas {
 	display: block;
-	width: 100%;
-	height: auto;
+	height: 100%;
+	width: auto;
+	max-width: 100%;
 	border-radius: 6px;
 	filter: drop-shadow(0 0 4px rgba(0, 0, 0, .5));
 }

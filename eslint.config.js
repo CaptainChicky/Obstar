@@ -58,6 +58,7 @@ const MENU_GLOBALS = {
 	POST: 'readonly',
 	PetsConfig: 'readonly', // public/SHARE/PetsConfig.js - the shop renders the pet art
 	AchievementsConfig: 'readonly', // public/SHARE/AchievementsConfig.js - the achievements panel
+	AchievementBadge: 'readonly', // public/SHARE/AchievementBadge.js - drawn badge renderer
 	State: 'writable',   // public/font.js - selected gamemode
 	Pref: 'writable',   // public/queue.js - cookie-restored preferences
 	UserData: 'writable',   // public/shop.js  - account + owned pets

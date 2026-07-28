@@ -142,6 +142,13 @@
 	const SPEED = 18; // px/s auto-scroll
 	const WHEEL_SCALE = 0.6;
 	const REVEAL_MS = 350;
+	// Item sizing/positioning constants - kept in sync by hand with the #ach-edge /
+	// .ach-item rules in public/style.css (search that file for the same names).
+	const ITEM_H = 56;      // absolute rendered height of every item, any aspect ratio
+	const ITEM_MAX_W = 280; // 56 * (320/64) - widest legacy asset at ITEM_H
+	const RIGHT_GAP = 25;   // right margin of the centred (widest-point) item
+	const HOVER_W = 220;    // reveal trigger zone, decoupled from panel width
+	const SCALE_MIN = 0.85; // wheel recession scale at the top/bottom edges
 	let items = []; // one '.ach-item' div per repeated slot, length N*k
 	let itemHeight = 0, PITCH = 0, TOTAL = 0;
 	let offset = 0;
@@ -157,15 +164,42 @@
 		buildItems();
 	}
 
+	// The one seam between "how an achievement is stored" and "what the wheel puts on
+	// screen" (plan.md Part 4): AchievementsConfig entries with a `badge` field render as a
+	// drawn AchievementBadge canvas, everything else keeps today's <img>. No entry sets
+	// `badge` yet, so this always takes the img branch for now.
+	function makeAchNode(entry, opts) {
+		const locked = !!(opts && opts.locked);
+		const secret = !!(opts && opts.secret);
+		const title = secret ? '???' : (entry.name + ' - ' + entry.desc);
+		if (entry.badge) {
+			const view = secret ? Object.assign({}, entry, { name: '???', desc: '???' }) : entry;
+			const canvas = AchievementBadge.draw(view, { scale: window.devicePixelRatio || 1, locked: locked });
+			canvas.style.height = ITEM_H + 'px';
+			canvas.style.width = 'auto';
+			canvas.title = title;
+			return canvas;
+		}
+		const img = document.createElement('IMG');
+		img.className = locked ? 'locked' : '';
+		img.src = './pic/img_mess/' + (secret ? 'achievement.png' : entry.icon);
+		// Not shown as text in the panel (that is the whole point of it being icon-only),
+		// but a native title tooltip costs nothing and means locked-and-hidden isn't a
+		// total mystery to someone who deliberately hovers one icon rather than the edge.
+		img.title = title;
+		return img;
+	}
+
 	function buildItems() {
 		const list = AchievementsConfig.list;
 		const n = list.length;
 		if (!n) { achList.innerHTML = ''; items = []; return; }
-		const panelW = achList.clientWidth || achEdge.clientWidth;
 		const panelH = achList.clientHeight || achEdge.clientHeight;
-		// The 8 real assets are 320x64 - fix the wheel's per-item height off that aspect ratio
-		// rather than measuring a rendered <img>, so layout is correct on the very first frame.
-		itemHeight = panelW * (64 / 320);
+		// Height is absolute (ITEM_H), not derived from panel width - see the design-constants
+		// block above. That's what keeps every item exactly 56px tall regardless of asset aspect
+		// ratio (the 86x86 Kawaii Smash icon included) and independent of viewport width. Resize
+		// still calls buildItems (below) purely to recount k for the new panelH.
+		itemHeight = ITEM_H;
 		PITCH = itemHeight + GAP;
 		const k = Math.max(1, Math.ceil((panelH + PITCH) / (n * PITCH)));
 		const total = n * k;
@@ -178,14 +212,7 @@
 			const secret = entry.hidden && !has;
 			const item = document.createElement('DIV');
 			item.className = 'ach-item';
-			const img = document.createElement('IMG');
-			img.className = has ? '' : 'locked';
-			img.src = './pic/img_mess/' + (secret ? 'achievement.png' : entry.icon);
-			// Not shown as text in the panel (that is the whole point of it being icon-only),
-			// but a native title tooltip costs nothing and means locked-and-hidden isn't a
-			// total mystery to someone who deliberately hovers one icon rather than the edge.
-			img.title = secret ? '???' : (entry.name + ' - ' + entry.desc);
-			item.appendChild(img);
+			item.appendChild(makeAchNode(entry, { locked: !has, secret: secret }));
 			achList.appendChild(item);
 			items.push(item);
 		}
@@ -204,8 +231,12 @@
 			d = Math.max(-1, Math.min(1, d));
 			const ad = Math.abs(d);
 			const opacity = Math.max(0, 1 - 0.8 * Math.pow(ad, 1.3));
-			const scale = 1 - 0.35 * ad;
-			const translateX = 46 * Math.pow(ad, 1.5) + slideIn;
+			const scale = 1 - (1 - SCALE_MIN) * ad;
+			// Inward recession: RIGHT_GAP clear of the edge at centre, sliding right to flush
+			// (never past it) at the top/bottom - the inverse of the old outward push, which
+			// clipped the centred item against #ach-edge's own right:0 / overflow:hidden.
+			const inset = RIGHT_GAP * (1 - Math.pow(ad, 1.5));
+			const translateX = slideIn - inset;
 			const el = items[i];
 			el.style.top = y + 'px';
 			el.style.opacity = opacity;
@@ -231,7 +262,7 @@
 	// Follow, the account chip), so the hover/reveal check runs off the raw cursor position
 	// instead of a `:hover`/`mouseenter` on an element that no longer receives pointer events.
 	window.addEventListener('mousemove', function (e) {
-		const panelWidth = achEdge.offsetWidth;
+		const panelWidth = Math.min(achEdge.offsetWidth, HOVER_W);
 		hovering = e.clientX > window.innerWidth - panelWidth;
 	});
 	window.addEventListener('wheel', function (e) {
