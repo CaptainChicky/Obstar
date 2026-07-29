@@ -1427,7 +1427,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 26;
+					this.reload = 15;
 					this.offTime = 0;
 					this.type = 0;
 					///
@@ -1489,7 +1489,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[1] = new function () {
-					this.reload = 23;
+					this.reload = 15;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -1507,7 +1507,7 @@
 					this.back = 0.43881;
 				};
 				this.cannons[0] = new function () {
-					this.reload = 23;
+					this.reload = 15;
 					this.offTime = 0.5;
 					///
 					this.offdir = 0;
@@ -1522,14 +1522,14 @@
 					this.size = 17;
 					///
 					this.weight = 0.27426;
-					this.back = 0.58508;
+					this.back = 0.43881;
 				};
 			},
 			"Machine Gun": new function () {
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 12;
+					this.reload = 8;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -1543,14 +1543,14 @@
 					this.size = 18;//17
 					///
 					this.weight = 0.27426;
-					this.back = 0.87761;
+					this.back = 0.58508;
 				}
 			},
 			"Sniper": new function () {
 				this.screen = 1664;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 45;
+					this.reload = 23;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -1564,7 +1564,7 @@
 					this.size = 18;
 					///
 					this.weight = 0.54851;
-					this.back = 0.43881;
+					this.back = 1.75523;
 				}
 			},
 			///
@@ -1647,7 +1647,7 @@
 			"Destroyer": new function () {
 				this.screen = 1408;
 				const c = new Array(1).fill(null).map(() => ({
-					reload: 87,
+					reload: 60,
 					offTime: 0,
 					type: 0,
 					life: 149,
@@ -1664,7 +1664,7 @@
 					///
 					exitSpeed: 53,
 					weight: 0.27426,
-					back: 5.55821
+					back: 8.77613
 				}));
 				///
 				this.cannons = c;
@@ -1673,7 +1673,7 @@
 				this.screen = 1920;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 43;
+					this.reload = 30;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -1798,7 +1798,7 @@
 				this.screen = 1408;
 				this.maxDrone = 2;
 				const c = new Array(1).fill(null).map(() => ({
-					reload: 87,
+					reload: 60,
 					offTime: 0,
 					type: 0,
 					life: 149,
@@ -1815,7 +1815,7 @@
 					///
 					exitSpeed: 53,
 					weight: 0.27426,
-					back: 5.55821
+					back: 8.77613
 				}));
 				c.push({
 					reload: 165,

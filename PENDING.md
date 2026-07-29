@@ -51,7 +51,12 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
      nothing keyed to `size` (barrel scaling, drawn hitbox, minimap dot) looks off at level 30.
    - **The `c` auto-spin** starts from wherever the barrel is pointing when you press it and
      spins from there; releasing leaves the tank facing where the spin left it, and the next
-     mouse move takes over cleanly.
+     mouse move takes over cleanly. Two changes to re-check here specifically: the rate is diep's
+     `1 rad/s` now (was ~0.455 — a 2.2× speed-up, so confirm it reads as a spin and not a blur),
+     and a **toggle-off-then-on used to flick the barrel to where the previous spin ended for one
+     frame before snapping back** — a race between the keydown packet and the room tick, fixed in
+     `rooms/Room.js`'s `getBuffer()` and covered by `test/rooms.js`, but it was a wire-timing bug
+     and the browser is where it was visible, so press `c` on and off repeatedly and watch for it.
    - **Base drones and bases.** Nothing here is covered by a browser-free test beyond placement
      and arithmetic:
      - 4team: each corner base is a coloured **square**, in-world and on the minimap; 2team's
@@ -66,8 +71,9 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
      - Kill a base drone (poke in and out with something high-DPS): it dies, and a new one is
        orbiting that post ~1 s later. This is the one that most needs eyes on it — see item 23 on
        whether `BASE_DRONE_HP`/`BASE_DRONE_DAMAGE` are on the right scale at all.
-     - Walk into an enemy base: the drones run you down fast (`BASE_DRONE_CHASE_SPEED`, a level-0
-       tank's own top speed), and a drone knocked off its ring visibly sprints back and settles
+     - Walk into an enemy base: the drones run you down fast (`BASE_DRONE_CHASE_SPEED`, pinned to
+       the fastest *sustained* speed any build in this game can hold — see #14, not a level-0
+       tank's walking speed), and a drone knocked off its ring visibly sprints back and settles
        rather than ringing around the target radius. A drone drifting home (including a post-swoosh
        climb back to level 3) leans onto the next ring over a long, gentle arc, visibly different
        from a shape-hit/proximity peel's sharp ~60° jerk.
@@ -134,10 +140,14 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
 *Source: `physics.html`, the archived spade-squad diep.io physics page (2022). Community-derived,
 not diep source — one formula in it is internally implausible and is flagged as such below. Every
 "ours" number here was read off the current tree, and every ratio is arithmetic on those two, not
-a feel judgement. Nothing in this section has been changed; it is the scoping data #11 was waiting
-on. Numbers assume the real-world quantities `TICK_MS: 33` / `FRICTION: 0.964` implied (top speed,
-recoil, reload in seconds); the later `TICK_MS: 25` / `REF_TICK_MS: 40` split preserved those
-real-world quantities exactly, so no re-derivation is needed here.*
+a feel judgement. Numbers assume the real-world quantities `TICK_MS: 33` / `FRICTION: 0.964`
+implied (top speed, recoil, reload in seconds); the later `TICK_MS: 25` / `REF_TICK_MS: 40` split
+preserved those real-world quantities exactly, so no re-derivation is needed here.*
+
+*This started as pure scoping data for #11, but parts have since been adopted — the auto-turret
+spin rate (was #21), the FOV half of #19, and the per-cannon base `reload`/`back` values in #15/#16.
+Each item below now states what is still open; anything not stated as open has shipped and should
+not be "re-fixed".*
 
 14. **Movement: right shape, wrong stiffness, and level/stat scaling is the wrong *form*.**
 
@@ -160,60 +170,51 @@ real-world quantities exactly, so no re-derivation is needed here.*
     (`len = 0.556`, `FRICTION = 0.9422` at 25 ms; `len = 1.449`, `FRICTION = 0.9091` at diep's own
     40 ms), with `len = base × 1.07^MSpeedPts / 1.015^level`.
 
-    **The 284 u/s above is a level-0, no-upgrade tank walking — not this game's ceiling.**
-    `BASE_DRONE_CHASE_SPEED` is pinned to the real maximum, so `test/rooms.js`'s
-    `fastestTankSpeed()` measures it by replaying `entities/Player.js`'s own `motion()` + `shoot()`
-    recurrence over every reachable class at 6 Movement Speed and 6 Reload, firing continuously
-    with the recoil aimed along the direction of travel:
+    **The 284 u/s above is a level-0, no-upgrade tank walking — not this game's ceiling.** Riding
+    your own recoil is worth ~1.5× a plain walk. `BASE_DRONE_CHASE_SPEED` is pinned to that real
+    ceiling, measured live by `test/rooms.js`'s `fastestTankSpeed()` (replays `entities/Player.js`'s
+    own `motion()` + `shoot()` recurrence over every reachable class at 6 Movement Speed and 6
+    Reload, with the recoil aimed along the direction of travel). The level penalty
+    (`Physics.moveAccel` subtracts `level / MOVE_LEVEL_FALLOFF`) is why each class is fastest at the
+    lowest level it unlocks at. **Deliberately not recorded here as a number** — it is a live test,
+    so any retune that moves the ceiling (this item's `FRICTION`/`len`, #15's reload stat, #16's
+    `weight`) fails `test/rooms.js` and forces a matching re-pin of `BASE_DRONE_CHASE_SPEED` and
+    `BASE_DRONE_CHASE_TURN` in `lib/config.js`, rather than silently drifting apart. Run the test
+    to see the current leaderboard.
 
-    | build | sustained |
-    |---|---|
-    | **Fighter, level 29** (rear pair, `back 2.04776` on a 22-tick reload) | **399.2 u/s** |
-    | Machine Gun, level 12 | 394.1 |
-    | Booster, level 29 | 393.8 |
-    | Triangle, level 19 | 389.9 |
-    | Twin, level 12 | 372.8 |
-    | walking only, level 0, no upgrades | 284.0 |
+15. **Reload.** (Base per-cannon values are done for Basic/Twin/Machine Gun/Sniper/Assassin/
+    Destroyer/Hybrid. `can.reload` is denominated in reference-ticks — `lib/tick.js`, 40 ms loops,
+    the same unit diep's own "loops" use — so diep's raw loop counts drop in unconverted. Keep that
+    in mind for the two open pieces below; neither needs a tick conversion either.)
+    - **Overlord/Overseer are still unconverted, and need a decision first.** The reference's
+      merged "90 loops" row doesn't map cleanly onto the code: Overseer's cannon is 182, Overlord's
+      is a different 281, and both are drone-*summon* cooldowns rather than a bullet reload, so it
+      is ambiguous which one (or whether both) the figure describes. Resolve that before touching
+      either number.
+    - **The reload *stat*'s scaling (`up.Reload -= 0.092`/pt) needs an in-game measurement before
+      anything is adopted.** The reference writes `RT = ⌈X₀/1,875^br⌉`, which taken literally means
+      a Basic with 5 reload points fires *every loop* (25 shots/s) — not credible.
+      `1.875 = 1 + 0.125 × 7`, so it is almost certainly a mangled rendering of a linear form
+      reaching 1.875× fire rate at max stat. Under that reading diep is ×1.875 and ours is ×2.23
+      (6 pts) — close enough to leave alone. Under the literal reading nothing about our reload
+      stat is salvageable. Measure before choosing. Note this one moves the speed ceiling #14
+      pins `BASE_DRONE_CHASE_SPEED` to.
+    - **Left off the conversion on purpose — do not "finish the job" without re-deciding.**
+      Annihilator keeps its 87: unlike Hybrid (a literal stat-clone of Destroyer's cannon, so it
+      moved with it), Annihilator's other stats are already tuned away from Destroyer's, so its
+      reload reads as its own number. Likewise every tree descendant that merely *shared* a tier-1's
+      old value by coincidence (Flank Guard, Twin Flank/Triple Shot/Quad Tank/Triple Twin/Sprayer/
+      Triplet/Penta Shot/Octo Tank, Ranger, Booster) — each has its own barrel count/damage/pene, so
+      a shared number there is a family trait, not the copy-paste bug Twin's mismatched barrels were.
 
-    So riding your own recoil is worth ~1.4× a plain walk, and **~400 u/s is the ceiling any build
-    in this game can hold.** The level penalty (`Physics.moveAccel` subtracts `level /
-    MOVE_LEVEL_FALLOFF`) is why each class is fastest at the lowest level it unlocks at, and why no
-    higher-level build beats these. The helper is a live test, not a recorded number — a cannon or
-    stat retune that moves the ceiling fails `test/rooms.js` rather than silently drifting from
-    item 23's base-drone chase speed.
+16. **Knockback (`weight`) is 5–7× too weak — the whole column still wants replacing.**
+    (The recoil `back` column is done and is now diep's table 1:1. Two things about it that matter
+    going forward: **Annihilator was deliberately left off-table** for the same reason as its
+    reload in #15, and **the 1:1 conversion is only true at today's `FRICTION`** — if #14's is
+    adopted the whole column must be rescaled by `back = gu × 28 × (1-F)/F`, i.e. ×2.55 at
+    `F = 0.9244`.)
 
-15. **Reload is uniformly 1.4–2.0× too slow, and the reload *stat* may be far off.**
-    diep quantizes reload to whole 40 ms loops with `RT = ⌈X₀ / …⌉` — confirmed by the reference's
-    own table, where every non-integer technical time rounds up exactly (`7,5 x → 0,32 s`,
-    `22,5 → 0,92`, `59,9 → 2,4`). We quantize the same way (`Math.round(can.reload * up.Reload)`),
-    so only the constants are wrong:
-
-    | class | diep | ours | ratio | faithful `reload` @33ms |
-    |---|---|---|---|---|
-    | Basic / Twin | 15 loops = 0.60 s | 32 / 28 ticks = 1.06 / 0.92 s | 1.76× / 1.54× | 18 |
-    | Machine Gun (`Rifle`) | 8 = 0.32 s | 14 = 0.46 s | 1.44× | 10 |
-    | Sniper | 23 = 0.92 s | 55 = 1.82 s | 1.97× | 28 |
-    | Assassin | 30 = 1.20 s | 52 = 1.72 s | 1.43× | 36 |
-    | Destroyer | 60 = 2.40 s | 105 = 3.47 s | 1.44× | 73 |
-    | Overlord/Overseer | 90 = 3.60 s | 220 = 7.26 s | 2.02× | 109 |
-
-    **The stat needs an in-game measurement before adopting.** The reference writes
-    `RT = ⌈X₀/1,875^br⌉`, which taken literally means a Basic with 5 reload points fires *every
-    loop* (25 shots/s) — not credible. `1.875 = 1 + 0.125 × 7`, so it is almost certainly a mangled
-    rendering of a linear form reaching 1.875× fire rate at max stat. Under that reading diep is
-    ×1.875 and ours is ×2.23 (`up.Reload -= 0.092`/pt, 6 pts) — close enough to leave alone. Under
-    the literal reading nothing about our reload stat is salvageable. Measure before choosing.
-
-16. **Recoil is already diep's table (mostly); knockback is 5–7× too weak.**
-    At 28 units/gu, an impulse `v` decays to `v × F/(1-F) = 26.8 v` units of displacement, so
-    `back` ≈ diep's recoil in gu at a 0.957 conversion — i.e. **1:1**. Spot-checking against the
-    reference's recoil table: Basic `0.4` vs 0.4 ✅, Twin `0.3` vs 0.3 ✅ (but our Twin's two barrels
-    disagree — `0.3` and `0.4`), Machine Gun `0.6` vs 0.4 ❌, Sniper `0.3` vs 1.2 ❌ (4× weak),
-    Destroyer `3.8` vs 6.0 ❌. **Audit the whole `back` column against the table — it is a
-    copy job, not a retune.** (If #14's `FRICTION` changes, the conversion stops being 1:1:
-    `back = gu × 28 × (1-F)/F`, i.e. ×2.55 at `F = 0.9244`.)
-
-    Knockback did not get the same treatment and is an order of magnitude off:
+    The measured gap:
 
     | | diep, per loop of contact | ours, per tick of overlap | ratio |
     |---|---|---|---|
@@ -283,12 +284,6 @@ real-world quantities exactly, so no re-derivation is needed here.*
     - Note also that diep's FOV is *resolution-dependent* (fixed 0.55 px/du, so an ultrawide
       genuinely sees more) where ours scales to fit. Ours is the fairer design; flagged only so
       the difference stays deliberate.
-
-21. **Auto-turret spin is 2.2× too slow.** diep's `ω = 1 rad/s` exactly (`t_r = 2π s`). Ours is
-    ~0.455 rad/s in real-world terms (`entities/Player.js`'s `SPIN_RATE`, which also drives the `c`
-    auto-spin; base drones similarly in `entities/Bullet.js`). Faithful value is real-world
-    `1 rad/s`, expressed as a per-reference-tick constant through `lib/tick.js`. One constant now,
-    so both spins move together.
 
 22. **Things that already match — do not "fix" them.** Necromancer base drone count (diep
     `22 + 2·br`; ours `maxDrone = 22` — only the growth differs, ours is +1/reload point against

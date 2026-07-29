@@ -38,7 +38,7 @@ const AUTOTURRET_LEAD = 15.84;
 // Idle spin rate, per reference tick: an auto-turret with nothing to shoot at (shoot()), and the
 // `c` auto-spin toggle (update()). One constant, because they are meant to look like the same
 // motion - PENDING #21 retunes both together or neither.
-const SPIN_RATE = 0.01818;
+const SPIN_RATE = 0.04;
 
 class Player {
 	constructor(id, x, y, name, team, xpLvl, room) {

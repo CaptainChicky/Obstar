@@ -3038,13 +3038,19 @@ function growthTests(rooms) {
 */
 function autoSpinTests(rooms) {
 	console.log('\nthe `c` auto-spin:');
-	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const room = rooms[0];
 	const me = player(room, 0);
-	const saved = { dir: me.dir, c: me.inputs.c, spinning: me.spinning };
-	const step = tick.perTick(0.01818);
+	const saved = { dir: me.dir, c: me.inputs.c, spinning: me.spinning, autoDir: me.autoDir };
 
+	// Measured off the player's own idle auto-turret spin rather than a copy of SPIN_RATE pasted
+	// in here - PENDING #21 retunes that constant, and a duplicated literal would silently go
+	// stale (as it already had) instead of catching the one thing this file actually needs to
+	// guarantee: both spins share one rate, whatever it is.
 	me.inputs.c = 0; me.spinning = 0;
+	const autoDirBefore = me.autoDir;
+	me.update();
+	const step = me.autoDir - autoDirBefore;
+
 	me.autoDir = 3;   // deliberately nowhere near the barrel, which is the old bug's symptom
 	me.dir = 1.234;
 	me.inputs.c = 1;
@@ -3068,7 +3074,41 @@ function autoSpinTests(rooms) {
 	check('re-engaging picks up the new facing, not where the last spin ended',
 		Math.abs(me.dir - (-2.5 + step)) < 1e-9, me.dir);
 
-	me.inputs.c = saved.c; me.spinning = saved.spinning; me.dir = saved.dir;
+	/*
+		The wire half, and the one a human actually saw: net/gameSocket.js's keydown handler
+		toggles `inputs.c` the INSTANT the packet lands, but `spinning`/`spinDir` are only
+		established on the next room tick - and the send loop is not tied to the room simulation
+		(net/gameSocket.js's header says so outright). getBuffer()'s RAW.main is the live Player,
+		so an encode landing in that window used to read `inputs.c === 1` alongside a `spinDir`
+		still holding the PREVIOUS spin's end angle, and shipped it as the authoritative aim.
+		The client draws that field verbatim (User.realDir when User.followDir), so the barrel
+		snapped to the old spin's end for a frame before the next tick re-seeded it from the live
+		aim - "press c, it flicks to where the last spin stopped, then jumps back and spins".
+		Both fields are gated on `spinning` now, which is assigned in the same tick as spinDir.
+	*/
+	me.inputs.c = 0; me.spinning = 0;
+	room.step();
+
+	const B = 2.7, A = -1.1;
+	me.spinDir = B;          // a stale phase left behind by an earlier spin
+	me.dir = A;              // ...and the live aim a mousemove has since set
+	me.inputs.c = 1;         // the keydown packet lands - but NO tick has run yet
+
+	const raced = room.getBuffer(0);
+	check('an encode between the c keydown and the next tick does not ship the stale spin phase',
+		raced.main.dir === A, raced.main.dir);
+	check('...and does not claim the spin has started before the tick that starts it',
+		raced.main.states[1] === 0, raced.main.states[1]);
+
+	// After the tick, the spin owns the wire fields for real.
+	room.step();
+	const spun = room.getBuffer(0);
+	check('...but once the tick has run, the spin does own the wire dir',
+		spun.main.states[1] === 1 && spun.main.dir === me.spinDir, spun.main.dir);
+	check('...seeded from the live aim, not the stale phase',
+		Math.abs(spun.main.dir - (A + step)) < 1e-9, spun.main.dir);
+
+	me.inputs.c = saved.c; me.spinning = saved.spinning; me.dir = saved.dir; me.autoDir = saved.autoDir;
 }
 
 /*

@@ -120,7 +120,13 @@ function attach(httpServer, controller) {
 				const tank = controller.getPlayer(socket.id);
 				if (!controller.getPlayer(socket.id)) { break; }
 				if (tank.botMod) { break; }
-				tank.dir = data.data.dir;
+				// A mousemove packet lands whenever it lands - not synced to the room's tick loop -
+				// so while the `c` auto-spin owns `dir` (entities/Player.js's spin block writes it
+				// every tick), a stray mousemove arriving mid-spin used to stomp it with the raw
+				// mouse angle for one broadcast before the next tick put it back: a visible
+				// snap-and-return glitch. `mouse_x`/`mouse_y` still update unconditionally - only
+				// `dir` needs to stay owned by the spin.
+				if (!tank.spinning) { tank.dir = data.data.dir; }
 				tank.inputs.mouse_x = data.data.x * tank.screen;
 				tank.inputs.mouse_y = data.data.y * tank.screen * 0.5625;
 				break;

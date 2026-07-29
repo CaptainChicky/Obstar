@@ -1208,7 +1208,7 @@ class Room {
 		///
 		buff.main = {
 			states: [!!RAW.main.hit * 1,
-			!!RAW.main.inputs.c * 1,
+			!!RAW.main.spinning * 1,
 			!!RAW.main.dead * 1,
 			!!RAW.main.shield * 1, 0, 0],
 			class: RAW.main.class,
@@ -1221,7 +1221,16 @@ class Room {
 			// land between the tick that spun the tank and this encode, and the client draws this
 			// field verbatim (User.realDir/followDir) - so reading it here would splice one frame
 			// of mouse aim into the spin.
-			dir: RAW.main.inputs.c ? RAW.main.spinDir : RAW.main.dir,
+			//
+			// Gated on `spinning`, NOT on `inputs.c`, and so is states[1] above. The keydown
+			// handler in net/gameSocket.js toggles inputs.c the instant the packet lands, but
+			// `spinning`/`spinDir` are only established on the next room tick - and the send loop
+			// is not tied to the room simulation (see net/gameSocket.js's header). Encoding in
+			// that window with inputs.c already 1 read a `spinDir` still holding the PREVIOUS
+			// spin's end angle, so the client drew one frame pointing there before the next tick
+			// re-seeded it from the live aim: a visible snap-away-and-back on every re-press.
+			// `spinning` is set in the same tick that assigns spinDir, so it can never be stale.
+			dir: RAW.main.spinning ? RAW.main.spinDir : RAW.main.dir,
 			size: RAW.main.size,
 			alpha: RAW.main.alpha,
 			hp: RAW.main.hp / RAW.main.maxHp,
