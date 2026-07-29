@@ -175,7 +175,14 @@ The things in this codebase that are *not* obvious from reading the code around 
   `BODY_FRICTION` (0.956532) instead: bullets, traps, drones, shapes, and the Summoner boss's
   scripted drift. diep gives a bullet no drag term at all (`V_b = ρ/t_b`), so the old single shared
   constant was a tank recurrence running on bullets; the split *is* the faithful model, not a
-  workaround, and merging them back is not a simplification. `public/SHARE/TanksConfig.js`'s
+  workaround, and merging them back is not a simplification. **The tank `FRICTION` also owns
+  `TanksConfig.js`'s whole `back` (recoil) column** (plan.md step 3): recoil is a one-shot impulse
+  on tank velocity, whose total displacement under `v *= F; x += v` is `v₀·F/(1−F)`, so `back` is
+  diep's own per-shot recoil table in grid squares run through `back = gu × 28 × (1−F)/F` — which at
+  `F = 10/11` is exactly `gu × 2.8`, i.e. every entry in that column reads as its diep gu value ×
+  2.8. Edit `FRICTION` and that column has to be recomputed with it; nothing tests the relationship.
+  Knockback (`weight`) has the same shape but has **not** been rescaled yet — it is blocked on two
+  human calls (PENDING #16). `public/SHARE/TanksConfig.js`'s
   client (drawn) and server (spawn) cannon tables are cross-checked index-by-index by
   `test/tanks.js`, which fails `npm test` on drift instead of relying on a comment asking the next
   editor to keep two hand-authored tables in sync. What it caught (plan.md WP-CANNON, PENDING
@@ -258,7 +265,7 @@ curls back on — there is no separate RETURN state to enter or an explicit snap
 `orbitState` is written every tick purely for tests/the admin dump; nothing branches on it.
 
 **Chase and return are a real dash** (plan.md WP4.5.0): `BASE_DRONE_CHASE_SPEED` is **the fastest
-sustained speed any build in this game can hold** — 501.7 u/s, measured rather than asserted by
+sustained speed any build in this game can hold** — 527.2 u/s, measured rather than asserted by
 `test/rooms.js`'s `fastestTankSpeed()`, which replays `entities/Player.js`'s own `motion()`/
 `shoot()` recurrence over every reachable class at a full Movement Speed and a full Reload bar (the
 ceiling is a Sniper at level 15 riding its own recoil). It is pinned to exactly that
@@ -267,8 +274,8 @@ absurdly either, so lapping an enemy base in the fastest tank in the game is sti
 the head start and the `BASE_DRONE_LEASH` boundary, not on top speed. If a lap ever reads unfair,
 move `BASE_DRONE_LEASH`/`BASE_DRONE_DETECT`, **not** the chase speed, which is pinned to a
 measurement and fails `npm test` if a cannon retune moves the ceiling out from under it. A chasing
-drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 8.36 rad/s), since the
-limiter that governs a leisurely orbit would give a 502 u/s drone a turn radius wide enough to arc
+drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 8.79 rad/s), since the
+limiter that governs a leisurely orbit would give a 527 u/s drone a turn radius wide enough to arc
 around a strafing target instead of into it. A return is a chase back to the ring at the same speed
 — no separate constant — the orbit field's own target speed blends from cruise to dash as a
 smoothstep of how far off its ring the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone

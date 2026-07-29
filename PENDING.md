@@ -144,10 +144,13 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
      harder and stops harder — the e-fold time to top speed halved (0.90 s → 0.42 s), which is the
      "2.14× floatier" complaint in #14's table being paid off. Judge it as *responsiveness*, not
      just speed: a fresh spawn should feel crisp rather than skating. Two knock-ons to look at
-     while you are there: **recoil now reads weak** — `back` has not been rescaled yet (step 3), so
-     a Destroyer's kick is 2.2× short of where it will end up, and so is every knockback — and
-     **base drones are faster too** (`BASE_DRONE_CHASE_SPEED` re-pinned 423.7 → 501.7 u/s), so the
-     "lap an enemy base and survive" race below is being re-run at both ends at once.
+     while you are there: **recoil is diep's now** (`back`, plan.md step 3) — a Destroyer's own kick
+     should push it ~6 grid squares per shot and a Basic's ~0.4, measurable against the background
+     grid, though the live 25 ms tick delivers only ~0.64× of that until nuance 43 is settled;
+     **knockback is still 2.2× short** (`weight`, #16, two human calls) so ramming stays wrong — and
+     **base drones are faster twice over** (`BASE_DRONE_CHASE_SPEED` re-pinned 423.7 → 501.7 →
+     527.2 u/s), so the "lap an enemy base and survive" race below is being re-run at both ends at
+     once.
    - **Regen actually starts immediately** (#17). At 0 Health Regen points, take a few HP off a
      fresh 150 HP tank and watch the bar: it should begin creeping back straight away, where it
      used to sit dead flat for ~22 s before the first tick of healing landed.
@@ -244,23 +247,30 @@ decision has its own numbered item above and is only cross-referenced here.*
 
 ### Live right now — the tree is in a knowingly-wrong state
 
-31. **Recoil and knockback are both 2.20× too weak until plan.md step 3 lands.** `back` and
-    `weight` are impulses on *tank* velocity, so both were denominated against the old `FRICTION`
-    and neither moved when step 2 took it to `10/11`. This is deliberate and separable, not a
-    regression — but it means **anything judged by feel between now and step 3 is being judged in a
-    game where ramming and recoil are wrong**, including the item-6 browser checklist and
-    `BASE_DRONE_DAMAGE`'s playtest. Do not retune anything else against the current recoil.
-    62 cannons across 27 classes carry a nonzero `back`; the consumer is
-    [entities/Player.js](entities/Player.js#L303) (`tick.perTick(can.back)`), mirrored by
-    `test/rooms.js`'s `fastestTankSpeed()`. See #16.
+31. **Knockback is still ~2.2× too weak; recoil is not, since plan.md step 3.** `back` and `weight`
+    are both impulses on *tank* velocity, so both were denominated against the old `FRICTION` and
+    neither moved when step 2 took it to `10/11`. **`back` was rescaled in step 3** (all 62 cannons
+    across 27 classes, ×1.914 — the column is `gu × 2.8` now; the consumer is
+    [entities/Player.js](entities/Player.js#L303), `tick.perTick(can.back)`, mirrored by
+    `test/rooms.js`'s `fastestTankSpeed()`). **`weight` was not** — it is blocked on two human calls
+    (#16), so **ramming is still being judged in a game where knockback is wrong**, including the
+    item-6 browser checklist and `BASE_DRONE_DAMAGE`'s playtest. Do not retune anything else
+    against the current knockback. See #16, and nuance 43 for the separate live-tick shortfall that
+    affects both columns.
 
 32. **`BASE_DRONE_CHASE_SPEED`/`_TURN` will need re-pinning at least twice more.** The pair is
-    pinned to a live measurement, so every retune that touches the speed ceiling moves it: **step 3**
-    (recoil `back` is most of a recoil rider's speed — the premium over a plain walk is 1.38× today
-    and was 1.49× before step 2 raised the walk without raising `back`), then **#15's reload stat**
-    if M3 says our ×2.23 is wrong, then **#16's `weight`** if knockback ever enters the recurrence.
-    Always move both constants together: `turn = speed_u_per_s / 60 / 25` holds the ~60-unit turn
-    radius, and `lib/config.js`'s comment carries the whole chain of re-pins.
+    pinned to a live measurement, so every retune that touches the speed ceiling moves it.
+    **Step 3 did it** (`back` ×1.914 → ceiling 501.7 → **527.2 u/s**, still a Sniper L15), and the
+    remaining two are **#15's reload stat** if M3 says our ×2.23 is wrong, then **#16's `weight`**
+    if knockback ever enters the recurrence. Always move both constants together:
+    `turn = speed_u_per_s / 60 / 25` holds the ~60-unit turn radius, and `lib/config.js`'s comment
+    carries the whole chain of re-pins.
+    **Calibrate expectations from step 3 rather than from the "premium" framing.** The 1.38×/1.49×
+    figures quoted before it compared the *ceiling* against a level-0 no-upgrade walk (362.25 u/s),
+    not against the same tank's walk — the build that actually sets the ceiling is a **maxed-Movement
+    Sniper at L15, whose own walk is 473.8 u/s**, so recoil contributes only 27.9 u/s of the old
+    501.7 and 53.4 of the new 527.2. Doubling `back` therefore moved the ceiling **5.1%**, not ~40%,
+    and it stayed inside the test's own 5%-agreement band. Expect the same of #16's `weight`.
 
 ### Consequences of step 2 that are permanent, not transitional
 
@@ -282,8 +292,13 @@ decision has its own numbered item above and is only cross-referenced here.*
     *N+1*'s `Init()` — different tester spawn point, different bot roster — before a single tick has
     run. That is why step 2's rebaseline moved 276262 → 301969 ops without anything "new" happening,
     and why `ffa` (built first) stayed bit-identical while `2team`/`4team`/`boss` diverged wholesale.
-    **Every future physics step will produce the same illegible delta.** The technique that made it
-    readable is worth reusing rather than reinventing: override the constants at load time and
+    **A future physics step will produce the same illegible delta *whenever* it shifts the draw
+    count — but it does not always.** Step 3 (the `back` rescale) moved every tank's position from
+    tick 2 in all four modes and still came out to **+96 ops in one mode**, because it changed no
+    `Math.random()` *draw count* through `ffa`/`2team`/`4team` (proved by `boss`, built last,
+    rendering bit-identically). So check whether the stream shifted before assuming it did.
+    The technique that made both readable is worth reusing rather than reinventing: override the
+    constants at load time and
     re-run the corpus once per candidate cause, so each cause gets its own hash and the ones that
     contribute nothing are *proved* to contribute nothing. **If it becomes a nuisance, the fix is to
     re-seed per mode** so each room's corpus is independent — cheap, and it would have made step 2's
@@ -326,7 +341,36 @@ decision has its own numbered item above and is only cross-referenced here.*
     `lead` / `smoothing`) does not fail anything loudly — the value just silently stops being
     real-world-correct at the live tick rate. Read that file's header before adding any new per-tick
     constant, and note that several existing constants are deliberately **flat** (`AUTOTURRET_LEAD`,
-    the pet's `2.475`, `BOSS_DRIFT`) with the reasoning at each site.
+    the pet's `2.475`, `BOSS_DRIFT`) with the reasoning at each site. **Nuance 43 is a live instance
+    of exactly this.**
+
+43. **`tick.perTick()` is the wrong category for a ONE-SHOT velocity impulse, and recoil and every
+    collision knockback use it.** Found while landing plan.md step 3, pre-existing since the
+    `REF_TICK_MS` split, deliberately *not* fixed inside step 3 — it is a separate behavioural
+    change and folding it in would have made that step's `clientDiff` delta uninterpretable
+    (see 34). **This is not a step-3 regression; step 3's numbers are exactly right at the
+    reference tick.** The arithmetic, replayed rather than argued:
+    `Physics.stepBody` keeps `vec` in units **per reference tick** (`x += vx * dtTicks`), so a
+    velocity impulse added to it is already in reference units and must go in **flat**. Under
+    `perTick()` it is multiplied by `SCALE` *and* then integrated `SCALE`-sized steps, so the total
+    displacement picks up a spurious factor. For `back = 1.12` (Basic's 0.4 gu):
+
+    | | impulse via `tick.perTick()` | impulse flat |
+    |---|---|---|
+    | at 40 ms (`SCALE` 1) | 0.4000 gu | 0.4000 gu |
+    | at the live 25 ms (`SCALE` 0.625) | **0.2546 gu** | 0.4073 gu |
+
+    So the live game delivers **0.64×** the recoil the column says, where flat would deliver
+    1.018× — the same ordinary ~1.8% semi-implicit-Euler overshoot as 33, which is the tell that
+    flat is the right answer. Same bug, same size, at every other one-shot site:
+    `entities/Player.js`'s four collision impulses (lines ~423/436/461/498, including the `weight`
+    knockback #16 is about to rewrite). Contrast the genuinely per-tick uses of `perTick()` —
+    accelerations, `hp -= damage` per tick of contact — which are correct.
+    **The fix is a new `lib/tick.js` category** (`impulse(v) { return v; }`, flat, documented, so
+    the *category* records the decision rather than a bare unwrapped literal at each site), not an
+    edit to `back`. Doing it will move the speed ceiling and force another
+    `BASE_DRONE_CHASE_SPEED`/`_TURN` re-pin (32), so it wants its own step — and it wants deciding
+    **before** #16 rewrites `weight`, or that column gets tuned against a 0.64× consumption site.
 
 ### Judgement calls already taken that a later step could quietly undo
 
@@ -399,10 +443,10 @@ movement magnitudes plus the tank/body friction split — have shipped.*
     | stat cap / level cap | 7 points, 45 levels | 7 points, 45 levels | **matched** (#30, shipped) |
 
     **What is left of this item is the split it forced** (below — future work must not undo it)
-    **and the two columns that ride the tank's `F` and have not been rescaled yet**: recoil `back`
-    (plan.md step 3, factor 2.20, unblocked) and knockback `weight` (#16, blocked on two human
-    calls). **Both are under-scaled by 2.20× as of this step**, which is a known, temporary,
-    deliberate state — not a regression to chase.
+    **and one of the two columns that ride the tank's `F`**: recoil `back` was rescaled against it
+    in **plan.md step 3** (it is `gu × 28 × (1−F)/F` = `gu × 2.8` now), and knockback `weight` was
+    not — that one is still under-scaled and blocked on #16's two human calls. A known, temporary,
+    deliberate state, not a regression to chase.
 
     ### `FRICTION` is EXACT, and it is a *tank* constant — SHIPPED, and do not merge it back
 
@@ -500,50 +544,68 @@ movement magnitudes plus the tank/body friction split — have shipped.*
       Triplet/Penta Shot/Octo Tank, Ranger, Booster) — each has its own barrel count/damage/pene, so
       a shared number there is a family trait, not the copy-paste bug Twin's mismatched barrels were.
 
-16. **Knockback (`weight`) is ~5.5× too weak — the whole column still wants replacing.**
-    (The recoil `back` column matched diep's table 1:1 **at the old `FRICTION`**. Two things about
-    it that matter going forward: **Annihilator was deliberately left off-table** for the same
-    reason as its reload in #15, and — **now overdue, not conditional** — #14's `F = 10/11` HAS
-    been adopted (plan.md step 2), so the whole column is currently **under-scaled by 2.20×** and
-    must be rescaled by `back = gu × 28 × (1-F)/F`. That is **plan.md step 3**, which lands on its
-    own; the two were deliberately kept separable. **The factor is 2.20, not the 2.55 this item
-    used to claim** — 2.55 does not follow from the formula beside it under any reading;
-    `(1−0.9244)/0.9244 ÷ (1−0.964)/0.964 = 2.19` at the 33 ms reference and the same ratio at the
-    40 ms one (10/11 against 0.956532) is 2.20. Use the formula, not the old number. Since `back`
-    is an impulse on *tank* velocity, this is unaffected by whatever M1 finds out about bullet
-    motion — recoil follows the tank's `F`, always.)
+16. **Knockback (`weight`) is ~20× too weak on bullets — the whole column still wants replacing.**
+    (**The recoil half of this item is SHIPPED — plan.md step 3.** All 62 nonzero `back` entries,
+    across 27 classes, were recomputed as `back = gu × 28 × (1−F)/F` against the tank `F = 10/11`,
+    which collapses to a flat **`back = gu × 2.8`**: the column is now literally diep's
+    "Tanks Recoil" table in grid squares, times 2.8, and divides back to it. Verified by replaying
+    the recurrence, not by arithmetic — one Basic shot displaces exactly 0.4 gu at the reference
+    tick. **Annihilator stays off-table on purpose** at 4 gu against diep's 6.8, same call as its
+    reload in #15; the per-class cross-check of which other entries are diep's and which are our
+    own is in plan.md's step-3 record. **The applied factor was ×1.914, not the ×2.20 this item
+    predicted**, and the difference is not a mistake in either: 2.20 is the ratio of `(1−F)/F`
+    across step 2's friction change, but the pre-step-3 column was `gu × 1.462688` (a historical
+    "stepBody factor") rather than `gu × 28 × (1−F_old)/F_old = gu × 1.272424`, i.e. it was already
+    ~1.15× hot against diep's table. Deriving from the formula rather than scaling by 2.20 is what
+    removed that. Since `back` is an impulse on *tank* velocity, none of this is affected by
+    whatever M1 finds out about bullet motion — recoil follows the tank's `F`, always, and if `F`
+    is ever edited again the whole column moves with it.
+    **One caveat that applies to `weight` too, before the column below is rewritten: see nuance 43.**
+    Both are consumed through `tick.perTick()`, which is the wrong `lib/tick.js` category for a
+    one-shot impulse, so the live 25 ms tick delivers ~0.64× of whatever the column says. That is a
+    consumption-site bug, not a column bug — do **not** compensate for it by inflating `weight`.)
 
     The gap, re-measured against the **live code path** (`entities/Player.js`'s bullet arm) rather
     than recomputed from the pre-rescale tree:
 
     | | diep, per loop of contact | ours, today | ratio |
     |---|---|---|---|
-    | basic bullet (`weight` 0.27426) | 0.667 gu | 0.0725 gu | **9.2× weak** |
-    | common bullet (`weight` 0.45709) | varies by class | 0.1208 gu | — |
-    | tank body | 1.6 gu | 0.29 gu | **5.5× weak** |
+    | basic bullet (`weight` 0.27426) | 0.667 gu | **0.0333 gu** | **20.1× weak** |
+    | common bullet (`weight` 0.45709) | varies by class | **0.0554 gu** | — |
+    | tank body | 1.6 gu | 0.29 gu *(pre-step-2, not re-measured)* | ~5.5× weak |
     | drones | 0.8 gu | no separate value | — |
 
-    **The conversion factor was pinned at 0.264175 gu of displacement per unit of `weight`**,
-    measured by replaying the real recurrence (impulse `tick.perTick(weight/3 × 1.6)` into
-    `this.vec`, decayed through `Physics.stepBody`) **at the old `FRICTION`**. The full diep
-    Knockbackfactor table is in `physics.html`, so no measurement is left to do here.
-    **⚠ That 0.264175 is now stale.** Knockback lands on *tank* velocity, so it tracked #14's `F`
-    when plan.md step 2 moved it: a one-shot impulse's total displacement is `v₀·F/(1−F)`, which
-    went from 22.02·v₀ to 10·v₀, i.e. ×0.454 — so the figure lands near **0.1200 gu**. Re-verify
-    that by replaying the recurrence rather than adopting the arithmetic, at the same time the
-    column is rewritten. Like `back`, it is independent of whatever M1 finds about bullet motion.
+    **The conversion factor is 0.121222 gu of displacement per unit of `weight`** at the live 25 ms
+    tick, measured by replaying the real recurrence (impulse `tick.perTick(weight/3 × 1.6)` into
+    `this.vec`, decayed through `Physics.stepBody`). The full diep Knockbackfactor table is in
+    `physics.html`, so no measurement is left to do here.
+    **It was 0.264175 before plan.md step 2** — knockback lands on *tank* velocity, so it tracked
+    #14's `F`: a one-shot impulse's total displacement is `v₀·F/(1−F)`, which went from 22.02·v₀ to
+    10·v₀, i.e. ×0.454. Step 3 **re-verified the new figure by replaying the recurrence** rather
+    than adopting that arithmetic (which predicted ~0.1200); the two bullet rows above were
+    re-measured from the same replay, and the tank-body row was left alone because it comes off a
+    different call site (`entities/Player.js:461`'s speed-dependent `len`) that is #16's own work to
+    revisit. **The gap therefore got worse, not better, at step 2** — a basic bullet's knockback is
+    20× short of diep now, where the pre-step-2 figure was 9.2×. Like `back`, all of this is
+    independent of whatever M1 finds about bullet motion. **And see nuance 43** — 0.121222 is a
+    *live-tick* number that includes a ~0.64× loss to a wrong `tick.js` category; at the 40 ms
+    reference the same replay gives 0.190476, and that is the figure a rewrite of the column should
+    be denominated against.
 
     **Two things block finishing it, both human calls:**
     - **~7 of our classes are not in diep's table at all**, so a complete replacement cannot be
       read off it: Cyclone, Submachine, Auto Hover, Fortress, Summoner and Rocket have no diep
       counterpart, and plain **Gunner** is a real diep tank that the Knockbackfactor table simply
-      omits. Converting only the mappable classes leaves Basic at 5.5× its current knockback while
+      omits. Converting only the mappable classes leaves Basic at ~20× its current knockback while
       Cyclone keeps the old value — a worse balance state than either endpoint, so this wants doing
       atomically with a decision for the unmapped seven.
     - **The 33 ms → 40 ms rescale did not preserve this column.** At 33 ms a `weight` of 0.3 gave
-      0.09563 gu; today's 0.45709 gives 0.12075 gu — **1.26× more knockback than before the
+      0.09563 gu; the 0.45709 it became gave 0.12075 gu — **1.26× more knockback than before the
       "one-time relabelling, not a balance change" conversion**, and dropping the `× 1.6` instead
       gives 0.07547 (0.79×). Neither reproduces the original, so one of the two factors is wrong.
+      (Both of those are **pre-step-2** figures, at the old `FRICTION`; the 1.26× is a ratio between
+      two states of that era and is unaffected by step 2 scaling both sides. Do not compare them
+      against the 0.0554 in the table above.)
       Worth settling *before* the column is rewritten, since the same factor scales the new values.
 
     diep also *inverts* knockback against damage — Destroyer 0.2 gu, Annihilator 0.1 gu, against

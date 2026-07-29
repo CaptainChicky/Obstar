@@ -76,9 +76,11 @@
 		what diep actually does with them.
 
 		Recoil (`back`) and knockback (`weight`) are impulses on TANK velocity, so they follow this
-		F and nothing M1 finds about bullets can move them. Both columns are consequently
-		UNDER-SCALED by (1-F_old)/F_old / ((1-F)/F) = 2.20x until plan.md step 3 rescales `back`;
-		`weight` is blocked on two human calls (PENDING #16).
+		F and nothing M1 finds about bullets can move them. `back` was rescaled against this F in
+		plan.md step 3 and is now `gu x 28 x (1-F)/F` = `gu x 2.8` exactly - so if F is ever edited
+		again, public/SHARE/TanksConfig.js's whole `back` column has to be recomputed with it.
+		`weight` has NOT been rescaled and is still under-scaled by roughly this F change; it is
+		blocked on two human calls (PENDING #16).
 	*/
 	exports.MOVE_STAT_MUL = 1.07;    // per Movement Speed upgrade point
 	exports.MOVE_LEVEL_DIV = 1.015;  // per level

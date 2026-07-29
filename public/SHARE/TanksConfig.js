@@ -1406,8 +1406,8 @@
 		///SERVER///
 		/*
 			Every number below is denominated against config.REF_TICK_MS (40ms), not the server's
-			actual TICK_MS - see lib/tick.js. Two columns are worth naming because they are the ones
-			a reader is most likely to try to "fix":
+			actual TICK_MS - see lib/tick.js. Three columns are worth naming because they are the
+			ones a reader is most likely to try to "fix":
 
 			`speed` is a bullet's CRUISE THRUST, an acceleration per reference tick squared. It is
 			consumed by entities/Bullet.js's motion tail as tick.quadratic(), not tick.perTick() -
@@ -1419,8 +1419,29 @@
 			rescaled with it - a bullet's one-time muzzle kick was correct before that fix - so
 			entities/Bullet.js divides the 1.6 back out at that one site (SPEED_RESCALE there).
 
+			`back` is RECOIL, and it is the one column here that is fully derived rather than tuned:
+			it is diep's own per-shot recoil table (physics.html's "Tanks Recoil", in GRID SQUARES)
+			run through `back = gu x 28 x (1-F)/F`, F being the TANK friction in
+			public/SHARE/Physics.js. That expression is just the inverse of a one-shot impulse's
+			total displacement under the recurrence `v *= F; x += v` (which sums to v0 x F/(1-F)),
+			so at F = 10/11 it collapses to a flat `back = gu x 2.8` and EVERY entry below is
+			readable as its diep gu value x 2.8: 0.28 is 0.1 gu, 1.12 is Basic's 0.4 gu, 16.8 is
+			Destroyer's 6 gu. Divide by 2.8 to read the table back. If the tank F ever moves again,
+			this whole column moves with it - it does NOT track whatever MEASUREMENTS.md's M1 finds
+			about bullets, because recoil is an impulse on the TANK. (plan.md step 3.) The gu
+			values are NOT all diep's, though the conversion is: Annihilator's 4 against diep's 6.8
+			is deliberately off-table, same call as its reload (PENDING #15/#16), and about a third
+			of the roster carries a gu we tuned ourselves rather than the table's. The per-class
+			cross-check of which is which is in plan.md's step-3 record - do not "finish the job"
+			off physics.html without reading it, that is a balance call, not a conversion.
+
 			`weight` is a knockback impulse, applied once per tick of contact and then decayed by
-			the recipient's own friction - a one-time-impulse shape, already invariant, untouched.
+			the recipient's own friction. It has NOT been rescaled against the tank F the way `back`
+			was - that is PENDING #16, blocked on two human calls. And note that neither column is
+			actually tick-rate invariant at its consumption site: a one-shot impulse goes through
+			tick.perTick(), which is the wrong lib/tick.js category for one, so the live 25ms tick
+			delivers ~0.64x of what these numbers say. That is a consumption-site bug (PENDING #43)
+			- do NOT compensate for it by inflating either column.
 		*/
 		{
 			"Basic": new function () {
@@ -1443,7 +1464,7 @@
 					this.size = 18;
 					///
 					this.weight = 0.27426;
-					this.back = 0.58508;
+					this.back = 1.12;
 				}
 			},
 			"Flank Guard": new function () {
@@ -1465,7 +1486,7 @@
 					this.size = 18;
 					///
 					this.weight = 0.27426;
-					this.back = 0.58508;
+					this.back = 1.12;
 				}
 				this.cannons[1] = {
 					reload: 26,
@@ -1482,7 +1503,7 @@
 					size: 17,
 					///
 					weight: 0.45709,
-					back: 1.75523
+					back: 3.36
 				};
 			},
 			"Twin": new function () {
@@ -1504,7 +1525,7 @@
 					this.size = 17;
 					///
 					this.weight = 0.27426;
-					this.back = 0.43881;
+					this.back = 0.84;
 				};
 				this.cannons[0] = new function () {
 					this.reload = 15;
@@ -1522,7 +1543,7 @@
 					this.size = 17;
 					///
 					this.weight = 0.27426;
-					this.back = 0.43881;
+					this.back = 0.84;
 				};
 			},
 			"Machine Gun": new function () {
@@ -1543,7 +1564,7 @@
 					this.size = 18;//17
 					///
 					this.weight = 0.27426;
-					this.back = 0.58508;
+					this.back = 1.12;
 				}
 			},
 			"Sniper": new function () {
@@ -1564,7 +1585,7 @@
 					this.size = 18;
 					///
 					this.weight = 0.54851;
-					this.back = 1.75523;
+					this.back = 3.36;
 				}
 			},
 			///
@@ -1586,7 +1607,7 @@
 					size: 16,
 					///
 					weight: 0.45709,
-					back: 0.58508
+					back: 1.12
 				}));
 				c[0].offx = 6; c[0].offdir = .4;
 				c[1].offx = -6; c[1].offdir = -.4;
@@ -1664,7 +1685,7 @@
 					///
 					exitSpeed: 53,
 					weight: 0.27426,
-					back: 8.77613
+					back: 16.8
 				}));
 				///
 				this.cannons = c;
@@ -1687,7 +1708,7 @@
 					this.size = 19;
 					///
 					this.weight = 0.54851;
-					this.back = 0.43881;
+					this.back = 0.84;
 				}
 			},
 			"Overseer": new function () {
@@ -1735,13 +1756,13 @@
 					size: 16,
 					///
 					weight: 0.45709,
-					back: 1.46269
+					back: 2.8
 				}));
 				// The main cannon's length bump used to write `.height`, a client-only field
 				// name the server never reads (Player.js:212 reads `canonLength`), so this
 				// line was a no-op and the cannon stayed at the 58 default. test/tanks.js's
 				// muzzle-tip band caught it once canonLength was corrected.
-				c[0].back = 0.14627; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.45344;
+				c[0].back = 0.28; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.45344;
 				c[1].offdir = -Math.PI - .4; c[1].offx = -5; c[1].offTime = .5;
 				c[2].offdir = -Math.PI + .4; c[2].offx = 5; c[2].offTime = .5;
 				///
@@ -1768,7 +1789,7 @@
 					///
 					this.exitSpeed = 60;
 					this.weight = 0.27426;
-					this.back = 0.58508;
+					this.back = 1.12;
 				}
 			},
 			///
@@ -1789,7 +1810,7 @@
 					size: 16,
 					///
 					weight: 0.91418,
-					back: 1.24328
+					back: 2.38
 				}));
 				c[1].offdir = -Math.PI + .4; c[1].offx = 5;
 				this.cannons = c;
@@ -1815,7 +1836,7 @@
 					///
 					exitSpeed: 53,
 					weight: 0.27426,
-					back: 8.77613
+					back: 16.8
 				}));
 				c.push({
 					reload: 165,
@@ -1836,7 +1857,7 @@
 					///
 					exitSpeed: 25,
 					weight: 0.36567,
-					back: 0.14627
+					back: 0.28
 				})
 				///
 				this.cannons = c;
@@ -1861,7 +1882,7 @@
 					///
 					exitSpeed: 53,
 					weight: 0.27426,
-					back: 5.85075
+					back: 11.2
 				}));
 				///
 				this.cannons = c;
@@ -1883,7 +1904,7 @@
 					size: 15,
 					///
 					weight: 0.45709,
-					back: 0.21941
+					back: 0.42
 				}));
 				// This array is index-paired against the client's cannons list in
 				// TanksConfig.js's ///CLIENTS/// half (longest barrel first, at index 0,
@@ -1915,7 +1936,7 @@
 					this.size = 19;
 					///
 					this.weight = 0.63992;
-					this.back = 1.17015;
+					this.back = 2.24;
 				}
 			},
 			"Triplet": new function () {
@@ -1936,7 +1957,7 @@
 					size: 16,
 					///
 					weight: 0.45709,
-					back: 0.58508
+					back: 1.12
 				}));
 				c[0].offx = 17;
 				c[1].offx = -17;
@@ -1988,7 +2009,7 @@
 					size: 16,
 					///
 					weight: 0.45709,
-					back: 0.40955
+					back: 0.784
 				}));
 				c[0].offx = 7; c[0].offdir = .6;
 				c[1].offx = -7; c[1].offdir = -.6;
@@ -2072,11 +2093,11 @@
 					size: 16,
 					///
 					weight: 0.45709,
-					back: 1.25791
+					back: 2.408
 				}));
 				// Same `.height`-instead-of-`.canonLength` typo as Triangle above; these three
 				// lines were no-ops until test/tanks.js caught it.
-				c[0].back = 0.29253; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.468064;
+				c[0].back = 0.56; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.468064;
 				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
 				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
 				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 58; c[3].offTime = .5;
@@ -2101,19 +2122,19 @@
 					size: 16,
 					///
 					weight: 0.45709,
-					back: 0.14627
+					back: 0.28
 				}));
 				// Same `.height`/`.canonLength` typo as Triangle/Booster above, plus a second
 				// one: the rear pair's offx was written to c[1]/c[2] (already set two lines
 				// up) instead of c[3]/c[4], so the rear cannons never got their splay and the
 				// side cannons silently lost theirs. test/tanks.js's index-paired offx check
 				// is what caught both.
-				c[0].back = 0.14627; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 4; c[0].speed = 0.45344;
+				c[0].back = 0.28; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 4; c[0].speed = 0.45344;
 				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 1.4; c[1].damage = 3.87879; c[1].speed = 0.438816;
 				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 1.4; c[2].damage = 3.87879; c[2].speed = 0.438816;
 				c[3].offdir = -Math.PI - .4; c[3].offx = -5; c[3].offTime = .5; c[3].canonLength = 59;
 				c[4].offdir = -Math.PI + .4; c[4].offx = 5; c[4].offTime = .5; c[4].canonLength = 59;
-				c[3].back = c[4].back = 2.04776;
+				c[3].back = c[4].back = 3.92;
 				///
 				this.cannons = c;
 			},
@@ -2145,7 +2166,7 @@
 					size: 14,
 					///
 					weight: 0.27426,
-					back: 0.14627
+					back: 0.28
 				}];
 				c = c.concat(new Array(3).fill(null).map(() => ({
 					reload: 25,
@@ -2162,7 +2183,7 @@
 					size: 16,
 					///
 					weight: 0.45709,
-					back: 1.46269
+					back: 2.8
 				})));
 				// `.height` was a typo for `.canonLength` (see Triangle/Booster/Fighter
 				// above), and it targeted c[0] - the auto-turret, already fully specified
@@ -2173,7 +2194,7 @@
 				// `cannons` array), which is why this one wasn't caught by the muzzle-tip
 				// band the way its siblings were - found by the same static read that fixed
 				// them.
-				c[1].back = 0.14627; c[1].canonLength = 62; c[1].pene = 1.35; c[1].damage = 4;
+				c[1].back = 0.28; c[1].canonLength = 62; c[1].pene = 1.35; c[1].damage = 4;
 				c[2].offdir = -Math.PI - .4; c[2].offx = -5; c[2].offTime = .5;
 				c[3].offdir = -Math.PI + .4; c[3].offx = 5; c[3].offTime = .5;
 				///
@@ -2202,7 +2223,7 @@
 					///
 					exitSpeed: 25,
 					weight: 0.45709,
-					back: 0.14627
+					back: 0.28
 				}));
 				c[1].offdir = Math.PI / 2;
 				c[2].offdir = Math.PI;
@@ -2233,7 +2254,7 @@
 					///
 					exitSpeed: 25,
 					weight: 0.45709,
-					back: 0.14627
+					back: 0.28
 				}]
 				this.cannons = c;
 			},
@@ -2354,7 +2375,7 @@
 					///
 					exitSpeed: 70,
 					weight: 0.27426,
-					back: 1.75523
+					back: 3.36
 				}];
 				this.cannons = c;
 			},
@@ -2379,7 +2400,7 @@
 					///
 					exitSpeed: 60,
 					weight: 0.27426,
-					back: 1.17015
+					back: 2.24
 				}];
 				c = c.concat(new Array(2).fill(null).map(() => ({
 					reload: 206,
@@ -2400,7 +2421,7 @@
 					///
 					exitSpeed: 25,
 					weight: 0.45709,
-					back: 0.14627
+					back: 0.28
 				})));
 				c[2].offdir = Math.PI * 4 / 3; c[2].offTime = .5;
 				this.cannons = c;
@@ -2433,7 +2454,7 @@
 					size: 14,
 					///
 					weight: 0.27426,
-					back: 0.14627
+					back: 0.28
 				}];
 				c.push({
 					reload: 30,
@@ -2453,7 +2474,7 @@
 					///
 					exitSpeed: 60,
 					weight: 0.27426,
-					back: 1.17015
+					back: 2.24
 				});
 				this.cannons = c;
 			},
@@ -2475,7 +2496,7 @@
 					this.size = 23;//17
 					///
 					this.weight = 0.27426;
-					this.back = 1.17015;
+					this.back = 2.24;
 				}
 			},
 			///dev
@@ -2533,7 +2554,7 @@
 					size: 14,
 					///
 					weight: 0.27426,
-					back: 0.14627
+					back: 0.28
 				}];
 				c = c.concat(new Array(4).fill(null).map(() => ({
 					reload: 27,

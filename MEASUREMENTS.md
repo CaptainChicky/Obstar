@@ -192,9 +192,13 @@ list lives in **[plan.md](plan.md)**, which is what the work is actually being r
    shipped as `lib/constants.js`'s `BODY_FRICTION` (0.956532), which is what **M1 below is
    measuring** — bullets, traps, drones, shapes and the boss's drift are bit-identical until it
    lands. Do not merge the two constants back together.
-3. **#16 recoil + knockback columns** — both act on *tank* velocity, so once #14's `F` is set they
-   are pure arithmetic against the Knockbackfactor table. Still gated on the ~7-class roster
-   decision and the 1.26× rescale error, neither of which is a measurement.
+3. ~~**#16 recoil** — acts on *tank* velocity, so once #14's `F` is set it is pure arithmetic
+   against the recoil table.~~ **DONE.** `back = gu × 28 × (1−F)/F` = `gu × 2.8`, all 62 entries;
+   the column divides by 2.8 straight back into `physics.html`'s "Tanks Recoil" table.
+   **#16 knockback** (`weight`) is the same shape and is still open — gated on the ~7-class roster
+   decision and the 1.26× rescale error, neither of which is a measurement. Note PENDING #43 before
+   rewriting it: the consumption site loses ~0.64× at the live tick, and that is a `lib/tick.js`
+   category bug to fix separately, not something to compensate for in the column.
 4. **#17 health + regen** — `MH₀`, the linear rate and the hyper threshold are all known; the hyper
    *rate* is solvable from the published time-to-full table. Do it after #30 so the domain is 7.
 5. **#23 `BASE_DRONE_HP` → 6400** — decided.
