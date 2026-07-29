@@ -42,6 +42,14 @@ function attach(httpServer, controller) {
 			case 'ping':
 				if (socket.main) {
 					socket.main.heartbeats = 0;
+					// probe 1 is a client-timed RTT probe (PENDING #24a): echo it straight back,
+					// same tick, no state kept here - the client owns the clock. probe 0 is the
+					// ordinary heartbeat and is answered by longloop()'s own ping, not here.
+					// The break is what the fallthrough into 'init' below already did for a
+					// connected socket (`if (socket.main) { break; }`); it is spelled out now so
+					// the echo has somewhere to sit. An unconnected socket still falls through.
+					if (data.data.probe) { talk(socket, 'ping', 1); }
+					break;
 				}
 			case 'init': {
 				if (socket.main) {

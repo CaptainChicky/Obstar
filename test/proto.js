@@ -50,14 +50,19 @@ const KEY = '0'.repeat(25);
 /// 1. the wire has not moved ///////////////////////////////////////////////////
 /*
 	Captured from the hand-rolled implementation this replaced. Read them as
-	[type byte][payload]: 'ping' is a bare 0x06, 'keydown w' is 0x02 0x01, and so on.
+	[type byte][payload]: 'keydown w' is 0x02 0x01, and so on.
+
+	'ping' is the one vector that has deliberately moved off the pre-refactor capture: it used to
+	be a bare 0x06 and now carries a probe byte (PENDING #24a), so 0x06 0x00 is the heartbeat and
+	0x06 0x01 the RTT probe the server echoes verbatim.
 */
 function golden() {
 	console.log('wire format (vectors from the pre-refactor encoder):');
 	const cases = [
 		['init', client.encode('init', { key: KEY, gm: 'ffa', name: 'ab', pet: -1 }),
 			'001930303030303030303030303030303030303030303030303030000200610062ff'],
-		['ping', client.encode('ping', 0), '06'],
+		['ping', client.encode('ping', 0), '0600'],
+		['ping probe', client.encode('ping', 1), '0601'],
 		['keydown w', client.encode('keydown', 'w'), '0201'],
 		['keyup enter', client.encode('keyup', 'enter'), '0308'],
 		['mousemove', client.encode('mousemove', { x: 0.5, y: -0.25, dir: 1.5 }), '047fffc0013fc00000'],
@@ -66,7 +71,8 @@ function golden() {
 		['chat', client.encode('chat', 'hi'), '0d0200680069'],
 		['com', client.encode('com', '/x'), '0b022f78'],
 		///
-		['ping (server)', server.encode('ping', 0), '06'],
+		['ping (server)', server.encode('ping', 0), '0600'],
+		['ping probe (server)', server.encode('ping', 1), '0601'],
 		['kick', server.encode('kick', 'ERR_SERVER_FULL'), '0103'],
 		['UpdateUp', server.encode('UpdateUp', [1, 2, 3]), '0803010203'],
 		['comResponse', server.encode('comResponse', ['ab']), '0c01026162'],

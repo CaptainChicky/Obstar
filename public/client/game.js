@@ -170,7 +170,14 @@
 				*/
 				const Ui = General['Ui'];
 				const ups = (CLASS[this.class] && CLASS[this.class].ups) ? CLASS[this.class].ups : TanksConfig.defaultUps;
-				const mspeedIdx = ups.indexOf('Movement Speed');
+				// `ups` is PANEL order (the labels down the upgrade column); Ui.upNb is WIRE order
+				// (entities/Player.js's `up` object, which orders MSpeed first). They are not the
+				// same list - CONST.UP_ORDER is the panel->wire map ui.js already draws through,
+				// and 'Movement Speed' sits at panel 4 against wire 0. Indexing upNb by the panel
+				// slot read Bullet Damage's points and predicted the local tank's speed off the
+				// wrong stat entirely; it only looked plausible because both are usually 0.
+				const panelIdx = ups.indexOf('Movement Speed');
+				const mspeedIdx = (panelIdx >= 0) ? CONST.UP_ORDER[panelIdx] : -1;
 				const mspeedPoints = (mspeedIdx >= 0 && Ui && Ui.upNb) ? (Ui.upNb[mspeedIdx] || 0) : 0;
 				const lvl = (Ui && Ui.lvl) || 0;
 				const tickLen = (Global.dtFrames / FRAMES_PER_TICK);
@@ -179,7 +186,8 @@
 				// this to per-frame, not this variable (that one-step conversion here is the bug
 				// PENDING #24 measured: it scaled by tickLen once where the accel-to-position
 				// conversion needs tickLen^2).
-				const accel = Physics.moveAccel(mspeedPoints * Physics.MOVE_ACCEL_PER_UP, lvl);
+				// A point count now, not points * a per-point accel bonus - see Physics.moveAccel().
+				const accel = Physics.moveAccel(mspeedPoints, lvl);
 				if (Global.inputs.w || Global.inputs.ArrowUp) { motionDir[0] -= accel; }
 				if (Global.inputs.s || Global.inputs.ArrowDown) { motionDir[0] += accel; }
 				if (Global.inputs.a || Global.inputs.ArrowLeft) { motionDir[1] -= accel; }
@@ -189,9 +197,27 @@
 				Physics.stepBody(this.predic, Math.cos(ddir) * llen, Math.sin(ddir) * llen, tickLen);
 				let tolen = Math.sqrt(Math.pow(this.predic.x, 2) + Math.pow(this.predic.y, 2));
 				tolen += (-tolen) * General['lerpK'](CONST.SMOOTH);
-				// The decay alone does not bound the lead, so cap it explicitly - a lead should
-				// read as "slightly ahead", never as a teleport when the server position lands.
-				tolen = Math.min(tolen, CONST.SIZE * 2);
+				/*
+					The cap is derived now, not tuned (PENDING #24a). What the lead has to cover is
+					exactly how far the tank travels during the two delays between the server
+					knowing where it is and us drawing it: Interp's deliberate one-interval render
+					delay, plus half the round trip the newest snapshot already spent in flight.
+					NET.leadMs() is those two, both measured; the speed it multiplies is `predic`'s
+					own velocity, which integrates the server's accel/friction and so converges to
+					whatever this tank's real top speed is at its level and Movement Speed.
+
+					`predic`'s velocity is per *reference* tick (public/SHARE/Physics.js), so it
+					converts to units-per-ms by REF_TICK, not by the send interval or the frame.
+
+					The old cap was CONST.SIZE*2 - a flat 70 units regardless of speed, latency or
+					packet rate, which over-led a slow tank on a good connection by 4x and was the
+					thing actually deciding the size of the lie. It stays as the ceiling, because a
+					lead should never read as a teleport no matter what a hostile RTT measurement
+					says: NET.echo() already rejects the absurd ones, this bounds the rest.
+				*/
+				const predicSpeed = Math.sqrt(this.predic.vx * this.predic.vx + this.predic.vy * this.predic.vy);
+				const leadCap = NET.leadMs() * (predicSpeed / MOTION.REF_TICK);
+				tolen = Math.min(tolen, leadCap, CONST.SIZE * 2);
 				ddir = Math.atan2(this.predic.y, this.predic.x);
 				this.predic.x = Math.cos(ddir) * tolen;
 				this.predic.y = Math.sin(ddir) * tolen;
@@ -802,6 +828,12 @@
 			const type = decoded.type;
 			switch (type) {
 				case 'ping': {
+					// probe 1 is our own probe coming back off the server (PENDING #24a). Time it
+					// and we are done - it is not a heartbeat and must not start the loop below.
+					if (decoded.data.probe) {
+						NET.echo();
+						break;
+					}
 					if (!General['PING']) {
 						General['PING'] = new function () {
 							this.run = function () {
@@ -809,7 +841,14 @@
 									console.log('ping stopped');
 									return;
 								}
+								// The heartbeat the server counts (probe 0), unchanged...
 								General['WS'].send(PROTO.encode('ping', 0))
+								// ...and an RTT probe (1) the server echoes verbatim. Separate
+								// packets because they answer different questions: the heartbeat
+								// only has to arrive, the probe has to come back. Two bytes a
+								// second between them.
+								NET.probe();
+								General['WS'].send(PROTO.encode('ping', 1))
 								setTimeout(it => it.run(), 1000, this)
 							}
 							this.stop = 0;

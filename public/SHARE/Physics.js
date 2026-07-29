@@ -23,17 +23,48 @@
 	// naive 40/33 changes that steady state by ~17%. The correct factor was solved numerically
 	// (binary search against the exact stepBody recurrence, verified to reproduce the old
 	// 284 u/s base top speed to <1%): 1.462688, not 40/33's 1.212121.
-	// MOVE_LEVEL_FALLOFF is a per-*level* falloff, not per-tick, so it is unaffected by either
-	// tick and keeps its original value.
+	// MOVE_STAT_MUL / MOVE_LEVEL_DIV are per-*point* and per-*level*, not per-tick, so they are
+	// unaffected by either tick rate.
 	exports.FRICTION = 0.956532;
 	exports.MOVE_ACCEL_BASE = 0.511941;
-	exports.MOVE_ACCEL_PER_UP = 0.029254;   // per Movement Speed upgrade point
-	exports.MOVE_LEVEL_FALLOFF = 155;
 
-	// Per-tick acceleration. `mspeedBonus` is the already-summed float the server keeps in
-	// up.MSpeed; the client passes points * MOVE_ACCEL_PER_UP.
-	exports.moveAccel = function (mspeedBonus, level) {
-		return exports.MOVE_ACCEL_BASE + mspeedBonus - level / exports.MOVE_LEVEL_FALLOFF;
+	/*
+		Level and Movement Speed are independent multipliers on the base accel, diep's own form
+		(PENDING #14). Both used to be additive terms on the same accel:
+
+			base + 0.029254 * points - level / 155
+
+		which is the load-bearing mismatch #14 measured, for two reasons that have nothing to do
+		with the constants being off:
+
+		1. THE TWO TERMS FOUGHT OVER ONE SUM. Maxing Movement Speed is supposed to buy back what
+			 leveling costs. Additively it could not: a level-30 tank with all 6 points sat at 0.79x
+			 a fresh spawn's speed, so the stat was a partial refund rather than a counterweight.
+			 As independent multipliers it lands at 0.96x (1.07^6 / 1.015^30) - diep's own ratio at
+			 the same level is 1.03x, and the remaining gap is entirely our 6-point stat cap against
+			 diep's 7, not the form.
+		2. THE LEVEL TERM HAD NO FLOOR. `- level/155` reaches zero accel at level 54 and goes
+			 negative after; only the 30-level cap was hiding it. A divisor cannot.
+
+		The magnitudes are unchanged and deliberately so - MOVE_ACCEL_BASE and FRICTION still
+		produce the same 284 u/s base top speed they did before this change. #14 also proposes
+		replacing those two (base 1.449 / FRICTION 0.9091 at this 40ms reference, which is diep's
+		12.94 gu/s and its v_max = 10 x A ratio exactly), but FRICTION is global - entities/Bullet.js
+		and entities/Objects.js decay through the same constant via lib/constants.js - so moving it
+		rescales every bullet's top speed by 2.2x as a side effect. #16 says how to re-derive the
+		recoil column when that happens and nothing says how to re-derive the bullet `speed` column,
+		which #23 lists as never measured in the first place. That swap is therefore still open;
+		this change is only the form.
+	*/
+	exports.MOVE_STAT_MUL = 1.07;    // per Movement Speed upgrade point
+	exports.MOVE_LEVEL_DIV = 1.015;  // per level
+
+	// Per-tick acceleration. `mspeedPoints` is a POINT COUNT (0-6), not a pre-summed bonus - the
+	// server keeps it in up.MSpeed, the client reads it off the wire's upNb.
+	exports.moveAccel = function (mspeedPoints, level) {
+		return exports.MOVE_ACCEL_BASE
+			* Math.pow(exports.MOVE_STAT_MUL, mspeedPoints)
+			/ Math.pow(exports.MOVE_LEVEL_DIV, level);
 	};
 
 	// Integrate one step of `dtTicks` reference ticks. Mutates {x, y, vx, vy}.

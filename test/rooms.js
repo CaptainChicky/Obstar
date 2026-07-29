@@ -634,7 +634,7 @@ function fastestTankSpeed() {
 		}
 	}
 	const run = (cls, level, dir, ticks = 3000) => {
-		const accel = Physics.moveAccel(MAXUP * 0.029254, level);
+		const accel = Physics.moveAccel(MAXUP, level);
 		const upReload = 1 - MAXUP * 0.092;
 		const body = { x: 0, y: 0, vx: 0, vy: 0 }, timer = [];
 		let sum = 0, n = 0;
@@ -664,10 +664,11 @@ function fastestTankSpeed() {
 	for (const name of T.list) {
 		const cls = T.class[name];
 		if (!cls || !cls.cannons || !cls.cannons.length || !(name in minLevel)) { continue; }
-		// Only the LOWEST level a class can be reached at is tested: Physics.moveAccel subtracts
-		// level / MOVE_LEVEL_FALLOFF and nothing else in this recurrence depends on level, so a
-		// class's speed decreases strictly with level. Sweeping all 45 costs 30x the time and
-		// returns the same answer (checked).
+		// Only the LOWEST level a class can be reached at is tested: Physics.moveAccel divides by
+		// MOVE_LEVEL_DIV^level and nothing else in this recurrence depends on level, so a class's
+		// speed decreases strictly with level. Sweeping all 45 costs 30x the time and returns the
+		// same answer (checked). Still true after PENDING #14 made the level term a divisor rather
+		// than a subtraction - strictly decreasing either way, and now without the level-54 zero.
 		const level = Math.max(minLevel[name], 12);
 		for (let k = 0; k < 36; k++) {
 			const v = run(cls, level, k * Math.PI / 18);

@@ -312,7 +312,12 @@ class Player {
 						case "BSpeed": this.up[i] += 0.11; break;
 						case "BDamage": this.up[i] += .2; break;
 						case "BPene": this.up[i] += 1.25; break;
-						case "MSpeed": this.up[i] += 0.029254; break;   // Physics.MOVE_ACCEL_PER_UP's twin, same one-time rescale
+						// A point COUNT, not a bonus: Physics.moveAccel() raises MOVE_STAT_MUL to it
+						// (PENDING #14). It used to accumulate an accel term (0.029254/pt) because
+						// the stat was additive; the multiplier needs the exponent instead, and
+						// keeping the count here rather than in upNb[0] leaves every caller of
+						// moveAccel(this.up.MSpeed, ...) reading the same field it always did.
+						case "MSpeed": this.up[i] += 1; break;
 						// The ratio comes off the OLD maxHp, so the point heals you by exactly the
 						// fraction it added. Reading the old value can't drift out of sync with the
 						// step the way the literal it replaces did.
@@ -497,7 +502,16 @@ class Player {
 				// it integrates twice over ticks, so tick.quadratic() (SCALE^2) applies at the
 				// increment, not the hp += below, which just reads the already-scaled result.
 				this.hpregan[1] += tick.quadratic(this.up.HpRegan / 673818.75);
-				this.hp += (parseInt(this.hpregan[1] * this.maxHp * 10)) / 10;
+				// PENDING #17: this used to be `parseInt(x * 10) / 10`, quantizing the *per-tick
+				// increment* to 0.1 HP. Truncating an increment is not rounding, it is a floor with
+				// no carry: every tick where the accumulator was worth less than 0.1 HP healed
+				// exactly nothing and threw the remainder away, so a 150 HP tank at 0 regen points
+				// sat at a dead 0 HPS for the first ~22 seconds. Worse, the dead time was
+				// `0.1 / (accumulator x maxHp)` - it *shrank* as maxHp grew, so the tanks with the
+				// most health to recover were the only ones regenerating promptly.
+				// Whether the accumulator should be quadratic at all is a separate open call in
+				// #17; this only stops the quantizer from eating it.
+				this.hp += this.hpregan[1] * this.maxHp;
 				this.hp = Math.min(this.maxHp, this.hp);
 			} else {
 				this.hp = this.maxHp;

@@ -107,8 +107,26 @@
 	// need to diverge at runtime, inject this through POST in views/play.ejs instead.
 	const REF_TICK = 40;
 
+	/*
+		Round-trip time (PENDING #24a).
+
+		RTT_GAIN is per probe, and probes go out once a second (public/client/game.js), so 0.2 is
+		a ~5s time constant - slow enough that one bad sample cannot move the prediction lead
+		visibly, fast enough to follow a genuine route change within a few seconds. RTT_MAX is the
+		"this was not a round trip" cut: a backgrounded tab parks the echo in a queue and reports
+		seconds, and folding that in would inflate the lead for the next half minute.
+
+		Seeded at 0 rather than at a guess: until the first echo lands the lead falls back to
+		interval alone, which is an under-estimate, and an under-estimated lead is a smaller lie
+		than an over-estimated one.
+	*/
+	const RTT_GAIN = 0.2;
+	const RTT_MAX = 2000;
+
 	const NET = {
 		interval: NET_TICK,   // EMA of the gap between GameUpdate packets, ms
+		rtt: 0,           // EMA of the measured round trip, ms; 0 until the first echo
+		probeAt: 0,       // when the outstanding probe went out, 0 if none - see probe()/echo()
 		last: 0,          // when the most recent one arrived
 		stepMs: 0,        // wall-clock length of one server step, ms (0 until measured)
 		stamp: -1,        // the step counter of the most recent snapshot
@@ -191,8 +209,43 @@
 			NET.clock = at;
 			return at;
 		},
+		/*
+			A probe is going out now. Stamping it here rather than keeping a queue is deliberate:
+			one probe is outstanding at a time and they are a second apart, so the only way this
+			overwrites a live stamp is an echo that took longer than the probe interval - which
+			RTT_MAX would have thrown away anyway.
+		*/
+		probe: function (t) {
+			NET.probeAt = (typeof t === 'undefined') ? NET.now() : t;
+		},
+		/* The echo came back. Returns the raw sample, or 0 if there was nothing to time. */
+		echo: function (t) {
+			if (!NET.probeAt) { return 0; }
+			if (typeof t === 'undefined') { t = NET.now(); }
+			const ms = t - NET.probeAt;
+			NET.probeAt = 0;
+			if (!(ms >= 0) || ms > RTT_MAX) { return 0; }
+			NET.rtt = NET.rtt ? NET.rtt + (ms - NET.rtt) * RTT_GAIN : ms;
+			return ms;
+		},
+		/*
+			How far ahead of the newest snapshot the local tank has to be drawn to sit where the
+			server already has it, in ms of its own travel.
+
+			Two pieces, both measured rather than tuned - which is the whole point of the probe
+			byte. `interval` is the render delay Interp.sample() deliberately holds (it draws one
+			packet interval in the past); `rtt/2` is how stale the newest snapshot already was when
+			it arrived. Multiply by the tank's speed and that is the lead in world units - about 16
+			at a base tank's 284 u/s on a 50ms RTT, where public/client/config.js's CONST.SIZE*2 cap
+			it replaces was a flat 70 regardless of speed, latency or packet rate.
+		*/
+		leadMs: function () {
+			return NET.interval + NET.rtt / 2;
+		},
 		reset: function () {
 			NET.interval = NET_TICK;
+			NET.rtt = 0;
+			NET.probeAt = 0;
 			NET.last = 0;
 			NET.stepMs = 0;
 			NET.stamp = -1;
@@ -315,4 +368,6 @@
 	exp.lerpK = lerpK;
 	exp.NET_TICK = NET_TICK;
 	exp.REF_TICK = REF_TICK;
+	exp.RTT_GAIN = RTT_GAIN;
+	exp.RTT_MAX = RTT_MAX;
 })(typeof (exports) === 'undefined' ? function () { this['MOTION'] = {}; return this['MOTION'] }() : exports);

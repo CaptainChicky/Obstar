@@ -288,8 +288,23 @@ console.log('\nyour own bullet leaves the muzzle, even strafing across your own 
 		for (let f = 0; f < FPP; f++) { a.frame(FRAME); }
 	}
 	const lead = Math.hypot(User.predic.x, User.predic.y);
+	/*
+		The lead is DERIVED now (PENDING #24a): (render delay + RTT/2) x the tank's own predicted
+		speed, where it used to be whatever the integrator settled on under a flat CONST.SIZE*2
+		ceiling that never bound. Two things make the honest number here ~4.5 units rather than the
+		~12 that ceiling used to allow: the stub socket never echoes a probe, so NET.rtt is 0 and
+		the delay is the render interval alone; and 20 packets is under one time constant of the
+		velocity integrator, so this tank is still accelerating and is genuinely owed less lead
+		than a tank at top speed.
+
+		So this asserts the derivation is what is in force, rather than a magic number that only
+		described the old uncapped behaviour - a strictly tighter check than `lead > 10` was.
+	*/
+	const M = a.sandbox.MOTION;
+	const derived = M.NET.leadMs() * Math.hypot(User.predic.vx, User.predic.vy) / M.REF_TICK;
 	check('the tank has a real input lead to be wrong about',
-		lead > 10, lead.toFixed(1) + ' units');
+		lead > 3 && near(lead, derived, 0.05),
+		lead.toFixed(1) + ' units, derived ' + derived.toFixed(1));
 	check('...and it is the sideways one, across the aim',
 		Math.abs(User.predic.x) > Math.abs(User.predic.y) * 10,
 		User.predic.x.toFixed(1) + ', ' + User.predic.y.toFixed(1));
@@ -357,8 +372,10 @@ console.log('\nyour own bullet leaves the muzzle, even strafing across your own 
 		for (let f = 0; f < FPP; f++) { a.frame(FRAME); }
 	}
 	const now = Math.hypot(b.lead.x, b.lead.y);
+	// `held` is the muzzle offset the bullet was born with, i.e. the tank's lead at the instant it
+	// fired - so it tracks the derived cap above and is ~4.7 here, not the old ~12.
 	check('the offset decays instead of riding along forever',
-		held > 10 && now < held * 0.2, held.toFixed(1) + ' -> ' + now.toFixed(1) + ' units');
+		held > 3 && now < held * 0.2, held.toFixed(1) + ' -> ' + now.toFixed(1) + ' units');
 
 	Global.inputs.d = 0;
 }

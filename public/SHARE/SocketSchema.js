@@ -144,6 +144,13 @@
 		'kick': {
 			'reason': 'uint8'
 		},
+		// `probe` is what makes RTT measurable (PENDING #24a). 0 is the plain heartbeat this
+		// message has always been - server->client every second, client echoes it back. 1 is a
+		// client-initiated probe the server echoes verbatim, so the client can time the round
+		// trip itself; the server keeps no state for it.
+		'ping': {
+			'probe': 'uint8'
+		},
 		/// inputs
 		'keydown': {
 			'key': 'uint8'
@@ -585,7 +592,7 @@
 	const LIMITS = {
 		packet: {
 			'init': [25, 65],
-			'ping': [1, 1],
+			'ping': [2, 2],
 			'keydown': [2, 2],
 			'keyup': [2, 2],
 			'mousemove': [9, 9],
@@ -730,12 +737,13 @@
 	///////////////////////////////////////////////////////////////////// outbound messages
 	/*
 		Framing only. Each entry writes its payload after the leading message-type byte, which
-		send() has already written; a `null` entry is a bare header (`ping`). 'Instance' is the
+		send() has already written; a `null` entry would be a bare header (nothing is one any more -
+		`ping` carries a probe byte since PENDING #24a). 'Instance' is the
 		one exception and is handled in send() - it is a fragment spliced into a GameUpdate, so
 		it carries no type byte and comes back as an Int8Array.
 	*/
 	const MSG = (platform === 'server') ? {
-		'ping': null,
+		'ping': (ENC, probe) => { ENC.write(probe, TYPE.ping.probe); },
 		'kick': (ENC, reason) => {
 			ENC.write(toBUFFER.reason[reason], TYPE.kick.reason);
 		},
@@ -790,7 +798,7 @@
 			ENC.write(clamp(data.name, LIMITS.str.name), TYPE.name);
 			ENC.write(parseInt(data.pet), TYPE.pet);
 		},
-		'ping': null,
+		'ping': (ENC, probe) => { ENC.write(probe, TYPE.ping.probe); },
 		'keydown': (ENC, data) => { ENC.write(toBUFFER.key[data], TYPE.keydown.key); },
 		'keyup': (ENC, data) => { ENC.write(toBUFFER.key[data], TYPE.keyup.key); },
 		'mousemove': (ENC, data) => {
@@ -822,7 +830,7 @@
 				result.error = 'ERR_BROKEN_KEY';
 			}
 		},
-		'ping': null,
+		'ping': (DEC, result) => { result.data.probe = DEC.read(TYPE.ping.probe); },
 		'keydown': (DEC, result) => { result.data.key = toSTRING.key[DEC.read(TYPE.keydown.key)]; },
 		'keyup': (DEC, result) => { result.data.key = toSTRING.key[DEC.read(TYPE.keyup.key)]; },
 		'mousemove': (DEC, result) => {
@@ -835,7 +843,7 @@
 		'chat': (DEC, result) => { result.data = DEC.read(TYPE.chat); },
 		'com': (DEC, result) => { result.data = DEC.read(TYPE.com); }
 	} : {
-		'ping': null,
+		'ping': (DEC, result) => { result.data.probe = DEC.read(TYPE.ping.probe); },
 		'kick': (DEC, result) => { result.reason = toSTRING.reason[DEC.read(TYPE.kick.reason)]; },
 		'GameUpdate': (DEC, result) => {
 			result.data.head = readRecord(DEC, 'head', {});

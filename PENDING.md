@@ -45,7 +45,16 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
      `map`, `Ui.map()` in `public/client/ui.js`).
    - The minimap has a thin dark frame in every mode (`public/client/ui.js`'s `MAP.lw`).
    - Level 1 vs. level 30 with Movement Speed maxed: confirm the tank does not rubber-band
-     differently at the two speeds.
+     differently at the two speeds. **#14's form change is most visible exactly here** — a maxed
+     level-30 tank now keeps 0.96× a fresh spawn's speed where it used to keep 0.79×, so leveling
+     should no longer feel like it quietly takes your mobility away.
+   - **Regen actually starts immediately** (#17). At 0 Health Regen points, take a few HP off a
+     fresh 150 HP tank and watch the bar: it should begin creeping back straight away, where it
+     used to sit dead flat for ~22 s before the first tick of healing landed.
+   - **The prediction lead is derived from a real RTT now** (#24a). It scales with your actual
+     latency and speed rather than sitting at a flat 70-unit cap, so it is smaller than it was —
+     confirm your own tank still feels immediate on WASD and does not snap when the server
+     position lands. Throttling the connection should visibly widen the lead, not break it.
    - **Tank growth is diep's exponential now** (`28 * 1.01^level`, a radius, continuous rather
      than stepping every 2.8 levels). Confirm a tank visibly grows smoothly as it levels and that
      nothing keyed to `size` (barrel scaling, drawn hitbox, minimap dot) looks off at level 30.
@@ -145,11 +154,17 @@ implied (top speed, recoil, reload in seconds); the later `TICK_MS: 25` / `REF_T
 preserved those real-world quantities exactly, so no re-derivation is needed here.*
 
 *This started as pure scoping data for #11, but parts have since been adopted — the auto-turret
-spin rate (was #21), the FOV half of #19, and the per-cannon base `reload`/`back` values in #15/#16.
-Each item below now states what is still open; anything not stated as open has shipped and should
-not be "re-fixed".*
+spin rate (was #21), the FOV half of #19, the per-cannon base `reload`/`back` values in #15/#16,
+and the level/stat *form* half of #14. Each item below now states what is still open; anything not
+stated as open has shipped and should not be "re-fixed".*
 
-14. **Movement: right shape, wrong stiffness, and level/stat scaling is the wrong *form*.**
+14. **Movement: right shape, wrong stiffness.** (**The *form* half is done.** Level and Movement
+    Speed are independent multipliers on the base accel now — `base × 1.07^pts / 1.015^level`,
+    `public/SHARE/Physics.js` — so a maxed level-30 tank sits at 0.96× a fresh spawn instead of
+    0.79×, and the level term no longer reaches zero speed at level 54. The remaining gap to diep's
+    1.03× is entirely our 6-point stat cap against diep's 7, not the form. **The magnitudes below
+    are still open** — `MOVE_ACCEL_BASE`/`FRICTION` are unchanged, so base top speed is still
+    284 u/s, and the table's other rows still stand. See the blocker under the table.)
 
     | | diep | ours | ratio |
     |---|---|---|---|
@@ -160,15 +175,27 @@ not be "re-fixed".*
     | speed vs stat | `× 1.07^vm` (+61% at 7) | `+ 0.020/pt` on 0.35 (+34% at 6) | additive, half the range |
     | stat cap / level cap | 7 points, 45 levels | 6 points, 30 levels | — |
 
-    The form mismatch is the load-bearing part: because ours subtracts level and adds stat to the
-    same accel term, a maxed-Movement level-30 tank ends up at **0.79× a fresh spawn's speed**,
-    where diep's independent multipliers put it at **1.03×** — max move speed is supposed to buy
-    back exactly what leveling costs. The linear level term also has no floor (it reaches zero
-    speed at level 54), which only the 30-level cap is hiding.
+    (The last two rows of the table are what the form fix addressed; the first three are the open
+    magnitude gap.)
 
     Diep-faithful replacements, if adopted: `len = 0.978`, `FRICTION = 0.9244` at `TICK_MS 33`
     (`len = 0.556`, `FRICTION = 0.9422` at 25 ms; `len = 1.449`, `FRICTION = 0.9091` at diep's own
-    40 ms), with `len = base × 1.07^MSpeedPts / 1.015^level`.
+    40 ms). Those two are verified self-consistent against diep's own identities — at the 40 ms
+    reference they reproduce `v_max = 10 × A` exactly and give 12.94 gu/s at 28 units/gu.
+
+    **BLOCKER on adopting them: `FRICTION` is global.** `lib/constants.js` re-exports it and
+    `entities/Bullet.js`, `entities/Objects.js` and `lib/gameAI.js` all decay through it — a bullet
+    runs the *same* `v = (v + speed)·F` recurrence a tank does, so its top speed is
+    `speed × F/(1−F)`. Moving F from 0.956532 to 0.9091 therefore makes **every bullet in the game
+    2.2× slower** unless the whole `speed` column is rescaled ×2.2 to compensate. Item 16 states the
+    matching rule for the `back` column and nothing states one for `speed` — and item 23 lists
+    bullet base speeds and lifetimes as never having been measured against anything in the first
+    place, so there is no reference to rescale *toward*. Two ways out, both a human call:
+    - Rescale `speed` (and re-check `life`, since range is speed × lifetime under a changed drag
+      profile) so bullets keep today's behaviour, and treat the whole thing as one atomic change.
+    - Or give tank movement its own friction constant and leave the global one for bullets/shapes.
+      Recoil and knockback both act on *tank* velocity, so #16's rules stay true verbatim under
+      this split; it is the smaller blast radius, at the cost of one constant becoming two.
 
     **The 284 u/s above is a level-0, no-upgrade tank walking — not this game's ceiling.** Riding
     your own recoil is worth ~1.5× a plain walk. `BASE_DRONE_CHASE_SPEED` is pinned to that real
@@ -207,24 +234,45 @@ not be "re-fixed".*
       Triplet/Penta Shot/Octo Tank, Ranger, Booster) — each has its own barrel count/damage/pene, so
       a shared number there is a family trait, not the copy-paste bug Twin's mismatched barrels were.
 
-16. **Knockback (`weight`) is 5–7× too weak — the whole column still wants replacing.**
+16. **Knockback (`weight`) is ~5.5× too weak — the whole column still wants replacing.**
     (The recoil `back` column is done and is now diep's table 1:1. Two things about it that matter
     going forward: **Annihilator was deliberately left off-table** for the same reason as its
     reload in #15, and **the 1:1 conversion is only true at today's `FRICTION`** — if #14's is
-    adopted the whole column must be rescaled by `back = gu × 28 × (1-F)/F`, i.e. ×2.55 at
-    `F = 0.9244`.)
+    adopted the whole column must be rescaled by `back = gu × 28 × (1-F)/F`. **That factor is 2.19,
+    not the 2.55 this item used to claim** — 2.55 does not follow from the formula beside it under
+    any reading; `(1−0.9244)/0.9244 ÷ (1−0.964)/0.964 = 2.19`, and the same ratio at the 40 ms
+    reference (0.9091 against 0.956532) is 2.20. Use the formula, not the old number.)
 
-    The measured gap:
+    The gap, re-measured against the **live code path** (`entities/Player.js`'s bullet arm) rather
+    than recomputed from the pre-rescale tree:
 
-    | | diep, per loop of contact | ours, per tick of overlap | ratio |
+    | | diep, per loop of contact | ours, today | ratio |
     |---|---|---|---|
-    | tank body | 1.6 gu | impulse 0.3 → 0.29 gu | **5.6× weak** |
-    | basic bullet | 0.667 gu | `weight/3` = 0.1 → 0.096 gu | **7.0× weak** |
-    | drones | 0.8 gu | same 0.3 `weight` as everything else | — |
+    | basic bullet (`weight` 0.27426) | 0.667 gu | 0.0725 gu | **9.2× weak** |
+    | common bullet (`weight` 0.45709) | varies by class | 0.1208 gu | — |
+    | tank body | 1.6 gu | 0.29 gu | **5.5× weak** |
+    | drones | 0.8 gu | no separate value | — |
+
+    **The conversion factor is now pinned: 1 unit of `weight` = 0.264175 gu of displacement**, at
+    today's `FRICTION`, measured by replaying the real recurrence (impulse `tick.perTick(weight/3
+    × 1.6)` into `this.vec`, decayed through `Physics.stepBody`). So `weight = Kf / 0.264175`, and
+    the full diep Knockbackfactor table is in `physics.html` — no measurement is left to do here.
+
+    **Two things block finishing it, both human calls:**
+    - **~7 of our classes are not in diep's table at all**, so a complete replacement cannot be
+      read off it: Cyclone, Submachine, Auto Hover, Fortress, Summoner and Rocket have no diep
+      counterpart, and plain **Gunner** is a real diep tank that the Knockbackfactor table simply
+      omits. Converting only the mappable classes leaves Basic at 5.5× its current knockback while
+      Cyclone keeps the old value — a worse balance state than either endpoint, so this wants doing
+      atomically with a decision for the unmapped seven.
+    - **The 33 ms → 40 ms rescale did not preserve this column.** At 33 ms a `weight` of 0.3 gave
+      0.09563 gu; today's 0.45709 gives 0.12075 gu — **1.26× more knockback than before the
+      "one-time relabelling, not a balance change" conversion**, and dropping the `× 1.6` instead
+      gives 0.07547 (0.79×). Neither reproduces the original, so one of the two factors is wrong.
+      Worth settling *before* the column is rewritten, since the same factor scales the new values.
 
     diep also *inverts* knockback against damage — Destroyer 0.2 gu, Annihilator 0.1 gu, against
-    Basic's 0.667 — where our `weight` is a flat 0.3 for Basic and Destroyer alike. The whole
-    `weight` column wants replacing from the Knockbackfactor table.
+    Basic's 0.667 — where ours is nearly flat across those three.
 
 17. **Health, regen and body damage.**
     - **Max health.** Same shape (`MH₀ + 2·lvl + 20·mh` vs `150 + 3/lvl + 110/pt`), very different
@@ -237,10 +285,13 @@ not be "re-fixed".*
       *quadratic* — full heal in 46 s at 0 points, 28 s at max. So our base regen is **21× faster
       than diep's** and our regen stat is nearly worthless (1.6× range vs diep's 29×). The
       quadratic ramp is a crude accidental stand-in for diep's out-of-combat regen rule, which the
-      reference does not document — decide whether to keep it deliberately or go linear.
-      Side effect of `parseInt(hpregan[1] * maxHp * 10)/10`: regen is quantized to 0.1 HP, so
-      nothing at all heals for the first ~22 s at 0 points / 150 maxHp. That dead time shrinks as
-      maxHp grows, which is backwards.
+      reference does not document — decide whether to keep it deliberately or go linear. **Still
+      open; only the quantizer under it has been fixed.** `parseInt(hpregan[1] * maxHp * 10)/10`
+      truncated the per-tick *increment* to 0.1 HP, which is a floor with no carry: every tick
+      worth less than 0.1 HP healed nothing and threw the remainder away, so a 150 HP tank at 0
+      points sat at a dead 0 HPS for ~22 s, and the dead time *shrank* as maxHp grew. The increment
+      is applied unquantized now, so the curve is whatever the accumulator actually says — which
+      makes the linear-vs-quadratic decision above a clean one to measure.
     - **Body damage.** At zero points in both stats, diep's tank body deals 2.86× a basic bullet's
       per-loop damage (20 vs 7); ours deals 1.75× (7 vs 4). So ramming is relatively 1.6× weaker
       here even before item 18's model differences. The stat *range* matches (diep `BS = 1+0.2·bd`
@@ -311,18 +362,16 @@ not be "re-fixed".*
 24. **Close-quarters bullet truth — the remaining error budget.** The dimensional bug in the
     client's input prediction is fixed (the integrator lives in `public/SHARE/Physics.js` now and
     `predic` stays in units-per-*tick*, scaled once at integration). What is left, cheapest-first:
-    - **(a) Derive the lead instead of tuning it.** The correct prediction lead is
-      `(interp delay + RTT/2) × velocity` ≈ 16 units at base top speed on a 50 ms RTT, smaller
-      than what the fixed integrator settles on now. We do not measure RTT — the `ping` message
-      is a server→client heartbeat the client echoes (`net/gameSocket.js`,
-      `public/client/game.js`). **This does need a schema change, contrary to what this item used
-      to claim**: `public/SHARE/SocketSchema.js` frames `ping` as `null` (a bare header) with
-      packet length `[1, 1]`, and the `0` in both `talk(socket, 'ping', 0)` and
-      `PROTO.encode('ping', 0)` is discarded. Making RTT measurable means a payload byte, the
-      length bound moving to `[2, 2]`, and an encoder/decoder entry on both sides — after which a
-      client-initiated probe can send `1`, the server echoes `1`, the client times it, and `0`
-      stays the heartbeat. Then `CONST.SIZE*2` and `CONST.SMOOTH`'s decay stop being the things
-      that decide how big the lie is.
+    - **(a) Derive the lead instead of tuning it. DONE.** `ping` carries a probe byte now
+      (`[2, 2]`, `TYPE.ping.probe`): `0` is the heartbeat it always was, `1` is a client-initiated
+      probe the server echoes verbatim in `net/gameSocket.js` without keeping state. The client
+      sends one a second alongside the heartbeat and times it into an EMA on `public/motion.js`'s
+      `NET` (`NET.probe()`/`NET.echo()`, gain 0.2, samples over 2 s discarded as a backgrounded
+      tab). `NET.leadMs()` is then `interval + rtt/2` — both measured — and `public/client/game.js`
+      caps the prediction offset at `leadMs × predicSpeed`, i.e. exactly how far the tank travels
+      during the render delay plus half the round trip. `CONST.SIZE*2` survives only as an absolute
+      ceiling against a hostile measurement; it no longer decides the size of the lie. On a 50 ms
+      RTT at base top speed this is ~16 units against the flat 70 it replaced.
     - **(b) Dead-reckon bullets instead of interpolating them.** A non-drone bullet's motion is
       fully deterministic between collisions (`vec += speed·dir; vec *= FRICTION`, no input), so
       the client can integrate it forward from the newest snapshot rather than drawing it one
