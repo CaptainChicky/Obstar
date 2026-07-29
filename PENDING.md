@@ -20,6 +20,135 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
    wire. New `kind`s go in `public/SHARE/kinds.js`, which `TanksConfig.js`'s `DETEC` filters
    now reference by constant rather than hardcoding — nothing to keep in sync by hand.
 
+30. **Adopt diep's upgrade economy: 45 levels, 7 points per stat, 33 total.** Decided — this is
+    the thing that makes every other diep number adoptable, because **every diep formula is
+    denominated in diep's caps, not ours**. `1.07^pts` assumes 7 points; `1.015^level` assumes 45
+    levels; `+20 HP/pt` assumes 7. Adopting a formula without its domain is what left #14's form
+    fix at 0.96× where diep's own figure is quoted at 1.03×.
+
+    | | diep | ours today |
+    |---|---|---|
+    | level cap | 45 | 30 (`rooms/Room.js`'s `XPLVL`) |
+    | points per stat | 7 (Smasher branch 10, over 4 stats; Auto Smasher 10 over 8) | 6 |
+    | total budget | 33 | 28 (`CONST.MAX_UP_POINTS`) |
+    | grant schedule | 1/level to 28, then at 30 and every 3 levels to 45 | 1/level, minus a takeback at 18 and 27 |
+    | tier gates | every 15 levels | every 10 |
+
+    Ours is a coherent ⅔-scale version rather than a bug — both give 3 tier-ups and both land on
+    "4 stats maxed plus change" (diep 4 + 5 spare, ours 4 + 4). That is why this is a *deliberate*
+    conversion and not a fix.
+
+    **Every site that has to move** (grepped, not guessed):
+    - `rooms/Room.js:99,125` — `maxXp: 25000` is described as "the level-30 cap", and the curve
+      hardcodes **30 twice**: `new Array(30)` and the `a = 30 / …` coefficient. Both → 45.
+    - `entities/Player.js:300` — `upNb[data] >= 6`, the per-stat cap.
+    - `entities/Player.js:539` — `level === 18 || level === 27`, the two takeback levels. **This one
+      is a rewrite, not a retune**: diep does not take points back, it changes the *grant rate*
+      (every level to 28, then every 3rd). Replace the schedule, don't renumber the takebacks.
+    - `entities/Player.js:334` — tier gate `parseInt((1 + level) / 10)` → `/ 15`.
+    - `entities/Player.js:576` — Rocket's unlock reads `upNb[0] === 6 && upNb[1] === 6`.
+    - `entities/Player.js:310-320` — **the stat step values are all sized for a 6-point span** and
+      will overshoot by ~17% each at 7 points unless re-derived. The exception is `MSpeed`, which
+      is multiplicative since #14 (`1.07^pts`) and therefore becomes *automatically* diep-correct
+      the moment the cap is 7 — a useful sign the multiplicative form was the right call.
+    - `public/client/config.js:44` — `MAX_UP_POINTS: 28` → 33. Hand-mirrored from the server, so it
+      is one of the two constants #23 flags as desynchronisable.
+    - `public/client/ui.js:269,282,292` — `perStat = 6 - …`, `>= 6`, and `drawAll(…, max = 6)`.
+      That last one is **layout, not logic**: the upgrade bar draws 6 segments and a 7th changes
+      the widget's geometry.
+    - `test/rooms.js:622` — `MAXUP = 6`, which feeds `fastestTankSpeed()` and therefore forces a
+      `BASE_DRONE_CHASE_SPEED` re-pin (#14) as a matter of course.
+
+    **No wire change needed** — `upNb` is `uint8` per stat, so 7 (or a Smasher's 10) already fits.
+
+    **Consequence worth knowing before starting, because it is counter-intuitive:** at diep's own
+    caps a maxed-Movement **level-45** tank runs at `1.07^7 / 1.015^45` = **0.82× a fresh spawn**.
+    The 1.03× figure quoted in #14 is a *level-30* comparison, not diep's endgame. So this
+    conversion makes high-level tanks **slower relative to a spawn** than our current 0.96×, not
+    faster. That is faithful, but it is a real feel change and it moves the speed ceiling
+    `BASE_DRONE_CHASE_SPEED` is pinned to.
+
+    **Do this before #17's health adoption and #15's reload-stat decision.** Both are described in
+    those items as "arithmetic now" — true, but only once the domain is 7 points. Doing them at 6
+    means doing them twice.
+
+## 🟠 Wiki cross-check: GAME MODES — pick what goes in, strike what doesn't
+
+*Source: `diep_wiki/` (`Game Modes.txt`, `Maze.txt`, `Domination.txt`, `Dominator.txt`,
+`Polygons.txt`, `Stats.txt`). Official game only — every fanon page in that folder is ignored.
+This is a menu, not a plan: nothing here is decided. Tick or strike each line, then the survivors
+become real items. We currently ship **ffa / 2team / 4team / boss / sandbox**.*
+
+**diep's nine modes, against ours:**
+
+| diep mode | we have | notes |
+|---|---|---|
+| FFA | ✅ | — |
+| 2 Teams | ✅ | — |
+| 4 Teams | ✅ | — |
+| Sandbox | ✅ | ours lacks diep's cheat keys, below |
+| Maze | ❌ | item 2's static-geometry work |
+| Domination | ❌ | item 2's capturable-structure work |
+| Tag | ❌ | no new entity types needed — cheapest new mode by far |
+| Breakout | ❌ | tile/turf war, needs a claimable grid |
+| Capture the Flag | ❌ | needs a carryable entity + 3 bases/team |
+| *(removed)* Mothership, Survival, Team DM | ❌ | historical; listed only so they aren't "missed" |
+
+**26. Maze — what the mode actually needs** (feeds item 2's `kinds.js` static-geometry work):
+- Randomly generated grey walls, **solid to tanks, bullets, traps and drones alike**. Visible on
+  the minimap.
+- **Walls have friction** (grinding along one slows you) **and bounciness** (a fast tank rebounds),
+  but deal **no body damage**. The wiki explicitly likens them to 2team/4team base edges: "they
+  give knockback, except without Body Damage" — so our existing base-edge code is the closest
+  thing we already have to model them on.
+- **Drones die instantly on contact with a wall.** Crashers (and Arena Closers) are the only
+  things that pass through.
+- **Bosses do not spawn in Maze at all** — a deliberate exclusion, because a boss can spawn inside
+  a wall and become unkillable. Cheap to honour, expensive to forget.
+- Known diep bug worth *not* reproducing: barrels are not part of the hitbox, so they poke through
+  walls and can shoot through double corners at exactly 45°.
+- Match length: the arena closes 5 hours in.
+
+**27. Domination — what the mode actually needs** (feeds item 2's capturable structures):
+- **4 Dominators**, stationary, on a 2-team map. Neutral (yellow) until captured; capture = drop
+  HP to 0 and land the last blow. An **enemy** Dominator takes **two** knockdowns — first back to
+  neutral, then to yours. Capturing refills its health, despawns its projectiles, recolours it.
+- **Stats are fully specified:** base health **5998**, **+2/level**, level 75 → **6148 HP**, weak
+  regen, no upgrades, **no recoil**, cannot move.
+- **Three variants**, each with its own barrels and its own numbers:
+  - *Destroyer Dominator* — 1 cannon; penetration **200 HP (×100 tank)**, damage **70/hit
+    (×10 tank)**, Hybrid-sized bullet, reload ≈ Hybrid at 3 points, bullet speed below Destroyer's.
+  - *Gunner Dominator* — 3 cannons; penetration **10 HP (×5 tank)**, damage **7 (×1 tank)**, high
+    reload, normal bullet speed.
+  - *Trapper Dominator* — 8 launchers, evenly spaced; trap health **30 (×15 tank)**, trap damage
+    **25.2 (×3.6 tank)**, trap speed above a maxed Tri-Trapper, reload = Trapper at 0 points,
+    auto-fire always on.
+- **AI:** targets nearest enemy, holds that target until it leaves FoV, re-targets on capture or
+  after the current target stops damaging it, and **leads its shots** (predicts movement).
+  Prioritises players, falls back to polygons/bosses/closers. Neutral Dominators cannot damage
+  shapes or bosses. FoV is roughly Sniper-to-Hunter range depending on variant.
+- **Player control:** press `H` to pilot an uncontrolled friendly Dominator, one player at a time,
+  at the cost of your own tank. This is a whole input/ownership path, not a cosmetic feature —
+  worth deciding separately from the rest of the mode.
+- XP gain is **doubled** in this mode.
+
+**28. Tag — the cheapest mode on this list, and we can already build all of it.** 4 teams, no
+bases, random spawns. Killing a player **converts them to your team** on respawn; dying to a
+polygon keeps your colour; suiciding into a colour is a legitimate way to switch. Win by owning
+every player. The leaderboard shows **player counts per team**, not scores. The arena **shrinks
+every ~12–13 s**. XP ×3. Needs: per-kill team reassignment, a shrinking arena bound, and a
+leaderboard variant — no new entity types at all. If any new mode ships first, this is the one.
+
+**Deliberately not itemised here:** Breakout (claimable tile grid, tiles block outside fire, and a
+camping-reset rule that instakills squatters) and Capture the Flag (3 bases/team, carryable flags,
+a mid-map barrier that drops after a few minutes, first to 10). Both are real modes and both are
+bigger than Maze and Domination combined. Listed so the roster is complete, not because they are
+next.
+
+**Sandbox gaps** (ours exists but is thinner than diep's): `K` level up (hold to repeat, cap 45),
+`\` cycle classes, `O` self-destruct, `;` god mode, party-link invites, arena size and shape count
+scaling with player count, and bosses still spawning after 50–60 minutes.
+
 ## 🟢 Untested — real risk, nobody has watched these happen
 
 3. A full match, start to finish: leveling into the class tree, death screen, respawn.
@@ -158,13 +287,20 @@ spin rate (was #21), the FOV half of #19, the per-cannon base `reload`/`back` va
 and the level/stat *form* half of #14. Each item below now states what is still open; anything not
 stated as open has shipped and should not be "re-fixed".*
 
+*Before planning work off this section, read **[MEASUREMENTS.md](MEASUREMENTS.md)**. It lists the
+handful of quantities that genuinely still need a real diep client, the ~14 that are already pinned
+and must not be re-measured, and — most importantly for sequencing — the fact that **almost nothing
+here is measurement-blocked any more.** #14's `FRICTION` is exact (`10/11`, derived), so #14, #16,
+#17, #19, #30 and the damage model can all be finished before a single measurement is taken.*
+
 14. **Movement: right shape, wrong stiffness.** (**The *form* half is done.** Level and Movement
     Speed are independent multipliers on the base accel now — `base × 1.07^pts / 1.015^level`,
     `public/SHARE/Physics.js` — so a maxed level-30 tank sits at 0.96× a fresh spawn instead of
     0.79×, and the level term no longer reaches zero speed at level 54. The remaining gap to diep's
     1.03× is entirely our 6-point stat cap against diep's 7, not the form. **The magnitudes below
     are still open** — `MOVE_ACCEL_BASE`/`FRICTION` are unchanged, so base top speed is still
-    284 u/s, and the table's other rows still stand. See the blocker under the table.)
+    284 u/s, and the table's other rows still stand. **They are no longer blocked, though**: the
+    section under the table derives `FRICTION` exactly and dissolves what used to be the blocker.)
 
     | | diep | ours | ratio |
     |---|---|---|---|
@@ -173,37 +309,50 @@ stated as open has shipped and should not be "re-fixed".*
     | e-fold time to top speed | 0.42 s | 0.90 s | **2.14× floatier** |
     | speed vs level | `÷ 1.015^lvl` (×0.64 at lvl 30) | `− lvl/155` (×0.447 at lvl 30) | multiplicative vs **subtractive** |
     | speed vs stat | `× 1.07^vm` (+61% at 7) | `+ 0.020/pt` on 0.35 (+34% at 6) | additive, half the range |
-    | stat cap / level cap | 7 points, 45 levels | 6 points, 30 levels | — |
+    | stat cap / level cap | 7 points, 45 levels | 6 points, 30 levels | **see #30** |
 
     (The last two rows of the table are what the form fix addressed; the first three are the open
     magnitude gap.)
 
-    Diep-faithful replacements, if adopted: `len = 0.978`, `FRICTION = 0.9244` at `TICK_MS 33`
-    (`len = 0.556`, `FRICTION = 0.9422` at 25 ms; `len = 1.449`, `FRICTION = 0.9091` at diep's own
-    40 ms). Those two are verified self-consistent against diep's own identities — at the 40 ms
-    reference they reproduce `v_max = 10 × A` exactly and give 12.94 gu/s at 28 units/gu.
+    ### `FRICTION` is EXACT, and it is a *tank* constant — this is no longer blocked
 
-    **BLOCKER on adopting them: `FRICTION` is global.** `lib/constants.js` re-exports it and
-    `entities/Bullet.js`, `entities/Objects.js` and `lib/gameAI.js` all decay through it — a bullet
-    runs the *same* `v = (v + speed)·F` recurrence a tank does, so its top speed is
-    `speed × F/(1−F)`. Moving F from 0.956532 to 0.9091 therefore makes **every bullet in the game
-    2.2× slower** unless the whole `speed` column is rescaled ×2.2 to compensate. Item 16 states the
-    matching rule for the `back` column and nothing states one for `speed` — and item 23 lists
-    bullet base speeds and lifetimes as never having been measured against anything in the first
-    place, so there is no reference to rescale *toward*. Two ways out, both a human call:
-    - Rescale `speed` (and re-check `life`, since range is speed × lifetime under a changed drag
-      profile) so bullets keep today's behaviour, and treat the whole thing as one atomic change.
-    - Or give tank movement its own friction constant and leave the global one for bullets/shapes.
-      Recoil and knockback both act on *tank* velocity, so #16's rules stay true verbatim under
-      this split; it is the smaller blast radius, at the cost of one constant becoming two.
+    **`F = 10/11 = 0.909090…` per 40 ms loop, derived rather than measured.** `physics.html` states
+    `V_max = 10 × A` for tanks. For the recurrence `v ← (v + A)·F` the steady state is `A·F/(1−F)`;
+    setting that equal to `10A` gives `F/(1−F) = 10`, hence `F = 10/11`. The `0.9091` this item used
+    to quote was a rounded 10/11 the whole time. Three independent cross-checks close:
+    - the page gives top speed in both `du/loop` (`10A`) and `gu/s` (`5A`), which at 25 loops/s
+      forces **1 gu = 50 du** in diep's own units;
+    - that yields `10 × 2.58825 / 50 × 25` = **12.94 gu/s**, the table's own figure;
+    - `A₀ = 2.58825 du × 28/50` = **1.449**, exactly the `len` quoted below.
+
+    So: `len = 1.449`, `FRICTION = 10/11` at the 40 ms reference (`len = 0.978` / `F = 0.9244` at
+    `TICK_MS 33`, `len = 0.556` / `F = 0.9422` at 25 ms). **Nothing here needs measuring.**
+
+    **The old "FRICTION is global" blocker was a mis-framing of a real bug.** It is true that
+    `lib/constants.js` re-exports one constant and that `entities/Bullet.js`, `entities/Objects.js`
+    and `lib/gameAI.js` all decay through it — but **diep does not model bullets that way at all.**
+    `physics.html` parameterises a bullet as `V_b = ρ/t_b`, range over lifetime, with **no drag term
+    anywhere**, and defines `ρ_Vb` as "distance a bullet can fly before decay". The `V_max = 10 × A`
+    identity that pins `F` is stated *for tanks only*.
+
+    In other words we are currently running a **tank** recurrence on bullets, and sharing one
+    constant between two things diep models separately. Splitting them is not a workaround to dodge
+    a cascade — **the split is the faithful model**, and it makes the 2.2×-slower-bullets problem
+    disappear rather than needing compensation. Recoil and knockback both act on *tank* velocity, so
+    #16's rules hold verbatim under the split.
+
+    **What is left is one observation, not a decision:** whether diep's bullets are truly constant
+    velocity or carry their own separate drag — see `MEASUREMENTS.md` **M1**, which also yields the
+    `ρ`/`t_b` values #23 wants. Adopting tank movement does **not** wait on it; bullets keep today's
+    behaviour untouched until M1 lands.
 
     **The 284 u/s above is a level-0, no-upgrade tank walking — not this game's ceiling.** Riding
     your own recoil is worth ~1.5× a plain walk. `BASE_DRONE_CHASE_SPEED` is pinned to that real
     ceiling, measured live by `test/rooms.js`'s `fastestTankSpeed()` (replays `entities/Player.js`'s
     own `motion()` + `shoot()` recurrence over every reachable class at 6 Movement Speed and 6
     Reload, with the recoil aimed along the direction of travel). The level penalty
-    (`Physics.moveAccel` subtracts `level / MOVE_LEVEL_FALLOFF`) is why each class is fastest at the
-    lowest level it unlocks at. **Deliberately not recorded here as a number** — it is a live test,
+    (`Physics.moveAccel` divides by `MOVE_LEVEL_DIV^level` since the form fix) is why each class is
+    fastest at the lowest level it unlocks at. **Deliberately not recorded here as a number** — it is a live test,
     so any retune that moves the ceiling (this item's `FRICTION`/`len`, #15's reload stat, #16's
     `weight`) fails `test/rooms.js` and forces a matching re-pin of `BASE_DRONE_CHASE_SPEED` and
     `BASE_DRONE_CHASE_TURN` in `lib/config.js`, rather than silently drifting apart. Run the test
@@ -225,7 +374,8 @@ stated as open has shipped and should not be "re-fixed".*
       reaching 1.875× fire rate at max stat. Under that reading diep is ×1.875 and ours is ×2.23
       (6 pts) — close enough to leave alone. Under the literal reading nothing about our reload
       stat is salvageable. Measure before choosing. Note this one moves the speed ceiling #14
-      pins `BASE_DRONE_CHASE_SPEED` to.
+      pins `BASE_DRONE_CHASE_SPEED` to. **Sequence after #30** — the `× 7` in that identity is
+      diep's stat cap, so the whole comparison is only apples-to-apples once ours is 7 too.
     - **Left off the conversion on purpose — do not "finish the job" without re-deciding.**
       Annihilator keeps its 87: unlike Hybrid (a literal stat-clone of Destroyer's cannon, so it
       moved with it), Annihilator's other stats are already tuned away from Destroyer's, so its
@@ -237,11 +387,13 @@ stated as open has shipped and should not be "re-fixed".*
 16. **Knockback (`weight`) is ~5.5× too weak — the whole column still wants replacing.**
     (The recoil `back` column is done and is now diep's table 1:1. Two things about it that matter
     going forward: **Annihilator was deliberately left off-table** for the same reason as its
-    reload in #15, and **the 1:1 conversion is only true at today's `FRICTION`** — if #14's is
-    adopted the whole column must be rescaled by `back = gu × 28 × (1-F)/F`. **That factor is 2.19,
-    not the 2.55 this item used to claim** — 2.55 does not follow from the formula beside it under
-    any reading; `(1−0.9244)/0.9244 ÷ (1−0.964)/0.964 = 2.19`, and the same ratio at the 40 ms
-    reference (0.9091 against 0.956532) is 2.20. Use the formula, not the old number.)
+    reload in #15, and **the 1:1 conversion is only true at today's `FRICTION`** — when #14's
+    `F = 10/11` is adopted the whole column must be rescaled by `back = gu × 28 × (1-F)/F`.
+    **That factor is 2.19, not the 2.55 this item used to claim** — 2.55 does not follow from the
+    formula beside it under any reading; `(1−0.9244)/0.9244 ÷ (1−0.964)/0.964 = 2.19`, and the same
+    ratio at the 40 ms reference (10/11 against 0.956532) is 2.20. Use the formula, not the old
+    number. Since `back` is an impulse on *tank* velocity, this is unaffected by whatever M1 finds
+    out about bullet motion — recoil follows the tank's `F`, always.)
 
     The gap, re-measured against the **live code path** (`entities/Player.js`'s bullet arm) rather
     than recomputed from the pre-rescale tree:
@@ -257,6 +409,8 @@ stated as open has shipped and should not be "re-fixed".*
     today's `FRICTION`, measured by replaying the real recurrence (impulse `tick.perTick(weight/3
     × 1.6)` into `this.vec`, decayed through `Physics.stepBody`). So `weight = Kf / 0.264175`, and
     the full diep Knockbackfactor table is in `physics.html` — no measurement is left to do here.
+    Knockback lands on *tank* velocity, so like `back` it tracks #14's tank `F` and is independent
+    of the bullet-motion question; re-derive the 0.264175 at `F = 10/11` when #14 lands.
 
     **Two things block finishing it, both human calls:**
     - **~7 of our classes are not in diep's table at all**, so a complete replacement cannot be
@@ -275,17 +429,36 @@ stated as open has shipped and should not be "re-fixed".*
     Basic's 0.667 — where ours is nearly flat across those three.
 
 17. **Health, regen and body damage.**
-    - **Max health.** Same shape (`MH₀ + 2·lvl + 20·mh` vs `150 + 3/lvl + 110/pt`), very different
-      balance of terms: diep is 10 levels per health point, ours is 36.7 — that ratio is
-      `MH₀`-independent and is the real mismatch. Ours ends up with leveling worth +60%
-      survivability and the stat worth +440%; diep splits it +180%/+280% *if* `MH₀ = 50`, which
-      the reference does not state → measurement task.
+    - **Max health. `MH₀ = 50` — CONFIRMED, no longer a measurement task.** `diep_wiki/Stats.txt`
+      states it twice: `Base HP = 50 + [2 × (Level − 1)]`, "a level 1 tank has 50 HP, while a max
+      level tank (level 45) has 138 HP", and separately "the health of a level 1 tank is exactly
+      50.0". The Max Health stat is a flat **+20 HP/point** (table, 0–7 points → +0…+140; Smashers
+      alone go to 10 points / +200). So diep's split is exactly the **+180% leveling / +280% stat**
+      this item guessed at, against ours at +60%/+440%. Same shape (`MH₀ + 2·lvl + 20·mh` vs
+      `150 + 3/lvl + 110/pt`), very different balance of terms: diep is 10 levels per health point,
+      ours is 36.7. **That ratio is the real mismatch and it is now fully specified** — adopting it
+      is arithmetic, not research. Note this also unblocks #23's `BASE_DRONE_HP` question.
+      **Sequence this after #30**: `+20 HP/pt` is denominated in diep's 7-point cap, so adopting it
+      at our 6 lands somewhere neither game intends, and would have to be redone.
     - **Regen.** diep is linear in time: `HPS = MH × (0.03 + 0.12·rr)/30` → full heal in 1000 s at
       0 points, 34.5 s at 7. Ours (`hpregan[1]` accumulates, then is added, every tick) is
       *quadratic* — full heal in 46 s at 0 points, 28 s at max. So our base regen is **21× faster
-      than diep's** and our regen stat is nearly worthless (1.6× range vs diep's 29×). The
-      quadratic ramp is a crude accidental stand-in for diep's out-of-combat regen rule, which the
-      reference does not document — decide whether to keep it deliberately or go linear. **Still
+      than diep's** and our regen stat is nearly worthless (1.6× range vs diep's 29×).
+      **The out-of-combat rule is now documented: diep calls it "Hyper Regeneration".**
+      `diep_wiki/Stats.txt` — after **~30 s without taking damage** the regen rate "greatly
+      increases"; below that threshold the linear `1/30 × MaxHP × (0.03 + 0.12·rr)` applies.
+      That is what reconciles the two numbers this item treats as contradictory: at 0 points the
+      linear rate alone is 0.1%/s (1000 s to full), but the measured time-to-full is **31.97 s**,
+      because hyper regen takes over at 30. The wiki's full 0–7 table is 31.97 / 30.67 / 23.07 /
+      15.15 / 11.75 / 9.13 / 7.72 / 6.41 s, and "9 or more points" is where a tank refills before
+      the 30 s threshold is even reached. Shapes and projectiles have no slow regen but **do** hyper
+      regen (polygons: "regenerate health if left unharmed for at least thirty seconds").
+      So our quadratic accumulator is a crude stand-in for a real two-regime rule.
+      **DECIDED: implement both regimes** — the linear rate below the threshold and hyper regen
+      above it — rather than picking one curve. The hyper *rate* is not published, but it is
+      solvable from the time-to-full table above (at 0 points the linear rate alone would take
+      1000 s and the observed figure is 31.97 s, so the residual pins it). No measurement needed.
+      **Still
       open; only the quantizer under it has been fixed.** `parseInt(hpregan[1] * maxHp * 10)/10`
       truncated the per-tick *increment* to 0.1 HP, which is a floor with no carry: every tick
       worth less than 0.1 HP healed nothing and threw the remainder away, so a 150 HP tank at 0
@@ -325,7 +498,9 @@ stated as open has shipped and should not be "re-fixed".*
     - **Arena.** diep sizes it per room: `AL = ⌊√N_P × 50⌋` gu (244 gu at our `maxPlayer: 24`).
       Ours is fixed and never changes with occupancy: ffa/4team/2team are **451/450/400 gu**, i.e.
       **1.85× diep's 244 gu**. Resizing toward diep is still open.
-    - **Shapes.** diep's count is `12,5 × N_P`, which with the arena rule is a *constant*
+    - **Shapes.** diep's count is `12,5 × N_P` — independently confirmed by `diep_wiki/Polygons.txt`
+      ("the arena gains 12.5 polygons for every player that is connected, rounded down"), so this
+      is not a `physics.html` artefact. With the arena rule it is a *constant*
       1 shape per 200 gu² at any player count. Ours is 1 per 261 gu² — 0.76× the density; combined
       with the narrow FOV, a diep screen held ~13.7 shapes and ours ~5.4. The grid rescale held
       this ratio constant rather than improving it (`objCaps` went ×1.96 with the map's area purely
@@ -341,17 +516,48 @@ stated as open has shipped and should not be "re-fixed".*
     diep's +2). Reload quantization to whole ticks. Per-tick-of-contact damage application (diep's
     "law 3").
 
-23. **Not covered by `physics.html` at all — still needs measuring in a real client.** Bullet base
-    speeds and lifetimes (the page defines `V_b = ρ/t_b` but lists no values), bullet spread
-    (`rand`), shape HP/XP/drift, `MH₀`, camera lag (`CONST.CAM_SMOOTH` is still a placeholder) and
-    `CONST.HP_BAR_HOLD`, a pure feel knob that was never measured against anything.
+23. **Not covered by `physics.html` — but `diep_wiki/` has since supplied most of it.**
+
+    **Resolved from the wiki, no measurement needed** (see also #17 and #19):
+
+    | | HP | body damage | XP |
+    |---|---|---|---|
+    | Square | 10 | 8 | 10 |
+    | Triangle | 30 | 8 | 25 |
+    | Pentagon | 100 | 12 | 130 |
+    | Hexagon | 1500 | — | 1500 |
+    | Alpha Pentagon | 3000 | 20 | 3000 |
+    | Crasher (small) | = Square | = Square | 15 |
+    | Crasher (large) | = Triangle | = Triangle | 25 |
+
+    Green ("shiny") variants: **×10 HP, ×100 XP**, body damage unchanged — worth checking against
+    `public/SHARE/ObjectsConfig.js`'s tuned chances in the item 6 browser pass, since ours were
+    picked by feel. Gamemode XP multipliers: **Tag ×3, Breakout ×3, Domination ×2**, everything
+    else ×1. Body damage is `(BodyDamagePoints + 5) × multiplier`, multiplier **4 vs shapes**
+    (so 20 at 0 points, confirming #17's figure), **+50% against tanks**, **−75% against
+    projectiles** — that last one is the "body damage reduces damage taken" term #18 wants, stated
+    directly. Bullet penetration: each point adds **+75% of the bullet's base HP**; a basic tank
+    bullet's base HP is **2** (cross-checked three ways off `diep_wiki/Dominator.txt`, which quotes
+    Dominator projectile stats as multiples of a tank's: "200 health (×100 Tank)", "10 Health
+    (×5 Tank)", trap "30 (×15 Tank)"). A basic bullet's damage is **7** ("70 damage per hit,
+    ×10 Tank"), matching #16/#18.
+
+    **Still genuinely unmeasured — and now each has a written protocol in
+    [MEASUREMENTS.md](MEASUREMENTS.md):** bullet range/lifetime (`ρ`/`t_b`, **M1** — which also
+    settles whether diep's bullets carry drag at all, see #14), bullet spread (`rand`, **M2** —
+    the form `w = h/ρ_Vb` is known, only `h` is missing), the reload stat's real form (**M3**),
+    shape drift (**M4**), camera lag (`CONST.CAM_SMOOTH`, **M5**) and `CONST.HP_BAR_HOLD` (**M6**).
+    That file also lists the ~14 quantities that are already pinned and must **not** be re-measured.
 
     Two things about the base drones stay open:
-    - **The HP scale.** `BASE_DRONE_HP: 2000` is the wiki's number on *diep's* HP scale, and ours
-      is not diep's — our base tank is 150 HP against diep's unmeasured `MH₀`, and a maxed level-30
-      tank here is 900. If `MH₀` is 50, diep's base drone is ~7.1× a maxed tank, which on our scale
-      would be ~6400, not 2000. 2000 ships because it lands on "very durable but killable", which is
-      the design intent; the 6400 alternative is blocked on the same `MH₀` measurement item 17 wants.
+    - **The HP scale — the blocker is gone, the decision is not.** `BASE_DRONE_HP: 2000` is the
+      wiki's number on *diep's* HP scale, and ours is not diep's — our base tank is 150 HP, a maxed
+      level-30 tank here is 900. **`MH₀ = 50` is now confirmed** (#17), so diep's base drone really
+      is ~7.1× a maxed diep tank, and the faithful number on our scale really is **~6400, not
+      2000** — a 3.2× increase. **DECIDED: go to ~6400**, i.e. stay true to diep rather than keep
+      the 2000 that was shipped on "very durable but killable". Recompute the exact figure against
+      whatever a maxed tank's HP becomes once #30's 7-point cap and #17's `+20/pt` land, since
+      6400 is derived from that pool rather than being a constant in its own right.
     - **`BASE_DRONE_DAMAGE: 2.97`** is derived (`8.48485 × 7/20`, our tank body damage scaled by the
       wiki's 7-per-loop against diep's 20-per-loop tank body), not observed. At today's rate that is
       ~74 HP/s from a single drone, so a swarm of twelve kills a 900 HP tank in about a second.
