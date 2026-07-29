@@ -70,12 +70,15 @@ says otherwise. Scaled values are derivable; base values are not.
 ## M1 — Bullet range `ρ` and lifetime `t_b` *(highest value; unblocks the most)*
 
 **Unblocks:** PENDING #23's `speed`/`life` columns, and closes the last of the #14/#16 FRICTION
-question. **This is the single most valuable measurement on the list.**
+question. **This is the single most valuable measurement on the list**, and it is now the *only*
+thing standing between the tree and a fully diep-faithful motion model: the tank half shipped in
+plan.md step 2, and what M1 decides is the fate of `lib/constants.js`'s `BODY_FRICTION`.
 
 `physics.html` parameterises bullets as `V_b = ρ/t_b` — range over lifetime, with **no drag term
-anywhere**. Our tree instead runs bullets through the *tank* recurrence (`v = (v + speed)·F`) using
-the shared global friction, which is a tank model applied to a bullet. Confirming diep's model is
-what lets tank friction and bullet motion be separated cleanly rather than as a workaround.
+anywhere**. Our tree still runs bullets through the *tank* recurrence (`v = (v + speed)·F`), now under its own
+name (`BODY_FRICTION`) rather than sharing the tank's — the shape is still a tank model applied to
+a bullet, it is just no longer coupled to the tank's value. Confirming diep's model is what decides
+whether that recurrence should exist at all.
 
 **Protocol**
 1. Basic Tank, level 1, 0 Bullet Speed points. Sit still (recoil moves you and corrupts the range).
@@ -87,7 +90,7 @@ what lets tank friction and bullet motion be separated cleanly rather than as a 
 **The question that matters most — is the speed constant?** Compare gu-per-frame just after the
 muzzle against just before despawn, over ≥10-frame spans at each end.
 - **Flat** → diep's bullets are constant-velocity with a lifetime. `ρ/t_b` is the entire model, and
-  our bullets should stop sharing the tank's `FRICTION` altogether.
+  `BODY_FRICTION` should be deleted rather than retuned — bullets stop decaying at all.
 - **Decaying** → bullets have their own drag. Fit the ratio to get `F_bullet`, which will *not* be
   10/11 (that value is derived from a tank identity).
 
@@ -183,8 +186,12 @@ list lives in **[plan.md](plan.md)**, which is what the work is actually being r
 
 1. ~~**PENDING #30** — the 45/7/33 economy. Wholly structural, zero measurement.~~ **DONE.**
    Every later item's domain is now diep's: 7 points, 45 levels, 33 total, tiers at 15/30/45.
-2. **#14 tank movement magnitudes** — `A₀` and `F = 10/11` are exact. Adopt tank motion *without*
-   touching bullets; that separation is the faithful model, not a workaround.
+2. ~~**#14 tank movement magnitudes** — `A₀` and `F = 10/11` are exact. Adopt tank motion *without*
+   touching bullets; that separation is the faithful model, not a workaround.~~ **DONE.**
+   `MOVE_ACCEL_BASE` 1.449 / tank `FRICTION` 10/11, base top speed 362.25 u/s. The separation
+   shipped as `lib/constants.js`'s `BODY_FRICTION` (0.956532), which is what **M1 below is
+   measuring** — bullets, traps, drones, shapes and the boss's drift are bit-identical until it
+   lands. Do not merge the two constants back together.
 3. **#16 recoil + knockback columns** — both act on *tank* velocity, so once #14's `F` is set they
    are pure arithmetic against the Knockbackfactor table. Still gated on the ~7-class roster
    decision and the 1.26× rescale error, neither of which is a measurement.

@@ -10,6 +10,10 @@ actually shipped is deleted from this file rather than recorded here.
 documented from the old dev (naming, MySQL, anything below) needs a migration path or
 backward-compat story. Old conventions are defaults to improve on, not constraints.*
 
+*Small open threads that are not items in their own right — things that will bite during a later
+step if nobody remembers them — are collected in **⚪ Nuances to iron out** near the bottom, with
+pointers back into the items below.*
+
 ## 🔵 Decided — queued for implementation (not yet built)
 
 2. **Next gamemodes: Domination/Maze get real new entity types.** Decided — not tunable-only.
@@ -135,6 +139,15 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
      where it used to start with one; the class picker opens at **15/30/45**, not 9/19/29; and
      levels 29–45 grant a point only every third level, so the "x*n*" badge stops ticking up every
      level near the cap — that is the schedule, not a stuck counter.
+   - **The tank moves at diep's speed now** (#14's magnitudes, plan.md step 2). Base top speed
+     went 284 → **362.25 u/s** (1.28×) and the drag went with it, so the tank both accelerates
+     harder and stops harder — the e-fold time to top speed halved (0.90 s → 0.42 s), which is the
+     "2.14× floatier" complaint in #14's table being paid off. Judge it as *responsiveness*, not
+     just speed: a fresh spawn should feel crisp rather than skating. Two knock-ons to look at
+     while you are there: **recoil now reads weak** — `back` has not been rescaled yet (step 3), so
+     a Destroyer's kick is 2.2× short of where it will end up, and so is every knockback — and
+     **base drones are faster too** (`BASE_DRONE_CHASE_SPEED` re-pinned 423.7 → 501.7 u/s), so the
+     "lap an enemy base and survive" race below is being re-run at both ends at once.
    - **Regen actually starts immediately** (#17). At 0 Health Regen points, take a few HP off a
      fresh 150 HP tank and watch the bar: it should begin creeping back straight away, where it
      used to sit dead flat for ~22 s before the first tick of healing landed.
@@ -223,6 +236,118 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
     check the drawn-height-vs-spawn-radius gap deliberately for any new boss cannon table instead
     of assuming the ordinary 0-12 band applies.
 
+## ⚪ Nuances to iron out — small open threads, none of them blocking
+
+*Not items in their own right; each is a detail that will cost a session if it is rediscovered
+rather than remembered. Ordered by when it will bite, soonest first. Anything that is genuinely a
+decision has its own numbered item above and is only cross-referenced here.*
+
+### Live right now — the tree is in a knowingly-wrong state
+
+31. **Recoil and knockback are both 2.20× too weak until plan.md step 3 lands.** `back` and
+    `weight` are impulses on *tank* velocity, so both were denominated against the old `FRICTION`
+    and neither moved when step 2 took it to `10/11`. This is deliberate and separable, not a
+    regression — but it means **anything judged by feel between now and step 3 is being judged in a
+    game where ramming and recoil are wrong**, including the item-6 browser checklist and
+    `BASE_DRONE_DAMAGE`'s playtest. Do not retune anything else against the current recoil.
+    62 cannons across 27 classes carry a nonzero `back`; the consumer is
+    [entities/Player.js](entities/Player.js#L303) (`tick.perTick(can.back)`), mirrored by
+    `test/rooms.js`'s `fastestTankSpeed()`. See #16.
+
+32. **`BASE_DRONE_CHASE_SPEED`/`_TURN` will need re-pinning at least twice more.** The pair is
+    pinned to a live measurement, so every retune that touches the speed ceiling moves it: **step 3**
+    (recoil `back` is most of a recoil rider's speed — the premium over a plain walk is 1.38× today
+    and was 1.49× before step 2 raised the walk without raising `back`), then **#15's reload stat**
+    if M3 says our ×2.23 is wrong, then **#16's `weight`** if knockback ever enters the recurrence.
+    Always move both constants together: `turn = speed_u_per_s / 60 / 25` holds the ~60-unit turn
+    radius, and `lib/config.js`'s comment carries the whole chain of re-pins.
+
+### Consequences of step 2 that are permanent, not transitional
+
+33. **`V_max = 10·A` is exact only at the 40 ms reference — our live 25 ms server runs 1.8% over
+    it.** `Physics.stepBody`'s steady state is `25·A·d·F^d/(1−F^d)` u/s, which equals `362.25` only
+    at `d = 1` and rises toward `−25·A/ln F` = 380.1 as `d → 0`; at the live `d = 0.625` it is
+    **368.9**. This is ordinary semi-implicit Euler error in the drag term, and it *grew* with the
+    heavier friction (it was 0.8% at `F = 0.956532`). Two things follow. First, quoting "362.25 u/s"
+    is quoting the reference, not the server — fine for comparing against diep, misleading if
+    someone measures in-game and finds 369. Second, `test/rooms.js`'s tick-scale band had to widen
+    2% → 3% for exactly this reason, with the derivation in the test.
+    **If this ever needs to be exact**, the fix is to make `stepBody` an exponential integrator
+    (solve the continuous ODE the `d = 1` recurrence samples) rather than to nudge constants — but
+    that changes the meaning of every per-reference-tick constant in the tree, so it is a pass of its
+    own and probably not worth 1.8%. Written down so it is a decision rather than a surprise.
+
+34. **`test/clientDiff.js` seeds ONE global RNG and builds all four rooms in sequence, so any
+    physics change relocates the camera in the last three modes.** Mode *N*'s divergence shifts mode
+    *N+1*'s `Init()` — different tester spawn point, different bot roster — before a single tick has
+    run. That is why step 2's rebaseline moved 276262 → 301969 ops without anything "new" happening,
+    and why `ffa` (built first) stayed bit-identical while `2team`/`4team`/`boss` diverged wholesale.
+    **Every future physics step will produce the same illegible delta.** The technique that made it
+    readable is worth reusing rather than reinventing: override the constants at load time and
+    re-run the corpus once per candidate cause, so each cause gets its own hash and the ones that
+    contribute nothing are *proved* to contribute nothing. **If it becomes a nuisance, the fix is to
+    re-seed per mode** so each room's corpus is independent — cheap, and it would have made step 2's
+    delta a three-line diff instead of a 25k-op one. Deliberately not done inside step 2, because
+    changing the corpus and changing the physics in the same commit makes neither reviewable.
+
+35. **`BODY_FRICTION` is on death row, not on a retune list.** If **M1** finds diep's bullets are
+    constant-velocity (the likely answer — `physics.html` has no drag term for them at all), the
+    right change is to **delete** the decay from `entities/Bullet.js`'s motion tail, not to fit a
+    new number into it. That is a structural edit to the tail plus every per-cannon `speed`/`life`
+    value, so budget it as such. Two things in that file are *already* separate and must not be
+    swept up: traps decay through their own `.82`, and `entities/Objects.js` uses
+    `vec.limit(…, BODY_FRICTION)` (a capped decay, not a bare multiply). See #14 and M1.
+
+36. **`PET_FRICTION`'s 2×-braking relationship is against `BODY_FRICTION`, not the tank's.** Checked
+    when the split landed and still exact (1.99×). The hazard is a future reader "restoring" it
+    against `10/11`, which gives `fr = 0.8182` and a pet that brakes ~2.2× harder and parks behind
+    its owner. The comment in `lib/gameAI.js` says so; this is the second copy.
+
+### Documentation and tooling drift
+
+37. **Prose in `HANDOFF.md` and `PENDING.md` goes stale silently — nothing tests it.** Step 2 found
+    a `lib/constants.js` comment naming "~8 consumers (… `lib/boot.js` …)" when there were three
+    and `boot.js` was not one of them, `fastestTankSpeed()`'s docstring still saying "6 Movement
+    Speed and 6 Reload" a whole step after the cap became 7, and `HANDOFF.md`'s file-map line counts
+    wrong on most rows (`lib/gameAI.js` listed 403 against an actual 490). **When a step changes a
+    number, grep the tree for the old number, not just for the constant's name** — that is what
+    caught `284` in `test/client.js` and `public/motion.js`. Beware one false positive: Gunner's
+    bullet `speed` is `0.511936`, which is a coincidence next to the old `MOVE_ACCEL_BASE`
+    `0.511941` and has nothing to do with it.
+
+38. **`npm run lint` is unusable as a gate.** It reports ~4984 errors, all inside the gitignored
+    `reference/` vendor dump, all predating this work. Lint the source explicitly instead:
+    `npx eslint entities lib rooms net public test server.js web`. Worth either scoping the npm
+    script or adding `reference/` to the eslint ignore list at some point, so "lint is clean" can
+    mean something again.
+
+39. **Constants are denominated per `REF_TICK_MS` (40 ms) and converted at the consumption site.**
+    Getting the `lib/tick.js` category wrong (`perTick` / `drag` / `ticks` / `chance` / `quadratic` /
+    `lead` / `smoothing`) does not fail anything loudly — the value just silently stops being
+    real-world-correct at the live tick rate. Read that file's header before adding any new per-tick
+    constant, and note that several existing constants are deliberately **flat** (`AUTOTURRET_LEAD`,
+    the pet's `2.475`, `BOSS_DRIFT`) with the reasoning at each site.
+
+### Judgement calls already taken that a later step could quietly undo
+
+40. **Step 1 deliberately did not re-price XP.** `maxXp` still spreads the same 25000/30000 over 45
+    levels instead of 30, so leveling is finer rather than slower. Re-pricing belongs with #19's
+    shape density, not with the economy conversion — but it *is* a live balance consequence
+    (early levels arrive much faster than they used to), so if leveling reads as too quick, that is
+    the knob, and it is a deliberate omission rather than an oversight.
+
+41. **Step 1's `parseInt(level / 15)` tier gate departs from PENDING's literal
+    `parseInt((1 + level) / 15)`.** Our `level` is 1-based in diep's sense (`XPLVL[0] === 0`), so the
+    `1 +` was an off-by-one that opened tier 1 at level 9. If a later reader "restores" the
+    reference's expression, the gates silently become 14/29/44. `test/rooms.js` pins 15/30/45.
+
+42. **The Summoner boss is the only entity whose `motion()` is replaced rather than overridden.**
+    `rooms/Room.js`'s `createBoss()` does `b.motion = spec[0].bind(b)`, so a boss never reaches
+    `Physics.stepBody` and none of the tank movement work applies to it. Any *future* boss added to
+    `lib/gameAI.js`'s `CONFIG.BOSS` inherits that shape — decide deliberately whether it should,
+    alongside #29's drawn-barrel-vs-spawn-radius check, which has the same "applies to every future
+    boss" property.
+
 ## 🟡 Explicitly deferred (told not to do this pass)
 
 11. The Spade Squad diep-physics balance pass. The client/server *mismatch* in the existing
@@ -252,32 +377,34 @@ handful of quantities that genuinely still need a real diep client, the ~14 that
 and must not be re-measured, and — most importantly for sequencing — the fact that **almost nothing
 here is measurement-blocked any more.** #14's `FRICTION` is exact (`10/11`, derived), so #14, #16,
 #17, #19 and the damage model can all be finished before a single measurement is taken. The
-ordered queue for that work is **[plan.md](plan.md)**; #30, its first step, has shipped.*
+ordered queue for that work is **[plan.md](plan.md)**; steps 1 and 2 — #30's economy and #14's tank
+movement magnitudes plus the tank/body friction split — have shipped.*
 
-14. **Movement: right shape, wrong stiffness.** (**The *form* half is done.** Level and Movement
-    Speed are independent multipliers on the base accel now — `base × 1.07^pts / 1.015^level`,
-    `public/SHARE/Physics.js` — so a maxed level-30 tank sits at 0.96× a fresh spawn instead of
-    0.79×, and the level term no longer reaches zero speed at level 54. The stat/level *domain* is
-    diep's too since #30 shipped, so the form is now exactly diep's: at the 45 cap a maxed-Movement
-    tank is `1.07^7 / 1.015^45` = 0.82× a spawn, diep's own endgame figure. **The magnitudes below
-    are still open** — `MOVE_ACCEL_BASE`/`FRICTION` are unchanged, so base top speed is still
-    284 u/s, and the table's other rows still stand. **They are no longer blocked, though**: the
-    section under the table derives `FRICTION` exactly and dissolves what used to be the blocker.)
+14. **Movement — SHIPPED, form and magnitudes both** (plan.md step 2). Level and Movement Speed
+    are independent multipliers on the base accel — `base × 1.07^pts / 1.015^level`,
+    `public/SHARE/Physics.js` — and the level term no longer reaches zero speed at level 54. The
+    stat/level *domain* is diep's since #30, so at the 45 cap a maxed-Movement tank is
+    `1.07^7 / 1.015^45` = 0.82× a spawn, diep's own endgame figure. **The magnitudes are diep's
+    now too**: `MOVE_ACCEL_BASE` 0.511941 → **1.449**, `FRICTION` 0.956532 → **10/11**, so base top
+    speed is **362.25 u/s** — diep's 12.94 gu/s at our 28 units/gu. Every row below reads as an
+    identity; the table is kept only so the item still records what was wrong.
 
     | | diep | ours | ratio |
     |---|---|---|---|
-    | top speed, base | `10 × A₀` = 12.94 gu/s = 6.47 tank-diameters/s | 284 u/s = 5.07 diam/s | **0.78×** |
-    | accel → top-speed ratio | `v_max = 10 × A` | `v_max = 26.8 × len` | **2.7×** |
-    | e-fold time to top speed | 0.42 s | 0.90 s | **2.14× floatier** |
+    | top speed, base | `10 × A₀` = 12.94 gu/s = 6.47 tank-diameters/s | 362.25 u/s = 6.47 diam/s | **matched** |
+    | accel → top-speed ratio | `v_max = 10 × A` | `v_max = 10 × A` | **matched** |
+    | e-fold time to top speed | 0.42 s | 0.42 s | **matched** |
     | speed vs level | `÷ 1.015^lvl` (×0.51 at lvl 45) | `÷ 1.015^lvl` (×0.51 at lvl 45) | **matched** |
     | speed vs stat | `× 1.07^vm` (+61% at 7) | `× 1.07^vm` (+61% at 7) | **matched** |
     | stat cap / level cap | 7 points, 45 levels | 7 points, 45 levels | **matched** (#30, shipped) |
 
-    (The last three rows are what the form fix and #30's domain conversion addressed — they read
-    as identities now and are kept only so the item still records what was wrong. The first three
-    are the open magnitude gap.)
+    **What is left of this item is the split it forced** (below — future work must not undo it)
+    **and the two columns that ride the tank's `F` and have not been rescaled yet**: recoil `back`
+    (plan.md step 3, factor 2.20, unblocked) and knockback `weight` (#16, blocked on two human
+    calls). **Both are under-scaled by 2.20× as of this step**, which is a known, temporary,
+    deliberate state — not a regression to chase.
 
-    ### `FRICTION` is EXACT, and it is a *tank* constant — this is no longer blocked
+    ### `FRICTION` is EXACT, and it is a *tank* constant — SHIPPED, and do not merge it back
 
     **`F = 10/11 = 0.909090…` per 40 ms loop, derived rather than measured.** `physics.html` states
     `V_max = 10 × A` for tanks. For the recurrence `v ← (v + A)·F` the steady state is `A·F/(1−F)`;
@@ -291,29 +418,54 @@ ordered queue for that work is **[plan.md](plan.md)**; #30, its first step, has 
     So: `len = 1.449`, `FRICTION = 10/11` at the 40 ms reference (`len = 0.978` / `F = 0.9244` at
     `TICK_MS 33`, `len = 0.556` / `F = 0.9422` at 25 ms). **Nothing here needs measuring.**
 
-    **The old "FRICTION is global" blocker was a mis-framing of a real bug.** It is true that
-    `lib/constants.js` re-exports one constant and that `entities/Bullet.js`, `entities/Objects.js`
-    and `lib/gameAI.js` all decay through it — but **diep does not model bullets that way at all.**
+    **The old "FRICTION is global" blocker was a mis-framing of a real bug.** It was true that
+    `lib/constants.js` re-exported one constant and that `entities/Bullet.js`, `entities/Objects.js`
+    and `lib/gameAI.js` all decayed through it — but **diep does not model bullets that way at all.**
     `physics.html` parameterises a bullet as `V_b = ρ/t_b`, range over lifetime, with **no drag term
     anywhere**, and defines `ρ_Vb` as "distance a bullet can fly before decay". The `V_max = 10 × A`
     identity that pins `F` is stated *for tanks only*.
 
-    In other words we are currently running a **tank** recurrence on bullets, and sharing one
-    constant between two things diep models separately. Splitting them is not a workaround to dodge
-    a cascade — **the split is the faithful model**, and it makes the 2.2×-slower-bullets problem
+    In other words we were running a **tank** recurrence on bullets, and sharing one constant
+    between two things diep models separately. Splitting them was not a workaround to dodge a
+    cascade — **the split is the faithful model**, and it made the 2.2×-slower-bullets problem
     disappear rather than needing compensation. Recoil and knockback both act on *tank* velocity, so
     #16's rules hold verbatim under the split.
 
+    **The split as shipped.** `public/SHARE/Physics.js`'s `FRICTION` is the tank's `10/11`, reached
+    only through `stepBody()` — `entities/Player.js`'s `motion()`, `lib/gameAI.js`'s bots,
+    `public/client/game.js`'s input prediction. `lib/constants.js`'s **`BODY_FRICTION`** keeps
+    0.956532 for `entities/Bullet.js`, `entities/Objects.js` and the Summoner boss's scripted drift
+    in `lib/gameAI.js`. Bullet, trap, drone, shape and boss behaviour is **bit-identical** across the
+    change — verified, not asserted: with the split applied and the magnitudes held at their old
+    values, `test/clientDiff.js` reproduces the previous golden exactly (276262/d7859442). Three
+    judgement calls, each written up at its call site rather than here:
+    - **The boss's drift stays on `BODY_FRICTION`.** `rooms/Room.js`'s `createBoss()` does
+      `b.motion = spec[0].bind(b)`, i.e. the drift function *replaces* `Player.prototype.motion()`,
+      so a boss never reaches `stepBody` at all; its `this.vec` is not in tank units either (the
+      position step divides by 10); and nothing in any reference pins a top speed for it — diep has
+      no Summoner boss. At 10/11 its drift steady state would have dropped to ~0.45× for no reason.
+    - **`PET_FRICTION` is unaffected, and its premise survives.** The documented
+      `1-fr = (1-F)×2` relationship was always against 0.956532 — exactly the constant that did not
+      move (1 − 0.91341 = 0.08659 against 1 − 0.956532 = 0.043468 is 1.99×). Re-deriving it against
+      the tank's 10/11 would give `fr = 0.8182`, a pet braking ~2.2× harder. Do not.
+    - **The client needed no edit.** `public/client/game.js` predicts through the same
+      `Physics.stepBody`/`Physics.moveAccel` and holds no accel or friction constant of its own
+      (grepped across `public/client/` and `public/motion.js`), so it followed the tank
+      automatically — which is the payoff for the shared-integrator rule in HANDOFF §3.
+
     **What is left is one observation, not a decision:** whether diep's bullets are truly constant
     velocity or carry their own separate drag — see `MEASUREMENTS.md` **M1**, which also yields the
-    `ρ`/`t_b` values #23 wants. Adopting tank movement does **not** wait on it; bullets keep today's
-    behaviour untouched until M1 lands.
+    `ρ`/`t_b` values #23 wants. Adopting tank movement did **not** wait on it; bullets keep today's
+    behaviour, now under `BODY_FRICTION`, until M1 lands.
 
-    **The 284 u/s above is a level-0, no-upgrade tank walking — not this game's ceiling.** Riding
-    your own recoil is worth ~1.5× a plain walk. `BASE_DRONE_CHASE_SPEED` is pinned to that real
+    **The 362.25 u/s above is a level-0, no-upgrade tank walking — not this game's ceiling.**
+    Riding your own recoil is worth ~1.4× a plain walk. (It was ~1.5× before the magnitudes moved:
+    the walk went up 1.28× while `back` did not move at all, so the recoil rider's premium shrank
+    — step 3's rescale is what puts it back, and it will move the ceiling again.) `BASE_DRONE_CHASE_SPEED` is pinned to that real
     ceiling, measured live by `test/rooms.js`'s `fastestTankSpeed()` (replays `entities/Player.js`'s
-    own `motion()` + `shoot()` recurrence over every reachable class at 6 Movement Speed and 6
-    Reload, with the recoil aimed along the direction of travel). The level penalty
+    own `motion()` + `shoot()` recurrence over every reachable class at a full Movement Speed and a
+    full Reload bar — it reads `MAX_PER_STAT`, so that is 7/7 since #30 — with the recoil aimed
+    along the direction of travel). The level penalty
     (`Physics.moveAccel` divides by `MOVE_LEVEL_DIV^level` since the form fix) is why each class is
     fastest at the lowest level it unlocks at. **Deliberately not recorded here as a number** — it is a live test,
     so any retune that moves the ceiling (this item's `FRICTION`/`len`, #15's reload stat, #16's
@@ -349,15 +501,17 @@ ordered queue for that work is **[plan.md](plan.md)**; #30, its first step, has 
       a shared number there is a family trait, not the copy-paste bug Twin's mismatched barrels were.
 
 16. **Knockback (`weight`) is ~5.5× too weak — the whole column still wants replacing.**
-    (The recoil `back` column is done and is now diep's table 1:1. Two things about it that matter
-    going forward: **Annihilator was deliberately left off-table** for the same reason as its
-    reload in #15, and **the 1:1 conversion is only true at today's `FRICTION`** — when #14's
-    `F = 10/11` is adopted the whole column must be rescaled by `back = gu × 28 × (1-F)/F`.
-    **That factor is 2.19, not the 2.55 this item used to claim** — 2.55 does not follow from the
-    formula beside it under any reading; `(1−0.9244)/0.9244 ÷ (1−0.964)/0.964 = 2.19`, and the same
-    ratio at the 40 ms reference (10/11 against 0.956532) is 2.20. Use the formula, not the old
-    number. Since `back` is an impulse on *tank* velocity, this is unaffected by whatever M1 finds
-    out about bullet motion — recoil follows the tank's `F`, always.)
+    (The recoil `back` column matched diep's table 1:1 **at the old `FRICTION`**. Two things about
+    it that matter going forward: **Annihilator was deliberately left off-table** for the same
+    reason as its reload in #15, and — **now overdue, not conditional** — #14's `F = 10/11` HAS
+    been adopted (plan.md step 2), so the whole column is currently **under-scaled by 2.20×** and
+    must be rescaled by `back = gu × 28 × (1-F)/F`. That is **plan.md step 3**, which lands on its
+    own; the two were deliberately kept separable. **The factor is 2.20, not the 2.55 this item
+    used to claim** — 2.55 does not follow from the formula beside it under any reading;
+    `(1−0.9244)/0.9244 ÷ (1−0.964)/0.964 = 2.19` at the 33 ms reference and the same ratio at the
+    40 ms one (10/11 against 0.956532) is 2.20. Use the formula, not the old number. Since `back`
+    is an impulse on *tank* velocity, this is unaffected by whatever M1 finds out about bullet
+    motion — recoil follows the tank's `F`, always.)
 
     The gap, re-measured against the **live code path** (`entities/Player.js`'s bullet arm) rather
     than recomputed from the pre-rescale tree:
@@ -369,12 +523,15 @@ ordered queue for that work is **[plan.md](plan.md)**; #30, its first step, has 
     | tank body | 1.6 gu | 0.29 gu | **5.5× weak** |
     | drones | 0.8 gu | no separate value | — |
 
-    **The conversion factor is now pinned: 1 unit of `weight` = 0.264175 gu of displacement**, at
-    today's `FRICTION`, measured by replaying the real recurrence (impulse `tick.perTick(weight/3
-    × 1.6)` into `this.vec`, decayed through `Physics.stepBody`). So `weight = Kf / 0.264175`, and
-    the full diep Knockbackfactor table is in `physics.html` — no measurement is left to do here.
-    Knockback lands on *tank* velocity, so like `back` it tracks #14's tank `F` and is independent
-    of the bullet-motion question; re-derive the 0.264175 at `F = 10/11` when #14 lands.
+    **The conversion factor was pinned at 0.264175 gu of displacement per unit of `weight`**,
+    measured by replaying the real recurrence (impulse `tick.perTick(weight/3 × 1.6)` into
+    `this.vec`, decayed through `Physics.stepBody`) **at the old `FRICTION`**. The full diep
+    Knockbackfactor table is in `physics.html`, so no measurement is left to do here.
+    **⚠ That 0.264175 is now stale.** Knockback lands on *tank* velocity, so it tracked #14's `F`
+    when plan.md step 2 moved it: a one-shot impulse's total displacement is `v₀·F/(1−F)`, which
+    went from 22.02·v₀ to 10·v₀, i.e. ×0.454 — so the figure lands near **0.1200 gu**. Re-verify
+    that by replaying the recurrence rather than adopting the arithmetic, at the same time the
+    column is rewritten. Like `back`, it is independent of whatever M1 finds about bullet motion.
 
     **Two things block finishing it, both human calls:**
     - **~7 of our classes are not in diep's table at all**, so a complete replacement cannot be

@@ -9,7 +9,11 @@ const Vec = require('victor');
 const tick = require('../lib/tick.js');
 const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
-const FRICTION = tick.drag(require('../lib/constants.js').FRICTION);
+// NOT public/SHARE/Physics.js's tank FRICTION - see lib/constants.js. diep models a bullet as
+// V_b = rho/t_b with no drag term at all, so the drag a bullet decays through here is our own
+// hand-tuned number and is deliberately NOT the tank's 10/11. It stays put until MEASUREMENTS.md's
+// M1 says what diep actually does; every number in this file is denominated against it.
+const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
 const KIND = require('../public/SHARE/kinds.js');
 const Detector = require('./Detector.js');
 
@@ -22,7 +26,7 @@ const CHARGE_CHANCE = tick.chance(0.0006061);
 	The one-time factor the `speed` column in public/SHARE/TanksConfig.js gained when this file's
 	motion tail (bottom of update()) moved from tick.perTick() to tick.quadratic().
 
-	The tail is the standard "add a thrust, decay through FRICTION, then position += vec" shape,
+	The tail is the standard "add a thrust, decay through BODY_FRICTION, then position += vec" shape,
 	which integrates the thrust TWICE over ticks - once into vec, again into position - so a single
 	SCALE is short by a factor of SCALE and a bullet's range came out proportional to 1/TICK_MS
 	(measured 955 -> 1695 units across TICK_MS 33 -> 16 for one class). tick.quadratic() is the
@@ -499,7 +503,7 @@ class Bullet {
 		this.speed = speed;
 		this.destroy = 0;
 		// The muzzle kick: a single impulse of `exitSpeed` reference ticks' worth of thrust,
-		// decayed by the tail's own FRICTION from here on. A one-time impulse against a bare
+		// decayed by the tail's own BODY_FRICTION from here on. A one-time impulse against a bare
 		// `position += vec` is already TICK_MS-invariant (it integrates only once over ticks), so
 		// it keeps tick.perTick() and divides the cruise term's own rescale back out - see
 		// SPEED_RESCALE above. `exitSpeed` itself is therefore unchanged in TanksConfig.js.
@@ -512,7 +516,7 @@ class Bullet {
 					if (this.origin.oId === other.id.oId) {
 						return;
 					}
-					// One impulse per tick of contact, decayed by the tail's FRICTION - the same
+					// One impulse per tick of contact, decayed by the tail's BODY_FRICTION - the same
 					// already-invariant shape as the muzzle kick, so it stays perTick and divides
 					// the cruise term's rescale back out of its `speed` half (SPEED_RESCALE above).
 					{
@@ -1091,7 +1095,7 @@ class Bullet {
 					// per-reference-tick units and takes no tick.perTick() of its own - the tail's
 					// tick.quadratic() applies the scale. The number is unchanged: dropping the
 					// perTick() and applying SPEED_RESCALE cancel exactly. .2 one-time-rescaled
-					// against the trap's own .82 decay, not global FRICTION.
+					// against the trap's own .82 decay, not BODY_FRICTION.
 					this.speed += Math.random() * 0.17916;
 				}
 				// NOT tick.perTick(): with the motion tail below corrected, this.vec is a
@@ -1201,7 +1205,7 @@ class Bullet {
 		}
 		/*
 			The shared motion tail every non-base-drone bullet falls through to: a constant thrust
-			along `dir`, decayed through FRICTION, integrated into position.
+			along `dir`, decayed through BODY_FRICTION, integrated into position.
 
 			tick.quadratic(), NOT tick.perTick(). The thrust is integrated twice over ticks - once
 			into this.vec, again into this.x/this.y - which is exactly the category lib/tick.js's
@@ -1222,8 +1226,8 @@ class Bullet {
 			recurrence (stepBody's vec is this one divided by SCALE), so nothing is lost.
 		*/
 		this.vec.add(new Vec(tick.quadratic(this.speed), 0).rotate(this.dir))
-		this.vec.x *= FRICTION;
-		this.vec.y *= FRICTION;
+		this.vec.x *= BODY_FRICTION;
+		this.vec.y *= BODY_FRICTION;
 		this.x += this.vec.x;
 		this.y += this.vec.y;
 		///

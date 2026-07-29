@@ -386,13 +386,17 @@ console.log('\ninput prediction reaches the same steady-state lead at any frame 
 		THE BUG PENDING #24 measured: game.js used to scale its per-tick accel by tickLen once
 		instead of tickLen^2, so the steady-state `predic` lead grew with the frame rate instead
 		of staying put - 24 units at 30fps, 54 at 60, 70 (capped) at 144, all chasing the same
-		284 u/s server truth. That is a ~3x runaway that saturates at CONST.SIZE*2.
+		server truth (284 u/s when this was measured; 362.25 since plan.md step 2 took the tank
+		magnitudes to diep's - the bug and this test are both about the frame-rate dependence, not
+		about the speed). That is a ~3x runaway that saturates at CONST.SIZE*2.
 
 		public/SHARE/Physics.js's stepBody fixes the dimension, but a large per-frame `dtTicks`
 		(30fps takes one whole reference tick in a single Euler step) vs a small one (144fps takes
 		~0.2 of a tick, four times finer) still do not integrate to bit-identical answers - that is
 		ordinary step-size discretization error, bounded and independent of frame rate once you're
-		past a couple of time constants (FRICTION's time constant here is ~28 ticks), not the old
+		past a couple of time constants (the tank FRICTION's time constant is ~17 real ticks at
+		10/11, where it was ~36 at 0.956532 - heavier drag settles the transient FASTER, so this
+		assertion got more headroom, not less), not the old
 		unbounded, cap-hitting divergence. Measured empirically at ~15% end to end across 30-144fps
 		once settled; the assertion below is deliberately looser than that measurement so it fails
 		on a regression of the old bug's magnitude (~3x), not on this residual.

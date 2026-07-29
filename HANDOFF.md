@@ -95,7 +95,7 @@ cookie.
 | `entities/Bullet.js` | 468 | Projectiles, incl. drone/trap/necro behaviour. Takes a `room` constructor argument (§3). |
 | `entities/Objects.js` | 220 | Farmable polygons. Takes a `room` constructor argument (§3). |
 | `entities/Detector.js` | 94 | Invisible "vision cone" query entity used by AI. A leaf — no `room`/`controller` reference needed. |
-| `lib/gameAI.js` | 403 | Bot/boss/pet AI. A plain module now — `Detector`/`Vec`/`FRICTION`/`CLASS`/`DES` are all leaves, so `module.exports = CONFIG` directly. |
+| `lib/gameAI.js` | 490 | Bot/boss/pet AI. A plain module now — `Detector`/`Vec`/`BODY_FRICTION`/`CLASS`/`DES` are all leaves, so `module.exports = CONFIG` directly. Bots steer through `Physics.stepBody` (tank `FRICTION`); the boss's drift and the pet do not. |
 | `lib/quadTree.js` | 75 | Spatial index for broad-phase collision. |
 | `lib/SlotMap.js` | 128 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. `maxIndex` is the highest allocatable id, not a capacity. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
@@ -103,7 +103,7 @@ cookie.
 | `lib/tick.js` | ~55 | `SCALE = TICK_MS/REF_TICK_MS` and the `perTick`/`drag`/`ticks`/`chance`/`quadratic`/`lead`/`smoothing` conversions every per-reference-tick constant is read through (massplanchunks WP3). |
 | `lib/db.js` | ~25 | The one Postgres connection point — `db.enabled`, `db.query()`, `db.check()`. Off unless `config.DB.ON`. |
 | `lib/terminal.js` | 34 | Terminal colour codes (`termColors`). |
-| `lib/constants.js` | 7 | Re-exports `FRICTION` from `public/SHARE/Physics.js`. |
+| `lib/constants.js` | 32 | **The tank/body friction split**, and the one place it is written down: re-exports the tank's `TANK_FRICTION` from `public/SHARE/Physics.js`, owns `BODY_FRICTION` (bullets, traps, drones, shapes, the boss's drift). |
 | `lib/dbConfig.js` | 18 | Postgres credentials, env-overridable. |
 | `db/schema.sql` | ~40 | Postgres table definitions (`acc`, `wrs`, `shop`, `devs`), applied on first container init. |
 | `docker-compose.yml` | ~15 | Local Postgres (`postgres:16`), version-pinned to rehearse the eventual managed-Postgres target. |
@@ -112,7 +112,7 @@ cookie.
 | `public/SHARE/World.js` | ~15 | The one grid-pitch constant (`GU`/`gu()`, plan.md WP1) — 1 grid square = 1 diep grid unit = 28 world units. Dual-mode, same footer idiom as `kinds.js`. |
 | `public/SHARE/SocketSchema.js` | 905 | Binary wire protocol, declarative (§6). Dual-mode: client *and* server. |
 | `public/SHARE/TanksConfig.js` | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. Cross-checked against itself by `test/tanks.js` — see §3. |
-| `public/SHARE/Physics.js` | 37 | **The one movement integrator** (`moveAccel`/`stepBody`/`FRICTION`) — `entities/Player.js`, `lib/gameAI.js`'s bots and `public/client/game.js` all call into it. Dual-mode. |
+| `public/SHARE/Physics.js` | 106 | **The one movement integrator** (`moveAccel`/`stepBody`/`FRICTION`) — `entities/Player.js`, `lib/gameAI.js`'s bots and `public/client/game.js` all call into it. Dual-mode. Its `FRICTION` is the **tank's** (10/11, diep's own); bullets/shapes/the boss decay through `lib/constants.js`'s `BODY_FRICTION` instead. |
 | `public/SHARE/PetsConfig.js` | 132 | Cosmetic pet definitions. |
 | `public/SHARE/ws_link.js` | 18 | Game server URL: `POST.ws`, else the page's own origin. |
 | `public/client/runtime.js` | 38 | **Late-bound client registry** (`CLIENT`). The server side no longer has an equivalent (§3) — this one is purely a client-side sequencing device, for scripts loaded by `<script>` tag with no bundler. |
@@ -166,7 +166,16 @@ The things in this codebase that are *not* obvious from reading the code around 
 - **The movement integrator and the two tank tables are enforced by code, not by memory.**
   `public/SHARE/Physics.js` is the one place the per-tick accel/friction constants are written
   down — `entities/Player.js`, `lib/gameAI.js`'s bots and `public/client/game.js`'s input
-  prediction all call into it rather than keeping their own copy. `public/SHARE/TanksConfig.js`'s
+  prediction all call into it rather than keeping their own copy, which is why the client's
+  prediction tracked plan.md step 2's magnitude change with no client edit at all.
+  **There are two frictions and they are not interchangeable** (plan.md step 2): `Physics.FRICTION`
+  is the *tank's*, exactly `10/11` per 40 ms loop — derived from diep's `V_max = 10·A`, which is
+  stated for tanks only — giving a **362.25 u/s** base top speed (diep's 12.94 gu/s at our 28
+  units/gu). Everything diep does not model as a steered tank decays through `lib/constants.js`'s
+  `BODY_FRICTION` (0.956532) instead: bullets, traps, drones, shapes, and the Summoner boss's
+  scripted drift. diep gives a bullet no drag term at all (`V_b = ρ/t_b`), so the old single shared
+  constant was a tank recurrence running on bullets; the split *is* the faithful model, not a
+  workaround, and merging them back is not a simplification. `public/SHARE/TanksConfig.js`'s
   client (drawn) and server (spawn) cannon tables are cross-checked index-by-index by
   `test/tanks.js`, which fails `npm test` on drift instead of relying on a comment asking the next
   editor to keep two hand-authored tables in sync. What it caught (plan.md WP-CANNON, PENDING
@@ -249,7 +258,7 @@ curls back on — there is no separate RETURN state to enter or an explicit snap
 `orbitState` is written every tick purely for tests/the admin dump; nothing branches on it.
 
 **Chase and return are a real dash** (plan.md WP4.5.0): `BASE_DRONE_CHASE_SPEED` is **the fastest
-sustained speed any build in this game can hold** — 423.7 u/s, measured rather than asserted by
+sustained speed any build in this game can hold** — 501.7 u/s, measured rather than asserted by
 `test/rooms.js`'s `fastestTankSpeed()`, which replays `entities/Player.js`'s own `motion()`/
 `shoot()` recurrence over every reachable class at a full Movement Speed and a full Reload bar (the
 ceiling is a Sniper at level 15 riding its own recoil). It is pinned to exactly that
@@ -258,8 +267,8 @@ absurdly either, so lapping an enemy base in the fastest tank in the game is sti
 the head start and the `BASE_DRONE_LEASH` boundary, not on top speed. If a lap ever reads unfair,
 move `BASE_DRONE_LEASH`/`BASE_DRONE_DETECT`, **not** the chase speed, which is pinned to a
 measurement and fails `npm test` if a cannon retune moves the ceiling out from under it. A chasing
-drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 7.06 rad/s), since the
-limiter that governs a leisurely orbit would give a 424 u/s drone a turn radius wide enough to arc
+drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 8.36 rad/s), since the
+limiter that governs a leisurely orbit would give a 502 u/s drone a turn radius wide enough to arc
 around a strafing target instead of into it. A return is a chase back to the ring at the same speed
 — no separate constant — the orbit field's own target speed blends from cruise to dash as a
 smoothstep of how far off its ring the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone
@@ -736,7 +745,7 @@ the minimap draws more than your own dot.
 | `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. `offdir` is compared mod 2π (`sameAngle()`), not with a literal `!==`, so two float64 expressions for the same rotation don't need a whitelist entry to excuse a false positive. The whitelist's size is pinned (`WHITELIST.length === 8`) and every entry's *reason* is re-verified live each run, not just its presence — a deviation that stops reproducing fails loud instead of the entry sitting in the file forever. See §3 and PENDING.md. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 2% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33 — WP3), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). No socket, built via `boot()`. |
+| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A — WP3; the band is 3% rather than 2% because Euler discretization of the drag term scales with 1−F, and plan.md step 2 took F from 0.956532 to 10/11), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, and that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps. |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all four modes. |

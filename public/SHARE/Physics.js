@@ -15,18 +15,27 @@
 	// actual TICK_MS (25ms). lib/tick.js's SCALE = TICK_MS/REF_TICK_MS is what actually converts
 	// these into a per-server-tick number, via stepBody's dtTicks below.
 	//
-	// These three were tuned by feel at the *old* reference (a measured ~29Hz/33ms tick) and have been
-	// converted once, here, to mean the same real-world motion at
-	// the new 40ms reference - a relabelling, not a retune, but NOT a plain linear rescale
-	// (0.964^(40/33) for FRICTION is exact - drag scaling is - but ACCEL_BASE/PER_UP compound
-	// with FRICTION into a bounded steady-state speed each tick, so scaling both by the same
-	// naive 40/33 changes that steady state by ~17%. The correct factor was solved numerically
-	// (binary search against the exact stepBody recurrence, verified to reproduce the old
-	// 284 u/s base top speed to <1%): 1.462688, not 40/33's 1.212121.
-	// MOVE_STAT_MUL / MOVE_LEVEL_DIV are per-*point* and per-*level*, not per-tick, so they are
-	// unaffected by either tick rate.
-	exports.FRICTION = 0.956532;
-	exports.MOVE_ACCEL_BASE = 0.511941;
+	// FRICTION here is the TANK's friction - see the split note in the block below and in
+	// lib/constants.js. Both of these are diep.io's own tank numbers, DERIVED rather than measured
+	// or tuned, and MEASUREMENTS.md's "Do NOT measure these" table exists to stop them being
+	// re-derived or "confirmed" against a real client:
+	//
+	//   FRICTION         physics.html states V_max = 10 x A for tanks. The steady state of the
+	//                    recurrence v <- (v + A)*F is A*F/(1-F), so F/(1-F) = 10 and F = 10/11
+	//                    EXACTLY, per 40ms loop. The 0.9091 PENDING #14 used to quote was a
+	//                    rounded 10/11 the whole time.
+	//   MOVE_ACCEL_BASE  diep's A0 = 2.58825 du/loop^2. The page gives top speed in both du/loop
+	//                    (10A) and gu/s (5A), which at 25 loops/s forces 1 gu = 50 du in diep's
+	//                    own units, so at our 28 units/gu A0 = 2.58825 * 28/50 = 1.449.
+	//
+	// The cross-check, and the thing to re-run if either is ever touched: base top speed is
+	// 10 * 1.449 = 14.49 units per reference tick = 362.25 u/s, which is diep's 12.94 gu/s at
+	// 28 units/gu. test/rooms.js's tickScaleTests() asserts that number at three tick rates.
+	//
+	// MOVE_STAT_MUL / MOVE_LEVEL_DIV are per-*point* and per-*level*, not per-tick, so neither
+	// tick rate touches them.
+	exports.FRICTION = 10 / 11;
+	exports.MOVE_ACCEL_BASE = 1.449;
 
 	/*
 		Level and Movement Speed are independent multipliers on the base accel, diep's own form
@@ -42,24 +51,40 @@
 			 a fresh spawn's speed, so the stat was a partial refund rather than a counterweight.
 			 As independent multipliers it lands at 0.96x (1.07^6 / 1.015^30) - diep's own ratio at
 			 the same level is 1.03x, and the remaining gap is entirely our 6-point stat cap against
-			 diep's 7, not the form.
+			 diep's 7, not the form. (Those are the level-30/6-point figures this was written
+			 against; since PENDING #30 the domain is diep's, so the ratio at the cap is
+			 1.07^7 / 1.015^45 = 0.82x - diep's own endgame number, gap closed.)
 		2. THE LEVEL TERM HAD NO FLOOR. `- level/155` reaches zero accel at level 54 and goes
 			 negative after; only the 30-level cap was hiding it. A divisor cannot.
 
-		The magnitudes are unchanged and deliberately so - MOVE_ACCEL_BASE and FRICTION still
-		produce the same 284 u/s base top speed they did before this change. #14 also proposes
-		replacing those two (base 1.449 / FRICTION 0.9091 at this 40ms reference, which is diep's
-		12.94 gu/s and its v_max = 10 x A ratio exactly), but FRICTION is global - entities/Bullet.js
-		and entities/Objects.js decay through the same constant via lib/constants.js - so moving it
-		rescales every bullet's top speed by 2.2x as a side effect. #16 says how to re-derive the
-		recoil column when that happens and nothing says how to re-derive the bullet `speed` column,
-		which #23 lists as never measured in the first place. That swap is therefore still open;
-		this change is only the form.
+		THE MAGNITUDES ARE DIEP'S TOO NOW (plan.md step 2). MOVE_ACCEL_BASE went 0.511941 -> 1.449
+		and FRICTION 0.956532 -> 10/11, so base top speed went 284 -> 362.25 u/s.
+
+		What used to block that swap, written here as "FRICTION is global - entities/Bullet.js and
+		entities/Objects.js decay through the same constant, so moving it rescales every bullet's
+		top speed by 2.2x as a side effect", was a mis-framing of a real bug. diep does not model
+		bullets with drag AT ALL: physics.html parameterises a bullet as V_b = rho/t_b, range over
+		lifetime, with no drag term anywhere, and the V_max = 10 x A identity that pins F is stated
+		for TANKS only. The shared constant was a *tank* recurrence being run on bullets.
+
+		So the constant is split, and PENDING #14 is explicit that the split IS the faithful model
+		rather than a workaround to dodge the cascade. FRICTION here is the tank's, and is the one
+		that moved; lib/constants.js's BODY_FRICTION keeps the old 0.956532 for everything diep
+		does not model as a steered tank - bullets, traps, drones, shapes, and the Summoner boss's
+		scripted drift - so all of those are bit-identical across this change. Do NOT collapse the
+		two back into one constant. Bullets stay where they are until MEASUREMENTS.md's M1 observes
+		what diep actually does with them.
+
+		Recoil (`back`) and knockback (`weight`) are impulses on TANK velocity, so they follow this
+		F and nothing M1 finds about bullets can move them. Both columns are consequently
+		UNDER-SCALED by (1-F_old)/F_old / ((1-F)/F) = 2.20x until plan.md step 3 rescales `back`;
+		`weight` is blocked on two human calls (PENDING #16).
 	*/
 	exports.MOVE_STAT_MUL = 1.07;    // per Movement Speed upgrade point
 	exports.MOVE_LEVEL_DIV = 1.015;  // per level
 
-	// Per-tick acceleration. `mspeedPoints` is a POINT COUNT (0-6), not a pre-summed bonus - the
+	// Per-tick acceleration. `mspeedPoints` is a POINT COUNT (0-7 since PENDING #30), not a
+	// pre-summed bonus - the
 	// server keeps it in up.MSpeed, the client reads it off the wire's upNb.
 	exports.moveAccel = function (mspeedPoints, level) {
 		return exports.MOVE_ACCEL_BASE

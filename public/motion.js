@@ -235,9 +235,12 @@
 			Two pieces, both measured rather than tuned - which is the whole point of the probe
 			byte. `interval` is the render delay Interp.sample() deliberately holds (it draws one
 			packet interval in the past); `rtt/2` is how stale the newest snapshot already was when
-			it arrived. Multiply by the tank's speed and that is the lead in world units - about 16
-			at a base tank's 284 u/s on a 50ms RTT, where public/client/config.js's CONST.SIZE*2 cap
-			it replaces was a flat 70 regardless of speed, latency or packet rate.
+			it arrived. Multiply by the tank's speed and that is the lead in world units - about 20
+			at a base tank's 362.25 u/s on a 50ms RTT. It was ~16 at the 284 u/s this game ran at
+			before plan.md step 2 adopted diep's tank magnitudes; the lead is proportional to speed,
+			so it tracked the change by itself - which is the whole point of deriving it rather than
+			tuning it. public/client/config.js's CONST.SIZE*2 cap it replaces was a flat 70
+			regardless of speed, latency or packet rate.
 		*/
 		leadMs: function () {
 			return NET.interval + NET.rtt / 2;

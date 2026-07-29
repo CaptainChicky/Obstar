@@ -2655,7 +2655,21 @@ function baseDroneAiTests() {
 	one-time rescale baked into Physics.js's own constants) is right, the real-world top speed
 	must come out the same regardless of which TICK_MS the server actually steps at - this drives
 	Physics.stepBody directly at a few different assumed rates and checks they agree, and that
-	they still match the ~284 u/s this game was tuned for before this pass.
+	they still match diep's own derived base top speed.
+
+	THE AGREEMENT BAND IS 3%, NOT THE 2% IT WAS, AND THAT IS ARITHMETIC RATHER THAN SLACK. The
+	steady state of `v <- (v + A*d)*F^d; x += v*d` is 25*A*d*F^d/(1-F^d) u/s, which is exact only
+	at d = 1 and drifts toward the continuum limit -25*A/ln(F) as d -> 0. The size of that drift is
+	set by how much drag one step applies, so it necessarily widened when plan.md step 2 took
+	FRICTION from 0.956532 to 10/11:
+
+	                        16ms     25ms     33ms     40ms(=ref)   d->0     16 vs 33
+	    F 0.956532         285.4    284.0    282.7    281.6        288.0      0.95%
+	    F 10/11            372.9    368.9    365.3    362.2        380.1      2.07%
+
+	This is ordinary Euler discretization of the drag term, not a defect and not something the
+	tank/body friction split can reach - nothing below reads lib/constants.js at all. 3% still
+	fails a regression of the magnitude this test was built to catch (PENDING #24's ~3x runaway).
 */
 function tickScaleTests() {
 	console.log('\ntick-scale invariance (massplanchunks WP3):');
@@ -2690,12 +2704,19 @@ function tickScaleTests() {
 	const at16 = steadySpeed(16);   // a much finer step, for good measure
 	const near = (a, b, pct) => Math.abs(a - b) / b < pct;
 
-	check('top speed at TICK_MS 25 and 33 agree within 2%', near(at25, at33, 0.02),
+	check('top speed at TICK_MS 25 and 33 agree within 3%', near(at25, at33, 0.03),
 		at25.toFixed(1) + ' vs ' + at33.toFixed(1) + ' u/s');
-	check('...and TICK_MS 16 agrees too - not just two lucky points', near(at16, at33, 0.02),
+	check('...and TICK_MS 16 agrees too - not just two lucky points', near(at16, at33, 0.03),
 		at16.toFixed(1) + ' vs ' + at33.toFixed(1) + ' u/s');
-	check('...and it still matches the pre-WP3 measured top speed (~284 u/s)',
-		near(at25, 284, 0.02), at25.toFixed(1));
+
+	// Not a magic number: diep's V_max = 10 x A stated against our own MOVE_ACCEL_BASE, so this
+	// re-derives the pin rather than restating it and moves by itself if either constant is edited.
+	// 10 * 1.449 = 14.49 units per 40ms reference tick = 362.25 u/s, which is diep's 12.94 gu/s at
+	// 28 units/gu. The live TICK_MS reads 1.8% over it for the discretization reason above, hence
+	// the 2% here - it is a pin on the CONSTANTS, checked through the integrator.
+	const derived = 10 * Physics.MOVE_ACCEL_BASE * (1000 / REF_TICK_MS);
+	check("...and it still matches diep's derived base top speed (10 x A, 362.25 u/s)",
+		near(at25, derived, 0.02), at25.toFixed(1) + ' vs ' + derived.toFixed(2));
 
 	reloadInvarianceTest(near);
 	bulletRangeInvarianceTest(near);

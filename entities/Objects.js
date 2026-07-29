@@ -9,7 +9,9 @@ const Vec = require('victor');
 const tick = require('../lib/tick.js');
 const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
-const FRICTION = tick.drag(require('../lib/constants.js').FRICTION);
+// NOT public/SHARE/Physics.js's tank FRICTION - see lib/constants.js. A shape is not a steered
+// tank, so it keeps the hand-tuned drag rather than diep's derived tank 10/11.
+const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
 const KIND = require('../public/SHARE/kinds.js');
 const RARITY = require('../public/SHARE/ObjectsConfig.js').rarity;
 const Detector = require('./Detector.js');
@@ -138,7 +140,7 @@ class Objects {
 	collision(other, option = {}) {
 		// Same call as entities/Player.js's own 0.5 threshold - the 0.4
 		// here is deliberately NOT tick.perTick()'d. this.vec is a real-tick velocity kept near its
-		// own accel/friction fixed point by update()'s vec.limit(tick.perTick(maxspeed/2), FRICTION),
+		// own accel/friction fixed point by update()'s vec.limit(tick.perTick(maxspeed/2), BODY_FRICTION),
 		// and that fixed point (verified numerically) barely moves across TICK_MS 16/25/33/40, so a
 		// bare threshold against it stays meaningful without a runtime conversion.
 		const len = (this.vec.length() * this.weight < 0.4) ? 2.42424 : .48485;   // one-time-rescaled from 2 / .4
@@ -193,7 +195,7 @@ class Objects {
 			return;
 		}
 		this.vec.rotate(tick.perTick(this.rotationVal));
-		this.vec.limit(tick.perTick(this.maxspeed / 2), FRICTION)
+		this.vec.limit(tick.perTick(this.maxspeed / 2), BODY_FRICTION)
 		this.x += this.vec.x / this.weight;
 		this.y += this.vec.y / this.weight;
 		if (this.DETEC) {
