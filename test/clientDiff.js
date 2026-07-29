@@ -97,7 +97,7 @@ const hash = fnv1a(blob);
 //   `while (1)` rejection loops it replaced, which shifts every Math.random() call downstream of
 //   the first spawn/placement (bot classes, shape positions, ...) - this is why the op count
 //   moved by tens of thousands even though neither change touches how many entities exist.
-const GOLDEN = { count: 323591, hash: 'bfda4735' };
+const GOLDEN = { count: 323591, hash: 'db7cb67a' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

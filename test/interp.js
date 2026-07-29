@@ -209,6 +209,94 @@ console.log('\nlead (own-bullet sync with the tank):');
 		farAt > oldCapX, farAt.toFixed(2) + ' vs old cap ' + oldCapX.toFixed(2));
 }
 
+console.log('\nstep clock (the send rate is not the tick rate):');
+{
+	/*
+		The rubber-banding players reported at speed. The simulation steps every TICK_MS and the
+		send loop fires every SEND_MS on its own timer, so consecutive packets carry a whole
+		number of steps of world - 1 or 2 - while arriving an even SEND_MS apart. Stamping each
+		snapshot with its arrival time therefore draws a variable amount of travel across a fixed
+		window, and the drawn speed oscillates even though the entity's real speed is constant
+		and the network is perfect.
+
+		Both halves of the fix are exercised here, because either alone leaves it visible: the
+		snapshot times come from the room step counter on the wire (NET.mark's second argument),
+		and Interp keeps enough of them that the instant being drawn is always straddled.
+	*/
+	const CFG = require('../lib/config.js').config;
+	const FRAME = 1000 / 144;
+	const SPEED = 0.4;    // units per ms, a fast tank
+
+	function drive(useStamp) {
+		NET.reset();
+		const e = new Interp(0, 0);
+		let simT = 0, step = 0, nextSend = CFG.SEND_MS, nextFrame = 0, sentStep = -1;
+		const frames = [];
+		for (let t = 0; t <= 8000; t += 0.5) {
+			while (simT + CFG.TICK_MS <= t) { simT += CFG.TICK_MS; step++; }
+			if (t >= nextSend) {
+				nextSend += CFG.SEND_MS;
+				if (step !== sentStep) {
+					sentStep = step;
+					e.push(simT * SPEED, 0, useStamp ? NET.mark(t, step) : NET.mark(t));
+				}
+			}
+			if (t >= nextFrame && e.n >= 2) {
+				nextFrame = t + FRAME;
+				frames.push({ t: t, drawn: e.sample(t).x, truth: simT * SPEED });
+			}
+		}
+		return frames;
+	}
+	/* Widest drawn speed swing, as a fraction of the true speed, over the settled tail. */
+	function swing(frames) {
+		let lo = Infinity, hi = -Infinity;
+		for (let i = Math.floor(frames.length / 2); i < frames.length; i++) {
+			const v = (frames[i].drawn - frames[i - 1].drawn) / (frames[i].t - frames[i - 1].t);
+			if (v < lo) { lo = v; }
+			if (v > hi) { hi = v; }
+		}
+		return (hi - lo) / SPEED;
+	}
+
+	const arrival = drive(false), stamped = drive(true);
+	// Only meaningful while the two rates differ; if they are ever made equal there is no
+	// sawtooth left to remove and this whole section is moot rather than failing.
+	check('arrival stamping visibly oscillates on a perfect network',
+		CFG.SEND_MS === CFG.TICK_MS || swing(arrival) > 0.5,
+		(swing(arrival) * 100).toFixed(0) + '% of true speed');
+	check('step stamping draws it at a near-constant speed',
+		swing(stamped) < 0.1, (swing(stamped) * 100).toFixed(0) + '% of true speed');
+	check('and does not pay for it in latency',
+		near(stamped[stamped.length - 1].truth - stamped[stamped.length - 1].drawn,
+			arrival[arrival.length - 1].truth - arrival[arrival.length - 1].drawn, SPEED * 12),
+		(stamped[stamped.length - 1].truth - stamped[stamped.length - 1].drawn).toFixed(1)
+		+ ' vs ' + (arrival[arrival.length - 1].truth - arrival[arrival.length - 1].drawn).toFixed(1) + ' units');
+
+	// The history depth is what stops the read point falling off the old end of the buffer.
+	// A clamp there is a freeze - two frames drawn in the same place - and the catch-up after
+	// it is the lurch. Neither may happen once the entity is properly running.
+	let frozen = 0, backwards = 0;
+	for (let i = Math.floor(stamped.length / 2); i < stamped.length; i++) {
+		if (stamped[i].drawn <= stamped[i - 1].drawn) { frozen++; }
+		if (stamped[i].drawn < stamped[i - 1].drawn) { backwards++; }
+	}
+	check('never freezes on the oldest position it holds', frozen === 0, frozen + ' frames');
+	check('and never draws backwards', backwards === 0, backwards + ' frames');
+
+	// One step's length is measured, not assumed - the browser cannot see lib/config.js.
+	check('measures the server step length off the wire',
+		near(NET.stepMs, CFG.TICK_MS, 0.5), NET.stepMs.toFixed(3) + ' vs ' + CFG.TICK_MS);
+
+	// A backgrounded tab comes back with a step counter hundreds ahead. Easing across that at
+	// STEP_GAIN would take minutes of crawling; it has to be treated as a cut.
+	const before = NET.stepMs;
+	const jumped = NET.mark(NET.last + 30000, NET.stamp + 1200);
+	check('a stall is cut, not eased across', jumped === NET.last, jumped);
+	check('...and the step length learned before it is kept',
+		NET.stepMs === before, NET.stepMs.toFixed(3));
+}
+
 console.log('\ninterval estimate:');
 {
 	NET.reset();

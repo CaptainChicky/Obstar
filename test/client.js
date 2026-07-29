@@ -32,7 +32,11 @@ function check(name, ok, detail) {
 }
 function near(a, b, tol) { return Math.abs(a - b) <= tol; }
 
-const TICK = 30;        // ms between packets, matching net/gameSocket.js
+// Read from config rather than restated, so retuning the send rate cannot leave this
+// harness quietly measuring a rate nobody runs - which it did, at 30ms against a 33ms
+// server. public/motion.js seeds its interval estimate at the same number, so a harness
+// that disagrees also puts the render delay a couple of ms out for the first few seconds.
+const TICK = require('../lib/config.js').config.SEND_MS;   // ms between packets
 const FPP = 2;         // render frames per packet...
 const FRAME = TICK / FPP;  // ...so the frame clock and the packet clock advance together.
 // The stub advances its clock inside frame(); delivering a packet
@@ -166,19 +170,31 @@ console.log('\nthe camera trails the tank (WP2), and aim corrects for it:');
 		worst.toFixed(1) + ' vs ~' + expected.toFixed(1) + ' expected');
 
 	// Still trailing significantly here - this is the real test of tankOff(): the tank is not
-	// drawn at the window centre any more, so aiming at the tank's own screen position (centre
-	// plus tankOff(), not bare centre) must land on zero. General.tankOff() is computed inside
-	// User.update() before camx/gx are advanced for the frame, from the same values read here,
-	// so this is exact rather than off by one frame of travel.
-	check('aim lands on the tank\'s own screen position, not the window centre', (function () {
+	// drawn at the window centre any more, so aim has to be measured from the tank's own screen
+	// position (centre plus tankOff(), not bare centre). Aim at a point a known distance
+	// straight below it and the reported direction must be exactly that bearing.
+	// Measured from a point REACH pixels away rather than from the tank itself: aiming *at* the
+	// tank asks atan2 for the direction of a zero-length vector, so the answer is whichever way
+	// the last bit of rounding fell and the check passes or fails on luck. An error of e window
+	// pixels in the offset tilts this bearing by about e/REACH radians instead, which is a real
+	// measurement - the tolerance below is a fifth of a pixel's worth.
+	// General.tankOff() is computed inside User.update() before camx/gx are advanced for the
+	// frame, from the same values read here, so this is exact rather than off by one frame.
+	const REACH = 200;
+	check('aim is measured from the tank\'s own screen position, not the window centre', (function () {
 		const G = hook.Global;
-		const offX = (User.gx - User.camx) * G.RATIO / hook.CONST.RESOLUTION;
-		const offY = (User.gy - User.camy) * G.RATIO / hook.CONST.RESOLUTION;
-		G.mouse_x = G.winW / 2 + offX;
-		G.mouse_y = G.winH / 2 + offY;
+		G.mouse_x = G.winW / 2 + (User.gx - User.camx) * G.RATIO / hook.CONST.RESOLUTION;
+		G.mouse_y = G.winH / 2 + (User.gy - User.camy) * G.RATIO / hook.CONST.RESOLUTION + REACH;
 		a.frame(FRAME);
-		return near(User.dir, 0, 1e-6);
+		return near(User.dir, Math.PI / 2, 1e-3);
 	})(), User.dir);
+	// ...and it would not: at this speed the camera is trailing far enough that ignoring the
+	// offset would visibly tilt the same shot.
+	check('...which is a correction big enough to matter', (function () {
+		const G = hook.Global;
+		const off = (User.gx - User.camx) * G.RATIO / hook.CONST.RESOLUTION;
+		return Math.abs(Math.atan2(REACH, -off) - Math.PI / 2) > 0.05;
+	})(), ((User.gx - User.camx) * hook.Global.RATIO / hook.CONST.RESOLUTION).toFixed(1) + ' px');
 
 	// Stop the tank and let the camera catch back up.
 	for (let p = 40; p < 70; p++) {

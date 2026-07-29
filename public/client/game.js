@@ -667,7 +667,10 @@
 				three passes of the whole quadtree slice for nothing, and `hit()` and `shoot()`
 				fired three times each. Each part is done once now.
 			*/
-			const at = NET.mark();
+			// Timestamped by the room's own step counter, not by when this packet landed - the
+			// send loop and the simulation clock run at different rates, so arrival order is even
+			// but the world's own advance per packet is not. See NET.mark().
+			const at = NET.mark(undefined, data.head.timestamp);
 			///Head///
 			Game.realScreen = data.head.screen;
 			Game.timestamp = data.head.timestamp;
