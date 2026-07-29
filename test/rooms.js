@@ -2691,6 +2691,7 @@ function tickScaleTests() {
 
 	reloadInvarianceTest(near);
 	bulletRangeInvarianceTest(near);
+	autoTurretLeadInvarianceTest(near);
 	regenInvarianceTest(near);
 }
 
@@ -2757,31 +2758,24 @@ function reloadInvarianceTest() {
 	Bullet range (massplanchunks WP-D pass 4, item 2): spawn a lone (alone=1, so it never looks
 	for an owning Player) Basic-speed bullet and step it until life runs out, at each rate.
 
-	This is the one the audit actually found broken, not just extended to check: a normal
-	bullet's motion tail (entities/Bullet.js, the shared code after the type switch) adds
-	tick.perTick(this.speed) to its own vec *every tick it is alive*, the same "constant thrust
-	decaying through FRICTION" shape entities/Player.js's movement uses - but Player.js reaches
-	that shape through Physics.stepBody, whose dtTicks parameter scales *both* the velocity add
-	and the position step, while Bullet.js only scales the velocity add (tick.perTick) and then
-	does a bare `this.x += this.vec.x` with no second dtTicks factor. A one-time spawn kick
-	(can.exitSpeed) is unaffected - verified separately, it stays invariant on its own - but the
-	repeated per-tick thrust is not: distance traveled over a fixed lifetime comes out roughly
-	proportional to 1/TICK_MS instead of constant.
+	This is the one the audit actually found broken rather than just extended to check, and it is
+	now fixed. entities/Bullet.js's motion tail adds a thrust to this.vec every tick and then
+	integrates this.vec into position, i.e. twice over ticks - so the thrust belongs to
+	lib/tick.js's quadratic() category, not perTick(). Under perTick() the range came out roughly
+	proportional to 1/TICK_MS (1695 / 1175 / 955 units at TICK_MS 16 / 25 / 33 for this class,
+	whose lifetime is itself correctly wall-clock-constant); under quadratic() it holds flat, and
+	the whole `speed` column was multiplied by the same 1.6 so the value at the live TICK_MS -
+	that middle 1175 - is exactly where it was. 0.48 below is the test's own 0.3 through that same
+	rescale, so the number this asserts is comparable with the pre-fix reading above.
 
-	This is reported, not asserted with check(): a real check() here would fail every run of
-	`npm test` (the two are ~2x apart, nowhere near 2%) and, because the suite's npm script is an
-	&&-chain in dependency order (HANDOFF §9), that stops test/client.js, clientDiff.js, smoke.js
-	and web.js from running at all on every future `npm test` until someone fixes bullet motion -
-	a much bigger cost than one red line. The right fix (route Bullet's shared motion tail through
-	public/SHARE/Physics.js's stepBody the way Player.js/lib/gameAI.js's bots already do) changes
-	what "speed" must mean for every class in public/SHARE/TanksConfig.js to keep today's actual
-	bullet ranges the same - a numeric re-derivation across ~118 cannons, not a local patch, so it
-	is recorded here and in PENDING.md for its own pass rather than attempted mid-audit.
+	1% rather than the movement case's 2%: a bullet's `life` is quantised to whole ticks
+	(tick.ticks()), so the three rates round to wall-clock lifetimes 0.35% apart and the ranges
+	inherit that. Anything looser would not notice the bug coming back at, say, TICK_MS 20.
 */
-function bulletRangeInvarianceTest() {
+function bulletRangeInvarianceTest(near) {
 	function rangeAt(tickMs) {
 		return withTickMs(tickMs, ({ Bullet }) => {
-			const b = new Bullet({ oId: -1 }, 0, 0, 0, 0.3, 40, fakeRoom());
+			const b = new Bullet({ oId: -1 }, 0, 0, 0, 0.48, 40, fakeRoom());
 			b.alone = 1;   // no owning Player to look up - see TwoTeam/FourTeam's guard drones
 			let guard = 0;
 			while (b.destroy === 0 && guard++ < 1e6) { b.update(); }
@@ -2790,7 +2784,40 @@ function bulletRangeInvarianceTest() {
 	}
 	const r16 = rangeAt(16), r25 = rangeAt(25), r33 = rangeAt(33);
 	console.log('  note bullet range at TICK_MS 16/25/33: ' + r16.toFixed(1) + ' / ' + r25.toFixed(1) +
-		' / ' + r33.toFixed(1) + ' units - known non-invariant (PENDING.md), not a pass/fail check');
+		' / ' + r33.toFixed(1) + ' units');
+	check('bullet range at TICK_MS 16/25/33 agrees within 1%',
+		near(r16, r33, 0.01) && near(r25, r33, 0.01),
+		r16.toFixed(1) + ' / ' + r25.toFixed(1) + ' / ' + r33.toFixed(1));
+	// The pre-fix reading at the live rate, which the speed rescale was solved to preserve: this
+	// is what stops the fix from being a silent balance change.
+	check('...and still matches the range this game was tuned for at TICK_MS 25 (~1175 units)',
+		near(r25, 1174.7, 0.01), r25.toFixed(1));
+}
+
+/*
+	Auto-turret aim lead: the second, narrower half of the same finding. shoot()'s aim point is
+	`other.vec * dis / AUTOTURRET_LEAD`, and both other factors are already TICK_MS-invariant, so
+	a tick.lead()-converted divisor was the thing making the offset move with the tick rate -
+	the opposite direction from the bullet-thrust bug above. Driven here through the real
+	entities/Player.js constant rather than a copy of the formula, so re-wrapping it in tick.lead()
+	fails this.
+*/
+function autoTurretLeadInvarianceTest(near) {
+	function offsetAt(tickMs) {
+		return withTickMs(tickMs, ({ Player }) => {
+			// A target 400 units away moving at a fixed real-world speed; its per-tick vec is what
+			// scales with the rate, which is exactly what the divisor has to absorb.
+			const room = fakeRoom();
+			const p = new Player({ oId: 0 }, 0, 0, 'x', 1, [0, 1e9], room);
+			p.inputs.w = 1;
+			for (let i = 0; i < Math.round(5000 / tickMs); i++) { p.motion(); }   // reach top speed
+			return Math.hypot(p.vec.x, p.vec.y) * 400 / Player.AUTOTURRET_LEAD;
+		});
+	}
+	const o16 = offsetAt(16), o25 = offsetAt(25), o33 = offsetAt(33);
+	check('auto-turret aim lead at TICK_MS 16/25/33 agrees within 3%',
+		near(o16, o33, 0.03) && near(o25, o33, 0.03),
+		o16.toFixed(1) + ' / ' + o25.toFixed(1) + ' / ' + o33.toFixed(1) + ' units of lead');
 }
 
 /*

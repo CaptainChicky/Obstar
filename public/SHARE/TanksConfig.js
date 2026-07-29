@@ -1404,6 +1404,24 @@
 			}
 		} :
 		///SERVER///
+		/*
+			Every number below is denominated against config.REF_TICK_MS (40ms), not the server's
+			actual TICK_MS - see lib/tick.js. Two columns are worth naming because they are the ones
+			a reader is most likely to try to "fix":
+
+			`speed` is a bullet's CRUISE THRUST, an acceleration per reference tick squared. It is
+			consumed by entities/Bullet.js's motion tail as tick.quadratic(), not tick.perTick() -
+			the tail adds it to a velocity and then integrates that velocity into a position, i.e.
+			it integrates twice over ticks. The whole column was multiplied by 1.6 when that
+			category was corrected, which is why each entry is a clean diep-ish number times
+			public/SHARE/Physics.js's compound 1.462688 factor (0.31 x 1.462688 = 0.45344 for
+			Basic), the same family `back` and `weight` are already in. `exitSpeed` was NOT
+			rescaled with it - a bullet's one-time muzzle kick was correct before that fix - so
+			entities/Bullet.js divides the 1.6 back out at that one site (SPEED_RESCALE there).
+
+			`weight` is a knockback impulse, applied once per tick of contact and then decayed by
+			the recipient's own friction - a one-time-impulse shape, already invariant, untouched.
+		*/
 		{
 			"Basic": new function () {
 				this.screen = 1408;
@@ -1418,7 +1436,7 @@
 					this.canonLength = 68;
 					this.rand = 0.14;
 					///
-					this.speed = 0.2834;
+					this.speed = 0.45344;
 					this.pene = 1.7;
 					this.peneMult = 1;
 					this.damage = 4.84848;
@@ -1441,7 +1459,7 @@
 					this.canonLength = 65;
 					this.rand = 0.14;
 					///
-					this.speed = 0.2834;
+					this.speed = 0.45344;
 					this.pene = 1.5;
 					this.damage = 4.36364;
 					this.size = 18;
@@ -1458,7 +1476,7 @@
 					canonLength: 58,
 					rand: 0.13,
 					///
-					speed: 0.25597,
+					speed: 0.409552,
 					pene: .6,
 					damage: 2.42424,
 					size: 17,
@@ -1479,7 +1497,7 @@
 					this.canonLength = 60;
 					this.rand = 0.21;
 					///
-					this.speed = 0.2834;
+					this.speed = 0.45344;
 					this.pene = 1.3;
 					this.peneMult = 1;
 					this.damage = 4.24242;
@@ -1497,7 +1515,7 @@
 					this.canonLength = 60;
 					this.rand = 0.21;
 					///
-					this.speed = 0.2834;
+					this.speed = 0.45344;
 					this.pene = 1.3;
 					this.peneMult = 1;
 					this.damage = 4.24242;
@@ -1519,7 +1537,7 @@
 					this.canonLength = 62;
 					this.rand = 0.6;
 					///
-					this.speed = 0.29254;//.22
+					this.speed = 0.468064;//.22
 					this.pene = 1.2;
 					this.damage = 3.15152;
 					this.size = 18;//17
@@ -1540,7 +1558,7 @@
 					this.canonLength = 80;
 					this.rand = 0.2;
 					///
-					this.speed = 0.36567;
+					this.speed = 0.585072;
 					this.pene = 2.5;
 					this.damage = 3.27273;
 					this.size = 18;
@@ -1562,7 +1580,7 @@
 					canonLength: 58,
 					rand: 0.2,
 					///
-					speed: 0.24683,
+					speed: 0.394928,
 					pene: 1,
 					damage: 2.42424,
 					size: 16,
@@ -1588,7 +1606,7 @@
 					canonLength: 60,
 					rand: 0.15,
 					///
-					speed: 0.2834,
+					speed: 0.45344,
 					pene: 1.2,
 					damage: 3.63636,
 					size: 16,
@@ -1613,7 +1631,7 @@
 					canonLength: 66,
 					rand: 0.2,
 					///
-					speed: 0.24683,
+					speed: 0.394928,
 					pene: 1.3,
 					damage: 4.24242,
 					size: 15,
@@ -1639,7 +1657,7 @@
 					canonLength: 62,
 					rand: 0.10,
 					///
-					speed: 0.20112,
+					speed: 0.321792,
 					pene: 18,
 					damage: 1.81818,
 					size: 27,
@@ -1663,7 +1681,7 @@
 					this.canonLength = 85;
 					this.rand = 0.1;
 					///
-					this.speed = 0.37481;
+					this.speed = 0.599696;
 					this.pene = 2.5;
 					this.damage = 3.15152;
 					this.size = 19;
@@ -1688,7 +1706,7 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.27426,
+					speed: 0.438816,
 					pene: 5.3,
 					damage: 2.42424,
 					size: 14,
@@ -1711,7 +1729,7 @@
 					canonLength: 58,
 					rand: 0.13,
 					///
-					speed: 0.25597,
+					speed: 0.409552,
 					pene: .6,
 					damage: 2.42424,
 					size: 16,
@@ -1723,7 +1741,7 @@
 				// name the server never reads (Player.js:212 reads `canonLength`), so this
 				// line was a no-op and the cannon stayed at the 58 default. test/tanks.js's
 				// muzzle-tip band caught it once canonLength was corrected.
-				c[0].back = 0.14627; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.2834;
+				c[0].back = 0.14627; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.45344;
 				c[1].offdir = -Math.PI - .4; c[1].offx = -5; c[1].offTime = .5;
 				c[2].offdir = -Math.PI + .4; c[2].offx = 5; c[2].offTime = .5;
 				///
@@ -1743,7 +1761,7 @@
 					this.canonLength = 68;
 					this.rand = 0.3;
 					///
-					this.speed = 0.13713;
+					this.speed = 0.219408;
 					this.pene = 4.2;
 					this.damage = 1.57576;
 					this.size = 12;
@@ -1765,7 +1783,7 @@
 					canonLength: 56,
 					rand: 0.3,
 					///
-					speed: 0.24683,
+					speed: 0.394928,
 					pene: 1.6,
 					damage: 4.24242,
 					size: 16,
@@ -1790,7 +1808,7 @@
 					canonLength: 62,
 					rand: 0.10,
 					///
-					speed: 0.20112,
+					speed: 0.321792,
 					pene: 17,
 					damage: 1.81818,
 					size: 27,
@@ -1811,7 +1829,7 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.27426,
+					speed: 0.438816,
 					pene: 5,
 					damage: 2.18182,
 					size: 14,
@@ -1836,7 +1854,7 @@
 					canonLength: 62,
 					rand: 0.10,
 					///
-					speed: 0.19655,
+					speed: 0.31448,
 					pene: 17,
 					damage: 1.81818,
 					size: 34,
@@ -1859,7 +1877,7 @@
 					canonLength: 82,
 					rand: 0.11,
 					///
-					speed: 0.36567,
+					speed: 0.585072,
 					pene: .45,
 					damage: 2.66667,
 					size: 15,
@@ -1891,7 +1909,7 @@
 					this.canonLength = 88;
 					this.rand = 0.1;
 					///
-					this.speed = 0.37481;
+					this.speed = 0.599696;
 					this.pene = 3;
 					this.damage = 3.0303;
 					this.size = 19;
@@ -1912,7 +1930,7 @@
 					canonLength: 55,
 					rand: 0.16,
 					///
-					speed: 0.24683,
+					speed: 0.394928,
 					pene: 1,
 					damage: 2.42424,
 					size: 16,
@@ -1938,7 +1956,7 @@
 					canonLength: 60,
 					rand: 0.15,
 					///
-					speed: 0.2834,
+					speed: 0.45344,
 					pene: 1.2,
 					damage: 3.39394,
 					size: 16,
@@ -1964,7 +1982,7 @@
 					canonLength: 55,
 					rand: 0.16,
 					///
-					speed: 0.24683,
+					speed: 0.394928,
 					pene: .95,
 					damage: 2.78788,
 					size: 16,
@@ -1991,7 +2009,7 @@
 					canonLength: 62,
 					rand: 0.2,
 					///
-					speed: 0.24683,
+					speed: 0.394928,
 					pene: 1.3,
 					damage: 3.0303,
 					size: 16,
@@ -2019,7 +2037,7 @@
 					canonLength: 52,
 					rand: 0.13,
 					///
-					speed: 0.24226,
+					speed: 0.387616,
 					pene: 1,
 					damage: 4.48485,
 					size: 12,
@@ -2048,7 +2066,7 @@
 					canonLength: 52,
 					rand: 0.13,
 					///
-					speed: 0.25597,
+					speed: 0.409552,
 					pene: .6,
 					damage: 2.42424,
 					size: 16,
@@ -2058,7 +2076,7 @@
 				}));
 				// Same `.height`-instead-of-`.canonLength` typo as Triangle above; these three
 				// lines were no-ops until test/tanks.js caught it.
-				c[0].back = 0.29253; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.29254;
+				c[0].back = 0.29253; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.468064;
 				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
 				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
 				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 58; c[3].offTime = .5;
@@ -2077,7 +2095,7 @@
 					canonLength: 57,
 					rand: 0.13,
 					///
-					speed: 0.26512,
+					speed: 0.424192,
 					pene: .5,
 					damage: 1.45455,
 					size: 16,
@@ -2090,9 +2108,9 @@
 				// up) instead of c[3]/c[4], so the rear cannons never got their splay and the
 				// side cannons silently lost theirs. test/tanks.js's index-paired offx check
 				// is what caught both.
-				c[0].back = 0.14627; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 4; c[0].speed = 0.2834;
-				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 1.4; c[1].damage = 3.87879; c[1].speed = 0.27426;
-				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 1.4; c[2].damage = 3.87879; c[2].speed = 0.27426;
+				c[0].back = 0.14627; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 4; c[0].speed = 0.45344;
+				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 1.4; c[1].damage = 3.87879; c[1].speed = 0.438816;
+				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 1.4; c[2].damage = 3.87879; c[2].speed = 0.438816;
 				c[3].offdir = -Math.PI - .4; c[3].offx = -5; c[3].offTime = .5; c[3].canonLength = 59;
 				c[4].offdir = -Math.PI + .4; c[4].offx = 5; c[4].offTime = .5; c[4].canonLength = 59;
 				c[3].back = c[4].back = 2.04776;
@@ -2121,7 +2139,7 @@
 					canonLength: 38,
 					rand: 0.1,
 					///
-					speed: 0.3291,
+					speed: 0.52656,
 					pene: 1.8,
 					damage: 3.0303,
 					size: 14,
@@ -2138,7 +2156,7 @@
 					canonLength: 58,
 					rand: 0.13,
 					///
-					speed: 0.25597,
+					speed: 0.409552,
 					pene: .6,
 					damage: 2.42424,
 					size: 16,
@@ -2177,7 +2195,7 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.27426,
+					speed: 0.438816,
 					pene: 4.5,
 					damage: 2.18182,
 					size: 14,
@@ -2208,7 +2226,7 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.27426,
+					speed: 0.438816,
 					pene: 5,
 					damage: 2.42424,
 					size: 14,
@@ -2226,7 +2244,7 @@
 					type: 3,
 					necro: 1,
 					///
-					speed: 0.27426,
+					speed: 0.438816,
 					pene: 4,
 					damage: 1.57576,
 					weight: 0.5028
@@ -2249,7 +2267,7 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.47537,
+					speed: 0.760592,
 					pene: .8,
 					damage: 1.09091,
 					size: 6,
@@ -2280,7 +2298,7 @@
 					canonLength: 65,
 					rand: 0.2,
 					///
-					speed: 0.13713,
+					speed: 0.219408,
 					pene: 4,
 					damage: 0.9697,
 					size: 10,
@@ -2302,7 +2320,7 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.38395,
+					speed: 0.61432,
 					pene: .7,
 					damage: 0.9697,
 					size: 6,
@@ -2329,7 +2347,7 @@
 					canonLength: 68,
 					rand: 0.2,
 					///
-					speed: 0.13713,
+					speed: 0.219408,
 					pene: 18,
 					damage: 1.69697,
 					size: 19,
@@ -2354,7 +2372,7 @@
 					canonLength: 65,
 					rand: 0.2,
 					///
-					speed: 0.14627,
+					speed: 0.234032,
 					pene: 5,
 					damage: 1.45455,
 					size: 10,
@@ -2375,7 +2393,7 @@
 					canonLength: 48,
 					rand: 0.2,
 					///
-					speed: 0.27426,
+					speed: 0.438816,
 					pene: 5.5,
 					damage: 1.81818,
 					size: 14,
@@ -2409,7 +2427,7 @@
 					canonLength: 38,
 					rand: 0.1,
 					///
-					speed: 0.29254,
+					speed: 0.468064,
 					pene: 1.5,
 					damage: 3.15152,
 					size: 14,
@@ -2428,7 +2446,7 @@
 					canonLength: 65,
 					rand: 0.2,
 					///
-					speed: 0.14627,
+					speed: 0.234032,
 					pene: 4,
 					damage: 1.69697,
 					size: 10,
@@ -2451,7 +2469,7 @@
 					this.canonLength = 60;
 					this.rand = 0.62;
 					///
-					this.speed = 0.24683;//.22
+					this.speed = 0.394928;//.22
 					this.pene = 3;
 					this.damage = 1.93939;
 					this.size = 23;//17
@@ -2473,7 +2491,7 @@
 					canonLength: 45,
 					rand: 0.1,
 					///
-					speed: 0.31996,
+					speed: 0.511936,
 					pene: .42,
 					damage: 2.66667,
 					size: 12,
@@ -2509,7 +2527,7 @@
 					canonLength: 38,
 					rand: 0.1,
 					///
-					speed: 0.29254,
+					speed: 0.468064,
 					pene: 1.8,
 					damage: 2.42424,
 					size: 14,
@@ -2526,7 +2544,7 @@
 					canonLength: 45,
 					rand: 0.1,
 					///
-					speed: 0.37481,
+					speed: 0.599696,
 					pene: .31,
 					damage: 2.66667,
 					size: 12,
@@ -2588,7 +2606,7 @@
 					canonLength: 50,
 					rand: 0.5,
 					///
-					speed: 0.35653,
+					speed: 0.570448,
 					pene: 5.5,
 					damage: 5.45455,
 					size: 20,

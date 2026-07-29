@@ -19,6 +19,26 @@ const REAIM_CHANCE = tick.chance(0.0012121);
 const CHARGE_CHANCE = tick.chance(0.0006061);
 
 /*
+	The one-time factor the `speed` column in public/SHARE/TanksConfig.js gained when this file's
+	motion tail (bottom of update()) moved from tick.perTick() to tick.quadratic().
+
+	The tail is the standard "add a thrust, decay through FRICTION, then position += vec" shape,
+	which integrates the thrust TWICE over ticks - once into vec, again into position - so a single
+	SCALE is short by a factor of SCALE and a bullet's range came out proportional to 1/TICK_MS
+	(measured 955 -> 1695 units across TICK_MS 33 -> 16 for one class). tick.quadratic() is the
+	category for exactly that shape; every `speed` was multiplied by 1.6 alongside the change so
+	the numbers a player actually sees at the live TICK_MS (25) did not move at all.
+
+	NOT tick.SCALE, even though 1/1.6 happens to equal today's 25/40. It is a frozen constant: if
+	TICK_MS ever moves, this must NOT move with it - that invariance is the whole point of the fix.
+
+	It divides back out at the two sites that consume `speed` as something OTHER than the per-tick
+	cruise thrust - the muzzle kick in the constructor, and the 'god' repulsion in collision() -
+	both of which were already TICK_MS-invariant on their own and must not move.
+*/
+const SPEED_RESCALE = 1.6;
+
+/*
 	Base drone orbit AI. All converted once at module load, not per drone per tick.
 
 	The steering model: every drone carries `head` (radians) and `spd` (units per real tick), both
@@ -478,7 +498,12 @@ class Bullet {
 		this.maxspeed = speed;
 		this.speed = speed;
 		this.destroy = 0;
-		this.vec = new Vec(tick.perTick(speed) * exitSpeed, 0).rotate(direction);
+		// The muzzle kick: a single impulse of `exitSpeed` reference ticks' worth of thrust,
+		// decayed by the tail's own FRICTION from here on. A one-time impulse against a bare
+		// `position += vec` is already TICK_MS-invariant (it integrates only once over ticks), so
+		// it keeps tick.perTick() and divides the cruise term's own rescale back out - see
+		// SPEED_RESCALE above. `exitSpeed` itself is therefore unchanged in TanksConfig.js.
+		this.vec = new Vec(tick.perTick(speed / SPEED_RESCALE) * exitSpeed, 0).rotate(direction);
 	}
 	collision(other, option = {}) {
 		if (option.type) {
@@ -487,7 +512,13 @@ class Bullet {
 					if (this.origin.oId === other.id.oId) {
 						return;
 					}
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.speed * 2 + 0.91418), tick.perTick(this.speed * 2 + 0.91418))));
+					// One impulse per tick of contact, decayed by the tail's FRICTION - the same
+					// already-invariant shape as the muzzle kick, so it stays perTick and divides
+					// the cruise term's rescale back out of its `speed` half (SPEED_RESCALE above).
+					{
+						const push = tick.perTick(this.speed / SPEED_RESCALE * 2 + 0.91418);
+						this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(push, push)));
+					}
 					return;
 			}
 		}
@@ -659,7 +690,7 @@ class Bullet {
 					}
 					const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
 					if (playDis < play.size * 3.5) {
-						this.speed = 0.07313;   // one-time-rescaled from .08 (singleAppFactor, see Physics.js)
+						this.speed = 0.117008;   // .08 one-time-rescaled, then x SPEED_RESCALE (top of file)
 						if (Math.random() < REAIM_CHANCE) {
 							this.comingDir += Math.PI / 2;
 						}
@@ -708,7 +739,7 @@ class Bullet {
 				}
 				const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
 				if (playDis < play.size * 3) {
-					this.speed = 0.07313;   // one-time-rescaled from .08 (singleAppFactor, see Physics.js)
+					this.speed = 0.117008;   // .08 one-time-rescaled, then x SPEED_RESCALE (top of file)
 					if (Math.random() < REAIM_CHANCE) {
 						this.comingDir += Math.PI / 2;
 					}
@@ -1056,10 +1087,18 @@ class Bullet {
 				if (!this.first) {
 					this.first = 1;
 					this.showDir = Math.random() * Math.PI * 2;
-					this.speed += tick.perTick(Math.random() * 0.17916);   // .2 one-time-rescaled against the trap's own .82 decay (not global FRICTION)
+					// A one-time bump to the cruise thrust, so it is denominated in `speed`'s own
+					// per-reference-tick units and takes no tick.perTick() of its own - the tail's
+					// tick.quadratic() applies the scale. The number is unchanged: dropping the
+					// perTick() and applying SPEED_RESCALE cancel exactly. .2 one-time-rescaled
+					// against the trap's own .82 decay, not global FRICTION.
+					this.speed += Math.random() * 0.17916;
 				}
-				this.showDir += tick.perTick(this.vec.length() / 100)
-					;
+				// NOT tick.perTick(): with the motion tail below corrected, this.vec is a
+				// per-REAL-tick displacement, so it already carries the tick scale and a second one
+				// would spin the trap faster on a finer tick. 160 = 100 * SPEED_RESCALE, which
+				// leaves the spin rate at the live TICK_MS exactly where it was.
+				this.showDir += this.vec.length() / 160;
 				this.speed *= tick.drag(0.7862);   // .82 one-time-rescaled (33ms ref)
 				break;
 			}
@@ -1101,7 +1140,7 @@ class Bullet {
 					}
 					const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
 					if (playDis < play.size * 3.5) {
-						this.speed = 0.07313;   // one-time-rescaled from .08 (singleAppFactor, see Physics.js)
+						this.speed = 0.117008;   // .08 one-time-rescaled, then x SPEED_RESCALE (top of file)
 						if (Math.random() < REAIM_CHANCE) {
 							this.comingDir += Math.PI / 2;
 						}
@@ -1142,7 +1181,7 @@ class Bullet {
 				/// else
 				const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
 				if (playDis < play.size * 4) {
-					this.speed = Math.max(this.speed * tick.drag(0.98789), .05);   // .99 one-time-rescaled (33ms ref)
+					this.speed = Math.max(this.speed * tick.drag(0.98789), .08);   // .99 one-time-rescaled (33ms ref); floor is .05 x SPEED_RESCALE
 					if (Math.random() < CHARGE_CHANCE) {
 						this.comingDir += Math.PI * .8;
 						this.speed = this.maxspeed * 2;
@@ -1160,7 +1199,29 @@ class Bullet {
 				break;
 			};
 		}
-		this.vec.add(new Vec(tick.perTick(this.speed), 0).rotate(this.dir))
+		/*
+			The shared motion tail every non-base-drone bullet falls through to: a constant thrust
+			along `dir`, decayed through FRICTION, integrated into position.
+
+			tick.quadratic(), NOT tick.perTick(). The thrust is integrated twice over ticks - once
+			into this.vec, again into this.x/this.y - which is exactly the category lib/tick.js's
+			quadratic() exists for (its header names hpregan, the other accumulator with this
+			shape). Under perTick() a bullet's total range came out proportional to 1/TICK_MS
+			(measured: 955 units at TICK_MS 33 against 1695 at 16, for one class with a lifetime
+			that is itself correctly wall-clock-constant); under quadratic() it holds to well
+			inside 1% across the same range - asserted, not just reported, by test/rooms.js's
+			bulletRangeInvarianceTest().
+
+			entities/Player.js reaches the same recurrence through public/SHARE/Physics.js's
+			stepBody(), whose dtTicks scales the velocity add and the position step together.
+			Deliberately not reused here: stepBody keeps its velocity per REFERENCE tick, and a
+			Bullet's this.vec is per REAL tick everywhere else in this file - the type-1.4 steering
+			tail derives it from head/spd, collision() adds knockback impulses to it, and the
+			destroy tail coasts on it. Routing only this one line through stepBody would split
+			this.vec into two units inside one class. The two forms are algebraically the same
+			recurrence (stepBody's vec is this one divided by SCALE), so nothing is lost.
+		*/
+		this.vec.add(new Vec(tick.quadratic(this.speed), 0).rotate(this.dir))
 		this.vec.x *= FRICTION;
 		this.vec.y *= FRICTION;
 		this.x += this.vec.x;

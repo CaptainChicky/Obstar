@@ -119,72 +119,6 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
     check the drawn-height-vs-spawn-radius gap deliberately for any new boss cannon table instead
     of assuming the ordinary 0-12 band applies.
 
-## 🟠 Known bug, not yet fixed
-
-27. **A bullet's own thrust does not scale correctly with `TICK_MS`** — proven with
-    `test/rooms.js`'s (reporting, not asserting) bullet-range case. `entities/Player.js`'s movement
-    reaches the standard "add an accel, decay through `FRICTION`" recurrence through
-    `public/SHARE/Physics.js`'s `stepBody`, whose `dtTicks` parameter scales *both* the velocity add
-    and the position step (`body.x += body.vx * dtTicks`) — that double scaling is why
-    `Physics.js`'s `MOVE_ACCEL_BASE`/`PER_UP` needed a numerically-solved one-time factor
-    (`1.462688`) instead of a plain linear one. `entities/Bullet.js`'s shared motion tail (every
-    bullet type falls through to it) hand-rolls the same shape —
-    `vec.add(tick.perTick(this.speed)...); vec *= FRICTION;` — but then does a bare
-    `this.x += this.vec.x`, with no second `dtTicks`/`SCALE` factor. Measured directly (drive
-    `Physics.stepBody`-equivalent code at `TICK_MS` 16/25/33): a bullet's one-time muzzle kick
-    (`can.exitSpeed`) is unaffected and stays invariant on its own, but the *ongoing* per-tick
-    thrust that keeps it cruising is not — total range comes out roughly proportional to
-    `1/TICK_MS` (955 to 1695 units across that range for the same class, a bullet whose own
-    lifetime is itself correctly wall-clock-constant). The correct category is `tick.quadratic()`,
-    not `tick.perTick()` — verified numerically: re-deriving the accumulation without the
-    per-tick-then-position-again double-scale reproduces a stable, TICK_MS-invariant range to <1%,
-    exactly the "accumulator that integrates twice over ticks" category `lib/tick.js`'s header
-    already describes for `hpregan`.
-    **Not fixed on purpose:** changing the category without also changing what `can.speed`
-    numerically *means* would silently roughly double every bullet's cruising contribution to range
-    at today's live `TICK_MS` (25) — a real balance change hiding inside a "correctness" fix. The
-    actual fix is to route `entities/Bullet.js`'s shared motion tail through
-    `public/SHARE/Physics.js`'s `stepBody` the way `entities/Player.js` and `lib/gameAI.js`'s bots
-    already do (so it inherits the same, already-proven-invariant shape), which requires
-    re-deriving `public/SHARE/TanksConfig.js`'s `speed` column - all ~118 cannons - against a solved
-    compound factor (`Physics.js`-style, not a plain `40/33`) to keep today's actual bullet ranges
-    from moving. That is the same shape of work as item 16's `back` column or item 18's damage
-    model - a deliberate numeric pass, not a mid-audit patch.
-    **The same bug, same fix, same non-fix-here, in two more places** that hand-roll "add a
-    per-tick thrust, decay via `FRICTION`, then `position += vec`" instead of going through
-    `stepBody`: `entities/Objects.js`'s `DETEC`-driven homing/return-to-nest pull (`update()`'s two
-    `this.vec.add(v)` calls, `v = tick.perTick(0.33939)...`) and `lib/gameAI.js`'s Summoner-boss
-    steering and pet-follow motion (`this.vec.add(new Vec(tick.perTick(...))...)` in both `BOSS`
-    and `PETS`). Objects.js's own collision-knockback impulses and its speed-clamp drift are *not*
-    affected - those are one-time or bounded-decay shapes, verified separately to already be
-    invariant.
-    **A second, narrower finding, also not fixed:** `AUTOTURRET_LEAD` (`entities/Player.js` and its
-    identical copy in `lib/gameAI.js`, `tick.lead(9.9)`) is not tick-scale invariant either, the
-    opposite direction from the bug above - the divisor's `tick.lead()` conversion makes
-    `other.vec * dis / AUTOTURRET_LEAD` vary by over 100% across `TICK_MS` 16/25/33/40, where
-    leaving the divisor unconverted (flat `9.9`) stays within ~1.5%, because `other.vec`'s magnitude
-    is itself already close to `TICK_MS`-invariant. Left as-is because un-wrapping it changes
-    today's auto-aim feel at live `TICK_MS` (25), which is a balance call. `lib/gameAI.js`'s
-    pet-follow lead (the `2.475` multiplying `play.vec`) already avoids this trap correctly - it
-    is *not* run through `tick.lead()`, and that was confirmed by testing, not just reading.
-    **Corroborating evidence from `public/SHARE/TanksConfig.js`'s own numbers,** checked with a
-    throwaway script that divides every `reload`/`speed`/`back`/`weight`/`damage`/`pene` in the
-    server cannon table by each candidate one-time-rescale factor and checks whether the result
-    round-trips to a clean number: `reload` (all 118 cannons) round-trips cleanly through the
-    `ticks`-category factor (`Math.round(x*33/40)`, inverted); `back` and `weight` (118/118 each)
-    round-trip cleanly through `Physics.js`'s compound `1.462688` factor, *not* the plain `40/33`
-    `perTick` one - i.e. they were already correctly treated as the "decays through the recipient's
-    own `stepBody`-shaped friction" category; `damage` (118/118) round-trips cleanly through the
-    plain `perTick` `40/33`; `pene` (118/118) is already round *unconverted*, confirming it's an
-    absolute HP-like pool (matching `entities/Objects.js`'s own `hp`), never meant to be rescaled at
-    all. **`speed` is the outlier** - only 82/118 cannons round-trip through either factor,
-    leaving 36 (Basic, Twin, Twin Flank, Triple Twin, Destroyer, Fortress, Summoner, BattleShip and
-    others) that round-trip through neither. Given the above, that's expected: bullet `speed`
-    is consumed by a doubly-integrated (`quadratic`-shaped) recurrence, so neither candidate factor
-    was ever going to be the right one to check it against - the 36 outliers aren't 36 separate
-    typos, they're the same missing category showing up in the one place a script could see it
-    numerically. Re-deriving `speed` is exactly the re-derivation this item already scopes.
-
 ## 🟡 Explicitly deferred (told not to do this pass)
 
 11. The Spade Squad diep-physics balance pass. The client/server *mismatch* in the existing
@@ -194,17 +128,6 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
     was hand-tuned against a measured ~29Hz tick; retuning them is its own pass.
     **The reference numbers now exist** — `physics.html` has been read against the whole tree and
     the mismatches are itemised in items 14–24 below. Still deferred, but no longer unscoped.
-
-12. **Forward velocity inheritance on bullets** — a real diep/arras feel difference, deliberately
-    not taken while fixing the muzzle alignment, because it changes damage-relevant physics
-    rather than what gets drawn. `entities/Bullet.js`'s constructor gives a bullet
-    `Vec(speed*exitSpeed, 0).rotate(direction)` and nothing else: driving forward into your own
-    shot changes nothing about it. arras adds the tank's velocity *projected onto the firing
-    direction*, clamped at zero so it can only ever speed a bullet up, never slow it or bend it
-    (`open-source-arras-main/server/game/entities/gun.js`, the `extraBoost` block in `fire()`) —
-    which is why a rammer's shots there feel like they carry. Sideways motion is correctly
-    ignored by that formula, so it does not reintroduce anything the muzzle fix just solved. Cheap
-    to add; needs a balance opinion first, and interacts with #11.
 
 ## 🔴 Measured against diep.io's real physics (`physics.html`) — mismatches
 

@@ -14,6 +14,19 @@ const KIND = require('../public/SHARE/kinds.js');
 const RARITY = require('../public/SHARE/ObjectsConfig.js').rarity;
 const Detector = require('./Detector.js');
 
+/*
+	update()'s DETEC-driven pull - a polygon boss chasing what its detector found, and any shape
+	dragging itself back inside 120 units of its nest post.
+
+	tick.quadratic(), not tick.perTick(): unlike the collision knockbacks below (a single impulse
+	per contact, decayed by the limiter, already invariant), this is added EVERY tick for as long
+	as the pull lasts and is then integrated into position again, so it integrates twice over
+	ticks - the same category as entities/Bullet.js's cruise thrust and lib/tick.js's hpregan.
+	0.543024 is the old 0.33939 x that file's SPEED_RESCALE (1.6), so the pull at the live TICK_MS
+	is unchanged; it is a frozen constant, NOT tick.SCALE, and must not move if TICK_MS does.
+*/
+const HOME_PULL = tick.quadratic(0.543024);
+
 class Objects {
 	constructor(type, pos, id, map, room) {
 		this.BUFF = {
@@ -188,12 +201,12 @@ class Objects {
 				if (this.DETEC.select.destroy || this.DETEC.select.god) {
 					this.DETEC.reset();
 				} else {
-					const v = new Vec(tick.perTick(0.33939), 0).rotate(Math.atan2(this.DETEC.select.y - this.y, this.DETEC.select.x - this.x))
+					const v = new Vec(HOME_PULL, 0).rotate(Math.atan2(this.DETEC.select.y - this.y, this.DETEC.select.x - this.x))
 					this.vec.add(v)
 					this.DETEC.enabled = 0;
 				}
 			} else if (Math.sqrt(Math.pow(this.x - this.rx, 2) + Math.pow(this.y - this.ry, 2)) > 120) {
-				const v = new Vec(tick.perTick(0.33939), 0).rotate(Math.atan2(this.ry - this.y, this.rx - this.x))
+				const v = new Vec(HOME_PULL, 0).rotate(Math.atan2(this.ry - this.y, this.rx - this.x))
 				this.vec.add(v);
 			} else {
 				this.DETEC.enabled = 1;

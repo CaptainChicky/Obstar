@@ -16,15 +16,24 @@ const ACHIEVEMENTS = require('../public/SHARE/AchievementsConfig.js').list;
 const Bullet = require('./Bullet.js');
 const Detector = require('./Detector.js');
 
-// Auto-turret aim lead (shoot()): "how many reference ticks ahead" to predict a moving target,
-// converted to real ticks once at load.
-// Known open finding (PENDING.md): the formula this feeds, other.vec * dis / AUTOTURRET_LEAD, is
-// NOT tick-scale invariant *because* of the tick.lead() conversion - other.vec is already a
-// real-tick quantity whose magnitude is close to TICK_MS-invariant on its own (same reasoning as
-// the knockback-threshold comments below and in entities/Objects.js), so dividing by a further
-// SCALE-adjusted constant introduces the step-rate dependency instead of removing it. Unwrapping
-// it changes today's auto-aim feel, which makes it a balance call rather than a bug fix.
-const AUTOTURRET_LEAD = tick.lead(9.9);
+/*
+	Auto-turret aim lead (shoot()): the divisor in `other.vec * dis / AUTOTURRET_LEAD`, which
+	offsets the aim point along a target's own velocity.
+
+	A FLAT constant, deliberately not tick.lead(9.9). Both of the other factors in that expression
+	are already TICK_MS-invariant on their own - `dis` is a distance in world units, and
+	`other.vec` is a real-tick velocity whose magnitude barely moves across tick rates (the same
+	reasoning as the knockback-threshold comments below and in entities/Objects.js) - so dividing
+	by a SCALE-adjusted constant was what introduced a step-rate dependency, not what removed one.
+	Measured across TICK_MS 16/25/33/40: tick.lead(9.9) swung the aim offset by over 100%, a flat
+	divisor holds it to ~1.5%.
+
+	15.84 is exactly what tick.lead(9.9) evaluated to at the live TICK_MS (9.9 / 0.625), so today's
+	auto-aim feel is unchanged - the fix costs no balance call. It is a frozen constant: if TICK_MS
+	moves, this must not. lib/gameAI.js keeps an identical copy so bots and humans lead a moving
+	target the same way.
+*/
+const AUTOTURRET_LEAD = 15.84;
 
 // Idle spin rate, per reference tick: an auto-turret with nothing to shoot at (shoot()), and the
 // `c` auto-spin toggle (update()). One constant, because they are meant to look like the same
@@ -569,5 +578,10 @@ class Player {
 // Type tag for collision / buffer dispatch - on the prototype, so it costs nothing per
 // instance. See public/SHARE/kinds.js for why this replaced `constructor.name`.
 Player.prototype.kind = KIND.PLAYER;
+
+// The auto-turret aim divisor, exposed so test/rooms.js's tick-scale suite drives the real
+// constant rather than a copy of it - re-wrapping it in tick.lead() has to fail a test, not just
+// contradict the comment above it. Same idea as entities/Bullet.js's estimateCrossTicks export.
+Player.AUTOTURRET_LEAD = AUTOTURRET_LEAD;
 
 module.exports = Player;
