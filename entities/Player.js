@@ -40,6 +40,42 @@ const AUTOTURRET_LEAD = 15.84;
 // motion - PENDING #21 retunes both together or neither.
 const SPIN_RATE = 0.04;
 
+/*
+	The upgrade economy, diep's own (PENDING #30 / plan.md step 1): 45 levels, 7 points per stat,
+	33 points over a life, one class tier every 15 levels.
+
+	This is a deliberate conversion of a coherent 2/3-scale version (30 levels, 6 points, 28
+	total, a tier every 10), not a bug fix. It is here because every diep formula is denominated
+	in diep's own caps: Physics.js's 1.07^points assumes 7 of them and 1.015^level assumes 45 of
+	those, and #17's +20 HP/point assumes 7. Adopting a formula without its domain is what left
+	#14's form fix at 0.96x where diep's own figure is 1.03x.
+
+	POINTS ARE A GRANT SCHEDULE, NOT A LEVEL COUNT MINUS TAKEBACKS. The old rule handed out one
+	point per level and then took two back (stillLvl++ at levels 18 and 27) to land on 28. diep
+	never takes a point back: it changes the *rate*, one per level to 28 and then one at 30 and
+	every third level after, which is where 33 comes from. pointsAtLevel() below is the whole
+	rule, and rooms/Room.js's getUi() reads it too so the client's "points available" counter
+	cannot drift from what upgrade() will actually allow.
+*/
+const MAX_PER_STAT = 7;
+const GRANT_EVERY_LEVEL_TO = 28;  // 1 point per level up to and including this one
+const LATE_GRANT_FROM = 30;       // then one here...
+const LATE_GRANT_STEP = 3;        // ...and every third level after, to the cap
+// Mirrors rooms/Room.js's XPLVL length. A Player can't out-level its own XPLVL array, so this is
+// a guard against a hand-set level (the resetLevel/xp admin commands), not a second source of truth.
+const LEVEL_CAP = 45;
+
+// Total upgrade points a tank has been granted by `level`. Level 1 (a fresh spawn) is 0 points,
+// level 28 is 27, level 45 is 33.
+function pointsAtLevel(level) {
+	const lvl = Math.min(level, LEVEL_CAP);
+	let n = Math.max(0, Math.min(lvl, GRANT_EVERY_LEVEL_TO) - 1);
+	if (lvl >= LATE_GRANT_FROM) {
+		n += Math.floor((lvl - LATE_GRANT_FROM) / LATE_GRANT_STEP) + 1;
+	}
+	return n;
+}
+
 class Player {
 	constructor(id, x, y, name, team, xpLvl, room) {
 		this.XPLVL = xpLvl;
@@ -292,12 +328,14 @@ class Player {
 	}
 	upgrade(data) {
 		if (this.destroy) { return; }
-		if (this.level - this.stillLvl <= 0) {
+		// stillLvl counts points *spent*; pointsAtLevel() is what has been granted. It used to be
+		// a bare `this.level`, which only worked because a point was granted per level.
+		if (pointsAtLevel(this.level) - this.stillLvl <= 0) {
 			return 1;
 		}
 		switch (data) {
 			case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-				if (this.upNb[data] >= 6) {
+				if (this.upNb[data] >= MAX_PER_STAT) {
 					break;
 				}
 				this.stillLvl += 1;
@@ -306,12 +344,25 @@ class Player {
 				for (const i in this.up) {
 					nb++;
 					if (nb !== data) { continue; }
+					/*
+						Every step below is the old 6-point-span value x 6/7 (PENDING #30): the cap
+						moved to 7, so an unchanged step would have handed a maxed stat ~17% more
+						than it was ever tuned to give. Scaling the step instead keeps each stat's
+						*maxed* value exactly where it was and only changes the granularity, which
+						is the conversion this item asks for and not a stealth buff.
+
+						Two exceptions. MSpeed is a point COUNT since #14's form fix, so it becomes
+						diep-correct on its own the moment the cap is 7 - nothing to rescale.
+						HpUp is rescaled here for consistency but is on borrowed time either way:
+						#17 replaces the whole health model (MH0 = 50, +2/level, +20/point) with the
+						7-point cap this step establishes as its domain.
+					*/
 					switch (i) {
-						case "HpRegan": this.up[i] += 0.28; break;
-						case "Reload": this.up[i] -= 0.092; break;
-						case "BSpeed": this.up[i] += 0.11; break;
-						case "BDamage": this.up[i] += .2; break;
-						case "BPene": this.up[i] += 1.25; break;
+						case "HpRegan": this.up[i] += 0.24; break;         // 0.28 x 6/7
+						case "Reload": this.up[i] -= 0.0788571; break;     // 0.092 x 6/7
+						case "BSpeed": this.up[i] += 0.0942857; break;     // 0.11 x 6/7
+						case "BDamage": this.up[i] += .1714286; break;     // 0.2 x 6/7
+						case "BPene": this.up[i] += 1.0714286; break;      // 1.25 x 6/7
 						// A point COUNT, not a bonus: Physics.moveAccel() raises MOVE_STAT_MUL to it
 						// (PENDING #14). It used to accumulate an accel term (0.029254/pt) because
 						// the stat was additive; the multiplier needs the exponent instead, and
@@ -321,8 +372,13 @@ class Player {
 						// The ratio comes off the OLD maxHp, so the point heals you by exactly the
 						// fraction it added. Reading the old value can't drift out of sync with the
 						// step the way the literal it replaces did.
-						case "HpUp": this.hp = parseInt(this.hp * ((this.maxHp + 110) / this.maxHp)); this.maxHp += 110; break;
-						case "BodyDam": this.damage += 2.18182; break;   // one-time-rescaled from 1.8 (33ms ref)
+						// The parseInt that used to wrap this heal is gone with the 6/7 rescale: hp is
+						// a float everywhere else already (update()'s regen adds a fractional amount
+						// every tick, and the wire carries hp as a fraction of maxHp), and against a
+						// step that is no longer a whole number the truncation cost up to 1 hp per
+						// point - a full-health tank that filled the bar ended 2 hp short of full.
+						case "HpUp": this.hp *= (this.maxHp + 94.28571) / this.maxHp; this.maxHp += 94.28571; break;   // 110 x 6/7
+						case "BodyDam": this.damage += 1.870131; break;   // 2.18182 (itself 1.8 one-time-rescaled from the 33ms ref) x 6/7
 					}
 					break;
 				}
@@ -331,7 +387,12 @@ class Player {
 	upClass(data) {
 		if (this.destroy) { return; }
 		let tanks = [];
-		for (let i = 0; i < parseInt((1 + this.level) / 10); i++) {
+		// A class tier every 15 levels - diep's own gates, 15/30/45 (PENDING #30).
+		// Note this dropped the old form's `1 +`: our levels are 1-based in exactly diep's sense
+		// (XPLVL[0] is 0, so a fresh tank is level 1), so `(1 + level) / 10` was opening tier 1 at
+		// level 9 under a rule that read "every 10". rooms/Room.js's getUi() sends the same
+		// expression as `cLvl`, and test/rooms.js's fastestTankSpeed() mirrors it.
+		for (let i = 0; i < parseInt(this.level / 15); i++) {
 			if (CLASS_TREE[i][this.class]) {
 				tanks = tanks.concat(CLASS_TREE[i][this.class]);
 			}
@@ -536,9 +597,10 @@ class Player {
 		this.shoot();
 		///
 		if (this.xp >= this.XPLVL[this.level]) {
-			if (this.level === 18 || this.level === 27) {
-				this.stillLvl++;
-			}
+			// No takeback here any more (PENDING #30). The two `stillLvl++`s that used to sit at
+			// levels 18 and 27 were how a 1-point-per-level grant was clawed back down to a
+			// 28-point budget; the budget is a schedule now (pointsAtLevel), so a level-up only
+			// ever levels you up.
 			this.hp += 3;
 			this.maxHp += 3;
 			this.level++;
@@ -573,7 +635,7 @@ class Player {
 				this.prize = parseInt(this.XPLVL[this.XPLVL.length - 3] + (this.xp - this.XPLVL[this.XPLVL.length - 3]) / 10);
 			}
 		}
-		if (this.class === 'Rocket' && this.upNb[0] === 6 && this.upNb[1] === 6) {
+		if (this.class === 'Rocket' && this.upNb[0] === MAX_PER_STAT && this.upNb[1] === MAX_PER_STAT) {
 			this.unlock('speed_demon');
 		}
 		///
@@ -597,5 +659,12 @@ Player.prototype.kind = KIND.PLAYER;
 // constant rather than a copy of it - re-wrapping it in tick.lead() has to fail a test, not just
 // contradict the comment above it. Same idea as entities/Bullet.js's estimateCrossTicks export.
 Player.AUTOTURRET_LEAD = AUTOTURRET_LEAD;
+
+// The upgrade economy (PENDING #30), exposed so rooms/Room.js's getUi() sends the client the same
+// "points available" figure upgrade() will actually honour, and so test/rooms.js drives the real
+// schedule rather than a copy of it.
+Player.MAX_PER_STAT = MAX_PER_STAT;
+Player.LEVEL_CAP = LEVEL_CAP;
+Player.pointsAtLevel = pointsAtLevel;
 
 module.exports = Player;

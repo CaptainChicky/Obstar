@@ -249,24 +249,24 @@ curls back on — there is no separate RETURN state to enter or an explicit snap
 `orbitState` is written every tick purely for tests/the admin dump; nothing branches on it.
 
 **Chase and return are a real dash** (plan.md WP4.5.0): `BASE_DRONE_CHASE_SPEED` is **the fastest
-sustained speed any build in this game can hold** — 400 u/s, measured rather than asserted by
+sustained speed any build in this game can hold** — 423.7 u/s, measured rather than asserted by
 `test/rooms.js`'s `fastestTankSpeed()`, which replays `entities/Player.js`'s own `motion()`/
-`shoot()` recurrence over every reachable class at 6 Movement Speed and 6 Reload (the ceiling is a
-Fighter at level 29 riding its own rear-pair recoil, 399.2 u/s). It is pinned to exactly that
+`shoot()` recurrence over every reachable class at a full Movement Speed and a full Reload bar (the
+ceiling is a Sniper at level 15 riding its own recoil). It is pinned to exactly that
 ceiling on purpose: nothing can outrun a base drone on straight-line speed, and nothing is outrun
 absurdly either, so lapping an enemy base in the fastest tank in the game is still winnable — on
 the head start and the `BASE_DRONE_LEASH` boundary, not on top speed. If a lap ever reads unfair,
 move `BASE_DRONE_LEASH`/`BASE_DRONE_DETECT`, **not** the chase speed, which is pinned to a
 measurement and fails `npm test` if a cannon retune moves the ceiling out from under it. A chasing
-drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 6.67 rad/s), since the
-limiter that governs a leisurely orbit would give a 400 u/s drone a turn radius wide enough to arc
+drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 7.06 rad/s), since the
+limiter that governs a leisurely orbit would give a 424 u/s drone a turn radius wide enough to arc
 around a strafing target instead of into it. A return is a chase back to the ring at the same speed
 — no separate constant — the orbit field's own target speed blends from cruise to dash as a
 smoothstep of how far off its ring the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone
 visibly sprints back and eases onto its ring rather than snapping or ringing around the radius.
 **The turn limiter blends on that same `k`** (plan.md WP4.5.13): speed and turn rate are one
 decision, so `v/ω` holds at 34–60 units in every state. They used not to, and a returning drone ran
-the 400 u/s dash under the orbit limiter's 2.5 rad/s — a 160-unit turn radius against a 224-unit
+the full-speed dash under the orbit limiter's 2.5 rad/s — a 160-unit turn radius against a 224-unit
 home ring — which is what made a long return swing wide and overshoot.
 
 **The chase itself is pure pursuit, and stays that way**: aim at where the target *is*, this tick
@@ -632,20 +632,28 @@ Key namespaces, all attached to a `General` object:
 **The upgrade queue** (`ui.js`'s `UP` namespace; keys handled in `game.js`'s `onkeydown`) lets a
 point be banked ahead of the packet that grants it. `M`+digit spends whatever `Ui.still` covers
 right now — one `upgrade` packet per point, immediately, not on the next `UpdateUp` — and queues
-the rest of that stat's room up to its own 6-point cap; this is the *corrected* semantics; `M`+
+the rest of that stat's room up to its own per-stat cap (`CONST.MAX_PER_STAT`, 7); this is the
+*corrected* semantics; `M`+
 digit originally only queued, so the bar visibly lagged a keypress even when points were already
 banked. `U`+digit queues exactly one point (also spent immediately if one is banked); a bare
 digit spends one point now and never queues. `M`+`U` (either held while the other is pressed)
 clears the client-side queue. `UP.drain()` re-runs the queue against `Ui.still` on every `still`
 update (`GameUpdate`'s head and `UpdateUp`) as well as on each keypress, so a queued point spends
-the instant it's affordable rather than waiting on a UI tick. All three caps — 6 per stat,
-`Ui.still` availability, and the lifetime `CONST.MAX_UP_POINTS` (28) — collapse into one place,
+the instant it's affordable rather than waiting on a UI tick. All three caps — 7 per stat,
+`Ui.still` availability, and the lifetime `CONST.MAX_UP_POINTS` (33) — collapse into one place,
 `UP.enqueue()`'s `budget()` helper, which subtracts points already spent (`Ui.upNb`, wire-
-authoritative) and already queued from 28. The server enforces the same lifetime cap a different
-way — `entities/Player.js`'s `upgrade()` gates on `this.level - this.stillLvl`, so a point can
-never be spent ahead of a level-up — which is why `CONST.MAX_UP_POINTS` is a hand-mirrored
-constant (assuming a 30-level cap) rather than something the server tells the client directly;
-see PENDING.md.
+authoritative) and already queued from 33.
+
+**The economy is diep's own since PENDING #30: 45 levels, 7 points per stat, 33 over a life, a
+class tier every 15 levels.** Points are a *grant schedule* — one per level-up to 28, then one at
+30 and every third level to the cap — written once in `entities/Player.js`'s `pointsAtLevel()`.
+There are no takebacks (the old rule granted one per level and clawed two back at levels 18 and
+27), and a fresh level-1 spawn therefore has **zero** points rather than one. The server enforces
+the lifetime cap through that same function — `upgrade()` gates on `pointsAtLevel(level) -
+stillLvl`, so a point can never be spent ahead of its grant — and `rooms/Room.js`'s `getUi()` sends
+its result as the wire's `still`. `CONST.MAX_UP_POINTS`/`MAX_PER_STAT` remain hand-mirrored client
+constants rather than something the server tells the client, but `test/rooms.js` now cross-checks
+both against the server's; see PENDING.md.
 
 `window.colorPattern` is a global `[light, dark]` pair map for two-tone tank fills. CSS lives in
 four places: `public/style.css`, `LeaderBoard.css`, `fontStyle.css`, and a large inline
@@ -728,7 +736,7 @@ the minimap draws more than your own dot.
 | `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. `offdir` is compared mod 2π (`sameAngle()`), not with a literal `!==`, so two float64 expressions for the same rotation don't need a whitelist entry to excuse a false positive. The whitelist's size is pinned (`WHITELIST.length === 8`) and every entry's *reason* is re-verified live each run, not just its presence — a deviation that stops reproducing fails loud instead of the entry sitting in the file forever. See §3 and PENDING.md. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 2% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33 — WP3), the FOV formula (WP4), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). No socket, built via `boot()`. |
+| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 2% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33 — WP3), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, and that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps. |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all four modes. |

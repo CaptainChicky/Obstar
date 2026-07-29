@@ -609,9 +609,10 @@ function baseDroneTests() {
 	comment: thrust is +x and the facing is swept, so each class rides its own recoil optimally;
 	drone cannons (life -1, capped by maxDrone) contribute no sustained recoil because the drones
 	stay alive; auto turrets do not aim where a rider needs them; a class is only counted from the
-	level its tier unlocks at (upClass's parseInt((1+level)/10) > tier), and never below level 12,
-	which is the first level that can buy 6 Movement Speed AND 6 Reload (upNb refuses at 6,
-	entities/Player.js:285). Returns u/s. This is what BASE_DRONE_CHASE_SPEED is pinned to, so a
+	level its tier unlocks at (upClass's parseInt(level/15) > tier), and never below the first level
+	that can buy a full Movement Speed AND a full Reload bar - both derived from entities/Player.js's
+	own economy (PENDING #30) rather than restated here.
+	Returns u/s. This is what BASE_DRONE_CHASE_SPEED is pinned to, so a
 	cannon retune that changes the ceiling fails this test instead of silently outrunning the drones.
 */
 function fastestTankSpeed() {
@@ -619,10 +620,16 @@ function fastestTankSpeed() {
 	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const Physics = require(path.join(ROOT, 'public', 'SHARE', 'Physics.js'));
 	const T = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js'));
-	const MAXUP = 6, TOUS = 1000 / config.REF_TICK_MS;
+	const P = require(path.join(ROOT, 'entities', 'Player.js'));
+	const MAXUP = P.MAX_PER_STAT, TOUS = 1000 / config.REF_TICK_MS;
+	// The first level whose granted points cover a maxed Movement Speed and a maxed Reload.
+	let ridable = P.LEVEL_CAP;
+	for (let l = 1; l <= P.LEVEL_CAP; l++) {
+		if (P.pointsAtLevel(l) >= MAXUP * 2) { ridable = l; break; }
+	}
 	const minLevel = { Basic: 0 };
 	for (let i = 0; i < T.tree.length; i++) {
-		const unlock = 10 * (i + 1) - 1;
+		const unlock = 15 * (i + 1);
 		for (let pass = 0; pass < T.tree.length; pass++) {
 			for (const from in T.tree[i]) {
 				if (!(from in minLevel)) { continue; }
@@ -635,7 +642,7 @@ function fastestTankSpeed() {
 	}
 	const run = (cls, level, dir, ticks = 3000) => {
 		const accel = Physics.moveAccel(MAXUP, level);
-		const upReload = 1 - MAXUP * 0.092;
+		const upReload = 1 - MAXUP * 0.0788571;   // entities/Player.js's per-point Reload step
 		const body = { x: 0, y: 0, vx: 0, vy: 0 }, timer = [];
 		let sum = 0, n = 0;
 		for (let t = 0; t < ticks; t++) {
@@ -669,7 +676,7 @@ function fastestTankSpeed() {
 		// speed decreases strictly with level. Sweeping all 45 costs 30x the time and returns the
 		// same answer (checked). Still true after PENDING #14 made the level term a divisor rather
 		// than a subtraction - strictly decreasing either way, and now without the level-54 zero.
-		const level = Math.max(minLevel[name], 12);
+		const level = Math.max(minLevel[name], ridable);
 		for (let k = 0; k < 36; k++) {
 			const v = run(cls, level, k * Math.PI / 18);
 			if (v > best) { best = v; who = name + ' L' + level; }
@@ -3113,36 +3120,127 @@ function autoSpinTests(rooms) {
 }
 
 /*
-	Max Health's own heal (PENDING #17). A point adds 110 maxHp and heals current hp by the same
-	proportion, so the health FRACTION survives the upgrade. It used to scale by
+	Max Health's own heal (PENDING #17). A point adds its step to maxHp and heals current hp by the
+	same proportion, so the health FRACTION survives the upgrade. It used to scale by
 	maxHp/(maxHp - 100) *after* the += 110 - a stale 100 against a 110 step - so every point
 	silently under-healed. Pinned as a ratio, not against a literal, so a retune of the step keeps
-	the property.
+	the property - which is exactly what PENDING #30 did to it: the step is 110 x 6/7 now, so a
+	FULL bar is still worth +660 while the per-point figure is not a round number any more.
 */
 function healthUpgradeTests(rooms) {
 	console.log('\nMax Health upgrade (PENDING #17):');
 	const room = rooms[0];
 	const me = player(room, 0);
+	const P = require(path.join(ROOT, 'entities', 'Player.js'));
 	const saved = { hp: me.hp, maxHp: me.maxHp, level: me.level, stillLvl: me.stillLvl, upNb: me.upNb.slice() };
 	const HP_UP = 6;   // entities/Player.js's `up` key order
+	// A level with at least a full bar's worth of points granted (PENDING #30's schedule).
+	let lvl = P.LEVEL_CAP;
+	for (let l = 1; l <= P.LEVEL_CAP; l++) { if (P.pointsAtLevel(l) >= P.MAX_PER_STAT) { lvl = l; break; } }
 
-	me.level = 6; me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
+	me.level = lvl; me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
 	me.maxHp = 150; me.hp = 75;
 	me.upgrade(HP_UP);
-	check('one point adds 110 maxHp', me.maxHp === 260, me.maxHp);
-	check('...and heals current hp by that same proportion', me.hp === parseInt(75 * (260 / 150)), me.hp);
+	const step = me.maxHp - 150;
+	check('one point adds a 6/7-scaled step to maxHp', Math.abs(step - 660 / P.MAX_PER_STAT) < 0.01, step);
+	check('...and heals current hp by that same proportion',
+		Math.abs(me.hp - 75 * (me.maxHp / 150)) < 1e-9, me.hp);
 	check('...so a tank on half health is still on half health afterwards',
 		Math.abs(me.hp / me.maxHp - 0.5) < 0.005, me.hp / me.maxHp);
 
 	me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
 	me.maxHp = 150; me.hp = 150;
-	for (let i = 0; i < 6; i++) { me.upgrade(HP_UP); }
-	check('six points is +660 maxHp', me.maxHp === 810, me.maxHp);
-	check('...and a full-health tank is still at full health, not six under-heals down',
-		me.hp === me.maxHp, me.hp + '/' + me.maxHp);
+	for (let i = 0; i < P.MAX_PER_STAT; i++) { me.upgrade(HP_UP); }
+	check('a full bar is +660 maxHp, exactly what six points used to buy',
+		Math.abs(me.maxHp - 810) < 0.01, me.maxHp);
+	check('...and a full-health tank is still at full health, not a bar of under-heals down',
+		Math.abs(me.hp - me.maxHp) < 1e-9, me.hp + '/' + me.maxHp);
+	// The per-stat cap itself, with points to spare so it is the cap doing the refusing and not
+	// the grant schedule running out.
+	me.level = P.LEVEL_CAP; me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
+	me.maxHp = 150; me.hp = 150;
+	for (let i = 0; i < P.MAX_PER_STAT + 3; i++) { me.upgrade(HP_UP); }
+	check('one stat cannot be pushed past the per-stat cap even with points banked',
+		me.upNb[HP_UP] === P.MAX_PER_STAT && me.stillLvl === P.MAX_PER_STAT,
+		me.upNb[HP_UP] + ' spent ' + me.stillLvl);
 
 	me.hp = saved.hp; me.maxHp = saved.maxHp; me.level = saved.level;
 	me.stillLvl = saved.stillLvl; me.upNb = saved.upNb;
+}
+
+/*
+	The upgrade economy (PENDING #30 / plan.md step 1): 45 levels, 7 points per stat, 33 points over
+	a life, one class tier every 15 levels.
+
+	Pinned because it is a DOMAIN, not a tunable. Every diep formula this tree adopts is denominated
+	against these caps - Physics.js's 1.07^points and 1.015^level, #17's +20 HP/point - so a silent
+	drift back to 6/30 would not fail as a wrong number anywhere, it would quietly make every one of
+	those formulas mean something neither game intends. The grant schedule is checked at its
+	boundaries (the 28/30 rate change and the cap) rather than level by level, and the client's
+	hand-mirrored copy is checked against the server's, since PENDING #23 lists that pair as the
+	thing most able to desynchronise.
+*/
+function upgradeEconomyTests(rooms) {
+	console.log('\nupgrade economy - 45/7/33 (PENDING #30):');
+	const P = require(path.join(ROOT, 'entities', 'Player.js'));
+	const room = rooms[0];
+
+	check('the level cap is 45', room.XPLVL.length === 45 && P.LEVEL_CAP === 45, room.XPLVL.length);
+	check('...and the last level still lands exactly on the mode\'s maxXp',
+		room.XPLVL[room.XPLVL.length - 1] === room.rules.maxXp, room.XPLVL[room.XPLVL.length - 1]);
+	check('the per-stat cap is 7', P.MAX_PER_STAT === 7, P.MAX_PER_STAT);
+
+	// The schedule: 1/level to 28, then one at 30 and every third level to 45.
+	check('a fresh spawn has no points - a point is granted per level-UP, not per level',
+		P.pointsAtLevel(1) === 0, P.pointsAtLevel(1));
+	check('level 28 has granted 27 - one per level so far',
+		P.pointsAtLevel(28) === 27, P.pointsAtLevel(28));
+	check('...29 grants nothing (the rate has changed, and 30 is the next grant)',
+		P.pointsAtLevel(29) === 27, P.pointsAtLevel(29));
+	check('...30 grants the 28th', P.pointsAtLevel(30) === 28, P.pointsAtLevel(30));
+	check('...and 31/32 nothing, 33 the next one',
+		P.pointsAtLevel(31) === 28 && P.pointsAtLevel(32) === 28 && P.pointsAtLevel(33) === 29,
+		P.pointsAtLevel(31) + '/' + P.pointsAtLevel(32) + '/' + P.pointsAtLevel(33));
+	check('the level cap has granted exactly 33 - diep\'s lifetime budget',
+		P.pointsAtLevel(P.LEVEL_CAP) === 33, P.pointsAtLevel(P.LEVEL_CAP));
+	check('the schedule never goes backwards - no takebacks anywhere on it', (() => {
+		for (let l = 2; l <= P.LEVEL_CAP; l++) {
+			const d = P.pointsAtLevel(l) - P.pointsAtLevel(l - 1);
+			if (d < 0 || d > 1) { return false; }
+		}
+		return true;
+	})());
+
+	// 33 points cover four maxed stats and change, which is the shape of the economy diep has and
+	// the reason this conversion is a conversion rather than a fix.
+	check('33 points is four maxed stats plus five spare',
+		P.pointsAtLevel(P.LEVEL_CAP) === 4 * P.MAX_PER_STAT + 5);
+
+	// The client mirrors both constants by hand (public/client/config.js) - PENDING #23's
+	// desynchronisation risk. Read the file rather than the module: it is a browser script.
+	const cfg = fs.readFileSync(path.join(ROOT, 'public', 'client', 'config.js'), 'utf8');
+	const mirrored = (k) => {
+		const m = cfg.match(new RegExp(k + ':\\s*(\\d+)'));
+		return m ? parseInt(m[1], 10) : NaN;
+	};
+	check('the client\'s MAX_UP_POINTS mirrors the server\'s lifetime budget',
+		mirrored('MAX_UP_POINTS') === P.pointsAtLevel(P.LEVEL_CAP), mirrored('MAX_UP_POINTS'));
+	check('the client\'s MAX_PER_STAT mirrors the server\'s per-stat cap',
+		mirrored('MAX_PER_STAT') === P.MAX_PER_STAT, mirrored('MAX_PER_STAT'));
+
+	// The wire's own "points available" counter has to agree with what upgrade() will honour, or
+	// the upgrade panel offers a point the server refuses.
+	const me = player(room, 0);
+	const saved = { level: me.level, stillLvl: me.stillLvl, dead: me.dead };
+	me.dead = 0; me.level = 30; me.stillLvl = 4;
+	check('getBuffer sends granted-minus-spent, not level-minus-spent',
+		room.getBuffer(0).head.still === P.pointsAtLevel(30) - 4, room.getBuffer(0).head.still);
+	check('...and the class tier it sends opens every 15 levels', room.getBuffer(0).head.cLvl === 2,
+		room.getBuffer(0).head.cLvl);
+	me.level = 14;
+	check('...so level 14 is still tier 0 - the gates are 15/30/45',
+		room.getBuffer(0).head.cLvl === 0, room.getBuffer(0).head.cLvl);
+	me.level = saved.level; me.stillLvl = saved.stillLvl; me.dead = saved.dead;
 }
 
 /*
@@ -3359,6 +3457,7 @@ fovTests(rooms);
 oobTests(rooms);
 growthTests(rooms);
 autoSpinTests(rooms);
+upgradeEconomyTests(rooms);
 healthUpgradeTests(rooms);
 spawnSamplerTests();
 broadPhaseTests();

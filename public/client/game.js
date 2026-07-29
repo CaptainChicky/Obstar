@@ -436,10 +436,11 @@
 						const wireIdx = CONST.UP_ORDER[parseInt(key) - 1];
 						if (Global.inputs.m) {
 							// m+digit: fill that stat's bar - spend what's banked right now, queue the
-							// remainder. Passing 6 and letting enqueue() clamp to the per-stat and
-							// lifetime (CONST.MAX_UP_POINTS) caps is deliberate: "fill the bar" is the
-							// intent, and all three caps live in one place now.
-							Ui.UP.enqueue(Ui, wireIdx, 6);
+							// remainder. Passing the per-stat cap and letting enqueue() clamp against
+							// what is already spent/queued and against the lifetime budget
+							// (CONST.MAX_UP_POINTS) is deliberate: "fill the bar" is the intent, and
+							// all three caps live in one place now.
+							Ui.UP.enqueue(Ui, wireIdx, CONST.MAX_PER_STAT);
 							Ui.UP.drain(Ui);
 						} else if (Global.inputs.u) {
 							// u+digit: queue one point on that stat, spending it now if affordable.

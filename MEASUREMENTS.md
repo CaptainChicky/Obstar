@@ -178,9 +178,11 @@ its health bar begins to fade. Convert to seconds.
 ## Sequencing — what you can finish *before* touching any of this
 
 **Almost everything.** The friction finding removed the dependency that made measurement look
-like a prerequisite. Safe to complete first, in this order:
+like a prerequisite. Safe to complete first, in this order — the ordered, per-site version of this
+list lives in **[plan.md](plan.md)**, which is what the work is actually being run off:
 
-1. **PENDING #30** — the 45/7/33 economy. Wholly structural, zero measurement.
+1. ~~**PENDING #30** — the 45/7/33 economy. Wholly structural, zero measurement.~~ **DONE.**
+   Every later item's domain is now diep's: 7 points, 45 levels, 33 total, tiers at 15/30/45.
 2. **#14 tank movement magnitudes** — `A₀` and `F = 10/11` are exact. Adopt tank motion *without*
    touching bullets; that separation is the faithful model, not a workaround.
 3. **#16 recoil + knockback columns** — both act on *tank* velocity, so once #14's `F` is set they

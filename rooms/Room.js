@@ -96,7 +96,11 @@ const SPAWN_TRIES = 128;
 */
 const DEFAULT_RULES = {
 	gm: 'ffa',
-	maxXp: 25000,  // the level-30 cap; drives the whole XPLVL curve
+	// The xp at the level cap (45 levels, PENDING #30); drives the whole XPLVL curve. Deliberately
+	// NOT rescaled when the cap moved 30 -> 45: the same total xp now buys 45 finer levels instead
+	// of 30 coarse ones, so each mode's farming economy is untouched by the conversion. Re-pricing
+	// xp itself belongs with #19's shape density, not here.
+	maxXp: 25000,
 	mapSize: { width: 9020, height: 9020 },
 	maxPlayer: 24,
 	preGenerate: 500,    // generate() passes run before the room opens
@@ -122,11 +126,14 @@ class Room {
 		this.controller = controller;
 		const POW = 2.5;
 		const MXLVL = this.rules.maxXp;
-		this.XPLVL = new Array(30).fill(0).map((x, i) => {
+		// 45 levels, diep's own cap (PENDING #30). The 30 this replaced appeared twice - as the
+		// array length and inside the curve's coefficient - and both have to be the same number or
+		// the last level stops landing exactly on maxXp.
+		this.XPLVL = new Array(Player.LEVEL_CAP).fill(0).map((x, i) => {
 			if (i === 0) {
 				return 0;
 			}
-			const a = 30 / Math.pow(MXLVL, 1 / POW)
+			const a = Player.LEVEL_CAP / Math.pow(MXLVL, 1 / POW)
 			return Math.min(MXLVL, parseInt(Math.pow((i + 1) / a, POW)));
 		})
 		this.gm = this.rules.gm;
@@ -1196,8 +1203,11 @@ class Room {
 			height: this.map.height,
 			screen: RAW.main.screen,
 			xp: RAW.main.xp,
-			still: RAW.main.dead ? 0 : RAW.main.level - RAW.main.stillLvl,
-			cLvl: RAW.main.dead ? 0 : parseInt((RAW.main.level) / 10),
+			// Both of these are the server's own rules, read straight off entities/Player.js rather
+			// than re-expressed here (PENDING #30): points available is granted-minus-spent, not
+			// level-minus-spent, and a class tier opens every 15 levels.
+			still: RAW.main.dead ? 0 : Player.pointsAtLevel(RAW.main.level) - RAW.main.stillLvl,
+			cLvl: RAW.main.dead ? 0 : parseInt(RAW.main.level / 15),
 			// 0 in ffa/boss/sandbox, which have no bases - the client reads that as "draw none"
 			// rather than needing to know which gamemodes have them.
 			baseSize: this.baseSize || 0

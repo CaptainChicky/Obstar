@@ -89,12 +89,7 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// Rebaselined for PENDING #24a (the prediction lead is derived from the measured render delay
-// and RTT now, so the local tank is drawn at a different offset), #14 (movement accel is
-// multiplicative in level/stat, which moves every tank's speed) and the BASE_DRONE_CHASE_SPEED
-// re-pin #14 forced in lib/config.js. Op COUNT is unchanged at 290334 - the same draws in the
-// same order, at different coordinates.
-const GOLDEN = { count: 290334, hash: '909a2864' };
+const GOLDEN = { count: 276262, hash: 'd7859442' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

@@ -38,10 +38,13 @@
 		// last real hp drop before it starts fading out again, regardless of whether it has
 		// healed back to full. Feel knob, not a measured diep number.
 		HP_BAR_HOLD: 180,
-		// Lifetime upgrade-point budget a tank can ever spend: 30 XPLVL levels minus the two
-		// stillLvl++ levels (18, 27) entities/Player.js takes a point back at. Hand-mirrored
-		// server constant.
-		MAX_UP_POINTS: 28,
+		// Lifetime upgrade-point budget a tank can ever spend, and the per-stat cap: diep's own
+		// 33 and 7 (PENDING #30). 33 is one point per level up to 28, then one at 30 and every
+		// third level to the 45 cap - a grant schedule, no takebacks. Both are hand-mirrored
+		// server constants (entities/Player.js's pointsAtLevel / MAX_PER_STAT); the server is
+		// still the authority, this is only what the upgrade widget draws and pre-caps against.
+		MAX_UP_POINTS: 33,
+		MAX_PER_STAT: 7,
 		UP_ORDER: [
 			7,
 			1,

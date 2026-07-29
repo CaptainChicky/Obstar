@@ -20,58 +20,6 @@ backward-compat story. Old conventions are defaults to improve on, not constrain
    wire. New `kind`s go in `public/SHARE/kinds.js`, which `TanksConfig.js`'s `DETEC` filters
    now reference by constant rather than hardcoding — nothing to keep in sync by hand.
 
-30. **Adopt diep's upgrade economy: 45 levels, 7 points per stat, 33 total.** Decided — this is
-    the thing that makes every other diep number adoptable, because **every diep formula is
-    denominated in diep's caps, not ours**. `1.07^pts` assumes 7 points; `1.015^level` assumes 45
-    levels; `+20 HP/pt` assumes 7. Adopting a formula without its domain is what left #14's form
-    fix at 0.96× where diep's own figure is quoted at 1.03×.
-
-    | | diep | ours today |
-    |---|---|---|
-    | level cap | 45 | 30 (`rooms/Room.js`'s `XPLVL`) |
-    | points per stat | 7 (Smasher branch 10, over 4 stats; Auto Smasher 10 over 8) | 6 |
-    | total budget | 33 | 28 (`CONST.MAX_UP_POINTS`) |
-    | grant schedule | 1/level to 28, then at 30 and every 3 levels to 45 | 1/level, minus a takeback at 18 and 27 |
-    | tier gates | every 15 levels | every 10 |
-
-    Ours is a coherent ⅔-scale version rather than a bug — both give 3 tier-ups and both land on
-    "4 stats maxed plus change" (diep 4 + 5 spare, ours 4 + 4). That is why this is a *deliberate*
-    conversion and not a fix.
-
-    **Every site that has to move** (grepped, not guessed):
-    - `rooms/Room.js:99,125` — `maxXp: 25000` is described as "the level-30 cap", and the curve
-      hardcodes **30 twice**: `new Array(30)` and the `a = 30 / …` coefficient. Both → 45.
-    - `entities/Player.js:300` — `upNb[data] >= 6`, the per-stat cap.
-    - `entities/Player.js:539` — `level === 18 || level === 27`, the two takeback levels. **This one
-      is a rewrite, not a retune**: diep does not take points back, it changes the *grant rate*
-      (every level to 28, then every 3rd). Replace the schedule, don't renumber the takebacks.
-    - `entities/Player.js:334` — tier gate `parseInt((1 + level) / 10)` → `/ 15`.
-    - `entities/Player.js:576` — Rocket's unlock reads `upNb[0] === 6 && upNb[1] === 6`.
-    - `entities/Player.js:310-320` — **the stat step values are all sized for a 6-point span** and
-      will overshoot by ~17% each at 7 points unless re-derived. The exception is `MSpeed`, which
-      is multiplicative since #14 (`1.07^pts`) and therefore becomes *automatically* diep-correct
-      the moment the cap is 7 — a useful sign the multiplicative form was the right call.
-    - `public/client/config.js:44` — `MAX_UP_POINTS: 28` → 33. Hand-mirrored from the server, so it
-      is one of the two constants #23 flags as desynchronisable.
-    - `public/client/ui.js:269,282,292` — `perStat = 6 - …`, `>= 6`, and `drawAll(…, max = 6)`.
-      That last one is **layout, not logic**: the upgrade bar draws 6 segments and a 7th changes
-      the widget's geometry.
-    - `test/rooms.js:622` — `MAXUP = 6`, which feeds `fastestTankSpeed()` and therefore forces a
-      `BASE_DRONE_CHASE_SPEED` re-pin (#14) as a matter of course.
-
-    **No wire change needed** — `upNb` is `uint8` per stat, so 7 (or a Smasher's 10) already fits.
-
-    **Consequence worth knowing before starting, because it is counter-intuitive:** at diep's own
-    caps a maxed-Movement **level-45** tank runs at `1.07^7 / 1.015^45` = **0.82× a fresh spawn**.
-    The 1.03× figure quoted in #14 is a *level-30* comparison, not diep's endgame. So this
-    conversion makes high-level tanks **slower relative to a spawn** than our current 0.96×, not
-    faster. That is faithful, but it is a real feel change and it moves the speed ceiling
-    `BASE_DRONE_CHASE_SPEED` is pinned to.
-
-    **Do this before #17's health adoption and #15's reload-stat decision.** Both are described in
-    those items as "arithmetic now" — true, but only once the domain is 7 points. Doing them at 6
-    means doing them twice.
-
 ## 🟠 Wiki cross-check: GAME MODES — pick what goes in, strike what doesn't
 
 *Source: `diep_wiki/` (`Game Modes.txt`, `Maze.txt`, `Domination.txt`, `Dominator.txt`,
@@ -173,10 +121,20 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
    - The minimap shows other players' dots, not just your own, moving smoothly (`Room.getUi`'s
      `map`, `Ui.map()` in `public/client/ui.js`).
    - The minimap has a thin dark frame in every mode (`public/client/ui.js`'s `MAP.lw`).
-   - Level 1 vs. level 30 with Movement Speed maxed: confirm the tank does not rubber-band
+   - Level 1 vs. level 45 with Movement Speed maxed: confirm the tank does not rubber-band
      differently at the two speeds. **#14's form change is most visible exactly here** — a maxed
-     level-30 tank now keeps 0.96× a fresh spawn's speed where it used to keep 0.79×, so leveling
-     should no longer feel like it quietly takes your mobility away.
+     level-30 tank keeps 0.96× a fresh spawn's speed where it used to keep 0.79×, so leveling
+     should no longer feel like it quietly takes your mobility away. **At the 45-level cap the
+     same figure is 0.82×** (`1.07^7 / 1.015^45`), diep's own endgame ratio and a deliberate
+     consequence of the economy conversion — high-level tanks *are* slower relative to a spawn now,
+     so judge the feel against diep, not against the 0.96×.
+   - **The upgrade economy is diep's now** (#30, shipped). Four things to look at, all of which
+     only a browser can judge: each stat bar draws **7** segments rather than 6 and the whole
+     upgrade widget is correspondingly wider — confirm it still fits its corner at a few UI
+     scales; a fresh spawn shows **no** point to spend (the first arrives on the level-up to 2),
+     where it used to start with one; the class picker opens at **15/30/45**, not 9/19/29; and
+     levels 29–45 grant a point only every third level, so the "x*n*" badge stops ticking up every
+     level near the cap — that is the schedule, not a stuck counter.
    - **Regen actually starts immediately** (#17). At 0 Health Regen points, take a few HP off a
      fresh 150 HP tank and watch the bar: it should begin creeping back straight away, where it
      used to sit dead flat for ~22 s before the first tick of healing landed.
@@ -186,7 +144,9 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
      position lands. Throttling the connection should visibly widen the lead, not break it.
    - **Tank growth is diep's exponential now** (`28 * 1.01^level`, a radius, continuous rather
      than stepping every 2.8 levels). Confirm a tank visibly grows smoothly as it levels and that
-     nothing keyed to `size` (barrel scaling, drawn hitbox, minimap dot) looks off at level 30.
+     nothing keyed to `size` (barrel scaling, drawn hitbox, minimap dot) looks off at the level
+     cap — which is **45** now, so the top-end tank is `1.01^45` = 1.56× a spawn's radius rather
+     than the 1.35× a level-30 cap gave.
    - **The `c` auto-spin** starts from wherever the barrel is pointing when you press it and
      spins from there; releasing leaves the tank facing where the spin left it, and the next
      mouse move takes over cleanly. Two changes to re-check here specifically: the rate is diep's
@@ -291,13 +251,15 @@ stated as open has shipped and should not be "re-fixed".*
 handful of quantities that genuinely still need a real diep client, the ~14 that are already pinned
 and must not be re-measured, and — most importantly for sequencing — the fact that **almost nothing
 here is measurement-blocked any more.** #14's `FRICTION` is exact (`10/11`, derived), so #14, #16,
-#17, #19, #30 and the damage model can all be finished before a single measurement is taken.*
+#17, #19 and the damage model can all be finished before a single measurement is taken. The
+ordered queue for that work is **[plan.md](plan.md)**; #30, its first step, has shipped.*
 
 14. **Movement: right shape, wrong stiffness.** (**The *form* half is done.** Level and Movement
     Speed are independent multipliers on the base accel now — `base × 1.07^pts / 1.015^level`,
     `public/SHARE/Physics.js` — so a maxed level-30 tank sits at 0.96× a fresh spawn instead of
-    0.79×, and the level term no longer reaches zero speed at level 54. The remaining gap to diep's
-    1.03× is entirely our 6-point stat cap against diep's 7, not the form. **The magnitudes below
+    0.79×, and the level term no longer reaches zero speed at level 54. The stat/level *domain* is
+    diep's too since #30 shipped, so the form is now exactly diep's: at the 45 cap a maxed-Movement
+    tank is `1.07^7 / 1.015^45` = 0.82× a spawn, diep's own endgame figure. **The magnitudes below
     are still open** — `MOVE_ACCEL_BASE`/`FRICTION` are unchanged, so base top speed is still
     284 u/s, and the table's other rows still stand. **They are no longer blocked, though**: the
     section under the table derives `FRICTION` exactly and dissolves what used to be the blocker.)
@@ -307,12 +269,13 @@ here is measurement-blocked any more.** #14's `FRICTION` is exact (`10/11`, deri
     | top speed, base | `10 × A₀` = 12.94 gu/s = 6.47 tank-diameters/s | 284 u/s = 5.07 diam/s | **0.78×** |
     | accel → top-speed ratio | `v_max = 10 × A` | `v_max = 26.8 × len` | **2.7×** |
     | e-fold time to top speed | 0.42 s | 0.90 s | **2.14× floatier** |
-    | speed vs level | `÷ 1.015^lvl` (×0.64 at lvl 30) | `− lvl/155` (×0.447 at lvl 30) | multiplicative vs **subtractive** |
-    | speed vs stat | `× 1.07^vm` (+61% at 7) | `+ 0.020/pt` on 0.35 (+34% at 6) | additive, half the range |
-    | stat cap / level cap | 7 points, 45 levels | 6 points, 30 levels | **see #30** |
+    | speed vs level | `÷ 1.015^lvl` (×0.51 at lvl 45) | `÷ 1.015^lvl` (×0.51 at lvl 45) | **matched** |
+    | speed vs stat | `× 1.07^vm` (+61% at 7) | `× 1.07^vm` (+61% at 7) | **matched** |
+    | stat cap / level cap | 7 points, 45 levels | 7 points, 45 levels | **matched** (#30, shipped) |
 
-    (The last two rows of the table are what the form fix addressed; the first three are the open
-    magnitude gap.)
+    (The last three rows are what the form fix and #30's domain conversion addressed — they read
+    as identities now and are kept only so the item still records what was wrong. The first three
+    are the open magnitude gap.)
 
     ### `FRICTION` is EXACT, and it is a *tank* constant — this is no longer blocked
 
@@ -372,10 +335,11 @@ here is measurement-blocked any more.** #14's `FRICTION` is exact (`10/11`, deri
       a Basic with 5 reload points fires *every loop* (25 shots/s) — not credible.
       `1.875 = 1 + 0.125 × 7`, so it is almost certainly a mangled rendering of a linear form
       reaching 1.875× fire rate at max stat. Under that reading diep is ×1.875 and ours is ×2.23
-      (6 pts) — close enough to leave alone. Under the literal reading nothing about our reload
-      stat is salvageable. Measure before choosing. Note this one moves the speed ceiling #14
-      pins `BASE_DRONE_CHASE_SPEED` to. **Sequence after #30** — the `× 7` in that identity is
-      diep's stat cap, so the whole comparison is only apples-to-apples once ours is 7 too.
+      at a full bar — close enough to leave alone (the per-point step is 0.0788571 since #30, so
+      the maxed total is the same 0.552 it was at 6 points). Under the literal reading nothing
+      about our reload stat is salvageable. Measure before choosing. Note this one moves the speed
+      ceiling #14 pins `BASE_DRONE_CHASE_SPEED` to. The `× 7` in that identity is diep's stat cap,
+      and ours is 7 now (#30, shipped), so the comparison is finally apples-to-apples.
     - **Left off the conversion on purpose — do not "finish the job" without re-deciding.**
       Annihilator keeps its 87: unlike Hybrid (a literal stat-clone of Destroyer's cannon, so it
       moved with it), Annihilator's other stats are already tuned away from Destroyer's, so its
@@ -438,8 +402,12 @@ here is measurement-blocked any more.** #14's `FRICTION` is exact (`10/11`, deri
       `150 + 3/lvl + 110/pt`), very different balance of terms: diep is 10 levels per health point,
       ours is 36.7. **That ratio is the real mismatch and it is now fully specified** — adopting it
       is arithmetic, not research. Note this also unblocks #23's `BASE_DRONE_HP` question.
-      **Sequence this after #30**: `+20 HP/pt` is denominated in diep's 7-point cap, so adopting it
-      at our 6 lands somewhere neither game intends, and would have to be redone.
+      **The domain is ready**: `+20 HP/pt` is denominated in diep's 7-point cap, and ours is 7
+      since #30 shipped, so this can be adopted directly now. What it still needs is the lethality
+      call in [plan.md](plan.md) step 4 — our 150 HP pool against a ~4.85/loop bullet is ~31 loops
+      to kill where diep's 50 against 7 is ~7 (≈18 once #18's damage-reduction term is in), so
+      taking the HP side alone shortens time-to-kill 4–5× and #17 and #18 probably want landing
+      together.
     - **Regen.** diep is linear in time: `HPS = MH × (0.03 + 0.12·rr)/30` → full heal in 1000 s at
       0 points, 34.5 s at 7. Ours (`hpregan[1]` accumulates, then is added, every tick) is
       *quadratic* — full heal in 46 s at 0 points, 28 s at max. So our base regen is **21× faster
@@ -551,19 +519,22 @@ here is measurement-blocked any more.** #14's `FRICTION` is exact (`10/11`, deri
 
     Two things about the base drones stay open:
     - **The HP scale — the blocker is gone, the decision is not.** `BASE_DRONE_HP: 2000` is the
-      wiki's number on *diep's* HP scale, and ours is not diep's — our base tank is 150 HP, a maxed
-      level-30 tank here is 900. **`MH₀ = 50` is now confirmed** (#17), so diep's base drone really
+      wiki's number on *diep's* HP scale, and ours is not diep's — our base tank is 150 HP, and a
+      maxed tank here is 945 at the 45-level cap (`150 + 3·45 + 660`; it was 900 at 30 levels, the
+      figure this item was originally written against). **`MH₀ = 50` is now confirmed** (#17), so diep's base drone really
       is ~7.1× a maxed diep tank, and the faithful number on our scale really is **~6400, not
       2000** — a 3.2× increase. **DECIDED: go to ~6400**, i.e. stay true to diep rather than keep
       the 2000 that was shipped on "very durable but killable". Recompute the exact figure against
-      whatever a maxed tank's HP becomes once #30's 7-point cap and #17's `+20/pt` land, since
-      6400 is derived from that pool rather than being a constant in its own right.
+      whatever a maxed tank's HP becomes once #17's `+20/pt` lands (#30's 7-point cap has shipped,
+      so a maxed pool is `150 + 3·45 + 660` on today's health model), since 6400 is derived from
+      that pool rather than being a constant in its own right.
     - **`BASE_DRONE_DAMAGE: 2.97`** is derived (`8.48485 × 7/20`, our tank body damage scaled by the
       wiki's 7-per-loop against diep's 20-per-loop tank body), not observed. At today's rate that is
-      ~74 HP/s from a single drone, so a swarm of twelve kills a 900 HP tank in about a second.
+      ~74 HP/s from a single drone, so a swarm of twelve kills a 945 HP tank in about a second.
       Playtest it before treating it as settled.
-    - `CONST.MAX_UP_POINTS` is hand-mirrored between client and server, next to the
-      input-prediction constants in item 24.
+    - `CONST.MAX_UP_POINTS` (33) and `CONST.MAX_PER_STAT` (7) are hand-mirrored between client and
+      server, next to the input-prediction constants in item 24 — `test/rooms.js` cross-checks both
+      against `entities/Player.js` since #30, so the pair can no longer drift silently.
 
 24. **Close-quarters bullet truth — the remaining error budget.** The dimensional bug in the
     client's input prediction is fixed (the integrator lives in `public/SHARE/Physics.js` now and

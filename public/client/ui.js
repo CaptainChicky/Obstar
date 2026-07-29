@@ -266,7 +266,7 @@
 					return Math.max(0, CONST.MAX_UP_POINTS - spent(Ui) - q);
 				}
 				function enqueue(Ui, wireIdx, n) {
-					const perStat = 6 - (Ui.upNb[wireIdx] || 0) - QUEUE[wireIdx];
+					const perStat = CONST.MAX_PER_STAT - (Ui.upNb[wireIdx] || 0) - QUEUE[wireIdx];
 					const add = Math.max(0, Math.min(n, perStat, budget(Ui)));
 					QUEUE[wireIdx] += add;
 					return add;
@@ -279,7 +279,7 @@
 					if (!still) { return; }
 					for (let i = 0; i < QUEUE.length && still > 0; i++) {
 						while (QUEUE[i] > 0 && still > 0) {
-							if ((Ui.upNb[i] || 0) >= 6) { QUEUE[i] = 0; break; }
+							if ((Ui.upNb[i] || 0) >= CONST.MAX_PER_STAT) { QUEUE[i] = 0; break; }
 							QUEUE[i]--;
 							still--;
 							Ui.upNb[i] = (Ui.upNb[i] || 0) + 1;
@@ -289,7 +289,10 @@
 					Ui.still = still;
 				}
 				///
-				function drawAll(tankClass, states, max = 6) {
+				// `max` is the number of segments in each stat's bar - the per-stat cap, 7 since
+				// PENDING #30. It is geometry as well as logic: the widget's width is
+				// max * (W + marge), so the whole upgrade panel grows a segment with it.
+				function drawAll(tankClass, states, max = CONST.MAX_PER_STAT) {
 					if (tankClass === CLASS) {
 						return;
 					}
