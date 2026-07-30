@@ -68,7 +68,12 @@ function packet(t, user, bullet, other) {
 			// player's own, which is what puts it in the local tank's reference frame on the
 			// client (public/client/entities.js, Bullet.update()).
 			construc: 'Bullets', id: 7,
-			states: [0, bullet.mine ? 1 : 0, 0, 0, 0, 0, 0], type: 0, color: 0,
+			// states[0] is the `pet` bit and `type` distinguishes an ordinary bullet (0) from a
+			// drone/trap (>= 1) - both decide whether the bullet is dead-reckoned or interpolated
+			// (public/client/entities.js, Bullet.reckonMs()). Default 0/absent = ordinary bullet,
+			// which is what every test written before dead reckoning existed wants.
+			states: [bullet.pet ? 1 : 0, bullet.mine ? 1 : 0, 0, 0, 0, 0, 0],
+			type: bullet.type || 0, color: 0,
 			x: bullet.x, y: bullet.y, size: 10, alpha: 1, dir: 0
 		})));
 	}
@@ -461,6 +466,130 @@ console.log('\na new entity is complete on the packet that introduces it:');
 		tank && [tank.name, tank.hp, tank.bot].join('/'));
 	check('nothing non-finite reached the canvas', a.record.badTranslate === 0,
 		a.record.badTranslate);
+}
+
+console.log('\nan incoming bullet is dead-reckoned, a drone is not (PENDING #24b):');
+{
+	/*
+		THE REMAINING HALF of PENDING #24. Every entity is drawn one packet interval in the past,
+		which for an incoming bullet means it damages you before it visually arrives - an enemy
+		Destroyer shot lands ~12 units before its picture does. A non-drone bullet is the one
+		entity where that delay buys nothing, because its motion is deterministic between
+		collisions, so the client can integrate it forward instead of waiting for the next packet.
+
+		The measurement below is deliberately a COMPARISON rather than an absolute: the same flight,
+		flown twice, once as an ordinary bullet (type 0, dead-reckoned) and once as a drone (type 1,
+		which steers and must stay interpolated). The gap between the two IS the delay being
+		cancelled, so this cannot pass by both numbers happening to be equal, and it does not depend
+		on the harness's fake clock landing on any particular phase.
+
+		The stub socket never echoes a ping probe, so NET.rtt is 0 here and leadMs is the render
+		interval alone. That is the conservative half of the lead; a real connection also cancels
+		rtt/2 on top.
+	*/
+	const SPEED = 36;   // bullet travel per packet
+
+	// Fly one bullet of the given wire `type` and report, at a fixed phase of the packet cycle,
+	// how far its DRAWN position sits ahead of the newest raw server position it was given.
+	function flight(type) {
+		const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+		const Insts = a.start(packet(1, { x: 0, y: 0 })).Instances;
+		let bx = 0, ahead = 0, perFrame = [];
+		for (let p = 0; p < 14; p++) {
+			a.deliver(packet(p + 1, { x: 0, y: 0 }, { x: bx, y: 0, type: type }));
+			const before = Insts.Bullets[7] ? Insts.Bullets[7].dx : 0;
+			a.frame(FRAME);
+			const b = Insts.Bullets[7];
+			// Always read one frame after a packet, so both flights are sampled at the same point
+			// in the cycle and the comparison is of leads, not of phases.
+			if (b && p > 3) {
+				ahead = b.dx - b.x;
+				perFrame.push(b.dx - before);
+			}
+			a.frame(FRAME);
+			bx += SPEED;
+		}
+		return { ahead: ahead, perFrame: perFrame, motion: a.sandbox.MOTION };
+	}
+
+	const bullet = flight(0);
+	const drone = flight(1);
+
+	check('a drone is still drawn behind the server, as interpolation intends',
+		drone.ahead < 0, drone.ahead.toFixed(1) + ' units');
+	check('...while an ordinary bullet is not drawn behind any more',
+		bullet.ahead > drone.ahead, bullet.ahead.toFixed(1) + ' vs ' + drone.ahead.toFixed(1));
+	// The gap is the render delay being cancelled: one leadMs of the bullet's own travel. With
+	// rtt 0 that is one interval, i.e. one packet's worth of flight.
+	{
+		const gap = bullet.ahead - drone.ahead;
+		const M = bullet.motion;
+		const expect = SPEED * M.NET.leadMs() / M.NET.interval;
+		check('...by exactly the delay it is cancelling - leadMs of its own travel',
+			near(gap, expect, expect * 0.1),
+			gap.toFixed(1) + ' units, expected ' + expect.toFixed(1));
+		check('...which is a lead big enough to be the reported bug, not rounding',
+			gap > 10, gap.toFixed(1) + ' units');
+	}
+	// Cancelling the delay must not change the drawn SPEED - a lead is a constant offset along
+	// the path, so if this drifted the bullet would be running fast and overshoot its own target.
+	{
+		const per = SPEED / FPP;
+		const worst = bullet.perFrame.reduce((m, s) => Math.max(m, Math.abs(s - per)), 0);
+		check('...and it still flies at its real speed, not faster',
+			worst < per * 0.15, 'worst frame off by ' + worst.toFixed(2) + ' of ' + per.toFixed(2));
+	}
+
+	/*
+		The ceiling. NET.leadMs() is measured, so a pathological RTT (a stalled tab, a hostile
+		server) would otherwise fling a bullet arbitrarily far downrange. reckonMs() caps it at
+		CONST.DEAD_RECKON_MAX_INTERVALS packet intervals - checked by driving the EMA somewhere
+		absurd rather than by re-reading the constant.
+	*/
+	{
+		const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+		const hook = a.start(packet(1, { x: 0, y: 0 }));
+		const Insts = hook.Instances;
+		const M = a.sandbox.MOTION, C = hook.CONST;
+		let bx = 0;
+		for (let p = 0; p < 6; p++) {
+			a.deliver(packet(p + 1, { x: 0, y: 0 }, { x: bx, y: 0 }));
+			for (let f = 0; f < FPP; f++) { a.frame(FRAME); }
+			bx += SPEED;
+		}
+		const b = Insts.Bullets[7];
+		const sane = b.reckonMs();
+		M.NET.rtt = 100000;   // far past anything echo() would ever admit
+		const capped = b.reckonMs();
+		check('a pathological RTT cannot fling a bullet arbitrarily far',
+			capped === M.NET.interval * C.DEAD_RECKON_MAX_INTERVALS,
+			capped.toFixed(1) + 'ms vs cap ' + (M.NET.interval * C.DEAD_RECKON_MAX_INTERVALS).toFixed(1));
+		check('...and the cap is a ceiling, not the everyday value',
+			sane < capped, sane.toFixed(1) + 'ms normally');
+		M.NET.rtt = 0;
+	}
+
+	// The two remaining exclusions, asserted through the real predicate rather than by re-stating
+	// its condition. A pet chases its owner and your own bullet is welded to the drawn muzzle for
+	// its first interval - see reckonMs()'s comment for why that one genuinely conflicts.
+	{
+		const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+		const Insts = a.start(packet(1, { x: 0, y: 0 })).Instances;
+		for (let p = 0; p < 4; p++) {
+			a.deliver(packet(p + 1, { x: 0, y: 0 }, { x: p * SPEED, y: 0 }));
+			for (let f = 0; f < FPP; f++) { a.frame(FRAME); }
+		}
+		const b = Insts.Bullets[7];
+		check('an ordinary enemy bullet is the thing being dead-reckoned', b.reckonMs() > 0,
+			b.reckonMs().toFixed(1) + 'ms');
+		b.pet = 1;
+		check('...a pet is not - it chases its owner, so its velocity is a control output',
+			b.reckonMs() === 0);
+		b.pet = 0;
+		b.mine = 1;
+		check('...and your own bullet is not, because the muzzle weld already owns its position',
+			b.reckonMs() === 0);
+	}
 }
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');

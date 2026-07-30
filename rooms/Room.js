@@ -46,6 +46,7 @@ const tick = require('../lib/tick.js');
 const termColors = require('../lib/terminal.js');
 const quadTree = require('../lib/quadTree.js');
 const SlotMap = require('../lib/SlotMap.js');
+const World = require('../public/SHARE/World.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const KIND = require('../public/SHARE/kinds.js');
 const clock = require('../lib/clock.js');
@@ -54,6 +55,91 @@ const Bullet = require('../entities/Bullet.js');
 const Objects = require('../entities/Objects.js');
 const Detector = require('../entities/Detector.js');
 const CONFIG = require('../lib/gameAI.js');
+
+/*
+	ARENA SIZE AND SHAPE DENSITY - PENDING #19, plan.md step 6.
+
+	diep has two published formulas and they are a MATCHED PAIR, which is the fact the whole design
+	below turns on: arena length AL = floor(sqrt(N_P) * 50) gu (physics.html) and shape count
+	12.5 * N_P (diep_wiki/Polygons.txt). Compose them and the player count cancels -
+	area = (sqrt(N)*50)^2 = 2500*N gu^2 against 12.5*N shapes, i.e. exactly
+
+	    ONE SHAPE PER 200 gu^2, at every player count.
+
+	So diep's real invariant is a DENSITY, and "12.5 per player" is what that density happens to
+	look like when the arena is also being sized by N. That matters because adopting one formula
+	without the other is actively wrong: 12.5*N shapes spread over OUR (bigger, fixed) arenas would
+	be far emptier than today, the opposite of what #19 is complaining about. The density is the
+	part that transfers.
+
+	Which half a mode gets is the split diep_wiki itself draws, and it is per-mode rather than
+	global:
+	  - ARENA SIZE is stated as population-varying for SANDBOX only ("The arena's size along with
+	    the number of shapes that spawn in it varies depending on the number of players connected
+	    to it", diep_wiki/Game Modes.txt) and for TAG as a timed shrink (diep_wiki/Map.txt). FFA,
+	    2 Teams and 4 Teams describe nothing of the kind, so they keep the arena each already has -
+	    see the deliberate-departure note below.
+	  - SHAPE DENSITY is the general rule ("The number of Polygons available in an arena is directly
+	    related to how many players are currently connected to it") and applies to every mode, off
+	    whatever area that mode's arena currently has.
+	A mode opts into the first by setting `arenaLive`; every mode gets the second for free.
+
+	DELIBERATE DEPARTURE, so it is not "fixed" later by mistake: #19 notes our ffa arena is 451 gu
+	against diep's 244 gu at maxPlayer 24, and that resizing toward diep "is still open". It stays
+	open. Shrinking ffa to AL(24) would cut its area to 29% - a balance change of a completely
+	different magnitude to this step, affecting every distance the mode was tuned around, and
+	nothing asked for it. What this step fixes is the density complaint (#19's actual subject: ours
+	was 1 per 261 gu^2 against diep's 1 per 200), which is fixed at OUR arena sizes.
+*/
+const SHAPE_DENSITY_GU2 = 200;
+function shapeTotal(widthGu, heightGu) { return Math.floor(widthGu * heightGu / SHAPE_DENSITY_GU2); }
+/*
+	AL() for the modes that do scale with population. The floor is a PLAYABILITY minimum, not a
+	satisfiability one: 150 gu is Sandbox's own long-standing tuned size, and also the smallest
+	arena this tree has ever shipped, so an empty live-scaled room lands exactly where Sandbox
+	already sat rather than somewhere new. Satisfiability is handled structurally instead - see
+	nestScale below.
+*/
+const MIN_ARENA_GU = 150;
+function arenaGu(n) { return Math.max(MIN_ARENA_GU, Math.floor(Math.sqrt(Math.max(1, n)) * 50)); }
+/*
+	Every nest radius in the tree - spawnKeepOut()'s three keep-out circles, entities/Objects.js's
+	three (slightly tighter) shape carve-outs, and createObj()'s three cluster radii - was tuned
+	against ffa's map and hardcoded absolute. They are all read through this one scale factor now,
+	so they stay a fixed PROPORTION of whatever arena they are in.
+
+	This is what actually retires rejectSample()'s "unsatisfiable below ~2744 units wide" warning,
+	and it retires it structurally rather than by clamping: if the carve-outs scale with the map,
+	the whole placement picture is similar at every size, so a configuration satisfiable at one
+	arena size is satisfiable at ALL of them. There is no longer a width at which no point on the
+	map is outside the nests. ffa is the reference, so its own scale is exactly 1 and its placement
+	behaviour is unchanged by construction.
+*/
+const NEST_REF_GU = 451;
+/*
+	Splits `total` shapes across sqr/tri/pnt - each further into max0 (scattered anywhere clear of
+	every nest) and max1 (clustered at one of the three nest points; see createObj()) - preserving
+	the mode's own proportions. `mix` is six raw weights keyed sqr0/sqr1/tri0/tri1/pnt0/pnt1, stated
+	by each mode as literally its pre-#19 objCaps numbers, and normalised here - so a mode states
+	the mix it was tuned with and this file decides only the total. Largest-remainder apportionment,
+	the same method levelTargets() below already uses for base drone levels, so the parts sum to
+	exactly `total` instead of drifting under six independent roundings.
+*/
+function apportionShapes(total, mix) {
+	const keys = ['sqr0', 'sqr1', 'tri0', 'tri1', 'pnt0', 'pnt1'];
+	const sum = keys.reduce((a, k) => a + mix[k], 0);
+	const exact = keys.map((k) => total * mix[k] / sum);
+	const floors = exact.map((x) => Math.floor(x));
+	const remainder = total - floors.reduce((a, b) => a + b, 0);
+	const order = keys.map((_, i) => i).sort((a, b) => (exact[b] - floors[b]) - (exact[a] - floors[a]));
+	const counts = floors.slice();
+	for (let k = 0; k < remainder; k++) { counts[order[k]]++; }
+	return {
+		sqr: { max0: counts[0], max1: counts[1] },
+		tri: { max0: counts[2], max1: counts[3] },
+		pnt: { max0: counts[4], max1: counts[5] }
+	};
+}
 
 // generate() is a simulation event, so it rides the simulation clock: one pass every this many fixed steps. These divide by the
 // actual wall-clock step (clock.STEP_MS, 25ms/40Hz), not a reference tick,
@@ -101,11 +187,27 @@ const DEFAULT_RULES = {
 	// of 30 coarse ones, so each mode's farming economy is untouched by the conversion. Re-pricing
 	// xp itself belongs with #19's shape density, not here.
 	maxXp: 25000,
+	// The arena, as a square count (PENDING #19, plan.md step 6). A mode states the size it is
+	// tuned for; an `arenaLive` mode has this overwritten every tick from AL(live human count) and
+	// only uses it as its pre-first-tick starting value.
 	mapSize: { width: 9020, height: 9020 },
+	// Opt in to diep's population-varying arena - Sandbox and (step 7) Tag. Off means the arena is
+	// whatever `mapSize` says, forever; SHAPE DENSITY still applies either way. See the header.
+	arenaLive: false,
+	// A team mode's baseSize as {num, den} of the map's width in squares, so it stays the same
+	// PROPORTION of the arena as that arena resizes. Written as a fraction rather than a pre-divided
+	// float on purpose: (width * num / den) reproduces 4team's gu(67) exactly where
+	// (width * (num/den)) lands on 1875.9999999999998 instead of 1876. 0/1 - ffa/boss/sandbox have
+	// no base, which is also what makes `baseSize` 0 for them, as before.
+	baseSizeRatio: { num: 0, den: 1 },
+	// Six raw weights - literally this mode's pre-#19 objCaps - normalised by apportionShapes()
+	// above. The mode states the MIX it was tuned with; the header's density formula states the
+	// TOTAL. Null here is deliberate: DEFAULT_RULES is never used unmerged, and a mode that forgets
+	// its mix should fail loudly rather than silently inherit ffa's.
+	shapeMix: null,
 	maxPlayer: 24,
 	preGenerate: 500,    // generate() passes run before the room opens
 	bootDelay: 100,    // ms between construction and the first tick
-	objCaps: { sqr: { max0: 220, max1: 18 }, tri: { max0: 80, max1: 12 }, pnt: { max0: 25, max1: 15 } },
 	betaPentRng: 0.98,   // RNG above this may spawn a beta pentagon
 	bossRng: 2,      // ... and above this calls createBoss(). 2 = never.
 	maxBoss: 0,      // how many bosses may be alive at once. 0 = the mode has none.
@@ -116,7 +218,9 @@ const DEFAULT_RULES = {
 	teams: [1],    // the team ids this mode assigns. One entry = free-for-all.
 	teamPlay: false,  // friendly fire off, and detectors ignore team mates
 	respawnPow: 0.9,    // exponent of the xp you keep through a death
-	baseSize: 0,
+	// Per-mode xp multiplier, applied once in awardXp(). diep_wiki/Polygons.txt: Tag x3,
+	// Breakout x3, Domination x2, everything else x1.
+	xpMul: 1,
 	viewerBullets: true   // re-encode your own bullets per viewer so they read as yours
 };
 
@@ -146,28 +250,36 @@ class Room {
 			"bullets": new SlotMap(),
 			"detectors": new SlotMap()
 		};
-		const caps = this.rules.objCaps;
+		this.leader = [];
+		// An `arenaLive` mode starts at AL(0) - the MIN_ARENA_GU floor - rather than at its stated
+		// mapSize, because it has no players yet at construction and step() will size it from the
+		// real count on the first tick regardless. Everything else opens at the size it states.
+		if (this.rules.arenaLive) {
+			const al = World.gu(arenaGu(0));
+			this.map = { width: al, height: al };
+		} else {
+			this.map = { width: this.rules.mapSize.width, height: this.rules.mapSize.height };
+		}
+		// newMap is what the map lerps towards each tick - the admin 'mapResize' command writes it,
+		// and so does tickArena() for an `arenaLive` mode. Starting them equal makes the lerp a
+		// no-op until one of those two asks for something different.
+		this.newMap = { width: this.map.width, height: this.map.height };
+		// sqr/tri/pnt's caps are derived (tickArena() below, called once here so the room is fully
+		// sized before build()/Init() run). Bpnt/Bsqr/Btri/bull are deliberately NOT: giant nest
+		// constructs and landmines are a separate, rarer mechanic that #19's density formula says
+		// nothing about, so their caps stay the literals they have always been.
 		this.obj = {
-			"sqr": { "0": 0, "1": 0, "max0": caps.sqr.max0, "max1": caps.sqr.max1 },
-			"tri": { "0": 0, "1": 0, "max0": caps.tri.max0, "max1": caps.tri.max1 },
-			"pnt": { "0": 0, "1": 0, "max0": caps.pnt.max0, "max1": caps.pnt.max1 },
+			"sqr": { "0": 0, "1": 0, "max0": 0, "max1": 0 },
+			"tri": { "0": 0, "1": 0, "max0": 0, "max1": 0 },
+			"pnt": { "0": 0, "1": 0, "max0": 0, "max1": 0 },
 			"Bpnt": { '1': 0, 'max1': 3 },
 			"Bsqr": { '1': 0, 'max1': 2 },
 			"Btri": { '1': 0, 'max1': 2 },
-			"bull": { '1': 0, 'max1': 39 }   // 20 x1.96, same density-hold as objCaps
+			"bull": { '1': 0, 'max1': 39 }
 		};
-		this.baseSize = this.rules.baseSize;
-		this.leader = [];
-		this.map = {
-			width: this.rules.mapSize.width,
-			height: this.rules.mapSize.height
-		};
-		// newMap is what the map lerps towards each tick; the 'mapResize' admin command writes
-		// it. Starting them equal makes the lerp a no-op until someone asks for a resize.
-		this.newMap = {
-			width: this.rules.mapSize.width,
-			height: this.rules.mapSize.height
-		};
+		this.baseSize = 0;
+		this.nestScale = 1;
+		this.tickArena(0);
 		this.timestamp = 0;
 		this.bots = [];
 		// Every boss currently alive. A list rather than a single slot because 'boss' mode runs
@@ -612,18 +724,22 @@ class Room {
 	createObj(type, pos) {
 		let ppp = -1;
 		if (pos) {
+			// Cluster radii, x this.nestScale so a nest stays the same fraction of the arena at any
+			// size (PENDING #19, plan.md step 6) - the same scaling spawnKeepOut()'s keep-out circles
+			// and entities/Objects.js's carve-outs get, and for the same reason. ffa's scale is 1.
+			const s = this.nestScale;
 			switch (type) {
 				case 'sqr':
 				case 'Bsqr':
-					ppp = [this.map.width / 4, this.map.height / 4, 490];   // 350 x1.4, grid rescale
+					ppp = [this.map.width / 4, this.map.height / 4, 490 * s];   // 350 x1.4, grid rescale
 					break;
 				case 'tri':
 				case 'Btri':
-					ppp = [-this.map.width / 4, -this.map.height / 4, 490]; // 350 x1.4, grid rescale
+					ppp = [-this.map.width / 4, -this.map.height / 4, 490 * s]; // 350 x1.4, grid rescale
 					break;
 				case 'pnt':
 				case 'Bpnt':
-					ppp = [0, 0, 630];   // 450 x1.4, grid rescale
+					ppp = [0, 0, 630 * s];   // 450 x1.4, grid rescale
 					break;
 			}
 		}
@@ -711,6 +827,41 @@ class Room {
 		}
 		return boss;
 	}
+	/*
+		Everything that is derived from the arena's current size, recomputed together (PENDING #19,
+		plan.md step 6). Called once from the constructor and once per tick from step(), with the
+		live human count - which is why it takes that count rather than reading it: step() has
+		already walked the player list to decide whether the room should self-destruct, so this
+		reuses that pass instead of adding a second one.
+
+		Three things are derived, and the ordering matters - `nestScale` and `baseSize` come off
+		this.map (what the arena IS right now, mid-lerp), not this.newMap (what it is heading for),
+		so the carve-outs and the base track the arena continuously as it resizes rather than
+		snapping to the target while the map is still moving.
+
+		`arenaLive` modes additionally write this.newMap, i.e. they ask for a resize the same way the
+		admin 'mapResize' command does, and get the same smoothing for free. A non-live mode never
+		touches newMap here, so the admin command still works in every mode - a live mode will simply
+		overwrite the request on the next tick, which is correct: its size is a function of its
+		population, not a setting.
+	*/
+	tickArena(humanCount) {
+		if (this.rules.arenaLive) {
+			const al = World.gu(arenaGu(humanCount));
+			this.newMap.width = al;
+			this.newMap.height = al;
+		}
+		this.nestScale = this.map.width / World.gu(NEST_REF_GU);
+		const r = this.rules.baseSizeRatio;
+		this.baseSize = r.num ? this.map.width * r.num / r.den : 0;
+		const caps = apportionShapes(
+			shapeTotal(this.map.width / World.GU, this.map.height / World.GU),
+			this.rules.shapeMix);
+		for (const type of ['sqr', 'tri', 'pnt']) {
+			this.obj[type].max0 = caps[type].max0;
+			this.obj[type].max1 = caps[type].max1;
+		}
+	}
 	createBullet(bullet, origin) {
 		this.assignBulletTeam(bullet, origin);
 		bullet.map = this.map;
@@ -718,6 +869,20 @@ class Room {
 			bullet.id = { 'GM': this.gm, 'sId': this.id, 'oId': id };
 			return bullet;
 		});
+	}
+	/*
+		The one place a kill turns into xp. Every "killer gains the victim's prize" site routes
+		through this - rooms/Room.js's two bullet arms below, entities/Player.js's tank-vs-tank arm
+		and entities/Objects.js's shape-vs-tank arm - so a mode's xp multiplier is stated once
+		(`rules.xpMul`) instead of being applied at four call sites that would drift apart.
+		diep_wiki gives Tag/Breakout x3 and Domination x2; every other mode is x1, so this is an
+		identity multiply for four of the five modes and costs them nothing.
+
+		Coins deliberately do NOT go through here: they are our own currency, not diep's xp economy,
+		and no reference multiplies them per mode.
+	*/
+	awardXp(tank, amount) {
+		tank.xp += amount * this.rules.xpMul;
 	}
 	/* A bullet belongs to whoever fired it. The dev 'color' command tints it without moving
 		 it to another side - bulletColor() is what reads that. */
@@ -774,6 +939,11 @@ class Room {
 		} else {
 			this.map.height = this.newMap.height;
 		}
+		// AFTER the lerp, not before: nestScale/baseSize/shape caps are functions of the size the
+		// arena actually has this tick, so they have to read this.map once it has moved. (It also
+		// sets next tick's lerp target for an arenaLive mode, which is why order is only visible
+		// here as a one-tick lag on the target, not on anything derived.)
+		this.tickArena(playerCount);
 		///BOTS///
 		let botNeeded = this.botBudget(playerCount);
 		if (botNeeded) {
@@ -955,7 +1125,7 @@ class Room {
 								if (other.destroy && other.prize) {
 									const killer = this.INSTANCE.players.get(obj.origin.oId);
 									if (killer) {
-										killer.xp += other.prize;
+										this.awardXp(killer, other.prize);
 										killer.coins += other.coinReward || 0;
 										if (otherKind === KIND.PLAYER && !killer.bot) {
 											killer.mess.push('You killed ' + other.name);
@@ -970,7 +1140,7 @@ class Room {
 								if (obj.destroy) {
 									const killer = this.INSTANCE.players.get(other.origin.oId);
 									if (killer) {
-										killer.xp += obj.prize;
+										this.awardXp(killer, obj.prize);
 										killer.coins += obj.coinReward || 0;
 										if (objKind === KIND.PLAYER && !killer.bot) {
 											killer.mess.push('You killed ' + obj.name);
@@ -1089,7 +1259,10 @@ class Room {
 		if (!tank || (!force && !tank.destroy) || tank.dead > 1) return;
 		///
 		const pos = this.spawnPoint(tank);
-		const newTank = new Player(tank.id, pos.x, pos.y, tank.name, tank.team, this.XPLVL, this);
+		// respawnTeam(), not tank.team, so Tag can put you on your killer's side. Every other mode
+		// returns tank.team and is unaffected. Read BEFORE the new Player exists, because it has to
+		// look at who killed the OLD one (tank.murder), which the new one knows nothing about.
+		const newTank = new Player(tank.id, pos.x, pos.y, tank.name, this.respawnTeam(tank), this.XPLVL, this);
 		if (bot) {
 			newTank.motion = CONFIG.BOTS[0].bind(newTank);
 			newTank.bot = 1;
@@ -1127,6 +1300,14 @@ class Room {
 		return tank.xp;
 	}
 	/*
+		Which side you come back on. Everywhere but Tag that is the side you were already on, which
+		is why this is a hook rather than a rule flag: Tag's answer needs `tank.murder` (who killed
+		the old tank), not a per-mode constant. See rooms/Tag.js.
+	*/
+	respawnTeam(tank) {
+		return tank.team;
+	}
+	/*
 		How much xp survives a death: a fractional power of what you had, floored at nothing and
 		capped at 60% of the level-30 requirement. The Math.min matters - below roughly a
 		thousand xp the curve returns *more* than it was given, so without it dying early is a
@@ -1145,11 +1326,19 @@ class Room {
 		placement (this.room.rejectSample). The cap is the whole point: neither caller may loop
 		until it succeeds.
 
-		The carve-out radii callers pass in are absolute, not a fraction of the map: a nest is a
-		fixed-size cluster (see createObj()'s ppp radii), so scaling them with mapSize would carve
-		a huge hole out of a big map. That is what makes the loop unsatisfiable on a small enough
-		one - below roughly 2744 units wide, no point on the map is 1540 from the origin at all -
-		and this ran on the simulation thread, so an unsatisfiable loop took the whole room down.
+		The carve-out radii callers pass in USED to be absolute, which made this loop unsatisfiable
+		on a small enough map - below roughly 2744 units wide, no point on the map was 1540 from the
+		origin at all - and since this runs on the simulation thread, an unsatisfiable loop took the
+		whole room down. PENDING #19 / plan.md step 6 removed that failure mode at the source: every
+		caller now scales its radii by room.nestScale (rooms/Room.js's spawnKeepOut()/createObj(),
+		entities/Objects.js's carve-outs), so the carve-outs are a fixed FRACTION of the arena and
+		the placement picture is geometrically similar at every size. There is no width at which the
+		loop becomes unsatisfiable any more.
+
+		The cap below stays anyway, and is not vestigial: it bounds the loop against a caller that
+		passes its own circles (and against any future mode whose keep-outs are not derived this
+		way), so "neither caller may loop until it succeeds" remains true by construction rather
+		than by the current radii happening to be well-behaved.
 
 		`circles` is [[x, y, r], ...]. Returns the first point outside all of them, or - if the
 		cap runs out - the best candidate seen, scored by normalised distance to its own tightest
@@ -1174,17 +1363,24 @@ class Room {
 		}
 		return best;
 	}
-	/* The three polygon nests, as [x, y, radius] keep-out circles. */
+	/* The three polygon nests, as [x, y, radius] keep-out circles. The radii are ffa's own tuned
+		 1540/1120 scaled by this.nestScale (PENDING #19, plan.md step 6), so they stay the same
+		 fraction of the arena at any size - ffa's scale is exactly 1, so ffa is unchanged. See
+		 NEST_REF_GU's comment at the top of this file for why that, not a clamp, is what makes
+		 rejectSample() below satisfiable at every arena size. */
 	spawnKeepOut() {
-				return [
-			[0, 0, 1540],
-			[this.map.width / 4, this.map.height / 4, 1120],
-			[-this.map.width / 4, -this.map.height / 4, 1120]
+		const s = this.nestScale;
+		return [
+			[0, 0, 1540 * s],
+			[this.map.width / 4, this.map.height / 4, 1120 * s],
+			[-this.map.width / 4, -this.map.height / 4, 1120 * s]
 		];
 	}
-	/* Free-for-all drops you anywhere clear of the three polygon nests. */
+	/* Free-for-all drops you anywhere clear of the three polygon nests. The 280 inset is scaled by
+		 nestScale for the same reason the nest radii are (PENDING #19, plan.md step 6) - it is the
+		 same inset entities/Objects.js's `marge` uses, and the two have to stay in step. */
 	spawnPoint(tank) {
-		return this.rejectSample(280, this.spawnKeepOut());
+		return this.rejectSample(280 * this.nestScale, this.spawnKeepOut());
 	}
 	getBuffer(id) {
 		const RAW = this.BUFFER[id];
@@ -1392,20 +1588,34 @@ class Room {
 	leaderColor(player, viewerId) {
 		return (player.id.oId === viewerId) ? 0 : player.team;
 	}
+	/*
+		The leaderboard's rows, as the wire's {xp, name, nameC, team} records. Ordinarily one row
+		per top-10 player, which is what `this.leader` is already sorted into by step().
+
+		A hook rather than inline code because Tag's board is a different KIND of thing - one row per
+		team showing how many players it has (diep_wiki/Tag.txt) - and the client needs no change to
+		draw that: public/client/ui.js renders every row as "name - xp" with a bar scaled against
+		row 0's xp, so a row count reads correctly as-is. See rooms/Tag.js.
+	*/
+	leaderRows(id) {
+		const rows = [];
+		for (const i of this.leader) {
+			rows.push({
+				xp: i.xp,
+				name: i.name,
+				nameC: 0,
+				team: i.dev.color ? i.dev.color - 1 : this.leaderColor(i, id)
+			});
+		}
+		return rows;
+	}
 	getUi(id) {
 		const buff = {
 			leader: [],
 			map: [],
 			mess: []
 		};
-		for (const i of this.leader) {
-			buff.leader.push({
-				xp: i.xp,
-				name: i.name,
-				nameC: 0,
-				team: i.dev.color ? i.dev.color - 1 : this.leaderColor(i, id)
-			})
-		};
+		buff.leader = this.leaderRows(id);
 		// Every live player as a minimap dot - same exclusion (dead/destroyed, bosses) and the
 		// same viewer-relative colouring (you're always "your" colour, everyone else by team)
 		// that this.leader already uses, just not limited to the top 10. x/y go out as 0..1

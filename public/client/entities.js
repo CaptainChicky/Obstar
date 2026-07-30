@@ -441,6 +441,65 @@
 			this.lead = null;
 			this.origin = null;
 		}
+		/*
+			DEAD RECKONING (PENDING #24(b), plan.md step 8) - how far ahead of the interpolator's
+			usual read point this bullet is drawn, in ms, or 0 to stay on plain interpolation.
+
+			Every other entity is deliberately drawn one packet interval in the PAST, because that
+			is what guarantees a known-good snapshot on both sides of the instant being drawn (see
+			public/motion.js's header). For a bullet that delay is the whole problem: an incoming
+			shot is drawn ~12 units behind where the server has it, so it damages you before it
+			visually arrives. A non-drone bullet is the one entity where paying that delay buys
+			nothing, because its motion is fully deterministic between collisions - `vec += speed *
+			dir; vec *= BODY_FRICTION`, with no input and no steering - so the position it is
+			heading for is knowable rather than guessable.
+
+			The lead is NET.leadMs(), the SAME measured quantity the local tank's own prediction
+			uses: `interval` cancels the render delay, `rtt/2` cancels how stale the newest snapshot
+			already was in flight. Together they put the bullet where the server has it NOW, which is
+			the frame it will actually be judged in. Nothing here is tuned - the only tuned number is
+			the ceiling, and that exists only to bound a hostile measurement.
+
+			WHAT STAYS ON INTERPOLATION, and why each one is not an oversight:
+			  - DRONES (`type >= 1`). They steer toward a target every tick, so "deterministic
+			    between collisions" is false for them - extrapolating a drone just flings it along
+			    whatever heading it happened to have last packet, and it turns.
+			  - PETS. Same reason: a pet chases its owner, so its velocity is a control output, not
+			    a constant. (It is also usually `type >= 1` already; the check is explicit rather
+			    than incidental.)
+			  - TRAPS are `type >= 1` too and so are excluded by the same test. That is fine rather
+			    than merely tolerable: a trap decays to a standstill within a few ticks, so there is
+			    no delay worth cancelling.
+			  - YOUR OWN BULLETS (`this.mine`), which is the interesting one - see below.
+
+			WHY YOUR OWN BULLETS ARE EXCLUDED. They already carry a compensation of their own, and
+			the two genuinely conflict rather than compose. For its first packet interval an own
+			bullet is deliberately WELDED TO THE DRAWN MUZZLE (update()'s phase 1) - a spatial lie
+			that exists so a shot appears to leave the barrel instead of open space beside it. Dead
+			reckoning is the opposite claim about the same bullet: that it should already be
+			`leadMs` of travel downrange, because the server has already moved it there. Both are
+			defensible and they cannot both be drawn. Running them together pops the bullet forward
+			by roughly a bullet-speed at the phase 1 -> phase 2 handoff (measured: ~54 units on a
+			frame whose steady travel is ~18), which is a worse artefact than the lateness it fixes,
+			and test/client.js's "no jump where its own interpolation takes over" catches it.
+
+			So this is a KNOWN, BOUNDED ASYMMETRY, not a finished job: incoming fire is now drawn
+			where the server has it, your own fire is still drawn one interval behind once its
+			muzzle offset has decayed. That is the half PENDING #24 actually complains about ("the
+			only item that fixes INCOMING bullets"), and #24(c) is explicit that bounded symmetric
+			error, not zero, is the target. Closing the other half means ramping the lead in across
+			the handoff instead of switching it on - doable, but it is a change to the muzzle
+			machinery, so it belongs with that code rather than smuggled in here.
+
+			For every OTHER bullet this composes with the muzzle offset rather than competing: that
+			offset is SPATIAL (it slides a new bullet sideways onto the drawn barrel), this is
+			TEMPORAL (it slides the bullet along its own velocity), and a bullet that is not yours
+			never takes the muzzle path at all.
+		*/
+		reckonMs() {
+			if (this.type >= 1 || this.pet || this.mine) { return 0; }
+			return Math.min(NET.leadMs(), NET.interval * CONST.DEAD_RECKON_MAX_INTERVALS);
+		}
 		update() {
 			/*
 				Keeping your own bullets on the muzzle.
@@ -491,8 +550,14 @@
 				Under ~30fps two packets can land between frames, and `User.x` is then already the
 				tick after the one that fired - phase 1 anchors one packet of tank travel off. It
 				self-corrects at the phase 2 handoff and is bounded by that, so it is left alone.
+
+				Both phases above are why reckonMs() refuses to dead-reckon an own bullet at all: the
+				muzzle weld and the dead-reckon lead are contradictory claims about where the same
+				bullet is during phase 1, and switching between them at the handoff pops it forward
+				by about a bullet-speed. See reckonMs()'s own comment for the measurement and for
+				what closing that half would take.
 			*/
-			const tw = this.tween.sample(NET.now());
+			const tw = this.tween.sample(NET.now(), this.reckonMs());
 			const U = this.mine ? CLIENT.User : null;
 			if (U) {
 				if (this.origin === null) { this.origin = { x: U.x, y: U.y }; }

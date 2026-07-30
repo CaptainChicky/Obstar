@@ -45,7 +45,10 @@ class Objects {
 		this.alpha = 1;
 		this.hit = 0;
 		this.spawnRad = 400;
-		this.marge = 280;   // inset from the map edge - the same one rooms/Room.js's spawnPoint() uses
+		// Inset from the map edge - the same one rooms/Room.js's spawnPoint() uses, and scaled by
+		// the same room.nestScale as the nest radii below (PENDING #19, plan.md step 6) so the whole
+		// placement picture stays geometrically similar as the arena resizes. ffa's scale is 1.
+		this.marge = 280 * room.nestScale;
 		this.weight = 1;   // a mass divisor (this.x += vec.x/weight below), not a per-tick rate - not rescaled
 		switch (pos) {
 			case -1: {
@@ -54,10 +57,15 @@ class Objects {
 				// tighter than spawnKeepOut()'s circles on purpose - a shape may sit closer to a
 				// nest than a fresh player spawn may. The sampler is bounded, and has to be: it
 				// runs hundreds of times per room rather than once per death.
+				// x room.nestScale (PENDING #19, plan.md step 6): the radii are ffa's own tuned
+				// figures, scaled so they stay the same fraction of whatever arena they are in -
+				// ffa's scale is exactly 1. Both the ratio to spawnKeepOut()'s circles and the
+				// margin from the map edge are preserved by that, since `marge` scales with it too.
+				const s = room.nestScale;
 				const p = room.rejectSample(this.marge, [
-					[0, 0, 1400],
-					[map.width / 4, map.height / 4, 980],
-					[-map.width / 4, -map.height / 4, 980]
+					[0, 0, 1400 * s],
+					[map.width / 4, map.height / 4, 980 * s],
+					[-map.width / 4, -map.height / 4, 980 * s]
 				]);
 				this.x = p.x;
 				this.y = p.y;
@@ -153,7 +161,7 @@ class Objects {
 				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(len), tick.perTick(len))));
 				this.hp -= tick.perTick(other.damage);
 				this.hit = tick.ticks(1.65);
-				if (this.hp <= 0) { this.destroy = tick.DES; other.xp += this.prize; other.coins += this.coinReward }
+				if (this.hp <= 0) { this.destroy = tick.DES; this.room.awardXp(other, this.prize); other.coins += this.coinReward }
 				break;
 			case KIND.OBJECTS:
 				if (other.type === 'bull') {

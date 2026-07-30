@@ -29,7 +29,7 @@ Re-measuring these wastes a session and risks replacing an exact value with a no
 | Knockback per class | full Knockbackfactor table (gu per loop of contact) | `physics.html` |
 | Body damage | `(points + 5) × 4` vs shapes, **+50%** vs tanks, **−75%** vs projectiles | `diep_wiki/Stats.txt` |
 | Bullet base HP / damage | 2 HP, 7 damage per loop | `diep_wiki/Dominator.txt` (quoted as ×tank multiples) |
-| Arena size / shape count | `AL = ⌊√N_P × 50⌋` gu; `12.5 × N_P` shapes | `physics.html` + `diep_wiki/Polygons.txt` |
+| Arena size / shape count | `AL = ⌊√N_P × 50⌋` gu; `12.5 × N_P` shapes — these **compose to a constant 1 shape per 200 gu²**, which is the form actually adopted (plan.md step 6) | `physics.html` + `diep_wiki/Polygons.txt` |
 | Upgrade economy | 45 levels, 7 points/stat (10 Smasher), 33 total, tiers every 15 | `diep_wiki/Levels.txt` |
 
 **Why tank friction needs no measurement.** `physics.html` states `V_max = 10 × A` for tanks. For
@@ -211,10 +211,25 @@ list lives in **[plan.md](plan.md)**, which is what the work is actually being r
    ~6400 figure was denominated in our OLD, custom HP scale; #17 replaced that scale with diep's own
    rather than rescaling it, so the ratio this item is built on now resolves back to diep's raw
    number. See PENDING #23 and plan.md step 5.
-6. **#19 arena/density** — formulas known. Real work is making `baseSize` and the nest carve-out
+6. ~~**#19 arena/density** — formulas known. Real work is making `baseSize` and the nest carve-out
    radii scale, since they are absolute today and `rooms/Room.js` warns the placement loop becomes
-   unsatisfiable below ~2744 units wide.
-7. **#24(b), gamemodes (Tag first), #18's damage model** — none measurement-gated. #18's `dr`
+   unsatisfiable below ~2744 units wide.~~ **DONE, the density half; the arena resize stays open on
+   purpose.** The two formulas compose to a *constant* **1 shape per 200 gu²** (the player count
+   cancels), so the density is what transfers to our own fixed-size arenas — adopting `12.5 × N_P`
+   alone would have made them emptier, not denser. Every mode's caps are derived from that density
+   now and sit at 1 per 200.0 gu². `baseSize` and every nest radius are a fixed *fraction* of the
+   arena (`room.nestScale`), which retires the ~2744-unit floor structurally rather than by
+   clamping. Resizing ffa toward diep's AL(24) = 244 gu is a 71% area cut and is deliberately NOT
+   done — the machinery exists (`rules.arenaLive`), the call does not. See PENDING #19 and
+   plan.md step 6.
+7. **~~#24(b)~~, ~~gamemodes (Tag first)~~, #18's damage model** — none measurement-gated.
+   **#24(b) is DONE** (plan.md step 8): incoming bullets are dead-reckoned forward by the measured
+   `NET.leadMs()` instead of being drawn a packet interval behind; drones/pets/traps stay on
+   interpolation, and your own bullets deliberately do too (the muzzle weld and a temporal lead are
+   contradictory claims about the same bullet — see PENDING #24(b)). **Tag is
+   DONE** (plan.md step 7, `rooms/Tag.js`) — no new entity types, as predicted; it lacks only the
+   win condition, which needs an Arena Closer entity, and the invisibility cap that goes with it
+   (PENDING #28). #18's `dr`
    (body damage reduces damage taken) and "bullet HP spent against target's DPL" are **DONE**
    (plan.md step 9, landed with #17 above); penetration→damage magnitude/slope stays open — no
    decided replacement formula exists for it, unlike the other two.

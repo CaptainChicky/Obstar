@@ -85,15 +85,16 @@ cookie.
 | `net/gameSocket.js` | 336 | `attach(httpServer, controller)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
 | `lib/Controller.js` | 649 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
 | `lib/clock.js` | 160 | Fixed-timestep clock (§4). One accumulator drives every room's `step()`. |
-| `rooms/Room.js` | 968 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, per-player views. Takes a `controller` constructor argument (§3). |
-| `rooms/index.js` | 16 | **The one list of gamemodes**, keyed by the string the client's `init` packet sends. |
-| `rooms/Ffa.js` | 30 | Free-for-all: tunables only. `Room`'s defaults *are* ffa's behaviour. |
-| `rooms/TwoTeam.js` | 108 | 2-team: two base strips, guard drones, team colours. |
-| `rooms/FourTeam.js` | 134 | 4-team: four corner bases, guard arcs, team colours. |
-| `rooms/BossMode.js` | 39 | Boss hunt: ffa with the boss knobs turned up. |
+| `rooms/Room.js` | 1645 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, per-player views. Takes a `controller` constructor argument (§3). |
+| `rooms/index.js` | 17 | **The one list of gamemodes**, keyed by the string the client's `init` packet sends. |
+| `rooms/Ffa.js` | 43 | Free-for-all: tunables only. `Room`'s defaults *are* ffa's behaviour. |
+| `rooms/TwoTeam.js` | 143 | 2-team: two base strips, guard drones, team colours. |
+| `rooms/FourTeam.js` | 179 | 4-team: four corner bases, guard arcs, team colours. |
+| `rooms/BossMode.js` | 45 | Boss hunt: ffa with the boss knobs turned up. |
+| `rooms/Tag.js` | 232 | Tag: 4 teams, no bases, killer-tags-victim respawn, timed arena shrink, per-team leaderboard, x3 xp. No new entity types. |
 | `entities/Player.js` | 742 | Tank entity: motion, shooting, upgrades, class changes, collision. Takes a `room` constructor argument (§3). |
 | `entities/Bullet.js` | 1308 | Projectiles, incl. drone/trap/necro behaviour. Takes a `room` constructor argument (§3). |
-| `entities/Objects.js` | 220 | Farmable polygons. Takes a `room` constructor argument (§3). |
+| `entities/Objects.js` | 250 | Farmable polygons. Takes a `room` constructor argument (§3). |
 | `entities/Detector.js` | 94 | Invisible "vision cone" query entity used by AI. A leaf — no `room`/`controller` reference needed. |
 | `lib/gameAI.js` | 490 | Bot/boss/pet AI. A plain module now — `Detector`/`Vec`/`BODY_FRICTION`/`CLASS`/`DES` are all leaves, so `module.exports = CONFIG` directly. Bots steer through `Physics.stepBody` (tank `FRICTION`); the boss's drift and the pet do not. |
 | `lib/quadTree.js` | 75 | Spatial index for broad-phase collision. |
@@ -116,16 +117,16 @@ cookie.
 | `public/SHARE/PetsConfig.js` | 132 | Cosmetic pet definitions. |
 | `public/SHARE/ws_link.js` | 18 | Game server URL: `POST.ws`, else the page's own origin. |
 | `public/client/runtime.js` | 38 | **Late-bound client registry** (`CLIENT`). The server side no longer has an equivalent (§3) — this one is purely a client-side sequencing device, for scripts loaded by `<script>` tag with no bundler. |
-| `public/client/config.js` | 125 | `CONST`, palette `C`, `CLASS`/`CLASS_TREE`, mutable bags `Global`/`Game`. |
+| `public/client/config.js` | 170 | `CONST`, palette `C`, `CLASS`/`CLASS_TREE`, mutable bags `Global`/`Game`. |
 | `public/client/util.js` | 148 | `roundedPoly`, `roundRect`, `sleep`, the `General` namespace, `NET`/`Interp`. |
 | `public/client/drawings.js` | 307 | Shape table: one function per body/barrel/turret/bullet/pet. |
-| `public/client/entities.js` | 456 | `Tank`, `Obj`, `Bullet` — everything the server can put in the world. |
+| `public/client/entities.js` | 614 | `Tank`, `Obj`, `Bullet` — everything the server can put in the world. |
 | `public/client/render.js` | 219 | `initRender()` (off-screen sprite caches), `initBackground()` (grid + team zones). |
 | `public/client/ui.js` | 1214 | `initUi()`: minimap, stats, upgrades, class picker, leaderboard, messages, death screen, doors. |
 | `public/client/game.js` | 734 | `CLIENT.Run()`: world state, camera, input, frame loop, `SetPacket`, `onmessage`. |
 | `public/client/overlay.js` | 150 | `General.DEV` and `General.CHAT` — the two DOM-rendered widgets. |
 | `public/client/boot.js` | 146 | `preRun()`: connecting screen, socket handshake, handover to `CLIENT.Run()`. |
-| `public/motion.js` | 161 | Client motion primitives (§7): snapshot interpolation, frame-rate-independent smoothing. |
+| `public/motion.js` | 376 | Client motion primitives (§7): snapshot interpolation, frame-rate-independent smoothing. |
 | `public/queue.js` | 146 | Menu page: gamemode selection, form submit. |
 | `public/shop.js` | 344 | Menu page: pet shop carousel + purchase calls. |
 | `public/font.js` | 655 | Animated canvas background on the menu. |
@@ -229,6 +230,25 @@ The things in this codebase that are *not* obvious from reading the code around 
   stat (it scales a bullet's own spawned `pene` *and* that same value is separately read as a damage
   multiplier), so a clean fix means restructuring `BPene` into a raw point count and rescaling every
   `can.pene` in `TanksConfig.js` alongside it — its own column-wide pass, not a two-line change.
+- **Arena size and shape density are derived, not written down** (PENDING #19, plan.md step 6).
+  diep's two published formulas — `AL = ⌊√N_P × 50⌋` gu and `12.5 × N_P` shapes — **compose to a
+  constant 1 shape per 200 gu²**, because the player count cancels. That composition is the whole
+  design: `rooms/Room.js` adopts the **density** (`SHAPE_DENSITY_GU2`), derives every mode's
+  `sqr`/`tri`/`pnt` caps from it against that mode's own area, and lets each mode state only the
+  *mix* it was tuned with (`rules.shapeMix`, verbatim its old `objCaps`, apportioned by
+  largest-remainder). Adopting `12.5 × N_P` **instead** would have been actively wrong — spread over
+  our bigger fixed arenas it is *emptier* than what we had. **Arena size is per-mode and follows
+  `diep_wiki`**: a mode sets `rules.arenaLive` to get `AL(live human count)` every tick through the
+  `newMap` lerp (Sandbox, and Tag when it lands); everything else keeps its stated `mapSize`. ffa is
+  deliberately **not** resized toward diep's 244 gu — that is a 71% area cut, a different order of
+  balance change, and it stays open. **Every nest radius in the tree is a fraction of the arena, via
+  `room.nestScale`** — `spawnKeepOut()`, `createObj()`'s cluster radii, `entities/Objects.js`'s
+  carve-outs and both 280-unit map-edge insets. ffa is the reference (`NEST_REF_GU`), so its scale
+  is exactly 1 and its placement behaviour is untouched — verified, not argued: ffa's canvas-op
+  stream is byte-identical across that change. This is also what retires `rejectSample()`'s old
+  "unsatisfiable below ~2744 units wide" hazard **structurally** (the placement picture is similar
+  at every size) rather than by clamping; the iteration cap stays for callers that pass their own
+  circles.
 - **Entities hold `this.room` and rooms hold `this.controller` — reached directly, not through a
   registry.** `Player`/`Bullet`/`Objects` take a trailing `room` constructor argument;
   `rooms/Room.js` takes a trailing `controller` argument. The dependency graph was never actually
@@ -280,7 +300,12 @@ drops — a stall also prints a throttled `[clock]` line to stderr.
 
 **Rooms.** `rooms/Room.js` is the whole simulation; each gamemode is a subclass passing a block
 of tunables to `super()` and overriding named hooks (table at the top of `Room.js` lists them
-all). `Ffa` is 30 lines because `Room`'s defaults *are* ffa.
+all). `Ffa` is 43 lines because `Room`'s defaults *are* ffa. **`rooms/Tag.js` is the worked example
+of how far that gets you**: four teams, no bases, per-kill team reassignment, a timed arena shrink,
+a per-team leaderboard and ×3 xp, with **no new entity types** — three hooks (`respawnTeam()`,
+`leaderRows()`, a shrink timer that writes `newMap` and lets the existing lerp move it) plus rules.
+Two of those hooks were added *for* Tag and are no-ops everywhere else, which is the pattern to
+copy: add a hook with the current behaviour as its default rather than branching on `this.gm`.
 
 **Base drones** are `Bullet`s of `type 1.4` with `life = -1`, and their **`pene` *is* their health
 pool** (`collision()` decrements it) — which is why `config.BASE_DRONE_HP` is written there and
@@ -735,6 +760,21 @@ independent — a raw `d += (t-d)*k` is not, and previously gave different playe
 behaviour on different monitors. `Global.dtFrames` is clamped to `[0.2, 4]` because a
 backgrounded browser tab produces frame gaps the interpolator would otherwise take literally.
 
+**Ordinary bullets are the one exception — they are dead-reckoned, not interpolated** (PENDING
+#24(b), plan.md step 8). Drawing one packet interval in the past is what buys the smoothness for
+everything else, but for an incoming bullet it means the shot damages you before its picture
+arrives. A non-drone bullet is the only entity where that delay buys nothing, because its motion is
+deterministic between collisions (no input, no steering), so `public/client/entities.js`'s
+`Bullet.reckonMs()` hands `sample()` a lead of `NET.leadMs()` — the *same measured quantity* the
+local tank's own prediction uses (`interval` + `rtt/2`), capped at `CONST.DEAD_RECKON_MAX_INTERVALS`
+packet intervals purely as a ceiling against a hostile measurement. **Drones (`type >= 1`), pets and
+traps stay on interpolation** — a drone steers, so extrapolating it just flings it along last
+packet's heading. **So do your own bullets, and that one is a deliberate bounded asymmetry**: an own
+bullet is welded to the drawn muzzle for its first interval (§6's phase 1), which is a spatial lie
+that directly contradicts "it is already `leadMs` downrange"; running both pops it forward by about
+a bullet-speed at the handoff. `test/client.js` pins the exclusion and the lead's size, and PENDING
+#24(c) is the written floor — bounded symmetric error, not zero.
+
 ---
 
 ## 8. Web/menu side & DB
@@ -791,10 +831,10 @@ the minimap draws more than your own dot.
 | `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. `offdir` is compared mod 2π (`sameAngle()`), not with a literal `!==`, so two float64 expressions for the same rotation don't need a whitelist entry to excuse a false positive. The whitelist's size is pinned (`WHITELIST.length === 8`) and every entry's *reason* is re-verified live each run, not just its presence — a deviation that stops reproducing fails loud instead of the entry sitting in the file forever. See §3 and PENDING.md. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All four gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A — WP3; the band is 3% rather than 2% because Euler discretization of the drag term scales with 1−F, and plan.md step 2 took F from 0.956532 to 10/11), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). No socket, built via `boot()`. |
-| `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, and that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps. |
+| `test/rooms.js` | All six gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A — WP3; the band is 3% rather than 2% because Euler discretization of the drag term scales with 1−F, and plan.md step 2 took F from 0.956532 to 10/11), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). No socket, built via `boot()`. |
+| `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps, and that an incoming bullet is dead-reckoned by exactly the render delay it cancels while drones/pets/own bullets are not (PENDING #24b). |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
-| `test/smoke.js` | End-to-end: real socket, real protocol, real server, all four modes. |
+| `test/smoke.js` | End-to-end: real socket, real protocol, real server, all six modes. |
 | `test/web.js` | The merged entry point: one port serves site + socket, `play.ejs` script order, split-mode wiring, and that the auth routes degrade to a clean `{error}` (never a 500) with `DB.AUTH` off. |
 | `test/clientProto.js` | Loads `SocketSchema.js` in *client* mode inside Node via `vm` — used by the above, not a standalone suite. |
 

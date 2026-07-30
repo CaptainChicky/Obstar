@@ -22,9 +22,10 @@ class TwoTeam extends Room {
 			mapSize: { width: gu(400), height: gu(400) },
 			preGenerate: 2000,
 			bootDelay: 1,
-			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
-			// rescale - FOV didn't grow, so the map's area did.
-			objCaps: { sqr: { max0: 314, max1: 35 }, tri: { max0: 118, max1: 24 }, pnt: { max0: 35, max1: 29 } },
+			// The shape MIX only - the TOTAL is diep's 1-per-200-gu^2 density now (PENDING #19,
+			// plan.md step 6), which takes this mode 555 -> 800 shapes at its unchanged gu(400)
+			// arena. These are verbatim the objCaps this mode used to state.
+			shapeMix: { sqr0: 314, sqr1: 35, tri0: 118, tri1: 24, pnt0: 35, pnt1: 29 },
 			betaPentRng: 0.99,
 			bossRng: 0.9999,
 			maxBoss: 1,
@@ -33,7 +34,11 @@ class TwoTeam extends Room {
 			teams: [0, 1],
 			teamPlay: true,
 			respawnPow: 0.8,
-			baseSize: gu(40),
+			// gu(40) of this mode's gu(400) map, stated as the fraction it is rather than the
+			// absolute it was (PENDING #19, plan.md step 6), so the strip stays a tenth of the
+			// arena's width if the arena is ever resized. At today's fixed gu(400) this is exactly
+			// gu(40), unchanged - test/rooms.js pins that.
+			baseSizeRatio: { num: 40, den: 400 },
 			viewerBullets: false
 		}, controller);
 	}

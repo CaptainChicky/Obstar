@@ -8,7 +8,7 @@
 
 	The one shape difference: a 2-team base is a strip down one side of the map, which lets
 	inEnemyBase() be a single comparison on x. Four bases have to be corners, so a base here is
-	the rules.baseSize square in the map corner (diep's own shape - it used to be a quarter-disc,
+	the rules.baseSizeRatio square in the map corner (diep's own shape - it used to be a quarter-disc,
 	which made a single orbit centre awkward to place). The guard drones orbit that one centre,
 	inset from the two borders the corner touches, not the square's own centre.
 	Everything else - joining the thinnest side, friendly fire, base fencing, boss summoning -
@@ -28,9 +28,10 @@ class FourTeam extends Room {
 			mapSize: { width: gu(450), height: gu(450) },
 			preGenerate: 2000,
 			bootDelay: 1,
-			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
-			// rescale - FOV didn't grow, so the map's area did.
-			objCaps: { sqr: { max0: 392, max1: 39 }, tri: { max0: 137, max1: 27 }, pnt: { max0: 43, max1: 31 } },
+			// The shape MIX only - the TOTAL is diep's 1-per-200-gu^2 density now (PENDING #19,
+			// plan.md step 6), which takes this mode 669 -> 1012 shapes at its unchanged gu(450)
+			// arena. These are verbatim the objCaps this mode used to state.
+			shapeMix: { sqr0: 392, sqr1: 39, tri0: 137, tri1: 27, pnt0: 43, pnt1: 31 },
 			betaPentRng: 0.99,
 			bossRng: 0.9999,
 			maxBoss: 1,
@@ -39,7 +40,11 @@ class FourTeam extends Room {
 			teams: [0, 1, 2, 3],
 			teamPlay: true,
 			respawnPow: 0.8,
-			baseSize: gu(67),
+			// gu(67) of this mode's gu(450) map, as the fraction it is rather than the absolute it
+			// was (PENDING #19, plan.md step 6). Written {num, den} rather than pre-divided because
+			// (width * 67 / 450) is exactly gu(67) where (width * (67/450)) is 1875.9999999999998 -
+			// and baseCenter()/inEnemyBase() below compare against it, so it has to be exact.
+			baseSizeRatio: { num: 67, den: 450 },
 			viewerBullets: false
 		}, controller);
 	}

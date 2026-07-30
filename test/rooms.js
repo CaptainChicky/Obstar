@@ -6,9 +6,9 @@
 	colours and respawn xp are exactly the things that differed between the old Ffa and
 	TwoTeam copies, so they are exactly what a shared rooms/Room.js has to be pinned on.
 
-	All four modes are covered: '4team' and 'boss' were written against this base without
-	touching rooms/Room.js's tick, and the shared block at the bottom runs the same rules over
-	every one of them, which is the assertion that the base really did fit.
+	All six modes are covered: '4team', 'boss' and 'tag' were each written against this base
+	without touching rooms/Room.js's tick, and the shared block at the bottom runs the same rules
+	over every one of them, which is the assertion that the base really did fit.
 
 	No server and no socket: lib/boot.js constructs the Controller, and the rooms are built and
 	poked directly.
@@ -391,6 +391,158 @@ function sandboxTests() {
 	thousand xp, so the Math.min in Room.respawnXp is the whole point - TwoTeam was missing it
 	and low-level deaths were a small reward there. See HANDOFF.md 5.8.
 */
+/// Tag ///////////////////////////////////////////////////////////////////////
+/*
+	Tag (PENDING #28, plan.md step 7). The mode adds no entity types, so what is actually worth
+	pinning is the three hooks that make it Tag - respawnTeam(), leaderRows() and the shrink timer -
+	plus the two rules that are easy to get subtly wrong: the per-team gate before tagging starts,
+	and the polygon/boss exemption from it.
+*/
+function tagTests() {
+	console.log('\nrooms (tag):');
+	const room = makeRoom('tag');
+	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
+	// Bots are seated by Init(), which runs on a timer that never fires inside this synchronous
+	// suite (see the note in ffaTests). Everything below is about team POPULATION, so seat them
+	// directly - createAi() rather than the whole of Init(), to skip 2000 preGenerate passes this
+	// mode's assertions do not need.
+	room.createAi();
+
+	check('four sides, the same ids 4team uses', room.rules.teams.join(',') === '0,1,2,3');
+	check('friendly fire is off', room.rules.teamPlay === true);
+	check('no bases at all - the structural difference from 4team',
+		room.baseSize === 0 && room.dronePosts.length === 0,
+		room.baseSize + ' / ' + room.dronePosts.length + ' drone posts');
+	check('xp is x3 - diep_wiki lists Tag among the triple-xp modes', room.rules.xpMul === 3,
+		room.rules.xpMul);
+
+	// awardXp() is the single site the multiplier lives at, so drive the real method rather than
+	// asserting the rule flag twice.
+	{
+		const tank = { xp: 0 };
+		room.awardXp(tank, 100);
+		check('...and awardXp() actually applies it', tank.xp === 300, tank.xp);
+		const ffa = makeRoom('ffa');
+		const t2 = { xp: 0 };
+		ffa.awardXp(t2, 100);
+		check('...while an ordinary mode is an identity multiply', t2.xp === 100, t2.xp);
+	}
+
+	// The tagging gate: every team needs MIN_PER_TEAM before a kill converts anyone. The room is
+	// built with 16 bots dealt round-robin across four sides, so it should be open from the start -
+	// assert that rather than assuming it, since a botCount change would silently close it.
+	check('every side has enough players for tagging to be live', room.tagging() === true,
+		room.rules.teams.map((t) => [...room.INSTANCE.players.live()]
+			.filter((p) => !p.boss && p.team === t).length).join('/'));
+
+	// respawnTeam() is the mode. Drive it directly with hand-built `murder` records - the same
+	// shapes entities/Player.js's collision arms actually write.
+	{
+		const victim = { team: 0, murder: null };
+		const killerId = room.bots.find((b) => {
+			const p = player(room, b);
+			return p && p.team === 2;
+		});
+		const killer = player(room, killerId);
+		check('a victim killed by a player joins that player\'s side',
+			room.respawnTeam({ team: 0, murder: ['players', killer.id] }) === killer.team,
+			room.respawnTeam({ team: 0, murder: ['players', killer.id] }) + ' vs ' + killer.team);
+		check('a victim killed by a polygon stays on its own side',
+			room.respawnTeam({ team: 0, murder: ['objs', { oId: 0 }] }) === 0);
+		check('a victim that died to nothing in particular stays on its own side',
+			room.respawnTeam(victim) === 0 && room.respawnTeam({ team: 3, murder: -1 }) === 3);
+		// A boss is a Player on team 9, a side assignTeam() never hands out - tagging onto it would
+		// strand the victim alone on a team nothing else is on.
+		// Past the bot range (botIdStart 10 + 16 bots = slots 10..25) and the join slots, but
+		// still inside maxPlayer 30. Deriving it rather than writing 26, because picking a literal
+		// here is exactly how this test first went wrong: 24 was clear when bots started at 8, and
+		// silently became a live bot slot when botIdStart moved to 10 - it overwrote a bot and
+		// quietly cost that team a player.
+		const BOSS_SLOT = room.rules.botIdStart + room.rules.botCount;
+		room.INSTANCE.players.set(BOSS_SLOT, { id: { oId: BOSS_SLOT }, team: 9, boss: 1 });
+		check('a victim killed by a BOSS stays on its own side, not team 9',
+			room.respawnTeam({ team: 1, murder: ['players', { oId: BOSS_SLOT }] }) === 1,
+			room.respawnTeam({ team: 1, murder: ['players', { oId: BOSS_SLOT }] }));
+		room.INSTANCE.players.delete(BOSS_SLOT);
+	}
+
+	// ...and the gate really does suppress it, checked by closing the gate rather than by trusting
+	// the branch: stub tagging() false and the same kill must no longer convert.
+	{
+		const realTagging = room.tagging;
+		room.tagging = () => false;
+		const killer = player(room, room.bots.find((b) => {
+			const p = player(room, b);
+			return p && p.team === 2;
+		}));
+		check('before every side has four players, a kill does NOT convert',
+			room.respawnTeam({ team: 0, murder: ['players', killer.id] }) === 0);
+		room.tagging = realTagging;
+	}
+
+	// The leaderboard is a different KIND of board here - one row per team, headcount in `xp`.
+	{
+		const rows = room.leaderRows(0);
+		check('the leaderboard has one row per team, not per player',
+			rows.length === room.rules.teams.length, rows.length);
+		check('...each carrying that team\'s headcount, summing to the whole population',
+			rows.reduce((a, r) => a + r.xp, 0) ===
+			[...room.INSTANCE.players.live()].filter((p) => !p.boss).length,
+			JSON.stringify(rows.map((r) => r.name + ':' + r.xp)));
+		check('...sorted with the leading team first, which is what the client scales bars against',
+			rows.every((r, i) => i === 0 || rows[i - 1].xp >= r.xp),
+			rows.map((r) => r.xp).join(','));
+		check('...and every row carries a real team colour index',
+			rows.every((r) => room.rules.teams.indexOf(r.team) >= 0 && typeof r.name === 'string'));
+	}
+
+	// A DEAD player is still on its team - it is respawning, not gone. Filtering the dead out made
+	// both the board and the tagging gate flicker on every death (with exactly 4 bots a side, one
+	// dead bot dropped that side to 3 and switched tagging off until it came back), so this pins
+	// the decision rather than leaving it to be "tidied" back.
+	{
+		const victim = player(room, room.bots[0]);
+		const before = room.teamCounts().slice();
+		victim.destroy = 1;
+		check('a dead-but-respawning player still counts toward its team',
+			room.teamCounts().join(',') === before.join(','), room.teamCounts().join(','));
+		check('...so one death cannot switch the tagging rule off', room.tagging() === true);
+		victim.destroy = 0;
+	}
+
+	// The shrink. Driving 12.5 s of real ticks would be slow, so drive the schedule directly -
+	// shrink() is the whole mechanism and step() only calls it.
+	{
+		const before = room.newMap.width;
+		room.shrinkIn = 1;
+		room.shrink();
+		check('the arena shrinks when its timer fires', room.newMap.width < before,
+			before + ' -> ' + room.newMap.width);
+		check('...squarely - width and height stay equal',
+			room.newMap.width === room.newMap.height);
+		check('...and re-arms rather than shrinking every tick',
+			(function () { const w = room.newMap.width; room.shrink(); return room.newMap.width === w; })());
+		// It must bottom out, or a long match collapses the arena to nothing.
+		room.newMap.width = room.newMap.height = World.gu(151);
+		for (let i = 0; i < 50; i++) { room.shrinkIn = 1; room.shrink(); }
+		check('...and floors at gu(150) instead of collapsing to zero',
+			room.newMap.width === World.gu(150), room.newMap.width);
+	}
+
+	// Random spawns anywhere clear of the nests - inherited from Room, but the POINT of the mode is
+	// that it has no base to spawn in, so a future override would be a real regression.
+	{
+		let clear = true;
+		for (let i = 0; i < 100; i++) {
+			const p = room.spawnPoint(player(room, 0));
+			if (Math.abs(p.x) > room.map.width / 2 || Math.abs(p.y) > room.map.height / 2) { clear = false; }
+		}
+		check('spawns are random across the whole arena, not inside a base', clear);
+	}
+
+	return room;
+}
+
 function respawnTests(rooms) {
 	console.log('rooms (shared):');
 	for (const room of rooms) {
@@ -3294,6 +3446,119 @@ function upgradeEconomyTests(rooms) {
 	it - so this pins the cap and the fallback with an explicit small `tries`, which can never hang
 	regardless of the implementation.
 */
+/*
+	Arena size and shape density (PENDING #19, plan.md step 6).
+
+	The load-bearing claim of that step is that diep's two published formulas -
+	AL = floor(sqrt(N_P) * 50) gu and 12.5 * N_P shapes - compose to a CONSTANT density of one
+	shape per 200 gu^2, and that the density is therefore the part that transfers to our own
+	(mostly fixed-size) arenas. That is checked here against the real rooms rather than restated:
+	every mode's derived caps are read back off the constructed room and divided by its actual
+	area, so a regression in apportionShapes(), in a mode's shapeMix, or in the density constant
+	itself shows up as a density that is no longer 200.
+*/
+function arenaDensityTests(rooms) {
+	console.log('\narena size and shape density (PENDING #19):');
+	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
+
+	// 1. The composition argument itself, stated as arithmetic rather than trusted from the
+	// comment: at any player count, AL(N)^2 / (12.5*N) is 200 gu^2 per shape.
+	{
+		let flat = true;
+		for (const n of [4, 9, 16, 25, 36, 64, 100]) {
+			const al = Math.floor(Math.sqrt(n) * 50);
+			if (Math.abs(al * al / (12.5 * n) - 200) > 1e-9) { flat = false; }
+		}
+		check('diep\'s AL and 12.5/player compose to a constant 200 gu^2 per shape', flat);
+	}
+
+	// 2. Every shipped mode actually sits at that density now. This is the step's whole point:
+	// PENDING #19 measured ours at 1 per 261 gu^2 against diep's 200.
+	for (const room of rooms) {
+		const o = room.obj;
+		const total = o.sqr.max0 + o.sqr.max1 + o.tri.max0 + o.tri.max1 + o.pnt.max0 + o.pnt.max1;
+		const areaGu = (room.map.width / World.GU) * (room.map.height / World.GU);
+		// Within one shape of the floor - apportionment is integer, so exactness is not available
+		// on a small arena (sandbox's 112 shapes cannot hit 200.0 on the nose).
+		check(room.gm + ' sits at diep\'s 1-shape-per-200gu^2 density',
+			Math.abs(areaGu / total - 200) <= 200 / total,
+			total + ' shapes over ' + Math.round(areaGu) + 'gu^2 = 1 per ' + (areaGu / total).toFixed(1));
+	}
+
+	// 3. The mix each mode was tuned with survives the total moving - the step changes how MANY
+	// shapes there are, never the sqr/tri/pnt balance between them.
+	{
+		const ffa = rooms[0];
+		const mix = ffa.rules.shapeMix;
+		const mixTotal = mix.sqr0 + mix.sqr1 + mix.tri0 + mix.tri1 + mix.pnt0 + mix.pnt1;
+		const o = ffa.obj;
+		const total = o.sqr.max0 + o.sqr.max1 + o.tri.max0 + o.tri.max1 + o.pnt.max0 + o.pnt.max1;
+		// Each part within one whole shape of its exact share - largest-remainder's own guarantee.
+		check('ffa\'s tuned sqr/tri/pnt mix is preserved through the density change',
+			Math.abs(o.sqr.max0 - total * mix.sqr0 / mixTotal) <= 1 &&
+			Math.abs(o.tri.max0 - total * mix.tri0 / mixTotal) <= 1 &&
+			Math.abs(o.pnt.max0 - total * mix.pnt0 / mixTotal) <= 1,
+			[o.sqr.max0, o.tri.max0, o.pnt.max0].join('/'));
+		check('...and the parts sum to exactly the density\'s total, with nothing lost to rounding',
+			total === Math.floor(451 * 451 / 200), total + ' vs ' + Math.floor(451 * 451 / 200));
+	}
+
+	// 4. baseSizeRatio reproduces the two measured diep base sizes EXACTLY, not to within a
+	// float epsilon - inEnemyBase()/baseCenter() compare against baseSize directly, and the
+	// {num, den} form exists precisely because width * (67/450) does not land on gu(67).
+	{
+		const two = rooms[1], four = rooms[2];
+		check('2team\'s strip is still exactly gu(40) - a ratio of its arena, same number',
+			two.baseSize === World.gu(40), two.baseSize + ' vs ' + World.gu(40));
+		check('4team\'s square is still exactly gu(67) - the {num,den} form, not a divided float',
+			four.baseSize === World.gu(67), four.baseSize + ' vs ' + World.gu(67));
+		check('...and the pre-divided float really would have missed it',
+			World.gu(450) * (67 / 450) !== World.gu(67), World.gu(450) * (67 / 450));
+	}
+
+	// 5. nestScale: ffa is the reference and must be exactly 1 (so the whole step is a no-op for
+	// ffa's placement), and every other mode's is its own honest ratio to it.
+	{
+		check('ffa\'s nestScale is exactly 1 - it is the reference arena',
+			rooms[0].nestScale === 1, rooms[0].nestScale);
+		check('every other mode\'s nestScale is its own arena as a fraction of ffa\'s',
+			rooms.slice(1).every((r) => Math.abs(r.nestScale - r.map.width / World.gu(451)) < 1e-12),
+			rooms.map((r) => r.gm + ':' + r.nestScale.toFixed(4)).join(' '));
+	}
+
+	// 6. The arenaLive split - which modes take diep's population-varying arena. Sandbox is the
+	// one shipped mode the wiki describes that way, and its own maxPlayer 0 means it sits at the
+	// MIN_ARENA_GU floor today: assert BOTH, so the "inert today" note in that file is a pinned
+	// fact rather than a claim, and so a future maxPlayer change surfaces here.
+	{
+		const sandbox = rooms[4];
+		check('sandbox is the one shipped mode with a population-varying arena',
+			rooms.filter((r) => r.rules.arenaLive).map((r) => r.gm).join(',') === 'sandbox',
+			rooms.filter((r) => r.rules.arenaLive).map((r) => r.gm).join(',') || 'none');
+		check('...and it sits at the gu(150) floor, since maxPlayer 0 caps it at one player',
+			sandbox.map.width === World.gu(150) && sandbox.rules.maxPlayer === 0,
+			sandbox.map.width + ' @ maxPlayer ' + sandbox.rules.maxPlayer);
+		// The live path does work, though - drive it directly at a count the floor doesn't swallow.
+		const savedMap = sandbox.map, savedNew = sandbox.newMap, savedScale = sandbox.nestScale;
+		sandbox.newMap = { width: savedMap.width, height: savedMap.height };
+		sandbox.tickArena(64);
+		check('...and asks for AL(64) = 400gu when it is actually given 64 players',
+			sandbox.newMap.width === World.gu(400), sandbox.newMap.width + ' vs ' + World.gu(400));
+		sandbox.tickArena(9);
+		check('...and AL(9) = 150gu, the floor, since sqrt(9)*50 is below it',
+			sandbox.newMap.width === World.gu(150), sandbox.newMap.width);
+		sandbox.map = savedMap; sandbox.newMap = savedNew; sandbox.nestScale = savedScale;
+		sandbox.tickArena(0);
+		// A non-live mode must NOT have its arena rewritten by its own population, or the admin
+		// 'mapResize' command would be undone every tick in four of the five modes.
+		const ffa = rooms[0];
+		const before = ffa.newMap.width;
+		ffa.tickArena(24);
+		check('a fixed-arena mode never rewrites its own newMap from the player count',
+			ffa.newMap.width === before, ffa.newMap.width + ' vs ' + before);
+	}
+}
+
 function spawnSamplerTests() {
 	console.log('\nspawn sampler (plan.md WP-SPAWN):');
 	const room = rooms[0];   // ffa
@@ -3316,7 +3581,12 @@ function spawnSamplerTests() {
 			Math.hypot(p.x, p.y) > room.map.width / 4, Math.hypot(p.x, p.y));
 	}
 
-	// 3. A map far below the ~2744-unit floor neither hangs nor places you off it.
+	// 3. A map far below what used to be the ~2744-unit unsatisfiability floor neither hangs nor
+	// places you off it. Kept as-is after plan.md step 6 removed that floor (the radii scale with
+	// the arena now, checks 8/9 below): this drives spawnPoint() with the map moved but nestScale
+	// left where it was, i.e. deliberately the OLD absolute-radii shape, so the cap-and-fallback
+	// guarantee is still tested against an unsatisfiable configuration rather than only against
+	// the well-behaved one the scaling now produces.
 	{
 		const sandbox = rooms[4];
 		const savedMap = sandbox.map;
@@ -3373,13 +3643,20 @@ function spawnSamplerTests() {
 	// 7. entities/Objects.js's own carve-outs (PENDING #28) rode the same x1.4 grid rescale as
 	// spawnKeepOut()'s. Captured off a stub room rather than inferred from where shapes land, so a
 	// regression names the wrong number instead of showing up as a density drift nobody can see.
-	{
+	// The stub carries a nestScale now (PENDING #19, plan.md step 6) because the real contract has
+	// one - at ffa's own scale of 1 every figure below is exactly what it was before that step.
+	const carveProbe = (nestScale, map) => {
 		const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
 		let seen = null;
 		const stub = {
+			nestScale: nestScale,
 			rejectSample: (inset, circles) => { seen = { inset: inset, circles: circles }; return { x: 0, y: 0 }; }
 		};
-		const probe = new Objects('sqr', -1, { GM: 'ffa', sId: 0, oId: 0 }, room.map, stub);
+		const probe = new Objects('sqr', -1, { GM: 'ffa', sId: 0, oId: 0 }, map, stub);
+		return { seen: seen, probe: probe };
+	};
+	{
+		const { seen, probe } = carveProbe(1, room.map);
 		check('a non-nest shape goes through the shared sampler', !!seen && probe.pos === 0);
 		check('...carving out 1400/980/980, the x1.4 twins of spawnKeepOut()\'s 1540/1120',
 			!!seen && seen.circles[0][2] === 1400 && seen.circles[1][2] === 980 && seen.circles[2][2] === 980,
@@ -3390,6 +3667,40 @@ function spawnSamplerTests() {
 			seen && JSON.stringify(seen.circles));
 		check('...and inset from the map edge by the same 280 spawnPoint() uses',
 			!!seen && seen.inset === 280, seen && seen.inset);
+	}
+
+	// 8. The carve-outs are a fixed FRACTION of the arena now, not an absolute (PENDING #19,
+	// plan.md step 6) - which is what retires this file's own "unsatisfiable below ~2744 units"
+	// failure mode at the source rather than by clamping. Probed at half ffa's scale: every radius
+	// and the edge inset all halve together, so the placement picture is geometrically similar.
+	{
+		const half = { width: room.map.width / 2, height: room.map.height / 2 };
+		const { seen } = carveProbe(0.5, half);
+		check('a half-size arena halves every carve-out radius with it',
+			!!seen && seen.circles[0][2] === 700 && seen.circles[1][2] === 490 && seen.circles[2][2] === 490,
+			seen && JSON.stringify(seen.circles.map((c) => c[2])));
+		check('...and halves the map-edge inset too, so the whole picture stays similar',
+			!!seen && seen.inset === 140, seen && seen.inset);
+	}
+
+	// 9. The same proportionality on the room side - spawnKeepOut() and spawnPoint()'s inset ride
+	// room.nestScale, so no arena size exists at which the keep-out swallows the whole map. Checked
+	// against a real room by moving its map rather than against arithmetic.
+	{
+		const sandbox = rooms[4];
+		const savedMap = sandbox.map, savedScale = sandbox.nestScale;
+		sandbox.map = { width: 1200, height: 1200 };
+		sandbox.tickArena(0);
+		const circles = sandbox.spawnKeepOut();
+		// The tightest nest still has to leave the map's own corner outside it, at ANY size - that
+		// is the property the old absolute radii lost below ~2744 units.
+		const corner = Math.hypot(sandbox.map.width / 2, sandbox.map.height / 2);
+		check('a 1200-unit arena still has points outside its own keep-out circles',
+			circles.every((c) => Math.hypot(c[0], c[1]) + c[2] < corner + 1e-9),
+			JSON.stringify(circles.map((c) => Math.round(c[2]))));
+		sandbox.map = savedMap;
+		sandbox.nestScale = savedScale;
+		sandbox.tickArena(0);
 	}
 }
 
@@ -3490,6 +3801,7 @@ rooms.push(teamTests()); console.log('');
 rooms.push(fourTeamTests()); console.log('');
 rooms.push(bossTests()); console.log('');
 rooms.push(sandboxTests()); console.log('');
+rooms.push(tagTests()); console.log('');
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);
@@ -3503,6 +3815,7 @@ growthTests(rooms);
 autoSpinTests(rooms);
 upgradeEconomyTests(rooms);
 healthUpgradeTests(rooms);
+arenaDensityTests(rooms);
 spawnSamplerTests();
 broadPhaseTests();
 

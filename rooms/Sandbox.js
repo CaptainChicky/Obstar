@@ -8,15 +8,19 @@
 	maxXp is kept at ffa's 25000 so the level cap stays 30 - a sandbox has no reason to see a
 	level the rest of the game can never reach.
 
-	mapSize has no hard floor any more, only degradation: Room.js's default spawnPoint() rejects
-	anywhere within a hardcoded 1540-unit radius of the origin (plus two 1120-unit nests at the
-	quarter-points, x1.4 under the grid rescale), written against ffa's gu(451)-unit
-	map where that is a small carve-out. Below roughly 2744 units wide no point on the map can ever
-	be 1540 from the origin - Room.rejectSample() bounds the search instead of
-	looping forever, and falls back to the best (furthest-from-a-nest) point it found, so a map
-	that small spawns you *near* a nest rather than hanging the room. gu(150) = 4200 stays clear of
-	that (~1/9th ffa's area - still a small arena) while leaving the corners reachable on the first
-	few tries.
+	This is the one shipped mode whose arena diep_wiki describes as population-varying - "The
+	arena's size along with the number of shapes that spawn in it varies depending on the number of
+	players connected to it" (diep_wiki/Game Modes.txt) - so it sets `arenaLive` and gets
+	AL = floor(sqrt(N_P) * 50) gu every tick (PENDING #19, plan.md step 6). In practice that is
+	*inert today*, and deliberately so rather than by oversight: maxPlayer 0 caps this room at one
+	player, AL(1) = 50 gu is below rooms/Room.js's MIN_ARENA_GU floor of 150, so the arena sits at
+	exactly the gu(150) it has always been. The flag is set because it is what the mode's own
+	behaviour is, and it comes alive by itself if the party-link path ever raises maxPlayer.
+
+	The old note here about mapSize "degrading" below ~2744 units - Room.js's spawnPoint() rejecting
+	a hardcoded 1540-unit radius that a small map has no point outside of - no longer applies. Those
+	radii scale with the arena now (room.nestScale), so a small map gets proportionally small nests
+	rather than a carve-out it cannot satisfy. See rooms/Room.js's rejectSample().
 */
 const World = require('../public/SHARE/World.js');
 const gu = World.gu;
@@ -28,14 +32,18 @@ class Sandbox extends Room {
 			gm: 'sandbox',
 			maxXp: 25000,
 			mapSize: { width: gu(150), height: gu(150) },
+			arenaLive: true,
 			// maxPlayer becomes SlotMap's maxIndex (lib/SlotMap.js) - the highest allocatable
 			// id, not a headcount - so 0 is what caps this room at one player.
 			maxPlayer: 0,
 			preGenerate: 120,
 			bootDelay: 100,
-			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
-			// rescale - FOV didn't grow, so the map's area did.
-			objCaps: { sqr: { max0: 49, max1: 6 }, tri: { max0: 20, max1: 4 }, pnt: { max0: 6, max1: 2 } },
+			// The shape MIX only - the TOTAL is diep's 1-per-200-gu^2 density now (PENDING #19,
+			// plan.md step 6), 87 -> 112 at gu(150). Because this mode is `arenaLive`, that density
+			// IS diep's published "12.5 polygons per connected player" for it, exactly: the two
+			// formulas compose to a constant density, so a mode that scales its arena by AL() gets
+			// the per-player count for free. See rooms/Room.js's header.
+			shapeMix: { sqr0: 49, sqr1: 6, tri0: 20, tri1: 4, pnt0: 6, pnt1: 2 },
 			betaPentRng: 0.98,
 			botCount: 0,
 			botIdStart: 10,

@@ -334,11 +334,11 @@ protocolTests();
 
 // Sequential, not parallel: config.MAX_IP caps concurrent connections per IP at 2.
 const modes = [['ffa', PORT], ['2team', PORT + 1], ['4team', PORT + 2], ['boss', PORT + 3],
-['sandbox', PORT + 4]];
+['sandbox', PORT + 4], ['tag', PORT + 5]];
 (function next() {
 	if (!modes.length) {
 		console.log('');
-		return doubleIpTest(PORT + 5, function () {
+		return doubleIpTest(PORT + 6, function () {
 			console.log('\n' + passed + ' passed, ' + failed + ' failed');
 			process.exit(failed ? 1 : 0);
 		});

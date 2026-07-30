@@ -368,7 +368,8 @@
 			'2team',
 			'4team',
 			'boss',
-			'sandbox'
+			'sandbox',
+			'tag'
 		],
 		'type': [
 			'init',
@@ -456,7 +457,8 @@
 			'2team': 1,
 			'4team': 2,
 			'boss': 3,
-			'sandbox': 4
+			'sandbox': 4,
+			'tag': 5
 		},
 		'type': {
 			'init': 0,

@@ -24,9 +24,11 @@ class BossMode extends Room {
 			mapSize: { width: gu(350), height: gu(350) },   // tighter than ffa: the fight finds you
 			preGenerate: 1200,
 			bootDelay: 100,
-			// x1.96 on every cap to hold per-screen shape density constant against the x1.4 grid
-			// rescale - FOV didn't grow, so the map's area did.
-			objCaps: { sqr: { max0: 353, max1: 31 }, tri: { max0: 137, max1: 24 }, pnt: { max0: 43, max1: 27 } },
+			// The shape MIX only - the TOTAL is diep's 1-per-200-gu^2 density now (PENDING #19,
+			// plan.md step 6). Worth noting because it is the one mode where that barely moves:
+			// 615 -> 612 shapes, because boss's tighter gu(350) arena already sat almost exactly at
+			// diep's density. These are verbatim the objCaps this mode used to state.
+			shapeMix: { sqr0: 353, sqr1: 31, tri0: 137, tri1: 24, pnt0: 43, pnt1: 27 },
 			betaPentRng: 0.98,
 			bossRng: 0.9,      // ~10% of spawn passes roll for a boss, vs 0.9999 in 2team
 			maxBoss: 3,

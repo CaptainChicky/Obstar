@@ -31,6 +31,18 @@
 		// ~90% gone after half a second, by which time the bullet is most of a screen away and
 		// the remaining slide is spread over ~700 units of travel - a few degrees, unnoticeable.
 		BULLET_LEAD_DECAY: 0.08,
+		/*
+			Dead reckoning (PENDING #24(b), plan.md step 8): how far past the newest snapshot an
+			ordinary bullet may be drawn, as a multiple of the measured packet interval.
+
+			The lead itself is NET.leadMs() - measured, not tuned - so this is only a ceiling
+			against a hostile or pathological measurement, exactly like CONST.SIZE*2's role for the
+			tank's own prediction (#24a). 3 intervals is ~100ms at a 33ms send rate, which comfortably
+			covers a normal RTT while bounding how far a bullet can be flung if the RTT EMA is ever
+			driven somewhere silly. It is a multiple of the interval rather than a flat ms figure so
+			it scales by itself if SEND_MS ever moves.
+		*/
+		DEAD_RECKON_MAX_INTERVALS: 3,
 		SIZE: 35,
 		MOUSEDELAY: 60 / 15,
 		MOUSE_OUT: 3,
