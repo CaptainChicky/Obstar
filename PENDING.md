@@ -4,11 +4,11 @@ Short-form companion to [HANDOFF.md](HANDOFF.md). Only what's *left*: things nee
 decisions already made but not yet built, and things nobody has verified yet.
 
 **A fully shipped item is deleted from this file. An item marked SHIPPED is still here for one of
-two reasons, and it says which:** either part of it is still open (#18's penetration→damage, #19's
+two reasons, and it says which:** either part of it is still open (#19's
 arena resize, #24(b)'s own bullets, #28's win condition), or it records a
 *"do not re-fix this"* — a value that looks wrong until you know why it is what it is (#22 is
-entirely that; #14's table, #16's two derived columns and #23's `BASE_DRONE_HP` are too). Do not
-treat a SHIPPED heading as work to redo.
+entirely that; #14's table, #16's two derived columns, #18's four damage fixes and #23's
+`BASE_DRONE_HP` are too). Do not treat a SHIPPED heading as work to redo.
 
 ---
 
@@ -419,6 +419,15 @@ decision has its own numbered item above and is only cross-referenced here.*
     re-seed per mode** so each room's corpus is independent — cheap, and it would have made that
     delta a three-line diff instead of a 25k-op one. Deliberately not done in the same change, because
     changing the corpus and changing the physics in the same commit makes neither reviewable.
+    *Shifted in every mode, and by construction rather than surprise:* #18's `BPene` magnitude fix
+    (352411/fa5f0e2b → **338725/5560688d**) moved all four mode boundaries (ffa −1573, 2team −11145,
+    4team −1402, boss +434 ops), heaviest in `2team` — a weaker maxed-Pene multiplier means those
+    bullets survive fewer ticks of contact, so fewer draws per bullet across the whole corpus, the
+    same "how long an ENTITY LIVES" category as the `PROJECTILE_BODY_DAMAGE` example just above.
+    Isolating it needed no instrumenting, just the load-time-override technique at its simplest:
+    restoring the retired per-point step (`1.0714286` for `0.75`) as a no-op reproduced the prior
+    golden **exactly**, confirming the whole delta was this one change and nothing else in the same
+    commit.
 
 35. **`BODY_FRICTION` is on death row, not on a retune list.** If **M1** finds diep's bullets are
     constant-velocity (the likely answer — `physics.html` has no drag term for them at all), the
@@ -615,16 +624,6 @@ decision has its own numbered item above and is only cross-referenced here.*
     by a human, on gameplay grounds. Cross-check the whole aggro model against `diep_wiki/`'s boss
     pages when someone next has that file open.
 
-## 🟡 Explicitly deferred (told not to do this pass)
-
-11. The Spade Squad diep-physics balance pass. The client/server *mismatch* in the existing
-    movement constants (accel, drag, tick conversion) is fixed, so prediction matches what the
-    server actually does — that pass deliberately did not retune the underlying
-    movement/knockback/recoil numbers themselves against any external reference. Every one of those
-    was hand-tuned against a measured ~29Hz tick; retuning them is its own pass.
-    **The reference numbers now exist** — `physics.html` has been read against the whole tree and
-    the mismatches are itemised in items 14–24 below. Still deferred, but no longer unscoped.
-
 ## 🔴 Measured against diep.io's real physics (`physics.html`) — mismatches
 
 *Source: `physics.html`, the archived spade-squad diep.io physics page (2022). Community-derived,
@@ -634,9 +633,13 @@ a feel judgement. Numbers assume the real-world quantities `TICK_MS: 33` / `FRIC
 implied (top speed, recoil, reload in seconds); the later `TICK_MS: 25` / `REF_TICK_MS: 40` split
 preserved those real-world quantities exactly, so no re-derivation is needed here.*
 
-*This started as pure scoping data for #11, but parts have since been adopted — the auto-turret
-spin rate (was #21), the FOV half of #19, the per-cannon base `reload`/`back` values in #15/#16,
-and the level/stat *form* half of #14. Each item below now states what is still open; anything not
+*This started as pure scoping data for a Spade Squad diep-physics balance pass that was explicitly
+deferred (the client/server *mismatch* in movement constants was fixed first, so prediction matched
+what the server actually did, without retuning the underlying movement/knockback/recoil numbers
+against any external reference — those had only ever been hand-tuned against a measured ~29Hz tick).
+Most of that deferred pass has since landed as items 14–24 below — the auto-turret spin rate
+(was #21), the FOV half of #19, the per-cannon base `reload`/`back` values in #15/#16, and the
+level/stat *form* half of #14. Each item below now states what is still open; anything not
 stated as open has shipped and should not be "re-fixed".*
 
 *Before planning work off this section, read **[MEASUREMENTS.md](MEASUREMENTS.md)**. It lists the
@@ -646,9 +649,9 @@ here is measurement-blocked any more.** #14's `FRICTION` is exact (`10/11`, deri
 #17, #19 and the damage model can all be finished before a single measurement is taken — and that
 work is now **complete**: #30's economy, #14's tank movement magnitudes and the tank/body friction
 split, #16's recoil half, #17's health and regen, #23's `BASE_DRONE_HP`, #19's shape density, #28's
-Tag mode, #24(b)'s bullet dead reckoning and three of #18's four damage fixes have all shipped —
+Tag mode, #24(b)'s bullet dead reckoning and all four of #18's damage fixes have all shipped —
 and #16's knockback `weight` column has since joined them, so that item is now closed on both of
-its columns. What is left in this section is itemised as open at each entry.*
+its columns, same as #18. What is left in this section is itemised as open at each entry.*
 
 14. **Movement — SHIPPED, form and magnitudes both**. Level and Movement Speed
     are independent multipliers on the base accel — `base × 1.07^pts / 1.015^level`,
@@ -932,9 +935,12 @@ its columns. What is left in this section is itemised as open at each entry.*
       untouched by #18's `dr` term (the *defensive* multiplier on damage taken, shipped) — and is
       still open.
 
-18. **The damage *model* differs structurally — three of four fixes SHIPPED (two bundled with the
-    health/regen work, the pene double-count + −75%-vs-projectiles fix landed 2026-07-30), the
-    fourth (penetration→damage magnitude, `BPene` rescale) is still open.**
+18. **The damage *model* differs structurally — SHIPPED, all four fixes** (two bundled with the
+    health/regen work, the pene double-count + −75%-vs-projectiles fix landed 2026-07-30, the
+    `BPene` magnitude fix landed 2026-07-30). Kept only as a *do-not-re-fix* record: several of the
+    numbers below (the vanished `Math.max(1, pene/5)` multiplier, `TANK_BODY_DAMAGE = 1.5`,
+    `PROJECTILE_BODY_DAMAGE = 0.25`, `BPene`'s `+0.75`/pt step) look arbitrary or simply missing
+    without the derivation attached to each.
     diep resolves a collision as mutual simultaneous destruction with partial-loop proration
     (the page's "3 laws"): each body has a constant damage-per-loop, each loses health equal to the
     *opponent's* DPL, and a body that dies mid-loop deals a proportionally reduced share
@@ -991,22 +997,31 @@ its columns. What is left in this section is itemised as open at each entry.*
       `damageReduction()` at that one collision site, the same shape as `Bullet.js`'s
       `PROJECTILE_BODY_DAMAGE`. `KIND.OBJECTS` (shape damage) and `KIND.BULLET` (bullet damage) are
       untouched — the wiki multiplier is specific to a tank's body hitting another tank's body.
-    - **Penetration → damage magnitude — still open**, the one piece of this item nothing above
-      touched. diep's health loss per bullet does scale with penetration (`D_b ∝ PP`, because a
-      tougher bullet survives more loops of contact) — that shape is now exactly what contact-duration
-      scaling gives for free, with no multiplier needed. What's still open is the *magnitude*: diep's
-      stat slope is `1 + 0.75×points` on a bullet's own HP/`PP`, ours is a differently-shaped compound
-      stat (`Bull.pene = up.BPene × can.pene`, i.e. one multiplier scaling a raw per-cannon table
-      rather than a point count added to a base). Matching diep's formula cleanly would mean turning
-      `BPene` into a raw point count (the conversion `MSpeed`/`HpRegan` already got) *and* rescaling
-      every `can.pene` in `public/SHARE/TanksConfig.js` alongside it — a second column-wide rescale in
-      the shape of the `back` column rescale, not a two-line change, and still outside what the
-      lethality question asked for. Left as a finding, not silently dropped — the strongest candidate
-      whenever someone wants `BPene`'s own point economy revisited.
+    - **Penetration → damage magnitude — SHIPPED 2026-07-30, and the predicted "column-wide
+      TanksConfig.js rescale" turned out not to be needed.** diep's health loss per bullet does scale
+      with penetration (`D_b ∝ PP`, because a tougher bullet survives more loops of contact) — that
+      shape was already exactly what contact-duration scaling gave for free, with no multiplier
+      needed. What was open was the *magnitude*: diep's stat slope is `1 + 0.75×points` on a bullet's
+      own HP/`PP` (`diep_wiki/Dominator.txt`), ours was `up.BPene` accumulating `+1.0714286`/point
+      from a base of 1 (a 6→7-cap rescale of an old, unrelated step — "1.25 x 6/7" — carried through
+      #30's point-cap conversion, maxing at 8.5×). Since diep's own formula is *linear* in points
+      (`base × (1 + 0.75n)` expands to `base + 0.75×base×n`), fixing the per-point step to a flat
+      `+0.75` (`entities/Player.js`'s `upgrade()`) makes `up.BPene` diep's exact multiplier directly —
+      no restructuring into a separate raw-point-count field the way `MSpeed`'s exponential form
+      needed, because a flat accumulator step already **is** "a point count times a constant" once a
+      linear formula is what's being matched. **`can.pene`/`necro.pene` in `TanksConfig.js` needed no
+      rescale at all**: the old step's own 0-point baseline was already `up.BPene = 1`, identical to
+      diep's `1 + 0.75×0`, so every per-cannon base value already sat at diep's base-HP figure — only
+      the *maxed* multiplier moves (**8.5× → 6.25×**, verified by reproducing the old golden exactly
+      with the old step as a no-op isolation check, nuance 34's technique), which is the actual
+      fidelity fix and not something to compensate for. The three consumption sites
+      (`entities/Player.js`'s two `Bull.pene =` assignments, `entities/Bullet.js`'s necromancer-drone
+      one) and `lib/gameAI.js`'s Summoner boss (`up.BPene = detected.length * .9`, a wholly separate
+      ad-hoc aggro-based scaling that deliberately zeroes out when unaggroed — nuance 49) all read
+      `up.BPene` exactly as before and needed no changes, since the fix is entirely inside what
+      `upgrade()` writes into that field.
 
-    Adopting the full real model would touch every `collision()` in `entities/`; three of the four
-    fixes now do. The fourth is the difference between "ramming is a build" and "ramming is chip
-    damage" for the *penetration* dimension specifically, and stays a design call.
+    Adopting the full real model touches every `collision()` in `entities/`; all four fixes now do.
 
 19. **Arena and shape density — SHIPPED, the density half**; **the arena-resize
     half stays deliberately open.** (The FOV half was already done: `config.FOV_MUL` 1.39 and

@@ -262,12 +262,16 @@ The things in this codebase that are *not* obvious from reading the code around 
   `PROJECTILE_BODY_DAMAGE`, is now multiplied in alongside `damageReduction()` at that one collision
   site only — `KIND.OBJECTS` and `KIND.BULLET` are untouched, since the wiki multiplier is specific
   to a tank's body hitting another tank's body.
-  **Left deliberately unshipped**: penetration→damage magnitude (diep's `1+0.75×points` slope
-  against our now-plain `can.damage × up.BDamage`) — no decided replacement formula exists, and our
-  `up.BPene` is a compound stat (it scales a bullet's own spawned `pene`, which is *also* what now
-  determines contact duration), so a clean fix means restructuring `BPene` into a raw point count and
-  rescaling every `can.pene` in `TanksConfig.js` alongside it — its own column-wide pass, not a
-  two-line change. Full numbers and the derivation of the double-count are in PENDING #18.
+  **Penetration→damage magnitude — SHIPPED 2026-07-30, and cheaper than expected.** diep's stat
+  slope (`1 + 0.75×points` on a bullet's own HP/`PP`) is linear, so `entities/Player.js`'s `upgrade()`
+  only needed its `BPene` per-point step corrected from `+1.0714286` (a 6→7-cap rescale of an
+  unrelated old step) to a flat `+0.75` — `up.BPene` accumulates from 1 exactly like diep's
+  `1 + 0.75n` without needing MSpeed's raw-point-count restructuring, since a flat step already *is*
+  a point count times a constant once the target formula is linear. `can.pene`/`necro.pene` in
+  `TanksConfig.js` needed **no** rescale: the old step's 0-point baseline was already `up.BPene = 1`,
+  so those tables already sat at diep's base-HP figure — only the maxed multiplier moved (8.5× →
+  6.25×), verified by reproducing the prior `clientDiff` golden exactly with the old step restored as
+  a no-op isolation check. Full derivation in PENDING #18, now closed on all four of its fixes.
 - **Arena size and shape density are derived, not written down** (PENDING #19, plan.md step 6).
   diep's two published formulas — `AL = ⌊√N_P × 50⌋` gu and `12.5 × N_P` shapes — **compose to a
   constant 1 shape per 200 gu²**, because the player count cancels. That composition is the whole

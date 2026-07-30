@@ -223,17 +223,18 @@ list lives in **[plan.md](plan.md)**, which is what the work is actually being r
    clamping. Resizing ffa toward diep's AL(24) = 244 gu is a 71% area cut and is deliberately NOT
    done — the machinery exists (`rules.arenaLive`), the call does not. See PENDING #19 and
    plan.md step 6.
-7. **~~#24(b)~~, ~~gamemodes (Tag first)~~, #18's damage model** — none measurement-gated.
+7. **~~#24(b)~~, ~~gamemodes (Tag first)~~, ~~#18's damage model~~** — none measurement-gated.
    **#24(b) is DONE** (plan.md step 8): incoming bullets are dead-reckoned forward by the measured
    `NET.leadMs()` instead of being drawn a packet interval behind; drones/pets/traps stay on
    interpolation, and your own bullets deliberately do too (the muzzle weld and a temporal lead are
    contradictory claims about the same bullet — see PENDING #24(b)). **Tag is
    DONE** (plan.md step 7, `rooms/Tag.js`) — no new entity types, as predicted; it lacks only the
    win condition, which needs an Arena Closer entity, and the invisibility cap that goes with it
-   (PENDING #28). #18's `dr`
-   (body damage reduces damage taken) and "bullet HP spent against target's DPL" are **DONE**
-   (plan.md step 9, landed with #17 above); penetration→damage magnitude/slope stays open — no
-   decided replacement formula exists for it, unlike the other two.
+   (PENDING #28). **#18 is DONE, all four fixes** (plan.md step 9): `dr`
+   (body damage reduces damage taken) and "bullet HP spent against target's DPL" landed with #17
+   above; the pene double-count + −75%-vs-projectiles fix and the `BPene` magnitude/slope fix both
+   landed 2026-07-30 — the latter needed only a per-point step correction in `entities/Player.js`'s
+   `upgrade()`, not the column-wide `TanksConfig.js` rescale this file originally expected.
 
 **What genuinely waits for a session with diep open:** the bullet `speed`/`life` columns (M1),
 `rand` (M2), the reload stat (M3), shape drift (M4), and the two feel knobs (M5, M6).

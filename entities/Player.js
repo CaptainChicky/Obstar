@@ -392,19 +392,26 @@ class Player {
 					nb++;
 					if (nb !== data) { continue; }
 					/*
-						Every step below except MSpeed/HpRegan/HpUp is the old 6-point-span value x 6/7
-						(PENDING #30): the cap moved to 7, so an unchanged step would have handed a
+						Every step below except MSpeed/HpRegan/HpUp/BPene is the old 6-point-span value x
+						6/7 (PENDING #30): the cap moved to 7, so an unchanged step would have handed a
 						maxed stat ~17% more than it was ever tuned to give. Scaling the step instead
 						keeps each stat's *maxed* value exactly where it was and only changes the
 						granularity, which is the conversion this item asks for and not a stealth buff.
 
-						Three exceptions, all point COUNTS rather than accumulated bonuses, so they
-						become diep-correct on their own the moment the cap is 7 - nothing to rescale.
-						MSpeed since #14's form fix; HpRegan and HpUp since #17's health model (plan.md
-						step 4) replaced the old health formula wholesale with diep's own raw numbers
-						(MH0 = 50, +2/level, +20/point, "Regen Stat" 0-7 read directly into
-						diep_wiki/Stats.txt's HPS formula in update()) rather than rescaling the old
-						110/0.28-per-point figures - there was nothing faithful about those to preserve.
+						Four exceptions, none of them a 6->7 rescale of an old step. MSpeed since #14's
+						form fix; HpRegan and HpUp since #17's health model (plan.md step 4) replaced the
+						old health formula wholesale with diep's own raw numbers (MH0 = 50, +2/level,
+						+20/point, "Regen Stat" 0-7 read directly into diep_wiki/Stats.txt's HPS formula
+						in update()) rather than rescaling the old 110/0.28-per-point figures - there was
+						nothing faithful about those to preserve. BPene since PENDING #18's last open
+						piece: diep's own per-point slope is linear (`PP = base x (1+0.75*points)`,
+						diep_wiki/Dominator.txt), so `up.BPene`'s flat +0.75/pt step *is* that formula -
+						no separate raw-point-count field is needed the way MSpeed's exponential form
+						needed one, since a flat step is already mathematically a point count times a
+						constant. `can.pene`/`necro.pene` in TanksConfig.js need no rescale alongside it:
+						the multiplier's 0-point baseline was already 1 under the old step too, so those
+						tables already sit at diep's base-HP value - only the MAXED multiplier moves
+						(8.5x -> 6.25x), which is the actual fidelity fix, not a value to compensate for.
 					*/
 					switch (i) {
 						// A point COUNT (diep_wiki/Stats.txt's "Regen Stat", read directly by update()'s
@@ -414,7 +421,7 @@ class Player {
 						case "Reload": this.up[i] -= 0.0788571; break;     // 0.092 x 6/7
 						case "BSpeed": this.up[i] += 0.0942857; break;     // 0.11 x 6/7
 						case "BDamage": this.up[i] += .1714286; break;     // 0.2 x 6/7
-						case "BPene": this.up[i] += 1.0714286; break;      // 1.25 x 6/7
+						case "BPene": this.up[i] += 0.75; break;           // diep's own per-point slope (PENDING #18), not a 6/7 rescale
 						// A point COUNT, not a bonus: Physics.moveAccel() raises MOVE_STAT_MUL to it
 						// (PENDING #14). It used to accumulate an accel term (0.029254/pt) because
 						// the stat was additive; the multiplier needs the exponent instead, and
