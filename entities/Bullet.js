@@ -544,15 +544,14 @@ class Bullet {
 						this.levels.provokedAt = this.room.timestamp;
 					}
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
-					// An ordinary bullet spends its own pene against itself, target-independent.
-					// A base drone cannot: its pene IS a 2000-point health pool, so pene/5 would
-					// be 400 a tick and it would die in five ticks of touching the player it is
-					// attacking. It takes the player's body damage instead - the same model as a
-					// tank taking body damage, which is what makes poking in and out with
-					// something high-DPS the way to kill one.
-					this.pene -= (this.type === 1.4)
-						? tick.perTick(other.damage)
-						: tick.perTick(Math.max(1, this.pene / 5));
+					// A bullet's health is spent against the TARGET's damage output (PENDING #18,
+					// plan.md step 9 - diep's own "3 laws" reciprocal collision rule), not against
+					// itself. Previously only base drones (type 1.4) worked this way, because a
+					// drone's pene IS a 2000-point health pool rather than a spend-down budget and the
+					// old self-referential pene/5 would have killed one in five ticks of contact - that
+					// reasoning turns out to generalize to every bullet, so the ordinary branch is gone
+					// and both read the same rule now.
+					this.pene -= tick.perTick(other.damage);
 					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.OBJECTS:
@@ -587,11 +586,9 @@ class Bullet {
 							return;
 						}
 					}
-					// Same trap as the KIND.PLAYER arm above, and worse (pene/2, not pene/5): a
-					// base drone's pene is health, not a spend-down budget.
-					this.pene -= (this.type === 1.4)
-						? tick.perTick(other.damage)
-						: tick.perTick(Math.max(this.pene / 2, 1));
+					// Same rule as the KIND.PLAYER arm above (PENDING #18, plan.md step 9): spent
+					// against the shape's own damage output, not self-referentially.
+					this.pene -= tick.perTick(other.damage);
 					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.BULLET:
@@ -1209,8 +1206,9 @@ class Bullet {
 
 			tick.quadratic(), NOT tick.perTick(). The thrust is integrated twice over ticks - once
 			into this.vec, again into this.x/this.y - which is exactly the category lib/tick.js's
-			quadratic() exists for (its header names hpregan, the other accumulator with this
-			shape). Under perTick() a bullet's total range came out proportional to 1/TICK_MS
+			quadratic() exists for (entities/Objects.js's HOME_PULL is the other current example -
+			Player.js's old regen accumulator, hpregan, used to be a third before PENDING #17 replaced
+			it). Under perTick() a bullet's total range came out proportional to 1/TICK_MS
 			(measured: 955 units at TICK_MS 33 against 1695 at 16, for one class with a lifetime
 			that is itself correctly wall-clock-constant); under quadratic() it holds to well
 			inside 1% across the same range - asserted, not just reported, by test/rooms.js's

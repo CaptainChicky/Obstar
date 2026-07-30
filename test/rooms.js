@@ -555,8 +555,11 @@ function baseDroneTests() {
 		victim.hp = victim.maxHp = 1000; victim.shield = 0; victim.dev.ghost = 0;
 		victim.collision(drone, {});
 		const perTick = 1000 - victim.hp;
+		// Bounds carry PENDING #18's dr term now (plan.md step 9, landed with step 4): a fresh
+		// (0 body-damage-point) victim takes 0.4/BS = 0.4 of the nominal hit, so the pre-#18 (1, 3)
+		// band scales to (0.4, 1.2) around it.
 		check('a base drone does one tick of body damage, not 400 of them',
-			perTick > 1 && perTick < 3, perTick);
+			perTick > 0.4 && perTick < 1.2, perTick);
 		check('...so a maxed tank survives a lone drone for over ten seconds',
 			1000 / (perTick * (1000 / config.TICK_MS)) > 10);
 	}
@@ -656,8 +659,11 @@ function fastestTankSpeed() {
 				const reload = timer[r];
 				if (reload === Math.floor(can.offTime * reloadMax)) {
 					const rd = dir + (can.offdir || 0) - Math.PI;
-					body.vx += tick.perTick(can.back) * Math.cos(rd);
-					body.vy += tick.perTick(can.back) * Math.sin(rd);
+					// tick.impulse(), mirroring entities/Player.js's shoot() (PENDING #43): body.vx/vy
+					// here is fed through Physics.stepBody just below, exactly like a real Player's
+					// this.vec, so the recoil impulse must land flat, not perTick()'d.
+					body.vx += tick.impulse(can.back) * Math.cos(rd);
+					body.vy += tick.impulse(can.back) * Math.sin(rd);
 				}
 				if (timer[r] === 0) { timer[r] += 1; continue; }
 				if (reload > 0 && reload < reloadMax) { timer[r] += 1; }
@@ -2850,41 +2856,59 @@ function autoTurretLeadInvarianceTest(near) {
 }
 
 /*
-	Regen (massplanchunks WP-D pass 4, item 3): the one meant to catch a quadratic accumulator
-	misfiled as a perTick one. entities/Player.js's hpregan[1] += tick.quadratic(...) is exactly
-	that shape and, checked directly (below), is correctly invariant.
+	Regen (PENDING #17, plan.md step 4): two direct tick.perTick() rates now, no accumulator, so
+	there is no quadratic-vs-perTick miscategorisation left to catch (that was the old hpregan's
+	failure mode). What is still worth pinning at tick-scale is that repeated tick.perTick() adds
+	over a fixed wall-clock window sum to the same total regardless of how finely the window is
+	sliced - true by construction for a flat per-tick add (no friction-style recurrence to
+	discretize), but checked directly rather than assumed, for both regimes.
 
-	This deliberately does not read Player.hp the way massplanchunks.md's checklist first
-	suggests: entities/Player.js:477's hp += parseInt(hpregan[1]*maxHp*10)/10 quantizes healing to
-	0.1 HP (PENDING.md item 17's already-documented "nothing heals for the first ~22s" quirk), and
-	that quantization's own error is the same order of magnitude as the 2% this test wants to
-	prove, for reasons that have nothing to do with tick-scale conversion - it would make this
-	test flaky (and occasionally fail) regardless of whether the conversion is right. So this
-	mirrors the accumulator update from Player.js's own update() exactly, using a fresh Player's
-	real up.HpRegan/maxHp and a freshly-required tick.js, summed *without* that rounding, which is
-	precisely the quantity tick.quadratic() is responsible for keeping invariant.
+	Mirrors entities/Player.js's own two formulas rather than calling the full update() (which would
+	couple this to motion()/shoot()/xp - unrelated systems this test has no reason to depend on).
 */
 function regenInvarianceTest() {
-	function healedIn(tickMs, wallMs) {
+	function healedLinear(tickMs, wallMs) {
 		return withTickMs(tickMs, ({ Player, tick }) => {
 			const p = new Player({ oId: 0 }, 0, 0, 'x', 1, [0, 1e9], fakeRoom());
 			p.update();   // let the level-0-at-xp-0 join quirk (see fovTests) resolve first
-			p.hp = p.maxHp / 2;
-			p.hpregan = [p.hp, 0];
 			let healed = 0;
+			const hps = p.maxHp * (0.03 + 0.12 * p.up.HpRegan) / 30 / 25;
 			const steps = Math.round(wallMs / tickMs);
-			for (let i = 0; i < steps; i++) {
-				p.hpregan[1] += tick.quadratic(p.up.HpRegan / 673818.75);
-				healed += p.hpregan[1] * p.maxHp;
-			}
+			for (let i = 0; i < steps; i++) { healed += tick.perTick(hps); }
 			return healed;
 		});
 	}
-	const h16 = healedIn(16, 10000), h25 = healedIn(25, 10000), h33 = healedIn(33, 10000);
+	function healedHyper(tickMs, wallMs) {
+		return withTickMs(tickMs, ({ Player, tick }) => {
+			const p = new Player({ oId: 0 }, 0, 0, 'x', 1, [0, 1e9], fakeRoom());
+			p.update();
+			let healed = 0;
+			const hps = p.maxHp * Player.HYPER_REGEN_RATE / 25;
+			const steps = Math.round(wallMs / tickMs);
+			for (let i = 0; i < steps; i++) { healed += tick.perTick(hps); }
+			return healed;
+		});
+	}
 	const near = (a, b, pct) => Math.abs(a - b) / b < pct;
-	check('regen accumulator over 10s agrees within 2% at TICK_MS 16/25/33',
-		near(h16, h33, 0.02) && near(h25, h33, 0.02),
+
+	const l16 = healedLinear(16, 10000), l25 = healedLinear(25, 10000), l33 = healedLinear(33, 10000);
+	check('linear-regime regen over 10s agrees within 1% at TICK_MS 16/25/33',
+		near(l16, l33, 0.01) && near(l25, l33, 0.01),
+		l16.toFixed(3) + ' / ' + l25.toFixed(3) + ' / ' + l33.toFixed(3));
+
+	const h16 = healedHyper(16, 10000), h25 = healedHyper(25, 10000), h33 = healedHyper(33, 10000);
+	check('hyper-regime regen over 10s agrees within 1% at TICK_MS 16/25/33',
+		near(h16, h33, 0.01) && near(h25, h33, 0.01),
 		h16.toFixed(3) + ' / ' + h25.toFixed(3) + ' / ' + h33.toFixed(3));
+
+	// The threshold itself: tick.ticks(750) must span the same ~30s of wall clock at every rate,
+	// same property test/rooms.js already checks for tick.DES/DEAD_DELAY/KEEP_PLACE elsewhere.
+	const d16 = withTickMs(16, ({ Player }) => Player.HYPER_REGEN_DELAY * 16);
+	const d25 = withTickMs(25, ({ Player }) => Player.HYPER_REGEN_DELAY * 25);
+	const d33 = withTickMs(33, ({ Player }) => Player.HYPER_REGEN_DELAY * 33);
+	check('the hyper-regen threshold spans ~30s of wall clock at TICK_MS 16/25/33',
+		near(d16, 30000, 0.05) && near(d25, 30000, 0.05) && near(d33, 30000, 0.05),
+		d16 + 'ms / ' + d25 + 'ms / ' + d33 + 'ms');
 }
 
 /*
@@ -3141,12 +3165,11 @@ function autoSpinTests(rooms) {
 }
 
 /*
-	Max Health's own heal (PENDING #17). A point adds its step to maxHp and heals current hp by the
-	same proportion, so the health FRACTION survives the upgrade. It used to scale by
-	maxHp/(maxHp - 100) *after* the += 110 - a stale 100 against a 110 step - so every point
-	silently under-healed. Pinned as a ratio, not against a literal, so a retune of the step keeps
-	the property - which is exactly what PENDING #30 did to it: the step is 110 x 6/7 now, so a
-	FULL bar is still worth +660 while the per-point figure is not a round number any more.
+	Max Health's own heal (PENDING #17, plan.md step 4). A point adds its step to maxHp and heals
+	current hp by the same proportion, so the health FRACTION survives the upgrade - the same
+	ratio-based heal PENDING #30's 6/7 rescale used, carried forward rather than reinvented. The
+	step itself is diep's own flat +20/point now (diep_wiki/Stats.txt), not a rescale of the old
+	110 - MH0 is 50 (not 150), so a full bar is +140, not +660.
 */
 function healthUpgradeTests(rooms) {
 	console.log('\nMax Health upgrade (PENDING #17):');
@@ -3160,26 +3183,26 @@ function healthUpgradeTests(rooms) {
 	for (let l = 1; l <= P.LEVEL_CAP; l++) { if (P.pointsAtLevel(l) >= P.MAX_PER_STAT) { lvl = l; break; } }
 
 	me.level = lvl; me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
-	me.maxHp = 150; me.hp = 75;
+	me.maxHp = 50; me.hp = 25;
 	me.upgrade(HP_UP);
-	const step = me.maxHp - 150;
-	check('one point adds a 6/7-scaled step to maxHp', Math.abs(step - 660 / P.MAX_PER_STAT) < 0.01, step);
+	const step = me.maxHp - 50;
+	check("one point adds diep's own flat +20 to maxHp", Math.abs(step - 20) < 0.01, step);
 	check('...and heals current hp by that same proportion',
-		Math.abs(me.hp - 75 * (me.maxHp / 150)) < 1e-9, me.hp);
+		Math.abs(me.hp - 25 * (me.maxHp / 50)) < 1e-9, me.hp);
 	check('...so a tank on half health is still on half health afterwards',
 		Math.abs(me.hp / me.maxHp - 0.5) < 0.005, me.hp / me.maxHp);
 
 	me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
-	me.maxHp = 150; me.hp = 150;
+	me.maxHp = 50; me.hp = 50;
 	for (let i = 0; i < P.MAX_PER_STAT; i++) { me.upgrade(HP_UP); }
-	check('a full bar is +660 maxHp, exactly what six points used to buy',
-		Math.abs(me.maxHp - 810) < 0.01, me.maxHp);
+	check("a full bar is +140 maxHp, diep's own 0-7 x +20 table",
+		Math.abs(me.maxHp - 190) < 0.01, me.maxHp);
 	check('...and a full-health tank is still at full health, not a bar of under-heals down',
 		Math.abs(me.hp - me.maxHp) < 1e-9, me.hp + '/' + me.maxHp);
 	// The per-stat cap itself, with points to spare so it is the cap doing the refusing and not
 	// the grant schedule running out.
 	me.level = P.LEVEL_CAP; me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
-	me.maxHp = 150; me.hp = 150;
+	me.maxHp = 50; me.hp = 50;
 	for (let i = 0; i < P.MAX_PER_STAT + 3; i++) { me.upgrade(HP_UP); }
 	check('one stat cannot be pushed past the per-stat cap even with points banked',
 		me.upNb[HP_UP] === P.MAX_PER_STAT && me.stillLvl === P.MAX_PER_STAT,

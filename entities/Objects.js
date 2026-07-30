@@ -23,7 +23,7 @@ const Detector = require('./Detector.js');
 	tick.quadratic(), not tick.perTick(): unlike the collision knockbacks below (a single impulse
 	per contact, decayed by the limiter, already invariant), this is added EVERY tick for as long
 	as the pull lasts and is then integrated into position again, so it integrates twice over
-	ticks - the same category as entities/Bullet.js's cruise thrust and lib/tick.js's hpregan.
+	ticks - the same category as entities/Bullet.js's cruise thrust (see lib/tick.js's quadratic()).
 	0.543024 is the old 0.33939 x that file's SPEED_RESCALE (1.6), so the pull at the live TICK_MS
 	is unchanged; it is a frozen constant, NOT tick.SCALE, and must not move if TICK_MS does.
 */

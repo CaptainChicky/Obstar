@@ -196,16 +196,28 @@ list lives in **[plan.md](plan.md)**, which is what the work is actually being r
    against the recoil table.~~ **DONE.** `back = gu × 28 × (1−F)/F` = `gu × 2.8`, all 62 entries;
    the column divides by 2.8 straight back into `physics.html`'s "Tanks Recoil" table.
    **#16 knockback** (`weight`) is the same shape and is still open — gated on the ~7-class roster
-   decision and the 1.26× rescale error, neither of which is a measurement. Note PENDING #43 before
-   rewriting it: the consumption site loses ~0.64× at the live tick, and that is a `lib/tick.js`
-   category bug to fix separately, not something to compensate for in the column.
-4. **#17 health + regen** — `MH₀`, the linear rate and the hyper threshold are all known; the hyper
-   *rate* is solvable from the published time-to-full table. Do it after #30 so the domain is 7.
-5. **#23 `BASE_DRONE_HP` → 6400** — decided.
+   decision and the 1.26× rescale error, neither of which is a measurement. Its consumption site's
+   `lib/tick.js` category bug (the old PENDING nuance 43 — it lost ~0.64× at the live tick) is fixed
+   now, in its own step (plan.md), so #16 can be rewritten straight against the reference-tick
+   figures without a separate correction.
+4. ~~**#17 health + regen** — `MH₀`, the linear rate and the hyper threshold are all known; the
+   hyper *rate* is solvable from the published time-to-full table. Do it after #30 so the domain is
+   7.~~ **DONE.** diep's raw `MH₀=50/+2/level/+20/point` adopted directly (not a rescale); the
+   `hpregan` accumulator replaced by two direct per-tick rates. The hyper rate needed a real fit
+   against all 8 published points, not the single-point residual this line implied — that naive
+   reading breaks down past ~2 Regen points; see PENDING #17 and plan.md step 4 for the derivation.
+   Landed together with #23 (below) and #18's `dr` term (item 7) per a lethality call.
+5. ~~**#23 `BASE_DRONE_HP` → 6400** — decided.~~ **DONE, and the answer moved: stays 2000.** The
+   ~6400 figure was denominated in our OLD, custom HP scale; #17 replaced that scale with diep's own
+   rather than rescaling it, so the ratio this item is built on now resolves back to diep's raw
+   number. See PENDING #23 and plan.md step 5.
 6. **#19 arena/density** — formulas known. Real work is making `baseSize` and the nest carve-out
    radii scale, since they are absolute today and `rooms/Room.js` warns the placement loop becomes
    unsatisfiable below ~2744 units wide.
-7. **#24(b), gamemodes (Tag first), #18's damage model** — none measurement-gated.
+7. **#24(b), gamemodes (Tag first), #18's damage model** — none measurement-gated. #18's `dr`
+   (body damage reduces damage taken) and "bullet HP spent against target's DPL" are **DONE**
+   (plan.md step 9, landed with #17 above); penetration→damage magnitude/slope stays open — no
+   decided replacement formula exists for it, unlike the other two.
 
 **What genuinely waits for a session with diep open:** the bullet `speed`/`life` columns (M1),
 `rand` (M2), the reload stat (M3), shape drift (M4), and the two feel knobs (M5, M6).

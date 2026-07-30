@@ -144,16 +144,22 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
      harder and stops harder — the e-fold time to top speed halved (0.90 s → 0.42 s), which is the
      "2.14× floatier" complaint in #14's table being paid off. Judge it as *responsiveness*, not
      just speed: a fresh spawn should feel crisp rather than skating. Two knock-ons to look at
-     while you are there: **recoil is diep's now** (`back`, plan.md step 3) — a Destroyer's own kick
-     should push it ~6 grid squares per shot and a Basic's ~0.4, measurable against the background
-     grid, though the live 25 ms tick delivers only ~0.64× of that until nuance 43 is settled;
-     **knockback is still 2.2× short** (`weight`, #16, two human calls) so ramming stays wrong — and
-     **base drones are faster twice over** (`BASE_DRONE_CHASE_SPEED` re-pinned 423.7 → 501.7 →
-     527.2 u/s), so the "lap an enemy base and survive" race below is being re-run at both ends at
-     once.
-   - **Regen actually starts immediately** (#17). At 0 Health Regen points, take a few HP off a
-     fresh 150 HP tank and watch the bar: it should begin creeping back straight away, where it
-     used to sit dead flat for ~22 s before the first tick of healing landed.
+     while you are there: **recoil is diep's now, at full strength** (`back`, plan.md step 3, and
+     the one-shot-impulse fix, plan.md's dedicated step) — a Destroyer's own kick should push it
+     ~6 grid squares per shot and a Basic's ~0.4, measurable against the background grid, and the
+     live 25 ms tick now delivers that in full (previously only ~0.64× of it, `tick.perTick()`
+     being the wrong category for a one-shot impulse — fixed, see plan.md);
+     **knockback is still short** (`weight`, #16, two human calls) so ramming stays wrong — and
+     **base drones are faster three times over** (`BASE_DRONE_CHASE_SPEED` re-pinned 423.7 → 501.7 →
+     527.2 → 559.2 u/s), so the "lap an enemy base and survive" race below is being re-run at both
+     ends at once.
+   - **Health and regen are diep's own numbers now, and the whole shape changed, not just the
+     quantizer bug** (#17, plan.md step 4). A fresh spawn is **50** HP, not 150 — confirm the bar
+     reads that, not a stale higher number cached anywhere client-side. At 0 Health Regen points,
+     take a few HP off and watch the bar: it should begin creeping back at diep's slow linear rate
+     immediately (no more ~22 s dead flat, since the old quantized accumulator is gone), then
+     **visibly speed up after ~30 s** of no further damage (hyper regen) — that second phase is new
+     and worth confirming looks like a genuine rate change, not a glitch.
    - **The prediction lead is derived from a real RTT now** (#24a). It scales with your actual
      latency and speed rather than sitting at a flat 70-unit cap, so it is smaller than it was —
      confirm your own tank still feels immediate on WASD and does not snap when the server
@@ -247,20 +253,26 @@ decision has its own numbered item above and is only cross-referenced here.*
 
 ### Live right now — the tree is in a knowingly-wrong state
 
-31. **Knockback is still ~2.2× too weak; recoil is not, since plan.md step 3.** `back` and `weight`
-    are both impulses on *tank* velocity, so both were denominated against the old `FRICTION` and
-    neither moved when step 2 took it to `10/11`. **`back` was rescaled in step 3** (all 62 cannons
-    across 27 classes, ×1.914 — the column is `gu × 2.8` now; the consumer is
-    [entities/Player.js](entities/Player.js#L303), `tick.perTick(can.back)`, mirrored by
-    `test/rooms.js`'s `fastestTankSpeed()`). **`weight` was not** — it is blocked on two human calls
-    (#16), so **ramming is still being judged in a game where knockback is wrong**, including the
-    item-6 browser checklist and `BASE_DRONE_DAMAGE`'s playtest. Do not retune anything else
-    against the current knockback. See #16, and nuance 43 for the separate live-tick shortfall that
-    affects both columns.
+31. **Knockback is still too weak; recoil is not, since plan.md step 3 and the one-shot-impulse fix.**
+    `back` and `weight` are both impulses on *tank* velocity, so both were denominated against the
+    old `FRICTION` and neither moved when step 2 took it to `10/11`. **`back` was rescaled in
+    step 3** (all 62 cannons across 27 classes, ×1.914 — the column is `gu × 2.8` now; the consumer
+    is [entities/Player.js](entities/Player.js#L303), `tick.impulse(can.back)` as of the one-shot-
+    impulse fix (was `tick.perTick()`, the wrong category — it lost ~0.64× at the live 25 ms tick;
+    see 43's old writeup, now folded into plan.md), mirrored by `test/rooms.js`'s
+    `fastestTankSpeed()`). **`weight` was rescaled to nothing yet** — it is blocked on two human
+    calls (#16), so **ramming is still being judged in a game where knockback is wrong**, including
+    the item-6 browser checklist and `BASE_DRONE_DAMAGE`'s playtest. `weight`'s own consumption site
+    (`entities/Player.js`'s four collision arms) is now correct (`tick.impulse()`, not
+    `tick.perTick()`), so #16 will be tuning against the right site once it lands — it just has
+    nothing to tune yet. Do not retune anything else against the current knockback. See #16.
 
 32. **`BASE_DRONE_CHASE_SPEED`/`_TURN` will need re-pinning at least twice more.** The pair is
     pinned to a live measurement, so every retune that touches the speed ceiling moves it.
-    **Step 3 did it** (`back` ×1.914 → ceiling 501.7 → **527.2 u/s**, still a Sniper L15), and the
+    **Step 3 did it** (`back` ×1.914 → ceiling 501.7 → 527.2 u/s, still a Sniper L15), **and so did
+    the one-shot-impulse fix** (plan.md's dedicated step, formerly nuance 43 — undoing recoil's
+    ~0.64× live-tick shortfall → ceiling 527.2 → **559.2 u/s**, still a Sniper L15) — one more than
+    this item originally counted, since that fix wasn't anticipated when this was written. The
     remaining two are **#15's reload stat** if M3 says our ×2.23 is wrong, then **#16's `weight`**
     if knockback ever enters the recurrence. Always move both constants together:
     `turn = speed_u_per_s / 60 / 25` holds the ~60-unit turn radius, and `lib/config.js`'s comment
@@ -268,9 +280,13 @@ decision has its own numbered item above and is only cross-referenced here.*
     **Calibrate expectations from step 3 rather than from the "premium" framing.** The 1.38×/1.49×
     figures quoted before it compared the *ceiling* against a level-0 no-upgrade walk (362.25 u/s),
     not against the same tank's walk — the build that actually sets the ceiling is a **maxed-Movement
-    Sniper at L15, whose own walk is 473.8 u/s**, so recoil contributes only 27.9 u/s of the old
-    501.7 and 53.4 of the new 527.2. Doubling `back` therefore moved the ceiling **5.1%**, not ~40%,
-    and it stayed inside the test's own 5%-agreement band. Expect the same of #16's `weight`.
+    Sniper at L15, whose own walk is 473.8 u/s**, so recoil contributed only 27.9 u/s of the old
+    501.7, 53.4 of 527.2, and 85.4 of the current 559.2. Doubling `back` moved the ceiling **5.1%**,
+    not ~40%, and stayed inside the test's own 5%-agreement band without forcing a re-pin (it was
+    done anyway, for tidiness). Undoing the 0.64× shortfall moved the ceiling a further **5.7%** —
+    just over that band, which is why that re-pin was not optional: `npm test` failed until it
+    landed. Expect the same dampened-by-the-walk shape of #16's `weight`, and do not assume it will
+    stay inside the band just because the last two moves mostly did.
 
 ### Consequences of step 2 that are permanent, not transitional
 
@@ -337,40 +353,18 @@ decision has its own numbered item above and is only cross-referenced here.*
     mean something again.
 
 39. **Constants are denominated per `REF_TICK_MS` (40 ms) and converted at the consumption site.**
-    Getting the `lib/tick.js` category wrong (`perTick` / `drag` / `ticks` / `chance` / `quadratic` /
-    `lead` / `smoothing`) does not fail anything loudly — the value just silently stops being
-    real-world-correct at the live tick rate. Read that file's header before adding any new per-tick
-    constant, and note that several existing constants are deliberately **flat** (`AUTOTURRET_LEAD`,
-    the pet's `2.475`, `BOSS_DRIFT`) with the reasoning at each site. **Nuance 43 is a live instance
-    of exactly this.**
-
-43. **`tick.perTick()` is the wrong category for a ONE-SHOT velocity impulse, and recoil and every
-    collision knockback use it.** Found while landing plan.md step 3, pre-existing since the
-    `REF_TICK_MS` split, deliberately *not* fixed inside step 3 — it is a separate behavioural
-    change and folding it in would have made that step's `clientDiff` delta uninterpretable
-    (see 34). **This is not a step-3 regression; step 3's numbers are exactly right at the
-    reference tick.** The arithmetic, replayed rather than argued:
-    `Physics.stepBody` keeps `vec` in units **per reference tick** (`x += vx * dtTicks`), so a
-    velocity impulse added to it is already in reference units and must go in **flat**. Under
-    `perTick()` it is multiplied by `SCALE` *and* then integrated `SCALE`-sized steps, so the total
-    displacement picks up a spurious factor. For `back = 1.12` (Basic's 0.4 gu):
-
-    | | impulse via `tick.perTick()` | impulse flat |
-    |---|---|---|
-    | at 40 ms (`SCALE` 1) | 0.4000 gu | 0.4000 gu |
-    | at the live 25 ms (`SCALE` 0.625) | **0.2546 gu** | 0.4073 gu |
-
-    So the live game delivers **0.64×** the recoil the column says, where flat would deliver
-    1.018× — the same ordinary ~1.8% semi-implicit-Euler overshoot as 33, which is the tell that
-    flat is the right answer. Same bug, same size, at every other one-shot site:
-    `entities/Player.js`'s four collision impulses (lines ~423/436/461/498, including the `weight`
-    knockback #16 is about to rewrite). Contrast the genuinely per-tick uses of `perTick()` —
-    accelerations, `hp -= damage` per tick of contact — which are correct.
-    **The fix is a new `lib/tick.js` category** (`impulse(v) { return v; }`, flat, documented, so
-    the *category* records the decision rather than a bare unwrapped literal at each site), not an
-    edit to `back`. Doing it will move the speed ceiling and force another
-    `BASE_DRONE_CHASE_SPEED`/`_TURN` re-pin (32), so it wants its own step — and it wants deciding
-    **before** #16 rewrites `weight`, or that column gets tuned against a 0.64× consumption site.
+    Getting the `lib/tick.js` category wrong (`perTick` / `impulse` / `drag` / `ticks` / `chance` /
+    `quadratic` / `lead` / `smoothing`) does not fail anything loudly — the value just silently
+    stops being real-world-correct at the live tick rate. Read that file's header before adding any
+    new per-tick constant, and note that several existing constants are deliberately **flat**
+    (`AUTOTURRET_LEAD`, the pet's `2.475`, `BOSS_DRIFT`) with the reasoning at each site. **A
+    one-shot velocity impulse added into a body that reaches `Physics.stepBody` (recoil and every
+    Player collision knockback) is `impulse()`'s category, not `perTick()`'s — getting this wrong is
+    exactly what the old nuance 43 was, before plan.md's dedicated step fixed it. The reverse case —
+    a one-shot impulse into a body that integrates its own `vec` directly with no separate `dtTicks`
+    multiply (`entities/Bullet.js`, `entities/Objects.js`) — correctly stays `perTick()`; see that
+    function's own header comment in `lib/tick.js` for the derivation of why the two shapes need
+    opposite categories.**
 
 ### Judgement calls already taken that a later step could quietly undo
 
@@ -560,37 +554,41 @@ movement magnitudes plus the tank/body friction split — have shipped.*
     removed that. Since `back` is an impulse on *tank* velocity, none of this is affected by
     whatever M1 finds out about bullet motion — recoil follows the tank's `F`, always, and if `F`
     is ever edited again the whole column moves with it.
-    **One caveat that applies to `weight` too, before the column below is rewritten: see nuance 43.**
-    Both are consumed through `tick.perTick()`, which is the wrong `lib/tick.js` category for a
-    one-shot impulse, so the live 25 ms tick delivers ~0.64× of whatever the column says. That is a
-    consumption-site bug, not a column bug — do **not** compensate for it by inflating `weight`.)
+    **The consumption-site bug that used to apply to `weight` too is fixed** (plan.md's dedicated
+    one-shot-impulse step, formerly nuance 43): both `back` and `weight` are now consumed through
+    the new `tick.impulse()` category, not `tick.perTick()`, so the live 25 ms tick delivers the
+    column's full value rather than ~0.64× of it. That was a consumption-site bug, not a column bug,
+    and fixing it changed nothing about how short `weight` itself is — the numbers below are
+    correspondingly ~1.6× bigger than they were (1/0.64), not smaller.
 
     The gap, re-measured against the **live code path** (`entities/Player.js`'s bullet arm) rather
     than recomputed from the pre-rescale tree:
 
     | | diep, per loop of contact | ours, today | ratio |
     |---|---|---|---|
-    | basic bullet (`weight` 0.27426) | 0.667 gu | **0.0333 gu** | **20.1× weak** |
-    | common bullet (`weight` 0.45709) | varies by class | **0.0554 gu** | — |
+    | basic bullet (`weight` 0.27426) | 0.667 gu | **0.0532 gu** | **12.5× weak** |
+    | common bullet (`weight` 0.45709) | varies by class | **0.0887 gu** | — |
     | tank body | 1.6 gu | 0.29 gu *(pre-step-2, not re-measured)* | ~5.5× weak |
     | drones | 0.8 gu | no separate value | — |
 
-    **The conversion factor is 0.121222 gu of displacement per unit of `weight`** at the live 25 ms
-    tick, measured by replaying the real recurrence (impulse `tick.perTick(weight/3 × 1.6)` into
-    `this.vec`, decayed through `Physics.stepBody`). The full diep Knockbackfactor table is in
-    `physics.html`, so no measurement is left to do here.
+    **The conversion factor is 0.193955 gu of displacement per unit of `weight`** at the live 25 ms
+    tick, measured by replaying the real recurrence (impulse `tick.impulse(weight/3 × 1.6)` into
+    `this.vec`, decayed through `Physics.stepBody`) — up from the pre-fix 0.121222 by the same
+    1/0.64 the fix restored. At the 40 ms reference the same replay gives **0.190476** (matching what
+    the pre-fix writeup predicted this figure would be once the consumption-site bug was gone), and
+    that reference figure — not the live-tick one — is what a rewrite of the column should be
+    denominated against, same as `back`'s. The full diep Knockbackfactor table is in `physics.html`,
+    so no measurement is left to do here.
     **It was 0.264175 before plan.md step 2** — knockback lands on *tank* velocity, so it tracked
     #14's `F`: a one-shot impulse's total displacement is `v₀·F/(1−F)`, which went from 22.02·v₀ to
     10·v₀, i.e. ×0.454. Step 3 **re-verified the new figure by replaying the recurrence** rather
     than adopting that arithmetic (which predicted ~0.1200); the two bullet rows above were
     re-measured from the same replay, and the tank-body row was left alone because it comes off a
     different call site (`entities/Player.js:461`'s speed-dependent `len`) that is #16's own work to
-    revisit. **The gap therefore got worse, not better, at step 2** — a basic bullet's knockback is
-    20× short of diep now, where the pre-step-2 figure was 9.2×. Like `back`, all of this is
-    independent of whatever M1 finds about bullet motion. **And see nuance 43** — 0.121222 is a
-    *live-tick* number that includes a ~0.64× loss to a wrong `tick.js` category; at the 40 ms
-    reference the same replay gives 0.190476, and that is the figure a rewrite of the column should
-    be denominated against.
+    revisit. **The gap is smaller than step 3 left it, but only because the consumption-site bug is
+    gone, not because `weight` moved** — a basic bullet's knockback is 12.5× short of diep now,
+    where step 3 measured 20.1× (itself worse than the pre-step-2 9.2×, an unrelated effect of `F`
+    moving). Like `back`, all of this is independent of whatever M1 finds about bullet motion.
 
     **Two things block finishing it, both human calls:**
     - **~7 of our classes are not in diep's table at all**, so a complete replacement cannot be
@@ -611,74 +609,86 @@ movement magnitudes plus the tank/body friction split — have shipped.*
     diep also *inverts* knockback against damage — Destroyer 0.2 gu, Annihilator 0.1 gu, against
     Basic's 0.667 — where ours is nearly flat across those three.
 
-17. **Health, regen and body damage.**
-    - **Max health. `MH₀ = 50` — CONFIRMED, no longer a measurement task.** `diep_wiki/Stats.txt`
-      states it twice: `Base HP = 50 + [2 × (Level − 1)]`, "a level 1 tank has 50 HP, while a max
-      level tank (level 45) has 138 HP", and separately "the health of a level 1 tank is exactly
-      50.0". The Max Health stat is a flat **+20 HP/point** (table, 0–7 points → +0…+140; Smashers
-      alone go to 10 points / +200). So diep's split is exactly the **+180% leveling / +280% stat**
-      this item guessed at, against ours at +60%/+440%. Same shape (`MH₀ + 2·lvl + 20·mh` vs
-      `150 + 3/lvl + 110/pt`), very different balance of terms: diep is 10 levels per health point,
-      ours is 36.7. **That ratio is the real mismatch and it is now fully specified** — adopting it
-      is arithmetic, not research. Note this also unblocks #23's `BASE_DRONE_HP` question.
-      **The domain is ready**: `+20 HP/pt` is denominated in diep's 7-point cap, and ours is 7
-      since #30 shipped, so this can be adopted directly now. What it still needs is the lethality
-      call in [plan.md](plan.md) step 4 — our 150 HP pool against a ~4.85/loop bullet is ~31 loops
-      to kill where diep's 50 against 7 is ~7 (≈18 once #18's damage-reduction term is in), so
-      taking the HP side alone shortens time-to-kill 4–5× and #17 and #18 probably want landing
-      together.
-    - **Regen.** diep is linear in time: `HPS = MH × (0.03 + 0.12·rr)/30` → full heal in 1000 s at
-      0 points, 34.5 s at 7. Ours (`hpregan[1]` accumulates, then is added, every tick) is
-      *quadratic* — full heal in 46 s at 0 points, 28 s at max. So our base regen is **21× faster
-      than diep's** and our regen stat is nearly worthless (1.6× range vs diep's 29×).
-      **The out-of-combat rule is now documented: diep calls it "Hyper Regeneration".**
-      `diep_wiki/Stats.txt` — after **~30 s without taking damage** the regen rate "greatly
-      increases"; below that threshold the linear `1/30 × MaxHP × (0.03 + 0.12·rr)` applies.
-      That is what reconciles the two numbers this item treats as contradictory: at 0 points the
-      linear rate alone is 0.1%/s (1000 s to full), but the measured time-to-full is **31.97 s**,
-      because hyper regen takes over at 30. The wiki's full 0–7 table is 31.97 / 30.67 / 23.07 /
-      15.15 / 11.75 / 9.13 / 7.72 / 6.41 s, and "9 or more points" is where a tank refills before
-      the 30 s threshold is even reached. Shapes and projectiles have no slow regen but **do** hyper
-      regen (polygons: "regenerate health if left unharmed for at least thirty seconds").
-      So our quadratic accumulator is a crude stand-in for a real two-regime rule.
-      **DECIDED: implement both regimes** — the linear rate below the threshold and hyper regen
-      above it — rather than picking one curve. The hyper *rate* is not published, but it is
-      solvable from the time-to-full table above (at 0 points the linear rate alone would take
-      1000 s and the observed figure is 31.97 s, so the residual pins it). No measurement needed.
-      **Still
-      open; only the quantizer under it has been fixed.** `parseInt(hpregan[1] * maxHp * 10)/10`
-      truncated the per-tick *increment* to 0.1 HP, which is a floor with no carry: every tick
-      worth less than 0.1 HP healed nothing and threw the remainder away, so a 150 HP tank at 0
-      points sat at a dead 0 HPS for ~22 s, and the dead time *shrank* as maxHp grew. The increment
-      is applied unquantized now, so the curve is whatever the accumulator actually says — which
-      makes the linear-vs-quadratic decision above a clean one to measure.
-    - **Body damage.** At zero points in both stats, diep's tank body deals 2.86× a basic bullet's
-      per-loop damage (20 vs 7); ours deals 1.75× (7 vs 4). So ramming is relatively 1.6× weaker
-      here even before item 18's model differences. The stat *range* matches (diep `BS = 1+0.2·bd`
-      → 2.4× at 7; ours `damage 7 → 17.8` = 2.54× at 6). Absolute lethality vs the HP pool can't be
-      closed without `MH₀` (above).
+17. **Health and regen — SHIPPED** (plan.md step 4); **body damage magnitude still open.**
+    - **Max health — SHIPPED, diep's raw numbers, not a rescale.** `MH₀ = 50`, `+2/level`,
+      `+20/point`, adopted directly rather than mapped onto the old `150 + 3/lvl + 110/pt` shape —
+      there was no faithful ratio in that formula worth preserving. `entities/Player.js`'s
+      constructor, level-up and `upgrade()`'s `HpUp` case all read diep's numbers now. A maxed
+      level-45 tank lands on exactly diep's own **278** (`50 + 44×2 + 7×20`), which also resolved
+      #23's `BASE_DRONE_HP` question back to diep's raw 2000 (see #23).
+    - **Regen — SHIPPED, both regimes.** `entities/Player.js`'s `update()` reads diep's linear
+      `HPS = MaxHp × (0.03 + 0.12·rr)/30` below the hyper-regen threshold (`tick.ticks(750)`, 30 s)
+      and a flat, point-independent hyper rate above it — no accumulator, so no `lib/tick.js`
+      quadratic-vs-perTick miscategorisation risk is left in this file the way `hpregan` was. `rr`
+      is `up.HpRegan` read as a raw 0–7 point count now (the same conversion #14 gave `MSpeed`), not
+      an accumulated per-point rate.
+      **The hyper rate required a real derivation, and the naive reading this item's own text used
+      does not survive contact with the full published table.** "At 0 points the linear rate alone
+      would take 1000 s and the observed figure is 31.97 s, so the residual pins it" implicitly reads
+      the wiki's time-to-full table as healing from 0% of the pool — but diep_wiki's own caption says
+      the table measures recovery **after ramming into a Pentagon** (a fixed, partial damage amount,
+      not 0%), and diep_wiki's OWN second table (% of the pool regenerated in the pre-hyper 30 s
+      window) proves most of the 8 point-rows never even reach the hyper phase under a from-0%
+      reading — it would require finishing in negative time past ~2 points. Least-squares-fitting the
+      ram's damage fraction and the hyper rate together against all 8 published times (not just the
+      point-0 illustration) resolves cleanly: **`HYPER_REGEN_RATE = 0.085871`** (8.5871% of `maxHp`
+      per second, point-independent — diep_wiki: Shapes/Bullets hyper regen too and have no Regen
+      stat to gate it with), worst-case 0.7 s off across all 8 rows.
+      The old quantizer bug this item used to track (`parseInt(hpregan[1]*maxHp*10)/10` eating the
+      first ~22 s) is moot — the accumulator it quantized is gone.
+    - **Body damage — still open, and now clearly separate from #18's `dr` term.** At zero points in
+      both stats, diep's tank body deals 2.86× a basic bullet's per-loop damage (20 vs 7); ours deals
+      1.75× (7 vs 4). So ramming is relatively 1.6× weaker here even before item 18's model
+      differences. The stat *range* matches (diep `BS = 1+0.2·bd` → 2.4× at 7; ours `damage 7 → 17.8`
+      = 2.54× at 6). This is the *offensive* magnitude (how much damage this tank's body deals) —
+      untouched by #18's `dr` term (the *defensive* multiplier on damage taken, shipped) — and is
+      still open.
 
-18. **The damage *model* differs structurally — this is the big one, and it is not a retune.**
+18. **The damage *model* differs structurally — two of three consequences SHIPPED (plan.md step 9,
+    bundled with step 4 per the lethality call), the third is still open.**
     diep resolves a collision as mutual simultaneous destruction with partial-loop proration
     (the page's "3 laws"): each body has a constant damage-per-loop, each loses health equal to the
     *opponent's* DPL, and a body that dies mid-loop deals a proportionally reduced share
-    (`GH_L = GH'' × DPL''/DPL`). Three consequences we do not reproduce:
-    - **Body damage reduces damage taken.** `MH_L = 4·D_b/BS`, i.e. `dr = 1 − 4/(10·BS)` — a tank
-      takes 40% of a bullet's nominal DPL at `bd 0`, 16.7% at `bd 7`. Ours has no such term:
-      `entities/Player.js`'s player-vs-bullet arm is `hp -= other.damage * max(1, other.pene/5)` flat.
-    - **A bullet's health is spent against the target's damage output.** In diep a bullet
+    (`GH_L = GH'' × DPL''/DPL`). Three consequences, this item's original list:
+    - **Body damage reduces damage taken — SHIPPED.** `MH_L = 4·D_b/BS`, i.e. `dr = 1 − 4/(10·BS)` —
+      a tank takes 40% of a bullet's nominal DPL at `bd 0`, 16.7% at `bd 7`.
+      `entities/Player.js`'s `damageReduction()` (`0.4 / (1 + 0.2 × this.upNb[5])`) is applied at all
+      three `collision()` damage sites now. **The wiki's separately-quoted "−75% against
+      projectiles" figure is NOT this term** — that turned out to be `(BodyDamagePoints+5)×
+      multiplier`, diep's rule for how much damage *this tank's body* deals *to* a bullet on contact
+      (the offensive side, governing how fast the rammed bullet's own health depletes), not how much
+      damage this tank receives. Easy to conflate since both are "body damage" rules; only
+      `dr = 1−4/(10·BS)` is the defensive term this bullet point is actually about, and it is the one
+      built. (See #17's own Body Damage bullet for the *offensive* magnitude question, still open and
+      independent of this.)
+    - **A bullet's health is spent against the target's damage output — SHIPPED.** In diep a bullet
       (`BP = 20·Pf·PP` HP) loses HP equal to the target's DPL, so a high-body-damage tank eats
-      bullets faster. Ours spends penetration against *itself*: `pene -= max(1, pene/5)`
-      (`entities/Bullet.js`), target-independent.
-    - **Penetration → damage is a coincidence, not a design.** diep's health loss per bullet does
-      scale with penetration (`D_b ∝ PP`, because a tougher bullet survives more loops of contact),
-      so our `× max(1, pene/5)` is accidentally the right *shape* — but the magnitude is off
-      (diep ×6.25 at max bp; ours ×2.89 at max) and ours has a dead zone below `pene 5` where the
-      stat does nothing at all. Stat slope is 0.75/pt (diep) vs 1.25/pt (ours).
+      bullets faster. `entities/Bullet.js`'s `collision()` used to do this only for base drones
+      (`type === 1.4`, because a drone's `pene` is a 2000-point health pool rather than a spend-down
+      budget) while an ordinary bullet spent against itself (`pene -= max(1, pene/5)`,
+      target-independent) — that special case turns out to generalize to every bullet, so both the
+      `KIND.PLAYER` and `KIND.OBJECTS` arms read `pene -= tick.perTick(other.damage)`
+      unconditionally now, and the type-1.4 ternary is gone rather than rewritten.
+    - **Penetration → damage is a coincidence, not a design — still open, deliberately.** diep's
+      health loss per bullet does scale with penetration (`D_b ∝ PP`, because a tougher bullet
+      survives more loops of contact), so our `× max(1, pene/5)` is accidentally the right *shape* —
+      but the magnitude is off (diep ×6.25 at max bp; ours ×2.89 at max) and ours has a dead zone
+      below `pene 5` where the stat does nothing at all. Stat slope is 0.75/pt (diep) vs 1.25/pt
+      (ours). **Unlike the two above, this bullet point never had a drop-in replacement formula** —
+      it names a discrepancy, not a decided target formula — and a straight substitution isn't
+      available the way it was for the other two: our `up.BPene` is a *compound* stat (one multiplier
+      scales a bullet's own spawned `pene`/health at `Bull.pene = up.BPene × can.pene`, and a
+      *second*, separate read of that already-scaled value is what produces the measured
+      "×2.89, 1.25/pt"). Matching diep's `1 + 0.75×points` cleanly would mean turning `BPene` into a
+      raw point count (the conversion `MSpeed`/`HpRegan` already got) *and* rescaling every
+      `can.pene` in `public/SHARE/TanksConfig.js` alongside it — a second column-wide rescale in the
+      shape of step 3's `back`, not a two-line change, and outside what the lethality question asked
+      for. Left as a finding, not silently dropped.
 
-    Adopting the real model would touch every `collision()` in `entities/`. It is the difference
-    between "ramming is a build" and "ramming is chip damage", so it is a design call, not a bug
-    fix — but nothing else in this section will make combat feel like diep on its own.
+    Adopting the full real model would touch every `collision()` in `entities/`; two of the three
+    consequences now do. The third is the difference between "ramming is a build" and "ramming is
+    chip damage" for the *penetration* dimension specifically, and stays a design call for whenever
+    someone wants BPene's own point economy revisited.
 
 19. **Arena and shape density — the world is emptier per screen than diep's.** (The FOV half of
     this item is done: `config.FOV_MUL` 1.39 and multiplicative `FOV_PER_LEVEL` 1.005.)
@@ -736,21 +746,27 @@ movement magnitudes plus the tank/body friction split — have shipped.*
     shape drift (**M4**), camera lag (`CONST.CAM_SMOOTH`, **M5**) and `CONST.HP_BAR_HOLD` (**M6**).
     That file also lists the ~14 quantities that are already pinned and must **not** be re-measured.
 
-    Two things about the base drones stay open:
-    - **The HP scale — the blocker is gone, the decision is not.** `BASE_DRONE_HP: 2000` is the
-      wiki's number on *diep's* HP scale, and ours is not diep's — our base tank is 150 HP, and a
-      maxed tank here is 945 at the 45-level cap (`150 + 3·45 + 660`; it was 900 at 30 levels, the
-      figure this item was originally written against). **`MH₀ = 50` is now confirmed** (#17), so diep's base drone really
-      is ~7.1× a maxed diep tank, and the faithful number on our scale really is **~6400, not
-      2000** — a 3.2× increase. **DECIDED: go to ~6400**, i.e. stay true to diep rather than keep
-      the 2000 that was shipped on "very durable but killable". Recompute the exact figure against
-      whatever a maxed tank's HP becomes once #17's `+20/pt` lands (#30's 7-point cap has shipped,
-      so a maxed pool is `150 + 3·45 + 660` on today's health model), since 6400 is derived from
-      that pool rather than being a constant in its own right.
+    One thing about the base drones is now resolved, one stays open:
+    - **The HP scale — SHIPPED (plan.md step 5), and the answer is NOT what this item predicted.**
+      `BASE_DRONE_HP` stays exactly **2000**. This item used to reason: our base tank was 150 HP, a
+      maxed tank was 945 at the cap (`150 + 3·45 + 660`, our OLD custom formula), diep's own drone is
+      ~7.1× a maxed diep tank, so the faithful figure on OUR (then-inflated) scale was ~6400 — a 3.2×
+      increase, decided. That reasoning was correct for the formula it was written against, but #17's
+      Max Health (above) didn't rescale that formula, it *replaced* it wholesale with diep's own raw
+      `MH₀=50, +2/level, +20/point`. A maxed tank's pool on our scale is now, exactly, diep's own
+      maxed pool (`50 + 44×2 + 7×20 = 278`) — verified by running the real `upgrade()`/level-up code,
+      not asserted. `2000 / 278 = 7.194`, matching the wiki's "~7.1×" exactly, because there is no
+      longer a scale gap between "diep's HP scale" and "ours" for a ratio to bridge — they're the
+      same scale now. So the derived figure converges back to diep's own raw 2000; nothing in
+      `lib/config.js` needed to change except the comment explaining why.
     - **`BASE_DRONE_DAMAGE: 2.97`** is derived (`8.48485 × 7/20`, our tank body damage scaled by the
       wiki's 7-per-loop against diep's 20-per-loop tank body), not observed. At today's rate that is
-      ~74 HP/s from a single drone, so a swarm of twelve kills a 945 HP tank in about a second.
-      Playtest it before treating it as settled.
+      ~74 HP/s from a single drone, nominal. Against a fresh (0-body-damage-point) victim, #18's `dr`
+      term now cuts that to ~30 HP/s effective (`×0.4`) — but #17's health model also cut a maxed
+      tank's pool 945 → 278, and the two don't cancel: a swarm of twelve still kills a maxed tank in
+      well under a second (`278 / (12 × 74 × 0.4) ≈ 0.78 s`, against the old ~1.06 s). Playtest it
+      before treating it as settled — the two changes' *combination* here was never separately
+      checked.
     - `CONST.MAX_UP_POINTS` (33) and `CONST.MAX_PER_STAT` (7) are hand-mirrored between client and
       server, next to the input-prediction constants in item 24 — `test/rooms.js` cross-checks both
       against `entities/Player.js` since #30, so the pair can no longer drift silently.

@@ -41,6 +41,34 @@ const AUTOTURRET_LEAD = 15.84;
 const SPIN_RATE = 0.04;
 
 /*
+	Regen, two regimes (PENDING #17, plan.md step 4): diep_wiki/Stats.txt's linear rate below the
+	hyper-regen threshold, hyper regen above it. Both are read directly in update() - no accumulator
+	any more, so no lib/tick.js "quadratic" category is needed here either; each is a genuine
+	per-reference-tick rate, tick.perTick()'d like any other.
+
+	HYPER_REGEN_DELAY: "the rate of regeneration greatly increases after approximately 30 seconds"
+	of no damage taken - 30000ms / REF_TICK_MS(40) = 750 reference ticks, converted once at load via
+	tick.ticks() to whatever TICK_MS actually is.
+
+	HYPER_REGEN_RATE: NOT published, so solved from diep_wiki/Stats.txt's own two tables rather than
+	guessed. The wiki's "Time to Regen to Full Health" table (0-7 Regen points: 31.97 / 30.67 /
+	23.07 / 15.15 / 11.75 / 9.13 / 7.72 / 6.41 s) is captioned "the amount of time... to fully
+	restore its health AFTER RAMMING INTO A PENTAGON" - i.e. it is NOT healing from 0% (the reading
+	plan.md's own writeup used as a illustrative shorthand), it is healing back a single ram's fixed
+	damage fraction D of MaxHp. Taking that literally and least-squares-fitting the two unknowns (D
+	and this rate) against all 8 published times - not just the point-0 illustration - lands at
+	D = 0.2011 (a single ram costs ~20% of the pool) and this rate, with a max residual of 0.7s
+	across all 8 points (the wiki itself: "Percentages and statistics on this page are merely
+	approximate"). The naive "healing from 0%" reading is internally INCONSISTENT past 1-2 Regen
+	points (it demands the tank finish healing in negative time by point 3), which is what rules it
+	out here rather than it being an arbitrary preference between two equally-valid fits.
+	Point-independent on purpose: diep_wiki/Stats.txt says Shapes/Bullets have no slow regen of
+	their own but DO hyper regen, so a Regen stat (which they don't have) cannot gate its rate.
+*/
+const HYPER_REGEN_DELAY = tick.ticks(750);
+const HYPER_REGEN_RATE = 0.085871;   // fraction of maxHp healed per SECOND once hyper regen is active
+
+/*
 	The upgrade economy, diep's own (PENDING #30 / plan.md step 1): 45 levels, 7 points per stat,
 	33 points over a life, one class tier every 15 levels.
 
@@ -103,9 +131,16 @@ class Player {
 		this.xp = 0;
 		this.coins = 0;
 		this.userKey = 0;
-		this.maxHp = 150;
-		this.hpregan = [0, 0];
+		// diep's own MH0 (diep_wiki/Stats.txt: "Base HP = 50 + [2 x (Level - 1)]", "the health of a
+		// level 1 tank is exactly 50.0") - PENDING #17, plan.md step 4. Not a rescale of the old 150;
+		// the whole formula (this, the level-up +2 below, and HpUp's +20/pt in upgrade()) is diep's
+		// raw numbers, adopted directly now that #30 made our stat/level caps diep's too.
+		this.maxHp = 50;
+		// Ticks since the last HP loss, real-tick-denominated - drives the hyper-regen threshold in
+		// update(). Not the old quadratic accumulator (hpregan); see update()'s regen block.
+		this.noDamageTicks = 0;
 		this.hp = this.maxHp;
+		this.lastHp = this.hp;
 		this.prize = 100;
 		this.autoDir = 0;
 		// The `c` auto-spin's own phase. Seeded from wherever the barrel is pointing the moment the
@@ -164,7 +199,7 @@ class Player {
 			"BDamage": 1,//4
 			"BodyDam": 1,//5
 			"HpUp": 0,    //6
-			"HpRegan": 1  //7
+			"HpRegan": 0  //7, a point COUNT (diep_wiki/Stats.txt's "Regen Stat") since PENDING #17
 		}
 		this.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
 		this.recoil = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -300,7 +335,12 @@ class Player {
 					Bull.size = this.boss ? can.size : can.size * ra;
 					Bull.weight = can.weight;
 					this.room.createBullet(Bull, this)
-					this.vec.add(new Vec(tick.perTick(can.back), 0).rotate(dir - Math.PI));
+					// tick.impulse(), not tick.perTick(): this.vec is fed into Physics.stepBody, which
+					// re-scales it by dtTicks on every subsequent position step, so a one-shot impulse
+					// landing in vec is already reference-tick-denominated and must go in flat or it is
+					// scaled by dtTicks twice (PENDING #43) - at the live 25ms tick perTick() delivered
+					// only 0.64x of what the `back` column states.
+					this.vec.add(new Vec(tick.impulse(can.back), 0).rotate(dir - Math.PI));
 					if (maxD && can.life === -1) {
 						this.droneCount++;
 					}
@@ -345,20 +385,25 @@ class Player {
 					nb++;
 					if (nb !== data) { continue; }
 					/*
-						Every step below is the old 6-point-span value x 6/7 (PENDING #30): the cap
-						moved to 7, so an unchanged step would have handed a maxed stat ~17% more
-						than it was ever tuned to give. Scaling the step instead keeps each stat's
-						*maxed* value exactly where it was and only changes the granularity, which
-						is the conversion this item asks for and not a stealth buff.
+						Every step below except MSpeed/HpRegan/HpUp is the old 6-point-span value x 6/7
+						(PENDING #30): the cap moved to 7, so an unchanged step would have handed a
+						maxed stat ~17% more than it was ever tuned to give. Scaling the step instead
+						keeps each stat's *maxed* value exactly where it was and only changes the
+						granularity, which is the conversion this item asks for and not a stealth buff.
 
-						Two exceptions. MSpeed is a point COUNT since #14's form fix, so it becomes
-						diep-correct on its own the moment the cap is 7 - nothing to rescale.
-						HpUp is rescaled here for consistency but is on borrowed time either way:
-						#17 replaces the whole health model (MH0 = 50, +2/level, +20/point) with the
-						7-point cap this step establishes as its domain.
+						Three exceptions, all point COUNTS rather than accumulated bonuses, so they
+						become diep-correct on their own the moment the cap is 7 - nothing to rescale.
+						MSpeed since #14's form fix; HpRegan and HpUp since #17's health model (plan.md
+						step 4) replaced the old health formula wholesale with diep's own raw numbers
+						(MH0 = 50, +2/level, +20/point, "Regen Stat" 0-7 read directly into
+						diep_wiki/Stats.txt's HPS formula in update()) rather than rescaling the old
+						110/0.28-per-point figures - there was nothing faithful about those to preserve.
 					*/
 					switch (i) {
-						case "HpRegan": this.up[i] += 0.24; break;         // 0.28 x 6/7
+						// A point COUNT (diep_wiki/Stats.txt's "Regen Stat", read directly by update()'s
+						// HPS = MaxHp*(0.03+0.12*rr)/30 - see the constant there), not an accumulated
+						// per-tick rate any more.
+						case "HpRegan": this.up[i] += 1; break;
 						case "Reload": this.up[i] -= 0.0788571; break;     // 0.092 x 6/7
 						case "BSpeed": this.up[i] += 0.0942857; break;     // 0.11 x 6/7
 						case "BDamage": this.up[i] += .1714286; break;     // 0.2 x 6/7
@@ -369,15 +414,13 @@ class Player {
 						// keeping the count here rather than in upNb[0] leaves every caller of
 						// moveAccel(this.up.MSpeed, ...) reading the same field it always did.
 						case "MSpeed": this.up[i] += 1; break;
-						// The ratio comes off the OLD maxHp, so the point heals you by exactly the
-						// fraction it added. Reading the old value can't drift out of sync with the
-						// step the way the literal it replaces did.
-						// The parseInt that used to wrap this heal is gone with the 6/7 rescale: hp is
-						// a float everywhere else already (update()'s regen adds a fractional amount
-						// every tick, and the wire carries hp as a fraction of maxHp), and against a
-						// step that is no longer a whole number the truncation cost up to 1 hp per
-						// point - a full-health tank that filled the bar ended 2 hp short of full.
-						case "HpUp": this.hp *= (this.maxHp + 94.28571) / this.maxHp; this.maxHp += 94.28571; break;   // 110 x 6/7
+						// diep's own flat +20 HP/point (diep_wiki/Stats.txt), not a rescale of the old
+						// 110. The ratio comes off the OLD maxHp, so the point heals you by exactly the
+						// fraction it added - same proportional-heal shape the old 110-point step used,
+						// carried forward rather than reinvented. hp stays a float (update()'s regen
+						// adds a fractional amount every tick, and the wire carries hp as a fraction of
+						// maxHp), so no truncation risk here.
+						case "HpUp": this.hp *= (this.maxHp + 20) / this.maxHp; this.maxHp += 20; break;
 						case "BodyDam": this.damage += 1.870131; break;   // 2.18182 (itself 1.8 one-time-rescaled from the 33ms ref) x 6/7
 					}
 					break;
@@ -415,12 +458,24 @@ class Player {
 			return;
 		}
 	}
+	// Body damage reduces damage taken (PENDING #18, plan.md step 9 - landed with step 4's health
+	// model per the lethality call, since adopting the HP side alone without this would have
+	// shortened time-to-kill 4-5x). diep_wiki/Stats.txt + PENDING #18: BS = 1 + 0.2*bd, and a tank
+	// takes 0.4/BS of a nominal DPL from any source - 40% at bd 0 (BS 1), 16.7% at bd 7 (BS 2.4).
+	// `this.upNb[5]` is BodyDam's own point count (the `up` object's index, same convention as
+	// upgrade()'s switch); `this.up.BodyDam`/`this.damage` track the OFFENSIVE side (damage this
+	// tank deals) and are untouched - this is the separate DEFENSIVE term #18 says we lack.
+	damageReduction() {
+		return 0.4 / (1 + 0.2 * this.upNb[5]);
+	}
 	collision(other, option = {}) {
 		if (this.dev.ghost) { return; }
 		if (option.type) {
 			switch (option.type) {
 				case 'god':
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(0.87761), tick.perTick(0.87761))));
+					// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody,
+					// see the `back` comment above and PENDING #43.
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(0.87761), tick.impulse(0.87761))));
 					return;
 			}
 		}
@@ -433,9 +488,12 @@ class Player {
 		const oldHp = this.hp;
 		switch (other.kind) {
 			case KIND.PLAYER:
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(0.43881), tick.perTick(0.43881))));
+				// tick.impulse(), not tick.perTick() - see the `back` comment above and PENDING #43.
+				// The hp drain below stays perTick(): it is genuine per-tick-of-contact damage, not
+				// a one-shot impulse.
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(0.43881), tick.impulse(0.43881))));
 				if (option.noDam || this.shield) { break; }
-				this.hp -= tick.perTick(other.damage);
+				this.hp -= tick.perTick(other.damage * this.damageReduction());
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) {
 					this.dead = tick.DEAD_DELAY;
@@ -458,7 +516,10 @@ class Player {
 				// 16/25/33/40) rather than assumed. Wrapping this threshold in tick.perTick() would
 				// make it track REF_TICK_MS instead and be the thing that's actually TICK_MS-sensitive.
 				const len = (this.vec.length() < 0.5) ? 2.92538 : .73134;   // one-time-rescaled from 2 / .5 (stepBody factor)
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(len), tick.perTick(len))));
+				// tick.impulse(), not tick.perTick() - see the `back` comment above and PENDING #43.
+				// (The 0.5 threshold above this.vec.length() is a separate, correctly-unwrapped read
+				// of this.vec's own magnitude - untouched.)
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(len), tick.impulse(len))));
 				if (this.necro && other.type === 'sqr' && this.droneCount < CLASS[this.class].maxDrone + this.upNb[1]) {
 					this.droneCount++;
 					const Bull = new Bullet(this.id, other.x, other.y, Math.random() * Math.PI * 2, this.up.BSpeed * this.necro.speed, 0, this.room);
@@ -474,7 +535,7 @@ class Player {
 					return;
 				}
 				if (this.shield) { return; }
-				this.hp -= tick.perTick(other.damage);
+				this.hp -= tick.perTick(other.damage * this.damageReduction());
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) {
 					this.dead = tick.DEAD_DELAY;
@@ -495,14 +556,17 @@ class Player {
 				// friction) knockback mechanism; the player receiving it decays that impulse
 				// through Physics.stepBody instead, which needs a further x1.6 (the ratio between
 				// the two mechanisms' correct one-time factors, see Physics.js).
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(other.weight / 3 * 1.6), tick.perTick(other.weight / 3 * 1.6))));
+				// tick.impulse(), not tick.perTick() - see the `back` comment above and PENDING #43;
+				// this is the `weight` knockback nuance 43 flagged as needing to move before #16
+				// rewrites the column, so #16 tunes against the right consumption site.
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(other.weight / 3 * 1.6), tick.impulse(other.weight / 3 * 1.6))));
 				if (this.shield) { return; }
 				// A base drone's `pene` is a health pool, not a penetration value (rooms/Room.js's
 				// spawnBaseDrone), so reading it as one dealt 400x damage and killed any tank in a
 				// single tick. Same substitution entities/Objects.js:164 already
 				// makes.
 				const pene = (other.type === 1.4) ? config.BASE_DRONE_PENE : other.pene;
-				this.hp -= tick.perTick(other.damage * Math.max(1, pene / 5));
+				this.hp -= tick.perTick(other.damage * Math.max(1, pene / 5) * this.damageReduction());
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
 				break;
@@ -552,31 +616,31 @@ class Player {
 				this.destroy = tick.DES;
 				this.dead = 1;
 			}
-			if (this.hpregan[0] > this.hp) {
-				this.hpregan[0] = this.hp;
-				this.hpregan[1] = 0;
+			// Hyper-regen gate: any HP loss resets the no-damage clock. Capped at the threshold
+			// rather than left to grow unbounded over a long AFK stretch. One tick of slop by
+			// construction (this compares against the value stored at the END of last tick's pass,
+			// i.e. before whatever happened to hp since) - the same shape the old hpregan[0]
+			// baseline used, harmless against a 750-tick threshold.
+			if (this.hp < this.lastHp) {
+				this.noDamageTicks = 0;
 			} else {
-				this.hpregan[0] = this.hp;
+				this.noDamageTicks = Math.min(this.noDamageTicks + 1, HYPER_REGEN_DELAY);
 			}
 			if (this.hp < this.maxHp) {
-				// 673818.75 = 990000 one-time-rescaled (33ms ref) for this quadratic accumulator -
-				// it integrates twice over ticks, so tick.quadratic() (SCALE^2) applies at the
-				// increment, not the hp += below, which just reads the already-scaled result.
-				this.hpregan[1] += tick.quadratic(this.up.HpRegan / 673818.75);
-				// PENDING #17: this used to be `parseInt(x * 10) / 10`, quantizing the *per-tick
-				// increment* to 0.1 HP. Truncating an increment is not rounding, it is a floor with
-				// no carry: every tick where the accumulator was worth less than 0.1 HP healed
-				// exactly nothing and threw the remainder away, so a 150 HP tank at 0 regen points
-				// sat at a dead 0 HPS for the first ~22 seconds. Worse, the dead time was
-				// `0.1 / (accumulator x maxHp)` - it *shrank* as maxHp grew, so the tanks with the
-				// most health to recover were the only ones regenerating promptly.
-				// Whether the accumulator should be quadratic at all is a separate open call in
-				// #17; this only stops the quantizer from eating it.
-				this.hp += this.hpregan[1] * this.maxHp;
+				const hps = (this.noDamageTicks >= HYPER_REGEN_DELAY)
+					// Point-independent (see HYPER_REGEN_RATE's comment above) - /25 converts diep's
+					// published per-SECOND rate to per-REFERENCE-tick, then tick.perTick() below
+					// converts that to the live tick, same two-step shape the linear branch uses.
+					? this.maxHp * HYPER_REGEN_RATE / 25
+					// diep_wiki/Stats.txt: HPS = MaxHp x (0.03 + 0.12 x Regen Stat) / 30, per SECOND;
+					// /25 is the same per-reference-tick conversion as the hyper branch above.
+					: this.maxHp * (0.03 + 0.12 * this.up.HpRegan) / 30 / 25;
+				this.hp += tick.perTick(hps);
 				this.hp = Math.min(this.maxHp, this.hp);
 			} else {
 				this.hp = this.maxHp;
 			}
+			this.lastHp = this.hp;
 		}
 		///
 		if (CLASS[this.class].alpha) {
@@ -601,8 +665,11 @@ class Player {
 			// levels 18 and 27 were how a 1-point-per-level grant was clawed back down to a
 			// 28-point budget; the budget is a schedule now (pointsAtLevel), so a level-up only
 			// ever levels you up.
-			this.hp += 3;
-			this.maxHp += 3;
+			// diep's own +2 HP/level (PENDING #17, plan.md step 4) - not a rescale of the old 3.
+			// A fresh spawn is `this.level` 0 (diep's level 1, MH0 = 50 already), so this fires once
+			// per level-UP thereafter and lands on diep's 138 at the level-45 cap (50 + 44*2).
+			this.hp += 2;
+			this.maxHp += 2;
 			this.level++;
 			if (this.level >= this.XPLVL.length) { this.unlock('the_end'); }
 		}
@@ -666,5 +733,10 @@ Player.AUTOTURRET_LEAD = AUTOTURRET_LEAD;
 Player.MAX_PER_STAT = MAX_PER_STAT;
 Player.LEVEL_CAP = LEVEL_CAP;
 Player.pointsAtLevel = pointsAtLevel;
+
+// Regen (PENDING #17), exposed for the same reason: test/rooms.js's tick-scale suite drives the
+// real hyper-regen threshold/rate rather than a restated copy.
+Player.HYPER_REGEN_DELAY = HYPER_REGEN_DELAY;
+Player.HYPER_REGEN_RATE = HYPER_REGEN_RATE;
 
 module.exports = Player;

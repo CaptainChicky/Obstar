@@ -91,8 +91,8 @@ cookie.
 | `rooms/TwoTeam.js` | 108 | 2-team: two base strips, guard drones, team colours. |
 | `rooms/FourTeam.js` | 134 | 4-team: four corner bases, guard arcs, team colours. |
 | `rooms/BossMode.js` | 39 | Boss hunt: ffa with the boss knobs turned up. |
-| `entities/Player.js` | 508 | Tank entity: motion, shooting, upgrades, class changes, collision. Takes a `room` constructor argument (§3). |
-| `entities/Bullet.js` | 468 | Projectiles, incl. drone/trap/necro behaviour. Takes a `room` constructor argument (§3). |
+| `entities/Player.js` | 742 | Tank entity: motion, shooting, upgrades, class changes, collision. Takes a `room` constructor argument (§3). |
+| `entities/Bullet.js` | 1308 | Projectiles, incl. drone/trap/necro behaviour. Takes a `room` constructor argument (§3). |
 | `entities/Objects.js` | 220 | Farmable polygons. Takes a `room` constructor argument (§3). |
 | `entities/Detector.js` | 94 | Invisible "vision cone" query entity used by AI. A leaf — no `room`/`controller` reference needed. |
 | `lib/gameAI.js` | 490 | Bot/boss/pet AI. A plain module now — `Detector`/`Vec`/`BODY_FRICTION`/`CLASS`/`DES` are all leaves, so `module.exports = CONFIG` directly. Bots steer through `Physics.stepBody` (tank `FRICTION`); the boss's drift and the pet do not. |
@@ -100,7 +100,7 @@ cookie.
 | `lib/SlotMap.js` | 128 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. `maxIndex` is the highest allocatable id, not a capacity. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
 | `lib/config.js` | ~100 | Live tunables/flags. **`TICK_MS`/`REF_TICK_MS`** live here — read §3/§4 first. Also `FOV_*`, `OOB_MARGIN`, `BASE_DRONE_*` and `BASE_BULLET_MARGIN` (§4). |
-| `lib/tick.js` | ~55 | `SCALE = TICK_MS/REF_TICK_MS` and the `perTick`/`drag`/`ticks`/`chance`/`quadratic`/`lead`/`smoothing` conversions every per-reference-tick constant is read through (massplanchunks WP3). |
+| `lib/tick.js` | ~96 | `SCALE = TICK_MS/REF_TICK_MS` and the `perTick`/`impulse`/`drag`/`ticks`/`chance`/`quadratic`/`lead`/`smoothing` conversions every per-reference-tick constant is read through (massplanchunks WP3). |
 | `lib/db.js` | ~25 | The one Postgres connection point — `db.enabled`, `db.query()`, `db.check()`. Off unless `config.DB.ON`. |
 | `lib/terminal.js` | 34 | Terminal colour codes (`termColors`). |
 | `lib/constants.js` | 32 | **The tank/body friction split**, and the one place it is written down: re-exports the tank's `TANK_FRICTION` from `public/SHARE/Physics.js`, owns `BODY_FRICTION` (bullets, traps, drones, shapes, the boss's drift). |
@@ -152,12 +152,22 @@ The things in this codebase that are *not* obvious from reading the code around 
   constant in `entities/`, `lib/gameAI.js` and `public/SHARE/TanksConfig.js` is denominated
   against" (`REF_TICK_MS`) — the server now steps at diep.io's own real rate (40 Hz) while every
   constant is still readable as "per 40ms of gameplay," converted to the actual step at its
-  consumption site by `lib/tick.js`'s `perTick()`/`drag()`/`ticks()`/`chance()`/`quadratic()`/
-  `lead()`/`smoothing()`. Changing `TICK_MS` alone is a simulation-cost knob, not a balance
-  change, because of that split — but if you ever add a *new* per-tick constant, get the category
-  right (see `lib/tick.js`'s header) or it silently drifts from real-world-correct. `SEND_MS`
-  must stay `>= TICK_MS`, or consecutive packets carry an identical world and the client's
-  interpolator reads that as "this entity stopped."
+  consumption site by `lib/tick.js`'s `perTick()`/`impulse()`/`drag()`/`ticks()`/`chance()`/
+  `quadratic()`/`lead()`/`smoothing()`. Changing `TICK_MS` alone is a simulation-cost knob, not a
+  balance change, because of that split — but if you ever add a *new* per-tick constant, get the
+  category right (see `lib/tick.js`'s header) or it silently drifts from real-world-correct.
+  **A one-shot velocity impulse needs the OPPOSITE category depending on how its body integrates
+  position**: `entities/Player.js`'s recoil and collision knockback route through
+  `Physics.stepBody`, which re-scales `vec` by `dtTicks` on every subsequent position step, so an
+  impulse landing in `vec` is already reference-tick-denominated and must be `impulse()` (flat) —
+  wrapping it in `perTick()` scales it by `SCALE` a second time and starves it at the live tick
+  (PENDING's old nuance 43, fixed). `entities/Bullet.js` and `entities/Objects.js` integrate their
+  own `vec` into position directly (`x += vec.x`, no `dtTicks` multiply of their own), so a one-shot
+  impulse there correctly stays `perTick()` — the `SCALE` factor it applies there IS the tick-rate
+  correction. Get the wrong one and it doesn't fail loudly, it just silently stops being
+  real-world-correct at the live tick rate; `lib/tick.js`'s header comments for both functions carry
+  the full derivation. `SEND_MS` must stay `>= TICK_MS`, or consecutive packets carry an identical
+  world and the client's interpolator reads that as "this entity stopped."
 - **Never destructure or cache a value off client `CLIENT` at module load time.** The server side
   no longer has an `RT`-style registry to worry about (below) — this rule is client-only now.
   `CLIENT.Run()` builds `User`/`Instances`/the 2D context after every `public/client/*.js` file has
@@ -181,8 +191,11 @@ The things in this codebase that are *not* obvious from reading the code around 
   diep's own per-shot recoil table in grid squares run through `back = gu × 28 × (1−F)/F` — which at
   `F = 10/11` is exactly `gu × 2.8`, i.e. every entry in that column reads as its diep gu value ×
   2.8. Edit `FRICTION` and that column has to be recomputed with it; nothing tests the relationship.
-  Knockback (`weight`) has the same shape but has **not** been rescaled yet — it is blocked on two
-  human calls (PENDING #16). `public/SHARE/TanksConfig.js`'s
+  The column is consumed through `tick.impulse()`, not `tick.perTick()` (see above) — a one-time fix
+  that raised the drone-chase ceiling 527.2 → 559.2 u/s with no change to `back` itself. Knockback
+  (`weight`) has the same shape but the column has **not** been rescaled yet — it is blocked on two
+  human calls (PENDING #16); its consumption site is already correct (`tick.impulse()`), so #16 will
+  tune against the right site once it lands. `public/SHARE/TanksConfig.js`'s
   client (drawn) and server (spawn) cannon tables are cross-checked index-by-index by
   `test/tanks.js`, which fails `npm test` on drift instead of relying on a comment asking the next
   editor to keep two hand-authored tables in sync. What it caught (plan.md WP-CANNON, PENDING
@@ -191,6 +204,31 @@ The things in this codebase that are *not* obvious from reading the code around 
   `offx` mirrored against the server's, so the recoil bitfield animated the barrel that did *not*
   fire — fixed. Summoner's drawn barrel is still short of its own spawn point on purpose (closing
   it means growing a boss's silhouette, a human call); see PENDING.md's balance-call item.
+- **Health, regen and the damage-taken side of combat are diep's own numbers now** (PENDING #17/#18,
+  plan.md steps 4/9). `entities/Player.js`'s `maxHp` starts at diep's `MH₀ = 50`, gains `+2` per
+  level-up and `+20` per Max Health point (`upgrade()`'s `HpUp` case) — not a rescale of the old
+  `150`/`+3`/`+110`; there was no ratio in that formula worth preserving. Regen reads two direct
+  `tick.perTick()` rates out of `update()` — diep's linear `HPS = maxHp×(0.03+0.12×rr)/30` below a
+  `tick.ticks(750)` (30 s) no-damage threshold, and a flat `HYPER_REGEN_RATE` (8.5871%/s, the same
+  for every entity — least-squares-fit against diep_wiki's full 8-point time-to-full table, since the
+  naive "healing from 0%" reading of that table is internally inconsistent past ~2 Regen points)
+  above it — no accumulator, so the `lib/tick.js` quadratic-vs-perTick miscategorisation risk the old
+  `hpregan` accumulator carried is gone with it. `damageReduction()` (`0.4 / (1 + 0.2×bd)`, `bd` =
+  `this.upNb[5]`) is the *separate*, newly-added defensive term: every `collision()` damage site
+  multiplies by it now, so a tank's own Body Damage points reduce damage it takes from any source —
+  diep's `dr` rule, not to be confused with the wiki's similarly-worded but *offensive*
+  `(BodyDamagePoints+5)×multiplier` rule (how much damage this tank's body deals to what it hits,
+  untouched). `entities/Bullet.js`'s `collision()` spends a bullet's own `pene` against the *target's*
+  damage output (`other.damage`) unconditionally now, not against itself — previously only base
+  drones worked this way (their `pene` is a 2000-point health pool, not a spend-down budget), and
+  that reasoning turned out to generalize to every bullet. `BASE_DRONE_HP` stays `2000`: a maxed
+  tank's pool is now exactly diep's own (`278`), so the ratio a fresh reader might reach for
+  (`~7.1× a maxed tank`) resolves back to diep's raw number rather than a scaled-up one.
+  **Left deliberately unshipped**: penetration→damage magnitude (diep's `1+0.75×points` slope against
+  our `max(1, pene/5)`) — no decided replacement formula exists, and our `up.BPene` is a compound
+  stat (it scales a bullet's own spawned `pene` *and* that same value is separately read as a damage
+  multiplier), so a clean fix means restructuring `BPene` into a raw point count and rescaling every
+  `can.pene` in `TanksConfig.js` alongside it — its own column-wide pass, not a two-line change.
 - **Entities hold `this.room` and rooms hold `this.controller` — reached directly, not through a
   registry.** `Player`/`Bullet`/`Objects` take a trailing `room` constructor argument;
   `rooms/Room.js` takes a trailing `controller` argument. The dependency graph was never actually
@@ -265,17 +303,18 @@ curls back on — there is no separate RETURN state to enter or an explicit snap
 `orbitState` is written every tick purely for tests/the admin dump; nothing branches on it.
 
 **Chase and return are a real dash** (plan.md WP4.5.0): `BASE_DRONE_CHASE_SPEED` is **the fastest
-sustained speed any build in this game can hold** — 527.2 u/s, measured rather than asserted by
+sustained speed any build in this game can hold** — 559.2 u/s, measured rather than asserted by
 `test/rooms.js`'s `fastestTankSpeed()`, which replays `entities/Player.js`'s own `motion()`/
 `shoot()` recurrence over every reachable class at a full Movement Speed and a full Reload bar (the
-ceiling is a Sniper at level 15 riding its own recoil). It is pinned to exactly that
-ceiling on purpose: nothing can outrun a base drone on straight-line speed, and nothing is outrun
-absurdly either, so lapping an enemy base in the fastest tank in the game is still winnable — on
-the head start and the `BASE_DRONE_LEASH` boundary, not on top speed. If a lap ever reads unfair,
-move `BASE_DRONE_LEASH`/`BASE_DRONE_DETECT`, **not** the chase speed, which is pinned to a
-measurement and fails `npm test` if a cannon retune moves the ceiling out from under it. A chasing
-drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 8.79 rad/s), since the
-limiter that governs a leisurely orbit would give a 527 u/s drone a turn radius wide enough to arc
+ceiling is a Sniper at level 15 riding its own recoil, now at full strength — the one-shot-impulse
+fix, plan.md, raised it from 527.2 by undoing recoil's ~0.64× live-tick shortfall). It is pinned to
+exactly that ceiling on purpose: nothing can outrun a base drone on straight-line speed, and nothing
+is outrun absurdly either, so lapping an enemy base in the fastest tank in the game is still
+winnable — on the head start and the `BASE_DRONE_LEASH` boundary, not on top speed. If a lap ever
+reads unfair, move `BASE_DRONE_LEASH`/`BASE_DRONE_DETECT`, **not** the chase speed, which is pinned
+to a measurement and fails `npm test` if a cannon retune moves the ceiling out from under it. A
+chasing drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 9.32 rad/s), since the
+limiter that governs a leisurely orbit would give a 559 u/s drone a turn radius wide enough to arc
 around a strafing target instead of into it. A return is a chase back to the ring at the same speed
 — no separate constant — the orbit field's own target speed blends from cruise to dash as a
 smoothstep of how far off its ring the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone
