@@ -17,6 +17,12 @@ const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
 const KIND = require('../public/SHARE/kinds.js');
 const Detector = require('./Detector.js');
 
+// diep_wiki/Stats.txt: Body Damage is "decreased by 75% when affecting projectiles (Bullets,
+// Traps, Drones)" - MEASUREMENTS.md's pinned "-75% vs projectiles" entry (PENDING #18). Applies
+// to what a bullet's own `pene` (its spend-down health pool) loses per tick of contact with a
+// body-damage source below - not to what the bullet itself deals, which is untouched.
+const PROJECTILE_BODY_DAMAGE = 0.25;
+
 // Per-tick re-aim chance for homing bullets/drones, converted to a real-tick probability once at
 // load (lib/tick.js's "chance" category).
 const REAIM_CHANCE = tick.chance(0.0012121);
@@ -488,7 +494,12 @@ class Bullet {
 		this.team = 0;
 		this.type = 0;
 		this.pene = 1;
+		// `weight` is knockback dealt to a TANK (entities/Player.js's bullet arm reads it);
+		// `push` is this bullet's own bounce off whatever it hit, read only by the three
+		// self-push sites in collision() below. Two different things, two different columns
+		// in public/SHARE/TanksConfig.js - see that file's header.
 		this.weight = 0;
+		this.push = 0;
 		this.damage = 0;
 		this.size = 10;
 		this.x = x;
@@ -543,19 +554,21 @@ class Bullet {
 						this.levels.provoked = other.id.oId;
 						this.levels.provokedAt = this.room.timestamp;
 					}
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.push), tick.perTick(this.push))));
 					// A bullet's health is spent against the TARGET's damage output (PENDING #18,
 					// plan.md step 9 - diep's own "3 laws" reciprocal collision rule), not against
 					// itself. Previously only base drones (type 1.4) worked this way, because a
 					// drone's pene IS a 2000-point health pool rather than a spend-down budget and the
 					// old self-referential pene/5 would have killed one in five ticks of contact - that
 					// reasoning turns out to generalize to every bullet, so the ordinary branch is gone
-					// and both read the same rule now.
-					this.pene -= tick.perTick(other.damage);
+					// and both read the same rule now. PROJECTILE_BODY_DAMAGE applies the wiki's other
+					// pinned body-damage rule alongside it: a tank's body damage is 75% weaker against a
+					// projectile than the raw `this.damage` it was reading here (PENDING #18).
+					this.pene -= tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE);
 					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.OBJECTS:
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.push), tick.perTick(this.push))));
 					/*
 						Shape-hit reaction: ALWAYS costs the drone a level, even if it
 						cannot be paid right now - not a knockback; ORBIT ignores this.vec entirely (it
@@ -582,19 +595,21 @@ class Bullet {
 							Bull.damage = play.up.BDamage * play.necro.damage;
 							Bull.size = other.size;
 							Bull.weight = play.necro.weight;
+							Bull.push = play.necro.push;
 							play.room.createBullet(Bull, play);
 							return;
 						}
 					}
 					// Same rule as the KIND.PLAYER arm above (PENDING #18, plan.md step 9): spent
-					// against the shape's own damage output, not self-referentially.
-					this.pene -= tick.perTick(other.damage);
+					// against the shape's own damage output, not self-referentially, and at the same
+					// -75%-vs-projectiles rate - shapes have Body Damage too (diep_wiki/Stats.txt).
+					this.pene -= tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE);
 					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.BULLET:
 					if (other.origin.oId === this.origin.oId) {
 						if ((parseInt(this.type) === 1 || parseInt(this.type) === 3) && this.type === other.type) {
-							this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.weight), tick.perTick(this.weight))));
+							this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.push), tick.perTick(this.push))));
 						}
 						return;
 					} else {

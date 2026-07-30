@@ -195,11 +195,12 @@ list lives in **[plan.md](plan.md)**, which is what the work is actually being r
 3. ~~**#16 recoil** — acts on *tank* velocity, so once #14's `F` is set it is pure arithmetic
    against the recoil table.~~ **DONE.** `back = gu × 28 × (1−F)/F` = `gu × 2.8`, all 62 entries;
    the column divides by 2.8 straight back into `physics.html`'s "Tanks Recoil" table.
-   **#16 knockback** (`weight`) is the same shape and is still open — gated on the ~7-class roster
-   decision and the 1.26× rescale error, neither of which is a measurement. Its consumption site's
-   `lib/tick.js` category bug (the old PENDING nuance 43 — it lost ~0.64× at the live tick) is fixed
-   now, in its own step (plan.md), so #16 can be rewritten straight against the reference-tick
-   figures without a separate correction.
+   ~~**#16 knockback** (`weight`) is the same shape and is still open.~~ **DONE too.**
+   `weight = gu × 5.25`, every entry, divides straight back into `physics.html`'s "Tanks
+   Knockbackfactor" table — verified by replaying the recurrence, exact at the 40 ms reference for
+   all 49 distinct values, and the tank body with it at diep's 1.6 gu. The ~7-class roster question
+   and the 1.26× rescale error were both answered by a human before implementation, neither being a
+   measurement; see PENDING #16.
 4. ~~**#17 health + regen** — `MH₀`, the linear rate and the hyper threshold are all known; the
    hyper *rate* is solvable from the published time-to-full table. Do it after #30 so the domain is
    7.~~ **DONE.** diep's raw `MH₀=50/+2/level/+20/point` adopted directly (not a rescale); the

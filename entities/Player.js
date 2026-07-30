@@ -334,6 +334,7 @@ class Player {
 					Bull.damage = this.up.BDamage * can.damage;
 					Bull.size = this.boss ? can.size : can.size * ra;
 					Bull.weight = can.weight;
+					Bull.push = can.push;
 					this.room.createBullet(Bull, this)
 					// tick.impulse(), not tick.perTick(): this.vec is fed into Physics.stepBody, which
 					// re-scales it by dtTicks on every subsequent position step, so a one-shot impulse
@@ -474,8 +475,11 @@ class Player {
 			switch (option.type) {
 				case 'god':
 					// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody,
-					// see the `back` comment above and PENDING #43.
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(0.87761), tick.impulse(0.87761))));
+					// see the `back` comment above.
+					// 8.96 = 3.2 gu x 2.8, i.e. deliberately twice the ordinary tank-body shove below,
+					// which is what it has always been relative to it. Not a diep number - diep has no
+					// god mode - so it rides the tank-body row rather than the table.
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(8.96), tick.impulse(8.96))));
 					return;
 			}
 		}
@@ -488,10 +492,35 @@ class Player {
 		const oldHp = this.hp;
 		switch (other.kind) {
 			case KIND.PLAYER:
-				// tick.impulse(), not tick.perTick() - see the `back` comment above and PENDING #43.
-				// The hp drain below stays perTick(): it is genuine per-tick-of-contact damage, not
-				// a one-shot impulse.
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(0.43881), tick.impulse(0.43881))));
+				// 4.48 = diep's "All Tank Bodies" knockback, 1.6 gu per loop of contact, through the
+				// same `gu x 2.8` impulse identity TanksConfig.js's `weight` and `back` columns use:
+				// a one-shot impulse on tank velocity displaces v0 x F/(1-F) = 10 x v0 units at the
+				// tank F = 10/11, and 1.6 x 2.8 x 10 / 28 = 1.6 gu.
+				// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody. The
+				// hp drain below stays perTick(): it is genuine per-tick-of-contact damage, not a
+				// one-shot impulse.
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(4.48), tick.impulse(4.48))));
+				// Positional overlap resolution, on top of the velocity impulse rather than instead of
+				// it. The impulse alone cannot separate two tanks inside a normal contact window - it
+				// lands in `vec` and is then decayed by stepBody over many ticks, during which the pair
+				// is still overlapping - so two tanks visibly interpenetrate. This pushes them apart
+				// along their separation axis by the overlap, split by size so the bigger tank moves
+				// less. rooms/Room.js calls collision() on BOTH sides of a pair, so each body moves only
+				// its own share and the two shares sum to the whole overlap. The calls are sequential,
+				// so the second sees the first's move and this behaves as a relaxation rather than a
+				// snap - a deep overlap clears over about two ticks. It runs before the noDam break
+				// because teammates take up space too. No diep reference behind it, unlike everything
+				// around it - an engine-quality call, made deliberately (PENDING nuance 44).
+				{
+					const sepX = this.x - other.x, sepY = this.y - other.y;
+					const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;
+					const overlap = this.size + other.size - sepD;
+					if (overlap > 0) {
+						const share = other.size / (this.size + other.size) * overlap / sepD;
+						this.x += sepX * share;
+						this.y += sepY * share;
+					}
+				}
 				if (option.noDam || this.shield) { break; }
 				this.hp -= tick.perTick(other.damage * this.damageReduction());
 				this.hit = tick.ticks(1.65);
@@ -531,6 +560,7 @@ class Player {
 					Bull.damage = this.up.BDamage * this.necro.damage;
 					Bull.size = other.size;
 					Bull.weight = this.necro.weight;
+					Bull.push = this.necro.push;
 					this.room.createBullet(Bull, this);
 					return;
 				}
@@ -552,21 +582,27 @@ class Player {
 				if (this.bot) {
 					this.lastBullet = other.origin;
 				}
-				// other.weight is rescaled at its TanksConfig source for Bullet's own (hand-rolled
-				// friction) knockback mechanism; the player receiving it decays that impulse
-				// through Physics.stepBody instead, which needs a further x1.6 (the ratio between
-				// the two mechanisms' correct one-time factors, see Physics.js).
-				// tick.impulse(), not tick.perTick() - see the `back` comment above and PENDING #43;
-				// this is the `weight` knockback nuance 43 flagged as needing to move before #16
-				// rewrites the column, so #16 tunes against the right consumption site.
+				// The one consumer of TanksConfig.js's `weight` column, which is diep's own
+				// Knockbackfactor table (grid squares per loop of contact) times 5.25. The `/ 3 * 1.6`
+				// here is the rest of that conversion: x 0.53333 turns the column into an impulse of
+				// `gu x 2.8`, the same form `back` takes, and a one-shot impulse on tank velocity
+				// displaces v0 x F/(1-F) = 10 x v0 units at the tank F = 10/11, so the round trip is
+				// `gu x 5.25 x 0.53333 x 10 / 28 = gu`. Edit either factor and the whole column has to
+				// be recomputed with it.
+				// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody.
 				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(other.weight / 3 * 1.6), tick.impulse(other.weight / 3 * 1.6))));
 				if (this.shield) { return; }
-				// A base drone's `pene` is a health pool, not a penetration value (rooms/Room.js's
-				// spawnBaseDrone), so reading it as one dealt 400x damage and killed any tank in a
-				// single tick. Same substitution entities/Objects.js:164 already
-				// makes.
-				const pene = (other.type === 1.4) ? config.BASE_DRONE_PENE : other.pene;
-				this.hp -= tick.perTick(other.damage * Math.max(1, pene / 5) * this.damageReduction());
+				// `pene` no longer multiplies damage here (PENDING #18): entities/Bullet.js's own
+				// `pene -= tick.perTick(other.damage)` already makes a tougher bullet survive more
+				// ticks of contact, which is where its total damage scaling with pene is supposed to
+				// come from. Multiplying this per-tick hit by pene again double-counted it - low-pene
+				// spam classes sat at the `max(1, pene/5)` floor (43 bullets to kill a fresh tank) while
+				// a maxed-Pene Destroyer got both the floor-busting multiplier and the longest contact,
+				// one-shotting instead. Removing it also retires the base-drone-pene substitution this
+				// line used to need: there's no multiplier left for a drone's 2000-point health pool to
+				// blow up (entities/Objects.js still needs its own, unrelated substitution at its own
+				// shape-damage site).
+				this.hp -= tick.perTick(other.damage * this.damageReduction());
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
 				break;

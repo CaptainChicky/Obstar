@@ -630,7 +630,12 @@ class Room {
 		bull.maxspeed = .75;
 		bull.pene = config.BASE_DRONE_HP;
 		bull.damage = config.BASE_DRONE_DAMAGE;
-		bull.weight = 2;
+		// Knockback dealt to a tank: diep's own drone row, 0.8 gu, the same the whole drone family
+		// carries in public/SHARE/TanksConfig.js. `push` is the separate self-bounce column, and it
+		// keeps the 2 that the single pre-split field held - base drones hold a ring, so their own
+		// separation impulse is load-bearing in a way an ordinary bullet's is not.
+		bull.weight = 4.2;
+		bull.push = 2;
 		bull.size = config.BASE_DRONE_SIZE;
 		bull.map = this.map;
 		const made = this.INSTANCE.bullets.add((id) => {

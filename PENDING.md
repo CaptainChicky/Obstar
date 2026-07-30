@@ -4,11 +4,11 @@ Short-form companion to [HANDOFF.md](HANDOFF.md). Only what's *left*: things nee
 decisions already made but not yet built, and things nobody has verified yet.
 
 **A fully shipped item is deleted from this file. An item marked SHIPPED is still here for one of
-two reasons, and it says which:** either part of it is still open (#16's `weight` column, #18's
-penetration→damage, #19's arena resize, #24(b)'s own bullets, #28's win condition), or it records a
+two reasons, and it says which:** either part of it is still open (#18's penetration→damage, #19's
+arena resize, #24(b)'s own bullets, #28's win condition), or it records a
 *"do not re-fix this"* — a value that looks wrong until you know why it is what it is (#22 is
-entirely that; #14's table and #23's `BASE_DRONE_HP` are too). Do not treat a SHIPPED heading as
-work to redo.
+entirely that; #14's table, #16's two derived columns and #23's `BASE_DRONE_HP` are too). Do not
+treat a SHIPPED heading as work to redo.
 
 ---
 
@@ -171,7 +171,14 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
      ~6 grid squares per shot and a Basic's ~0.4, measurable against the background grid, and the
      live 25 ms tick now delivers that in full (previously only ~0.64× of it, `tick.perTick()`
      being the wrong category for a one-shot impulse — fixed);
-     **knockback is still short** (`weight`, #16, two human calls) so ramming stays wrong — and
+     **knockback is diep's now too** (`weight`, #16, shipped) so ramming is finally worth judging:
+     a Basic's bullet should shove a tank **0.666 grid squares** per tick of contact and a
+     Destroyer's only **0.2** (diep inverts knockback against damage), a Mega Trapper's trap 1.07,
+     and a tank *body* 1.6 — all measurable against the background grid. **Tanks are solid now**
+     (nuance 44): drive into another player and confirm you are held apart rather than sliding
+     through each other, and that the bigger tank yields less. Watch for the two things a relaxation
+     can get wrong — jitter when two tanks press together, and a shove that reads as "sticky"
+     rather than firm; and
      **base drones are faster three times over** (`BASE_DRONE_CHASE_SPEED` re-pinned 423.7 → 501.7 →
      527.2 → 559.2 u/s), so the "lap an enemy base and survive" race below is being re-run at both
      ends at once.
@@ -302,27 +309,39 @@ decision has its own numbered item above and is only cross-referenced here.*
 
 ### Live right now — the tree is in a knowingly-wrong state
 
-31. **Knockback is still too weak; recoil is not, since the `back` rescale and the one-shot-impulse fix.**
-    `back` and `weight` are both impulses on *tank* velocity, so both were denominated against the
-    old `FRICTION` and neither moved when the tank magnitudes took it to `10/11`. **`back` was rescaled** (all 62 cannons across 27 classes, ×1.914 — the column is `gu × 2.8` now; the consumer
-    is [entities/Player.js](entities/Player.js#L303), `tick.impulse(can.back)` as of the one-shot-
-    impulse fix (was `tick.perTick()`, the wrong category — it lost ~0.64× at the live 25 ms tick;
-    the fix is described in nuance 39), mirrored by `test/rooms.js`'s
-    `fastestTankSpeed()`). **`weight` was rescaled to nothing yet** — it is blocked on two human
-    calls (#16), so **ramming is still being judged in a game where knockback is wrong**, including
-    the item-6 browser checklist and `BASE_DRONE_DAMAGE`'s playtest. `weight`'s own consumption site
-    (`entities/Player.js`'s four collision arms) is now correct (`tick.impulse()`, not
-    `tick.perTick()`), so #16 will be tuning against the right site once it lands — it just has
-    nothing to tune yet. Do not retune anything else against the current knockback. See #16.
+31. **`weight` and `push` are two different things that used to be one field — do not merge them
+    back.** Splitting them is what let #16's knockback rewrite land without moving bullet or drone
+    behaviour by a single unit, and the split is permanent, not transitional.
+    - **`weight` is knockback dealt to a TANK.** One consumer: `entities/Player.js`'s `KIND.BULLET`
+      arm, `tick.impulse(other.weight / 3 * 1.6)`. It is diep's Knockbackfactor table × 5.25 and
+      nothing else may be read off it.
+    - **`push` is the bullet's own bounce off whatever it hit.** Three consumers, all in
+      `entities/Bullet.js`'s `collision()`, all `tick.perTick(this.push)` into the bullet's own
+      hand-rolled `BODY_FRICTION` decay. It carries the pre-#16 `weight` values verbatim, because
+      that half of the old field never had a reference behind it.
+    The reason the split was not optional: the two mechanisms differ by ~14× in what they do with
+    the same number (`push` displaces `weight × 13.76` units through `BODY_FRICTION`'s 22.02-tick
+    sum, against knockback's `× 5.33` through the tank's 10-tick sum), and the rewrite moved
+    individual entries by anywhere from ×0.77 (Rocket) to ×12.8 (Basic) — **non-uniformly**, so no
+    single divisor could have carried the old behaviour through. Left merged, a Basic's bullet would
+    have rebounded ~48 units off a tank instead of ~4, a Mega Trapper's trap ~77, and every drone
+    swarm's separation impulse would have moved by its class's own arbitrary factor.
+    `rooms/Room.js`'s base drone sets both by hand (`weight = 4.2`, the drone row; `push = 2`, what
+    the single field used to be) — its `push` is genuinely load-bearing, since base drones hold a
+    ring.
 
-32. **`BASE_DRONE_CHASE_SPEED`/`_TURN` will need re-pinning at least twice more.** The pair is
+32. **`BASE_DRONE_CHASE_SPEED`/`_TURN` will need re-pinning at most once more.** The pair is
     pinned to a live measurement, so every retune that touches the speed ceiling moves it.
     **The `back` rescale did it** (×1.914 → ceiling 501.7 → 527.2 u/s, still a Sniper L15), **and so did
     the one-shot-impulse fix** (formerly nuance 43 — undoing recoil's
     ~0.64× live-tick shortfall → ceiling 527.2 → **559.2 u/s**, still a Sniper L15) — one more than
-    this item originally counted, since that fix wasn't anticipated when this was written. The
-    remaining two are **#15's reload stat** if M3 says our ×2.23 is wrong, then **#16's `weight`**
-    if knockback ever enters the recurrence. Always move both constants together:
+    this item originally counted, since that fix wasn't anticipated when this was written.
+    **#16's `weight` was expected to be one of the remaining two and turned out not to be: it moved
+    the ceiling by nothing at all.** `fastestTankSpeed()` replays `motion()` + `shoot()`, and
+    knockback is not in that recurrence — it only enters through *contact*, which a solo speed
+    replay never has. `npm test` passed across the whole column rewrite with no re-pin, which is the
+    proof. So the only remaining candidate is **#15's reload stat**, if M3 says our ×2.23 is wrong.
+    Always move both constants together:
     `turn = speed_u_per_s / 60 / 25` holds the ~60-unit turn radius, and `lib/config.js`'s comment
     carries the whole chain of re-pins.
     **Calibrate expectations from the `back` rescale rather than from the "premium" framing.** The 1.38×/1.49×
@@ -333,8 +352,7 @@ decision has its own numbered item above and is only cross-referenced here.*
     not ~40%, and stayed inside the test's own 5%-agreement band without forcing a re-pin (it was
     done anyway, for tidiness). Undoing the 0.64× shortfall moved the ceiling a further **5.7%** —
     just over that band, which is why that re-pin was not optional: `npm test` failed until it
-    landed. Expect the same dampened-by-the-walk shape of #16's `weight`, and do not assume it will
-    stay inside the band just because the last two moves mostly did.
+    landed.
 
 ### Consequences of adopting diep's tank magnitudes — permanent, not transitional
 
@@ -369,9 +387,31 @@ decision has its own numbered item above and is only cross-referenced here.*
     boundaries** (8217 / 16609 / 25928 / 34096), so their deltas were pure position drift.
     A useful rule of thumb from those three: a change to how many ENTITIES exist shifts the stream;
     a change to how existing entities MOVE or how much health they have usually does not.
+    *Shifted in exactly one mode, and legibly:* #16's knockback column plus nuance 44's overlap
+    resolution left `ffa`/`2team`/`4team` **bit-identical — same op count AND the same cumulative
+    draw count at every boundary (11281 / 21739 / 33949)** — while `boss` moved 338578 → 338610 ops
+    and *lost* 52 draws (42294 → 42242). One cause covers both halves: `lib/gameAI.js`'s Summoner
+    now aggros a low-level tank pressed against it, and its shoot gate is
+    `if (this.detected.length || Math.random() < BOSS_SHOOT_CHANCE)`, whose `Math.random()`
+    **short-circuits away** once `detected` is non-empty. Worth copying as a technique, not just as
+    a result: instrumenting `Math.random()` with a counter and printing the cumulative total at each
+    mode boundary is a three-line patch that turns "did the stream shift?" from a guess into a
+    reading, and it localised a four-mode delta to one mode and one branch in a single run.
     *Neither:* a client-only change (#24b's bullet dead reckoning) cannot shift it at all — the
     simulation is untouched by construction, and the identical per-mode op counts confirmed it
     without any instrumenting.
+    *One-cause-shifts-it, one-cause-doesn't, bundled in a single commit:* #18's pene double-count
+    fix landed alongside its `-75%-vs-projectiles` body-damage fix, and isolating
+    `PROJECTILE_BODY_DAMAGE` (temporarily setting it to 1, a no-op) split them cleanly: the
+    double-count removal alone reproduced the prior golden **exactly** (338610/a72a71ab, every
+    boundary's rand count unchanged) — a pure damage-magnitude change, like #18's first two
+    consequences before it. `PROJECTILE_BODY_DAMAGE` alone accounted for the entire
+    338610 → 352411 move, and unlike the boss-only Summoner-aggro example above, it shifted the
+    stream starting in `ffa` itself (rand 11281 → 11284) rather than only downstream: a bullet's own
+    `pene` now depletes 4x slower against a player/shape's body damage, so it survives ~4x longer in
+    contact — more live bullets per frame, more shots fired before a target dies. A change to how
+    long an ENTITY LIVES shifts the stream just as reliably as a change to how many exist; only
+    "how existing entities move or how much health they have" is the safe category.
     The technique that made all of these readable is worth reusing rather than reinventing: override
     the constants at load time and
     re-run the corpus once per candidate cause, so each cause gets its own hash and the ones that
@@ -401,9 +441,12 @@ decision has its own numbered item above and is only cross-referenced here.*
     Speed and 6 Reload" a whole step after the cap became 7, and `HANDOFF.md`'s file-map line counts
     wrong on most rows (`lib/gameAI.js` listed 403 against an actual 490). **When a step changes a
     number, grep the tree for the old number, not just for the constant's name** — that is what
-    caught `284` in `test/client.js` and `public/motion.js`. Beware one false positive: Gunner's
-    bullet `speed` is `0.511936`, which is a coincidence next to the old `MOVE_ACCEL_BASE`
-    `0.511941` and has nothing to do with it.
+    caught `284` in `test/client.js` and `public/motion.js`. **Beware two false positives, both
+    trailing-digit near-collisions.** Gunner's bullet `speed` is `0.511936`, a coincidence next to
+    the old `MOVE_ACCEL_BASE` `0.511941`. And the old tank-body knockback impulse `0.43881` (retired
+    by #16, now `4.48`) is one digit off `0.438816`, the bullet `speed` eight drone and trap cannons
+    share in `public/SHARE/TanksConfig.js` — grepping the retired value hits all eight and none of
+    them is knockback.
 
 38. **`npm run lint` is unusable as a gate.** It reports ~4984 errors, all inside the gitignored
     `reference/` vendor dump, all predating this work. Lint the source explicitly instead:
@@ -445,7 +488,32 @@ decision has its own numbered item above and is only cross-referenced here.*
     alongside #29's drawn-barrel-vs-spawn-radius check, which has the same "applies to every future
     boss" property.
 
-44. **Tank-vs-tank collision has no positional overlap resolution, only a velocity knockback
+44. **Tank-vs-tank positional overlap resolution — SHIPPED**, alongside #16's column as decided.
+    Kept as a *do-not-undo*: it is the one piece of collision behaviour in the tree with no diep
+    reference behind it, so it looks arbitrary until you know it was asked for.
+    `entities/Player.js`'s `KIND.PLAYER` arm now pushes both bodies apart along their separation
+    axis by their overlap, split by size (`share = other.size / (this.size + other.size)`), **in
+    addition to** the velocity impulse rather than instead of it. `rooms/Room.js` calls
+    `collision()` on both sides of a pair, so each body moves only its own share and the two shares
+    sum to the whole overlap; because the calls are sequential the second sees the first's move, so
+    it behaves as a relaxation rather than a snap — measured, a 10-unit-apart pair of 25-radius
+    tanks reaches 45.3 units in one tick and clears contact on the next. It runs **before** the
+    `noDam` break, because teammates take up space too.
+    **Two consequences that are not obvious and cost a session if rediscovered.** First, "standing
+    on top of another body" is now a state the engine actively destroys, which is why
+    `test/rooms.js`'s Summoner detection test re-asserts the player's position between its two
+    steps — that is modelling a player *holding* against the boss, not the test propping itself up.
+    Second, it made `lib/gameAI.js`'s boss aggro test unsatisfiable at low level and had to be
+    fixed with it; see the nuance below.
+    Not done, and deliberately: the **tank-vs-shape** arm has the same gap (checked while here, as
+    this item asked). `entities/Objects.js` gives a shape a velocity impulse and moves it through
+    its own `weight` mass divisor — 1 for a Square, 4 for a Pentagon, 100 for a boss shape — so
+    resolving overlap there means deciding who yields against an existing mass semantic, and against
+    a 100-divisor Alpha Pentagon the answer has to be "the tank moves", which is a different edit in
+    a different file. It also changes shape-farming feel in every mode. Real, scoped, and left.
+
+    *The original statement of the problem, kept because it is the rationale:*
+    **Tank-vs-tank collision has no positional overlap resolution, only a velocity knockback
     impulse — raised by a human while #16 was being scoped, deliberately deferred alongside it.**
     `entities/Player.js`'s `KIND.PLAYER` collision arm ([Player.js:494](entities/Player.js#L494))
     applies `tick.impulse()` to `this.vec` and lets `Physics.stepBody` decay it like any other
@@ -460,7 +528,7 @@ decision has its own numbered item above and is only cross-referenced here.*
     **Decided: build this alongside #16's `weight` column rewrite, not before or separately** — both
     land at the same collision sites (`entities/Player.js`'s player-vs-player arm, and worth checking
     `entities/Objects.js`'s tank-vs-object arm for the same gap while there), so doing them in the
-    same pass means the site only gets touched once. Not built yet.
+    same pass means the site only gets touched once.
 
 45. **The arena/density work put ~40% more shapes in three of the five modes, and that is a live cost as
     well as a live balance change.** ffa 725 → 1017, 2team 555 → 800, 4team 669 → 1012 (boss and
@@ -497,9 +565,10 @@ decision has its own numbered item above and is only cross-referenced here.*
     derivation was mirrored into `HANDOFF.md` §3 as each step landed (the two frictions and the
     `back` column, `lib/tick.js`'s `impulse()`-vs-`perTick()` rule, health/regen and the `dr` term,
     arena density and `nestScale`, the bullet dead-reckoning exception), and every part deliberately
-    left unshipped is an open item in *this* file — #16 (knockback `weight`), #18 (penetration →
+    left unshipped is an open item in *this* file — #18 (penetration →
     damage), #19 (resizing the arena toward diep's AL), #24(b) (own-bullet dead reckoning), #28
-    (Tag's win condition and invisibility cap). So a comment citing a step number is telling you
+    (Tag's win condition and invisibility cap). #16's knockback `weight` was on that list and has
+    since shipped. So a comment citing a step number is telling you
     *when* a value was set and why it is not arbitrary; the current justification for it lives at the
     call site or in HANDOFF §3.
     What did NOT survive the deletion, and is genuinely gone: the per-step `clientDiff` golden
@@ -524,6 +593,37 @@ decision has its own numbered item above and is only cross-referenced here.*
     "why", the code is the place for "what". Worth doing in one deliberate pass rather than
     incidentally inside a feature step, since it will touch nearly every file and would make any
     other diff in the same commit unreviewable.
+
+49. **A boss's aggro radius is smaller than its own hitbox at low level, and that only stopped
+    mattering because tanks used to be able to stand inside it. Worth a `diep_wiki` cross-check.**
+    `lib/gameAI.js`'s Summoner test is `dis / max(1, level) < screen / 30`, i.e. **65.6 units** for a
+    level-0 or level-1 tank — against a boss body radius of **64** (`rooms/Room.js`'s `createBoss()`)
+    plus a ~28-radius tank. So the only way a fresh spawn ever satisfied it was by being *inside* the
+    boss, which nuance 44's overlap resolution makes impossible. Left alone it would have silently
+    blinded every boss to freshly-respawned players — including `up.BPene = detected.length * .9`,
+    so an unaggroed boss fires zero-penetration drones.
+    **Fixed by measuring from the boss's HULL rather than its centre**, as a fraction of the raw
+    distance (`(raw − size) / raw`) so it survives the metric's own 0.5625 y-squash. A flat
+    subtraction would be worth 1.78× more along one axis than the other, and which axis a shoved tank
+    ends up on is random — that made a first attempt pass and fail on alternate runs, which is the
+    trap worth remembering here. At high level the boss's 64 units are a ~2% widening of a
+    ~2950-unit radius, so nothing above level 2 moved.
+    **Still open, and the reason this is a nuance rather than closed:** nothing was checked against
+    `diep_wiki` — diep has no Summoner and no boss of this shape, so the `screen / 30` radius, the
+    `/ level` scaling and the 0.5625 ellipse are all ours, none of them referenced. Whether a boss
+    *should* aggro on contact regardless of level is the question that was actually answered here,
+    by a human, on gameplay grounds. Cross-check the whole aggro model against `diep_wiki/`'s boss
+    pages when someone next has that file open.
+
+50. **Tank-vs-tank body-ram damage has no "+50% against Tanks" term — found while fixing #18's
+    pene double-count, not fixed.** diep_wiki/Stats.txt: Body Damage "is increased by 50% when
+    affecting Tanks and decreased by 75% when affecting projectiles." The projectile half is now
+    applied (`entities/Bullet.js`'s `PROJECTILE_BODY_DAMAGE`, #18). The tank half is not:
+    `entities/Player.js`'s `KIND.PLAYER` collision arm (two tanks ramming each other) reads
+    `other.damage * this.damageReduction()` with no `×1.5`, i.e. it still uses the vs-shapes baseline
+    (correct on its own, #17) rather than the higher vs-tank figure. Nobody has decided whether
+    fixing it is in scope with #18's pene work or its own item — it changes body-damage-build
+    tank-vs-tank lethality on its own, independent of anything pene-related.
 
 ## 🟡 Explicitly deferred (told not to do this pass)
 
@@ -556,8 +656,9 @@ here is measurement-blocked any more.** #14's `FRICTION` is exact (`10/11`, deri
 #17, #19 and the damage model can all be finished before a single measurement is taken — and that
 work is now **complete**: #30's economy, #14's tank movement magnitudes and the tank/body friction
 split, #16's recoil half, #17's health and regen, #23's `BASE_DRONE_HP`, #19's shape density, #28's
-Tag mode, #24(b)'s bullet dead reckoning and two of #18's three damage consequences have all
-shipped. What is left in this section is itemised as open at each entry.*
+Tag mode, #24(b)'s bullet dead reckoning and three of #18's four damage fixes have all shipped —
+and #16's knockback `weight` column has since joined them, so that item is now closed on both of
+its columns. What is left in this section is itemised as open at each entry.*
 
 14. **Movement — SHIPPED, form and magnitudes both**. Level and Movement Speed
     are independent multipliers on the base accel — `base × 1.07^pts / 1.015^level`,
@@ -577,11 +678,11 @@ shipped. What is left in this section is itemised as open at each entry.*
     | speed vs stat | `× 1.07^vm` (+61% at 7) | `× 1.07^vm` (+61% at 7) | **matched** |
     | stat cap / level cap | 7 points, 45 levels | 7 points, 45 levels | **matched** (#30, shipped) |
 
-    **What is left of this item is the split it forced** (below — future work must not undo it)
-    **and one of the two columns that ride the tank's `F`**: recoil `back` was rescaled against it
-    against it (it is `gu × 28 × (1−F)/F` = `gu × 2.8` now), and knockback `weight` was
-    not — that one is still under-scaled and blocked on #16's two human calls. A known, temporary,
-    deliberate state, not a regression to chase.
+    **What is left of this item is the split it forced** (below — future work must not undo it).
+    **Both columns that ride the tank's `F` are now derived from it**: recoil `back` is
+    `gu × 28 × (1−F)/F` = `gu × 2.8`, and knockback `weight` is `gu × 5.25` (#16, shipped). Edit `F`
+    again and both columns, plus the tank-body constant in `entities/Player.js`, move with it —
+    nothing tests that relationship.
 
     ### `FRICTION` is EXACT, and it is a *tank* constant — SHIPPED, and do not merge it back
 
@@ -679,8 +780,42 @@ shipped. What is left in this section is itemised as open at each entry.*
       Triplet/Penta Shot/Octo Tank, Ranger, Booster) — each has its own barrel count/damage/pene, so
       a shared number there is a family trait, not the copy-paste bug Twin's mismatched barrels were.
 
-16. **Knockback (`weight`) is ~20× too weak on bullets — the whole column still wants replacing.**
-    (**The recoil half of this item is SHIPPED.** All 62 nonzero `back` entries,
+16. **Knockback and recoil — SHIPPED, both columns.** Kept only as a *do-not-re-fix* record: the
+    two columns are derived, not tuned, and the derivation is what stops a future reader "fixing"
+    a number that looks arbitrary.
+
+    **`weight` is diep's own "Tanks Knockbackfactor" table (grid squares per loop of contact)
+    times 5.25**, every entry, across all 27 classes plus Necromancer's `necro` block and the
+    Summoner boss. The factor closes the same way `back`'s did: `entities/Player.js`'s bullet arm
+    turns the column into an impulse as `weight / 3 * 1.6` = `× 0.53333`, and a one-shot impulse on
+    tank velocity displaces `v₀ · F/(1−F)` = `10 · v₀` units at the tank `F = 10/11`, so
+    `gu × 5.25 × 0.53333 × 10 / 28 = gu` exactly. **Verified by replaying the recurrence, not by
+    arithmetic**: all 49 distinct entries reproduce their diep gu value to the last digit at the
+    40 ms reference tick, and the tank body lands on exactly 1.6 gu. At the live 25 ms tick every
+    row reads **1.83% high** (0.193955 gu per unit of `weight` against the reference 0.190476) —
+    that is nuance 33's semi-implicit Euler drag error, the same 1.8% `V_max = 10·A` carries, and
+    is **not** a column error to compensate for.
+    **The shape of the roster changed, deliberately.** diep inverts knockback against damage, so
+    Destroyer (0.2 gu) and Annihilator (0.1 gu) are now near the *bottom* of the column and Basic
+    (0.666 gu) near the top, where ours used to be nearly flat across the three. **Annihilator is
+    on-table here** even though its `back` is deliberately off-table (4 gu against diep's 6.8) —
+    the two calls are independent and only `back` was ever excepted.
+    **The tank body came with it**: `entities/Player.js`'s `KIND.PLAYER` arm is `tick.impulse(4.48)`
+    now, diep's "All Tank Bodies" row (1.6 gu) through the same `gu × 2.8` impulse identity. The
+    sandbox `'god'` repulsion rides it at twice that (8.96) — the relationship it always had, and
+    not a diep number, since diep has no god mode. The `KIND.OBJECTS` arm (a *shape* shoving a tank)
+    was left alone on purpose: diep's table has no polygon row.
+    **The seven unmapped classes each inherit a nearest mapped relative and say so at their own
+    entry**, per the decision recorded below. Which relative, and why, is at each site in
+    `public/SHARE/TanksConfig.js`; each is flagged as a stand-in that may want its own tune.
+    Two of them departed from the obvious class-tree parent for a stated reason: **Rocket** takes
+    the rear-thruster row (0.1333 gu) rather than Flank Guard's forward gun, because both its
+    barrels point backwards; **Cyclone** takes Octo Tank's 0.4333 rather than its parent Quad Tank's
+    0.5, because the table's own trend is monotone in barrel count and Cyclone has ten.
+    **A second column, `push`, was split out of `weight` in the same pass** — see the nuance below;
+    it is the reason bullet and drone behaviour did not move at all.
+
+    (**The recoil half of this item shipped earlier.** All 62 nonzero `back` entries,
     across 27 classes, were recomputed as `back = gu × 28 × (1−F)/F` against the tank `F = 10/11`,
     which collapses to a flat **`back = gu × 2.8`**: the column is now literally diep's
     "Tanks Recoil" table in grid squares, times 2.8, and divides back to it. Verified by replaying
@@ -701,15 +836,19 @@ shipped. What is left in this section is itemised as open at each entry.*
     and fixing it changed nothing about how short `weight` itself is — the numbers below are
     correspondingly ~1.6× bigger than they were (1/0.64), not smaller.
 
-    The gap, re-measured against the **live code path** (`entities/Player.js`'s bullet arm) rather
-    than recomputed from the pre-rescale tree:
+    The gap this closed, as it stood before the rewrite (kept so the size of the move is on record):
 
-    | | diep, per loop of contact | ours, today | ratio |
+    | | diep, per loop of contact | ours, pre-rewrite | ratio |
     |---|---|---|---|
-    | basic bullet (`weight` 0.27426) | 0.667 gu | **0.0532 gu** | **12.5× weak** |
-    | common bullet (`weight` 0.45709) | varies by class | **0.0887 gu** | — |
-    | tank body | 1.6 gu | 0.29 gu *(pre-step-2, not re-measured)* | ~5.5× weak |
+    | basic bullet (`weight` 0.27426) | 0.667 gu | 0.0532 gu | **12.5× weak** |
+    | common bullet (`weight` 0.45709) | varies by class | 0.0887 gu | — |
+    | tank body | 1.6 gu | 0.157 gu | **10.2× weak** |
     | drones | 0.8 gu | no separate value | — |
+
+    The tank-body row is the one figure this item used to get wrong, and it is worth knowing why:
+    it pointed at `entities/Player.js`'s speed-dependent `len` in the `KIND.OBJECTS` arm (0.29 gu),
+    which is a *shape* shoving a tank. diep's "All Tank Bodies" row is a *tank* shoving a tank —
+    the `KIND.PLAYER` arm, which was 0.43881 → **0.157 gu**, i.e. worse than this item recorded.
 
     **The conversion factor is 0.193955 gu of displacement per unit of `weight`** at the live 25 ms
     tick, measured by replaying the real recurrence (impulse `tick.impulse(weight/3 × 1.6)` into
@@ -723,14 +862,11 @@ shipped. What is left in this section is itemised as open at each entry.*
     #14's `F`: a one-shot impulse's total displacement is `v₀·F/(1−F)`, which went from 22.02·v₀ to
     10·v₀, i.e. ×0.454. The rescale **re-verified the new figure by replaying the recurrence** rather
     than adopting that arithmetic (which predicted ~0.1200); the two bullet rows above were
-    re-measured from the same replay, and the tank-body row was left alone because it comes off a
-    different call site (`entities/Player.js:461`'s speed-dependent `len`) that is #16's own work to
-    revisit. **The gap is smaller than the rescale left it, but only because the consumption-site bug is
-    gone, not because `weight` moved** — a basic bullet's knockback is 12.5× short of diep now,
-    where the rescale measured 20.1× (itself worse than the pre-magnitudes 9.2×, an unrelated effect of `F`
-    moving). Like `back`, all of this is independent of whatever M1 finds about bullet motion.
+    re-measured from the same replay. Like `back`, all of this is independent of whatever M1 finds
+    about bullet motion.
 
-    **Both human calls were asked and answered (2026-07-29/30), before implementation — not guessed:**
+    **Both human calls were asked and answered (2026-07-29/30), before implementation — not guessed,
+    and both were honoured verbatim by the rewrite:**
     - **~7 of our classes are not in diep's table at all**, so a complete replacement cannot be
       read off it: Cyclone, Submachine, Auto Hover, Fortress, Summoner and Rocket have no diep
       counterpart, and plain **Gunner** is a real diep tank that the Knockbackfactor table simply
@@ -740,8 +876,16 @@ shipped. What is left in this section is itemised as open at each entry.*
       **Decided: each unmapped class inherits its nearest mapped relative's rescaled `weight`**
       (same shape as #15's reload inheritance down the class tree), with a comment at each inherited
       site flagging it as a stand-in that may need its own fine-tune later — not a silent copy.
-      Which relative is "nearest" for each of the seven is not decided yet; that's a per-class read
-      of `public/SHARE/TanksConfig.js`'s tree to do when the column is actually rewritten.
+      **Done. Which relative each took, and why, is recorded at its own entry** in
+      `public/SHARE/TanksConfig.js`: Submachine ← Machine Gun (0.4666), Gunner ← Gunner Trapper's
+      bullet row (0.333, the table's only entry for a bullet out of a Gunner barrel, in preference
+      to the class-tree parent Machine Gun), Auto Gunner's manual barrels ← Gunner's stand-in,
+      Cyclone ← Octo Tank (0.4333, not parent Quad Tank's 0.5 — the table is monotone in barrel
+      count), Rocket ← the rear-thruster row (0.1333, not parent Flank Guard's 0.666 — both its
+      barrels point backwards), Fortress ← Tri-Trapper's traps (0.666) and Battleship's drones
+      (0.1), Summoner ← the drone row (0.8). **Auto Hover turned out not to need a stand-in for
+      its class at all** — every one of its four cannons has a mapped analogue (an Auto- turret
+      plus Tri-Angle's three), so it is mapped per cannon rather than inherited wholesale.
     - **The 33 ms → 40 ms rescale did not preserve this column.** At 33 ms a `weight` of 0.3 gave
       0.09563 gu; the 0.45709 it became gave 0.12075 gu — **1.26× more knockback than before the
       "one-time relabelling, not a balance change" conversion**, and dropping the `× 1.6` instead
@@ -754,17 +898,14 @@ shipped. What is left in this section is itemised as open at each entry.*
       already-confirmed 0.190476 gu-per-`weight` reference-tick conversion above, the same way
       `back` was rederived from the formula rather than rescaled by a guessed ratio. The
       1.26×/0.79× figures above become moot once the column is computed this way rather than patched.
+      **Done exactly that**, so both figures are now moot as predicted and neither historical factor
+      was ever diagnosed. Nothing in the tree depends on which of them broke.
 
-    **Still not built.** Both calls are answered, but the rewrite itself is a column-wide pass (all
-    nonzero `weight` entries across every class, plus the ~7 inherited stand-ins) in the shape of
-    the `back` rescale — a pass of its own, not something to do
-    incidentally inside steps 6-8. Next session that picks this up can go straight to computing the
-    column; nothing about *how* is still open, only the doing of it. See also nuance 44 (tank-vs-tank
-    overlap), raised alongside this and deferred for the same reason — it touches the same
-    consumption site (`entities/Player.js`'s `KIND.PLAYER` collision arm) this rewrite will touch.
-
-    diep also *inverts* knockback against damage — Destroyer 0.2 gu, Annihilator 0.1 gu, against
-    Basic's 0.667 — where ours is nearly flat across those three.
+    **What it cost outside the column**, all of it recorded rather than incidental: a new `push`
+    column (below), the tank-body and `'god'` constants above, nuance 44's overlap resolution, one
+    consequent change to `lib/gameAI.js`'s Summoner aggro test (below), and a `clientDiff`
+    rebaseline in which **three of the four modes came out bit-identical** — see nuance 34, which
+    now carries this as its cleanest worked example.
 
 17. **Health and regen — SHIPPED**; **body damage magnitude still open.**
     - **Max health — SHIPPED, diep's raw numbers, not a rescale.** `MH₀ = 50`, `+2/level`,
@@ -801,8 +942,9 @@ shipped. What is left in this section is itemised as open at each entry.*
       untouched by #18's `dr` term (the *defensive* multiplier on damage taken, shipped) — and is
       still open.
 
-18. **The damage *model* differs structurally — two of three consequences SHIPPED (bundled with the
-    health/regen work per the lethality call), the third is still open.**
+18. **The damage *model* differs structurally — three of four fixes SHIPPED (two bundled with the
+    health/regen work, the pene double-count + −75%-vs-projectiles fix landed 2026-07-30), the
+    fourth (penetration→damage magnitude, `BPene` rescale) is still open.**
     diep resolves a collision as mutual simultaneous destruction with partial-loop proration
     (the page's "3 laws"): each body has a constant damage-per-loop, each loses health equal to the
     *opponent's* DPL, and a body that dies mid-loop deals a proportionally reduced share
@@ -826,26 +968,52 @@ shipped. What is left in this section is itemised as open at each entry.*
       target-independent) — that special case turns out to generalize to every bullet, so both the
       `KIND.PLAYER` and `KIND.OBJECTS` arms read `pene -= tick.perTick(other.damage)`
       unconditionally now, and the type-1.4 ternary is gone rather than rewritten.
-    - **Penetration → damage is a coincidence, not a design — still open, deliberately.** diep's
-      health loss per bullet does scale with penetration (`D_b ∝ PP`, because a tougher bullet
-      survives more loops of contact), so our `× max(1, pene/5)` is accidentally the right *shape* —
-      but the magnitude is off (diep ×6.25 at max bp; ours ×2.89 at max) and ours has a dead zone
-      below `pene 5` where the stat does nothing at all. Stat slope is 0.75/pt (diep) vs 1.25/pt
-      (ours). **Unlike the two above, this bullet point never had a drop-in replacement formula** —
-      it names a discrepancy, not a decided target formula — and a straight substitution isn't
-      available the way it was for the other two: our `up.BPene` is a *compound* stat (one multiplier
-      scales a bullet's own spawned `pene`/health at `Bull.pene = up.BPene × can.pene`, and a
-      *second*, separate read of that already-scaled value is what produces the measured
-      "×2.89, 1.25/pt"). Matching diep's `1 + 0.75×points` cleanly would mean turning `BPene` into a
-      raw point count (the conversion `MSpeed`/`HpRegan` already got) *and* rescaling every
-      `can.pene` in `public/SHARE/TanksConfig.js` alongside it — a second column-wide rescale in the
-      shape of the `back` column rescale, not a two-line change, and outside what the lethality question asked
-      for. Left as a finding, not silently dropped.
+    - **Penetration was counted twice, multiplicatively — SHIPPED 2026-07-30.** Measured
+      2026-07-30, in a real room, against the real `shoot()`/`collision()` path with every other
+      entity removed, **before this fix**: target a fresh 52 HP tank, attacker firing at 160 units —
+      a Basic needed **43** bullets to kill it, a Twin 49, a Sniper 64, a Machine Gun 66, a Gunner 78,
+      a 0-point Destroyer 19, a 7/7 Pene+Dmg Basic 5.1 — and a **maxed-Pene Destroyer one-shot**
+      (399 dmg/bullet). Since the second bullet point above had shipped,
+      `entities/Bullet.js`'s `pene -= tick.perTick(other.damage)` already made `pene` decide *how
+      many ticks of contact a bullet survives*, but `pene` was *also* still the damage multiplier at
+      `entities/Player.js`'s `Math.max(1, pene / 5)` — the same stat spent twice, roughly
+      **quadratic in `pene` above 5, flat-and-tiny below it**, an ~900× spread between spam and
+      Destroyer. **Fix:** the `Math.max(1, pene / 5)` multiplier (and the `BASE_DRONE_PENE`
+      substitution it needed) is gone from `entities/Player.js` entirely, not replaced — a bullet's
+      damage per tick is now just `can.damage × up.BDamage × dr`, and its total damage against a
+      target still scales with `pene` purely through contact duration, the same shape base drones
+      already used. Numerically a no-op for base drones (their `BASE_DRONE_PENE` substitution made
+      the old multiplier evaluate to exactly 1 — `entities/Objects.js`'s own, differently-shaped
+      `(pene>1)?pene:pene/2` shape-damage formula was untouched by this fix, deliberately: nothing in
+      this measurement implicated it, and `test/rooms.js`'s "pene/2 * damage, not one-shots it" check
+      pins it as intentional).
+      **Bundled in the same pass** (found alongside the double-count, cheap, and also just a plain
+      bug rather than a design question): `MEASUREMENTS.md`'s pinned "body damage is −75% against
+      projectiles" was applied nowhere — `entities/Bullet.js` spent the raw `other.damage`
+      (8.48485 for a 0-point tank), so bullets were eaten 4× faster than diep's own rule. Now applied
+      via `entities/Bullet.js`'s `PROJECTILE_BODY_DAMAGE = 0.25`, at both sites a bullet's own `pene`
+      is spent against a `damage` stat (`KIND.PLAYER` and `KIND.OBJECTS` — shapes have Body Damage
+      too, diep_wiki/Stats.txt).
+      **Found in the same pass, left as a finding, not fixed:** `entities/Player.js`'s `KIND.PLAYER`
+      arm (tank-vs-tank body-ram damage) applies no equivalent to diep_wiki's "+50% against Tanks" —
+      only the vs-shapes baseline (already correct, #17) and the now-fixed vs-projectiles term exist.
+      See nuance 50.
+    - **Penetration → damage magnitude — still open**, the one piece of this item nothing above
+      touched. diep's health loss per bullet does scale with penetration (`D_b ∝ PP`, because a
+      tougher bullet survives more loops of contact) — that shape is now exactly what contact-duration
+      scaling gives for free, with no multiplier needed. What's still open is the *magnitude*: diep's
+      stat slope is `1 + 0.75×points` on a bullet's own HP/`PP`, ours is a differently-shaped compound
+      stat (`Bull.pene = up.BPene × can.pene`, i.e. one multiplier scaling a raw per-cannon table
+      rather than a point count added to a base). Matching diep's formula cleanly would mean turning
+      `BPene` into a raw point count (the conversion `MSpeed`/`HpRegan` already got) *and* rescaling
+      every `can.pene` in `public/SHARE/TanksConfig.js` alongside it — a second column-wide rescale in
+      the shape of the `back` column rescale, not a two-line change, and still outside what the
+      lethality question asked for. Left as a finding, not silently dropped — the strongest candidate
+      whenever someone wants `BPene`'s own point economy revisited.
 
-    Adopting the full real model would touch every `collision()` in `entities/`; two of the three
-    consequences now do. The third is the difference between "ramming is a build" and "ramming is
-    chip damage" for the *penetration* dimension specifically, and stays a design call for whenever
-    someone wants BPene's own point economy revisited.
+    Adopting the full real model would touch every `collision()` in `entities/`; three of the four
+    fixes now do. The fourth is the difference between "ramming is a build" and "ramming is chip
+    damage" for the *penetration* dimension specifically, and stays a design call.
 
 19. **Arena and shape density — SHIPPED, the density half**; **the arena-resize
     half stays deliberately open.** (The FOV half was already done: `config.FOV_MUL` 1.39 and

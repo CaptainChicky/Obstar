@@ -331,6 +331,13 @@ function bossTests() {
 		right on top of a boss and step the room twice: once to let motion() build the boss's
 		Detector (a step it does not have yet), once more so the collision pass it now runs can
 		actually populate DETEC.selectAll for that Detector to read.
+
+		The position is re-asserted between the two steps, and that is not the test propping
+		itself up. Tank bodies are solid now (entities/Player.js's positional overlap resolution,
+		PENDING nuance 44), so "on top of a boss" is a state the engine actively destroys - one
+		step separates the pair by the sum of their radii. Re-placing models what it models in a
+		real match: a player HOLDING position against the boss, which is the only way the
+		scenario this test describes can exist at all.
 	*/
 	{
 		const me = player(room, 0);
@@ -341,6 +348,8 @@ function bossTests() {
 		me.x = boss.x;
 		me.y = boss.y;
 		room.step();
+		me.x = boss.x;
+		me.y = boss.y;
 		room.step();
 		check('the summoner detects a level-0 (freshly respawned) player standing next to it',
 			boss.detected.includes(me), 'detected ' + boss.detected.length + ' players');

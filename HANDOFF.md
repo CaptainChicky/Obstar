@@ -193,10 +193,27 @@ The things in this codebase that are *not* obvious from reading the code around 
   `F = 10/11` is exactly `gu × 2.8`, i.e. every entry in that column reads as its diep gu value ×
   2.8. Edit `FRICTION` and that column has to be recomputed with it; nothing tests the relationship.
   The column is consumed through `tick.impulse()`, not `tick.perTick()` (see above) — a one-time fix
-  that raised the drone-chase ceiling 527.2 → 559.2 u/s with no change to `back` itself. Knockback
-  (`weight`) has the same shape but the column has **not** been rescaled yet — it is blocked on two
-  human calls (PENDING #16); its consumption site is already correct (`tick.impulse()`), so #16 will
-  tune against the right site once it lands. `public/SHARE/TanksConfig.js`'s
+  that raised the drone-chase ceiling 527.2 → 559.2 u/s with no change to `back` itself.
+  **Knockback (`weight`) is the same shape and is now derived the same way** (PENDING #16): it is
+  diep's own "Tanks Knockbackfactor" table in grid squares run through `weight = gu × 5.25`, because
+  `entities/Player.js`'s bullet arm turns the column into an impulse as `weight / 3 * 1.6`
+  (`× 0.53333`) and `gu × 5.25 × 0.53333 × 10 / 28 = gu` at `F = 10/11`. Divide by 5.25 to read the
+  table back. The tank *body* rides the same identity as a bare constant — `tick.impulse(4.48)` in
+  the `KIND.PLAYER` arm, diep's "All Tank Bodies" 1.6 gu — and the sandbox `'god'` repulsion sits at
+  twice that. **A second column, `push`, was split out of `weight` in the same pass and the two must
+  not be merged back**: `weight` is knockback dealt to a tank (one consumer, that bullet arm);
+  `push` is the bullet's own bounce off what it hit (three consumers, all in `entities/Bullet.js`,
+  all `tick.perTick()` into its hand-rolled `BODY_FRICTION` decay). They were one overloaded field,
+  only the knockback half had a reference behind it, and the two mechanisms differ by ~14× in what
+  they do with the same number — so `push` carries the pre-#16 values verbatim and that is why
+  bullet and drone behaviour did not move at all across the rewrite. **Tank bodies are also solid
+  now** (PENDING nuance 44): the same `KIND.PLAYER` arm resolves positional overlap directly,
+  splitting it by size, on top of the velocity impulse rather than instead of it — the impulse alone
+  decays through `stepBody` over many ticks while the pair is still overlapping, so tanks used to
+  interpenetrate. That has one non-obvious knock-on: standing *inside* another body is no longer
+  possible, which made `lib/gameAI.js`'s boss aggro test (a radius smaller than the boss's own
+  hitbox at low level) unsatisfiable and forced it to measure from the hull — see PENDING nuance 49.
+  `public/SHARE/TanksConfig.js`'s
   client (drawn) and server (spawn) cannon tables are cross-checked index-by-index by
   `test/tanks.js`, which fails `npm test` on drift instead of relying on a comment asking the next
   editor to keep two hand-authored tables in sync. What it caught (plan.md WP-CANNON, PENDING
@@ -225,11 +242,29 @@ The things in this codebase that are *not* obvious from reading the code around 
   that reasoning turned out to generalize to every bullet. `BASE_DRONE_HP` stays `2000`: a maxed
   tank's pool is now exactly diep's own (`278`), so the ratio a fresh reader might reach for
   (`~7.1× a maxed tank`) resolves back to diep's raw number rather than a scaled-up one.
-  **Left deliberately unshipped**: penetration→damage magnitude (diep's `1+0.75×points` slope against
-  our `max(1, pene/5)`) — no decided replacement formula exists, and our `up.BPene` is a compound
-  stat (it scales a bullet's own spawned `pene` *and* that same value is separately read as a damage
-  multiplier), so a clean fix means restructuring `BPene` into a raw point count and rescaling every
-  `can.pene` in `TanksConfig.js` alongside it — its own column-wide pass, not a two-line change.
+  **The double-count this produced — SHIPPED 2026-07-30 (PENDING #18).** Because the shipped
+  "bullet HP spent against the target's DPL" rule already made `pene` decide how many *ticks of
+  contact* a bullet survives, `entities/Player.js`'s leftover `max(1, pene/5)` damage multiplier was
+  applying the same stat a second time — low-pene spam classes sat at the `×1` floor (a Basic needed
+  **43** bullets to kill a fresh 52 HP tank) while a maxed-Pene Destroyer got both the
+  floor-busting multiplier *and* the longest contact, one-shotting instead. The multiplier is gone
+  (not replaced): a bullet's damage per tick is now just `can.damage × up.BDamage × dr`, and its
+  total damage against a given target still scales with `pene` entirely through contact duration,
+  same as it did for base drones already (below). This also retired the `BASE_DRONE_PENE`
+  substitution `entities/Player.js` used to need (below). In the same pass, `MEASUREMENTS.md`'s
+  pinned "body damage is −75% against projectiles" — previously applied nowhere, so bullets were
+  eaten 4× faster than diep's rule — is now applied at both places `entities/Bullet.js` spends its
+  own `pene` against a `damage` stat (`KIND.PLAYER` and `KIND.OBJECTS`), via the module-level
+  `PROJECTILE_BODY_DAMAGE = 0.25` constant.
+  **Left deliberately unshipped**: penetration→damage magnitude (diep's `1+0.75×points` slope
+  against our now-plain `can.damage × up.BDamage`) — no decided replacement formula exists, and our
+  `up.BPene` is a compound stat (it scales a bullet's own spawned `pene`, which is *also* what now
+  determines contact duration), so a clean fix means restructuring `BPene` into a raw point count and
+  rescaling every `can.pene` in `TanksConfig.js` alongside it — its own column-wide pass, not a
+  two-line change. Full numbers and the derivation of the double-count are in PENDING #18. **Also
+  found, not fixed, in the same pass**: `entities/Player.js`'s `KIND.PLAYER` arm (tank-vs-tank body
+  damage) applies no equivalent to the wiki's "+50% against Tanks" — only the vs-shapes baseline and
+  the now-fixed vs-projectiles term are implemented. Left as a finding; see PENDING #18.
 - **Arena size and shape density are derived, not written down** (PENDING #19, plan.md step 6).
   diep's two published formulas — `AL = ⌊√N_P × 50⌋` gu and `12.5 × N_P` shapes — **compose to a
   constant 1 shape per 200 gu²**, because the player count cancels. That composition is the whole
@@ -391,13 +426,18 @@ centre agrees; provocation is recorded there too (`provoked`/`provokedAt`, set f
 after `BASE_DRONE_PROVOKE_MEMORY`. `t.fallen` is the hook for the Fallen bosses; nothing sets it
 today because we only ship the Summoner.
 
-**Contact damage reads `BASE_DRONE_PENE`, never the drone's own `pene`** (plan.md WP4.5.11). A base
-drone's `pene` is its 2000-point health pool, so `entities/Player.js`'s ordinary-bullet
-`pene / 5` penetration multiplier evaluated to **400** and one drone killed any tank in a single
-25 ms tick. `entities/Objects.js` already made the same substitution for shapes; `entities/Player.js`
-does now too. The resulting feel is the wiki's "low damage, delivered extremely quickly": one drone
-in contact is 74 HP/s (~13.6 s to kill a maxed tank), a full 4team base of twelve is ~891 HP/s
-(~1.1 s). `BASE_DRONE_DAMAGE` itself is correct as it stands and was **not** retuned.
+**Contact damage reads `BASE_DRONE_PENE`, never the drone's own `pene` — `entities/Objects.js`
+only, since PENDING #18's double-count fix** (plan.md WP4.5.11, updated 2026-07-30). A base
+drone's `pene` is its 2000-point health pool, so reading it as a penetration value used to evaluate
+to a 400x (`entities/Player.js`'s old `pene / 5`) or 2000x (`entities/Objects.js`'s `pene`) damage
+multiplier and one drone could one-shot a tank or vaporise a shape in a single 25 ms tick.
+`entities/Player.js` no longer needs the substitution at all: its pene-based damage multiplier is
+gone outright (below), so there's nothing left for a drone's real pene to blow up.
+`entities/Objects.js` still substitutes `BASE_DRONE_PENE` for its own, unrelated `(pene>1)?pene:
+pene/2` shape-damage formula, which PENDING #18's fix did not touch. The resulting feel is still
+the wiki's "low damage, delivered extremely quickly": one drone in contact is 74 HP/s (~13.6 s to
+kill a maxed tank), a full 4team base of twelve is ~891 HP/s (~1.1 s). `BASE_DRONE_DAMAGE` itself is
+correct as it stands and was **not** retuned.
 
 **Radius is quantised into five shared "energy levels"** (plan.md WP4.5.0, `rooms/Room.js`'s
 `levelR()`/`levelPlan()`), not a continuous random band: a drone is always *at*

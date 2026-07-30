@@ -1435,13 +1435,30 @@
 			cross-check of which is which is in plan.md's step-3 record - do not "finish the job"
 			off physics.html without reading it, that is a balance call, not a conversion.
 
-			`weight` is a knockback impulse, applied once per tick of contact and then decayed by
-			the recipient's own friction. It has NOT been rescaled against the tank F the way `back`
-			was - that is PENDING #16, blocked on two human calls. And note that neither column is
-			actually tick-rate invariant at its consumption site: a one-shot impulse goes through
-			tick.perTick(), which is the wrong lib/tick.js category for one, so the live 25ms tick
-			delivers ~0.64x of what these numbers say. That is a consumption-site bug (PENDING #43)
-			- do NOT compensate for it by inflating either column.
+			`weight` is KNOCKBACK - how far this bullet shoves the TANK it hits - and like `back` it
+			is now fully derived rather than tuned: it is diep's own "Tanks Knockbackfactor" table
+			(physics.html, in GRID SQUARES per loop of contact) run through `weight = gu x 5.25`.
+			That factor is the same one-shot-impulse identity `back` uses. entities/Player.js's
+			bullet arm turns the column into an impulse as `weight / 3 * 1.6` = `weight x 0.53333`,
+			and a one-shot impulse on tank velocity displaces `v0 x F/(1-F)` = `10 x v0` units at the
+			tank F = 10/11, so the round trip is `gu x 5.25 x 0.53333 x 10 / 28 = gu`. Every entry
+			below therefore divides by 5.25 straight back into diep's table: 3.5 is Basic's 0.666 gu,
+			1.05 is Destroyer's 0.2 gu, 4.2 is the 0.8 gu every drone row carries, 0.525 is
+			Annihilator's 0.1 gu. Note what that does to the shape of the roster - diep INVERTS
+			knockback against damage, so Destroyer and Annihilator sit at the bottom of this column
+			and Basic near the top. Like `back`, this tracks the TANK friction and not whatever
+			MEASUREMENTS.md's M1 finds about bullet motion. Seven classes have no row in diep's table
+			at all (Cyclone, Submachine, Auto Hover, Fortress, Summoner, Rocket, and plain Gunner,
+			which diep has but the table omits); each inherits its nearest mapped relative and says
+			so at its own entry.
+
+			`push` is NOT knockback and is not diep's: it is the bullet's own bounce off whatever it
+			hit, read only by entities/Bullet.js's three self-push sites. It carries what `weight`
+			held before `weight` became diep's table, because the two were one overloaded field and
+			only the knockback half had a reference behind it. For a spend-down bullet the bounce is
+			cosmetic (it is destroyed the same tick and only coasts through its fade), but for a
+			drone - whose pene is a health pool - it is the separation impulse that keeps a swarm
+			from stacking, which is why it still exists.
 		*/
 		{
 			"Basic": new function () {
@@ -1463,7 +1480,8 @@
 					this.damage = 4.84848;
 					this.size = 18;
 					///
-					this.weight = 0.27426;
+					this.weight = 3.5;   // diep 0.666 gu
+					this.push = 0.27426;
 					this.back = 1.12;
 				}
 			},
@@ -1485,7 +1503,8 @@
 					this.damage = 4.36364;
 					this.size = 18;
 					///
-					this.weight = 0.27426;
+					this.weight = 3.5;   // diep 0.666 gu
+					this.push = 0.27426;
 					this.back = 1.12;
 				}
 				this.cannons[1] = {
@@ -1502,7 +1521,8 @@
 					damage: 2.42424,
 					size: 17,
 					///
-					weight: 0.45709,
+					weight: 3.5,   // diep lists Flank Guard once, so the rear barrel is 0.666 gu too
+					push: 0.45709,
 					back: 3.36
 				};
 			},
@@ -1524,7 +1544,8 @@
 					this.damage = 4.24242;
 					this.size = 17;
 					///
-					this.weight = 0.27426;
+					this.weight = 2.275;   // diep 0.4333 gu
+					this.push = 0.27426;
 					this.back = 0.84;
 				};
 				this.cannons[0] = new function () {
@@ -1542,7 +1563,8 @@
 					this.damage = 4.24242;
 					this.size = 17;
 					///
-					this.weight = 0.27426;
+					this.weight = 2.275;   // diep 0.4333 gu
+					this.push = 0.27426;
 					this.back = 0.84;
 				};
 			},
@@ -1563,7 +1585,8 @@
 					this.damage = 3.15152;
 					this.size = 18;//17
 					///
-					this.weight = 0.27426;
+					this.weight = 2.45;   // diep 0.4666 gu
+					this.push = 0.27426;
 					this.back = 1.12;
 				}
 			},
@@ -1584,7 +1607,8 @@
 					this.damage = 3.27273;
 					this.size = 18;
 					///
-					this.weight = 0.54851;
+					this.weight = 3.5;   // diep 0.666 gu
+					this.push = 0.54851;
 					this.back = 3.36;
 				}
 			},
@@ -1606,7 +1630,8 @@
 					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.45709,
+					weight: 2.45,   // diep 0.4666 gu
+					push: 0.45709,
 					back: 1.12
 				}));
 				c[0].offx = 6; c[0].offdir = .4;
@@ -1632,7 +1657,8 @@
 					damage: 3.63636,
 					size: 16,
 					///
-					weight: 0.27426,
+					weight: 1.75,   // diep 0.333 gu
+					push: 0.27426,
 					back: 0
 				}));
 				c[2].offdir = c[3].offdir = Math.PI;
@@ -1657,7 +1683,8 @@
 					damage: 4.24242,
 					size: 15,
 					///
-					weight: 0.45709,
+					weight: 2.625,   // diep 0.5 gu
+					push: 0.45709,
 					back: 0
 				}));
 				c[1].offdir = Math.PI / 2; c[1].offTime = .5;
@@ -1684,7 +1711,8 @@
 					size: 27,
 					///
 					exitSpeed: 53,
-					weight: 0.27426,
+					weight: 1.05,   // diep 0.2 gu (Destroyer and Hybrid's bullet share the row) - the table inverts knockback against damage
+					push: 0.27426,
 					back: 16.8
 				}));
 				///
@@ -1707,7 +1735,8 @@
 					this.damage = 3.15152;
 					this.size = 19;
 					///
-					this.weight = 0.54851;
+					this.weight = 3.5;   // diep 0.666 gu
+					this.push = 0.54851;
 					this.back = 0.84;
 				}
 			},
@@ -1733,7 +1762,8 @@
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.36567,
+					weight: 4.2,   // diep 0.8 gu, the row every drone class shares
+					push: 0.36567,
 					back: 0
 				}));
 				c[1].offdir = -Math.PI / 2;
@@ -1755,7 +1785,8 @@
 					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.45709,
+					weight: 0.7,   // diep Tri-Angle (Rear Bullet) 0.1333 gu; c[0] overrides to the front row
+					push: 0.45709,
 					back: 2.8
 				}));
 				// The main cannon's length bump used to write `.height`, a client-only field
@@ -1763,6 +1794,7 @@
 				// line was a no-op and the cannon stayed at the 58 default. test/tanks.js's
 				// muzzle-tip band caught it once canonLength was corrected.
 				c[0].back = 0.28; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.45344;
+				c[0].weight = 3.5;   // diep Tri-Angle (Front Bullet) 0.666 gu
 				c[1].offdir = -Math.PI - .4; c[1].offx = -5; c[1].offTime = .5;
 				c[2].offdir = -Math.PI + .4; c[2].offx = 5; c[2].offTime = .5;
 				///
@@ -1788,7 +1820,8 @@
 					this.size = 12;
 					///
 					this.exitSpeed = 60;
-					this.weight = 0.27426;
+					this.weight = 3.5;   // diep 0.666 gu, the row every manual trap shares
+					this.push = 0.27426;
 					this.back = 1.12;
 				}
 			},
@@ -1809,7 +1842,12 @@
 					damage: 4.24242,
 					size: 16,
 					///
-					weight: 0.91418,
+					// STAND-IN: diep has no Rocket. Both barrels point backwards (offdir ~ +-PI), so
+					// this takes the rear-thruster row every mapped tank with rear barrels carries -
+					// Tri-Angle/Booster/Fighter (Rear Bullet), 0.1333 gu - rather than its class-tree
+					// parent Flank Guard's 0.666, which is a forward gun. May want its own tune.
+					weight: 0.7,
+					push: 0.91418,
 					back: 2.38
 				}));
 				c[1].offdir = -Math.PI + .4; c[1].offx = 5;
@@ -1835,7 +1873,8 @@
 					size: 27,
 					///
 					exitSpeed: 53,
-					weight: 0.27426,
+					weight: 1.05,   // diep 0.2 gu (Destroyer and Hybrid's bullet share the row) - the table inverts knockback against damage
+					push: 0.27426,
 					back: 16.8
 				}));
 				c.push({
@@ -1856,7 +1895,8 @@
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.36567,
+					weight: 4.2,   // diep Hybrid (Drone) 0.8 gu
+					push: 0.36567,
 					back: 0.28
 				})
 				///
@@ -1881,7 +1921,10 @@
 					size: 34,
 					///
 					exitSpeed: 53,
-					weight: 0.27426,
+					// diep 0.1 gu - the floor of the table, and the one entry where `back` stays
+					// deliberately off-table (4 gu against diep's 6.8) while `weight` does not.
+					weight: 0.525,
+					push: 0.27426,
 					back: 11.2
 				}));
 				///
@@ -1903,7 +1946,11 @@
 					damage: 2.66667,
 					size: 15,
 					///
-					weight: 0.45709,
+					// diep Sprayer (Small Bullet) 0.0666 gu, the floor of the table. All five barrels
+					// are the same small, low-pene, fast bullet, so none takes the Large Bullet row -
+					// the volley's combined shove is ~0.333 gu.
+					weight: 0.35,
+					push: 0.45709,
 					back: 0.42
 				}));
 				// This array is index-paired against the client's cannons list in
@@ -1935,7 +1982,8 @@
 					this.damage = 3.0303;
 					this.size = 19;
 					///
-					this.weight = 0.63992;
+					this.weight = 3.5;   // diep 0.666 gu
+					this.push = 0.63992;
 					this.back = 2.24;
 				}
 			},
@@ -1956,7 +2004,8 @@
 					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.45709,
+					weight: 2.1,   // diep 0.4 gu
+					push: 0.45709,
 					back: 1.12
 				}));
 				c[0].offx = 17;
@@ -1982,7 +2031,8 @@
 					damage: 3.39394,
 					size: 16,
 					///
-					weight: 0.27426,
+					weight: 1.75,   // diep 0.333 gu
+					push: 0.27426,
 					back: 0
 				}));
 				c[2].offdir = c[3].offdir = Math.PI * 2 / 3;
@@ -2008,7 +2058,8 @@
 					damage: 2.78788,
 					size: 16,
 					///
-					weight: 0.45709,
+					weight: 1.925,   // diep 0.3666 gu
+					push: 0.45709,
 					back: 0.784
 				}));
 				c[0].offx = 7; c[0].offdir = .6;
@@ -2035,7 +2086,8 @@
 					damage: 3.0303,
 					size: 16,
 					///
-					weight: 0.45709,
+					weight: 2.275,   // diep 0.4333 gu
+					push: 0.45709,
 					back: 0
 				}));
 				c[1].offdir = Math.PI * 1 / 4; c[1].offTime = .5;
@@ -2063,7 +2115,12 @@
 					damage: 4.48485,
 					size: 12,
 					///
-					weight: 0.45709,
+					// STAND-IN: diep has no Cyclone. It takes Octo Tank's 0.4333 gu rather than its
+					// class-tree parent Quad Tank's 0.5, because the table's own trend is monotone in
+					// barrel count (Quad 4 -> 0.5, Octo 8 -> 0.4333) and Cyclone has ten. May want its
+					// own tune.
+					weight: 2.275,
+					push: 0.45709,
 					back: 0
 				}));
 				this.cannons[1].offdir = Math.PI * .2; this.cannons[1].offTime = .5;
@@ -2092,12 +2149,14 @@
 					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.45709,
+					weight: 0.7,   // diep Booster (Rear Bullet) 0.1333 gu; c[0] overrides to the front row
+					push: 0.45709,
 					back: 2.408
 				}));
 				// Same `.height`-instead-of-`.canonLength` typo as Triangle above; these three
 				// lines were no-ops until test/tanks.js caught it.
 				c[0].back = 0.56; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.468064;
+				c[0].weight = 3.5;   // diep Booster (Front Bullet) 0.666 gu
 				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
 				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
 				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 58; c[3].offTime = .5;
@@ -2121,7 +2180,8 @@
 					damage: 1.45455,
 					size: 16,
 					///
-					weight: 0.45709,
+					weight: 0.7,   // diep Fighter (Rear Bullet) 0.1333 gu; c[0]-c[2] override below
+					push: 0.45709,
 					back: 0.28
 				}));
 				// Same `.height`/`.canonLength` typo as Triangle/Booster above, plus a second
@@ -2135,6 +2195,10 @@
 				c[3].offdir = -Math.PI - .4; c[3].offx = -5; c[3].offTime = .5; c[3].canonLength = 59;
 				c[4].offdir = -Math.PI + .4; c[4].offx = 5; c[4].offTime = .5; c[4].canonLength = 59;
 				c[3].back = c[4].back = 3.92;
+				// diep Fighter (Front Bullet) 0.666 gu and (Side Bullet) 0.5333 gu; the rear pair
+				// keeps the literal's 0.1333 gu row above.
+				c[0].weight = 3.5;
+				c[1].weight = c[2].weight = 2.8;
 				///
 				this.cannons = c;
 			},
@@ -2165,7 +2229,11 @@
 					damage: 3.0303,
 					size: 14,
 					///
-					weight: 0.27426,
+					// STAND-IN by class, mapped by cannon: diep has no Auto Hover, but this slot is
+					// the same auto-turret every Auto- class carries, so it takes their row -
+					// Auto Gunner/Auto Trapper/Auto Smasher (Auto Bullet), 0.2 gu.
+					weight: 1.05,
+					push: 0.27426,
 					back: 0.28
 				}];
 				c = c.concat(new Array(3).fill(null).map(() => ({
@@ -2182,7 +2250,10 @@
 					damage: 2.42424,
 					size: 16,
 					///
-					weight: 0.45709,
+					// The other three cannons are Tri-Angle's, so they take Tri-Angle's rows:
+					// 0.1333 gu rear here, 0.666 gu front on c[1] below.
+					weight: 0.7,
+					push: 0.45709,
 					back: 2.8
 				})));
 				// `.height` was a typo for `.canonLength` (see Triangle/Booster/Fighter
@@ -2195,6 +2266,7 @@
 				// band the way its siblings were - found by the same static read that fixed
 				// them.
 				c[1].back = 0.28; c[1].canonLength = 62; c[1].pene = 1.35; c[1].damage = 4;
+				c[1].weight = 3.5;   // diep Tri-Angle (Front Bullet) 0.666 gu
 				c[2].offdir = -Math.PI - .4; c[2].offx = -5; c[2].offTime = .5;
 				c[3].offdir = -Math.PI + .4; c[3].offx = 5; c[3].offTime = .5;
 				///
@@ -2222,7 +2294,8 @@
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.45709,
+					weight: 4.2,   // diep Overlord 0.8 gu, the row every drone class shares
+					push: 0.45709,
 					back: 0.28
 				}));
 				c[1].offdir = Math.PI / 2;
@@ -2253,7 +2326,8 @@
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.45709,
+					weight: 4.2,   // diep Manager 0.8 gu, the row every drone class shares
+					push: 0.45709,
 					back: 0.28
 				}]
 				this.cannons = c;
@@ -2268,7 +2342,8 @@
 					speed: 0.438816,
 					pene: 4,
 					damage: 1.57576,
-					weight: 0.5028
+					weight: 4.2,   // diep Necromancer 0.8 gu, the row every drone class shares
+					push: 0.5028
 				};
 				this.cannons = [];
 			},
@@ -2294,7 +2369,8 @@
 					size: 6,
 					///
 					exitSpeed: 25,
-					weight: 0.04571,
+					weight: 0.525,   // diep Battleship 0.1 gu
+					push: 0.04571,
 					back: 0
 				}));
 				c[1].offdir = -Math.PI / 2; c[1].offx = -12; c[1].offTime = .5;
@@ -2325,7 +2401,10 @@
 					size: 10,
 					///
 					exitSpeed: 60,
-					weight: 0.27426,
+					// STAND-IN: diep has no Fortress. Its three launchers are Tri-Trapper's, so they
+					// take the 0.666 gu row every manual trap carries. May want its own tune.
+					weight: 3.5,
+					push: 0.27426,
 					back: 0
 				}));
 				c[1].offdir = Math.PI * 2 / 3; c[2].offdir = Math.PI * 4 / 3;
@@ -2347,7 +2426,10 @@
 					size: 6,
 					///
 					exitSpeed: 28,
-					weight: 0.04571,
+					// STAND-IN, same reasoning as the launchers above: these are BattleShip's small
+					// drones, so they take Battleship's 0.1 gu row. May want its own tune.
+					weight: 0.525,
+					push: 0.04571,
 					back: 0
 				})));
 				c[4].offdir = Math.PI * 2 / 3 + Math.PI / 3; c[5].offdir = Math.PI * 4 / 3 + Math.PI / 3;
@@ -2374,7 +2456,8 @@
 					size: 19,
 					///
 					exitSpeed: 70,
-					weight: 0.27426,
+					weight: 5.6,   // diep 1.0666 gu, the top of the whole table
+					push: 0.27426,
 					back: 3.36
 				}];
 				this.cannons = c;
@@ -2399,7 +2482,8 @@
 					size: 10,
 					///
 					exitSpeed: 60,
-					weight: 0.27426,
+					weight: 3.5,   // diep Overtrapper (Trap) 0.666 gu
+					push: 0.27426,
 					back: 2.24
 				}];
 				c = c.concat(new Array(2).fill(null).map(() => ({
@@ -2420,7 +2504,8 @@
 					size: 14,
 					///
 					exitSpeed: 25,
-					weight: 0.45709,
+					weight: 4.2,   // diep Overtrapper (Drone) 0.8 gu
+					push: 0.45709,
 					back: 0.28
 				})));
 				c[2].offdir = Math.PI * 4 / 3; c[2].offTime = .5;
@@ -2453,7 +2538,8 @@
 					damage: 3.15152,
 					size: 14,
 					///
-					weight: 0.27426,
+					weight: 1.05,   // diep Auto Trapper (Auto Bullet) 0.2 gu
+					push: 0.27426,
 					back: 0.28
 				}];
 				c.push({
@@ -2473,7 +2559,8 @@
 					size: 10,
 					///
 					exitSpeed: 60,
-					weight: 0.27426,
+					weight: 3.5,   // diep Auto Trapper (Trap) 0.666 gu
+					push: 0.27426,
 					back: 2.24
 				});
 				this.cannons = c;
@@ -2495,7 +2582,10 @@
 					this.damage = 1.93939;
 					this.size = 23;//17
 					///
-					this.weight = 0.27426;
+					// STAND-IN: diep has no Submachine. It inherits its class-tree parent Machine
+					// Gun's 0.4666 gu. May want its own tune.
+					this.weight = 2.45;
+					this.push = 0.27426;
 					this.back = 2.24;
 				}
 			},
@@ -2517,7 +2607,12 @@
 					damage: 2.66667,
 					size: 12,
 					///
-					weight: 0.45709,
+					// STAND-IN: diep HAS a Gunner but its Knockbackfactor table omits it. This takes
+					// Gunner Trapper (Bullet), 0.333 gu - the table's only entry for a bullet fired
+					// out of a Gunner barrel - rather than the class-tree parent Machine Gun's
+					// 0.4666. May want its own tune.
+					weight: 1.75,
+					push: 0.45709,
 					back: 0
 				})));
 				c[1].offx *= -1;
@@ -2553,7 +2648,8 @@
 					damage: 2.42424,
 					size: 14,
 					///
-					weight: 0.27426,
+					weight: 1.05,   // diep Auto Gunner (Auto Bullet) 0.2 gu
+					push: 0.27426,
 					back: 0.28
 				}];
 				c = c.concat(new Array(4).fill(null).map(() => ({
@@ -2570,7 +2666,10 @@
 					damage: 2.66667,
 					size: 12,
 					///
-					weight: 0.45709,
+					// STAND-IN via Gunner above - the table has no Auto Gunner (Manual Bullet) row
+					// either, so the manual barrels carry Gunner's stand-in. May want its own tune.
+					weight: 1.75,
+					push: 0.45709,
 					back: 0
 				})));
 				c[2].offx *= -1;
@@ -2633,7 +2732,11 @@
 					size: 20,
 					///
 					exitSpeed: 35,
-					weight: 0.18283,
+					// STAND-IN: diep has no Summoner and no boss of any kind. These are drones, so
+					// they take the 0.8 gu row every drone class shares. May want its own tune -
+					// a boss fields up to 35 of them at once, where Overlord fields 8.
+					weight: 4.2,
+					push: 0.18283,
 					back: 0
 				}));
 				c[1].offdir = Math.PI / 2; c[1].offTime = .5;
