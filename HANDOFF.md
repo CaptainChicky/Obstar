@@ -255,16 +255,19 @@ The things in this codebase that are *not* obvious from reading the code around 
   pinned "body damage is −75% against projectiles" — previously applied nowhere, so bullets were
   eaten 4× faster than diep's rule — is now applied at both places `entities/Bullet.js` spends its
   own `pene` against a `damage` stat (`KIND.PLAYER` and `KIND.OBJECTS`), via the module-level
-  `PROJECTILE_BODY_DAMAGE = 0.25` constant.
+  `PROJECTILE_BODY_DAMAGE = 0.25` constant. **Also found in the same pass and fixed 2026-07-30**:
+  `entities/Player.js`'s `KIND.PLAYER` arm (tank-vs-tank body-ram damage) applied no equivalent to
+  the wiki's "+50% against Tanks" — only the vs-shapes baseline (#17) and the vs-projectiles term
+  existed. A `TANK_BODY_DAMAGE = 1.5` constant, the same shape as `Bullet.js`'s
+  `PROJECTILE_BODY_DAMAGE`, is now multiplied in alongside `damageReduction()` at that one collision
+  site only — `KIND.OBJECTS` and `KIND.BULLET` are untouched, since the wiki multiplier is specific
+  to a tank's body hitting another tank's body.
   **Left deliberately unshipped**: penetration→damage magnitude (diep's `1+0.75×points` slope
   against our now-plain `can.damage × up.BDamage`) — no decided replacement formula exists, and our
   `up.BPene` is a compound stat (it scales a bullet's own spawned `pene`, which is *also* what now
   determines contact duration), so a clean fix means restructuring `BPene` into a raw point count and
   rescaling every `can.pene` in `TanksConfig.js` alongside it — its own column-wide pass, not a
-  two-line change. Full numbers and the derivation of the double-count are in PENDING #18. **Also
-  found, not fixed, in the same pass**: `entities/Player.js`'s `KIND.PLAYER` arm (tank-vs-tank body
-  damage) applies no equivalent to the wiki's "+50% against Tanks" — only the vs-shapes baseline and
-  the now-fixed vs-projectiles term are implemented. Left as a finding; see PENDING #18.
+  two-line change. Full numbers and the derivation of the double-count are in PENDING #18.
 - **Arena size and shape density are derived, not written down** (PENDING #19, plan.md step 6).
   diep's two published formulas — `AL = ⌊√N_P × 50⌋` gu and `12.5 × N_P` shapes — **compose to a
   constant 1 shape per 200 gu²**, because the player count cancels. That composition is the whole

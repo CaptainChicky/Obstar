@@ -615,16 +615,6 @@ decision has its own numbered item above and is only cross-referenced here.*
     by a human, on gameplay grounds. Cross-check the whole aggro model against `diep_wiki/`'s boss
     pages when someone next has that file open.
 
-50. **Tank-vs-tank body-ram damage has no "+50% against Tanks" term — found while fixing #18's
-    pene double-count, not fixed.** diep_wiki/Stats.txt: Body Damage "is increased by 50% when
-    affecting Tanks and decreased by 75% when affecting projectiles." The projectile half is now
-    applied (`entities/Bullet.js`'s `PROJECTILE_BODY_DAMAGE`, #18). The tank half is not:
-    `entities/Player.js`'s `KIND.PLAYER` collision arm (two tanks ramming each other) reads
-    `other.damage * this.damageReduction()` with no `×1.5`, i.e. it still uses the vs-shapes baseline
-    (correct on its own, #17) rather than the higher vs-tank figure. Nobody has decided whether
-    fixing it is in scope with #18's pene work or its own item — it changes body-damage-build
-    tank-vs-tank lethality on its own, independent of anything pene-related.
-
 ## 🟡 Explicitly deferred (told not to do this pass)
 
 11. The Spade Squad diep-physics balance pass. The client/server *mismatch* in the existing
@@ -994,10 +984,13 @@ its columns. What is left in this section is itemised as open at each entry.*
       via `entities/Bullet.js`'s `PROJECTILE_BODY_DAMAGE = 0.25`, at both sites a bullet's own `pene`
       is spent against a `damage` stat (`KIND.PLAYER` and `KIND.OBJECTS` — shapes have Body Damage
       too, diep_wiki/Stats.txt).
-      **Found in the same pass, left as a finding, not fixed:** `entities/Player.js`'s `KIND.PLAYER`
-      arm (tank-vs-tank body-ram damage) applies no equivalent to diep_wiki's "+50% against Tanks" —
-      only the vs-shapes baseline (already correct, #17) and the now-fixed vs-projectiles term exist.
-      See nuance 50.
+      **Found in the same pass, fixed 2026-07-30 (formerly nuance 50):** `entities/Player.js`'s
+      `KIND.PLAYER` arm (tank-vs-tank body-ram damage) applied no equivalent to diep_wiki's "+50%
+      against Tanks" — only the vs-shapes baseline (already correct, #17) and the vs-projectiles term
+      existed. Fixed via a `TANK_BODY_DAMAGE = 1.5` constant multiplied in alongside
+      `damageReduction()` at that one collision site, the same shape as `Bullet.js`'s
+      `PROJECTILE_BODY_DAMAGE`. `KIND.OBJECTS` (shape damage) and `KIND.BULLET` (bullet damage) are
+      untouched — the wiki multiplier is specific to a tank's body hitting another tank's body.
     - **Penetration → damage magnitude — still open**, the one piece of this item nothing above
       touched. diep's health loss per bullet does scale with penetration (`D_b ∝ PP`, because a
       tougher bullet survives more loops of contact) — that shape is now exactly what contact-duration

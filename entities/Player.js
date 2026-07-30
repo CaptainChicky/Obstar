@@ -35,6 +35,12 @@ const Detector = require('./Detector.js');
 */
 const AUTOTURRET_LEAD = 15.84;
 
+// diep_wiki/Stats.txt: Body Damage "is increased by 50% when affecting Tanks" - the counterpart to
+// entities/Bullet.js's PROJECTILE_BODY_DAMAGE (-75% vs projectiles), both halves of the same wiki
+// sentence (PENDING #18/nuance 50). Applies to the KIND.PLAYER collision arm only (tank-vs-tank
+// body-ram): the vs-shapes baseline (#17) is already correct and untouched.
+const TANK_BODY_DAMAGE = 1.5;
+
 // Idle spin rate, per reference tick: an auto-turret with nothing to shoot at (shoot()), and the
 // `c` auto-spin toggle (update()). One constant, because they are meant to look like the same
 // motion - PENDING #21 retunes both together or neither.
@@ -522,7 +528,7 @@ class Player {
 					}
 				}
 				if (option.noDam || this.shield) { break; }
-				this.hp -= tick.perTick(other.damage * this.damageReduction());
+				this.hp -= tick.perTick(other.damage * TANK_BODY_DAMAGE * this.damageReduction());
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) {
 					this.dead = tick.DEAD_DELAY;
