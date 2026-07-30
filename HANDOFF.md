@@ -808,19 +808,23 @@ behaviour on different monitors. `Global.dtFrames` is clamped to `[0.2, 4]` beca
 backgrounded browser tab produces frame gaps the interpolator would otherwise take literally.
 
 **Ordinary bullets are the one exception — they are dead-reckoned, not interpolated** (PENDING
-#24(b), plan.md step 8). Drawing one packet interval in the past is what buys the smoothness for
-everything else, but for an incoming bullet it means the shot damages you before its picture
-arrives. A non-drone bullet is the only entity where that delay buys nothing, because its motion is
-deterministic between collisions (no input, no steering), so `public/client/entities.js`'s
+#24(b), SHIPPED — plan.md step 8). Drawing one packet interval in the past is what buys the
+smoothness for everything else, but for an incoming bullet it means the shot damages you before its
+picture arrives. A non-drone bullet is the only entity where that delay buys nothing, because its
+motion is deterministic between collisions (no input, no steering), so `public/client/entities.js`'s
 `Bullet.reckonMs()` hands `sample()` a lead of `NET.leadMs()` — the *same measured quantity* the
 local tank's own prediction uses (`interval` + `rtt/2`), capped at `CONST.DEAD_RECKON_MAX_INTERVALS`
-packet intervals purely as a ceiling against a hostile measurement. **Drones (`type >= 1`), pets and
-traps stay on interpolation** — a drone steers, so extrapolating it just flings it along last
-packet's heading. **So do your own bullets, and that one is a deliberate bounded asymmetry**: an own
-bullet is welded to the drawn muzzle for its first interval (§6's phase 1), which is a spatial lie
-that directly contradicts "it is already `leadMs` downrange"; running both pops it forward by about
-a bullet-speed at the handoff. `test/client.js` pins the exclusion and the lead's size, and PENDING
-#24(c) is the written floor — bounded symmetric error, not zero.
+packet intervals purely as a ceiling against a hostile measurement. **Drones (`type >= 1`) and pets
+stay on interpolation** — a drone steers, so extrapolating it just flings it along last packet's
+heading. **Your own bullets get the lead too, but RAMPED IN rather than switched on**: an own bullet
+is welded to the drawn muzzle for its first interval (§6's phase 1), which is a spatial lie that
+directly contradicts "it is already `leadMs` downrange" — switching between the two in one frame
+pops the bullet forward by about a bullet-speed at the handoff. `Bullet.reckonRamp` eases from 0 to 1
+on the same clock (`CONST.BULLET_LEAD_DECAY`) the muzzle-weld offset decays on, in the opposite
+direction, so the two trade off continuously instead of handing off in one frame. `test/client.js`
+pins both the absence of a jump at the handoff and that the ramp actually reaches full strength once
+the weld offset is gone. PENDING #24(c) is still the written floor — bounded symmetric error, not
+zero, is unreachable-below-that by design, not an oversight.
 
 ---
 
@@ -879,7 +883,7 @@ the minimap draws more than your own dot.
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
 | `test/rooms.js` | All six gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A — WP3; the band is 3% rather than 2% because Euler discretization of the drag term scales with 1−F, and plan.md step 2 took F from 0.956532 to 10/11), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). No socket, built via `boot()`. |
-| `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps, and that an incoming bullet is dead-reckoned by exactly the render delay it cancels while drones/pets/own bullets are not (PENDING #24b). |
+| `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps, that an incoming bullet is dead-reckoned by exactly the render delay it cancels while drones/pets are not, and that an own bullet's dead-reckon lead ramps in across the muzzle-weld handoff without a jump and reaches the same lead any other bullet gets (PENDING #24b, both halves shipped). |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all six modes. |
 | `test/web.js` | The merged entry point: one port serves site + socket, `play.ejs` script order, split-mode wiring, and that the auth routes degrade to a clean `{error}` (never a 500) with `DB.AUTH` off. |

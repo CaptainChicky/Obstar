@@ -440,6 +440,10 @@
 			// Both set on the first update() of one of your own bullets - see there.
 			this.lead = null;
 			this.origin = null;
+			// 0 while still muzzle-welded, eases to 1 as `this.lead` decays - see reckonMs()
+			// and update()'s decay block. Meaningless (never advanced) for a bullet that is
+			// not `mine`, since reckonMs() does not read it for those.
+			this.reckonRamp = 0;
 		}
 		/*
 			DEAD RECKONING (PENDING #24(b), plan.md step 8) - how far ahead of the interpolator's
@@ -460,7 +464,7 @@
 			the frame it will actually be judged in. Nothing here is tuned - the only tuned number is
 			the ceiling, and that exists only to bound a hostile measurement.
 
-			WHAT STAYS ON INTERPOLATION, and why each one is not an oversight:
+			WHAT STAYS ON PLAIN INTERPOLATION, and why each one is not an oversight:
 			  - DRONES (`type >= 1`). They steer toward a target every tick, so "deterministic
 			    between collisions" is false for them - extrapolating a drone just flings it along
 			    whatever heading it happened to have last packet, and it turns.
@@ -470,26 +474,28 @@
 			  - TRAPS are `type >= 1` too and so are excluded by the same test. That is fine rather
 			    than merely tolerable: a trap decays to a standstill within a few ticks, so there is
 			    no delay worth cancelling.
-			  - YOUR OWN BULLETS (`this.mine`), which is the interesting one - see below.
 
-			WHY YOUR OWN BULLETS ARE EXCLUDED. They already carry a compensation of their own, and
-			the two genuinely conflict rather than compose. For its first packet interval an own
-			bullet is deliberately WELDED TO THE DRAWN MUZZLE (update()'s phase 1) - a spatial lie
-			that exists so a shot appears to leave the barrel instead of open space beside it. Dead
-			reckoning is the opposite claim about the same bullet: that it should already be
-			`leadMs` of travel downrange, because the server has already moved it there. Both are
-			defensible and they cannot both be drawn. Running them together pops the bullet forward
-			by roughly a bullet-speed at the phase 1 -> phase 2 handoff (measured: ~54 units on a
-			frame whose steady travel is ~18), which is a worse artefact than the lateness it fixes,
-			and test/client.js's "no jump where its own interpolation takes over" catches it.
+			YOUR OWN BULLETS (`this.mine`) get the full lead too, but RAMPED IN rather than switched
+			on - `this.reckonRamp`, advanced in update()'s decay block. They cannot just be switched
+			on because they already carry a compensation of their own that genuinely conflicts with
+			this one. For its first packet interval an own bullet is deliberately WELDED TO THE
+			DRAWN MUZZLE (update()'s phase 1) - a spatial lie that exists so a shot appears to leave
+			the barrel instead of open space beside it. Dead reckoning is the opposite claim about
+			the same bullet: that it should already be `leadMs` of travel downrange, because the
+			server has already moved it there. Both are defensible and neither can be drawn at full
+			strength while the other still is. Switching from one to the other in a single frame
+			pops the bullet forward by roughly a bullet-speed at the phase 1 -> phase 2 handoff
+			(measured: ~54 units on a frame whose steady travel is ~18) - worse than the lateness
+			either fixes on its own. `reckonRamp` starts at 0 while the weld offset (`this.lead`) is
+			still large and eases toward 1 on the SAME clock (`CONST.BULLET_LEAD_DECAY`) the weld
+			offset decays on, so the two trade off against each other continuously instead of
+			handing off in one frame. test/client.js's "no jump where its own interpolation takes
+			over" is what proves the ramp avoids the pop the plain switch produced.
 
-			So this is a KNOWN, BOUNDED ASYMMETRY, not a finished job: incoming fire is now drawn
-			where the server has it, your own fire is still drawn one interval behind once its
-			muzzle offset has decayed. That is the half PENDING #24 actually complains about ("the
-			only item that fixes INCOMING bullets"), and #24(c) is explicit that bounded symmetric
-			error, not zero, is the target. Closing the other half means ramping the lead in across
-			the handoff instead of switching it on - doable, but it is a change to the muzzle
-			machinery, so it belongs with that code rather than smuggled in here.
+			#24(c) is still the floor even with both halves ramped: the shooter and the target
+			disagree by RTT/2, and zero error is unreachable client-side without server-side lag
+			compensation, which diep does not do either. Bounded, symmetric error was always the
+			target, not zero.
 
 			For every OTHER bullet this composes with the muzzle offset rather than competing: that
 			offset is SPATIAL (it slides a new bullet sideways onto the drawn barrel), this is
@@ -497,8 +503,9 @@
 			never takes the muzzle path at all.
 		*/
 		reckonMs() {
-			if (this.type >= 1 || this.pet || this.mine) { return 0; }
-			return Math.min(NET.leadMs(), NET.interval * CONST.DEAD_RECKON_MAX_INTERVALS);
+			if (this.type >= 1 || this.pet) { return 0; }
+			const full = Math.min(NET.leadMs(), NET.interval * CONST.DEAD_RECKON_MAX_INTERVALS);
+			return this.mine ? full * this.reckonRamp : full;
 		}
 		update() {
 			/*
@@ -551,11 +558,12 @@
 				tick after the one that fired - phase 1 anchors one packet of tank travel off. It
 				self-corrects at the phase 2 handoff and is bounded by that, so it is left alone.
 
-				Both phases above are why reckonMs() refuses to dead-reckon an own bullet at all: the
-				muzzle weld and the dead-reckon lead are contradictory claims about where the same
-				bullet is during phase 1, and switching between them at the handoff pops it forward
-				by about a bullet-speed. See reckonMs()'s own comment for the measurement and for
-				what closing that half would take.
+				Both phases above are why reckonMs() ramps rather than switches an own bullet's
+				dead-reckon lead in: the muzzle weld and the dead-reckon lead are contradictory
+				claims about where the same bullet is, and swapping between them in one frame pops
+				it forward by about a bullet-speed. `reckonRamp` (advanced below, alongside
+				`this.lead`'s own decay) is what turns that swap into a crossfade. See reckonMs()'s
+				own comment for the measurement that made a plain switch a non-starter.
 			*/
 			const tw = this.tween.sample(NET.now(), this.reckonMs());
 			const U = this.mine ? CLIENT.User : null;
@@ -570,6 +578,9 @@
 					const k = General['lerpK'](CONST.BULLET_LEAD_DECAY);
 					this.lead.x -= this.lead.x * k;
 					this.lead.y -= this.lead.y * k;
+					// Same clock, opposite direction: the dead-reckon lead (reckonMs()) eases in
+					// exactly as fast as the weld offset above eases out.
+					this.reckonRamp += (1 - this.reckonRamp) * k;
 				}
 				this.dx = tw.x + this.lead.x;
 				this.dy = tw.y + this.lead.y;

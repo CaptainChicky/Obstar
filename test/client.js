@@ -382,6 +382,15 @@ console.log('\nyour own bullet leaves the muzzle, even strafing across your own 
 	check('the offset decays instead of riding along forever',
 		held > 3 && now < held * 0.2, held.toFixed(1) + ' -> ' + now.toFixed(1) + ' units');
 
+	// The other half of PENDING #24(b): once the weld offset is mostly gone, an own bullet's
+	// dead-reckon lead (ramped in on the same clock, in the opposite direction - see
+	// reckonMs()/reckonRamp) should have closed most of the way to what any other bullet gets.
+	// This is what "closing the gap" actually means, not just "no jump getting there".
+	const full = Math.min(M.NET.leadMs(), M.NET.interval * hook.CONST.DEAD_RECKON_MAX_INTERVALS);
+	check('...and by then its own dead-reckon lead has ramped up to about what any other bullet gets',
+		near(b.reckonMs(), full, full * 0.05),
+		b.reckonMs().toFixed(1) + 'ms vs ' + full.toFixed(1) + 'ms');
+
 	Global.inputs.d = 0;
 }
 
@@ -569,9 +578,12 @@ console.log('\nan incoming bullet is dead-reckoned, a drone is not (PENDING #24b
 		M.NET.rtt = 0;
 	}
 
-	// The two remaining exclusions, asserted through the real predicate rather than by re-stating
-	// its condition. A pet chases its owner and your own bullet is welded to the drawn muzzle for
-	// its first interval - see reckonMs()'s comment for why that one genuinely conflicts.
+	// One permanent exclusion and one that is a starting condition, not an exclusion, asserted
+	// through the real predicate rather than by re-stating its condition. A pet chases its owner,
+	// so it is excluded outright; an own bullet's lead is ramped rather than excluded (see the
+	// "your own bullet leaves the muzzle" block above for the ramp itself), and here it is still
+	// at 0 simply because reckonRamp was never advanced for it - it never went through update()
+	// as a `mine` bullet.
 	{
 		const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
 		const Insts = a.start(packet(1, { x: 0, y: 0 })).Instances;
@@ -587,7 +599,7 @@ console.log('\nan incoming bullet is dead-reckoned, a drone is not (PENDING #24b
 			b.reckonMs() === 0);
 		b.pet = 0;
 		b.mine = 1;
-		check('...and your own bullet is not, because the muzzle weld already owns its position',
+		check('...and a freshly-welded own bullet is not yet, since its ramp has not started',
 			b.reckonMs() === 0);
 	}
 }

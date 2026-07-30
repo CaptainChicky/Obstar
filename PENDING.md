@@ -5,10 +5,10 @@ decisions already made but not yet built, and things nobody has verified yet.
 
 **A fully shipped item is deleted from this file. An item marked SHIPPED is still here for one of
 two reasons, and it says which:** either part of it is still open (#19's
-arena resize, #24(b)'s own bullets, #28's win condition), or it records a
+arena resize, #28's win condition), or it records a
 *"do not re-fix this"* — a value that looks wrong until you know why it is what it is (#22 is
-entirely that; #14's table, #16's two derived columns, #18's four damage fixes and #23's
-`BASE_DRONE_HP` are too). Do not treat a SHIPPED heading as work to redo.
+entirely that; #14's table, #16's two derived columns, #18's four damage fixes, #23's
+`BASE_DRONE_HP` and #24's written floor are too). Do not treat a SHIPPED heading as work to redo.
 
 ---
 
@@ -230,9 +230,13 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
      stand still and let a bot shoot you. Previously an enemy shot damaged you slightly *before* its
      picture reached you (it was drawn a packet interval in the past); it should now connect on the
      frame it visually touches you. Judge it under a throttled connection too, since the correction
-     scales with your real RTT. **Your own bullets are deliberately unchanged** here — if own fire
-     starts looking like it leaves the barrel late or jumps forward just after firing, that is a
-     regression in the muzzle-weld interaction, which is exactly the conflict #24(b) records.
+     scales with your real RTT. **Your own bullets are dead-reckoned too now** (#24b, both halves
+     shipped), ramped in rather than switched on across the muzzle-weld handoff — the first packet
+     interval is still the weld (a shot should still visibly leave the barrel, not appear beside
+     it), and the lead eases in from there. Watch specifically for a pop or a visible kink right
+     where an own bullet's interpolation takes over from the muzzle ride: `test/client.js` pins
+     the absence of that in the stub-DOM harness, but a real browser under real frame timing and
+     network jitter is the only place a wrong ramp rate would actually be visible.
    - **Base drones and bases.** Nothing here is covered by a browser-free test beyond placement
      and arithmetic:
      - 4team: each corner base is a coloured **square**, in-world and on the minimap; 2team's
@@ -574,10 +578,10 @@ decision has its own numbered item above and is only cross-referenced here.*
     derivation was mirrored into `HANDOFF.md` §3 as each step landed (the two frictions and the
     `back` column, `lib/tick.js`'s `impulse()`-vs-`perTick()` rule, health/regen and the `dr` term,
     arena density and `nestScale`, the bullet dead-reckoning exception), and every part deliberately
-    left unshipped is an open item in *this* file — #18 (penetration →
-    damage), #19 (resizing the arena toward diep's AL), #24(b) (own-bullet dead reckoning), #28
-    (Tag's win condition and invisibility cap). #16's knockback `weight` was on that list and has
-    since shipped. So a comment citing a step number is telling you
+    left unshipped is an open item in *this* file — #19 (resizing the arena toward diep's AL) and
+    #28 (Tag's win condition and invisibility cap). #16's knockback `weight`, #18's penetration →
+    damage and #24(b)'s own-bullet dead reckoning were all on that list too and have since shipped.
+    So a comment citing a step number is telling you
     *when* a value was set and why it is not arbitrary; the current justification for it lives at the
     call site or in HANDOFF §3.
     What did NOT survive the deletion, and is genuinely gone: the per-step `clientDiff` golden
@@ -1124,9 +1128,10 @@ its columns, same as #18. What is left in this section is itemised as open at ea
       server, next to the input-prediction constants in item 24 — `test/rooms.js` cross-checks both
       against `entities/Player.js` since #30, so the pair can no longer drift silently.
 
-24. **Close-quarters bullet truth — the remaining error budget.** The dimensional bug in the
-    client's input prediction is fixed (the integrator lives in `public/SHARE/Physics.js` now and
-    `predic` stays in units-per-*tick*, scaled once at integration). What is left, cheapest-first:
+24. **Close-quarters bullet truth — SHIPPED, kept only for the written floor (c) and the
+    Destroyer amplifier below, neither of which is fixable client-side.** The dimensional bug in
+    the client's input prediction is fixed (the integrator lives in `public/SHARE/Physics.js` now
+    and `predic` stays in units-per-*tick*, scaled once at integration).
     - **(a) Derive the lead instead of tuning it. DONE.** `ping` carries a probe byte now
       (`[2, 2]`, `TYPE.ping.probe`): `0` is the heartbeat it always was, `1` is a client-initiated
       probe the server echoes verbatim in `net/gameSocket.js` without keeping state. The client
@@ -1137,11 +1142,11 @@ its columns, same as #18. What is left in this section is itemised as open at ea
       during the render delay plus half the round trip. `CONST.SIZE*2` survives only as an absolute
       ceiling against a hostile measurement; it no longer decides the size of the lie. On a 50 ms
       RTT at base top speed this is ~16 units against the flat 70 it replaced.
-    - **(b) Dead-reckon bullets instead of interpolating them. DONE for incoming fire; your own
-      bullets deliberately still interpolate.** A non-drone bullet's motion is fully deterministic
-      between collisions (`vec += speed·dir; vec *= BODY_FRICTION`, no input), so the client
-      integrates it forward from the newest snapshot instead of drawing it one packet interval in
-      the past. `public/client/entities.js`'s `Bullet.reckonMs()` is the whole rule: the lead is
+    - **(b) Dead-reckon bullets instead of interpolating them. DONE, both halves — SHIPPED
+      2026-07-30.** A non-drone bullet's motion is fully deterministic between collisions
+      (`vec += speed·dir; vec *= BODY_FRICTION`, no input), so the client integrates it forward
+      from the newest snapshot instead of drawing it one packet interval in the past.
+      `public/client/entities.js`'s `Bullet.reckonMs()` is the whole rule: the lead is
       `NET.leadMs()` — the **same measured quantity** (a)'s tank prediction uses, `interval` to
       cancel the render delay plus `rtt/2` to cancel how stale the snapshot was in flight — capped
       at `CONST.DEAD_RECKON_MAX_INTERVALS` (3) packet intervals purely as a ceiling against a
@@ -1149,16 +1154,25 @@ its columns, same as #18. What is left in this section is itemised as open at ea
       **Excluded, each for a stated reason:** drones (`type >= 1`) steer, so "deterministic" is
       false for them; pets chase their owner; traps are `type >= 1` anyway and decay to a standstill
       within a few ticks, so they have no delay worth cancelling.
-      **And your own bullets are excluded too — a real, bounded asymmetry, not an omission.** An own
-      bullet is welded to the *drawn muzzle* for its first packet interval (a deliberate spatial lie,
-      so a shot leaves the barrel rather than open space beside it). Dead reckoning is the opposite
-      claim about the same bullet — that it is already `leadMs` downrange because the server put it
-      there — and both cannot be drawn. Running them together pops the bullet forward by about a
+      **Your own bullets are no longer excluded — they get the lead too, ramped in rather than
+      switched on.** An own bullet is welded to the *drawn muzzle* for its first packet interval
+      (a deliberate spatial lie, so a shot leaves the barrel rather than open space beside it).
+      Dead reckoning is the opposite claim about the same bullet — that it is already `leadMs`
+      downrange because the server put it there — and neither can be drawn at full strength while
+      the other still is. Switching between them in one frame pops the bullet forward by about a
       bullet-speed at the phase-1→phase-2 handoff: **measured at ~54 units on a frame whose steady
       travel is ~18**, which `test/client.js`'s "no jump where its own interpolation takes over"
-      catches. Closing that half means *ramping* the lead in across the handoff rather than switching
-      it on — a change to the muzzle machinery, so it belongs with that code. Per (c) below, bounded
-      symmetric error is the goal, and this is bounded and written down.
+      exists to catch. The fix was exactly what this item used to say it would take: a new
+      `Bullet.reckonRamp` field eases from 0 to 1 on the same clock (`CONST.BULLET_LEAD_DECAY`) the
+      muzzle-weld offset (`Bullet.lead`) decays on, in the opposite direction, so the two trade off
+      continuously instead of handing off in one frame — a change to the muzzle machinery
+      (`public/client/entities.js`'s `Bullet.update()`), not a standalone tuning knob.
+      `test/client.js` now also asserts the ramp actually reaches full strength once the weld
+      offset is mostly gone ("...and by then its own dead-reckon lead has ramped up to about what
+      any other bullet gets"), so the gap is closed, not just quietly still open behind a passing
+      "no jump" check. Client-only change; `test/clientDiff.js`'s golden did not move (no `mine`
+      bullet is ever fired in that harness's packet corpus, so the changed code path was never
+      exercised by it — confirmed by running the suite, not assumed).
     - **(c) The floor.** Even with both, the shooter and the target disagree by RTT/2 and every
       *other* entity is still drawn one interval late. Zero error is unreachable client-side; only
       server-side lag compensation (rewinding hit checks by the shooter's latency) removes it, and
