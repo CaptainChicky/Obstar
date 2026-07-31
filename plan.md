@@ -33,13 +33,21 @@ docs updated).
 | 12 | **Maze walls** — rectangles, bullet-kill, real generator | subsystem redesign |
 | 13 | Documentation cleanup | docs only |
 
-**Trial-run note (2026-07-31, reverted — treat as a hint, not a result).** Step 1 was applied and
-`npm test` run once. Everything passed except `test/clientDiff.js`
-(`327848/3685f870 → 327834/a23ce1d3`), and `test/rooms.js`'s own "within 5% of the fastest
-sustainable build" check **still passed with `BASE_DRONE_CHASE_SPEED` untouched** — the reported
-ceiling stayed at 559.2 u/s (Sniper L15) to one decimal, because that build's recoil premium is small
-next to its walk. So the re-pin Step 1 warns about may turn out to be unnecessary; measure before
-moving it. The golden delta was **not** isolated, so it is unverified.
+**Step 1 LANDED (2026-07-31). The trial-run hint below it was partly wrong — recorded here as the
+verified result.** The reload-only `npm test` did reproduce `test/clientDiff.js`'s
+`327848/3685f870 → 327834/a23ce1d3` (op count 327848 → 327834: maxed-Reload builds fire less often,
+so fewer bullets — nuance 34's "how many exist" case). But the trial-run's claim that the ceiling
+"stayed at 559.2 to one decimal" was **falsified**: `fastestTankSpeed()`'s ceiling actually dropped
+to **546.363189 u/s** (still Sniper L15). The `within 5%` check passed with `BASE_DRONE_CHASE_SPEED`
+untouched only because 559.2 vs 546.4 is 2.34% — the *pin* was stale, so the re-pin **was** done.
+`BASE_DRONE_CHASE_SPEED 22.369 → 21.8545`, `BASE_DRONE_CHASE_TURN 0.37282 → 0.36424`
+(`turn = 546.363189 / 60 / 25`). The re-pin moved the golden hash but **not** the op count
+(`327834/a23ce1d3 → 327834/bccb68b0`: drones chase at 546.4 vs 559.2 in the 2team/4team corpus, pure
+position drift — nuance 34's "how they MOVE" case). **Final Step 1 golden: `327834/bccb68b0`.**
+Citation correction for whoever re-reads this: the reload formula is `diepcustom/src/Entity/Tank/
+TankBody.ts:267` (`15 * Math.pow(0.914, ...)`), **not** line 245 as the Step 1 body below states
+(245 is inside `receiveDamage`). C6's `round()` removal was **deferred, not done** — see the note in
+Step 1 below.
 
 ## Reading the references: unit and convention notes
 
@@ -71,7 +79,8 @@ story for bullets, whose terminal speed is `thrust × F/(1−F)` and therefore 2
 
 ### Step 1: Reload stat form — closes M3 without a measurement session
 - **Resolves:** PENDING #15 (the reload-stat open question), **MEASUREMENTS M3** (delete it).
-- **Reference:** `diepcustom/src/Entity/Tank/TankBody.ts:245` —
+- **Reference:** `diepcustom/src/Entity/Tank/TankBody.ts:267` (the Step 1 header note above corrects
+  this from the 245 originally written here) —
   `this.reloadTime = 15 * Math.pow(0.914, statLevels[Stat.Reload]);`
   and `Barrel.ts:57` — `reloadTime = tank.reloadTime * definition.reload`.
   At 7 points `0.914^7 = 0.53287` → **1.8766× fire rate**. That is MEASUREMENTS' "≈1.875×" reading,
@@ -845,6 +854,12 @@ Tri-Trapper 3.2, Trapper 8). Folded into **Step 9**, not raised separately.
   Sub-tick, and it only matters after Step 1 makes `up.Reload` geometric (`0.914^p` lands on
   non-integers far more often than `1 − 0.0789p` did). Worth removing the `round()` in the same
   session as Step 1 if it is free; otherwise note it.
+  **DEFERRED, not done, in Step 1 (2026-07-31).** It is not free: dropping the `round()` changes every
+  class's effective reload cadence at non-integer point counts, which is a *second* behavioural cause
+  in the same `clientDiff` golden as the stat-form change — exactly what nuance 34 warns against
+  landing in one commit. It also lives in `entities/Player.js`'s `shoot()` consumption site
+  (`tick.ticks(Math.round(can.reload * this.up.Reload))`) and its `fastestTankSpeed()` mirror in
+  `test/rooms.js`, both of which would need the change together. Left for its own isolated pass.
 
 ---
 

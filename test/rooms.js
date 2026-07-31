@@ -1162,7 +1162,7 @@ function fastestTankSpeed() {
 	}
 	const run = (cls, level, dir, ticks = 3000) => {
 		const accel = Physics.moveAccel(MAXUP, level);
-		const upReload = 1 - MAXUP * 0.0788571;   // entities/Player.js's per-point Reload step
+		const upReload = Math.pow(0.914, MAXUP);   // entities/Player.js's per-point Reload step (geometric 0.914^points)
 		const body = { x: 0, y: 0, vx: 0, vy: 0 }, timer = [];
 		let sum = 0, n = 0;
 		for (let t = 0; t < ticks; t++) {

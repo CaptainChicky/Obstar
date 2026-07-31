@@ -439,13 +439,18 @@ class Player {
 					nb++;
 					if (nb !== data) { continue; }
 					/*
-						Every step below except MSpeed/HpRegan/HpUp/BPene/BodyDam is the old 6-point-span
-						value x 6/7 (PENDING #30): the cap moved to 7, so an unchanged step would have
-						handed a maxed stat ~17% more than it was ever tuned to give. Scaling the step
-						instead keeps each stat's *maxed* value exactly where it was and only changes the
-						granularity, which is the conversion this item asks for and not a stealth buff.
+						Every step below except MSpeed/Reload/HpRegan/HpUp/BPene/BodyDam is the old
+						6-point-span value x 6/7 (PENDING #30): the cap moved to 7, so an unchanged step
+						would have handed a maxed stat ~17% more than it was ever tuned to give. Scaling
+						the step instead keeps each stat's *maxed* value exactly where it was and only
+						changes the granularity, which is the conversion this item asks for and not a
+						stealth buff.
 
-						Five exceptions, none of them a 6->7 rescale of an old step. MSpeed since #14's
+						Six exceptions, none of them a 6->7 rescale of an old step. Reload is diep's own
+						geometric form: up.Reload = 0.914^points, a multiplier on can.reload consumed in
+						shoot() (diepcustom/src/Entity/Tank/TankBody.ts:267, `15 * Math.pow(0.914, ...)`),
+						so 0.53287 at the 7-point cap = 1.877x fire rate - not a linear step with a span
+						to rescale. MSpeed since #14's
 						form fix; HpRegan and HpUp since #17's health model (plan.md step 4) replaced the
 						old health formula wholesale with diep's own raw numbers (MH0 = 50, +2/level,
 						+20/point, "Regen Stat" 0-7 read directly into diep_wiki/Stats.txt's HPS formula
@@ -468,7 +473,7 @@ class Player {
 						// HPS = MaxHp*(0.03+0.12*rr)/30 - see the constant there), not an accumulated
 						// per-tick rate any more.
 						case "HpRegan": this.up[i] += 1; break;
-						case "Reload": this.up[i] -= 0.0788571; break;     // 0.092 x 6/7
+						case "Reload": this.up[i] *= 0.914; break;         // up.Reload = 0.914^points, a multiplier on can.reload (diepcustom/src/Entity/Tank/TankBody.ts:267)
 						case "BSpeed": this.up[i] += 0.0942857; break;     // 0.11 x 6/7
 						case "BDamage": this.up[i] += .1714286; break;     // 0.2 x 6/7
 						case "BPene": this.up[i] += 0.75; break;           // diep's own per-point slope (PENDING #18), not a 6/7 rescale

@@ -567,18 +567,22 @@ curls back on — there is no separate RETURN state to enter or an explicit snap
 `orbitState` is written every tick purely for tests/the admin dump; nothing branches on it.
 
 **Chase and return are a real dash** (plan.md WP4.5.0): `BASE_DRONE_CHASE_SPEED` is **the fastest
-sustained speed any build in this game can hold** — 559.2 u/s, measured rather than asserted by
+sustained speed any build in this game can hold** — 546.36 u/s, measured rather than asserted by
 `test/rooms.js`'s `fastestTankSpeed()`, which replays `entities/Player.js`'s own `motion()`/
 `shoot()` recurrence over every reachable class at a full Movement Speed and a full Reload bar (the
-ceiling is a Sniper at level 15 riding its own recoil, now at full strength — the one-shot-impulse
-fix, plan.md, raised it from 527.2 by undoing recoil's ~0.64× live-tick shortfall). It is pinned to
+ceiling is a Sniper at level 15 riding its own recoil; adopting diep's geometric `0.914^points`
+reload stat lowered it from 559.2, since a maxed-Reload build fires less often and so rides less
+recoil premium). It is pinned to
 exactly that ceiling on purpose: nothing can outrun a base drone on straight-line speed, and nothing
 is outrun absurdly either, so lapping an enemy base in the fastest tank in the game is still
-winnable — on the head start and the `BASE_DRONE_LEASH` boundary, not on top speed. If a lap ever
+winnable — on the head start and the `BASE_DRONE_LEASH` boundary, not on top speed. **This pin is
+our own mechanic, not diep's**: diep's base drone runs a flat 54 du/tick = 756 u/s
+(`diepcustom/src/Entity/Misc/BaseDrones.ts`, `bullet.speed 2.7`), pinned to nothing — plan.md Step 10
+adopts that number and retires the pin. If a lap ever
 reads unfair, move `BASE_DRONE_LEASH`/`BASE_DRONE_DETECT`, **not** the chase speed, which is pinned
 to a measurement and fails `npm test` if a cannon retune moves the ceiling out from under it. A
-chasing drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 9.32 rad/s), since the
-limiter that governs a leisurely orbit would give a 559 u/s drone a turn radius wide enough to arc
+chasing drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 9.11 rad/s), since the
+limiter that governs a leisurely orbit would give a 546 u/s drone a turn radius wide enough to arc
 around a strafing target instead of into it. A return is a chase back to the ring at the same speed
 — no separate constant — the orbit field's own target speed blends from cruise to dash as a
 smoothstep of how far off its ring the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone

@@ -123,6 +123,14 @@ far easier to read than Basic's.
 
 ## M3 — Reload stat form *(resolves a live ambiguity, not just a value)*
 
+> **RESOLVED FROM SOURCE — no measurement needed.** `diepcustom/src/Entity/Tank/TankBody.ts:267`
+> gives the reload stat as `reloadTime = 15 * Math.pow(0.914, reloadPoints)` — a *geometric*
+> `0.914^points` multiplier on the base reload, **1.877× fire rate at the 7-point cap**. That
+> confirms the "≈1.875× (linear reading)" *magnitude* below, but the form is geometric, not linear:
+> 0.914 is the base per point and 1.875 is the value at the cap, not a slope. `entities/Player.js`'s
+> `up.Reload` is now `*= 0.914`/pt (was the linear `−0.0788571`, ×2.23 at the cap). Kept only until
+> the final documentation-cleanup step deletes M1–M4 wholesale.
+
 **Unblocks:** PENDING #15's reload-stat decision. **Do this after the #30 economy change**, so the
 comparison is at 7 points on both sides.
 

@@ -587,12 +587,16 @@ than remembered. Anything that is genuinely a decision has its own numbered item
 32. **`BASE_DRONE_CHASE_SPEED`/`_TURN` are pinned to a live measurement**
     (`fastestTankSpeed()` in `test/rooms.js`, replaying `motion()`+`shoot()` over every class at
     max Movement/Reload), so any retune that moves the speed ceiling moves this pair with it.
-    Current value: **559.2 u/s** (a maxed-Movement Sniper at L15), after the `back` rescale
-    (501.7 → 527.2) and the one-shot-impulse fix (527.2 → 559.2). `#16`'s `weight` column turned
+    Current value: **546.36 u/s** (a maxed-Movement Sniper at L15), after the `back` rescale
+    (501.7 → 527.2), the one-shot-impulse fix (527.2 → 559.2), and **#15's reload-stat form becoming
+    diep's geometric `0.914^points`** (559.2 → 546.36 — a maxed-Reload build now fires less often, so
+    the fastest recoil-rider carries less recoil premium). `#16`'s `weight` column turned
     out **not** to move the ceiling at all — knockback only enters through contact, which a solo
     speed replay never has, and `npm test` passing with no re-pin across that whole rewrite is the
-    proof. The only remaining candidate that could move it again is **#15's reload stat**, if M3
-    finds our ×2.23 is wrong. Always move both constants together:
+    proof. The reload-stat candidate this note used to flag has now fired (resolved from source, not
+    a live measurement); **Step 10 retires this pin entirely** in favour of diep's own flat 756 u/s
+    base-drone speed (`diepcustom/src/Entity/Misc/BaseDrones.ts`, `bullet.speed 2.7`), which is
+    pinned to nothing. Until then, always move both constants together:
     `turn = speed_u_per_s / 60 / 25` holds the ~60-unit turn radius; `lib/config.js`'s comment
     carries the re-pin chain. Note the ceiling is a *maxed-Movement Sniper's own walk* (473.8 u/s)
     plus a recoil premium, not a bare speed number — quoting "1.4×" against a level-0 walk is
@@ -831,13 +835,16 @@ What's left in this section is itemised as open at each entry.*
       "90 loops" row doesn't map cleanly: Overseer's cannon is 182, Overlord's is a different 281,
       and both are drone-*summon* cooldowns rather than a bullet reload, so it's ambiguous which (or
       whether both) the figure describes.
-    - **The reload *stat*'s scaling (`up.Reload -= 0.092`/pt) needs an in-game measurement before
-      anything is adopted.** The reference's literal `RT = ⌈X₀/1,875^br⌉` would mean a Basic with 5
-      reload points fires *every loop* (25 shots/s) — not credible. `1.875 = 1 + 0.125 × 7` is
-      almost certainly a mangled linear form reaching 1.875× fire rate at max stat; under that
-      reading diep is ×1.875 and ours ×2.23 at a full bar, close enough to leave alone. Under the
-      literal reading nothing about our reload stat is salvageable. Measure before choosing (M3) —
-      this one also moves the speed ceiling #14/#32 pin `BASE_DRONE_CHASE_SPEED` to.
+    - **The reload *stat*'s scaling — RESOLVED from source, no measurement needed.**
+      `diepcustom/src/Entity/Tank/TankBody.ts:267` gives `reloadTime = 15 * Math.pow(0.914, points)`,
+      a *geometric* `0.914^points` multiplier on the base reload (0.53287 at the 7-point cap =
+      **1.877× fire rate**). That confirms the "mangled linear form reaching 1.875× at max stat"
+      reading's *magnitude* but not its shape: the base is 0.914 per point, and 1.875 is the value at
+      the cap, not a linear slope. `entities/Player.js`'s `up.Reload` is now `*= 0.914`/pt (was the
+      linear `−0.0788571`, ×2.23 at the cap). As nuance 32 predicted, this moved the `#14/#32` speed
+      ceiling that pins `BASE_DRONE_CHASE_SPEED`: the fastest sustainable build dropped
+      559.2 → **546.36 u/s** (still a maxed-Movement Sniper L15, which rides less recoil now that a
+      maxed-Reload build fires less often), and the pin was moved with it. M3 is settled by this.
     - **Left off the conversion on purpose — do not "finish the job" without re-deciding.**
       Annihilator keeps its 87 (its other stats are already tuned away from Destroyer's, so its
       reload reads as its own number, unlike Hybrid which is a literal stat-clone). Likewise every
