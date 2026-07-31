@@ -235,8 +235,9 @@ The things in this codebase that are *not* obvious from reading the code around 
   `this.upNb[5]`) is the *separate*, newly-added defensive term: every `collision()` damage site
   multiplies by it now, so a tank's own Body Damage points reduce damage it takes from any source —
   diep's `dr` rule, not to be confused with the wiki's similarly-worded but *offensive*
-  `(BodyDamagePoints+5)×multiplier` rule (how much damage this tank's body deals to what it hits,
-  untouched). `entities/Bullet.js`'s `collision()` spends a bullet's own `pene` against the *target's*
+  `(BodyDamagePoints+5)×multiplier` rule (how much damage this tank's body deals to what it hits —
+  its magnitude is the separate fix below). `entities/Bullet.js`'s `collision()` spends a bullet's
+  own `pene` against the *target's*
   damage output (`other.damage`) unconditionally now, not against itself — previously only base
   drones worked this way (their `pene` is a 2000-point health pool, not a spend-down budget), and
   that reasoning turned out to generalize to every bullet. `BASE_DRONE_HP` stays `2000`: a maxed
@@ -272,6 +273,58 @@ The things in this codebase that are *not* obvious from reading the code around 
   so those tables already sat at diep's base-HP figure — only the maxed multiplier moved (8.5× →
   6.25×), verified by reproducing the prior `clientDiff` golden exactly with the old step restored as
   a no-op isolation check. Full derivation in PENDING #18, now closed on all four of its fixes.
+  **Body-damage magnitude — SHIPPED 2026-07-30 (PENDING #17's last open piece).** The offensive
+  `(BodyDamagePoints+5)×4` rule above was only ever a formula name until now; the ratio it implies —
+  diep's vs-shapes body damage is **2.857142857×** (20/7) a Basic bullet's own 7 damage/loop — was
+  off in ours at **1.75×**, both sides being pre-diep-adoption legacy numbers that happened to share
+  the same tick-rate rescale. Since bullet magnitudes themselves aren't diep-adopted yet
+  (`MEASUREMENTS.md`'s **M1**), the fix applies diep's `20/7` ratio to Basic's own live `can.damage`
+  (`TanksConfig.js`, `4.84848`) rather than converting `20` on an unrelated unit scale:
+  `entities/Player.js`'s `this.damage` base moves `8.48485 → 13.852814`
+  (`4.84848 × 20/7`), and the `BodyDam` per-point step to `2.770563` (`0.2 × base`, diep's own
+  `BS = 1+0.2·bd` slope, landing on exactly diep's `2.4×` at the 7-point cap — the same linear-slope
+  shape `up.BPene`'s fix above used). `lib/config.js`'s `BASE_DRONE_DAMAGE` (derived off this same
+  base, PENDING #23) and `rooms/Tag.js`'s Arena Closer damage (a flat `10×` of it, PENDING #28) both
+  moved with it to stay scale-consistent. `test/clientDiff.js`'s golden moved
+  (`338725/5560688d → 297741/14e024be`) since entities now die at a different rate on contact
+  (nuance 34's "how long one LIVES" case) — isolated by temporarily reverting both constants and
+  confirming the prior golden reproduced exactly before trusting the new one.
+  **`KIND.WALL` — SHIPPED 2026-07-30, entity type only (PENDING #2, wall-only slice).** A new
+  entity kind, `public/SHARE/kinds.js`'s `KIND.WALL` and `entities/Wall.js` — a static circular
+  "stud" (everything in this codebase's collision pass is a circle, so a wall is a chain of these,
+  same convention as every other kind). `rooms/Room.js`'s `INSTANCE.walls` `SlotMap` is the whole
+  quadtree/collision/update wiring: all three of Room.js's own tick loops already iterate
+  `for (const kind in this.INSTANCE)` with no kind filter, so adding the SlotMap is what makes a
+  wall insert/collide/update for free. `Wall` itself is inert — `collision()`/`update()` are
+  required no-ops (both tick loops call them unconditionally on every entity) — all the physics
+  live in the *mover's* own `collision()` arm (`entities/Player.js`, `entities/Bullet.js`), the same
+  split `createBoss()`/Arena Closers use for AI vs. reaction: normal/tangential `vec` decomposition
+  against the wall's centre, `WALL_BOUNCE = 0.4` reflecting the inbound normal component (applied
+  directly to the live `vec` read — deliberately **not** wrapped in `tick.impulse()`/
+  `tick.perTick()` like every other knockback in the tree, since it is a dimensionless ratio with no
+  `REF_TICK_MS`-denominated units of its own; nuance 39's exact failure mode if that reasoning were
+  skipped), `WALL_FRICTION = 0.85` decaying the tangential component through `tick.drag()` (a
+  genuine per-reference-tick rate, unlike the bounce term). Both constants live in
+  `lib/constants.js`, flagged as ours, not diep's — diep_wiki (#26) states the *behaviour* (solid,
+  friction, bounce, no body damage) with no numbers. Zero `hp -=`/`pene -=` in either arm. A base
+  drone dies instantly on contact (`this.destroy = tick.DES`, no physics) instead of bouncing; an
+  Arena Closer passes through for free via its existing `this.closer` guard (`Player.collision()`'s
+  first line, before the `switch`); a Crasher passes through by omission (no `KIND.WALL` case on
+  either side). Wire protocol: a new minimal `Walls` record (`SocketSchema.js`,
+  `{x, y, size}` only, no hp/color/states since a wall never changes after spawn) — four schema
+  edits plus the decoder's `Instances` pre-init object (`SocketSchema.js`'s `PARSE.GameUpdate`),
+  the one easy-to-miss spot that throws on an empty packet if forgotten. Client: a minimal `Wall`
+  class (`entities.js`, no hp bar/tween-interpolation smoothing/rarity tier — it never moves or
+  changes), `Drawings.wall` (a filled+stroked circle), `Palette.wall` (grey, distinct from
+  Crasher's `bull` grey). Tested directly against hand-built entities (`test/rooms.js`'s
+  `wallTests()`), since **no Maze room exists yet to spawn one in a real match** —
+  `test/clientDiff.js`'s golden did not move, confirmed rather than assumed, since none of ffa/
+  2team/4team/boss's canvas-op corpus ever emits a `Walls` record. **What's still open:** the `Maze`
+  room/gamemode itself (wall chain generation/placement, the boss-exclusion rule, the 5-hour close
+  timer), and the structure/Dominator half of item 2 — redesigned mid-session from a second static
+  `kind` to a **stationary tank** (the `CONFIG.BOSS`/`CONFIG.CLOSER` pattern, `lib/gameAI.js`: an
+  ordinary `Player` with custom `motion`/`update`, same as `createBoss()` and Tag's Arena Closers),
+  since a Dominator has HP/regen/cannons/AI that no static entity has; see PENDING #27.
 - **Arena size and shape density are derived, not written down** (PENDING #19, plan.md step 6).
   diep's two published formulas — `AL = ⌊√N_P × 50⌋` gu and `12.5 × N_P` shapes — **compose to a
   constant 1 shape per 200 gu²**, because the player count cancels. That composition is the whole
@@ -462,9 +515,11 @@ multiplier and one drone could one-shot a tank or vaporise a shape in a single 2
 gone outright (below), so there's nothing left for a drone's real pene to blow up.
 `entities/Objects.js` still substitutes `BASE_DRONE_PENE` for its own, unrelated `(pene>1)?pene:
 pene/2` shape-damage formula, which PENDING #18's fix did not touch. The resulting feel is still
-the wiki's "low damage, delivered extremely quickly": one drone in contact is 74 HP/s (~13.6 s to
-kill a maxed tank), a full 4team base of twelve is ~891 HP/s (~1.1 s). `BASE_DRONE_DAMAGE` itself is
-correct as it stands and was **not** retuned.
+the wiki's "low damage, delivered extremely quickly": one drone in contact is ~121 HP/s nominal
+(~48.5 HP/s effective against a fresh 0-body-damage-point victim, diep's `dr` term above; ~5.7 s to
+kill a maxed 278 HP tank), a full 4team base of twelve is ~1455 HP/s nominal (~582 HP/s effective,
+~0.48 s). `BASE_DRONE_DAMAGE` moved `2.97 → 4.84848` with PENDING #17's body-damage-magnitude fix
+(it's derived off the same base — see there); these figures are recomputed against the new value.
 
 **Radius is quantised into five shared "energy levels"** (plan.md WP4.5.0, `rooms/Room.js`'s
 `levelR()`/`levelPlan()`), not a continuous random band: a drone is always *at*
@@ -898,12 +953,12 @@ the minimap draws more than your own dot.
 
 | Suite | What it covers |
 |---|---|
-| `test/proto.js` | Wire protocol: golden bytes, self-sizing, round trips, input validation, Unicode, `UiUpdate.map` and Objects rarity-tier bits. |
+| `test/proto.js` | Wire protocol: golden bytes, self-sizing, round trips, input validation, Unicode, `UiUpdate.map`, Objects rarity-tier bits, and the `Walls` record (PENDING #2). |
 | `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. `offdir` is compared mod 2π (`sameAngle()`), not with a literal `!==`, so two float64 expressions for the same rotation don't need a whitelist entry to excuse a false positive. The whitelist's size is pinned (`WHITELIST.length === 8`) and every entry's *reason* is re-verified live each run, not just its presence — a deviation that stops reproducing fails loud instead of the entry sitting in the file forever. See §3 and PENDING.md. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All six gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A — WP3; the band is 3% rather than 2% because Euler discretization of the drag term scales with 1−F, and plan.md step 2 took F from 0.956532 to 10/11), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). Tag's win condition (PENDING #28, shipped): `winner()`/`startClosing()` driven directly (team reassignment, not a random match, to stay unseeded-RNG-free), that a spawned Closer takes no damage/knockback from either a tank or a bullet, that it doesn't count toward the self-destruct check, that `respawn()` no-ops once `closing`, and that a stealth class's alpha decay settles at `rules.invisFloor` in Tag instead of reaching 0. No socket, built via `boot()`. |
-| `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps, that an incoming bullet is dead-reckoned by exactly the render delay it cancels while drones/pets are not, and that an own bullet's dead-reckon lead ramps in across the muzzle-weld handoff without a jump and reaches the same lead any other bullet gets (PENDING #24b, both halves shipped). |
+| `test/rooms.js` | All six gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A — WP3; the band is 3% rather than 2% because Euler discretization of the drag term scales with 1−F, and plan.md step 2 took F from 0.956532 to 10/11), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). Tag's win condition (PENDING #28, shipped): `winner()`/`startClosing()` driven directly (team reassignment, not a random match, to stay unseeded-RNG-free), that a spawned Closer takes no damage/knockback from either a tank or a bullet, that it doesn't count toward the self-destruct check, that `respawn()` no-ops once `closing`, and that a stealth class's alpha decay settles at `rules.invisFloor` in Tag instead of reaching 0. `KIND.WALL` (PENDING #2, wall-only slice) direct-collision tests against hand-built entities, the same pattern the Arena Closer checks above use, since no Maze room exists yet to spawn one in a real match: bounce, friction, zero body damage, full positional-overlap absorption on the tank's own side, an ordinary bullet/trap bouncing without being destroyed, a base drone dying instantly on contact, and an Arena Closer passing through untouched. No socket, built via `boot()`. |
+| `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps, that an incoming bullet is dead-reckoned by exactly the render delay it cancels while drones/pets are not, and that an own bullet's dead-reckon lead ramps in across the muzzle-weld handoff without a jump and reaches the same lead any other bullet gets (PENDING #24b, both halves shipped); a `Walls` instance creates a client `Wall` entity at the packet's position/size and draws/updates across several frames without throwing (PENDING #2). |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all six modes. |
 | `test/web.js` | The merged entry point: one port serves site + socket, `play.ejs` script order, split-mode wiring, and that the auth routes degrade to a clean `{error}` (never a 500) with `DB.AUTH` off. |

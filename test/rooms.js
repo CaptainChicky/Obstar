@@ -783,7 +783,7 @@ function baseDroneTests() {
 	// Against a player the drone must take the PLAYER's body damage, not pene/5 of its own pool:
 	// at pene 2000 the old formula was 400 a tick, i.e. dead in five ticks of contact.
 	drone.pene = config.BASE_DRONE_HP;
-	drone.collision({ kind: KIND.PLAYER, id: { oId: 0 }, damage: 8.48485, x: drone.x + 1, y: drone.y }, {});
+	drone.collision({ kind: KIND.PLAYER, id: { oId: 0 }, damage: 13.852814, x: drone.x + 1, y: drone.y }, {});
 	check('touching a player costs it that player\'s body damage, not a fifth of its own health',
 		drone.pene > config.BASE_DRONE_HP - 20, drone.pene);
 
@@ -795,11 +795,12 @@ function baseDroneTests() {
 		victim.hp = victim.maxHp = 1000; victim.shield = 0; victim.dev.ghost = 0;
 		victim.collision(drone, {});
 		const perTick = 1000 - victim.hp;
-		// Bounds carry PENDING #18's dr term now (plan.md step 9, landed with step 4): a fresh
-		// (0 body-damage-point) victim takes 0.4/BS = 0.4 of the nominal hit, so the pre-#18 (1, 3)
-		// band scales to (0.4, 1.2) around it.
+		// Bounds carry PENDING #18's dr term: a fresh (0 body-damage-point) victim takes 0.4/BS =
+		// 0.4 of the nominal hit. PENDING #17's body-damage-magnitude fix moved BASE_DRONE_DAMAGE
+		// (2.97 -> 4.84848) with it, landing the nominal-hit-with-dr figure at ~1.21212 - a loose
+		// sanity band around that, not a pin (config.BASE_DRONE_DAMAGE is pinned exactly above).
 		check('a base drone does one tick of body damage, not 400 of them',
-			perTick > 0.4 && perTick < 1.2, perTick);
+			perTick > 0.8 && perTick < 2, perTick);
 		check('...so a maxed tank survives a lone drone for over ten seconds',
 			1000 / (perTick * (1000 / config.TICK_MS)) > 10);
 	}
@@ -3885,6 +3886,128 @@ function broadPhaseTests() {
 	}
 }
 
+/*
+	KIND.WALL, the wall-only slice of PENDING #2. No Maze room exists yet to spawn a wall inside a
+	real match, so these are direct-collision tests against hand-built entities - the same pattern
+	Tag's own Arena Closer tests (#28) use above for the same reason (arenaTests's closer.collision()
+	calls).
+*/
+function wallTests() {
+	console.log('\nwalls (PENDING #2, wall-only slice):');
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const constants = require(path.join(ROOT, 'lib', 'constants.js'));
+	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+	const Wall = require(path.join(ROOT, 'entities', 'Wall.js'));
+	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
+
+	const WALL_FRICTION = tick.drag(constants.WALL_FRICTION);
+
+	// ffa, not sandbox: sandbox's maxPlayer is 0 (Sandbox.js), which caps SlotMap.players at the
+	// one tester seat - too small for this function's several hand-planted tanks.
+	const room = makeRoom('ffa');
+	const wall = new Wall(0, 0, 40, { GM: room.gm, sId: room.id, oId: -1 }, room);
+
+	// A tank sitting 100 units to the right of the wall's centre (sepD=100 > size sum, no overlap),
+	// so only the vec bounce/friction shape is exercised - the overlap-correction assertions below
+	// use their own, deliberately-overlapping setup.
+	function plantTank() {
+		return room.INSTANCE.players.add((id) => new Player(
+			{ GM: room.gm, sId: room.id, oId: id }, 100, 0, 'tester', 1, room.XPLVL, room));
+	}
+
+	// ---- bounce reflects a fast tank -------------------------------------------------------
+	{
+		const p = plantTank();
+		p.vec.x = -5; p.vec.y = 0;   // moving straight into the wall (negative x = toward origin)
+		p.collision(wall, {});
+		const want = 5 * constants.WALL_BOUNCE;
+		check('a fast tank rebounds off the wall at WALL_BOUNCE of its inbound speed',
+			Math.abs(p.vec.x - want) < 1e-9 && Math.abs(p.vec.y) < 1e-9,
+			p.vec.x + ',' + p.vec.y + ' vs ' + want + ',0');
+		p.destroy = 1;
+	}
+
+	// ---- friction decays a grinding tank's tangential velocity -----------------------------
+	{
+		const p = plantTank();
+		p.vec.x = 0; p.vec.y = 7;   // purely tangential to the wall's normal (the x axis here)
+		p.collision(wall, {});
+		const want = 7 * WALL_FRICTION;
+		check('a grinding tank\'s tangential speed decays by WALL_FRICTION, not the normal component',
+			Math.abs(p.vec.x) < 1e-9 && Math.abs(p.vec.y - want) < 1e-9,
+			p.vec.x + ',' + p.vec.y + ' vs 0,' + want);
+		p.destroy = 1;
+	}
+
+	// ---- zero body damage, and full positional overlap correction on the tank's own side ---
+	{
+		const p = plantTank();
+		p.x = 30; p.y = 0;   // sepD=30 < size(1)+size(40), a real overlap
+		p.vec.x = 0; p.vec.y = 0;
+		const hpBefore = p.hp;
+		p.collision(wall, {});
+		check('a wall deals no body damage', p.hp === hpBefore, p.hp + ' vs ' + hpBefore);
+		const overlap = p.size + wall.size - 30;
+		check('the tank absorbs the FULL positional overlap (wall never moves, unlike a tank pair)',
+			Math.abs(p.x - (30 + overlap)) < 1e-9, p.x + ' vs ' + (30 + overlap));
+		p.destroy = 1;
+	}
+
+	// ---- an ordinary bullet/trap bounces without being destroyed, and the wall takes no
+	//      damage (it has none to begin with - this just confirms no pene/hp field is touched) --
+	{
+		const b = new Bullet({ GM: room.gm, sId: room.id, oId: -1 }, 100, 0, Math.PI, 0.5, 40, room);
+		b.type = 3;   // a trap - still an ordinary Bullet instance, per the file header
+		b.pene = 50;
+		b.vec.x = -5; b.vec.y = 0;
+		const peneBefore = b.pene;
+		b.collision(wall, {});
+		const want = 5 * constants.WALL_BOUNCE;
+		check('an ordinary bullet/trap rebounds off a wall the same way a tank does',
+			Math.abs(b.vec.x - want) < 1e-9 && Math.abs(b.vec.y) < 1e-9,
+			b.vec.x + ',' + b.vec.y + ' vs ' + want + ',0');
+		check('...and is not destroyed, and loses no pene',
+			b.destroy === 0 && b.pene === peneBefore, b.destroy + ' / ' + b.pene + ' vs ' + peneBefore);
+	}
+
+	// ---- a base drone dies instantly on contact instead of bouncing ------------------------
+	{
+		const d = new Bullet({ GM: room.gm, sId: room.id, oId: -1 }, 100, 0, Math.PI, 0.5, 40, room);
+		d.type = 1.4;
+		d.pene = 2000;
+		d.vec.x = -5; d.vec.y = 0;
+		d.collision(wall, {});
+		check('a base drone dies instantly on contact with a wall, no physics',
+			d.destroy === tick.DES && d.vec.x === -5,
+			'destroy=' + d.destroy + ' vec.x=' + d.vec.x);
+	}
+
+	// ---- an Arena Closer (#28) passes through untouched, via the same this.closer guard every
+	//      other collision kind already relies on - not a new exemption ----------------------
+	{
+		const p = plantTank();
+		p.closer = 1;
+		p.vec.x = -5; p.vec.y = 0;
+		const snap = { hp: p.hp, vx: p.vec.x, vy: p.vec.y };
+		p.collision(wall, {});
+		check('an Arena Closer passes through a wall untouched (this.closer guard, before the switch)',
+			p.hp === snap.hp && p.vec.x === snap.vx && p.vec.y === snap.vy,
+			p.hp + ' / ' + p.vec.x + ',' + p.vec.y);
+		p.destroy = 1;
+	}
+
+	// ---- the wall itself is inert: required no-op collision()/update() (rooms/Room.js's tick
+	//      loops call both unconditionally on every live entity of every INSTANCE kind) --------
+	check('Wall.collision() is a no-op and does not throw', (() => {
+		try { wall.collision({ kind: KIND.PLAYER, x: 0, y: 0 }, {}); return true; } catch (e) { return false; }
+	})());
+	check('Wall.update() is a no-op and does not throw', (() => {
+		try { wall.update(); return true; } catch (e) { return false; }
+	})());
+	check('a wall never tombstones itself', wall.destroy === 0, wall.destroy);
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -3909,6 +4032,7 @@ healthUpgradeTests(rooms);
 arenaDensityTests(rooms);
 spawnSamplerTests();
 broadPhaseTests();
+wallTests();
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

@@ -23,6 +23,11 @@ const Detector = require('./Detector.js');
 // body-damage source below - not to what the bullet itself deals, which is untouched.
 const PROJECTILE_BODY_DAMAGE = 0.25;
 
+// Wall contact physics (PENDING #2, wall-only slice) - see lib/constants.js and entities/Player.js's
+// own KIND.WALL arm for what these mean and why they're ours, not diep's.
+const WALL_BOUNCE = require('../lib/constants.js').WALL_BOUNCE;
+const WALL_FRICTION = tick.drag(require('../lib/constants.js').WALL_FRICTION);
+
 // Per-tick re-aim chance for homing bullets/drones, converted to a real-tick probability once at
 // load (lib/tick.js's "chance" category).
 const REAIM_CHANCE = tick.chance(0.0012121);
@@ -632,6 +637,27 @@ class Bullet {
 					}
 					this.pene -= tick.perTick(option.pene);
 					if (this.pene <= 0) { this.destroy = tick.DES; }
+					break;
+				case KIND.WALL:
+					// Drones die instantly on contact instead of bouncing (diep_wiki, PENDING #26) -
+					// no physics, no pene drain (a wall deals no body damage either way).
+					if (this.type === 1.4) {
+						this.destroy = tick.DES;
+						break;
+					}
+					{
+						const sepX = this.x - other.x, sepY = this.y - other.y;
+						const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;
+						const nx = sepX / sepD, ny = sepY / sepD;
+						const vn = this.vec.x * nx + this.vec.y * ny;
+						const tx = this.vec.x - nx * vn, ty = this.vec.y - ny * vn;
+						// Same shape as entities/Player.js's own KIND.WALL arm: WALL_BOUNCE is
+						// dimensionless and applied directly to this live vn read, no
+						// tick.impulse()/tick.perTick() wrapping needed (PENDING nuance 39).
+						const newVn = (vn < 0) ? -vn * WALL_BOUNCE : vn;
+						this.vec.x = nx * newVn + tx * WALL_FRICTION;
+						this.vec.y = ny * newVn + ty * WALL_FRICTION;
+					}
 					break;
 			}
 		}

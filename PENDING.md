@@ -4,11 +4,11 @@ Short-form companion to [HANDOFF.md](HANDOFF.md). Only what's *left*: things nee
 decisions already made but not yet built, and things nobody has verified yet.
 
 **A fully shipped item is deleted from this file. An item marked SHIPPED is still here for one of
-two reasons, and it says which:** either part of it is still open (#17's body damage magnitude), or
-it records a *"do not re-fix this"* — a value that looks wrong until you know why it is what it is
-(#22 is entirely that; #14's table, #16's two derived columns, #18's four damage fixes, #19's arena
-size, #23's `BASE_DRONE_HP`, #24's written floor and #28's Arena Closer count/invisibility floor are
-too). Do not treat a SHIPPED heading as work to redo.
+two reasons, and it says which:** either part of it is still open, or it records a *"do not re-fix
+this"* — a value that looks wrong until you know why it is what it is (#22 is entirely that; #14's
+table, #16's two derived columns, #17's body-damage-vs-bullet ratio, #18's four damage fixes, #19's
+arena size, #23's `BASE_DRONE_HP`, #24's written floor and #28's Arena Closer count/invisibility
+floor are too). Do not treat a SHIPPED heading as work to redo.
 
 ---
 
@@ -22,13 +22,38 @@ pointers back into the items below.*
 
 ## 🔵 Decided — queued for implementation (not yet built)
 
-2. **Next gamemodes: Domination/Maze get real new entity types.** Decided — not tunable-only.
-   Needs: a new `kind` in `public/SHARE/kinds.js` for static geometry (walls) and one for capturable
-   structures; a static (no `step()`) entity class with its own `collision()`; quadtree
-   insertion for that static geometry; a wire-schema addition (`SocketSchema.js`) so the client
-   can draw walls/structures; team-ownership state on capturable structures synced over the
-   wire. New `kind`s go in `public/SHARE/kinds.js`, which `TanksConfig.js`'s `DETEC` filters
-   now reference by constant rather than hardcoding — nothing to keep in sync by hand.
+2. **Next gamemodes: Domination/Maze get real new entity types.** Split in two — the wall half
+   shipped, the structure/Dominator half is still open and now redesigned (see #27 below).
+   - **`KIND.WALL` — SHIPPED 2026-07-30, entity type only, no Maze room yet.** A static circular
+     "stud" entity (`entities/Wall.js`) — everything in this codebase's collision pass is a circle,
+     so a wall is a chain of these, same convention as every other entity kind. `public/SHARE/
+     kinds.js`'s `KIND.WALL`, `rooms/Room.js`'s `INSTANCE.walls` `SlotMap` (which is all it took to
+     wire quadtree insertion/collision pairing/the update pass — those three loops already iterate
+     `for (const kind in this.INSTANCE)` with no kind filter), a `Walls` wire record
+     (`SocketSchema.js`, `{x,y,size}` only — no hp/color/states, since a wall never changes after
+     spawn), and client rendering (`entities.js`'s `Wall` class, `drawings.js`'s `Drawings.wall`,
+     `config.js`'s `Palette.wall`). Physics live entirely in the *mover's* own `collision()` arm
+     (`entities/Player.js`, `entities/Bullet.js`) since `Wall` itself never reacts: normal/tangential
+     vec decomposition, `WALL_BOUNCE = 0.4` (dimensionless ratio, self-referential to the live vec —
+     deliberately *not* wrapped in `tick.impulse()`/`tick.perTick()`, unlike every other knockback in
+     the tree, since it carries no `REF_TICK_MS`-denominated units of its own; see nuance 39) and
+     `WALL_FRICTION = 0.85` (a genuine per-reference-tick decay, so it *does* go through
+     `tick.drag()`) — both in `lib/constants.js`, flagged as ours, not diep's (diep_wiki gives the
+     behaviour, no numbers). Zero body damage in both arms. A base drone dies instantly on contact
+     (`this.destroy = tick.DES`, no physics); Arena Closers pass through for free via the existing
+     `this.closer` guard; Crashers pass through by omission (no `KIND.WALL` case needed on either
+     side). Tested directly (`test/rooms.js`'s `wallTests()`) since no Maze room exists yet to spawn
+     one in a real match. **What's still missing:** the `Maze` room/gamemode itself — wall chain
+     generation, placement, the boss-exclusion rule, the 5-hour close timer (see #26).
+   - **Structure/Dominator — still open, redesigned.** Originally scoped as a second static `kind`
+     (`KIND.STRUCTURE`); a Dominator is actually a **stationary tank**, not static geometry — it has
+     HP, regen, cannons, an AI that aims/leads/fires, and a capture state machine. The right template
+     is `CONFIG.BOSS`/`CONFIG.CLOSER` (`lib/gameAI.js`): an ordinary `Player` with custom
+     `motion`/`update` bound on at spawn, reusing `Player.shoot()`'s cannon machinery, the same way
+     `createBoss()` and Tag's Arena Closers (#28) already work — not a new entity kind. Needs its own
+     session: three cannon variants (#27), a neutral/team/team capture state machine, shot-leading
+     AI, and (diep confirms, and it's already true in this codebase's `sandbox`/`;`-god pattern) a
+     Dominator should be spawnable in Sandbox too for testing without a real Domination match.
 
 ## 🟠 Wiki cross-check: GAME MODES — pick what goes in, strike what doesn't
 
@@ -42,27 +67,37 @@ decided. We currently ship **ffa / 2team / 4team / boss / sandbox**.*
 | 2 Teams | ✅ | — |
 | 4 Teams | ✅ | — |
 | Sandbox | ✅ | ours lacks diep's cheat keys, below |
-| Maze | ❌ | item 2's static-geometry work |
-| Domination | ❌ | item 2's capturable-structure work |
+| Maze | ❌ | `KIND.WALL` entity type shipped (item 2); the room itself (generation/placement) is not |
+| Domination | ❌ | item 2's Dominator-as-stationary-tank work, still open |
 | Tag | ✅ | shipped, item 28 |
 | Breakout | ❌ | tile/turf war, needs a claimable grid |
 | Capture the Flag | ❌ | needs a carryable entity + 3 bases/team |
 | *(removed)* Mothership, Survival, Team DM | ❌ | historical; listed only so they aren't "missed" |
 
-**26. Maze — what the mode actually needs** (feeds item 2's `kinds.js` static-geometry work):
+**26. Maze — what the mode actually needs** (the `KIND.WALL` entity type itself is SHIPPED, item 2;
+everything below the entity type is still open):
 - Randomly generated grey walls, **solid to tanks, bullets, traps and drones alike**. Visible on
-  the minimap.
+  the minimap — the minimap piece is still open (`Wall` client entities draw in-world today, but
+  nothing feeds a wall's position onto `UiUpdate.map`'s dots yet).
 - **Walls have friction** (grinding along one slows you) **and bounciness** (a fast tank rebounds),
-  but deal **no body damage**. The wiki likens them to 2team/4team base edges — knockback, no body
-  damage — so our existing base-edge code is the closest model to build from.
+  but deal **no body damage** — SHIPPED, `entities/Player.js`/`entities/Bullet.js`'s `KIND.WALL`
+  collision arms, `WALL_FRICTION`/`WALL_BOUNCE` in `lib/constants.js` (ours, untuned, due a real
+  playtest pass once a Maze room exists to spawn a wall to hit).
 - **Drones die instantly on contact with a wall.** Crashers (and Arena Closers) are the only
-  things that pass through.
+  things that pass through. — SHIPPED alongside the rest of the collision arms above.
+- **Still open:** the `Maze` room/gamemode itself — wall chain generation and placement (nothing
+  spawns a `Wall` in a real match yet), the minimap dots above, the boss-exclusion rule below, and
+  the 5-hour close timer.
 - **Bosses do not spawn in Maze at all** — a boss can spawn inside a wall and become unkillable.
 - Known diep bug worth *not* reproducing: barrels aren't part of the hitbox, so they poke through
   walls and can shoot through double corners at exactly 45°.
 - Match length: the arena closes 5 hours in.
 
-**27. Domination — what the mode actually needs** (feeds item 2's capturable structures):
+**27. Domination — what the mode actually needs** (feeds item 2's Dominator work, redesigned —
+a Dominator is a **stationary tank** (`CONFIG.BOSS`/`CONFIG.CLOSER` pattern, `lib/gameAI.js`: an
+ordinary `Player` with custom `motion`/`update` bound on at spawn, same as `createBoss()` and Tag's
+Arena Closers, #28), not a new static `kind` — it has HP, regen, cannons and an AI, none of which a
+static entity has. Should be spawnable in Sandbox too, the same way a boss already is there):
 - **4 Dominators**, stationary, on a 2-team map. Neutral (yellow) until captured; capture = drop
   HP to 0 and land the last blow. An **enemy** Dominator takes **two** knockdowns — first back to
   neutral, then to yours. Capturing refills its health, despawns its projectiles, recolours it.
@@ -168,6 +203,11 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
      off and watch the bar: it should creep back at diep's slow linear rate immediately (no more
      ~22 s dead flat), then **visibly speed up after ~30 s** of no further damage (hyper regen) —
      confirm that reads as a genuine rate change, not a glitch.
+   - **Ramming deals diep's own body damage now** (#17) — a Basic's own body ram against a shape
+     should feel roughly 2.86× its bullet's per-hit damage, not the old 1.75×, a ~1.6× jump in how
+     hard bumping into things hurts (and is hurt by, tank-vs-tank). Base drones hit harder too
+     (`BASE_DRONE_DAMAGE` moved with it) — confirm a lone drone still feels like "low damage,
+     delivered extremely quickly" per the wiki, not a one-shot.
    - **The prediction lead is derived from a real RTT now** (#24a) — smaller than the old flat
      70-unit cap, scales with your actual latency/speed. Confirm your own tank still feels
      immediate on WASD and doesn't snap when the server position lands; throttling the connection
@@ -478,9 +518,9 @@ exactly, so no re-derivation is needed here.*
 *Before planning work off this section, read **[MEASUREMENTS.md](MEASUREMENTS.md)** — it lists the
 handful of quantities that still need a real diep client, the ones already pinned that must not be
 re-measured, and confirms almost nothing here is measurement-blocked any more. #14's tank movement,
-#16's recoil/knockback, #17's health/regen, #18's damage-model fixes, #19's shape density, #23's
-`BASE_DRONE_HP`, #24's bullet dead reckoning and #28's Tag mode have all shipped. What's left in
-this section is itemised as open at each entry.*
+#16's recoil/knockback, #17's health/regen/body-damage, #18's damage-model fixes, #19's shape
+density, #23's `BASE_DRONE_HP`, #24's bullet dead reckoning and #28's Tag mode have all shipped.
+What's left in this section is itemised as open at each entry.*
 
 14. **Movement — SHIPPED, form and magnitudes both**. Level and Movement Speed are independent
     multipliers on base accel — `base × 1.07^pts / 1.015^level`, `public/SHARE/Physics.js` — and
@@ -585,7 +625,8 @@ this section is itemised as open at each entry.*
     tick (0.190476 at the 40 ms reference — what a rewrite of the column should be denominated
     against). The full diep Knockbackfactor table is in `physics.html`; nothing left to measure.
 
-17. **Health and regen — SHIPPED**; **body damage magnitude still open.**
+17. **Health, regen and body damage — SHIPPED, all three.** Kept only as a *do-not-re-fix* record
+    for the body-damage ratio below.
     - **Max health — SHIPPED, diep's raw numbers, not a rescale.** `MH₀ = 50`, `+2/level`,
       `+20/point`, replacing the old `150 + 3/lvl + 110/pt` shape outright — there was no faithful
       ratio in that formula worth preserving. A maxed level-45 tank lands on exactly diep's own
@@ -599,12 +640,24 @@ this section is itemised as open at each entry.*
       recovery times — the naive "residual pins it from a 0%-health reading" approach doesn't
       survive contact with the wiki's own caption (the table measures recovery after a specific
       partial-damage ram, not from empty).
-    - **Body damage — still open.** At zero points in both stats, diep's tank body deals 2.86× a
-      basic bullet's per-loop damage (20 vs 7); ours deals 1.75× (7 vs 4) — ramming is relatively
-      1.6× weaker here even before #18's model differences. The stat *range* matches (diep
-      `BS = 1+0.2·bd` → 2.4× at 7; ours 7 → 17.8 = 2.54× at 6). This is the *offensive* magnitude
-      (how much damage this tank's body deals), untouched by #18's `dr` term (the *defensive*
-      multiplier on damage taken, shipped).
+    - **Body damage — SHIPPED 2026-07-30.** diep's tank body deals **20** vs shapes at 0 points
+      (`(BodyDamagePoints+5)×4`, `diep_wiki/Stats.txt`), **2.857142857×** (20/7) a Basic bullet's
+      own 7 damage/loop — ours used to deal only **1.75×** (a legacy, non-diep 7-vs-4 pair, both
+      pre-diep-adoption numbers that happened to share the tick-rate rescale's shape). Bullet
+      magnitudes themselves aren't diep-adopted yet (`MEASUREMENTS.md`'s **M1**), so the fix applies
+      diep's **20/7** ratio to Basic's own live `can.damage` (`public/SHARE/TanksConfig.js`,
+      `4.84848`) rather than converting `20` on its own unit scale — `entities/Player.js`'s
+      `this.damage` base moves `8.48485 → 13.852814` (`4.84848 × 20/7`), and the `BodyDam` per-point
+      step to `2.770563` (`0.2 × base`, diep's own `BS = 1+0.2·bd` slope, landing on exactly diep's
+      **2.4×** at the 7-point cap). This is the *offensive* magnitude (how much damage this tank's
+      body deals), separate from `dr` (the *defensive* multiplier on damage taken, shipped earlier).
+      **`lib/config.js`'s `BASE_DRONE_DAMAGE` moved with it** (`2.97 → 4.84848`) to stay
+      scale-consistent — see #23. **`rooms/Tag.js`'s Arena Closer damage moved with it too**
+      (`84.8485 → 138.52814`, still exactly 10× the base) — see #28.
+      **`test/clientDiff.js`'s golden was rebaselined** (`338725/5560688d → 297741/14e024be`):
+      isolated first by temporarily reverting both constants and confirming the prior golden
+      reproduced exactly, so the shift is provably these two values changing how long entities
+      survive contact (nuance 34's "how long one LIVES" case), not an unrelated regression.
 
 18. **The damage *model* differs structurally — SHIPPED, all four fixes.** Kept only as a
     *do-not-re-fix* record — several of the numbers below look arbitrary without the derivation.
@@ -702,11 +755,12 @@ this section is itemised as open at each entry.*
       that formula wholesale with diep's own raw numbers, so a maxed tank's pool is now, exactly,
       diep's own maxed pool (278) — `2000 / 278 = 7.194`, matching the wiki's "~7.1×" with no scale
       gap left to bridge. Nothing in `lib/config.js` needed to change except the comment.
-    - **`BASE_DRONE_DAMAGE: 2.97`** is derived (`8.48485 × 7/20`, our tank body damage scaled by the
-      wiki's 7-vs-20 tank-body ratio), not observed — ~74 HP/s nominal, ~30 HP/s effective against a
-      fresh victim after #18's `dr` (×0.4). A swarm of twelve still kills a maxed tank in well under
-      a second (`278 / (12 × 74 × 0.4) ≈ 0.78 s`). **Playtest before treating as settled** — #17 and
-      #18's combined effect here was never separately checked.
+    - **`BASE_DRONE_DAMAGE: 4.84848`** (was `2.97` — moved with #17's body-damage fix, see there) is
+      derived (`13.852814 × 7/20`, our tank body damage scaled by the wiki's 7-vs-20 bullet:body
+      ratio), not observed — ~121 HP/s nominal, ~48.5 HP/s effective against a fresh victim after
+      #18's `dr` (×0.4). A swarm of twelve still kills a maxed tank well under a second
+      (`278 / (12 × 121 × 0.4) ≈ 0.48 s`). **Playtest before treating as settled** — #17 and #18's
+      combined effect here was never separately checked.
     - `CONST.MAX_UP_POINTS` (33) and `CONST.MAX_PER_STAT` (7) are hand-mirrored between client and
       server; `test/rooms.js` cross-checks both against `entities/Player.js` so the pair can't drift
       silently.

@@ -616,10 +616,35 @@
 			}
 		}
 	};
+	/*
+		Wall - a static circular "stud" of Maze geometry (PENDING #2, wall-only slice). Much
+		smaller than Obj: a wall never moves, never changes hp/alpha/tier after spawn, so update()
+		is a no-op - but it still has to exist, since game.js's render loop calls it unconditionally
+		on every live instance of every construc (see the Draw()/update() loops there). tween is set
+		for the same reason: SetPacket() calls `.tween.push(obj.x, obj.y, at)` on every instance
+		regardless of kind.
+	*/
+	class Wall {
+		constructor(x, y, size) {
+			this.x = x;
+			this.y = y;
+			this.dx = x;
+			this.dy = y;
+			this.tween = new Interp(x, y);
+			this.size = size;
+			this.alpha = 1;
+		}
+		update() { };
+		draw(ctx) {
+			ctx.translate(this.dx, this.dy);
+			Drawings.wall(ctx, this.size);
+		}
+	};
 	///
 	CLIENT.Tank = Tank;
 	CLIENT.Obj = Obj;
 	CLIENT.Bullet = Bullet;
+	CLIENT.Wall = Wall;
 })(typeof (exports) === 'undefined'
 	? (window.CLIENT = window.CLIENT || {})
 	: (module.exports = global.CLIENT = global.CLIENT || {}));

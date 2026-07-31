@@ -31,6 +31,7 @@
 	exports.BULLET = 'Bullet';
 	exports.OBJECTS = 'Objects';
 	exports.DETECTOR = 'Detector';
+	exports.WALL = 'Wall';
 
 })(typeof (exports) === 'undefined' ? function () { this['KIND'] = {}; return this['KIND'] }() : exports,
 	typeof (exports) === 'undefined' ? 'client' : 'server')

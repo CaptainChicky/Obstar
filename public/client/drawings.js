@@ -298,6 +298,18 @@
 				ctx.stroke();
 			}
 		},
+		// A wall "stud" (PENDING #2, wall-only slice) - a filled+stroked circle, not nested under
+		// obj since it is not a farmable-shape type.
+		wall: (ctx, size) => {
+			ctx.beginPath();
+			ctx.arc(0, 0, size, 0, Math.PI * 2);
+			ctx.closePath();
+			ctx.fillStyle = Palette.wall[0];
+			ctx.strokeStyle = Palette.wall[1];
+			ctx.lineWidth = CONST.LINEWIDTH;
+			ctx.fill();
+			ctx.stroke();
+		},
 		pet: PetsConfig.pets
 	};
 	///

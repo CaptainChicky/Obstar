@@ -604,5 +604,55 @@ console.log('\nan incoming bullet is dead-reckoned, a drone is not (PENDING #24b
 	}
 }
 
+console.log('\na Walls instance creates a client Wall entity and draws without throwing (PENDING #2, wall-only slice):');
+{
+	// No shipped room spawns a wall yet (no Maze room exists), so this is a hand-built packet,
+	// same as `packet()` above builds a synthetic Bullets/Players instance for its own tests.
+	function wallPacket(t, wall) {
+		const buff = {
+			head: {
+				timestamp: t, width: 8000, height: 8000, screen: 1920, xp: 500,
+				level: 5, still: 0, cLvl: 0
+			},
+			main: {
+				states: [0, 0, 0, 0, 0, 0], class: 'Basic', color: 0,
+				x: 0, y: 0, vx: 0, vy: 0, dir: 0,
+				size: 25, alpha: 1, hp: 1, name: 'tester', nameC: 0,
+				recoil: new Array(15).fill(0), canDir: [0]
+			},
+			instances: [new Int8Array(PROTO.encode('Instance', {
+				construc: 'Walls', id: 11, x: wall.x, y: wall.y, size: wall.size
+			}))]
+		};
+		return PROTO.encode('GameUpdate', buff);
+	}
+
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+	// The very first packet handed to start() drives the connecting-screen handoff and is not
+	// applied through the normal entity-creation path (every other entity test in this file
+	// checks entities from a packet delivered AFTER start(), never the handoff packet itself -
+	// see the bullet/tank tests above). So: hand over on a bare packet, then deliver the one that
+	// actually carries the wall.
+	const hook = a.start(wallPacket(1, { x: 200, y: -150, size: 40 }));
+	check('the client hands over from the connecting screen to the game loop', !!hook);
+	a.deliver(wallPacket(2, { x: 200, y: -150, size: 40 }));
+	a.frame(FRAME);
+
+	const wall = hook.Instances.Walls[11];
+	check('a Walls instance creates a client Wall entity', !!wall);
+	check('...at the position and size the packet carried',
+		wall && wall.x === 200 && wall.y === -150 && wall.size === 40,
+		wall && (wall.x + ',' + wall.y + ',' + wall.size));
+
+	let err = null;
+	try {
+		for (let f = 0; f < FPP * 5; f++) { a.frame(FRAME); }
+	} catch (e) { err = e.message + ' | ' + e.stack.split('\n')[1]; }
+	check('its draw()/update() run across several frames without throwing', !err, err);
+	check('no non-finite value reached a canvas transform',
+		a.record.badTransform === 0 && a.record.badTranslate === 0,
+		a.record.badTransform + ' transforms, ' + a.record.badTranslate + ' translates');
+}
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

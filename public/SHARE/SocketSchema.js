@@ -227,6 +227,13 @@
 				'color': 'uint8',
 				'alpha': 'uint8',
 				'dir': 'int16'
+			},
+			// A wall never moves and never changes after spawn (PENDING #2, wall-only slice) - no
+			// hp/color/states, just the geometry.
+			'Walls': {
+				'x': 'float32',
+				'y': 'float32',
+				'size': 'float32'
 			}
 		},
 		'UiUpdate': {
@@ -333,6 +340,11 @@
 				'color',
 				'alpha',
 				'dir'
+			],
+			'Walls': [
+				'x',
+				'y',
+				'size'
 			]
 		},
 		'UiUpdate': {
@@ -358,6 +370,7 @@
 			'Players',
 			'Objects',
 			'Bullets',
+			'Walls',
 		],
 		/* Must stay index-for-index with toBUFFER.gamemode below, and cover every key in
 			 rooms/index.js. It did not: '4team' encoded as 3 but decoded from index 2, so
@@ -450,7 +463,8 @@
 		'construc': {
 			'Players': 0,
 			'Objects': 1,
-			'Bullets': 2
+			'Bullets': 2,
+			'Walls': 3
 		},
 		'gamemode': {
 			'ffa': 0,
@@ -576,6 +590,8 @@
 		},
 		'Objects': { states: CODECS.bits, shape: CODECS.shape, hp: CODECS.unit, alpha: CODECS.unit },
 		'Bullets': { states: CODECS.bits, dir: CODECS.angle, color: CODECS.color, alpha: CODECS.unit },
+		// Everything is a raw float - no codec needed.
+		'Walls': {},
 		'leader': { team: CODECS.color },
 		// x/y reuse CODECS.unit (already a 0..1 float packed into a uint8) since Room.getUi()
 		// hands over map-fraction floats, not world coordinates - see TYPE.UiUpdate.map.
@@ -850,7 +866,7 @@
 		'GameUpdate': (DEC, result) => {
 			result.data.head = readRecord(DEC, 'head', {});
 			result.data.User = readRecord(DEC, 'User', {});
-			result.data.Instances = { Objects: [], Players: [], Bullets: [] };
+			result.data.Instances = { Objects: [], Players: [], Bullets: [], Walls: [] };
 			while (!DEC.isEnd()) {
 				const construc = toSTRING.construc[DEC.read(TYPE.GameUpdate.CONSTRUCTOR)];
 				const id = DEC.read(TYPE.GameUpdate.ID);

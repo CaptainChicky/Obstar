@@ -38,8 +38,16 @@ const AUTOTURRET_LEAD = 15.84;
 // diep_wiki/Stats.txt: Body Damage "is increased by 50% when affecting Tanks" - the counterpart to
 // entities/Bullet.js's PROJECTILE_BODY_DAMAGE (-75% vs projectiles), both halves of the same wiki
 // sentence (PENDING #18/nuance 50). Applies to the KIND.PLAYER collision arm only (tank-vs-tank
-// body-ram): the vs-shapes baseline (#17) is already correct and untouched.
+// body-ram); the vs-shapes baseline this multiplies is `this.damage` below (PENDING #17).
 const TANK_BODY_DAMAGE = 1.5;
+
+// Wall contact physics (PENDING #2, wall-only slice) - see lib/constants.js for what these mean
+// and why they're ours, not diep's. WALL_FRICTION is pre-converted to a per-tick drag factor at
+// load, same as entities/Objects.js's own BODY_FRICTION; WALL_BOUNCE is a dimensionless ratio
+// applied directly to a live this.vec read, not a fresh magnitude, so it is used as-is (see the
+// KIND.WALL collision arm below).
+const WALL_BOUNCE = require('../lib/constants.js').WALL_BOUNCE;
+const WALL_FRICTION = tick.drag(require('../lib/constants.js').WALL_FRICTION);
 
 // Idle spin rate, per reference tick: an auto-turret with nothing to shoot at (shoot()), and the
 // `c` auto-spin toggle (update()). One constant, because they are meant to look like the same
@@ -195,7 +203,13 @@ class Player {
 		this.level = 0;
 		this.stillLvl = 0;
 		this.droneCount = 0;
-		this.damage = 8.48485;   // one-time-rescaled from 7 (33ms ref); tick.perTick() at each hp -= site
+		// diep's own vs-shapes body-damage baseline is (BodyDamagePoints+5)x4 = 20 at 0 points
+		// (diep_wiki/Stats.txt), 2.857142857x (20/7) a Basic bullet's own 7 damage/loop. Bullet
+		// magnitudes aren't diep-adopted yet (MEASUREMENTS.md's M1), so that ratio is applied to
+		// Basic's own can.damage (public/SHARE/TanksConfig.js, 4.84848) instead of converting 20
+		// directly - 4.84848 x 20/7 = 13.852814 (PENDING #17, was 8.48485, a 1.75x ratio against
+		// the same bullet). tick.perTick() at each hp -= site, same as before.
+		this.damage = 13.852814;
 		this.murder = -1;
 		this.up = {
 			"MSpeed": 0, //0
@@ -397,13 +411,13 @@ class Player {
 					nb++;
 					if (nb !== data) { continue; }
 					/*
-						Every step below except MSpeed/HpRegan/HpUp/BPene is the old 6-point-span value x
-						6/7 (PENDING #30): the cap moved to 7, so an unchanged step would have handed a
-						maxed stat ~17% more than it was ever tuned to give. Scaling the step instead
-						keeps each stat's *maxed* value exactly where it was and only changes the
+						Every step below except MSpeed/HpRegan/HpUp/BPene/BodyDam is the old 6-point-span
+						value x 6/7 (PENDING #30): the cap moved to 7, so an unchanged step would have
+						handed a maxed stat ~17% more than it was ever tuned to give. Scaling the step
+						instead keeps each stat's *maxed* value exactly where it was and only changes the
 						granularity, which is the conversion this item asks for and not a stealth buff.
 
-						Four exceptions, none of them a 6->7 rescale of an old step. MSpeed since #14's
+						Five exceptions, none of them a 6->7 rescale of an old step. MSpeed since #14's
 						form fix; HpRegan and HpUp since #17's health model (plan.md step 4) replaced the
 						old health formula wholesale with diep's own raw numbers (MH0 = 50, +2/level,
 						+20/point, "Regen Stat" 0-7 read directly into diep_wiki/Stats.txt's HPS formula
@@ -417,6 +431,9 @@ class Player {
 						the multiplier's 0-point baseline was already 1 under the old step too, so those
 						tables already sit at diep's base-HP value - only the MAXED multiplier moves
 						(8.5x -> 6.25x), which is the actual fidelity fix, not a value to compensate for.
+						BodyDam since PENDING #17's last open piece: `this.damage`'s base and step were
+						rederived from diep's own vs-shapes formula (see the constructor), not rescaled
+						from an old span - see that comment for the derivation.
 					*/
 					switch (i) {
 						// A point COUNT (diep_wiki/Stats.txt's "Regen Stat", read directly by update()'s
@@ -440,7 +457,7 @@ class Player {
 						// adds a fractional amount every tick, and the wire carries hp as a fraction of
 						// maxHp), so no truncation risk here.
 						case "HpUp": this.hp *= (this.maxHp + 20) / this.maxHp; this.maxHp += 20; break;
-						case "BodyDam": this.damage += 1.870131; break;   // 2.18182 (itself 1.8 one-time-rescaled from the 33ms ref) x 6/7
+						case "BodyDam": this.damage += 2.770563; break;   // 0.2 x the 13.852814 base - diep's own "BS = 1+0.2xbd" slope (PENDING #17), 2.4x base at the 7-point cap
 					}
 					break;
 				}
@@ -631,6 +648,29 @@ class Player {
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
 				break;
+			case KIND.WALL: {
+				// Solid, no body damage (diep_wiki, PENDING #26): friction while grinding along it,
+				// bounce on a fast impact, no hp -= anywhere in this arm - the one respect in which
+				// this differs from every other case above. Wall never moves, so unlike KIND.PLAYER's
+				// overlap split above the tank absorbs the full positional overlap, not a share of it.
+				const sepX = this.x - other.x, sepY = this.y - other.y;
+				const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;
+				const nx = sepX / sepD, ny = sepY / sepD;
+				const vn = this.vec.x * nx + this.vec.y * ny;
+				const tx = this.vec.x - nx * vn, ty = this.vec.y - ny * vn;
+				// WALL_BOUNCE is dimensionless and applied directly to this live vn read - unlike
+				// every knockback above it is not a fresh REF_TICK_MS-denominated magnitude, so it
+				// needs no tick.impulse()/tick.perTick() wrapping (PENDING nuance 39).
+				const newVn = (vn < 0) ? -vn * WALL_BOUNCE : vn;
+				this.vec.x = nx * newVn + tx * WALL_FRICTION;
+				this.vec.y = ny * newVn + ty * WALL_FRICTION;
+				const overlap = this.size + other.size - sepD;
+				if (overlap > 0) {
+					this.x += nx * overlap;
+					this.y += ny * overlap;
+				}
+				break;
+			}
 		}
 		if (this.alpha < 1 && !this.dev.invisible) {
 			this.alpha = Math.min(1, this.alpha + (oldHp - this.hp) / this.maxHp * 5)

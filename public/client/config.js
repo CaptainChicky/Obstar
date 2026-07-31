@@ -88,6 +88,9 @@
 
 		hit: ['#d82626', '#d82626'],//red when you get hitted
 		bull: ["#999999", "#6a6a6a"],
+		// Solid grey walls (diep_wiki, PENDING #2/#26) - deliberately distinct from bull's grey
+		// above so a wall stud doesn't read as a Crasher shape.
+		wall: ["#7d7d7d", "#5c5c5c"],
 		sqr: ["#cfcf9f", "#a6a689"],
 		alphaSqr: ["#cfcf9f", "#a6a689"],
 		tri: ["#d1adb2", "#a38a8e"],

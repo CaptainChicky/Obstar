@@ -19,6 +19,7 @@
 	const Tank = CLIENT.Tank;
 	const Obj = CLIENT.Obj;
 	const Bullet = CLIENT.Bullet;
+	const Wall = CLIENT.Wall;
 	const CLASS = CLIENT.CLASS;
 	// One *reference* tick (public/motion.js's REF_TICK, 40ms) expressed in
 	// 60fps-equivalent frames, so the per-reference-tick server constants below (Physics.js) can
@@ -42,7 +43,8 @@
 		const Instances = {
 			'Objects': [],
 			'Players': [],
-			'Bullets': []
+			'Bullets': [],
+			'Walls': []
 		};
 		const User = new function () {
 			this.color = 'green';
@@ -763,6 +765,7 @@
 									inst[OBJ] = new Bullet(obj.x, obj.y, obj.size, obj.dir, obj.type, obj.color);
 									break;
 								}
+								case 'Walls': inst[OBJ] = new Wall(obj.x, obj.y, obj.size); break;
 								default: continue;    // a construc byte this client does not know
 							}
 						}

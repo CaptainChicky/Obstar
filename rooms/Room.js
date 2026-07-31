@@ -54,6 +54,7 @@ const Player = require('../entities/Player.js');
 const Bullet = require('../entities/Bullet.js');
 const Objects = require('../entities/Objects.js');
 const Detector = require('../entities/Detector.js');
+const Wall = require('../entities/Wall.js');
 const CONFIG = require('../lib/gameAI.js');
 
 /*
@@ -253,7 +254,8 @@ class Room {
 			"players": new SlotMap({ maxIndex: this.maxPlayer }),
 			"objs": new SlotMap(),
 			"bullets": new SlotMap(),
-			"detectors": new SlotMap()
+			"detectors": new SlotMap(),
+			"walls": new SlotMap()
 		};
 		this.leader = [];
 		// An `arenaLive` mode starts at AL(0) - the MIN_ARENA_GU floor - rather than at its stated
@@ -1536,6 +1538,18 @@ class Room {
 							color: this.bulletColor(obj),
 							alpha: obj.alpha,
 							dir: obj.showDir
+						};
+						break;
+					};
+					case KIND.WALL: {
+						// A wall never moves and never changes after spawn (PENDING #2, wall-only
+						// slice) - no hp/color/states, just the geometry.
+						raw = {
+							construc: 'Walls',
+							id: obj.id.oId,
+							x: obj.x,
+							y: obj.y,
+							size: obj.size
 						};
 						break;
 					};
