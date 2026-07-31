@@ -1401,6 +1401,28 @@
 					width: 1,
 					height: 1
 				}
+			},
+			// PENDING #28. One forward cannon, drawn like every ordinary single-barrel class -
+			// diep_wiki/Arena Closer.txt describes the barrel as Flank-Guard-shaped, not exotic, so
+			// height mirrors Flank Guard's own forward cannon (client height == server canonLength
+			// exactly, test/tanks.js's gap check passes the same way there) rather than a guess -
+			// only width/open grew, to carry the wiki's "shortest and widest cannons" trivia.
+			"Arena Closer": {
+				cannons: [
+					{
+						type: 0,
+						height: 68,
+						width: 34,
+						offx: 0,
+						offdir: 0,
+						open: 34
+					}
+				],
+				body: {
+					shape: 1,
+					width: 1,
+					height: 1
+				}
 			}
 		} :
 		///SERVER///
@@ -2744,6 +2766,57 @@
 				c[3].offdir = Math.PI * 1.5; c[3].offTime = .5;
 				this.cannons = c;
 			},
+			/*
+				Tag's win-condition NPC (PENDING #28, rooms/Tag.js's createCloser()). Every number
+				below that diep_wiki/Arena Closer.txt gives directly is used verbatim rather than
+				estimated - the two genuinely vague ones ("extremely high body damage" and its own
+				body size) are set on the spawned instance instead of here, and flagged there.
+
+				damage: 196 - the wiki's own figure ("196 bullet damage, seven times that of a
+				maxed basic Tank"), not derived.
+				pene: 3750 - the wiki's "3,750 HP for bullet health"; this codebase's own rule is
+				that a bullet's `pene` IS its health pool (PENDING #18), so the wiki figure maps
+				onto this field directly.
+				size: 34 - "bullets... about as large as an Annihilator's bullet"; copied from
+				Annihilator's own cannon.size below, same reasoning for weight/push/exitSpeed (a
+				projectile that size hits and recoils like that class's, not a new guess).
+				speed: 0.599696 (Assassin's base cannon speed) x 1.66 (the engine's own maxed
+				BSpeed multiplier, 7 points x 0.0942857/pt, entities/Player.js upgrade()) - "The
+				Bullet Speed of a maxed Assassin", computed rather than eyeballed.
+				reload: round(15 x 0.448) = 7 reference ticks - Basic's base reload (15) x the
+				engine's maxed Reload multiplier (7 points x -0.0788571/pt = 0.448 remaining) -
+				"The Reload of a maxed reload Basic Tank".
+				back: 0 - "Complete resistance to knockback" is about what it TAKES
+				(entities/Player.js's `this.closer` collision() guard), but a self-recoil on firing
+				would still visibly kick it, so this is 0 too rather than leaving diep's own back
+				value on a class it should never move a duplicate of.
+			*/
+			"Arena Closer": new function () {
+				this.screen = 2000;
+				const c = new Array(1).fill(null).map(() => ({
+					reload: 7,
+					offTime: 0,
+					auto: 1,
+					type: 0,
+					life: 107,
+					///
+					offdir: 0,
+					offx: 0,
+					canonLength: 68,
+					rand: 0.05,
+					///
+					speed: 0.995491,
+					pene: 3750,
+					damage: 196,
+					size: 34,
+					///
+					exitSpeed: 53,
+					weight: 0.525,
+					push: 0.27426,
+					back: 0
+				}));
+				this.cannons = c;
+			},
 		};
 	///
 	exports.defaultUps = [
@@ -2832,7 +2905,8 @@
 		'shape1',
 		'shape2',
 		///
-		'Summoner'
+		'Summoner',
+		'Arena Closer'
 	];
 
 })(typeof (exports) === 'undefined' ? function () { this['TanksConfig'] = {}; return this['TanksConfig'] }() : exports,

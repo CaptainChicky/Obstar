@@ -338,7 +338,12 @@ class Player {
 					// tick.ticks(), which would turn it into a 1-real-tick lifetime instead.
 					Bull.life = (can.life === -1) ? -1 : tick.ticks(can.life ? can.life : 107);
 					Bull.damage = this.up.BDamage * can.damage;
-					Bull.size = this.boss ? can.size : can.size * ra;
+					// A boss and a Closer (PENDING #28) both hold a fixed, non-level-derived `size` -
+					// their update() is fully replaced (lib/gameAI.js), so this class's own
+					// `this.size = 28 * 1.01^level` growth line below never runs for either - so
+					// their bullets draw at the literal cannon size TanksConfig.js states rather
+					// than the tank-relative `ra` an ordinary levelling player's cannons scale by.
+					Bull.size = (this.boss || this.closer) ? can.size : can.size * ra;
 					Bull.weight = can.weight;
 					Bull.push = can.push;
 					this.room.createBullet(Bull, this)
@@ -484,6 +489,13 @@ class Player {
 	}
 	collision(other, option = {}) {
 		if (this.dev.ghost) { return; }
+		// An Arena Closer (PENDING #28, rooms/Tag.js's createCloser()) - diep_wiki: "Invincibility"
+		// and "Complete resistance to knockback". Returning before anything below runs means it
+		// takes no damage AND no velocity impulse from any of the three collision kinds, or from an
+		// admin 'god' repulsion - a single guard for both wiki claims, since neither has a separate
+		// mechanism to turn off. The damage it DEALS is unaffected: that is `other.damage` read from
+		// the OTHER entity's own collision() call, not anything gated here.
+		if (this.closer) { return; }
 		if (option.type) {
 			switch (option.type) {
 				case 'god':
@@ -693,7 +705,9 @@ class Player {
 		}
 		///
 		if (CLASS[this.class].alpha) {
-			this.alpha = Math.max(0, this.alpha - tick.perTick(CLASS[this.class].alpha));
+			// this.room.rules.invisFloor (PENDING #28) - 0 everywhere but Tag, where diep_wiki
+			// forbids a stealth class from ever fully vanishing so a win condition can't stall.
+			this.alpha = Math.max(this.room.rules.invisFloor, this.alpha - tick.perTick(CLASS[this.class].alpha));
 		} else if (!this.dev.invisible) { this.alpha = 1 }
 		this.motion();
 		if (this.inputs.c) {

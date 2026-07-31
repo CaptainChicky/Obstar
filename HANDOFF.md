@@ -85,18 +85,18 @@ cookie.
 | `net/gameSocket.js` | 336 | `attach(httpServer, controller)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
 | `lib/Controller.js` | 649 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
 | `lib/clock.js` | 160 | Fixed-timestep clock (§4). One accumulator drives every room's `step()`. |
-| `rooms/Room.js` | 1645 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, per-player views. Takes a `controller` constructor argument (§3). |
+| `rooms/Room.js` | 1701 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, per-player views. Takes a `controller` constructor argument (§3). |
 | `rooms/index.js` | 17 | **The one list of gamemodes**, keyed by the string the client's `init` packet sends. |
 | `rooms/Ffa.js` | 43 | Free-for-all: tunables only. `Room`'s defaults *are* ffa's behaviour. |
 | `rooms/TwoTeam.js` | 143 | 2-team: two base strips, guard drones, team colours. |
 | `rooms/FourTeam.js` | 179 | 4-team: four corner bases, guard arcs, team colours. |
 | `rooms/BossMode.js` | 45 | Boss hunt: ffa with the boss knobs turned up. |
-| `rooms/Tag.js` | 232 | Tag: 4 teams, no bases, killer-tags-victim respawn, timed arena shrink, per-team leaderboard, x3 xp. No new entity types. |
-| `entities/Player.js` | 742 | Tank entity: motion, shooting, upgrades, class changes, collision. Takes a `room` constructor argument (§3). |
+| `rooms/Tag.js` | 360 | Tag: 4 teams, no bases, killer-tags-victim respawn, timed arena shrink, per-team leaderboard, x3 xp, Arena Closer win condition (PENDING #28, shipped). No new entity types — a Closer is a `Player` bound to `CONFIG.CLOSER`, like a boss. |
+| `entities/Player.js` | 805 | Tank entity: motion, shooting, upgrades, class changes, collision — including a Closer's invincibility/knockback-immunity guard (PENDING #28). Takes a `room` constructor argument (§3). |
 | `entities/Bullet.js` | 1308 | Projectiles, incl. drone/trap/necro behaviour. Takes a `room` constructor argument (§3). |
-| `entities/Objects.js` | 250 | Farmable polygons. Takes a `room` constructor argument (§3). |
+| `entities/Objects.js` | 254 | Farmable polygons, incl. the Closer body-damage exemption (PENDING #28). Takes a `room` constructor argument (§3). |
 | `entities/Detector.js` | 94 | Invisible "vision cone" query entity used by AI. A leaf — no `room`/`controller` reference needed. |
-| `lib/gameAI.js` | 490 | Bot/boss/pet AI. A plain module now — `Detector`/`Vec`/`BODY_FRICTION`/`CLASS`/`DES` are all leaves, so `module.exports = CONFIG` directly. Bots steer through `Physics.stepBody` (tank `FRICTION`); the boss's drift and the pet do not. |
+| `lib/gameAI.js` | 564 | Bot/boss/pet/**Arena Closer** (PENDING #28) AI. A plain module now — `Detector`/`Vec`/`BODY_FRICTION`/`CLASS`/`DES` are all leaves, so `module.exports = CONFIG` directly. Bots steer through `Physics.stepBody` (tank `FRICTION`); the boss's drift, the Closer's chase and the pet do not. |
 | `lib/quadTree.js` | 75 | Spatial index for broad-phase collision. |
 | `lib/SlotMap.js` | 128 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. `maxIndex` is the highest allocatable id, not a capacity. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
@@ -281,9 +281,15 @@ The things in this codebase that are *not* obvious from reading the code around 
   largest-remainder). Adopting `12.5 × N_P` **instead** would have been actively wrong — spread over
   our bigger fixed arenas it is *emptier* than what we had. **Arena size is per-mode and follows
   `diep_wiki`**: a mode sets `rules.arenaLive` to get `AL(live human count)` every tick through the
-  `newMap` lerp (Sandbox, and Tag when it lands); everything else keeps its stated `mapSize`. ffa is
-  deliberately **not** resized toward diep's 244 gu — that is a 71% area cut, a different order of
-  balance change, and it stays open. **Every nest radius in the tree is a fraction of the arena, via
+  `newMap` lerp (Sandbox, and Tag when it lands); everything else keeps its stated `mapSize`. ffa/
+  2team/4team are deliberately **not** resized toward diep's 244 gu — decided against, 2026-07-30
+  (PENDING #19): that would be a 71% area cut nobody asked for, and the wiki only describes
+  population-varying arenas for Sandbox and Tag's shrink timer, never for FFA/2/4 Teams. **Turning
+  `arenaLive` on for 2team/4team specifically is not just a flag flip even setting the balance call
+  aside** — their base-drone orbit centres (`dronePosts`) are baked as absolute world coordinates
+  once in the constructor and never recomputed as the map resizes, unlike Sandbox/Tag which have no
+  bases to go stale; see PENDING nuance 50 before ever revisiting this. **Every nest radius in the
+  tree is a fraction of the arena, via
   `room.nestScale`** — `spawnKeepOut()`, `createObj()`'s cluster radii, `entities/Objects.js`'s
   carve-outs and both 280-unit map-edge insets. ffa is the reference (`NEST_REF_GU`), so its scale
   is exactly 1 and its placement behaviour is untouched — verified, not argued: ffa's canvas-op
@@ -348,6 +354,20 @@ a per-team leaderboard and ×3 xp, with **no new entity types** — three hooks 
 `leaderRows()`, a shrink timer that writes `newMap` and lets the existing lerp move it) plus rules.
 Two of those hooks were added *for* Tag and are no-ops everywhere else, which is the pattern to
 copy: add a hook with the current behaviour as its default rather than branching on `this.gm`.
+**The win condition (PENDING #28, shipped) keeps that "no new entity types" property**: an Arena
+Closer is a `Player` bound to `CONFIG.CLOSER` (`lib/gameAI.js`) exactly the way `createBoss()`
+binds `CONFIG.BOSS`, on `rules.bossTeam` so it is on nobody's side the same way a boss is.
+`winner()` (one team holds everyone left, gated on `tagging()`'s own latch — see there) fires
+`startClosing()` once, which spawns a fixed burst (`CLOSER_COUNT`) rather than maintaining a
+population, because a Closer is invincible and never dies (`entities/Player.js`'s `collision()`
+returns immediately for one — no damage, no knockback, and `entities/Objects.js`'s `KIND.PLAYER`
+arm skips the hp half of the shape-contact case for the same flag). Once `closing`, `respawn()`
+is overridden to a no-op so nobody comes back — the match ends by becoming empty, which is what
+lets `rooms/Room.js`'s existing zero-human self-destruct (extended to also exclude `i.closer`,
+next to its `i.bot`/`i.boss` exclusions) finish the job with no new termination path of its own.
+The invisibility cap that goes with the win condition (diep_wiki: Tag players "can't become fully
+invisible") is `rules.invisFloor` — a new `DEFAULT_RULES` entry, 0 everywhere but Tag, read by
+`entities/Player.js`'s stealth-alpha decay as the floor instead of a hard-coded 0.
 
 **Base drones** are `Bullet`s of `type 1.4` with `life = -1`, and their **`pene` *is* their health
 pool** (`collision()` decrements it) — which is why `config.BASE_DRONE_HP` is written there and
@@ -882,7 +902,7 @@ the minimap draws more than your own dot.
 | `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason. `offdir` is compared mod 2π (`sameAngle()`), not with a literal `!==`, so two float64 expressions for the same rotation don't need a whitelist entry to excuse a false positive. The whitelist's size is pinned (`WHITELIST.length === 8`) and every entry's *reason* is re-verified live each run, not just its presence — a deviation that stops reproducing fails loud instead of the entry sitting in the file forever. See §3 and PENDING.md. |
 | `test/interp.js` | Client motion arithmetic (§7). |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All six gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A — WP3; the band is 3% rather than 2% because Euler discretization of the drag term scales with 1−F, and plan.md step 2 took F from 0.956532 to 10/11), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). No socket, built via `boot()`. |
+| `test/rooms.js` | All six gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner actually detecting a nearby player, and that `respawn()` carries a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, that they are killable at all, the respawn delay, the base fence's bullet margin — WP-E), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A — WP3; the band is 3% rather than 2% because Euler discretization of the drag term scales with 1−F, and plan.md step 2 took F from 0.956532 to 10/11), the FOV formula (WP4), the 45/7/33 upgrade economy and its client-mirrored constants (PENDING #30), and `Room.rejectSample()`'s hard cap and best-effort fallback on an unsatisfiable/too-small map (plan.md WP-SPAWN). Tag's win condition (PENDING #28, shipped): `winner()`/`startClosing()` driven directly (team reassignment, not a random match, to stay unseeded-RNG-free), that a spawned Closer takes no damage/knockback from either a tank or a bullet, that it doesn't count toward the self-destruct check, that `respawn()` no-ops once `closing`, and that a stealth class's alpha decay settles at `rules.invisFloor` in Tag instead of reaching 0. No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, that the input-prediction lead (`public/SHARE/Physics.js`) reaches the same steady state at 30/60/144fps, that an incoming bullet is dead-reckoned by exactly the render delay it cancels while drones/pets are not, and that an own bullet's dead-reckon lead ramps in across the muzzle-weld handoff without a jump and reaches the same lead any other bullet gets (PENDING #24b, both halves shipped). |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server, all six modes. |

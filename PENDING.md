@@ -4,11 +4,12 @@ Short-form companion to [HANDOFF.md](HANDOFF.md). Only what's *left*: things nee
 decisions already made but not yet built, and things nobody has verified yet.
 
 **A fully shipped item is deleted from this file. An item marked SHIPPED is still here for one of
-two reasons, and it says which:** either part of it is still open (#19's
-arena resize, #28's win condition), or it records a
+two reasons, and it says which:** either part of it is still open (#17's body damage magnitude), or
+it records a
 *"do not re-fix this"* — a value that looks wrong until you know why it is what it is (#22 is
-entirely that; #14's table, #16's two derived columns, #18's four damage fixes, #23's
-`BASE_DRONE_HP` and #24's written floor are too). Do not treat a SHIPPED heading as work to redo.
+entirely that; #14's table, #16's two derived columns, #18's four damage fixes, #19's arena size,
+#23's `BASE_DRONE_HP`, #24's written floor and #28's Arena Closer count/invisibility floor are
+too). Do not treat a SHIPPED heading as work to redo.
 
 ---
 
@@ -90,29 +91,57 @@ become real items. We currently ship **ffa / 2team / 4team / boss / sandbox**.*
   worth deciding separately from the rest of the mode.
 - XP gain is **doubled** in this mode.
 
-**28. Tag — SHIPPED** (`rooms/Tag.js`). 4 teams, no bases, random spawns. Killing a
+**28. Tag — SHIPPED, both halves** (`rooms/Tag.js`). 4 teams, no bases, random spawns. Killing a
 player **converts them to your team** on respawn; dying to a polygon keeps your colour; suiciding
 into a colour is a legitimate way to switch. The leaderboard shows **player counts per team**, not
 scores. The arena **shrinks every ~12–13 s**. XP ×3. It cost no new entity types, as predicted —
 three hooks (`respawnTeam()`, `leaderRows()`, a shrink timer) plus rules.
 
-**What it does NOT have, and why — both are their own work, not oversights:**
-- **No win condition / Arena Closers.** diep ends a Tag match by spawning Arena Closers once one
-  team holds every player. That is a **new entity type**, which is the one thing this mode was
-  picked for not needing. The room still self-destructs when it empties, like every other mode. A
-  match therefore runs indefinitely rather than resetting.
-- **No invisibility cap.** diep_wiki: players "can't become fully invisible" in Tag, to stop a
-  Landmine/Stalker hiding in a corner and preventing the match from ending. It is a change to
-  `entities/Player.js`'s alpha handling rather than anything `rooms/Tag.js` can state, and it only
-  actually matters once there IS a win condition to stall — so it is naturally the same piece of
-  work as the bullet above.
+**The win condition and invisibility cap — SHIPPED, landed after the rest of this mode.** diep ends
+a Tag match by spawning Arena Closers once one team holds every player; both halves turned out to
+still cost **no new entity type**, which is what the mode was picked for in the first place — an
+Arena Closer is a `Player` bound to `CONFIG.CLOSER` (`lib/gameAI.js`), spawned the same way
+`createBoss()` spawns a boss.
+- `winner()` (one team holds every player, gated on `tagging()`) fires `startClosing()` once, which
+  spawns a fixed burst of Closers (`CLOSER_COUNT`, `rooms/Tag.js`) rather than maintaining a target
+  population — they are invincible and never die, so a burst is the whole mechanism.
+  `entities/Player.js`'s `collision()` returns immediately for `this.closer` (no damage, no
+  knockback — diep_wiki's "Invincibility"/"Complete resistance to knockback"), and
+  `entities/Objects.js`'s `KIND.PLAYER` arm skips the hp half of the shape-contact case for a
+  closer too (diep_wiki: its body "can't harm shapes"). A Closer's own body-damage/bullet-size stat
+  (diep_wiki gives no number for either — "extremely high", "about as large as a Dominator") is set
+  on the spawned instance in `createCloser()`, the same pattern `createBoss()` uses for a boss's
+  hp/size, rather than guessed into `TanksConfig.js`'s shared class table.
+- Once `closing`, `respawn()` is overridden to a no-op, so nobody comes back — the match ends by
+  becoming empty, which is what lets `rooms/Room.js`'s existing zero-human self-destruct (now also
+  excluding `i.closer`, next to `i.bot`/`i.boss`) finish the job. No new termination path exists.
+- The invisibility cap is `rules.invisFloor` (`rooms/Room.js`'s `DEFAULT_RULES`, 0 everywhere but
+  Tag), read by `entities/Player.js`'s stealth-alpha decay as the floor instead of a hard 0 —
+  diep_wiki gives no number for the cap itself, only that zero is disallowed, so the floor value
+  (`rooms/Tag.js`'s `INVIS_FLOOR`) is ours, flagged rather than presented as measured.
+- **A real bug this surfaced and fixed**: `tagging()` used to re-evaluate live
+  (`Math.min(teamCounts()) >= MIN_PER_TEAM`), which reads fine for "hasn't started yet" but is
+  wrong for what `winner()` needs — a team being weeded down toward zero *is* a match heading
+  toward a winner, and the live check would go permanently false the moment the first team dropped
+  below `MIN_PER_TEAM`, freezing `respawnTeam()`'s conversion (and `winner()`, which depends on
+  `tagging()`) right when the match should be closing in on one. `tagging()` is a one-time latch
+  now (`this.tagged`), matching diep_wiki's own one-time framing ("Once each team has enough
+  players, killing a player will convert them") rather than a standing condition. No existing test
+  exercised the old live-recheck path, so this was a silent latent bug until the win condition
+  needed `tagging()` to stay true through an actual match.
+- **`CLOSER_COUNT` is 4, not diep's "up to 16"** — this room's `maxPlayer` (30) is a slot ceiling
+  shared with 10 join slots and 16 already-seated bots, so 16 more would frequently not fit, and a
+  Closer never needing to be replaced (invincible, immortal) means a smaller burst hunts a match
+  this size down just as certainly, only slower. `createCloser()` no-ops if the room is full, the
+  same guard `createBoss()` uses, so this is a target, not a promise.
 
 **Two judgement calls it took, worth not undoing:** the tagging gate is real (diep_wiki: the mode
 "only begins when each team has at least four players"), so `botCount` is 16 across 4 sides
 specifically to open it — dropping the bot count silently turns tagging off. And `teamCounts()`
 **counts dead-but-respawning players**, because filtering them made both the gate and the board
 flicker on every single death (one dead bot took a side from 4 to 3 and switched tagging off for
-the respawn delay). `test/rooms.js` pins both.
+the respawn delay). `test/rooms.js` pins both, plus the win condition, the Closer's invincibility,
+`respawn()`'s no-op once closing, and the invisibility floor.
 
 **Deliberately not itemised here:** Breakout (claimable tile grid, tiles block outside fire, and a
 camping-reset rule that instakills squatters) and Capture the Flag (3 bases/team, carryable flags,
@@ -223,8 +252,16 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
      polygon leaves you on your own team**. Finally, sit in a room for a few minutes and watch the
      **arena shrink** — it should step inward every ~12.5 s and glide rather than jump (it rides the
      same lerp the admin `mapResize` uses), and stop at a floor rather than closing to nothing.
-     Note there is deliberately **no win condition** yet, so a match never ends — that is #28, not a
-     bug you are seeing.
+     **The win condition and Arena Closers are new too** (#28, shipped) and equally
+     browser-unverified beyond `test/rooms.js` driving `winner()`/`startClosing()` directly rather
+     than through a real match: play (or bot-simulate) a match long enough that one team absorbs
+     every player, and confirm several tanks matching `TanksConfig.js`'s "Arena Closer" class appear
+     and beeline for everyone left, winners included — they should be unkillable (no flash, no hp
+     bar movement, no knockback on a ram) and should one-shot-ish anything they touch. Confirm the
+     room actually empties and self-destructs once every real player is dead, rather than idling
+     with only Closers left in it. **Stealth classes can't fully vanish here** — take a class with
+     nonzero `TanksConfig.js` `alpha` (`Manager`), sit still until it would normally read as
+     invisible in another mode, and confirm it stays faintly visible in Tag instead.
    - **Incoming bullets should now arrive when they look like they arrive** (#24b, shipped). This
      is the one item on this list that is purely a *feel* check and cannot be seen any other way:
      stand still and let a bot shoot you. Previously an enemy shot damaged you slightly *before* its
@@ -577,10 +614,11 @@ decision has its own numbered item above and is only cross-referenced here.*
     **Where the reasoning went instead**, since ~185 comments still point at it: every load-bearing
     derivation was mirrored into `HANDOFF.md` §3 as each step landed (the two frictions and the
     `back` column, `lib/tick.js`'s `impulse()`-vs-`perTick()` rule, health/regen and the `dr` term,
-    arena density and `nestScale`, the bullet dead-reckoning exception), and every part deliberately
-    left unshipped is an open item in *this* file — #19 (resizing the arena toward diep's AL) and
-    #28 (Tag's win condition and invisibility cap). #16's knockback `weight`, #18's penetration →
-    damage and #24(b)'s own-bullet dead reckoning were all on that list too and have since shipped.
+    arena density and `nestScale`, the bullet dead-reckoning exception), and every part that was
+    deliberately left unshipped when the queue was deleted became an open item in *this* file in its
+    place. #16's knockback `weight`, #18's penetration → damage, #19's arena resize (decided
+    against, 2026-07-30), #24(b)'s own-bullet dead reckoning and #28's win condition/invisibility
+    cap were all on that list and have since shipped or been closed — none are open any more.
     So a comment citing a step number is telling you
     *when* a value was set and why it is not arbitrary; the current justification for it lives at the
     call site or in HANDOFF §3.
@@ -627,6 +665,29 @@ decision has its own numbered item above and is only cross-referenced here.*
     *should* aggro on contact regardless of level is the question that was actually answered here,
     by a human, on gameplay grounds. Cross-check the whole aggro model against `diep_wiki/`'s boss
     pages when someone next has that file open.
+
+50. **`rules.arenaLive` was declined for ffa/2team/4team (#19, 2026-07-30) — and if that decision
+    is ever revisited, it is more than a flag flip for the two team modes.** The immediate reason
+    to decline was gameplay (a 71% area cut nobody asked for, and `diep_wiki` only describes
+    population-varying arenas for Sandbox and the Tag shrink-timer, never for FFA/2/4 Teams) — but
+    there is also a real structural gap underneath that only shows up if a mode WITH bases tries to
+    adopt it. `rooms/Room.js`'s constructor calls `this.dronePosts = this.basePosts()` **once**,
+    and `TwoTeam.js`/`FourTeam.js`'s `basePosts()` bakes each orbit centre's `post.x`/`post.y` as
+    absolute world coordinates computed off `this.map` **at that one moment** — consumed verbatim
+    forever after (`Room.js`'s drone spawn/orbit math, `bull.ox = post.x` etc.), never
+    recomputed. `tickArena()` (called every tick from `step()`) keeps `baseSize`/`nestScale`
+    current as the map lerps, but nothing rebuilds `dronePosts` alongside it. An `arenaLive` room
+    starts construction at `AL(0)` (the 150 gu floor, see `Room.js`'s constructor comment) and
+    only grows toward `AL(live count)` afterward — Sandbox and Tag never exposed this because
+    neither has a base (`basePosts()` returns `[]` for both). Turning `arenaLive` on for 2team/4team
+    would lay out every base's drone ring for a ~150 gu map and then leave it frozen there
+    while the arena itself lerped toward something bigger — badly off-center from the
+    base corners/strip the whole game. Fixing that for real means making `dronePosts`/
+    `droneCentres` re-derive from the live map (either rebuild them on resize, or store them as
+    ratios of `baseSize` and recompute `post.x`/`post.y` each tick) — real engineering, not
+    something to smuggle into a one-line rules change. ffa itself has no base and would not hit
+    this — `spawnPoint()`/nest carve-outs there already read `this.map`/`this.nestScale` live, the
+    same way Sandbox's already do.
 
 ## 🔴 Measured against diep.io's real physics (`physics.html`) — mismatches
 
@@ -1027,9 +1088,8 @@ its columns, same as #18. What is left in this section is itemised as open at ea
 
     Adopting the full real model touches every `collision()` in `entities/`; all four fixes now do.
 
-19. **Arena and shape density — SHIPPED, the density half**; **the arena-resize
-    half stays deliberately open.** (The FOV half was already done: `config.FOV_MUL` 1.39 and
-    multiplicative `FOV_PER_LEVEL` 1.005.)
+19. **Arena and shape density — SHIPPED, both halves.** (The FOV half was already done:
+    `config.FOV_MUL` 1.39 and multiplicative `FOV_PER_LEVEL` 1.005.)
     - **Shapes — SHIPPED, and the key insight is that diep's two formulas are a MATCHED PAIR.**
       `AL = ⌊√N_P × 50⌋` gu and `12,5 × N_P` shapes compose to `(√N·50)² / (12.5·N)` = a *constant*
       **1 shape per 200 gu², at every player count** — the player count cancels. So diep's real
@@ -1044,20 +1104,22 @@ its columns, same as #18. What is left in this section is itemised as open at ea
       landing at 1 per 200.0 gu². **boss barely moved (615 → 612)** — its tighter gu(350) arena was
       already almost exactly at diep's density, which is a useful cross-check that the formula is
       measuring something real. The old 1-per-261-gu²/0.76× figures are what this replaced.
-    - **Arena — still open, and now open ON PURPOSE rather than by omission.** diep sizes it
-      `AL = ⌊√N_P × 50⌋` gu (244 gu at our `maxPlayer: 24`) against our fixed **451/450/400** gu,
-      i.e. 1.85×. The density work deliberately did **not** resize: cutting ffa to AL(24) is a **71% cut in
-      area**, a balance change of a completely different magnitude to a density fix, affecting every
-      distance the mode was tuned around — and nothing asked for it. The *machinery* now exists
-      (`rules.arenaLive` recomputes `AL(live human count)` every tick through the existing
-      `newMap` lerp), so adopting it for a mode is one flag; the call to point it at ffa is the part
-      that is still a human's.
+    - **Arena — SHIPPED, decided AGAINST for ffa/2team/4team. Kept only as that
+      do-not-re-fix record** (nuance 50 has the technical reason it would be more than a flag
+      flip if this is ever revisited). diep sizes it `AL = ⌊√N_P × 50⌋` gu (244 gu at our
+      `maxPlayer: 24`) against our fixed **451/450/400** gu, i.e. 1.85×. Cutting ffa to AL(24)
+      would be a **71% cut in area**, a balance change of a completely different magnitude to a
+      density fix, affecting every distance the mode was tuned around — decided against, on
+      gameplay grounds, 2026-07-30. `rules.arenaLive` **stays exactly what it already was for
+      Sandbox and (once it lands) Tag, and nothing more** — see the wiki bullet right below for
+      why those two and only those two.
     - **Which modes scale is per-mode, and it follows `diep_wiki` rather than being applied
       globally.** Arena size is described as population-varying for **Sandbox** only ("The arena's
       size along with the number of shapes that spawn in it varies depending on the number of
       players connected to it", `diep_wiki/Game Modes.txt`) and as a timed shrink for **Tag**
       (`diep_wiki/Map.txt`); FFA/2 Teams/4 Teams describe nothing of the kind and keep the arena
-      they have. Shape *density* is the general rule and applies everywhere. Sandbox sets
+      they have — which is exactly the decision above, not a gap. Shape *density* is the general
+      rule and applies everywhere. Sandbox sets
       `arenaLive` and is **inert today** — `maxPlayer: 0` caps it at one player and AL(1) = 50 gu is
       under the 150 gu floor — which `test/rooms.js` pins as a fact so a future `maxPlayer` change
       surfaces there rather than silently.

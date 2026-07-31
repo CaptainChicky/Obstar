@@ -221,7 +221,12 @@ const DEFAULT_RULES = {
 	// Per-mode xp multiplier, applied once in awardXp(). diep_wiki/Polygons.txt: Tag x3,
 	// Breakout x3, Domination x2, everything else x1.
 	xpMul: 1,
-	viewerBullets: true   // re-encode your own bullets per viewer so they read as yours
+	viewerBullets: true,  // re-encode your own bullets per viewer so they read as yours
+	// The alpha a stealth class's decay-toward-invisible (entities/Player.js's update()) stops at.
+	// 0 everywhere except Tag (PENDING #28): diep_wiki/Tag.txt - "Players can't become fully
+	// invisible... to prevent tanks like Landmine and Stalker from hiding in the corner of the map
+	// and preventing the game from ending." No number is given, only that zero is disallowed.
+	invisFloor: 0
 };
 
 class Room {
@@ -909,8 +914,12 @@ class Room {
 		let playerCount = 0;
 		for (const i of this.INSTANCE.players.live()) {
 			// A boss is not a bot - it has its own AI, not CONFIG.BOTS - so it has to be excluded
-			// explicitly, or an empty 'boss' room (three bosses, always alive) ticks forever.
-			if (!i.bot && !i.boss) {
+			// explicitly, or an empty 'boss' room (three bosses, always alive) ticks forever. A
+			// Closer (PENDING #28, rooms/Tag.js's createCloser()) needs the same exclusion for the
+			// same reason: it is invincible and never dies, so counting it here would mean a Tag
+			// match that has finished closing - every real player dead - never actually self-
+			// destructs, and just sits open with its Closers idling forever.
+			if (!i.bot && !i.boss && !i.closer) {
 				playerCount++;
 				stop = 0;
 			}

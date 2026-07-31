@@ -549,6 +549,85 @@ function tagTests() {
 		check('spawns are random across the whole arena, not inside a base', clear);
 	}
 
+	// The win condition (PENDING #28's remaining half). Driven directly by reassigning team,
+	// the same "drive the field, not a full random match" style the rest of this file uses -
+	// letting a real match converge under unseeded RNG is exactly the kind of flakiness this
+	// suite avoids elsewhere.
+	{
+		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+
+		check('winner() is false while every side still has players', room.winner() === false,
+			room.teamCounts().join(','));
+
+		const live = [...room.INSTANCE.players.live()].filter((p) => !p.boss);
+		const before = live.map((p) => p.team);
+		for (const p of live) { p.team = room.rules.teams[0]; }
+		check('winner() is true once one team holds every player', room.winner() === true,
+			room.teamCounts().join(','));
+
+		check('the room has not started closing yet', room.closing === false);
+		const closersBefore = room.closers.length;
+		room.startClosing();
+		check('startClosing() flips the closing flag', room.closing === true);
+		check('...and spawns at least one Arena Closer', room.closers.length > closersBefore,
+			room.closers.length);
+		check('...on a side none of rules.teams claims, same as a boss',
+			room.closers.every((c) => room.rules.teams.indexOf(c.team) < 0 && c.closer === 1),
+			room.closers.map((c) => c.team + ':' + c.closer).join(','));
+		// Room.js's step() self-destruct loop has to exclude a Closer the same way it already
+		// excludes a bot/boss, or a finished match (every real player dead) idles forever instead
+		// of self-destructing, since a Closer is invincible and never dies on its own.
+		check('a Closer does not read as a still-live human to the self-destruct check',
+			room.closers.every((c) => !c.bot && !c.boss && c.closer === 1));
+
+		// Invincibility and complete knockback resistance (diep_wiki) - drive collision() directly
+		// for both a tank ram and a bullet hit, rather than trusting the guard is reached.
+		const closer = room.closers[0];
+		const snap = { hp: closer.hp, vx: closer.vec.x, vy: closer.vec.y };
+		closer.collision({ kind: KIND.PLAYER, id: { oId: -1 }, damage: 999999, x: closer.x + 1, y: closer.y }, {});
+		closer.collision({ kind: KIND.BULLET, origin: { oId: -1 }, weight: 999999, damage: 999999, x: closer.x + 1, y: closer.y }, {});
+		check('a Closer takes no damage or knockback from a tank ram or a bullet',
+			closer.hp === snap.hp && closer.vec.x === snap.vx && closer.vec.y === snap.vy,
+			closer.hp + ' / ' + closer.vec.x + ',' + closer.vec.y);
+
+		// Once closing, nobody respawns - diep_wiki's ending is "all players killed off the
+		// arena", not a match that keeps restocking itself.
+		const victim = live[0];
+		const victimSlotBefore = room.INSTANCE.players.get(victim.id.oId);
+		victim.destroy = 1;
+		room.respawn(victim.id.oId, 0, 0);
+		check('respawn() is a no-op once the arena is closing',
+			room.INSTANCE.players.get(victim.id.oId) === victimSlotBefore);
+
+		// Restore, so nothing above leaks into a test file run further down the same process.
+		live.forEach((p, i) => { p.team = before[i]; });
+		victim.destroy = 0;
+		room.closing = false;
+		room.closers = [];
+	}
+
+	// The invisibility cap (PENDING #28) - diep_wiki: Tag players "can't become fully invisible".
+	// Mirrors entities/Player.js's own decay line directly rather than looping the full update()
+	// (which would fire the stealth class's real cannons into the room's real bullet SlotMap -
+	// unrelated to what this checks), the same reasoning the regen invariance tests above give for
+	// doing the same thing to the regen formula.
+	{
+		const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+		const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+		const stealthClass = 'Manager';
+		check('there is a real stealth class to test the cap against',
+			CLASS[stealthClass] && CLASS[stealthClass].alpha > 0,
+			CLASS[stealthClass] && CLASS[stealthClass].alpha);
+		check('Tag opts into a nonzero invisibility floor', room.rules.invisFloor > 0,
+			room.rules.invisFloor);
+		let alpha = 1;
+		for (let i = 0; i < 100000; i++) {
+			alpha = Math.max(room.rules.invisFloor, alpha - tick.perTick(CLASS[stealthClass].alpha));
+		}
+		check('decaying a stealth class in Tag settles at rules.invisFloor, not fully invisible',
+			alpha === room.rules.invisFloor, alpha);
+	}
+
 	return room;
 }
 
@@ -2920,9 +2999,12 @@ function withTickMs(assumedTickMs, fn) {
 }
 
 /* A room stand-in with just enough surface for a standalone Player/Bullet: a map to clamp
-	 against and a createBullet() that does nothing (or counts), never a real SlotMap. */
+	 against, a createBullet() that does nothing (or counts), and rules.invisFloor (PENDING #28) -
+	 Room.js's own DEFAULT_RULES value, since entities/Player.js's update() reads it unconditionally
+	 whenever a class has stealth alpha, and every test through here uses a class that doesn't. Never
+	 a real SlotMap. */
 function fakeRoom() {
-	return { map: { width: 1e6, height: 1e6 }, createBullet() { } };
+	return { map: { width: 1e6, height: 1e6 }, createBullet() { }, rules: { invisFloor: 0 } };
 }
 
 /*

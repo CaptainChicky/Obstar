@@ -159,6 +159,10 @@ class Objects {
 					return;
 				}
 				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(len), tick.perTick(len))));
+				// An Arena Closer (PENDING #28) still shoves a shape out of the way (the impulse
+				// above) but diep_wiki is explicit that its body "can't harm shapes" - so the damage/
+				// kill half is skipped for it alone, the one KIND.PLAYER exception in this arm.
+				if (other.closer) { break; }
 				this.hp -= tick.perTick(other.damage);
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.destroy = tick.DES; this.room.awardXp(other, this.prize); other.coins += this.coinReward }

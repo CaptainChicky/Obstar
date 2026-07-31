@@ -17,21 +17,43 @@
 	Everything else - joining the thinnest side, four-way team colours, friendly fire, the boss
 	roll - is inherited unchanged, which is the point of the hook table at the top of Room.js.
 
-	WHAT IS DELIBERATELY NOT HERE, so it reads as scope rather than oversight:
-	  - Arena Closers. diep ends a Tag match by spawning Arena Closers once one team holds every
-	    player. We have no Arena Closer entity and adding one is a new entity type - exactly what
-	    this mode was chosen for NOT needing. The room still self-destructs when it empties, the
-	    same as every other mode.
-	  - The invisibility cap. diep_wiki notes players "can't become fully invisible" in Tag,
-	    to stop a Landmine/Stalker hiding in a corner and preventing the match from ending. That is
-	    a real rule, it is just a change to entities/Player.js's alpha handling rather than
-	    anything this file can state, and it only matters once there is a win condition to stall.
-	    Both are written up in PENDING rather than half-built.
+	THE WIN CONDITION (PENDING #28's remaining half, landed after the rest of this file). diep_wiki/
+	Tag.txt: "Once a team kills all enemy players, that team wins and the arena will be closed."
+	"Closed" is diep_wiki/Arena Closer.txt's own mechanism, not a bespoke Tag ending: several
+	invincible Arena Closers spawn and hunt everyone down - winners included, per that page's own
+	AI priority list - until nobody is left, at which point Room.step()'s existing zero-human
+	self-destruct (the same one every other mode already relies on) fires on its own. Nothing new
+	had to be taught to end the room; winning just has to make it empty. See winner()/
+	startClosing()/createCloser() below, CONFIG.CLOSER in lib/gameAI.js for the AI itself,
+	and TanksConfig.js's "Arena Closer" class for its stats.
+
+	The invisibility cap lives in entities/Player.js (rules.invisFloor, defaulted in Room.js) since
+	it is a change to alpha handling, not anything this file states - but it is this mode's own
+	rule (diep_wiki: "Players can't become fully invisible... to prevent tanks like Landmine and
+	Stalker from hiding in the corner of the map and preventing the game from ending"), so it is
+	opted into below rather than left at the base default.
 */
 const World = require('../public/SHARE/World.js');
 const gu = World.gu;
 const clock = require('../lib/clock.js');
 const Room = require('./Room.js');
+const Player = require('../entities/Player.js');
+const CLASS = require('../public/SHARE/TanksConfig.js').class;
+const CONFIG = require('../lib/gameAI.js');
+
+/*
+	How many Arena Closers a win spawns. diep_wiki gives a maximum of 16, not a fixed count, and 16
+	is the wrong number to reach for here regardless: this room's SlotMap tops out at rules.
+	maxPlayer (30, 10 join slots + 16 bots already seated), so 16 more would frequently not fit,
+	and they never need to (they are invincible and never die, so a handful hunts down a match this
+	size just as certainly as sixteen would - it only takes longer). createCloser() already no-ops
+	if the room is full, the same guard createBoss() uses, so this is a target, not a promise.
+*/
+const CLOSER_COUNT = 4;
+// diep_wiki gives no number for the invisibility cap, only that zero is disallowed - 0.15 is ours,
+// picked to stay clearly visible up close (where a Landmine/Stalker corner-camp actually matters)
+// without erasing the class's whole point at range.
+const INVIS_FLOOR = 0.15;
 
 /*
 	The shrink, which is the one number here diep_wiki does not supply.
@@ -94,12 +116,24 @@ class Tag extends Room {
 			xpMul: 3,
 			// No bases at all - that is the defining structural difference from 4team, and it is
 			// stated by leaving baseSizeRatio at its 0/1 default rather than by an override.
-			viewerBullets: false
+			viewerBullets: false,
+			invisFloor: INVIS_FLOOR
 		}, controller);
 	}
 	/* Counts down to the next shrink. build() runs before the first tick, so this exists by then. */
 	build() {
 		this.shrinkIn = SHRINK_EVERY;
+		// Whether the win condition has fired - starting the Arena Closer swarm and cutting off
+		// respawn() (below). false for the room's whole life unless winner() trips it in step().
+		this.closing = false;
+		// Every closer createCloser() has actually spawned - not consulted by anything in this file
+		// (a Closer never dies, so there is no cleanup loop to drive), kept for the same reason
+		// this.bosses exists on Room: something outside this file (a test, an admin command) may
+		// want to know they are there.
+		this.closers = [];
+		// tagging()'s latch (see there) - starts closed, same as a fresh match where no side has
+		// reached MIN_PER_TEAM yet.
+		this.tagged = false;
 	}
 	/*
 		You respawn on the team of whoever killed you - the whole mode.
@@ -148,9 +182,22 @@ class Tag extends Room {
 		}
 		return count;
 	}
-	/* Whether the tagging rule is live yet: every team needs MIN_PER_TEAM players first. */
+	/*
+		Whether the tagging rule is live yet: every team needed MIN_PER_TEAM players AT SOME POINT.
+		Latched into this.tagged rather than re-evaluated live (PENDING #28's win condition surfaced
+		why: a team being weeded down toward zero is exactly what a match heading toward a winner
+		looks like, and a live re-check would have this go permanently false the moment the first
+		team dropped below MIN_PER_TEAM, freezing respawnTeam()'s conversion - and winner() below,
+		which depends on tagging() - right when the match should be closing in on one). diep_wiki
+		itself reads as one-time, not continuous: "The game only begins when each team has at least
+		four players... Once each team has enough players, killing a player will convert them" - a
+		trigger, not a standing condition.
+	*/
 	tagging() {
-		return Math.min.apply(null, this.teamCounts()) >= MIN_PER_TEAM;
+		if (!this.tagged) {
+			this.tagged = Math.min.apply(null, this.teamCounts()) >= MIN_PER_TEAM;
+		}
+		return this.tagged;
 	}
 	/*
 		The timed shrink. Writes newMap the same way the admin 'mapResize' command does, so the
@@ -168,11 +215,92 @@ class Tag extends Room {
 		this.newMap.width = next;
 		this.newMap.height = next;
 	}
+	/*
+		True once the win condition has fired - one team holds every player left in the room, and
+		the mode is actually live yet (mirrors tagging()'s own gate: diep_wiki's win condition is a
+		Tag-specific ending, not something that can fire before Tag's own rule is even active).
+		Team 9 (rules.bossTeam, also what createCloser() below puts closers on) is never in
+		rules.teams, so a boss or a closer already can't be the "one team" this counts - no separate
+		exclusion needed here, the same reason teamCounts() above needs none for bosses.
+	*/
+	winner() {
+		if (!this.tagging()) { return false; }
+		return this.teamCounts().filter((n) => n > 0).length === 1;
+	}
+	/*
+		Fires once, the tick winner() first goes true. Doesn't try to keep a target Closer
+		population topped up the way createBoss() replenishes a killed boss - a Closer is invincible
+		(entities/Player.js's collision() returns immediately for one) and never dies, so a one-time
+		burst is the whole mechanism; see CLOSER_COUNT above for why it is 4, not diep's up-to-16.
+	*/
+	startClosing() {
+		this.closing = true;
+		for (let i = 0; i < CLOSER_COUNT; i++) { this.createCloser(); }
+	}
+	/*
+		One Arena Closer, spawned the same way createBoss() spawns a boss - a fresh Player bound to
+		CONFIG.CLOSER's motion/update instead of a class's normal ones. Two of the wiki's own stats
+		are given only as comparisons, not numbers ("about as large as a Dominator", "extremely high
+		body damage, even higher than a maxed Spike"), so - like createBoss() sets a boss's hp/size
+		on the instance rather than in TanksConfig.js - they are set here rather than guessed into
+		the shared class table:
+		  size: 64, a boss's own body radius (rooms/Room.js's createBoss()) - the closest tank-scale
+		  reference already modelled, for a tank the wiki calls Dominator-sized.
+		  damage: 84.8485, 10x this.damage's own diep-derived base (8.48485, entities/Player.js) -
+		  "extremely high" without inventing a one-shot-everything constant from nothing.
+		hp/maxHp don't matter to a Closer itself (collision() never spends them - see there) but are
+		set to a real finite number rather than left at whatever a fresh level-0 tank defaults to,
+		in case anything else ever reads them (the leaderboard, an admin command); rules.bossHp is a
+		convenient existing "big number" rather than a second one invented to match it.
+	*/
+	createCloser() {
+		const spec = CONFIG.CLOSER[0];
+		const pos = this.spawnPoint();
+		const closer = this.INSTANCE.players.add((id) => {
+			const c = new Player(
+				{ GM: this.gm, sId: this.id, oId: id },
+				pos.x, pos.y,
+				spec[2],
+				this.rules.bossTeam,
+				this.XPLVL,
+				this
+			);
+			c.closer = 1;
+			c.class = spec[2];
+			c.screen = CLASS[c.class].screen;
+			c.size = 64;
+			c.damage = 84.8485;
+			c.hp = c.maxHp = this.rules.bossHp;
+			c.shield = 0;
+			c.motion = spec[0].bind(c);
+			c.update = spec[1].bind(c);
+			return c;
+		});
+		if (closer) { this.closers.push(closer); }
+		return closer;
+	}
 	step() {
 		// Before super.step(), so the shrink's new target is in newMap by the time that tick's map
-		// lerp reads it - otherwise every shrink lands one tick late for no reason.
-		if (!this.destroy) { this.shrink(); }
+		// lerp reads it - otherwise every shrink lands one tick late for no reason. winner() is
+		// checked the same way, before super.step()'s own humans-vs-bots count decides whether the
+		// room self-destructs this tick, so a match that wins and immediately empties still gets its
+		// Closers spawned first rather than skipped by a same-tick race.
+		if (!this.destroy) {
+			this.shrink();
+			if (!this.closing && this.winner()) { this.startClosing(); }
+		}
 		super.step();
+	}
+	/*
+		Once the arena is closing, nobody comes back - diep_wiki's win condition ends when "all
+		players are killed off the arena", not when they respawn into it again. `force` is still
+		honoured (createAi()'s initial seed, if this were ever reached that late), so this only cuts
+		off the two ordinary paths - the client-driven respawn request and step()'s own bot restock -
+		that already call this without it.
+	*/
+	respawn(id, force = 0, bot = 0) {
+		if (this.closing && !force) { return; }
+		return super.respawn(id, force, bot);
 	}
 	/*
 		One row per team, showing how many players are on it - diep_wiki: "The leaderboard will show
