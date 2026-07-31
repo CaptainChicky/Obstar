@@ -105,6 +105,23 @@ body {
 	background-image: linear-gradient(to right, #36e27f, #ffd400, #ff5242);
 }
 
+/* Height is set from JS (public/queue.js's syncGamemodeListHeight()) to match .right-zone's own
+   rendered height - CSS alone can't know that ahead of the account chip/info panel's real content.
+   overflow-x hidden since a button's own width already fits the box; only the vertical list scrolls.
+   No visible scrollbar (unlike .inside_info/.leadZone below) - same "scrolls, doesn't show a bar"
+   feel as the achievements panel (public/account.js's transform-driven strip), just via native
+   scroll + wheel/touch/drag instead of a JS-driven transform, since this is a plain button list. */
+#gamemode-list {
+	overflow-y: auto;
+	overflow-x: hidden;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+#gamemode-list::-webkit-scrollbar {
+	display: none;
+}
+
 #gamemode-box .button {
 	user-select: none;
 	cursor: pointer;

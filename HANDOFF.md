@@ -94,7 +94,7 @@ cookie.
 | `rooms/Tag.js` | 360 | Tag: 4 teams, no bases, killer-tags-victim respawn, timed arena shrink, per-team leaderboard, x3 xp, Arena Closer win condition (PENDING #28, shipped). No new entity types — a Closer is a `Player` bound to `CONFIG.CLOSER`, like a boss. |
 | `rooms/Maze.js` | 211 | Maze: ffa's own tuning plus `KIND.WALL` chain generation, a precomputed minimap dot per wall, and a 5-hour close that reuses Tag's Arena Closer swarm (PENDING #26, shipped; wall geometry/bullet behaviour reopened as wrong 2026-07-31). |
 | `rooms/Domination.js` | ~40 | Domination: `TwoTeam`'s own base/tuning (via its new `extraRules` constructor param) plus 4 neutral Dominators placed from `build()` (PENDING #27, shipped). No new entity types — a Dominator is a `Player` bound to `CONFIG.DOMINATOR`, like a boss or Tag's Arena Closers. |
-| `entities/Player.js` | 856 | Tank entity: motion, shooting, upgrades, class changes, collision — including a Closer's invincibility/knockback-immunity guard (PENDING #28) and a `lastAttacker` write a Dominator's own AI reads (PENDING #27). Takes a `room` constructor argument (§3). |
+| `entities/Player.js` | 909 | Tank entity: motion, shooting, upgrades, class changes, collision — including a Closer's invincibility/knockback-immunity guard (PENDING #28) and a `lastAttacker` write a Dominator's own AI reads (PENDING #27). Takes a `room` constructor argument (§3). `cycleClass()`'s `CYCLE_EXCLUDE` now lets Arena Closer/the 3 Dominators through (PENDING #51, 2026-07-31). |
 | `entities/Bullet.js` | 1308 | Projectiles, incl. drone/trap/necro behaviour. Takes a `room` constructor argument (§3). |
 | `entities/Objects.js` | 254 | Farmable polygons, incl. the Closer body-damage exemption (PENDING #28). Takes a `room` constructor argument (§3). |
 | `entities/Detector.js` | 94 | Invisible "vision cone" query entity used by AI. A leaf — no `room`/`controller` reference needed. |
@@ -119,20 +119,20 @@ cookie.
 | `public/SHARE/PetsConfig.js` | 132 | Cosmetic pet definitions. |
 | `public/SHARE/ws_link.js` | 18 | Game server URL: `POST.ws`, else the page's own origin. |
 | `public/client/runtime.js` | 38 | **Late-bound client registry** (`CLIENT`). The server side no longer has an equivalent (§3) — this one is purely a client-side sequencing device, for scripts loaded by `<script>` tag with no bundler. |
-| `public/client/config.js` | 170 | `CONST`, palette `C`, `CLASS`/`CLASS_TREE`, mutable bags `Global`/`Game`. |
+| `public/client/config.js` | 177 | `CONST`, palette `C`, `CLASS`/`CLASS_TREE`, mutable bags `Global`/`Game`. `Palette.bull` (Crashers) is light pink now, not grey (PENDING "Sandbox gaps", 2026-07-31). |
 | `public/client/util.js` | 148 | `roundedPoly`, `roundRect`, `sleep`, the `General` namespace, `NET`/`Interp`. |
-| `public/client/drawings.js` | 307 | Shape table: one function per body/barrel/turret/bullet/pet. |
-| `public/client/entities.js` | 614 | `Tank`, `Obj`, `Bullet` — everything the server can put in the world. |
+| `public/client/drawings.js` | 324 | Shape table: one function per body/barrel/turret/bullet/pet. `obj.bull` (Crashers) now aliases `obj.tri` - a triangle, not `entities.js`'s old `drawBullet` circle (2026-07-31). |
+| `public/client/entities.js` | 673 | `Tank`, `Obj`, `Bullet` — everything the server can put in the world. `Obj.draw()`'s `'bull'` special case (routed Crashers through `drawBullet`'s circle) is gone - they dispatch through `Drawings['obj']` like every other shape now. `Obj.update()` also gives Crashers a movement-derived facing (`this.dir` tracks their own position delta, since the wire has no facing angle) so their triangle head points at whatever their server-side `DETEC` has them chasing (2026-07-31). |
 | `public/client/render.js` | 219 | `initRender()` (off-screen sprite caches), `initBackground()` (grid + team zones). |
 | `public/client/ui.js` | 1214 | `initUi()`: minimap, stats, upgrades, class picker, leaderboard, messages, death screen, doors. |
 | `public/client/game.js` | 734 | `CLIENT.Run()`: world state, camera, input, frame loop, `SetPacket`, `onmessage`. |
 | `public/client/overlay.js` | 150 | `General.DEV` and `General.CHAT` — the two DOM-rendered widgets. |
 | `public/client/boot.js` | 146 | `preRun()`: connecting screen, socket handshake, handover to `CLIENT.Run()`. |
 | `public/motion.js` | 376 | Client motion primitives (§7): snapshot interpolation, frame-rate-independent smoothing. |
-| `public/queue.js` | 146 | Menu page: gamemode selection, form submit. |
+| `public/queue.js` | 173 | Menu page: gamemode selection, form submit, `syncGamemodeListHeight()` (PENDING #10, 2026-07-31 - caps `#gamemode-list` to `.right-zone`'s own height). |
 | `public/shop.js` | 344 | Menu page: pet shop carousel + purchase calls. |
-| `public/font.js` | 655 | Animated canvas background on the menu. |
-| `views/index.ejs` | 153 | Menu page. |
+| `public/font.js` | 851 | Animated canvas background on the menu, incl. the per-mode "door" reveal `switch(toState)` - every mode has its own case now (PENDING #10, 2026-07-31; previously `tag`/`boss`/`sandbox`/`maze`/`domination` fell through to `ffa`'s). `tag` went through 4 iterations the same day (laggy 4-gradient wedges -> an evenodd double-hole that inverted into a huge false-filled circle -> a single evenodd hole that worked but read as empty at rest -> a plain painted circle, current) before landing on "just a white circle running the screen's edge," no `evenodd` involved at all. `domination` needed one rewrite (sliver-width gap -> a `2team`-style scaling wipe). |
+| `views/index.ejs` | 187 | Menu page. |
 | `views/play.ejs` | 131 | Game page. **`<script>` order is the client's dependency graph** — §7. |
 | `test/*.js` | ~2835 total | 9 suites, see §9. |
 
@@ -265,6 +265,22 @@ The things in this codebase that are *not* obvious from reading the code around 
   `PROJECTILE_BODY_DAMAGE`, is now multiplied in alongside `damageReduction()` at that one collision
   site only — `KIND.OBJECTS` and `KIND.BULLET` are untouched, since the wiki multiplier is specific
   to a tank's body hitting another tank's body.
+  **`entities/Objects.js`'s own pene double-count — FIXED 2026-07-31 (PENDING #18).** The
+  `KIND.PLAYER`-arm fix above (bullet damage to a *tank*) had a sibling bug in the shape-damage arm
+  that was deliberately left alone at the time: `KIND.BULLET`'s `this.hp -= ((pene>1)?pene:pene/2) *
+  other.damage` multiplied a shape's damage taken by the bullet's own `pene`, on top of `pene`
+  *already* gating how many ticks of contact the bullet survives (`Bullet.js`'s own `this.pene -=
+  tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE)` in its `KIND.OBJECTS` arm) — the identical
+  double-count #18 fixed for tanks, just never carried over to shapes. Total damage against a shape
+  scaled roughly quadratically with `pene` instead of linearly, which is what let a maxed-pene
+  Destroyer one-shot an Alpha Pentagon diep expects to take 20+ hits. Fixed the same way:
+  `this.hp -= tick.perTick(other.damage)`, matching the `KIND.PLAYER` arm two cases above it in the
+  same file. Retired `config.BASE_DRONE_PENE`, the stand-in the old formula needed so a base drone's
+  2000-point `pene` health pool didn't read as a 2000× multiplier — nothing left for it to guard
+  against once the multiplier is gone. `test/clientDiff.js`'s golden moved
+  (`297741/14e024be → 327848/3685f870`) since shapes now survive contact longer against upgraded
+  bullets (nuance 34's "how long one LIVES" case) — isolated first by reverting to the old formula
+  and confirming the prior golden reproduced exactly.
   **Penetration→damage magnitude — SHIPPED 2026-07-30, and cheaper than expected.** diep's stat
   slope (`1 + 0.75×points` on a bullet's own HP/`PP`) is linear, so `entities/Player.js`'s `upgrade()`
   only needed its `BPene` per-point step corrected from `+1.0714286` (a 6→7-cap rescale of an
@@ -425,6 +441,14 @@ The things in this codebase that are *not* obvious from reading the code around 
   reusing `state.disconnect`'s own idle-decay as "the cost", piloting granting aim/fire input only
   since a Dominator stays immobile regardless of who's notionally driving it, one pilot at a time
   via a `pilotedBy` field) but deliberately not built this session, by request.
+- **Arena Closer's body-shape bug — FIXED 2026-07-31 (PENDING #51).** `TanksConfig.js`'s "Arena
+  Closer" client entry drew `body: {shape: 1}` — `public/client/drawings.js`'s `Drawings.body` array
+  is `[circle, rounded rect, pentagon]`, so shape 1 is a rounded RECTANGLE, not the circle every
+  comment in the tree (including PENDING #28's own writeup) described it as. diep_wiki is explicit
+  ("a large yellow circular base"), so it's now `shape: 0`, same index every ordinary tank body uses.
+  A rendering bug, not the open design question PENDING #51 originally flagged — Summoner's own
+  `shape: 1` square body is intentional and untouched, and Dominator's body/size and both entities'
+  AI behaviour are still open per #51.
 - **Arena size and shape density are derived, not written down** (PENDING #19, plan.md step 6).
   diep's two published formulas — `AL = ⌊√N_P × 50⌋` gu and `12.5 × N_P` shapes — **compose to a
   constant 1 shape per 200 gu²**, because the player count cancels. That composition is the whole

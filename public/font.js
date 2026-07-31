@@ -155,6 +155,202 @@ function draw() {
 	ctx.translate(-Width / 2, -Height / 2);
 	//ctx.filter = 'drop-shadow(0 0 16px rgba(0,0,0,0.3))'
 	switch (toState) {
+		case 'tag': {
+			// Just a white circle running around the screen's own border - simplified down from
+			// the punch-a-hole approach (rect + evenodd) after that turned into a real bug (a
+			// huge false-filled circle, PENDING #10) once already. This paints the circle
+			// directly instead, so there is no hole/fill-rule trick to get backwards: it is big
+			// enough to cover the whole screen from any point on the perimeter while the mode
+			// switch is actually closing (`toOpen` near 1), then shrinks down to a small ball
+			// that just keeps circling once open (`toOpen` near 0), instead of growing into
+			// something that blocks the view.
+			const perim = 2 * (Width + Height);
+			function pointOnPerim(p) {
+				p = ((p % perim) + perim) % perim;
+				if (p < Width) { return { x: p, y: 0 }; }
+				p -= Width;
+				if (p < Height) { return { x: Width, y: p }; }
+				p -= Height;
+				if (p < Width) { return { x: Width - p, y: Height }; }
+				p -= Width;
+				return { x: 0, y: Height - p };
+			}
+			const chaser = pointOnPerim(T * 4);
+			const restR = 46 + Math.sin(T / 30) * 6;
+			const bigR = Math.hypot(Width, Height);
+			const r = restR + toOpen * (bigR - restR);
+			ctx.beginPath();
+			ctx.arc(chaser.x, chaser.y, r, 0, Math.PI * 2);
+			ctx.fillStyle = 'white';
+			ctx.fill();
+			ctx.globalCompositeOperation = 'hard-light';
+			{
+				// Cycles through Tag's four team colours (SocketSchema's own order, same as
+				// #gamemode-box .taggm's gradient) as it goes, instead of picking one.
+				const colors = ['#36e27f', '#ff5242', '#ffd400', '#579aff'];
+				const cIdx = Math.floor(T / 120) % colors.length;
+				const grd = ctx.createRadialGradient(chaser.x, chaser.y, 0, chaser.x, chaser.y, r);
+				grd.addColorStop(0, colors[cIdx]);
+				grd.addColorStop(1, 'rgba(0,0,0,0)');
+				ctx.fillStyle = grd;
+				ctx.globalAlpha = 0.35;
+				ctx.beginPath();
+				ctx.arc(chaser.x, chaser.y, r, 0, Math.PI * 2);
+				ctx.fill();
+			}
+			break;
+		}
+		case 'boss': {
+			// No literal boss silhouette drawn here on purpose - more bosses than the Summoner are
+			// coming (diep_wiki has several), so nothing in the menu should read as "this specific
+			// one". Instead, a slow ominous iris: a circular hole in a white sheet that grows from
+			// nothing (closed) to the whole screen (open), rather than wiping in from a corner like
+			// every team mode. A faint ring is left trailing just inside the hole's edge - an "eye"
+			// without a face - and the whole thing breathes gently rather than holding still.
+			const maxR = Math.hypot(Width, Height) / 2;
+			const pulse = 1 + Math.sin(T / 70) * 0.04;
+			const r = Math.max(0, (1 - toOpen) * maxR * pulse);
+			ctx.beginPath();
+			ctx.rect(0, 0, Width, Height);
+			ctx.arc(Width / 2, Height / 2, r, 0, Math.PI * 2, true);
+			ctx.fillStyle = 'white';
+			ctx.fill('evenodd');
+			ctx.beginPath();
+			ctx.arc(Width / 2, Height / 2, r * 0.7, 0, Math.PI * 2);
+			ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+			ctx.lineWidth = 8 + Math.sin(T / 50) * 3;
+			ctx.stroke();
+			ctx.globalCompositeOperation = 'hard-light';
+			{
+				let grd = ctx.createRadialGradient(Width / 2, Height / 2, 0, Width / 2, Height / 2, maxR);
+				grd.addColorStop(0.10, '#c65ed6');
+				grd.addColorStop(.400, '#9d3fbf');
+				grd.addColorStop(.700, '#4b1f7a');
+				grd.addColorStop(1.00, '#2b1055');
+				ctx.fillStyle = grd;
+				ctx.globalAlpha = Math.max(0, (1 - toOpen) / 5);
+				ctx.fillRect(0, 0, Width, Height);
+			}
+			break;
+		}
+		case 'sandbox': {
+			// A box, not a corner wipe: 4 edge panels recede from the centre outward. Top/bottom
+			// slide fully offscreen once open; left/right stop flush with the edge instead of
+			// vanishing, so a thin frame stays on screen even at rest - Sandbox's own colour
+			// (#gamemode-box .sandboxgm's green) reads as a box lid, not ffa's diagonal sheet.
+			const margin = 22; // left/right panels' resting width once open - never fully vanish
+			const jitterX = Math.sin(T / 90) * 8, jitterY = Math.sin(T / 95 + 1) * 8;
+			ctx.fillStyle = 'white';
+			const topEdge = -Height * 0.6 + toOpen * (Height / 2 + Height * 0.6) + jitterY;
+			ctx.fillRect(0, -Height, Width, Height + topEdge);
+			const botEdge = Height * 1.6 - toOpen * (Height * 1.6 - Height / 2) - jitterY;
+			ctx.fillRect(0, botEdge, Width, Height * 2 - botEdge);
+			const leftEdge = margin + toOpen * (Width / 2 - margin) + jitterX;
+			ctx.fillRect(0, 0, leftEdge, Height);
+			const rightEdge = Width - margin - toOpen * (Width / 2 - margin) - jitterX;
+			ctx.fillRect(rightEdge, 0, Width - rightEdge, Height);
+			ctx.globalCompositeOperation = 'hard-light';
+			{
+				let grd = ctx.createLinearGradient(0, 0, 0, Height);
+				grd.addColorStop(0.00, '#0f5132');
+				grd.addColorStop(.400, '#157347');
+				grd.addColorStop(.700, '#1a9c5b');
+				grd.addColorStop(1.00, '#56cf94');
+				ctx.fillStyle = grd;
+				ctx.globalAlpha = Math.max(0, (1 - toOpen) / 5.5);
+				ctx.fillRect(0, 0, Width, Height);
+			}
+			break;
+		}
+		case 'maze': {
+			// Vertical slats alternating from the top/bottom edges, not a diagonal wipe - Maze's
+			// own wall studs snapping into a corridor, in the wall dot's own greys
+			// (public/client/config.js's Palette.wall / #gamemode-box .mazegm) rather than a team
+			// colour, since there is no team here. Reach exceeds Height at toOpen 1 regardless of
+			// jitter, so every column still fully whites out the screen when closed.
+			const cols = 7;
+			const colW = Width / cols;
+			ctx.fillStyle = 'white';
+			for (let i = 0; i < cols; i++) {
+				const extent = Math.max(0, toOpen * (Height + 40) + Math.sin(T / 70 + i) * 10);
+				if (i % 2 === 0) {
+					ctx.fillRect(i * colW, 0, colW + 1, extent);
+				} else {
+					ctx.fillRect(i * colW, Height, colW + 1, -extent);
+				}
+			}
+			ctx.globalCompositeOperation = 'hard-light';
+			{
+				let grd = ctx.createLinearGradient(0, 0, Width, 0);
+				grd.addColorStop(0.00, '#3d3d3d');
+				grd.addColorStop(.400, '#5c5c5c');
+				grd.addColorStop(.700, '#7d7d7d');
+				grd.addColorStop(1.00, '#bdbdbd');
+				ctx.fillStyle = grd;
+				ctx.globalAlpha = Math.max(0, (1 - toOpen) / 6);
+				ctx.fillRect(0, 0, Width, Height);
+			}
+			break;
+		}
+		case 'domination': {
+			// Same diagonal two-corner wipe silhouette as 2 Teams (Domination is a 2-team mode
+			// too, SocketSchema's own team order), not the fixed-width centre gap the first
+			// draft used - PENDING #10 caught that the fixed ~180px gap left the reveal a tiny
+			// sliver of the screen no matter how wide it was, since the gap never scaled with
+			// Width/Height the way every other mode's wipe does. Colours are green/red like 2
+			// Teams; a thin diamond outline (not a filled panel, so it never blocks the reveal)
+			// stays stencilled at the centre - the loose diamond the four Dominators sit in
+			// (PENDING #27) - fading in only as the screen closes.
+			ctx.beginPath();
+			ctx.moveTo(0, 0);
+			ctx.lineTo(225 + toOpen * (Width / 2 - 225) + Math.sin(T / 78) * 15, 0);
+			ctx.lineTo(0 + toOpen * (Width / 2) + Math.sin(T / 78) * 15, Height * 1.25 + 375);
+			ctx.lineTo(0, Height)
+			///
+			ctx.moveTo(Width, Height);
+			ctx.lineTo(Width - 225 - toOpen * (Width / 2 - 225) + (1 - toOpen) * (Math.sin(1 + T / 75) * 15), Height);
+			ctx.lineTo(Width - toOpen * (Width / 2) + (1 - toOpen) * (Math.sin(1 + T / 75) * 15), (Height - Height * 1.25) - 375);
+			ctx.lineTo(Width, 0);
+			///
+			ctx.closePath();
+			ctx.fillStyle = 'white';
+			ctx.fill();
+			//////////////////////////////////////////
+			ctx.beginPath();
+			ctx.moveTo(0, 0);
+			ctx.lineTo(180 + toOpen * (Width / 2 - 180) + (Math.sin(.5 + T / 83) * 10) * (1 - toOpen), 0);
+			ctx.lineTo(0 + toOpen * (Width / 2) + (Math.sin(.5 + T / 83) * 10) * (1 - toOpen), Height + 300);
+			ctx.lineTo(0, Height)
+			///
+			ctx.moveTo(Width, Height);
+			ctx.lineTo(Width - 180 - toOpen * (Width / 2 - 180) + (1 - toOpen) * (Math.sin(1.5 + T / 80) * 10), Height);
+			ctx.lineTo(Width - toOpen * (Width / 2) + (1 - toOpen) * (Math.sin(1.5 + T / 80) * 10), -300);
+			ctx.lineTo(Width, 0);
+			///
+			ctx.closePath();
+			ctx.fillStyle = 'white';
+			ctx.fill();
+			ctx.save();
+			ctx.translate(Width / 2, Height / 2);
+			ctx.rotate(Math.PI / 4 + Math.sin(T / 200) * 0.08);
+			const d = Math.min(Width, Height) * 0.2;
+			ctx.strokeStyle = 'rgba(255,255,255,' + Math.max(0, (1 - toOpen) * 0.6) + ')';
+			ctx.lineWidth = 6;
+			ctx.strokeRect(-d / 2, -d / 2, d, d);
+			ctx.restore();
+			///GRADIENT///
+			{
+				ctx.globalCompositeOperation = 'hard-light';
+				let grd = ctx.createLinearGradient(0, 0, Width, 0);
+				grd.addColorStop(0.00, '#36e27f');
+				grd.addColorStop(.500, '#ffd400');
+				grd.addColorStop(1.00, '#ff5242');
+				ctx.fillStyle = grd;
+				ctx.globalAlpha = Math.max(0, (1 - toOpen) / 5.5);
+				ctx.fillRect(0, 0, Width, Height);
+			}
+			break;
+		}
 		case '2team':
 			ctx.beginPath();
 			ctx.moveTo(0, 0);

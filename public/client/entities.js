@@ -288,6 +288,15 @@
 			this.dalpha = 0;
 			this.dir = Math.PI * 2 * Math.random();
 			this.hitted = 0;
+			// A Crasher's own last drawn position (PENDING "Sandbox gaps") - update() diffs this
+			// against the new one to steer its triangle's apex into its direction of travel, since
+			// the server never sends a facing angle for a shape, only x/y. Motion IS a fair stand-in
+			// for "facing what it's chasing" here specifically: entities/Objects.js's own update()
+			// steers a Crasher's velocity at its DETEC target every tick (HOME_PULL), so where it is
+			// currently headed and where it is chasing are the same thing, modulo the same
+			// momentum/turn-rate lag a real steered body would have.
+			this.pdx = x;
+			this.pdy = y;
 			this.hpBar = (() => {
 				const can = document.createElement('CANVAS');
 				const ctx = can.getContext('2d');
@@ -366,7 +375,26 @@
 			const k = General['lerpK'](CONST.SMOOTH * 2);
 			this.dsize += (this.size - this.dsize) * k;
 			this.dalpha += (this.alpha - this.dalpha) * k;
-			this.dir += this.rotate * Global.dtFrames;
+			if (this.type === 'bull') {
+				// Point the triangle's own apex (Drawings.obj.tri draws it at local +X, i.e. angle 0)
+				// at whatever it is chasing, approximated from its own motion since the wire carries
+				// no facing angle - see the constructor comment. Turned toward, not snapped to, so a
+				// sharp DETEC re-target doesn't spin the head instantly; falls back to the same slow
+				// idle spin every other shape gets while it is too close to stationary for a movement
+				// direction to mean anything (freshly spawned, parked, or between DETEC pulls).
+				const mdx = this.dx - this.pdx, mdy = this.dy - this.pdy;
+				if (mdx * mdx + mdy * mdy > 0.0004) {
+					const target = Math.atan2(mdy, mdx);
+					const diff = ((target - this.dir + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+					this.dir += diff * General['lerpK'](0.25);
+				} else {
+					this.dir += this.rotate * Global.dtFrames;
+				}
+				this.pdx = this.dx;
+				this.pdy = this.dy;
+			} else {
+				this.dir += this.rotate * Global.dtFrames;
+			}
 			// Rarity tier. RARITY[0].color is null, so an ordinary (tier 0) polygon never enters
 			// the branch below.
 			const tier = RARITY[this.tier || 0];
@@ -410,11 +438,6 @@
 			if (this.tier) {
 				ctx.shadowColor = Palette[this.color][0];
 				ctx.shadowBlur = 14;
-			}
-			if (this.type === 'bull') {
-				const can = General['drawBullet'].draw(ctx, { size: this.size, type: 0, color: (this.hitted > 1) ? 'hit' : this.color });
-				ctx.shadowBlur = 0;
-				return;
 			}
 			Drawings['obj'][this.type](ctx, (this.hitted > 1) ? Palette.hit : Palette[this.color], this.dsize, this.dir);
 			ctx.shadowBlur = 0;

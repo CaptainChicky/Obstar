@@ -15,6 +15,23 @@ function selectGM(gm) {
 	}
 };
 
+/*
+	Caps #gamemode-list (the 8 mode buttons) to .right-zone's own rendered height, scrollbar taking
+	over past that, rather than a guessed pixel value - the right column's real height depends on
+	the account chip's guest-vs-signed-in content, which isn't known until it renders. Re-measures
+	from the list's natural (unclamped) height each call so it stays correct if either column's
+	content changes later (a mode gets added, the account chip grows).
+*/
+function syncGamemodeListHeight() {
+	const box = document.getElementById('gamemode-box');
+	const list = document.getElementById('gamemode-list');
+	const right = document.querySelector('.right-zone');
+	if (!box || !list || !right) { return; }
+	list.style.maxHeight = 'none';
+	const overflow = box.offsetHeight - right.offsetHeight;
+	list.style.maxHeight = (overflow > 0) ? (list.offsetHeight - overflow) + 'px' : 'none';
+}
+
 function play() {
 	const form = document.createElement('FORM');
 	form.method = 'post';
@@ -72,6 +89,9 @@ window.onload = function () {
 		// account.js loads after this script but its own render needs the same response, so
 		// it hangs a hook here rather than issuing a second /userData request of its own.
 		if (window.onUserData) window.onUserData(data);
+		// The account chip's real content (guest vs signed-in) only exists after this fires, and it
+		// changes .right-zone's height - resync now that it's settled.
+		syncGamemodeListHeight();
 		if (UserData.own && UserData.own.pets) {
 			SetPets(UserData.own.pets);
 			if (UserData.own.pets[window.Pref.pet]) {
@@ -145,5 +165,9 @@ window.onload = function () {
 	document.getElementById('play-button').focus();
 	document.getElementById('Lead').onclick = toggleLB;
 	resize();
+	syncGamemodeListHeight();
+	// font.js already owns window.onresize (the animated background canvas) - a listener here
+	// instead of a second window.onresize assignment so neither clobbers the other.
+	window.addEventListener('resize', syncGamemodeListHeight);
 	requestAnimationFrame(loop);
 };

@@ -389,10 +389,34 @@ shape count scaling with player count, bosses still spawning after 50–60 minut
      designed (#27) but not built — nothing to test yet.
    - **Sandbox's four cheat keys are code-tested, not browser-played.** In a Sandbox room: hold
      `K` and confirm you visibly climb one level at a time (not an instant jump), stopping dead at
-     45; press `\` repeatedly and confirm it cycles through real tanks only, never a blank/debug
-     silhouette; press `;` and confirm you shove other tanks/bullets away on contact and take no
-     damage from anything touching you, and that pressing it again turns it back off; `O` is
-     unchanged (already-shipped self-destruct).
+     45; press `\` repeatedly and confirm it cycles through real tanks, never a blank/debug
+     silhouette or Summoner, and — as of 2026-07-31, explicit ask — also lands on Arena Closer and
+     all 3 Dominators (`entities/Player.js`'s `CYCLE_EXCLUDE`, PENDING #51): expect their normal
+     TanksConfig stats/cannons/body under your own WASD+mouse control, NOT the scripted AI's
+     invincibility or wall-pass-through, since this is a raw stat/silhouette preview, not the real
+     boss-scaffolding entity; press `;` and confirm you shove other tanks/bullets away on contact
+     and take no damage from anything touching you, and that pressing it again turns it back off;
+     `O` is unchanged (already-shipped self-destruct).
+   - **Crashers are now light pink triangles that face what they're chasing, not grey ovals**
+     (2026-07-31, explicit ask - `public/client/config.js`'s `Palette.bull`,
+     `public/client/drawings.js`'s `Drawings.obj.bull = Drawings.obj.tri`, dropping `entities.js`'s
+     old special case that routed `'bull'`-type Objs through `drawBullet`'s circle sprite instead of
+     the shared shape table). The wire never carries a facing angle for a shape (only x/y) and
+     Crashers are the one shape type that actually chases something (`entities/Objects.js`'s
+     `this.DETEC` pulls a Crasher's velocity at whatever `KIND.PLAYER` it has detected, `HOME_PULL`
+     every tick) — so `public/client/entities.js`'s `Obj.update()` now derives a Crasher's `this.dir`
+     from its own frame-to-frame movement delta (`atan2` of the position change, turned toward
+     smoothly rather than snapped, since motion direction and chase target are the same thing here
+     by construction) instead of the passive constant self-spin every other shape keeps. Falls back
+     to that same idle spin below a small movement-magnitude threshold (freshly spawned, parked,
+     between DETEC pulls) so the heading doesn't jitter or go NaN when it isn't really moving.
+     `test/clientDiff.js`'s golden did not move — the seeded 60-tick ffa/2team/4team/boss corpus
+     never happens to spawn one (`rooms/Room.js`'s `bull` cap is 39 per room, a slow trickle, not
+     guaranteed within any short window) — so this is confirmed unexercised by that guard, not
+     confirmed correct. Watch a live match long enough for a Crasher to spawn and chase a tank
+     (any mode; it's part of the general shape ecology, not mode-specific) and confirm it reads as a
+     pink triangle whose point tracks the tank it's chasing, turning smoothly rather than snapping
+     or lagging noticeably behind a direction change.
    - **Incoming bullets should now arrive when they look like they arrive** (#24b) — a pure *feel*
      check. Stand still and let a bot shoot you; it should connect on the frame it visually touches
      you, not slightly before. Judge under a throttled connection too. **Your own bullets are
@@ -434,6 +458,51 @@ shape count scaling with player count, bosses still spawning after 50–60 minut
 8. Real browser hitting the new packet-length validation (`chat`/`com` in particular) — a mistake
    here shows up as a kicked player, not a crash.
 9. Load: multiple busy rooms at once on one process (everything so far is one room alone).
+10. **The front-page menu (`views/index.ejs`/`public/queue.js`/`public/font.js`) — untouched by
+    this checklist until now, since item 6 above is specifically the in-game client, not the menu.**
+    First landed 2026-07-31 code-tested-only; the human then actually opened it in a browser and
+    reported 3 real bugs the same day, since fixed (also code-tested-only again — still nobody has
+    re-opened a browser on this since the fixes):
+    - **`#gamemode-box`'s 8 mode buttons cap to `.right-zone`'s own height and scroll**
+      (`public/queue.js`'s `syncGamemodeListHeight()`, a `#gamemode-list` wrapper div around the
+      buttons). Bug found in-browser: the scrollbar thumb/track were visible, wanted invisible (like
+      the achievements panel's own scroll feel) — fixed by dropping the styled scrollbar rules for
+      `scrollbar-width: none` / `::-webkit-scrollbar { display: none }` in `public/style.css`;
+      scrolling itself (wheel/touch/drag) is untouched. Confirm in-browser: the left column no longer
+      towers over the right one, no scrollbar is visible, all 8 modes are still reachable by
+      scrolling, and it re-syncs after the account chip's content settles and on window resize.
+    - **`public/font.js`'s per-mode "door" background animation has a case for every mode** —
+      previously `tag`/`boss`/`sandbox`/`maze`/`domination` all silently fell through to `ffa`'s own
+      animation. `tag` took three rounds to get right; `domination` one:
+      - `tag` v1 was "very laggy and uncreative" — 4 corner wedges, each with its own fresh
+        `createRadialGradient` + full-screen `hard-light` `fillRect`, 4 full-canvas gradient fills a
+        frame. v2 tried a single chaser-and-runner circle pair cut from one path via `evenodd` (the
+        same one-hole trick `boss` uses) — but two big, nearly-identical circles overlap almost
+        completely, and `evenodd` re-fills the *shared interior* at odd parity (rect + both circles
+        = 3), leaving only the thin non-overlapping rim as the actual hole: "a huge white circle
+        blocking the middle, a thin strip of map around it" — exactly backwards. v3 dropped to one
+        circle (same one-hole trick as `boss`, anchored to a perimeter-walking point) which fixed the
+        inversion, but a hole that grows to cover the whole screen once open still reads as "nothing
+        there" at rest, not as a moving thing to notice. **v4 (current, explicit ask - "just the
+        white circle around the screen... running around")** drops the hole-punch model entirely:
+        paints a plain filled circle directly (no `evenodd`, no fill-rule to get backwards), big
+        enough to cover the screen from any point on the perimeter while actually closing (`toOpen`
+        near 1), shrinking to a small ball that keeps circling once open (`toOpen` near 0) instead of
+        growing into something that blocks the view or vanishing into nothing.
+      - `domination` "only shows a tiny sliver" — the original left a fixed ~180px-wide gap at the
+        centre regardless of screen width, since the gap size never scaled with `Width`/`Height` the
+        way every other mode's wipe does. Replaced with the same diagonal two-corner wipe geometry
+        `2team` uses (which does scale correctly), green/red colours, plus a thin diamond *outline*
+        (not a filled panel) stencilled at the centre so it never blocks the reveal.
+      `boss` (radial iris, no literal silhouette — more bosses than the Summoner are coming per
+      `diep_wiki`), `sandbox` (box lid, 4 edge panels, left/right leave a persistent thin frame — the
+      literal spec given for it), and `maze` (alternating vertical slats in the wall-stud greys) had
+      no complaints and are unchanged. Confirm in-browser: `tag`'s ball reads as a small circle
+      visibly running around the screen's edge at rest, growing to cover the screen only during an
+      actual mode-switch close, never sitting as a big static blocking shape; `domination`'s reveal
+      is now a proper half-screen wipe like `2team`'s with a visible diamond accent, not a sliver;
+      every mode's animation actually plays when clicked (not a leftover `ffa` flash); and none of
+      them clip, flicker, or leave a visible seam at common window sizes.
 
 ## 🟣 Needs a human balance call
 
@@ -465,13 +534,33 @@ shape count scaling with player count, bosses still spawning after 50–60 minut
     #27's `createDominator()` made the identical call, "the closest existing convention for a large,
     non-levelling scripted tank"). Nuance 42 and #29 already predicted this tension would recur for
     any future boss-pattern entity — it now has, twice, and a human's read is that the stand-in
-    doesn't hold up for either one. **No specifics decided yet** — "shape/size/behaviour" was flagged
-    in the moment, not itemised — so treat this as "needs its own look with `diep_wiki`/reference
-    material open," not a scoped fix: what a real Arena Closer silhouette should be (diep's own page
-    may describe it better than "Dominator-sized"), whether Dominator's own body should differ from
-    a boss's circle at all (diep does have a real Dominator to reference, unlike the Summoner), and
-    whether either one's AI *behaviour* (not just its body) reads right against diep_wiki's own
-    description are all open questions for that session, not this note.
+    doesn't hold up for either one.
+    - **Arena Closer's SHAPE half — FIXED 2026-07-31, and it turned out to be a rendering bug, not a
+      design gap.** `size: 64` (the boss-scale radius) was always the right call and is unchanged —
+      what was actually wrong is that `TanksConfig.js`'s "Arena Closer" client entry drew it with
+      `body: {shape: 1}`. `public/client/drawings.js`'s `Drawings.body` array is `[circle, rounded
+      rect, pentagon]` — shape 1 is a rounded RECTANGLE, not a circle, so the Closer was rendering as
+      a square the whole time despite every comment in the tree describing it as "boss-style
+      circle." diep_wiki/Arena Closer.txt is explicit ("a large yellow circular base"), so this is
+      now `shape: 0` (plain circle, same index Basic/every ordinary tank uses). Confirmed human read:
+      Summoner's own `shape: 1` square body is intentional (it's meant to be a square boss) and is
+      NOT reopened by this — only Arena Closer's copy of it was wrong. `test/clientDiff.js`'s golden
+      didn't move (Arena Closer never spawns in that corpus's short single-mode runs).
+    - **Still open, on both entities:** Dominator's body (still `shape: 1`, deliberately untouched
+      this pass — diep does have a real Dominator to reference, unlike Summoner, so its correct shape
+      is a real open question, not a known bug the way Arena Closer's was), size on both (still the
+      boss's flat `64`, untuned), and AI *behaviour* on both (not just the body) against diep_wiki's
+      own description. **A human's own framing, worth keeping verbatim for whoever picks this up:**
+      Arena Closer and Dominator are reusing the *boss* class as scripted-tank scaffolding, and
+      technically each deserves its own class rather than borrowing the boss's — that restructuring
+      is still undecided and unscoped, not just the shape/size numbers on top of it.
+    - **Sandbox `'\'` preview opened up to these 4 classes — 2026-07-31, explicit ask, "for now."**
+      `entities/Player.js`'s `CYCLE_EXCLUDE` no longer excludes Arena Closer or the 3 Dominator
+      variants (Summoner still excluded — it wasn't part of the ask and is a boss, not a
+      Closer/Dominator). This previews only the `Player`-class stats/cannons/body a human cycles
+      onto, not the real scripted `CONFIG.CLOSER`/`CONFIG.DOMINATOR` entity's invincibility or
+      wall-pass-through — a quick way to eyeball the shape/size fixes above without waiting on the
+      "own class" restructuring, not a substitute for it.
 
 ## ⚪ Nuances to iron out — small open threads, none of them blocking
 
@@ -856,7 +945,19 @@ What's left in this section is itemised as open at each entry.*
       tick is now just `can.damage × up.BDamage × dr`, and total damage scales with `pene` purely
       through contact duration — the same shape base drones already used, so numerically a no-op
       for them. `entities/Objects.js`'s differently-shaped shape-damage formula
-      (`(pene>1)?pene:pene/2`) was untouched, deliberately.
+      (`(pene>1)?pene:pene/2`) was untouched, deliberately, **until a human flagged shapes as too
+      fragile against upgraded/high-pene bullets and this was found to be why, 2026-07-31**: the
+      identical double-count was live there too (a shape's damage taken was multiplied by the
+      bullet's `pene` on top of `pene` already gating contact duration through `Bullet.js`'s own
+      decay), making shape damage scale roughly quadratically with `pene` instead of linearly — a
+      maxed-pene bullet could erase an Alpha Pentagon in one hit instead of diep's own 20+. Fixed the
+      same way: `this.hp -= tick.perTick(other.damage)`, no multiplier, matching the `KIND.PLAYER`
+      arm two cases above it in the same file. Retired `config.BASE_DRONE_PENE`, the stand-in the old
+      formula needed to keep a drone's 2000-point pene pool from reading as a 2000× multiplier —
+      nothing left for it to guard against. `test/rooms.js`'s base-drone-vs-shape test and
+      `test/clientDiff.js`'s golden (`297741/14e024be → 327848/3685f870`, isolated first by
+      reverting to the old formula and confirming the prior golden reproduced exactly) both moved
+      with it.
       Bundled in the same fix: the wiki's pinned "−75% against projectiles"
       (`PROJECTILE_BODY_DAMAGE = 0.25`) had been applied nowhere, so bullets were eaten 4× faster
       than diep's rule — now applied at both `Bullet.js` collision sites. Also found and fixed in

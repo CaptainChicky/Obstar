@@ -408,21 +408,27 @@ function sandboxTests() {
 		me.inputs.k = 0;
 	}
 
-	// '\' (PENDING "Sandbox gaps"): a raw class preview, no tree/level gating, and only real
-	// playable tanks - never a dev placeholder or a boss/Closer/Dominator entity.
+	// '\' (PENDING "Sandbox gaps" / #51): a raw class preview, no tree/level gating, real
+	// playable tanks plus Arena Closer/the 3 Dominators (allowed on purpose for now, so a human
+	// can eyeball them in sandbox - PENDING #51) - never a dev placeholder or Summoner (still a
+	// boss, not part of that ask).
 	{
-		const NEVER = ['pre launch', 'testbed', 'bigView', 'shapes', 'shape1', 'shape2',
-			'Summoner', 'Arena Closer', 'Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'];
+		const NEVER = ['pre launch', 'testbed', 'bigView', 'shapes', 'shape1', 'shape2', 'Summoner'];
+		const CLOSER_DOMINATOR = ['Arena Closer', 'Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'];
 		me.class = 'Basic'; me.classLvl = 0;
 		const seen = new Set();
+		const seenClosersDominators = new Set();
 		let cameBackToBasic = false;
 		for (let i = 0; i < 60; i++) {
 			me.cycleClass();
 			if (NEVER.includes(me.class)) { seen.add(me.class); }
+			if (CLOSER_DOMINATOR.includes(me.class)) { seenClosersDominators.add(me.class); }
 			if (me.class === 'Basic') { cameBackToBasic = true; break; }
 		}
-		check('cycling class never lands on a dev placeholder or a boss/Closer/Dominator entity',
+		check('cycling class never lands on a dev placeholder or Summoner',
 			seen.size === 0, [...seen].join(','));
+		check('...but does reach Arena Closer and all 3 Dominators',
+			seenClosersDominators.size === CLOSER_DOMINATOR.length, [...seenClosersDominators].join(','));
 		check('cycling all the way around comes back to Basic (a real cycle, not a dead end)',
 			cameBackToBasic);
 		check('cycleClass() does not bump classLvl - this is a preview, not a real evolution',
@@ -1334,7 +1340,10 @@ function baseDroneAiTests() {
 	}
 
 	// 4.5.2a - shape damage is sane: a base drone's `pene` is a 2000-point health pool, not a
-	// penetration value: reading it as one used to one-shot every shape a drone brushed.
+	// penetration value, and no longer factors into shape damage at all (PENDING #18 - a
+	// bullet's `pene` decides its own contact-duration survival, not a damage multiplier;
+	// multiplying by it a second time here used to double-count it, the same bug #18 already fixed
+	// on entities/Player.js's identical arm). A drone just deals its own flat per-tick damage.
 	{
 		const room = makeRoom('2team');
 		const post = room.dronePosts[0];
@@ -1342,8 +1351,8 @@ function baseDroneAiTests() {
 		const sq = new Objects('sqr', -1, { GM: room.gm, sId: room.id, oId: 500 }, room.map, room);
 		const hpBefore = sq.hp;
 		sq.collision(drone, { pene: drone.pene });
-		const dropExpected = tick.perTick(0.5 * config.BASE_DRONE_DAMAGE);
-		check('a base drone grinds a shape down (pene/2 * damage), not one-shots it (pene * damage)',
+		const dropExpected = tick.perTick(config.BASE_DRONE_DAMAGE);
+		check('a base drone deals its own flat per-tick damage to a shape, not its 2000-point pene as a multiplier',
 			Math.abs((hpBefore - sq.hp) - dropExpected) < 1e-6,
 			(hpBefore - sq.hp) + ' vs ' + dropExpected);
 		check('...nowhere near enough to vaporise it in one tick', (hpBefore - sq.hp) < sq.maxHp / 2,
@@ -1441,9 +1450,9 @@ function baseDroneAiTests() {
 			drone.x = 0; drone.y = 0;
 			const foe = plantPlayer(room, drone.team ? 0 : 1, 0, 0);
 			// One step first, to burn off the fresh-Player auto-level-at-xp-0 hp bump the same-team
-			// case above documents: a drone's contact damage is ~1.9 hp a tick now that it is read
-			// against BASE_DRONE_PENE rather than its 2000-point health pool (plan.md WP4.5.11), and
-			// that bump is bigger than it. Both are put back on the centre line for the measured step.
+			// case above documents: a drone's contact damage is ~1.9 hp a tick (BASE_DRONE_DAMAGE,
+			// entities/Player.js's KIND.BULLET arm, PENDING #18), and that bump is bigger than it.
+			// Both are put back on the centre line for the measured step.
 			room.step();
 			drone.x = 0; drone.y = 0; foe.x = 0; foe.y = 0;
 			const foeBefore = foe.hp, droneBefore = drone.pene;

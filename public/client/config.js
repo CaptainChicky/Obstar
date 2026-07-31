@@ -87,8 +87,12 @@
 		Grid: ["#d0cdcd", "#c1bebe"],
 
 		hit: ['#d82626', '#d82626'],//red when you get hitted
-		bull: ["#999999", "#6a6a6a"],
-		// Solid grey walls (diep_wiki, PENDING #2/#26) - deliberately distinct from bull's grey
+		// Crashers - diep_wiki's own light pink, not a grey oval (PENDING "Sandbox gaps"/#10):
+		// this used to be a plain grey circle standing in for the real shape. Kept distinct from
+		// `tri`'s dustier rose below so a Crasher still reads as its own thing next to an ordinary
+		// Triangle, not just a brighter one.
+		bull: ["#ff9fc7", "#d97ea3"],
+		// Solid grey walls (diep_wiki, PENDING #2/#26) - deliberately distinct from bull's pink
 		// above so a wall stud doesn't read as a Crasher shape.
 		wall: ["#7d7d7d", "#5c5c5c"],
 		sqr: ["#cfcf9f", "#a6a689"],

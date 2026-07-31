@@ -118,11 +118,15 @@ const LEVEL_CAP = 45;
 // Sandbox-only cheat ('\', PENDING "Sandbox gaps") - a raw class preview, not an evolution, so
 // it skips upClass()'s tree/level gating entirely. TanksConfig.js's exports.list filtered down
 // to real playable tanks: the dev/debug placeholders ('testbed' etc.) are hidden, uncontrollable
-// stand-ins (test/tanks.js's own whitelist explains why), and the boss/Closer/Dominator classes
-// are scripted entities, never meant to be piloted by a human.
+// stand-ins (test/tanks.js's own whitelist explains why). Arena Closer and the 3 Dominator
+// variants are cyclable on purpose, for now (explicit ask, PENDING #51) - they're normally
+// scripted entities (lib/gameAI.js's CONFIG.CLOSER/CONFIG.DOMINATOR), so previewing them this way
+// only gets TanksConfig.js's stats/body/cannons, none of the AI's invincibility or pass-through-
+// wall behaviour, which is enough for a human to eyeball the Arena Closer body-shape fix (PENDING
+// #51) without waiting on those classes getting their own Player subclass. Summoner stays
+// excluded - it's a boss, not a Dominator/Closer, and wasn't part of that ask.
 const CYCLE_EXCLUDE = new Set([
-	'pre launch', 'testbed', 'bigView', 'shapes', 'shape1', 'shape2',
-	'Summoner', 'Arena Closer', 'Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'
+	'pre launch', 'testbed', 'bigView', 'shapes', 'shape1', 'shape2', 'Summoner'
 ]);
 const CYCLABLE_CLASSES = CLASS_LIST.filter((name) => !CYCLE_EXCLUDE.has(name));
 

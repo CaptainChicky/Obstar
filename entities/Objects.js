@@ -7,7 +7,6 @@
 */
 const Vec = require('victor');
 const tick = require('../lib/tick.js');
-const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 // NOT public/SHARE/Physics.js's tank FRICTION - see lib/constants.js. A shape is not a steered
 // tank, so it keeps the hand-tuned drag rather than diep's derived tank 10/11.
@@ -182,11 +181,18 @@ class Objects {
 						return;
 					}
 				}
-				// A base drone's `pene` is a health pool, not a penetration value (rooms/Room.js's
-				// spawnBaseDrone), so reading it as one here dealt 2000 x damage and vaporised any shape on
-				// contact
-				const pene = (other.type === 1.4) ? config.BASE_DRONE_PENE : option.pene;
-				this.hp -= tick.perTick(((pene > 1) ? pene : pene / 2) * other.damage);
+				// `pene` no longer multiplies damage here (PENDING #18, the same fix
+				// entities/Player.js's own KIND.BULLET arm already got): a bullet's `pene` already
+				// decides how many ticks of contact it survives against this shape's own body damage
+				// (entities/Bullet.js's `this.pene -= tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE)`
+				// in its own KIND.OBJECTS arm) - multiplying the per-tick hit by `pene` again
+				// double-counted it, so damage against a shape scaled roughly quadratically with
+				// `pene` instead of linearly (a maxed-pene Destroyer erasing an Alpha Pentagon in one
+				// hit instead of the ~20+ diep's own numbers call for). This also retires the
+				// base-drone-pene substitution the old formula needed to avoid reading a drone's
+				// 2000-point health pool as a 2000x multiplier - a drone's `other.damage`
+				// (BASE_DRONE_DAMAGE) is already the right per-tick number on its own.
+				this.hp -= tick.perTick(other.damage);
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.destroy = tick.DES; }
 				if (this.type[0] === 'B') {

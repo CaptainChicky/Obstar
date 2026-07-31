@@ -312,6 +312,11 @@
 		},
 		pet: PetsConfig.pets
 	};
+	// Crashers ('bull' - PENDING "Sandbox gaps"/#10) draw as a triangle, same geometry as an
+	// ordinary Triangle (Palette.bull's own light pink is what tells them apart, not the shape) -
+	// entities.js used to special-case this type to General['drawBullet']'s circle sprite instead
+	// of dispatching through this table like every other Obj type.
+	Drawings.obj.bull = Drawings.obj.tri;
 	///
 	CLIENT.Drawings = Drawings;
 })(typeof (exports) === 'undefined'

@@ -1407,6 +1407,11 @@
 			// height mirrors Flank Guard's own forward cannon (client height == server canonLength
 			// exactly, test/tanks.js's gap check passes the same way there) rather than a guess -
 			// only width/open grew, to carry the wiki's "shortest and widest cannons" trivia.
+			// Body is shape 0 (a plain circle, Drawings.body[0]) - diep_wiki: "a large yellow
+			// circular base". PENDING #51 flagged this as unsatisfactory when it still copied the
+			// boss/Dominator convention's shape 1 (Drawings.body[1] is a rounded RECTANGLE, not a
+			// circle - a real rendering bug, not a design placeholder). Summoner and the Dominator
+			// variants keep shape 1 on purpose (their own bodies, not reopened here).
 			"Arena Closer": {
 				cannons: [
 					{
@@ -1419,9 +1424,7 @@
 					}
 				],
 				body: {
-					shape: 1,
-					width: 1,
-					height: 1
+					shape: 0
 				}
 			},
 			// PENDING #27. A Dominator is a stationary tank (lib/gameAI.js's CONFIG.DOMINATOR),
