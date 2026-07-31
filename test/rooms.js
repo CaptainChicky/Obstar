@@ -6,9 +6,9 @@
 	colours and respawn xp are exactly the things that differed between the old Ffa and
 	TwoTeam copies, so they are exactly what a shared rooms/Room.js has to be pinned on.
 
-	All six modes are covered: '4team', 'boss' and 'tag' were each written against this base
-	without touching rooms/Room.js's tick, and the shared block at the bottom runs the same rules
-	over every one of them, which is the assertion that the base really did fit.
+	All seven modes are covered: '4team', 'boss', 'tag' and 'maze' were each written against this
+	base without touching rooms/Room.js's tick, and the shared block at the bottom runs the same
+	rules over every one of them, which is the assertion that the base really did fit.
 
 	No server and no socket: lib/boot.js constructs the Controller, and the rooms are built and
 	poked directly.
@@ -626,6 +626,94 @@ function tagTests() {
 		}
 		check('decaying a stealth class in Tag settles at rules.invisFloor, not fully invisible',
 			alpha === room.rules.invisFloor, alpha);
+	}
+
+	return room;
+}
+
+/// Maze /////////////////////////////////////////////////////////////////////
+function mazeTests() {
+	console.log('\nrooms (maze):');
+	const room = makeRoom('maze');
+	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
+	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+
+	check('same arena as ffa - diep_wiki: "works similarly to Free For All"',
+		room.map.width === World.gu(451) && room.map.height === World.gu(451),
+		room.map.width + 'x' + room.map.height);
+	check('one nominal team, friendly fire off, same as ffa',
+		room.rules.teams.join(',') === '1' && room.rules.teamPlay === false);
+
+	// Bosses do not spawn here (diep_wiki: "Unlike other game modes, Bosses do NOT spawn in
+	// Maze") - this mode states no override, so it rides ffa's own never-roll defaults.
+	check('bosses never spawn - the mode turns neither bossRng nor maxBoss up from the default',
+		room.rules.bossRng === 2 && room.rules.maxBoss === 0,
+		room.rules.bossRng + ' / ' + room.rules.maxBoss);
+
+	// The walls themselves - build() runs synchronously in the constructor (see rooms/Room.js's
+	// header), so they exist the moment makeRoom() returns, with no Init()/timer to wait on.
+	{
+		const walls = [...room.INSTANCE.walls.live()];
+		check('build() scatters at least one wall structure across the arena', walls.length > 0,
+			walls.length);
+		check('every wall is a real KIND.WALL stud, ' + World.gu(3) + ' units in radius',
+			walls.every((w) => w.kind === KIND.WALL && w.size === World.gu(3)),
+			walls.map((w) => w.kind + ':' + w.size).slice(0, 5).join(' '));
+		check('every wall sits inside the drawn arena, not the OOB band past it',
+			walls.every((w) => Math.abs(w.x) <= room.map.width / 2 && Math.abs(w.y) <= room.map.height / 2),
+			walls.length);
+		check('a wall is permanent geometry - never tombstoned',
+			walls.every((w) => w.destroy === 0));
+	}
+
+	// Visible on the minimap (diep_wiki: "The maze walls are also visible on the minimap") -
+	// precomputed once in build(), not walked per viewer per tick; see rooms/Room.js's
+	// this.wallDots for why. 'gray' (SocketSchema's color index 4) is never a live team dot, so
+	// reusing the ordinary player-dot record needs no wire-format change of its own.
+	{
+		const walls = [...room.INSTANCE.walls.live()];
+		check('one precomputed minimap dot per wall stud', room.wallDots.length === walls.length,
+			room.wallDots.length + ' vs ' + walls.length);
+		check('every wall dot is grey and lands inside the 0..1 map fraction',
+			room.wallDots.every((d) => d.team === 4 && d.x >= 0 && d.x <= 1 && d.y >= 0 && d.y <= 1),
+			room.wallDots.slice(0, 3).map((d) => d.x.toFixed(2) + ',' + d.y.toFixed(2) + ':' + d.team).join(' '));
+		const ui = room.getUi(0);
+		check('getUi() folds the wall dots into the same map array the player dots ride in',
+			ui.map.length >= room.wallDots.length, ui.map.length + ' vs ' + room.wallDots.length);
+	}
+
+	// The 5-hour close (diep_wiki: "Five hours after the server opened") and the Arena Closer
+	// swarm it spawns - the same mechanism rooms/Tag.js's win condition already built (PENDING
+	// #28), reused rather than re-derived. Driving 5 hours of real ticks would be slow, so the
+	// countdown is armed directly, the same style Tag's own shrink-timer test uses.
+	{
+		check('the arena has not started closing yet', room.closing === false);
+		const closersBefore = room.closers.length;
+		room.closeIn = 1;
+		room.close();
+		check('the countdown reaching zero starts closing', room.closing === true);
+		check('...and spawns at least one Arena Closer', room.closers.length > closersBefore,
+			room.closers.length);
+		check('...on a side this mode never assigns, same as a boss',
+			room.closers.every((c) => room.rules.teams.indexOf(c.team) < 0 && c.closer === 1),
+			room.closers.map((c) => c.team + ':' + c.closer).join(','));
+
+		// Once closing, nobody respawns - diep_wiki's "the server will be reset" ending is the
+		// room going empty (Room.step()'s existing zero-human self-destruct), not a match that
+		// keeps restocking itself.
+		const victim = player(room, 0);
+		victim.destroy = 1;
+		const victimSlotBefore = room.INSTANCE.players.get(0);
+		room.respawn(0, 0, 0);
+		check('respawn() is a no-op once the arena is closing',
+			room.INSTANCE.players.get(0) === victimSlotBefore);
+
+		// Restore, so nothing above leaks into a test run further down the same process - this
+		// room is about to join the shared `rooms` array, whose later tests call respawn() for
+		// real (rooms/Tag.js's own closing test resets the same way for the same reason).
+		victim.destroy = 0;
+		room.closing = false;
+		room.closers = [];
 	}
 
 	return room;
@@ -3219,7 +3307,7 @@ function gridAnchorTests() {
 	// The WP1.3 table, in squares: every arena kept the square count it had at the old 20-unit pitch
 	// and grew x1.4 in world units with it, which is what D1 decided. Sandbox and boss ride the same
 	// gu() helper; only the four modes with their own tuned figure are pinned here.
-	const squares = { ffa: 451, '4team': 450, '2team': 400, boss: 350 };
+	const squares = { ffa: 451, '4team': 450, '2team': 400, boss: 350, maze: 451 };
 	for (const gm in squares) {
 		const r = makeRoom(gm);
 		check(gm + '\'s map is gu(' + squares[gm] + ') square',
@@ -4016,6 +4104,7 @@ rooms.push(fourTeamTests()); console.log('');
 rooms.push(bossTests()); console.log('');
 rooms.push(sandboxTests()); console.log('');
 rooms.push(tagTests()); console.log('');
+rooms.push(mazeTests()); console.log('');
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);

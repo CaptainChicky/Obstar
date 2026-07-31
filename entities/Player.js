@@ -358,6 +358,10 @@ class Player {
 					// their bullets draw at the literal cannon size TanksConfig.js states rather
 					// than the tank-relative `ra` an ordinary levelling player's cannons scale by.
 					Bull.size = (this.boss || this.closer) ? can.size : can.size * ra;
+					// An Arena Closer's own bullets pass through Maze walls the same way the closer
+					// itself does (diep_wiki, PENDING #26/#28) - entities/Bullet.js's KIND.WALL arm
+					// reads this. Undefined (falsy) for every ordinary shot.
+					Bull.closer = this.closer;
 					Bull.weight = can.weight;
 					Bull.push = can.push;
 					this.room.createBullet(Bull, this)

@@ -645,6 +645,11 @@ class Bullet {
 						this.destroy = tick.DES;
 						break;
 					}
+					// An Arena Closer's own bullet passes through a wall untouched too (diep_wiki,
+					// PENDING #26/#28) - the same exemption entities/Player.js's collision() gives
+					// the closer tank itself, set on the bullet at the shoot() site since a bullet
+					// has no live reference back to its origin here.
+					if (this.closer) { break; }
 					{
 						const sepX = this.x - other.x, sepY = this.y - other.y;
 						const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;

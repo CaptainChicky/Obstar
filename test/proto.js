@@ -87,9 +87,13 @@ function golden() {
 		['Instance (Walls)', server.encode('Instance', {
 			construc: 'Walls', id: 5, x: -100.5, y: 250.125, size: 40
 		}), '030005c2c90000437a200042200000'],
+		// UiUpdate's three array-count fields (leader/map/mess) moved uint8 -> uint16 (PENDING #26):
+		// Maze's wall dots can push a room's live UiUpdate.map array past 255 once combined with
+		// player dots, and a truncated uint8 count desyncs the rest of the packet instead of
+		// failing loudly - see the comment at TYPE.UiUpdate.array. +1 byte per count, three counts.
 		['UiUpdate', server.encode('UiUpdate', {
 			leader: [{ xp: 100, name: 'bo', nameC: 0, team: 1 }], map: [], mess: ['hi']
-		}), '0a0100000064020062006f000100010200680069'],
+		}), '0a000100000064020062006f0001000000010200680069'],
 	];
 	for (const [name, got, want] of cases) {
 		check(name + ' encodes to the same bytes as before', hex(got) === want, hex(got));

@@ -13,5 +13,6 @@ module.exports = {
 	'4team': require('./FourTeam.js'),
 	'boss': require('./BossMode.js'),
 	'sandbox': require('./Sandbox.js'),
-	'tag': require('./Tag.js')
+	'tag': require('./Tag.js'),
+	'maze': require('./Maze.js')
 };

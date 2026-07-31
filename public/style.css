@@ -93,6 +93,12 @@ body {
 	background-image: linear-gradient(to left top, #0f5132, #157347, #1a9c5b, #2fb673, #56cf94);
 }
 
+/* Maze: the wall stud's own greys (public/client/config.js's Palette.wall), not a team colour -
+   there is no team here. */
+#gamemode-box .mazegm {
+	background-image: linear-gradient(to left top, #3d3d3d, #5c5c5c, #7d7d7d, #9d9d9d, #bdbdbd);
+}
+
 #gamemode-box .button {
 	user-select: none;
 	cursor: pointer;

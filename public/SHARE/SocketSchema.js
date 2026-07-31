@@ -237,7 +237,13 @@
 			}
 		},
 		'UiUpdate': {
-			'array': 'uint8',
+			// uint16, not uint8 (PENDING #26): Maze's wall dots (rooms/Room.js's this.wallDots,
+			// appended to every viewer's `map` array by getUi()) can run past 255 once combined
+			// with a room's live player dots, and a truncated length prefix here would desync the
+			// whole rest of the packet - the loop below still writes every real record regardless
+			// of what the header says, so an overflowed uint8 count silently drops the decoder out
+			// of sync with the bytes actually on the wire rather than failing loudly.
+			'array': 'uint16',
 			'leader': {
 				'xp': 'uint32',
 				'name': 'str',
@@ -382,7 +388,8 @@
 			'4team',
 			'boss',
 			'sandbox',
-			'tag'
+			'tag',
+			'maze'
 		],
 		'type': [
 			'init',
@@ -472,7 +479,8 @@
 			'4team': 2,
 			'boss': 3,
 			'sandbox': 4,
-			'tag': 5
+			'tag': 5,
+			'maze': 6
 		},
 		'type': {
 			'init': 0,

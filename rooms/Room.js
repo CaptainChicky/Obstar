@@ -292,6 +292,11 @@ class Room {
 		// Every boss currently alive. A list rather than a single slot because 'boss' mode runs
 		// several at once; modes with rules.maxBoss 0 never put anything in it.
 		this.bosses = [];
+		// Precomputed minimap dots for a mode's own static geometry (PENDING #26's Maze walls, the
+		// one consumer so far) - empty for every other mode. A wall never moves and this codebase
+		// never resizes a `walls`-bearing arena live, so build() computes these once instead of
+		// getUi() re-walking INSTANCE.walls for every viewer on every UI tick.
+		this.wallDots = [];
 		// Counts down to the next generate() pass. Init() sets it; step() decrements it.
 		this.generateIn = FIRST_GENERATE;
 		this.build();
@@ -1658,6 +1663,10 @@ class Room {
 				size: Math.min(255, Math.round(i.size))
 			});
 		}
+		// A mode's own static geometry (Maze's walls, PENDING #26) - precomputed once in build(),
+		// see this.wallDots' own comment in the constructor for why this is a plain concat rather
+		// than a live walk of INSTANCE.walls.
+		for (const d of this.wallDots) { buff.map.push(d); }
 		for (const i of this.INSTANCE.players.get(id).mess) {
 			buff.mess.push(i);
 		};
