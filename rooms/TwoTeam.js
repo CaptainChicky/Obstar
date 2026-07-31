@@ -15,8 +15,12 @@ const gu = World.gu;
 const Room = require('./Room.js');
 
 class TwoTeam extends Room {
-	constructor(id, controller) {
-		super(id, {
+	// `extraRules` (PENDING #27, rooms/Domination.js) merges over this mode's own tuning below -
+	// e.g. { gm: 'domination', xpMul: 2 } - rather than Domination duplicating this whole rules
+	// block and every base/drone/colour method beneath it just to change two fields. Omitted, this
+	// is exactly 2team's own constructor, unchanged.
+	constructor(id, controller, extraRules = {}) {
+		super(id, Object.assign({
 			gm: '2team',
 			maxXp: 30000,
 			mapSize: { width: gu(400), height: gu(400) },
@@ -40,7 +44,7 @@ class TwoTeam extends Room {
 			// gu(40), unchanged - test/rooms.js pins that.
 			baseSizeRatio: { num: 40, den: 400 },
 			viewerBullets: false
-		}, controller);
+		}, extraRules), controller);
 	}
 	/*
 		Fifteen orbit centres down each side's base strip, each hosting a PAIR of drones - the

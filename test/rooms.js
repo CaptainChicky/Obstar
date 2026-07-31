@@ -379,13 +379,75 @@ function sandboxTests() {
 	const second = room.ask({ name: 'tester2', key: '0'.repeat(25), pet: -1, gm: 'sandbox' });
 	check('a second player is refused - single-player only', second === undefined, second);
 
-	// 'k'/'o' are net/gameSocket.js keydown cases, not Room methods - what belongs to the room
-	// is that it hands out a real XP ceiling for that handler to set, and that the ordinary
-	// death path (used for the 'o' self-kill) still works with nobody else in the room.
-	me.xp = room.XPLVL[room.XPLVL.length - 1];
-	for (let i = 0; i < room.XPLVL.length; i++) { me.update(); }
-	check('max xp actually climbs to the real max level', me.level === room.XPLVL.length,
-		me.level);
+	// net/gameSocket.js's keydown/keyup cases just flip inputs.k / call cycleClass() / flip
+	// dev.god - the actual sandbox-cheat behaviour lives on the Player instance itself
+	// (entities/Player.js), so it's tested directly here rather than through a socket.
+
+	// 'k' (PENDING "Sandbox gaps"): hold to climb one level at a time, diep's own hold-to-repeat
+	// convention - not the instant jump-to-cap this used to be. Starts from level 1, not 0:
+	// XPLVL[0] is 0, so a fresh level-0 spawn already satisfies the level-up check for free on
+	// its very first tick regardless of 'k' - level 1->2 is the first REAL (nonzero) threshold.
+	{
+		me.level = 1; me.xp = 0; me.maxHp = 50; me.hp = 50; me.levelUpHold = 0;
+		me.inputs.k = 1;
+		let ticks = 0;
+		while (me.level === 1 && ticks < 50) { me.update(); ticks++; }
+		check('holding \'k\' does not jump straight to the cap - it takes several ticks for the first level',
+			me.level === 2 && ticks > 1, 'level=' + me.level + ' after ' + ticks + ' ticks');
+		const levelAfterFirst = me.level;
+		me.update();
+		check('...and never grants more than one level in a single tick',
+			me.level - levelAfterFirst <= 1, me.level);
+		for (let i = 0; i < 5000 && me.level < me.XPLVL.length; i++) { me.update(); }
+		check('...but holding it long enough still reaches the real cap and stops exactly there',
+			me.level === me.XPLVL.length, me.level);
+		const xpAtCap = me.xp;
+		me.update();
+		check('...and xp does not corrupt once parked at the cap', me.xp === xpAtCap && !isNaN(me.xp),
+			me.xp);
+		me.inputs.k = 0;
+	}
+
+	// '\' (PENDING "Sandbox gaps"): a raw class preview, no tree/level gating, and only real
+	// playable tanks - never a dev placeholder or a boss/Closer/Dominator entity.
+	{
+		const NEVER = ['pre launch', 'testbed', 'bigView', 'shapes', 'shape1', 'shape2',
+			'Summoner', 'Arena Closer', 'Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'];
+		me.class = 'Basic'; me.classLvl = 0;
+		const seen = new Set();
+		let cameBackToBasic = false;
+		for (let i = 0; i < 60; i++) {
+			me.cycleClass();
+			if (NEVER.includes(me.class)) { seen.add(me.class); }
+			if (me.class === 'Basic') { cameBackToBasic = true; break; }
+		}
+		check('cycling class never lands on a dev placeholder or a boss/Closer/Dominator entity',
+			seen.size === 0, [...seen].join(','));
+		check('cycling all the way around comes back to Basic (a real cycle, not a dead end)',
+			cameBackToBasic);
+		check('cycleClass() does not bump classLvl - this is a preview, not a real evolution',
+			me.classLvl === 0, me.classLvl);
+	}
+
+	// ';' (PENDING "Sandbox gaps"): repels contact and takes no consequence from it, the same
+	// one-sided guard shape dev.ghost/this.closer already use in collision().
+	{
+		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+		me.dev.god = 1;
+		me.hp = me.maxHp;
+		const vx0 = me.vec.x, vy0 = me.vec.y;
+		const stubEnemy = { kind: KIND.PLAYER, x: me.x + 40, y: me.y, size: 25, damage: 999, team: me.team + 1 };
+		me.collision(stubEnemy, {});
+		check('god mode takes no damage from a contact that would otherwise be lethal',
+			me.hp === me.maxHp, me.hp);
+		check('...and gets shoved away from whatever touched it',
+			me.vec.x !== vx0 || me.vec.y !== vy0, me.vec.x + ',' + me.vec.y);
+		me.dev.god = 0;
+		me.vec.x = 0; me.vec.y = 0;
+	}
+
+	// 'o' (already-shipped self-destruct, kept as its own check): the ordinary death path still
+	// works with nobody else in the room.
 	me.hp = 0;
 	me.update();
 	check('zero hp kills you same as anywhere else', me.destroy > 0 && me.dead > 0,
@@ -714,6 +776,126 @@ function mazeTests() {
 		victim.destroy = 0;
 		room.closing = false;
 		room.closers = [];
+	}
+
+	return room;
+}
+
+/// Domination ////////////////////////////////////////////////////////////////
+function dominatorTests() {
+	console.log('\nrooms (domination):');
+	const room = makeRoom('domination');
+	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
+
+	check('same base/team tuning as 2team, just gm and xpMul differ',
+		room.rules.teams.join(',') === '0,1' && room.rules.teamPlay === true &&
+		room.rules.baseSizeRatio.num === 40 && room.rules.baseSizeRatio.den === 400,
+		room.rules.teams.join(','));
+	check('xp is doubled (diep_wiki/Polygons.txt)', room.rules.xpMul === 2, room.rules.xpMul);
+
+	// build() spawns all four before the first tick, same as Maze's walls. room.dominators holds
+	// the live Player instances directly (SlotMap.add() returns the entity, not an id).
+	const doms = room.dominators;
+	check('build() spawns exactly 4 Dominators', doms.length === 4, doms.length);
+	check('every Dominator is flagged, neutral, and at diep_wiki\'s own 5998 HP',
+		doms.every((d) => d.dominator === 1 && d.team === 2 && d.hp === 5998 && d.maxHp === 5998),
+		doms.map((d) => d.team + ':' + d.hp).join(' '));
+	check('every Dominator is one of the three cannon variants',
+		doms.every((d) => ['Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'].includes(d.class)),
+		doms.map((d) => d.class).join(', '));
+	check('every Dominator sits inside the drawn arena',
+		doms.every((d) => Math.abs(d.x) <= room.map.width / 2 && Math.abs(d.y) <= room.map.height / 2));
+	check('a Dominator is an ordinary Player, not a new entity kind (PENDING #27)',
+		doms.every((d) => d.kind === KIND.PLAYER), doms.map((d) => d.kind).join(','));
+
+	// createDominator() with an explicit variant, for the Sandbox admin command.
+	{
+		const d = room.createDominator(0, 0, 1);
+		check('createDominator(variant) picks the named cannon table, not a random one',
+			d.class === 'Gunner Dominator', d.class);
+	}
+
+	// "Cannot move" - motion() is a real no-op, and update() snaps back any drift a ramming tank's
+	// own overlap-resolution or a knockback impulse would otherwise leave it with.
+	{
+		const d = doms[0];
+		const x0 = d.x, y0 = d.y;
+		d.x += 500; d.y -= 500; d.vec.x = 12; d.vec.y = -7;
+		d.motion();
+		check('motion() itself touches nothing', d.x === x0 + 500 && d.y === y0 - 500);
+		d.update();
+		check('update() snaps position back to spawn and zeroes vec',
+			d.x === x0 && d.y === y0 && d.vec.x === 0 && d.vec.y === 0,
+			d.x + ',' + d.y);
+	}
+
+	// Two real-team test players, added directly rather than trusting slot 0 to be a human -
+	// build() already seated all 4 Dominators in slots 0-3 before makeRoom()'s own tester joins,
+	// so player(room, 0) here would be a Dominator (still neutral), not the tester.
+	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+	const teamA = room.INSTANCE.players.add((id) =>
+		new Player({ GM: room.gm, sId: room.id, oId: id }, 0, 0, 'Basic', 0, room.XPLVL, room));
+	const teamB = room.INSTANCE.players.add((id) =>
+		new Player({ GM: room.gm, sId: room.id, oId: id }, 0, 0, 'Basic', 1, room.XPLVL, room));
+
+	// The capture/knockdown state machine (lib/gameAI.js's dominatorCapture(), bound as part of
+	// update()) - poking hp/destroy/murder directly the way collision() would have left them,
+	// same technique mazeTests() uses for close()/respawn() above.
+	{
+		const dom = doms[1];
+
+		// One knockdown from neutral captures it outright (diep_wiki's own rule).
+		dom.hp = 0;
+		dom.destroy = 1;
+		dom.murder = ['players', teamA.id];
+		dom.update();
+		check('neutral -> one knockdown captures it to the attacker\'s team',
+			dom.team === teamA.team && dom.hp === dom.maxHp && dom.destroy === 0 && dom.dead === 0,
+			dom.team + ' hp=' + dom.hp);
+
+		// A bullet fired by the OTHER side then knocks it down to neutral, not straight to their own.
+		const bull = new Bullet(teamB.id, dom.x, dom.y, 0, 1, 0, room);
+		dom.hp = 0;
+		dom.destroy = 1;
+		dom.murder = ['players', bull.origin];
+		dom.update();
+		check('an enemy team\'s knockdown on a CAPTURED Dominator sends it back to neutral first',
+			dom.team === 2 && dom.hp === dom.maxHp, dom.team + ' hp=' + dom.hp);
+
+		// One more knockdown from that same enemy now captures it to their side.
+		dom.hp = 0;
+		dom.destroy = 1;
+		dom.murder = ['players', teamB.id];
+		dom.update();
+		check('...and the second knockdown from neutral captures it to them',
+			dom.team === teamB.team, dom.team);
+	}
+
+	// A capture despawns the Dominator's own live projectiles (diep_wiki/Dominator.txt).
+	{
+		const dom = doms[2];
+		const bull = new Bullet(dom.id, dom.x, dom.y, 0, 1, 0, room);
+		room.INSTANCE.bullets.add(() => bull);
+		check('the projectile exists before capture', bull.destroy === 0);
+		dom.hp = 0;
+		dom.destroy = 1;
+		dom.murder = ['players', teamA.id];
+		dom.update();
+		check('capture marks that projectile for removal', bull.destroy > 0, bull.destroy);
+	}
+
+	// A knockdown with no live attacker to credit (e.g. a shape's own body damage) just heals it
+	// back up rather than crashing or awarding a team nobody earned.
+	{
+		const dom = doms[3];
+		const before = dom.team;
+		dom.hp = 0;
+		dom.destroy = 1;
+		dom.murder = ['objs', { oId: 987654 }];
+		dom.update();
+		check('a non-player knockdown heals it back up with no team change',
+			dom.team === before && dom.hp === dom.maxHp, dom.team + ' hp=' + dom.hp);
 	}
 
 	return room;
@@ -4105,6 +4287,7 @@ rooms.push(bossTests()); console.log('');
 rooms.push(sandboxTests()); console.log('');
 rooms.push(tagTests()); console.log('');
 rooms.push(mazeTests()); console.log('');
+rooms.push(dominatorTests()); console.log('');
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);

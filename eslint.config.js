@@ -123,7 +123,11 @@ const LEGACY = {
 
 module.exports = [
 	{
-		ignores: ['node_modules/**', 'public/font.js']   // font.js is a vendored art asset
+		// font.js is a vendored art asset; reference/ is a gitignored vendor dump that predates
+		// this work (PENDING nuance 38) - `npm run lint` used to sweep it in and drown in ~4984
+		// unrelated errors, which is why the source had to be linted with an explicit path list
+		// instead. Both excluded so the bare npm script is the gate again.
+		ignores: ['node_modules/**', 'public/font.js', 'reference/**']
 	},
 	js.configs.recommended,
 	{

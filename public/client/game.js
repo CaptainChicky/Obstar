@@ -424,6 +424,11 @@
 					case 'c':
 					case 'k':
 					case 'o':
+					// Sandbox-only cheat keys - '\' cycles class, ';' toggles god mode. Both
+					// relayed unconditionally, same as every key here; net/gameSocket.js is
+					// what gates them to a sandbox room.
+					case '\\':
+					case ';':
 					case 'arrowup':
 					case 'arrowdown':
 					case 'arrowleft':
@@ -492,6 +497,9 @@
 					case 'w':
 					case 's':
 					case 'd':
+					// 'k' is a held input server-side now (Sandbox's hold-to-level-up cheat),
+					// same shape as the movement keys - needs a release signal too.
+					case 'k':
 					case 'arrowup':
 					case 'arrowdown':
 					case 'arrowleft':

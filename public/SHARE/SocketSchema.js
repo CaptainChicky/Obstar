@@ -389,7 +389,8 @@
 			'boss',
 			'sandbox',
 			'tag',
-			'maze'
+			'maze',
+			'domination'
 		],
 		'type': [
 			'init',
@@ -457,7 +458,13 @@
 			'arra',
 			'arrd',
 			'k',
-			'o'
+			'o',
+			// Sandbox-only cheat keys (PENDING "Sandbox gaps"): '\' previews any real tank
+			// class with none of upClass()'s tree/level gating, ';' toggles the repel-and-
+			// take-no-contact-damage god mode entities/Player.js's collision() already had a
+			// dead branch for. Both gated sandbox-only in net/gameSocket.js, same as 'k'/'o'.
+			'classcycle',
+			'god'
 		],
 		'xpExt': [
 			'',
@@ -480,7 +487,8 @@
 			'boss': 3,
 			'sandbox': 4,
 			'tag': 5,
-			'maze': 6
+			'maze': 6,
+			'domination': 7
 		},
 		'type': {
 			'init': 0,
@@ -536,7 +544,12 @@
 			'arrowleft': 11,
 			'arrowright': 12,
 			'k': 13,
-			'o': 14
+			'o': 14,
+			// Client-side raw key literals (public/client/game.js's e.key.toLowerCase()) mapped
+			// to the same short server-side names ('classcycle'/'god') toSTRING.key above uses -
+			// the same long-name/short-name split the arrow keys already have.
+			'\\': 15,
+			';': 16
 		}
 	};
 	///

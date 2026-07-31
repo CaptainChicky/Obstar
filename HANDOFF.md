@@ -83,21 +83,22 @@ cookie.
 | `web/app.js` | 205 | `createApp()` — the Express site. Menu, cookies, shop purchase, leaderboard reads. Opens no port. |
 | `lib/boot.js` | 22 | Constructs the `Controller` singleton, memoised. No registry to fill any more — see §3. |
 | `net/gameSocket.js` | 336 | `attach(httpServer, controller)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
-| `lib/Controller.js` | 649 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
+| `lib/Controller.js` | 660 | `Main` — the singleton controller. Connections, rooms, chat, admin commands (incl. `summonDominator`, PENDING #27), leaderboard. |
 | `lib/clock.js` | 160 | Fixed-timestep clock (§4). One accumulator drives every room's `step()`. |
-| `rooms/Room.js` | 1701 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, per-player views. Takes a `controller` constructor argument (§3). |
+| `rooms/Room.js` | 1773 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, **Dominators** (`createDominator()`, PENDING #27), per-player views. Takes a `controller` constructor argument (§3). |
 | `rooms/index.js` | 17 | **The one list of gamemodes**, keyed by the string the client's `init` packet sends. |
 | `rooms/Ffa.js` | 43 | Free-for-all: tunables only. `Room`'s defaults *are* ffa's behaviour. |
-| `rooms/TwoTeam.js` | 143 | 2-team: two base strips, guard drones, team colours. |
+| `rooms/TwoTeam.js` | 147 | 2-team: two base strips, guard drones, team colours. Its constructor takes an optional `extraRules` param (PENDING #27) that `rooms/Domination.js` merges over this mode's own rules rather than duplicating them. |
 | `rooms/FourTeam.js` | 179 | 4-team: four corner bases, guard arcs, team colours. |
 | `rooms/BossMode.js` | 45 | Boss hunt: ffa with the boss knobs turned up. |
 | `rooms/Tag.js` | 360 | Tag: 4 teams, no bases, killer-tags-victim respawn, timed arena shrink, per-team leaderboard, x3 xp, Arena Closer win condition (PENDING #28, shipped). No new entity types — a Closer is a `Player` bound to `CONFIG.CLOSER`, like a boss. |
-| `rooms/Maze.js` | 211 | Maze: ffa's own tuning plus `KIND.WALL` chain generation, a precomputed minimap dot per wall, and a 5-hour close that reuses Tag's Arena Closer swarm (PENDING #26, shipped). |
-| `entities/Player.js` | 805 | Tank entity: motion, shooting, upgrades, class changes, collision — including a Closer's invincibility/knockback-immunity guard (PENDING #28). Takes a `room` constructor argument (§3). |
+| `rooms/Maze.js` | 211 | Maze: ffa's own tuning plus `KIND.WALL` chain generation, a precomputed minimap dot per wall, and a 5-hour close that reuses Tag's Arena Closer swarm (PENDING #26, shipped; wall geometry/bullet behaviour reopened as wrong 2026-07-31). |
+| `rooms/Domination.js` | ~40 | Domination: `TwoTeam`'s own base/tuning (via its new `extraRules` constructor param) plus 4 neutral Dominators placed from `build()` (PENDING #27, shipped). No new entity types — a Dominator is a `Player` bound to `CONFIG.DOMINATOR`, like a boss or Tag's Arena Closers. |
+| `entities/Player.js` | 856 | Tank entity: motion, shooting, upgrades, class changes, collision — including a Closer's invincibility/knockback-immunity guard (PENDING #28) and a `lastAttacker` write a Dominator's own AI reads (PENDING #27). Takes a `room` constructor argument (§3). |
 | `entities/Bullet.js` | 1308 | Projectiles, incl. drone/trap/necro behaviour. Takes a `room` constructor argument (§3). |
 | `entities/Objects.js` | 254 | Farmable polygons, incl. the Closer body-damage exemption (PENDING #28). Takes a `room` constructor argument (§3). |
 | `entities/Detector.js` | 94 | Invisible "vision cone" query entity used by AI. A leaf — no `room`/`controller` reference needed. |
-| `lib/gameAI.js` | 564 | Bot/boss/pet/**Arena Closer** (PENDING #28) AI. A plain module now — `Detector`/`Vec`/`BODY_FRICTION`/`CLASS`/`DES` are all leaves, so `module.exports = CONFIG` directly. Bots steer through `Physics.stepBody` (tank `FRICTION`); the boss's drift, the Closer's chase and the pet do not. |
+| `lib/gameAI.js` | 693 | Bot/boss/pet/**Arena Closer** (PENDING #28)/**Dominator** (PENDING #27) AI. A plain module now — `Detector`/`Vec`/`BODY_FRICTION`/`CLASS`/`DES` are all leaves, so `module.exports = CONFIG` directly. Bots steer through `Physics.stepBody` (tank `FRICTION`); the boss's drift, the Closer's chase, the Dominator (stationary) and the pet do not. |
 | `lib/quadTree.js` | 75 | Spatial index for broad-phase collision. |
 | `lib/SlotMap.js` | 128 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. `maxIndex` is the highest allocatable id, not a capacity. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
@@ -113,7 +114,7 @@ cookie.
 | `public/SHARE/kinds.js` | 36 | Entity type tags (`KIND`), used for `obj.kind` dispatch. Dual-mode: server require() + client global. |
 | `public/SHARE/World.js` | ~15 | The one grid-pitch constant (`GU`/`gu()`, plan.md WP1) — 1 grid square = 1 diep grid unit = 28 world units. Dual-mode, same footer idiom as `kinds.js`. |
 | `public/SHARE/SocketSchema.js` | 905 | Binary wire protocol, declarative (§6). Dual-mode: client *and* server. |
-| `public/SHARE/TanksConfig.js` | 2648 | Tank classes, stats, barrels, upgrade tree. Shared client/server. Cross-checked against itself by `test/tanks.js` — see §3. |
+| `public/SHARE/TanksConfig.js` | 3078 | Tank classes, stats, barrels, upgrade tree — including the 3 Dominator cannon variants (PENDING #27). Shared client/server. Cross-checked against itself by `test/tanks.js` — see §3. |
 | `public/SHARE/Physics.js` | 106 | **The one movement integrator** (`moveAccel`/`stepBody`/`FRICTION`) — `entities/Player.js`, `lib/gameAI.js`'s bots and `public/client/game.js` all call into it. Dual-mode. Its `FRICTION` is the **tank's** (10/11, diep's own); bullets/shapes/the boss decay through `lib/constants.js`'s `BODY_FRICTION` instead. |
 | `public/SHARE/PetsConfig.js` | 132 | Cosmetic pet definitions. |
 | `public/SHARE/ws_link.js` | 18 | Game server URL: `POST.ws`, else the page's own origin. |
@@ -367,11 +368,63 @@ The things in this codebase that are *not* obvious from reading the code around 
   `test/clientDiff.js`'s golden did not move, since Maze is not one of the four modes that corpus
   drives.
 
-  **What's still open:** the structure/Dominator half of item 2 — redesigned mid-session from a
-  second static `kind` to a **stationary tank** (the `CONFIG.BOSS`/`CONFIG.CLOSER` pattern,
-  `lib/gameAI.js`: an ordinary `Player` with custom `motion`/`update`, same as `createBoss()` and
-  Tag's Arena Closers), since a Dominator has HP/regen/cannons/AI that no static entity has; see
-  PENDING #27.
+  **The structure/Dominator half of item 2 — SHIPPED 2026-07-31 (`rooms/Domination.js`,
+  PENDING #27), redesigned mid-session from a second static `kind` to a stationary tank** (the
+  `CONFIG.BOSS`/`CONFIG.CLOSER` pattern, `lib/gameAI.js`'s `CONFIG.DOMINATOR`: an ordinary `Player`
+  with `motion`/`update` bound at spawn, same as `createBoss()` and Tag's Arena Closers), since a
+  Dominator has HP/regen/cannons/AI that no static entity has.
+  **`rooms/TwoTeam.js` grew one new constructor param, `extraRules`** (merged over its own rules
+  object via `Object.assign`, defaulting to `{}` so every existing caller is untouched) — the
+  mechanism that lets `Domination extends TwoTeam` reuse its whole base-strip/guard-drone/colour
+  block for two fields (`gm: 'domination'`, `xpMul: 2`) instead of duplicating ~100 lines. Four
+  Dominators spawn from `Domination`'s own `build()` hook (the same pre-tick hook Maze's wall
+  generation runs from), in a loose diamond around the arena centre — diep_wiki/Domination.txt gives
+  4 Dominators and no coordinates, so the layout is ours, untuned by design, on the same footing
+  Maze's own wall placement shipped on.
+  **Capture is `lib/gameAI.js`'s `dominatorCapture()`**, which runs instead of the ordinary death
+  path the instant a Dominator's own `update()` sees `destroy` set — `collision()` is the
+  *unmodified* `entities/Player.js` method (a Dominator takes damage exactly like any other
+  `Player`), so only what happens at 0 HP is replaced: neutral → the attacker's team outright;
+  an enemy team → neutral first, a second knockdown to actually flip it (diep's own two-knockdown
+  rule). Every knockdown refills HP and despawns the Dominator's own live bullets (a sweep over
+  `INSTANCE.bullets` keyed on `origin.oId`, each marked `destroy = tick.DES`). A knockdown credited
+  to a non-player (a shape's own body damage) just heals it — there's no team to credit.
+  **"Cannot move" needed a second enforcement point beyond `motion()` being a no-op**: `entities/
+  Player.js`'s tank-vs-tank overlap resolution (nuance 44) moves BOTH bodies on contact regardless
+  of either one's `motion()`, so `dominatorUpdate()` snaps `x`/`y` back to the spawn point and zeroes
+  `vec` every tick, cancelling any push or knockback impulse a ramming tank would otherwise leave it
+  with.
+  **The AI needed almost no new code**: `entities/Player.js`'s own `shoot()` already leads a target
+  and holds it until it leaves `DETEC.maxDis` for any class whose cannons carry `autoDir`/
+  `autoShoot` — the same auto-turret machinery Auto Gunner/Auto Trapper ship on — so each variant's
+  `CLASS[...].DETEC` (priority-ordered `[KIND.PLAYER, KIND.OBJECTS]`) does the targeting/leading/
+  FoV-hold for free. What's actually new: dropping a target that has stopped shooting back (a new
+  `lastAttacker` field, written at the end of `entities/Player.js`'s `collision()` whenever hp
+  actually drops — inert for every ordinary `Player`, the one consumer being this reader), and
+  refusing a shape/boss target while neutral (diep_wiki: neutral Dominators can't damage
+  shapes/bosses — refusing the target outright is the simplest correct statement of that rule).
+  **Simplification, flagged rather than silent:** diep_wiki's "falls back to polygons/bosses/
+  closers" reads as a third priority tier below ordinary players; a boss/closer is a `KIND.PLAYER`
+  instance here (flagged `.boss`/`.closer`), so `DETEC`'s own type-order bucketing only gives two
+  tiers, not three — left this way since a boss/closer is rare enough that the distinction is
+  unlikely to matter live.
+  **Three cannon variants** (`public/SHARE/TanksConfig.js`, client + server): pene/damage are
+  diep_wiki/Dominator.txt's own multiples of "a tank" (`MEASUREMENTS.md`'s pinned 2 HP/7 damage per
+  loop), applied to **our own** corresponding Basic-cannon numbers (1.7 pene / 4.84848 damage)
+  rather than diep's raw absolute figures — bullet magnitudes aren't diep-adopted in this tree yet
+  (`MEASUREMENTS.md`'s M1), so this is the same methodology #17/#18's body-damage-magnitude fix
+  already used for an identical problem. Every other per-variant number diep_wiki gives only as a
+  qualitative comparison (Destroyer's bullet speed "below Destroyer's own", Gunner's "high" reload,
+  Trapper's trap speed "above a maxed Tri-Trapper" — this tree has no Tri-Trapper class to anchor
+  to) is ours, flagged at the constant itself in PENDING #27 rather than presented as measured.
+  Sandbox spawnability (`summonDominator` admin command, `lib/Controller.js`, the same pattern
+  `summonRandBoss` uses) and XP ×2 (`rules.xpMul`, the field Tag's ×3 already established) round
+  out the shipped list.
+  Tested directly (`test/rooms.js`'s `dominatorTests()`) rather than only through a live match.
+  **What's still open:** the `H`-key piloting mechanic — designed (PENDING #27 has the full call:
+  reusing `state.disconnect`'s own idle-decay as "the cost", piloting granting aim/fire input only
+  since a Dominator stays immobile regardless of who's notionally driving it, one pilot at a time
+  via a `pilotedBy` field) but deliberately not built this session, by request.
 - **Arena size and shape density are derived, not written down** (PENDING #19, plan.md step 6).
   diep's two published formulas — `AL = ⌊√N_P × 50⌋` gu and `12.5 × N_P` shapes — **compose to a
   constant 1 shape per 200 gu²**, because the player count cancels. That composition is the whole

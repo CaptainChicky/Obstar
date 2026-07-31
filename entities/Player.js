@@ -10,6 +10,7 @@ const config = require('../lib/config.js').config;
 const tick = require('../lib/tick.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CLASS_TREE = require('../public/SHARE/TanksConfig.js').tree;
+const CLASS_LIST = require('../public/SHARE/TanksConfig.js').list;
 const Physics = require('../public/SHARE/Physics.js');
 const KIND = require('../public/SHARE/kinds.js');
 const ACHIEVEMENTS = require('../public/SHARE/AchievementsConfig.js').list;
@@ -82,6 +83,13 @@ const SPIN_RATE = 0.04;
 const HYPER_REGEN_DELAY = tick.ticks(750);
 const HYPER_REGEN_RATE = 0.085871;   // fraction of maxHp healed per SECOND once hyper regen is active
 
+// Sandbox-only practice key ('k', PENDING "Sandbox gaps") - a threshold on a per-tick hold
+// counter (same tick.ticks() category HYPER_REGEN_DELAY above uses), not a physical quantity.
+// diep_wiki gives no rate for its own hold-to-repeat 'K', so this is ours: 5 reference ticks
+// (200ms) per level, level 0 to the 45 cap in ~9s of holding - fast enough to read as "hold and
+// watch it climb," not an instant jump (the old behaviour here) or a crawl.
+const SANDBOX_LEVELUP_TICKS = tick.ticks(5);
+
 /*
 	The upgrade economy, diep's own (PENDING #30 / plan.md step 1): 45 levels, 7 points per stat,
 	33 points over a life, one class tier every 15 levels.
@@ -106,6 +114,17 @@ const LATE_GRANT_STEP = 3;        // ...and every third level after, to the cap
 // Mirrors rooms/Room.js's XPLVL length. A Player can't out-level its own XPLVL array, so this is
 // a guard against a hand-set level (the resetLevel/xp admin commands), not a second source of truth.
 const LEVEL_CAP = 45;
+
+// Sandbox-only cheat ('\', PENDING "Sandbox gaps") - a raw class preview, not an evolution, so
+// it skips upClass()'s tree/level gating entirely. TanksConfig.js's exports.list filtered down
+// to real playable tanks: the dev/debug placeholders ('testbed' etc.) are hidden, uncontrollable
+// stand-ins (test/tanks.js's own whitelist explains why), and the boss/Closer/Dominator classes
+// are scripted entities, never meant to be piloted by a human.
+const CYCLE_EXCLUDE = new Set([
+	'pre launch', 'testbed', 'bigView', 'shapes', 'shape1', 'shape2',
+	'Summoner', 'Arena Closer', 'Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'
+]);
+const CYCLABLE_CLASSES = CLASS_LIST.filter((name) => !CYCLE_EXCLUDE.has(name));
 
 // Total upgrade points a tank has been granted by `level`. Level 1 (a fresh spawn) is 0 points,
 // level 28 is 27, level 45 is 33.
@@ -183,7 +202,8 @@ class Player {
 			'arra': 0,
 			'arrd': 0,
 			"e": 0,
-			"n": 0
+			"n": 0,
+			"k": 0   // Sandbox-only hold-to-level-up cheat (net/gameSocket.js, update() above)
 		};
 		this.destroy = 0;
 		this.shootTimer = [0, 0];
@@ -498,6 +518,20 @@ class Player {
 			return;
 		}
 	}
+	/*
+		Sandbox-only cheat ('\', PENDING "Sandbox gaps") - jumps straight to a class with none of
+		upClass()'s tree/level gating, so a human can preview any tank regardless of level. Redoes
+		the same class-dependent resets upClass() does (DETEC/droneCount/necro/shootTimer) but
+		does not touch classLvl or unlock('scary_tank') - this isn't a real evolution.
+	*/
+	cycleClass() {
+		const i = CYCLABLE_CLASSES.indexOf(this.class);
+		this.class = CYCLABLE_CLASSES[(i + 1) % CYCLABLE_CLASSES.length];
+		if (!this.bot && this.DETEC && !CLASS[this.class].DETEC) { this.DETEC = null; }
+		this.droneCount = 0;
+		this.necro = CLASS[this.class].necro;
+		this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
+	}
 	// Body damage reduces damage taken (PENDING #18, plan.md step 9 - landed with step 4's health
 	// model per the lethality call, since adopting the HP side alone without this would have
 	// shortened time-to-kill 4-5x). diep_wiki/Stats.txt + PENDING #18: BS = 1 + 0.2*bd, and a tank
@@ -517,17 +551,18 @@ class Player {
 		// mechanism to turn off. The damage it DEALS is unaffected: that is `other.damage` read from
 		// the OTHER entity's own collision() call, not anything gated here.
 		if (this.closer) { return; }
-		if (option.type) {
-			switch (option.type) {
-				case 'god':
-					// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody,
-					// see the `back` comment above.
-					// 8.96 = 3.2 gu x 2.8, i.e. deliberately twice the ordinary tank-body shove below,
-					// which is what it has always been relative to it. Not a diep number - diep has no
-					// god mode - so it rides the tank-body row rather than the table.
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(8.96), tick.impulse(8.96))));
-					return;
-			}
+		// Sandbox god mode (';', PENDING "Sandbox gaps") - repel whatever touches you and take
+		// no consequence from the contact, the same one-sided shape the dev.ghost/closer guards
+		// above use. Checked on `this`, not passed in as an option, so a single flag on the god
+		// player's own instance handles both directions of every pair: Room.js calls collision()
+		// on each side separately, so the god player's own call is what has to short-circuit.
+		if (this.dev.god) {
+			// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody, see
+			// the `back` comment above. 8.96 = 3.2 gu x 2.8, deliberately twice the ordinary
+			// tank-body shove below, which is what it has always been relative to it. Not a diep
+			// number - diep has no god mode - so it rides the tank-body row rather than a table.
+			this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(8.96), tick.impulse(8.96))));
+			return;
 		}
 		if (option.base) {
 			this.alpha = 1;
@@ -679,6 +714,13 @@ class Player {
 		if (this.alpha < 1 && !this.dev.invisible) {
 			this.alpha = Math.min(1, this.alpha + (oldHp - this.hp) / this.maxHp * 5)
 		}
+		// Who most recently landed a hit - inert for every ordinary Player, the one consumer
+		// being a Dominator's own update() (lib/gameAI.js, PENDING #27), which drops a target
+		// that has stopped shooting back rather than holding it forever. `other.origin` for a
+		// bullet, `other.id` for a body ram - both are `{oId}`-shaped id descriptors.
+		if (oldHp > this.hp) {
+			this.lastAttacker = (other.kind === KIND.BULLET) ? other.origin : other.id;
+		}
 	}
 	// One-shot achievement unlock: pushes the registry's toast onto the same mess feed the
 	// two legacy flags (mess_cursed_score / mess_im_speed) used to push directly, so the
@@ -766,6 +808,20 @@ class Player {
 			this.spinning = 0;
 		}
 		this.shoot();
+		///
+		// Sandbox-only practice key ('k') - hold to climb one level at a time rather than
+		// snapping straight to the cap (diep's own hold-to-repeat convention). Setting `xp` to
+		// exactly this level's threshold feeds the ordinary level-up check right below, so a
+		// held 'k' never grants more than one level per SANDBOX_LEVELUP_TICKS interval.
+		if (this.id.GM === 'sandbox' && this.inputs.k && this.level < this.XPLVL.length) {
+			this.levelUpHold = (this.levelUpHold || 0) + 1;
+			if (this.levelUpHold >= SANDBOX_LEVELUP_TICKS) {
+				this.levelUpHold = 0;
+				this.xp = this.XPLVL[this.level];
+			}
+		} else {
+			this.levelUpHold = 0;
+		}
 		///
 		if (this.xp >= this.XPLVL[this.level]) {
 			// No takeback here any more (PENDING #30). The two `stillLvl++`s that used to sit at

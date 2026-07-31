@@ -14,5 +14,6 @@ module.exports = {
 	'boss': require('./BossMode.js'),
 	'sandbox': require('./Sandbox.js'),
 	'tag': require('./Tag.js'),
-	'maze': require('./Maze.js')
+	'maze': require('./Maze.js'),
+	'domination': require('./Domination.js')
 };

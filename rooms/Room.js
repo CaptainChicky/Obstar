@@ -292,6 +292,11 @@ class Room {
 		// Every boss currently alive. A list rather than a single slot because 'boss' mode runs
 		// several at once; modes with rules.maxBoss 0 never put anything in it.
 		this.bosses = [];
+		// Every Dominator currently alive (PENDING #27) - empty everywhere but Domination and
+		// whatever spawns one via the Sandbox admin command. A Dominator never dies (its own
+		// update(), lib/gameAI.js, intercepts `destroy` and turns it into a capture instead), so
+		// unlike this.bosses nothing ever needs to be removed from this list.
+		this.dominators = [];
 		// Precomputed minimap dots for a mode's own static geometry (PENDING #26's Maze walls, the
 		// one consumer so far) - empty for every other mode. A wall never moves and this codebase
 		// never resizes a `walls`-bearing arena live, so build() computes these once instead of
@@ -845,6 +850,48 @@ class Room {
 		return boss;
 	}
 	/*
+		Spawn one Dominator (PENDING #27) - a stationary Player bound to one of
+		CONFIG.DOMINATOR's three cannon variants, the same way createBoss() above binds
+		CONFIG.BOSS. `variant` picks an index into CONFIG.DOMINATOR (Destroyer/Gunner/Trapper,
+		0/1/2); omitted, one is picked at random - convenient for the Sandbox admin command,
+		which has no reason to care which variant it gets.
+
+		Spawns neutral (team 2, SocketSchema's 'yellow' - diep's own neutral-Dominator colour)
+		regardless of what rules.teams this room states, since capture is what assigns it a real
+		side; lib/gameAI.js's dominatorCapture() is what moves it off team 2 later. Stats are set
+		on the instance rather than in TanksConfig.js, the same call createBoss() already makes
+		for a boss: diep_wiki/Dominator.txt states them directly (5998 HP, no per-level table
+		this engine's level cap ever reaches), not as a formula this class table's usual
+		level-driven growth could express.
+	*/
+	createDominator(x, y, variant) {
+		const spec = CONFIG.DOMINATOR[(variant !== undefined) ? variant : Math.floor(Math.random() * CONFIG.DOMINATOR.length)];
+		const dom = this.INSTANCE.players.add((id) => {
+			const d = new Player(
+				{ "GM": this.gm, "sId": this.id, "oId": id },
+				x, y,
+				spec[2],
+				2,   // neutral - lib/gameAI.js's DOMINATOR_NEUTRAL_TEAM
+				this.XPLVL,
+				this
+			);
+			d.hp = 5998;
+			d.maxHp = 5998;
+			d.dominator = 1;
+			d.spawnX = x;
+			d.spawnY = y;
+			d.size = 64;
+			d.class = spec[2];
+			d.screen = CLASS[d.class].screen;
+			d.shield = 0;
+			d.motion = spec[0].bind(d);
+			d.update = spec[1].bind(d);
+			return d;
+		});
+		if (dom) { this.dominators.push(dom); }
+		return dom;
+	}
+	/*
 		Everything that is derived from the arena's current size, recomputed together (PENDING #19,
 		plan.md step 6). Called once from the constructor and once per tick from step(), with the
 		live human count - which is why it takes that count rather than reading it: step() has
@@ -925,8 +972,10 @@ class Room {
 			// Closer (PENDING #28, rooms/Tag.js's createCloser()) needs the same exclusion for the
 			// same reason: it is invincible and never dies, so counting it here would mean a Tag
 			// match that has finished closing - every real player dead - never actually self-
-			// destructs, and just sits open with its Closers idling forever.
-			if (!i.bot && !i.boss && !i.closer) {
+			// destructs, and just sits open with its Closers idling forever. A Dominator
+			// (PENDING #27) needs it for the identical reason: it never dies either, only gets
+			// captured, so an empty Domination room would otherwise never self-destruct.
+			if (!i.bot && !i.boss && !i.closer && !i.dominator) {
 				playerCount++;
 				stop = 0;
 			}
@@ -990,7 +1039,7 @@ class Room {
 		for (const kind in this.INSTANCE) {
 			this.INSTANCE[kind].tick();
 			for (const i of this.INSTANCE[kind].live()) {
-				if (kind === 'players' && !i.destroy && !i.boss) {
+				if (kind === 'players' && !i.destroy && !i.boss && !i.dominator) {
 					if (this.leader.length) {
 						for (let l = Math.min(this.leader.length - 1, 9); l >= 0; l--) {
 							if (this.leader.length < 9) {
@@ -1190,7 +1239,7 @@ class Room {
 		}
 		this.BUFFER = [];
 		for (const [id, player] of this.INSTANCE.players.entries()) {
-			if (player.bot || player.boss) {
+			if (player.bot || player.boss || player.dominator) {
 				continue;
 			}
 

@@ -1423,6 +1423,65 @@
 					width: 1,
 					height: 1
 				}
+			},
+			// PENDING #27. A Dominator is a stationary tank (lib/gameAI.js's CONFIG.DOMINATOR),
+			// drawn the same circular boss/Closer body (shape 1) rather than an ordinary tank's
+			// octagon - the closest existing convention for a large, non-levelling scripted tank.
+			// Every cannon's client `height` is set equal to its own server `canonLength` (a
+			// small, ordinary muzzle-tip gap once run through test/tanks.js's *.93 check - no
+			// whitelist entry needed, unlike Summoner's).
+			"Destroyer Dominator": {
+				cannons: [
+					{
+						type: 0,
+						height: 62,
+						width: 48,
+						offx: 0,
+						offdir: 0,
+						open: 0
+					}
+				],
+				body: {
+					shape: 1,
+					width: 1,
+					height: 1
+				}
+			},
+			// Three barrels evenly spaced (diep_wiki/Dominator.txt), not Gunner's own forward
+			// cross layout - the Dominator variant differs from Gunner in barrel count/placement,
+			// so its own layout is drawn rather than copied.
+			"Gunner Dominator": {
+				cannons: [0, 1, 2].map((i) => ({
+					type: 0,
+					height: 45,
+					width: 20,
+					offx: 0,
+					offdir: i * Math.PI * 2 / 3,
+					open: 0
+				})),
+				body: {
+					shape: 1,
+					width: 1,
+					height: 1
+				}
+			},
+			// Eight launchers evenly spaced (diep_wiki/Dominator.txt), drawn like Trapper's own
+			// trap barrel (type 1, the same openlength/open shape).
+			"Trapper Dominator": {
+				cannons: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({
+					type: 1,
+					height: 68,
+					width: 27,
+					openlength: 16,
+					offx: 0,
+					offdir: i * Math.PI / 4,
+					open: 18
+				})),
+				body: {
+					shape: 1,
+					width: 1,
+					height: 1
+				}
 			}
 		} :
 		///SERVER///
@@ -2817,6 +2876,109 @@
 				}));
 				this.cannons = c;
 			},
+			/*
+				PENDING #27's three Dominator variants. `pene`/`damage` are diep_wiki/Dominator.txt's
+				own multiples of "a tank" - diep's universal 0-point bullet baseline, MEASUREMENTS.md's
+				pinned 2 HP / 7 damage per loop. Bullet magnitudes aren't diep-adopted in this tree yet
+				(MEASUREMENTS.md's M1), so - the same call PENDING #17/#18's body-damage fix already
+				made for an identical problem - the multiple is applied to OUR OWN corresponding live
+				number (Basic's own can.pene 1.7 / can.damage 4.84848, the closest thing this engine has
+				to "a tank's" baseline bullet) rather than diep's raw absolute figure, which would land
+				on the wrong scale entirely next to every other cannon in this table. `back: 0`
+				everywhere - diep_wiki: a Dominator has "no recoil" (it cannot move at all,
+				lib/gameAI.js's CONFIG.DOMINATOR). Detector-driven auto-aim (`auto`/`autoShoot`/
+				`autoDir`, DETEC below) is the same auto-turret machinery Auto Gunner/Auto Trapper
+				already use - see lib/gameAI.js's CONFIG.DOMINATOR comment for why the AI itself needs
+				no bespoke targeting code.
+			*/
+			"Destroyer Dominator": new function () {
+				// FoV "roughly Sniper-to-Hunter range" (diep_wiki) - Sniper's own screen (1664),
+				// the low end of that band; ours, flagged, no exact number given.
+				this.screen = 1664;
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
+				this.cannons = [{
+					// reload: Hybrid's own 60 at 3 Reload points (1 - 3*0.0788571 = 0.7634287),
+					// rounded - diep_wiki: "reload... approximately equal to a Hybrid with 3 points".
+					reload: 46,
+					offTime: 0,
+					auto: 1, autoShoot: 1, autoDir: 1,
+					type: 0,
+					life: 149,
+					///
+					offdir: 0,
+					offx: 0,
+					canonLength: 62,
+					rand: 0.10,
+					///
+					// Below Destroyer's own 0.321792 (diep_wiki gives no figure, only "below
+					// Destroyer's") - 0.9x, ours, flagged.
+					speed: 0.2896128,
+					pene: 170,      // 100 x tank's own 1.7 (diep_wiki: "200 HP, x100 tank")
+					damage: 48.4848,  // 10 x tank's own 4.84848 (diep_wiki: "70/hit, x10 tank")
+					size: 27,      // Hybrid-sized bullet (diep_wiki)
+					///
+					exitSpeed: 53,
+					weight: 1.05,
+					push: 0.27426,
+					back: 0
+				}];
+			},
+			"Gunner Dominator": new function () {
+				this.screen = 1920;   // mid Sniper-Hunter band - Assassin's own screen, ours/flagged
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
+				const c = new Array(3).fill(null).map((_, i) => ({
+					// "High reload" (diep_wiki gives no number) - 2x Gunner's own base 27, ours/flagged.
+					reload: 54,
+					offTime: 0,
+					auto: 1, autoShoot: 1, autoDir: 1,
+					type: 0,
+					///
+					offdir: i * Math.PI * 2 / 3,   // 3 cannons, evenly spaced (diep_wiki)
+					offx: 0,
+					canonLength: 45,
+					rand: 0.1,
+					///
+					speed: 0.511936,   // Gunner's own "normal" bullet speed (diep_wiki)
+					pene: 8.5,       // 5 x tank's own 1.7 (diep_wiki: "10 HP, x5 tank")
+					damage: 4.84848,   // 1 x tank's own 4.84848 (diep_wiki: "7, x1 tank")
+					size: 12,
+					///
+					weight: 1.75,
+					push: 0.45709,
+					back: 0
+				}));
+				this.cannons = c;
+			},
+			"Trapper Dominator": new function () {
+				this.screen = 2208;   // Ranger's own screen, our stand-in for diep's "Hunter"
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
+				const c = new Array(8).fill(null).map((_, i) => ({
+					reload: 25,   // Trapper's own base reload, at 0 points (diep_wiki)
+					offTime: 0,
+					auto: 1, autoShoot: 1, autoDir: 1,   // "auto-fire always on" (diep_wiki)
+					type: 2,
+					life: 297,
+					///
+					offdir: i * Math.PI / 4,   // 8 launchers, evenly spaced (diep_wiki)
+					offx: 0,
+					canonLength: 68,
+					rand: 0.3,
+					///
+					// Above a maxed Tri-Trapper (diep_wiki) - this tree has no "Tri-Trapper" class to
+					// anchor exactly, so this is our own Trapper's maxed trap speed
+					// (0.219408 x 1.66 = 0.36421728) with headroom, ours/flagged/approximate.
+					speed: 0.45,
+					pene: 25.5,        // 15 x tank's own 1.7 (diep_wiki: "30 HP, x15 tank")
+					damage: 17.454528,   // 3.6 x tank's own 4.84848 (diep_wiki: "25.2, x3.6 tank")
+					size: 12,
+					///
+					exitSpeed: 60,
+					weight: 3.5,
+					push: 0.27426,
+					back: 0
+				}));
+				this.cannons = c;
+			}
 		};
 	///
 	exports.defaultUps = [
@@ -2906,7 +3068,10 @@
 		'shape2',
 		///
 		'Summoner',
-		'Arena Closer'
+		'Arena Closer',
+		'Destroyer Dominator',
+		'Gunner Dominator',
+		'Trapper Dominator'
 	];
 
 })(typeof (exports) === 'undefined' ? function () { this['TanksConfig'] = {}; return this['TanksConfig'] }() : exports,

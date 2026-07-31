@@ -23,47 +23,16 @@ pointers back into the items below.*
 
 ## 🔵 Decided — queued for implementation (not yet built)
 
-2. **Next gamemodes: Domination/Maze get real new entity types.** Split in two — the wall half and
-   the Maze room built on it landed 2026-07-30 (see #26), but #26's wall *geometry and bullet
-   behaviour were reopened 2026-07-31 as wrong* (see #26 for the correction) — the structure/
-   Dominator half is still open and redesigned (see #27 below).
-   - **`KIND.WALL` and the `Maze` room — SHIPPED, 2026-07-30 (entity type) and 2026-07-30 (the
-     room itself, see #26 for its own writeup).** A static circular "stud" entity
-     (`entities/Wall.js`) — everything in this codebase's collision pass is a circle, so a wall is
-     a chain of these, same convention as every other entity kind. `public/SHARE/kinds.js`'s
-     `KIND.WALL`, `rooms/Room.js`'s `INSTANCE.walls` `SlotMap` (which is all it took to wire
-     quadtree insertion/collision pairing/the update pass — those three loops already iterate
-     `for (const kind in this.INSTANCE)` with no kind filter), a `Walls` wire record
-     (`SocketSchema.js`, `{x,y,size}` only — no hp/color/states, since a wall never changes after
-     spawn), and client rendering (`entities.js`'s `Wall` class, `drawings.js`'s `Drawings.wall`,
-     `config.js`'s `Palette.wall`). Physics live entirely in the *mover's* own `collision()` arm
-     (`entities/Player.js`, `entities/Bullet.js`) since `Wall` itself never reacts: normal/tangential
-     vec decomposition, `WALL_BOUNCE = 0.4` (dimensionless ratio, self-referential to the live vec —
-     deliberately *not* wrapped in `tick.impulse()`/`tick.perTick()`, unlike every other knockback in
-     the tree, since it carries no `REF_TICK_MS`-denominated units of its own; see nuance 39) and
-     `WALL_FRICTION = 0.85` (a genuine per-reference-tick decay, so it *does* go through
-     `tick.drag()`) — both in `lib/constants.js`, flagged as ours, not diep's (diep_wiki gives the
-     behaviour, no numbers). Zero body damage in both arms. A base drone dies instantly on contact
-     (`this.destroy = tick.DES`, no physics); Arena Closers (and, now the Maze room can spawn them,
-     their own bullets too) pass through for free via the `this.closer` guard; Crashers pass
-     through by omission (no `KIND.WALL` case needed on either side). Tested directly
-     (`test/rooms.js`'s `wallTests()` for the entity type, `mazeTests()` for the room) rather than
-     only through a live match.
-   - **Structure/Dominator — still open, redesigned.** Originally scoped as a second static `kind`
-     (`KIND.STRUCTURE`); a Dominator is actually a **stationary tank**, not static geometry — it has
-     HP, regen, cannons, an AI that aims/leads/fires, and a capture state machine. The right template
-     is `CONFIG.BOSS`/`CONFIG.CLOSER` (`lib/gameAI.js`): an ordinary `Player` with custom
-     `motion`/`update` bound on at spawn, reusing `Player.shoot()`'s cannon machinery, the same way
-     `createBoss()` and Tag's Arena Closers (#28) already work — not a new entity kind. Needs its own
-     session: three cannon variants (#27), a neutral/team/team capture state machine, shot-leading
-     AI, and (diep confirms, and it's already true in this codebase's `sandbox`/`;`-god pattern) a
-     Dominator should be spawnable in Sandbox too for testing without a real Domination match.
+*Nothing queued right now.* The last entry here (old #2, Domination/Maze's new entity types) split
+into #26 (Maze/`KIND.WALL`) and #27 (Domination/Dominator) as each half's own scope firmed up, and
+both are now fully documented at their own numbers below — deleted here rather than kept as a
+redundant pointer, per this file's own rule that a fully-resolved entry doesn't linger.
 
 ## 🟠 Wiki cross-check: GAME MODES — pick what goes in, strike what doesn't
 
 *Source: `diep_wiki/` (`Game Modes.txt`, `Maze.txt`, `Domination.txt`, `Dominator.txt`,
 `Polygons.txt`, `Stats.txt`). Official game only. This is a menu, not a plan: nothing here is
-decided. We currently ship **ffa / 2team / 4team / boss / sandbox**.*
+decided. We currently ship **ffa / 2team / 4team / boss / sandbox / tag / maze / domination**.*
 
 | diep mode | we have | notes |
 |---|---|---|
@@ -72,7 +41,7 @@ decided. We currently ship **ffa / 2team / 4team / boss / sandbox**.*
 | 4 Teams | ✅ | — |
 | Sandbox | ✅ | ours lacks diep's cheat keys, below |
 | Maze | ✅ | shipped, item 26 |
-| Domination | ❌ | item 2's Dominator-as-stationary-tank work, still open |
+| Domination | ✅ | shipped, item 27 (its `H`-key piloting mechanic designed but not built) |
 | Tag | ✅ | shipped, item 28 |
 | Breakout | ❌ | tile/turf war, needs a claimable grid |
 | Capture the Flag | ❌ | needs a carryable entity + 3 bases/team |
@@ -158,31 +127,127 @@ human correction, and need a real redesign session — do not assume the fix is 
   through walls and can shoot through double corners at exactly 45° — nothing in this tree's
   collision model special-cases a barrel's position at all, so there is no such gap to begin with.
 
-**27. Domination — what the mode actually needs** (feeds item 2's Dominator work, redesigned —
-a Dominator is a **stationary tank** (`CONFIG.BOSS`/`CONFIG.CLOSER` pattern, `lib/gameAI.js`: an
-ordinary `Player` with custom `motion`/`update` bound on at spawn, same as `createBoss()` and Tag's
-Arena Closers, #28), not a new static `kind` — it has HP, regen, cannons and an AI, none of which a
-static entity has. Should be spawnable in Sandbox too, the same way a boss already is there):
-- **4 Dominators**, stationary, on a 2-team map. Neutral (yellow) until captured; capture = drop
-  HP to 0 and land the last blow. An **enemy** Dominator takes **two** knockdowns — first back to
-  neutral, then to yours. Capturing refills its health, despawns its projectiles, recolours it.
-- **Stats:** base health **5998**, **+2/level**, level 75 → **6148 HP**, weak regen, no upgrades,
-  **no recoil**, cannot move.
-- **Three variants**, each with its own barrels and numbers:
-  - *Destroyer Dominator* — 1 cannon; penetration **200 HP (×100 tank)**, damage **70/hit
-    (×10 tank)**, Hybrid-sized bullet, reload ≈ Hybrid at 3 points, bullet speed below Destroyer's.
-  - *Gunner Dominator* — 3 cannons; penetration **10 HP (×5 tank)**, damage **7 (×1 tank)**, high
-    reload, normal bullet speed.
-  - *Trapper Dominator* — 8 launchers, evenly spaced; trap health **30 (×15 tank)**, trap damage
-    **25.2 (×3.6 tank)**, trap speed above a maxed Tri-Trapper, reload = Trapper at 0 points,
-    auto-fire always on.
-- **AI:** targets nearest enemy, holds until it leaves FoV, re-targets on capture or when the
-  current target stops damaging it, and **leads its shots**. Prioritises players, falls back to
-  polygons/bosses/closers. Neutral Dominators cannot damage shapes or bosses. FoV roughly
-  Sniper-to-Hunter range depending on variant.
-- **Player control:** `H` pilots an uncontrolled friendly Dominator, one player at a time, at the
-  cost of your own tank — a real input/ownership path, worth deciding separately from the rest.
-- XP gain is **doubled** in this mode.
+**27. Domination — SHIPPED 2026-07-31**, except the `H`-key piloting mechanic (below), which is
+**designed but deliberately not built this session** — the user asked for the design call to be
+made without the implementation, so its own subsection below is a decision record, not a shipped
+line. A Dominator is a **stationary tank** (`CONFIG.BOSS`/`CONFIG.CLOSER` pattern, `lib/gameAI.js`'s
+`CONFIG.DOMINATOR`: an ordinary `Player` with `motion`/`update` bound at spawn, same as
+`createBoss()` and Tag's Arena Closers, #28), not a new static `kind`.
+- **4 Dominators, stationary, on a 2-team map — SHIPPED.** `rooms/Domination.js` extends
+  `rooms/TwoTeam.js` (a new `extraRules` constructor param on `TwoTeam` merges over its rules
+  object — `{gm:'domination', xpMul:2}` — rather than duplicating TwoTeam's whole base/drone/colour
+  block for two fields) and places all 4 from its own `build()` hook, the same pre-tick hook
+  `rooms/Maze.js`'s wall generation runs from. **Layout is a loose diamond around the arena centre,
+  untuned by design** — diep_wiki/Domination.txt gives 4 Dominators and no coordinates at all, the
+  same footing Maze's wall placement shipped on (#26 as it stood before its own reopening) — due a
+  real playtest pass once a human can see the map.
+  Neutral (yellow, team 2 — `DOMINATOR_NEUTRAL_TEAM` in `lib/gameAI.js`) until captured; capture =
+  drop HP to 0 and land the last blow. An **enemy** Dominator takes **two** knockdowns — first back
+  to neutral, then to yours; a **neutral** one takes **one**. Capturing refills its health, despawns
+  its projectiles (a `bull.destroy = tick.DES` sweep over `INSTANCE.bullets` keyed on `origin.oId`),
+  recolours it (a normal `this.team` write — `entityColor()`/`leaderColor()` already read team,
+  no client change needed). All of this is `lib/gameAI.js`'s `dominatorCapture()`, which runs
+  instead of the ordinary death path the moment `update()` sees `destroy` set — `collision()`
+  itself is the unmodified `entities/Player.js` method, so a Dominator takes damage exactly like
+  any other `Player`; only what happens at 0 HP is replaced. A knockdown credited to a non-player
+  (e.g. `murder = ['objs', ...]`, a shape's own body damage) heals it with no team change, since
+  there's no team to credit.
+- **Stats — SHIPPED.** Base health **5998**, weak regen (diep_wiki/Stats.txt's own 0-Regen-point
+  linear/hyper rates, `entities/Player.js`'s identical formula reimplemented rather than shared,
+  since a Dominator's `update()` is fully replaced and never reaches `Player.prototype.update()`),
+  no upgrades (nothing ever calls `upgrade()`), **no recoil** (`back: 0` on every cannon), cannot
+  move — enforced two ways: `motion()` is a real no-op, AND `update()` snaps `x`/`y` back to the
+  spawn point and zeroes `vec` every tick, since `entities/Player.js`'s own tank-vs-tank overlap
+  resolution (nuance 44) moves BOTH bodies on contact regardless of either one's `motion()`, so a
+  ramming tank would otherwise still shove a "stationary" Dominator a little on every hit.
+  **The "+2/level, level 75 → 6148 HP" figure is not implemented** — a Dominator never levels (no
+  XP-driven growth path in its own `update()`), and this engine's level cap (45) never reaches
+  diep's hypothetical level 75 anyway; 5998 is used as a flat constant.
+  **Its body is a boss-style circle, `size: 64`, the same stand-in `createBoss()` uses — flagged
+  unsatisfactory by a human, see #51.**
+- **Three variants — SHIPPED**, `public/SHARE/TanksConfig.js` (client + server, `exports.list`),
+  each reusing the existing auto-turret `DETEC`/`autoDir`/`autoShoot` machinery Auto Gunner/Auto
+  Trapper already use rather than any bespoke targeting code (see the AI paragraph below).
+  **Numeric methodology, flagged rather than silent:** diep_wiki/Dominator.txt states pene/damage as
+  multiples of "a tank" — diep's own universal 0-point bullet baseline, `MEASUREMENTS.md`'s pinned
+  2 HP / 7 damage per loop. Bullet magnitudes aren't diep-adopted in this tree yet (`MEASUREMENTS.md`'s
+  **M1**), so — the same call #17/#18's body-damage-magnitude fix already made for an identical
+  problem — every multiple is applied to **our own** corresponding live number (Basic's own
+  `can.pene` 1.7 / `can.damage` 4.84848, the closest thing this engine has to "a tank's" baseline
+  bullet) rather than diep's raw absolute figure, which would land on the wrong scale next to every
+  other cannon in the table.
+  - *Destroyer Dominator* — 1 cannon; pene **170** (100× 1.7), damage **48.4848** (10× 4.84848),
+    Hybrid-sized bullet (`size: 27`), reload **46** (Hybrid's own 60 at 3 Reload points,
+    `round(60 × (1 − 3×0.0788571))`), bullet speed **0.2896128** (Destroyer's own 0.321792 × 0.9 —
+    diep_wiki gives no figure, only "below Destroyer's"; **ours, flagged, approximate**).
+  - *Gunner Dominator* — 3 cannons, evenly spaced (120° apart, not Gunner's own forward-cross
+    layout); pene **8.5** (5× 1.7), damage **4.84848** (1× 4.84848), reload **54** ("high reload",
+    diep_wiki gives no number — 2× Gunner's own base 27, **ours, flagged**), Gunner's own "normal"
+    bullet speed (0.511936).
+  - *Trapper Dominator* — 8 launchers, evenly spaced; trap pene **25.5** (15× 1.7), trap damage
+    **17.454528** (3.6× 4.84848), reload **25** (Trapper's own base, at 0 points), auto-fire always
+    on (`auto: 1`). Trap speed **0.45** — "above a maxed Tri-Trapper" (diep_wiki), but this tree has
+    no "Tri-Trapper" class to anchor exactly, so this is our own Trapper's maxed trap speed
+    (`0.219408 × 1.66 = 0.36421728`) with headroom — **ours, flagged, approximate**.
+  FoV (each variant's `DETEC.size`/`maxDis`, and `screen`): Destroyer 1664 (Sniper's own screen),
+  Gunner 1920 (Assassin's, a mid-band stand-in), Trapper 2208 (Ranger's, this tree's closest analog
+  to diep's "Hunter") — diep_wiki says only "roughly Sniper-to-Hunter range depending on variant",
+  so all three are **ours, flagged, approximate**.
+- **AI — SHIPPED, and cheaper than the spec first read.** Targeting/leading/FoV-hold needed **no
+  bespoke code**: `entities/Player.js`'s own `shoot()` already does exactly that for any class whose
+  cannons carry `autoDir`/`autoShoot` (the same machinery Auto Gunner/Auto Trapper already ship on)
+  — the class's own `CLASS[...].DETEC` picks the nearest target in priority-type order and holds it
+  until it dies or leaves `DETEC.maxDis`, and `shoot()`'s `autoDir` branch already leads a moving
+  target the way an ordinary auto-turret does. What `lib/gameAI.js`'s `dominatorUpdate()` actually
+  adds: dropping a target that has stopped shooting back (a new `lastAttacker` field,
+  `entities/Player.js`'s `collision()`, written whenever hp actually drops — inert for every
+  ordinary `Player`, the one consumer being this reader; `DOMINATOR_RETARGET_IDLE` = 3s, diep_wiki
+  gives no number, **ours, flagged**), and refusing a shape/boss target while neutral (the simplest
+  correct statement of "neutral cannot damage shapes/bosses": a bullet that never fires at one can't
+  damage one).
+  **Simplification, flagged rather than silent:** "falls back to polygons/bosses/closers" reads as a
+  THIRD priority tier below ordinary players; a boss/closer is a `KIND.PLAYER` instance in this
+  engine (flagged `.boss`/`.closer`), so `DETEC`'s own type-order bucketing only gives two tiers
+  (players-including-bosses/closers, then objects), not three. Left this way deliberately rather
+  than hand-rolling a second search past the shared `Detector` — a boss/closer is rare enough that
+  the distinction is unlikely to matter in a live match.
+- **Sandbox spawnability — SHIPPED**, the same pattern as `summonRandBoss`: a `summonDominator`
+  admin command (`lib/Controller.js`), optionally naming a variant (`destroyer`/`gunner`/`trapper`),
+  calling the same `createDominator()` any Domination room uses.
+- XP gain is **doubled** — SHIPPED (`rules.xpMul: 2`, the same field Tag's ×3 already uses).
+- **`H`-key piloting — DESIGNED, NOT BUILT** (by explicit request this session; a Dominator has to
+  exist before this makes sense to build against). The design call, so a future session doesn't
+  have to re-derive it:
+  - **What "at the cost of your own tank" means.** Piloting doesn't move a socket's control from one
+    live `Player` object to another — it can't, cleanly, without duplicating every input-handling
+    site. Instead, reuse `entities/Player.js`'s existing `state.disconnect` mechanic *without*
+    actually disconnecting the socket: the moment a human's own tank is vacated, set
+    `state.disconnect = 1` on it (the same flag a real disconnect sets), which already makes
+    `motion()` ignore WASD and `update()` chip its HP down over time (see `update()`'s
+    `this.state.disconnect` branch) — so the vacated tank sits idle and slowly dies exactly the way
+    an abandoned connection's tank already does. That *is* the cost the wiki phrase describes, for
+    free, with no new decay mechanic to invent.
+  - **What piloting actually grants.** A Dominator "cannot move" even while piloted — diep's own
+    Dominator is permanently immobile regardless of who's notionally driving it, so piloting is
+    **aim and fire only**, not a movement grant. Concretely: temporarily rebind the target
+    Dominator's `motion`/`update` from `lib/gameAI.js`'s `CONFIG.DOMINATOR` functions to ordinary
+    `Player.prototype.motion`/`update` would be wrong (it would let the "stationary" tank move); the
+    right shape is a THIRD small function pair — reuses `dominatorUpdate`'s regen/idle bookkeeping
+    but reads real `this.inputs.mouse_x/mouse_y/mouseL` instead of running the auto-turret DETEC
+    scan, i.e. `shoot()`'s ordinary manual-fire path instead of its `autoDir` branch. `motion()`
+    stays the same no-op either way.
+  - **Ownership/one-at-a-time.** A `pilotedBy` field on the Dominator instance (the piloting
+    socket's `id`), set on entry and checked before honouring another player's `H`; cleared when the
+    pilot's own vacated tank finally dies (the `state.disconnect` chip damage above) or presses `H`
+    again to return. The socket's own `oId` is NOT reassigned — net/gameSocket.js keeps routing that
+    socket's input packets to the SAME slot it always has (the pilot's own now-idle tank); what
+    changes is which entity's `inputs` object those packets actually get copied onto (a redirect at
+    the input-application site, not a slot swap), and which entity the view/camera centres on for
+    that viewer specifically (`getBuffer()`'s per-viewer main entity).
+  - **Explicitly out of scope for the design call:** the exact input-application redirect site
+    (`net/gameSocket.js` vs `rooms/Room.js`), and whether `H` targets "nearest friendly Dominator in
+    range" or requires being adjacent/touching one — both are implementation details for whichever
+    session actually builds this, not decisions that change the shape above.
 
 **28. Tag — SHIPPED** (`rooms/Tag.js`). 4 teams, no bases, random spawns. Killing a player
 **converts them to your team** on respawn; dying to a polygon keeps your colour; suiciding into a
@@ -197,7 +262,9 @@ Arena **shrinks every ~12–13 s**. XP ×3.
   `respawn()` no-ops once closing, so the match ends by the room going empty and self-destructing
   the normal way. **`CLOSER_COUNT` is 4, not diep's "up to 16"**: this room's 30-slot cap (10 join
   + 16 seated bots) usually can't fit 16 more, and an immortal Closer never needs replacing, so a
-  smaller burst hunts a match this size down just as certainly, only slower.
+  smaller burst hunts a match this size down just as certainly, only slower. **Its body is a
+  boss-style circle, `size: 64`, the closest tank-scale stand-in this tree had — flagged
+  unsatisfactory by a human, see #51.**
 - The invisibility floor (`rules.invisFloor`, `rooms/Tag.js`'s `INVIS_FLOOR`) replaces the hard-0
   stealth floor in Tag only — diep_wiki gives no number for it, so this value is ours, flagged as
   such rather than presented as measured.
@@ -215,9 +282,19 @@ camping-reset rule that instakills squatters) and Capture the Flag (3 bases/team
 a mid-map barrier that drops after a few minutes, first to 10). Both are bigger than Maze and
 Domination combined. Listed for a complete roster, not because they're next.
 
-**Sandbox gaps** (ours exists but is thinner than diep's): `K` level up (hold to repeat, cap 45),
-`\` cycle classes, `O` self-destruct, `;` god mode, party-link invites, arena size and shape count
-scaling with player count, and bosses still spawning after 50–60 minutes.
+**Sandbox gaps — the four cheat keys SHIPPED 2026-07-31, the rest still open.** `K`/`O`/`\`/`;`
+(`net/gameSocket.js`'s keydown/keyup dispatch, `entities/Player.js` for the actual behaviour,
+all sandbox-gated the same way `O` always was) are done: `K` is now a genuine held input
+(diep's own hold-to-repeat, climbing one level every `SANDBOX_LEVELUP_TICKS` — 200ms, **ours**,
+diep gives no rate) rather than the instant jump-to-cap it used to be; `O` self-destruct was
+already there and is unchanged; `\` (`Player.cycleClass()`) previews any real playable tank with
+none of `upClass()`'s tree/level gating, filtered off `TanksConfig.js`'s `exports.list` so it never
+lands on a dev placeholder or the boss/Closer/Dominator entities; `;` toggles `dev.god`, wired
+directly into `collision()`'s existing (previously dead — nothing ever set `option.type`) repulsion
+branch as a same-shape guard to `dev.ghost`/`this.closer`, so a god-mode player takes no consequence
+from any contact and shoves whatever touched it away. Tested directly (`test/rooms.js`'s
+`sandboxTests()`). **Still open, and NOT touched by this pass:** party-link invites, arena size and
+shape count scaling with player count, bosses still spawning after 50–60 minutes.
 
 ## 🟢 Untested — real risk, nobody has watched these happen
 
@@ -299,6 +376,23 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
      (winners included), are unkillable, one-shot-ish anything they touch, and that the room
      actually empties and self-destructs. **Stealth classes can't fully vanish here** — a
      `Manager`-class tank should stay faintly visible instead of invisible.
+   - **Domination is a new mode and nobody has played it** (#27). Pick it in the menu, confirm 4
+     yellow (neutral) Dominators sit between the two bases, XP ×2. Shoot one down to 0 HP and
+     confirm it flips straight to your team and refills; have the enemy team knock YOUR captured
+     Dominator down and confirm it goes back to neutral first, not straight to them (two knockdowns
+     for an enemy-held one, one for a neutral one). Confirm a Dominator's own bullets vanish the
+     instant it flips. Confirm it never physically moves even when several tanks ram it at once.
+     Judge the untuned diamond layout and the three variants' feel (Destroyer's single heavy
+     cannon, Gunner's 3-barrel spread, Trapper's 8-launcher ring) against diep — every approximate
+     number here (reload/speed stand-ins where diep_wiki gave only a qualitative comparison) is
+     flagged at the item itself, not a considered final tune. `H`-key Dominator piloting is
+     designed (#27) but not built — nothing to test yet.
+   - **Sandbox's four cheat keys are code-tested, not browser-played.** In a Sandbox room: hold
+     `K` and confirm you visibly climb one level at a time (not an instant jump), stopping dead at
+     45; press `\` repeatedly and confirm it cycles through real tanks only, never a blank/debug
+     silhouette; press `;` and confirm you shove other tanks/bullets away on contact and take no
+     damage from anything touching you, and that pressing it again turns it back off; `O` is
+     unchanged (already-shipped self-destruct).
    - **Incoming bullets should now arrive when they look like they arrive** (#24b) — a pure *feel*
      check. Stand still and let a bot shoot you; it should connect on the frame it visually touches
      you, not slightly before. Judge under a throttled connection too. **Your own bullets are
@@ -356,10 +450,28 @@ scaling with player count, and bosses still spawning after 50–60 minutes.
     (`boss` mode, or `summonRandBoss`), not a mechanical sync. `test/tanks.js` whitelists all four
     `Summoner` cannons for exactly this reason.
     **The same check applies to every future boss.** `lib/gameAI.js`'s `CONFIG.BOSS` list has one
-    entry (Summoner) today, but item 2's Domination/Maze work and any later boss will hit the same
-    tension the moment its body is drawn at a non-default `size` (`createBoss()` hardcodes `64` for
-    all bosses today) — check the drawn-height-vs-spawn-radius gap deliberately for any new boss
-    cannon table instead of assuming the ordinary 0-12 band applies.
+    entry (Summoner) today, but any later boss will hit the same tension the moment its body is
+    drawn at a non-default `size` (`createBoss()` hardcodes `64` for all bosses today) — check the
+    drawn-height-vs-spawn-radius gap deliberately for any new boss cannon table instead of assuming
+    the ordinary 0-12 band applies. #51 below is this same tension arriving in practice, for two
+    entities that aren't bosses at all.
+
+51. **Arena Closer and Dominator both reuse the boss's stand-in body — a human has now looked at
+    both and flagged them as unsatisfactory: shape, size, and behaviour all worth revisiting.**
+    Neither diep_wiki's Arena Closer page nor its Dominator page states a literal shape/hitbox, so
+    both were given the one large-stationary/scripted-tank body this tree already had a convention
+    for: `createBoss()`'s circular `size: 64` (`rooms/Tag.js`'s `createCloser()` calls it explicitly
+    "the closest tank-scale reference already modelled, for a tank the wiki calls Dominator-sized";
+    #27's `createDominator()` made the identical call, "the closest existing convention for a large,
+    non-levelling scripted tank"). Nuance 42 and #29 already predicted this tension would recur for
+    any future boss-pattern entity — it now has, twice, and a human's read is that the stand-in
+    doesn't hold up for either one. **No specifics decided yet** — "shape/size/behaviour" was flagged
+    in the moment, not itemised — so treat this as "needs its own look with `diep_wiki`/reference
+    material open," not a scoped fix: what a real Arena Closer silhouette should be (diep's own page
+    may describe it better than "Dominator-sized"), whether Dominator's own body should differ from
+    a boss's circle at all (diep does have a real Dominator to reference, unlike the Summoner), and
+    whether either one's AI *behaviour* (not just its body) reads right against diep_wiki's own
+    description are all open questions for that session, not this note.
 
 ## ⚪ Nuances to iron out — small open threads, none of them blocking
 
@@ -448,11 +560,6 @@ than remembered. Anything that is genuinely a decision has its own numbered item
     `0.511936` vs the old `MOVE_ACCEL_BASE` `0.511941`; the retired tank-body knockback impulse
     `0.43881` vs `0.438816`, a bullet `speed` eight unrelated drone/trap cannons share.
 
-38. **`npm run lint` is unusable as a gate.** ~4984 errors, all inside the gitignored `reference/`
-    vendor dump, all predating this work. Lint the source explicitly instead:
-    `npx eslint entities lib rooms net public test server.js web`. Worth scoping the npm script or
-    adding `reference/` to the eslint ignore list at some point.
-
 39. **Constants are denominated per `REF_TICK_MS` (40 ms) and converted at the consumption site.**
     Getting the `lib/tick.js` category wrong (`perTick`/`impulse`/`drag`/`ticks`/`chance`/
     `quadratic`/`lead`/`smoothing`) doesn't fail loudly — the value just silently stops being
@@ -477,12 +584,15 @@ than remembered. Anything that is genuinely a decision has its own numbered item
     off-by-one that opened tier 1 at level 9. If a later reader "restores" the reference's
     expression, the gates silently become 14/29/44. `test/rooms.js` pins 15/30/45.
 
-42. **The Summoner boss is the only entity whose `motion()` is replaced rather than overridden.**
-    `rooms/Room.js`'s `createBoss()` does `b.motion = spec[0].bind(b)`, so a boss never reaches
-    `Physics.stepBody` and none of the tank movement work applies to it. Any *future* boss added to
-    `lib/gameAI.js`'s `CONFIG.BOSS` inherits that shape — decide deliberately whether it should,
-    alongside #29's drawn-barrel-vs-spawn-radius check (same "applies to every future boss"
-    property).
+42. **`motion()`/`update()` replacement (not override) is now a three-way pattern, not just the
+    Summoner's.** `rooms/Room.js`'s `createBoss()` does `b.motion = spec[0].bind(b)`, so a boss
+    never reaches `Physics.stepBody` and none of the tank movement work applies to it — Tag's
+    `createCloser()` (#28) and this session's `createDominator()` (#27) both deliberately made the
+    identical call for the same reason (an invincible chaser and a stationary tank have no business
+    running the WASD/friction integrator either). Any *future* entity built this way inherits the
+    same shape — decide deliberately whether it should, alongside #29's drawn-barrel-vs-spawn-radius
+    check (same "applies to every future boss-pattern entity" property) and #51 (both existing
+    non-Summoner uses of this pattern are already flagged unsatisfactory on shape/size/behaviour).
 
 44. **Tank-vs-tank positional overlap resolution — SHIPPED**, alongside #16's column. Kept as a
     *do-not-undo*: it's the one piece of collision behaviour in the tree with no diep reference

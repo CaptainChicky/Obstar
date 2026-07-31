@@ -81,15 +81,22 @@ function attach(httpServer, controller) {
 						tank.inputs[data.data.key] = !tank.inputs[data.data.key] * 1
 						break;
 					// Sandbox-only practice keys - inert everywhere else, so a modified client
-					// gains nothing by sending them outside a sandbox room.
+					// gains nothing by sending them outside a sandbox room. 'k' is a HELD input
+					// (like w/a/s/d) rather than a one-shot jump to max: entities/Player.js's own
+					// update() climbs one level per interval while it stays down, diep's own
+					// hold-to-repeat convention rather than a snap to the cap. 'o'/'classcycle'/
+					// 'god' are one-shot/toggle actions applied directly here.
 					case 'k':
-					case 'o': {
+						tank.inputs.k = 1;
+						break;
+					case 'o':
+					case 'classcycle':
+					case 'god': {
 						if (tank.id.GM !== 'sandbox') { break; }
-						const room = controller.server[tank.id.GM][tank.id.sId];
-						if (data.data.key === 'k') {
-							tank.xp = room.XPLVL[room.XPLVL.length - 1];
-						} else {
-							tank.hp = 0;
+						switch (data.data.key) {
+							case 'o': tank.hp = 0; break;
+							case 'classcycle': tank.cycleClass(); break;
+							case 'god': tank.dev.god = !tank.dev.god; break;
 						}
 						break;
 					};
@@ -110,7 +117,8 @@ function attach(httpServer, controller) {
 					case 'arra':
 					case 'arrd':
 					case 'mouseL':
-					case 'mouseR': {
+					case 'mouseR':
+					case 'k': {
 						tank.inputs[data.data.key] = 0;
 						break;
 					};
