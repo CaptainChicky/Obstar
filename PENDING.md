@@ -66,12 +66,10 @@ moment. `tickArena()` keeps `baseSize`/`nestScale` current as the map lerps but 
 150 gu starting floor and freeze it there while the arena grows around it. Fixing it for real means
 making `dronePosts` re-derive from the live map. Sandbox and Tag never hit this (no bases).
 
-### 6. Shape mass-divisor vs diep's absorption
-`entities/Objects.js` moves a shape through a `weight` mass divisor (1 Square / 4 Pentagon / 100
-boss shape); diep has no mass, it has `absorbtionFactor`. Also open on the same axis: the
-tank-vs-shape arm has no positional overlap resolution (the tank-vs-tank arm does). Against a
-100-divisor Alpha Pentagon the answer has to be "the tank moves", which changes shape-farming feel
-in every mode. → plan D7/D8.
+### 6. Tank-vs-shape has no positional overlap resolution
+Still open (unrelated to the mass-divisor question resolved by plan D7/D8): the tank-vs-tank arm
+resolves positional overlap directly (§3), the tank-vs-shape arm does not — a tank can stand inside
+a shape's hitbox, held apart only by whatever knockback impulse is currently in flight.
 
 ### 7. Base drones outrun everything, by design
 `BASE_DRONE_CHASE_SPEED` is diep's own flat **756 u/s** (`BaseDrones.ts`, `bullet.speed 2.7`),
@@ -138,6 +136,25 @@ stand-in, and **the three columns do not share one mapping** — you cannot reco
 - **Summoner's whole stat block, body, drift and aggro model** — diep has no boss of this shape.
   Its `screen / 30` aggro radius, the `/ level` scaling and the 0.5625 ellipse are all unreferenced.
   → plan X3.
+- **The Crasher Zone/Pentagon Nest are circles, not diep's squares.** diep's own zone test is
+  `max(|x|,|y|) < R/10` (a square region) - kept circular here (`entities/Objects.js`'s `'bull'`
+  case, `rooms/Room.js`'s `createObj()`) for consistency with every other nest/carve-out in the
+  tree, which are all circles. → plan S2.
+- **Square/Triangle corner nests are kept on top of diep's zones, not replaced by them** - a
+  deliberate user call (plan K5): diep decides a shape's type purely from its landing point, with
+  no concept of "Squares live NE". Ours does, and stays, alongside diep's own Pentagon
+  Nest/Crasher Zone radii.
+- **Shape edge-avoidance turning snaps to target instead of diep's literal fixed-sign increment.**
+  `AbstractShape.ts`'s `orbitAngle += orbitRate` is unconditional even when it overshoots the
+  target (diep's own `rotationDir` sign can occasionally send a shape most of the way around
+  before it lands) - `entities/Objects.js`'s port instead clamps the last step to land exactly on
+  the target angle, so a shape can't overshoot and oscillate. Same visible "turn away from the
+  wall" behaviour, a deliberately gentler mechanic underneath. → plan S5.
+- **Respawn cadence closes 85% of the gap to diep's instant refill, not all of it**
+  (`RESPAWN_CATCHUP` in `rooms/Room.js`) - a deliberate user call (plan K6), keeping some of the
+  "farming visibly thins a patch out" feel rather than diep's "a nest never looks empty". The
+  400 ms `generate()` pass itself is also kept as our own engine-cost knob rather than switched to
+  diep's true per-(reference-)tick check.
 
 ---
 
@@ -154,15 +171,6 @@ They differ by ~14× in what they do with the same number, and the rewrite moved
 non-uniformly (×0.77 to ×12.8), so no single divisor carries the old behaviour through both.
 `rooms/Room.js`'s base drone sets both by hand (`weight 4.2`, `push 2`); its `push` is load-bearing
 — base drones hold a ring and would stack without it.
-
-### The `weight` column is a measurement at **1** Bullet Damage point, not 0
-diep computes `pushFactor = (7/3 + bulletDamagePoints) × bullet.damage × bullet.absorbtionFactor`
-(`Bullet.ts:86`). Our column reproduces the published table exactly at `bd = 1`, so the true
-0-point knockback is 0.7× today's column and the 7-point value is 2.8× — a **4× span we don't model
-at all**. If it's ever taken: replace `tick.impulse(other.weight / 3 * 1.6)` with
-`tick.impulse(other.weight * 0.112 * (7/3 + shooterBdPoints))`, which reduces to the current
-expression at `bd = 1` — it needs the bullet to carry its shooter's Bullet Damage point count.
-→ plan D7.
 
 ### `V_max = 10·A` is exact only at the 40 ms reference — the live 25 ms server runs 1.8% over
 `Physics.stepBody`'s steady state rises from 362.25 u/s (`d=1`) toward 380.1 (`d→0`); at the live

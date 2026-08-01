@@ -424,6 +424,9 @@ class Player {
 					Bull.closer = this.closer;
 					Bull.weight = can.weight;
 					Bull.push = can.push;
+					// Only read for type 0/2 (bullet/trap) at the receiving end - a drone's pushFactor
+					// is diep's own flat 4, not scaled by the shooter's Bullet Damage points (plan.md D7).
+					Bull.bdPoints = this.upNb[4];
 					this.room.createBullet(Bull, this)
 					// tick.impulse(), not tick.perTick(): this.vec is fed into Physics.stepBody, which
 					// re-scales it by dtTicks on every subsequent position step, so a one-shot impulse
@@ -724,15 +727,30 @@ class Player {
 				if (this.bot) {
 					this.lastBullet = other.origin;
 				}
-				// The one consumer of TanksConfig.js's `weight` column, which is diep's own
-				// Knockbackfactor table (grid squares per loop of contact) times 5.25. The `/ 3 * 1.6`
-				// here is the rest of that conversion: x 0.53333 turns the column into an impulse of
-				// `gu x 2.8`, the same form `back` takes, and a one-shot impulse on tank velocity
-				// displaces v0 x F/(1-F) = 10 x v0 units at the tank F = 10/11, so the round trip is
-				// `gu x 5.25 x 0.53333 x 10 / 28 = gu`. Edit either factor and the whole column has to
-				// be recomputed with it.
-				// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody.
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(other.weight / 3 * 1.6), tick.impulse(other.weight / 3 * 1.6))));
+				// A Dominator receives zero knockback here too (diep's `absorbtionFactor = 0`,
+				// plan.md D7) - this used to only be guarded on the KIND.PLAYER body-contact arm
+				// above, so a Dominator was still shoved by ordinary bullets. Damage below is
+				// unaffected, exactly like the KIND.PLAYER guard.
+				if (!this.dominator) {
+					// The one consumer of TanksConfig.js's `weight` column, which is diep's own
+					// Knockbackfactor table (grid squares per loop of contact) times 5.25. The `/ 3 *
+					// 1.6` here is the rest of that conversion: x 0.53333 turns the column into an
+					// impulse of `gu x 2.8`, the same form `back` takes, and a one-shot impulse on tank
+					// velocity displaces v0 x F/(1-F) = 10 x v0 units at the tank F = 10/11, so the
+					// round trip is `gu x 5.25 x 0.53333 x 10 / 28 = gu`.
+					// A true bullet/trap's push also scales with the shooter's Bullet Damage points
+					// now (diepcustom's Bullet.ts:86, plan.md D7): `weight` was authored at bd = 1
+					// (0.16 x (7/3 + 1) = 0.53333, the constant above), so scaling around that same
+					// anchor reproduces the table exactly at bd = 1 and diep's own 4x span (0.7x at
+					// 0 points, 2.8x at 7) either side of it. A drone (type >= 1) keeps the flat
+					// per-cannon `weight` value untouched - diepcustom's own Drone.ts overrides
+					// pushFactor to a flat 4 regardless of the shooter's points.
+					const pushBase = (other.type === 0 || other.type === 2)
+						? other.weight * 0.16 * (7 / 3 + other.bdPoints)
+						: other.weight / 3 * 1.6;
+					// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody.
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(pushBase), tick.impulse(pushBase))));
+				}
 				if (this.shield) { return; }
 				// `pene` no longer multiplies damage here (PENDING #18): entities/Bullet.js's own
 				// `pene -= tick.perTick(other.damage)` already makes a tougher bullet survive more

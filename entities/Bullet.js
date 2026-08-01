@@ -498,6 +498,11 @@ class Bullet {
 		// in public/SHARE/TanksConfig.js - see that file's header.
 		this.weight = 0;
 		this.push = 0;
+		// The shooter's Bullet Damage point count at the moment of firing (plan.md D7) - only a
+		// true bullet or trap's pushFactor scales with it (diepcustom's Bullet.ts:86); a drone
+		// overrides pushFactor to a flat 4 regardless, so this is read at exactly one site
+		// (entities/Player.js's KIND.BULLET arm) and only for `type === 0 || type === 2`.
+		this.bdPoints = 0;
 		this.damage = 0;
 		this.size = 10;
 		this.x = x;

@@ -43,6 +43,15 @@ const CRASHER_CHASE_ACCEL_SMALL = tick.quadratic(2.602 * 0.56);
 const CRASHER_CHASE_ACCEL_LARGE = tick.quadratic(2.64 * 0.56);
 // Crasher.ts's ai.viewRange 2000 du x 0.56 (plan.md S1) - was 500, under half diep's own range.
 const CRASHER_VIEW_RANGE = 1120;
+// diep's own edge-avoidance window and hold time (AbstractShape.ts:29,104-124, plan.md S5): 400/500
+// du x 0.56 = 224/280 units, and TURN_TIMEOUT 300 reference ticks. Unscaled by nestScale, same as
+// config.OOB_MARGIN - diep's own values are absolute, not arena-proportional, and every fixed-size
+// mode's arena already sits within 1% of diep's own (plan.md A1).
+const EDGE_TURN_INNER = 224, EDGE_TURN_OUTER = 280;
+const EDGE_TURN_TIMEOUT = tick.ticks(300);
+// The angle within which a turn is considered "arrived" and released back to ordinary idle drift -
+// diep's own 0.20 rad (AbstractShape.ts:83,119).
+const EDGE_TURN_DONE = 0.20;
 
 class Objects {
 	constructor(type, pos, id, map, room) {
@@ -70,6 +79,11 @@ class Objects {
 		// placement picture stays geometrically similar as the arena resizes. ffa's scale is 1.
 		this.marge = 280 * room.nestScale;
 		this.weight = 1;   // a mass divisor (this.x += vec.x/weight below), not a per-tick rate - not rescaled
+		// diep's own absorbtionFactor (Object.ts:287, plan.md D7/D8): the receiver-side term that
+		// scales an incoming collision impulse (kbMagnitude = this.absorb x attacker.pushFactor),
+		// read at every this.vec.add() site in collision() below. Unlike `weight`, it never touches
+		// idle drift/orbit - that stays governed by maxspeed alone, matching diep's own split.
+		this.absorb = 1;
 		switch (pos) {
 			case -1: {
 				// Carve-outs around the three polygon nests, at the same 28-unit grid pitch the
@@ -93,9 +107,18 @@ class Objects {
 				break;
 			}
 			case 'bull': {
-				// A 650..700 annulus around the origin, sampled directly rather than by rejection.
+				// diep's own Crasher Zone (ShapeManager.ts:51-99, plan.md S2): R/10..R/5 of the
+				// arena's own half-width, contiguous with the Pentagon Nest circle
+				// (rooms/Room.js's createObj(), same 630 x nestScale radius) rather than the old
+				// fixed 650..700 annulus, which was under half diep's own zone width. Area-uniform
+				// (sqrt of a uniform draw over the annulus's area), not radius-uniform, so density
+				// doesn't spike at the inner edge. diep's own zones are square (max(|x|,|y|) < R/10),
+				// not circular - kept circular here for consistency with every other nest/carve-out
+				// in the tree, which are all circles (PENDING).
+				const s = room.nestScale;
+				const rIn = 630 * s, rOut = 1249 * s;
 				const dir = Math.random() * Math.PI * 2;
-				const rad = 650 + Math.random() * 50;
+				const rad = Math.sqrt(rIn * rIn + Math.random() * (rOut * rOut - rIn * rIn));
 				this.x = Math.cos(dir) * rad;
 				this.y = Math.sin(dir) * rad;
 				this.pos = 1;
@@ -120,14 +143,20 @@ class Objects {
 			// clamps to maxspeed/2, its own fixed point (plan.md step 7).
 			case "sqr": this.size = 21.78; this.hp = 10; this.prize = 10; this.damage = 2; this.maxspeed = 1.12; break;
 			case "tri": this.size = 21.78; this.hp = 30; this.prize = 25; this.maxspeed = 1.12; this.damage = 2; break;
-			case "pnt": this.size = 29.70; this.hp = 100; this.prize = 130; this.maxspeed = 0.56; this.weight = 4; this.damage = 3; break;   // (weight is a mass divisor, not rescaled)
-			case "Bpnt": this.size = 79.20; this.hp = 3000; this.prize = 3000; this.maxspeed = 0.56; this.weight = 100; this.damage = 5; break;   // diep's Alpha Pentagon damagePerTick
+			// diep's Pentagon absorbtionFactor (Pentagon.ts:46-47, plan.md D8) - no `weight` mass
+			// divisor any more, idle drift is maxspeed alone now, matching diep's own split.
+			case "pnt": this.size = 29.70; this.hp = 100; this.prize = 130; this.maxspeed = 0.56; this.absorb = 0.5; this.damage = 3; break;
+			case "Bpnt": this.size = 79.20; this.hp = 3000; this.prize = 3000; this.maxspeed = 0.56; this.absorb = 0.05; this.damage = 5; break;   // diep's Alpha Pentagon damagePerTick/absorbtionFactor
 			// Bsqr/Btri have no diep counterpart (plan.md steps 6-7) - radius, hp, prize, damage and
 			// drift (maxspeed/rotationVal below) all left exactly as they were, flagged as ours; they
-			// inherit `this.damage`'s own default above rather than setting their own.
+			// inherit `this.damage`'s own default above rather than setting their own. Still on the
+			// old `weight` mass-divisor (plan.md D8 only re-derived the two real shapes above and
+			// Crasher below) - `this.absorb` stays at its neutral default of 1 for both.
 			case "Bsqr": this.size = 90; this.hp = 8000; this.prize = 2000; this.maxspeed = 0.01212; this.weight = 100; break;   // .01
 			case "Btri": this.size = 72; this.hp = 7000; this.prize = 1000; this.maxspeed = 0.01212; this.weight = 100; break;   // .01
-			case "bull": this.size = 13.86; this.hp = 10; this.prize = 15; this.maxspeed = 1.12; this.damage = 2;   // diep's Crasher damagePerTick, small and large alike
+			// diep's Crasher absorbtionFactor (Crasher.ts:48, plan.md D8) - small default here,
+			// overridden to the large value below on the large-crasher roll.
+			case "bull": this.size = 13.86; this.hp = 10; this.prize = 15; this.maxspeed = 1.12; this.damage = 2; this.absorb = 2;   // diep's Crasher damagePerTick, small and large alike
 				this.DETEC = new Detector(this, this.x, this.y, CRASHER_VIEW_RANGE, type = [KIND.PLAYER]); break;
 		}
 		this.coinReward *= parseInt(this.prize / 10);
@@ -148,6 +177,7 @@ class Objects {
 				this.hp = 30;
 				this.prize = 25;
 				this.crasherLarge = true;
+				this.absorb = 0.1;   // Crasher.ts:48 - large barely budges, vs small's 2 above (plan.md D8)
 			}
 		}
 		// Rarity roll. Checked rarest-first:
@@ -171,6 +201,11 @@ class Objects {
 		// rolled for exactly that and had no consumer until now.
 		this.rotationDir = Math.sign(Math.random() - 0.5);
 		this.vec = new Vec(tick.perTick(this.maxspeed), 0).rotate(Math.random() * Math.PI * 2);
+		// Edge-avoidance turning (plan.md S5) - 0 outside a turn; while turning, `turning` counts
+		// down from EDGE_TURN_TIMEOUT and `turnAngle` is the heading update()'s idle branch is
+		// steering this.vec toward.
+		this.turning = 0;
+		this.turnAngle = 0;
 		this.destroy = 0;
 		this.rx = this.x;
 		this.ry = this.y;
@@ -199,13 +234,17 @@ class Objects {
 		// and that fixed point (verified numerically) barely moves across TICK_MS 16/25/33/40, so a
 		// bare threshold against it stays meaningful without a runtime conversion.
 		const len = (this.vec.length() * this.weight < 0.4) ? 2.42424 : .48485;   // one-time-rescaled from 2 / .4
+		// Every impulse below lands in `this.vec` (this shape's own velocity), so every add is
+		// this shape RECEIVING a knockback - `this.absorb` (diep's absorbtionFactor, plan.md D7/D8)
+		// belongs on all of them, not just this one. `this.weight`'s mass divisor (update(), Bsqr/
+		// Btri only now) is unrelated - that's a position-step effect, this is a velocity one.
 		switch (other.kind) {
 			case KIND.PLAYER:
 				if (other.necro && this.type === 'sqr' && other.droneCount < CLASS[other.class].maxDrone + other.upNb[1]) {
 					this.destroy = 1;
 					return;
 				}
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(len), tick.perTick(len))));
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(len * this.absorb), tick.perTick(len * this.absorb))));
 				// An Arena Closer (PENDING #28) still shoves a shape out of the way (the impulse
 				// above) but diep_wiki is explicit that its body "can't harm shapes" - so the damage/
 				// kill half is skipped for it alone, the one KIND.PLAYER exception in this arm.
@@ -222,10 +261,10 @@ class Objects {
 				break;
 			case KIND.OBJECTS:
 				if (other.type === 'bull') {
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(0.12121), tick.perTick(0.12121))));
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(0.12121 * this.absorb), tick.perTick(0.12121 * this.absorb))));
 					return;
 				}
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(len), tick.perTick(len))));
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(len * this.absorb), tick.perTick(len * this.absorb))));
 				break;
 			case KIND.BULLET:
 				if (other.necro && this.type === 'sqr') {
@@ -250,7 +289,7 @@ class Objects {
 				if (this.type[0] === 'B') {
 					break;
 				}
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(0.48485), tick.perTick(0.48485))));
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(0.48485 * this.absorb), tick.perTick(0.48485 * this.absorb))));
 				break;
 		}
 	}
@@ -278,7 +317,51 @@ class Objects {
 				.rotate(Math.atan2(target.y - this.y, target.x - this.x)));
 			this.DETEC.enabled = 0;
 		} else {
-			this.vec.rotate(tick.perTick(this.rotationVal));
+			// diep's own edge-avoidance (AbstractShape.ts:104-124, plan.md S5): within
+			// EDGE_TURN_INNER of any wall, turn to point straight away from the arena centre; within
+			// EDGE_TURN_OUTER of exactly one side, turn to run along it instead (diep's own four
+			// mutually-exclusive checks, inner-first). Replaces the old behaviour of hard-clamping
+			// position and zeroing the velocity component on contact, which piled shapes up on the
+			// edges instead of turning them away.
+			if (this.turning <= 0) {
+				const right = this.map.width / 2, left = -this.map.width / 2;
+				const bottom = this.map.height / 2, top = -this.map.height / 2;
+				let target = null;
+				if (this.x > right - EDGE_TURN_INNER || this.x < left + EDGE_TURN_INNER ||
+					this.y < top + EDGE_TURN_INNER || this.y > bottom - EDGE_TURN_INNER) {
+					target = Math.PI + Math.atan2(this.y, this.x);
+				} else if (this.x > right - EDGE_TURN_OUTER) {
+					target = Math.sign(this.rotationDir) * Math.PI / 2;
+				} else if (this.x < left + EDGE_TURN_OUTER) {
+					target = -Math.sign(this.rotationDir) * Math.PI / 2;
+				} else if (this.y < top + EDGE_TURN_OUTER) {
+					target = this.rotationDir > 0 ? 0 : Math.PI;
+				} else if (this.y > bottom - EDGE_TURN_OUTER) {
+					target = this.rotationDir > 0 ? Math.PI : 0;
+				}
+				if (target !== null) {
+					const diff = Math.atan2(Math.sin(target - this.vec.angle()), Math.cos(target - this.vec.angle()));
+					if (Math.abs(diff) >= EDGE_TURN_DONE) {
+						this.turnAngle = target;
+						this.turning = EDGE_TURN_TIMEOUT;
+					}
+				}
+			}
+			if (this.turning > 0) {
+				// diep's own 10x orbit-rate boost on the tick a turn starts (AbstractShape.ts:118),
+				// so the shape snaps onto its new heading rather than crawling into the turn.
+				const boost = (this.turning === EDGE_TURN_TIMEOUT) ? 10 : 1;
+				const diff = Math.atan2(Math.sin(this.turnAngle - this.vec.angle()), Math.cos(this.turnAngle - this.vec.angle()));
+				const step = tick.perTick(this.rotationVal) * boost;
+				// diep's own unconditional `orbitAngle += orbitRate` (a fixed-sign step, not a
+				// shortest-path one) - snap exactly to target instead of overshooting on the tick
+				// that would otherwise pass it.
+				this.vec.rotate(Math.abs(diff) <= Math.abs(step) ? diff : step);
+				this.turning -= 1;
+				if (Math.abs(diff) < EDGE_TURN_DONE) { this.turning = 0; }
+			} else {
+				this.vec.rotate(tick.perTick(this.rotationVal));
+			}
 			this.vec.limit(tick.perTick(this.maxspeed / 2), BODY_FRICTION)
 		}
 		this.x += this.vec.x / this.weight;

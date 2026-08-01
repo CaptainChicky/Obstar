@@ -4163,17 +4163,19 @@ function spawnSamplerTests() {
 			JSON.stringify(circles));
 	}
 
-	// 6. 'bull' placement (now direct polar sampling, not rejection) still lands in its annulus.
+	// 6. 'bull' placement (direct polar sampling, not rejection) lands in diep's own Crasher Zone
+	// annulus now (630..1249 units x nestScale, plan.md S2 - was a fixed 650..700 ring, under half
+	// diep's own zone width).
 	{
 		const before = room.INSTANCE.objs.size;
 		for (let i = 0; i < 50; i++) { room.createObj('bull', 0); }
 		const after = [...room.INSTANCE.objs.live()].slice(-50);
 		check('bull placement still landed 50 new objects', room.INSTANCE.objs.size - before === 50,
 			room.INSTANCE.objs.size - before);
-		check('...every one in the 650..700 annulus with pos === 1',
+		check('...every one in the 630..1249 Crasher Zone with pos === 1',
 			after.every((o) => {
 				const r = Math.hypot(o.x, o.y);
-				return r >= 650 && r <= 700 && o.pos === 1;
+				return r >= 630 * room.nestScale - 0.01 && r <= 1249 * room.nestScale + 0.01 && o.pos === 1;
 			}));
 	}
 

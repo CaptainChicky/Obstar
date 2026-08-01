@@ -143,6 +143,19 @@ function apportionShapes(total, mix) {
 	};
 }
 
+/*
+	diep refills a dead shape slot the very next tick, holding a flat population target
+	(ShapeManager.ts:112-118, plan.md S7) - effectively instant. generate()'s own per-type gates
+	below (RNG < 0.7/0.5/0.1 deciding whether a type is even checked this pass, plus a second
+	0.26/0.2 roll on top of THAT for a nest-cluster slot specifically) make ours trickle back in
+	over several passes instead. Decision: close 85% of the gap to diep's instant refill rather
+	than going all the way - PENDING logs why. `towardInstant(p) = p + 0.85 x (1-p)` scales every
+	gate below toward 1 by that fraction; the untouched gates (betaPentRng, the Bsqr/Btri 0.992
+	checks, bossRng) are rarity/special-spawn knobs, not the ordinary-shape cadence this is about.
+*/
+const RESPAWN_CATCHUP = 0.85;
+const towardInstant = (p) => p + RESPAWN_CATCHUP * (1 - p);
+
 // generate() is a simulation event, so it rides the simulation clock: one pass every this many fixed steps. These divide by the
 // actual wall-clock step (clock.STEP_MS, 25ms/40Hz), not a reference tick,
 // so they stay wall-clock-correct with no rescale of their own.
@@ -761,22 +774,22 @@ class Room {
 		if (RNG < 1) {
 			const obj = this.obj.sqr;
 			if (obj[0] < obj.max0) { this.createObj("sqr", 0); obj[0]++; }
-			if (obj[1] < obj.max1 && Math.random() < 0.26) { this.createObj("sqr", 1); obj[1]++; }
+			if (obj[1] < obj.max1 && Math.random() < towardInstant(0.26)) { this.createObj("sqr", 1); obj[1]++; }
 		}
 		///TRIANGLE///
-		if (RNG < 0.7) {
+		if (RNG < towardInstant(0.7)) {
 			const obj = this.obj.tri;
 			if (obj[0] < obj.max0) { this.createObj("tri", 0); obj[0]++; }
-			if (obj[1] < obj.max1 && Math.random() < 0.26) { this.createObj("tri", 1); obj[1]++; }
+			if (obj[1] < obj.max1 && Math.random() < towardInstant(0.26)) { this.createObj("tri", 1); obj[1]++; }
 		}
 		///PENTAGONE///
-		if (RNG < 0.5) {
+		if (RNG < towardInstant(0.5)) {
 			const obj = this.obj.pnt;
 			if (obj[0] < obj.max0) { this.createObj("pnt", 0); obj[0]++; }
-			if (obj[1] < obj.max1 && Math.random() < 0.2) { this.createObj("pnt", 1); obj[1]++; }
+			if (obj[1] < obj.max1 && Math.random() < towardInstant(0.2)) { this.createObj("pnt", 1); obj[1]++; }
 		}
 		///BULL///
-		if (RNG < 0.1) {
+		if (RNG < towardInstant(0.1)) {
 			const obj = this.obj.bull;
 			if (obj[1] < obj.max1) { this.createObj("bull", 0); obj[1]++; }
 		}

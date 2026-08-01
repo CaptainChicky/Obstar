@@ -151,10 +151,10 @@ proration on the final partial tick is a different number.
 reference ticks the way diep quantises it to its own. (b) is more faithful and makes every
 "N hits to kill" figure exactly reproducible; it costs a per-pair set per tick.
 
-### D7 — **[ADD] `absorbtionFactor` / `pushFactor` are not modelled per entity**
+### D7 — **[DONE] `absorbtionFactor` / `pushFactor` are now modelled per entity**
 
 diep's knockback is `receiveKnockback`: `kbMagnitude = this.absorbtionFactor × other.pushFactor`
-(`Object.ts:287`). We have a single `weight` column on the *bullet* and no receiver-side term at
+(`Object.ts:287`). We had a single `weight` column on the *bullet* and no receiver-side term at
 all. Missing receiver values, all from source:
 
 | entity | `absorbtionFactor` | `pushFactor` |
@@ -170,16 +170,25 @@ all. Missing receiver values, all from source:
 | Bullet | `bullet.absorbtionFactor` | `((7/3) + bulletDamagePoints) × bullet.damage × bullet.absorbtionFactor` |
 | Maze wall | — | 2, then `/= 0.3` |
 
-Consequences we currently don't have: small Crashers get flung (absorb 2), large ones barely move
-(0.1), Alpha Pentagons are nearly immovable, and knockback **scales 4× across the Bullet Damage
-stat** (0.7× at 0 points, 2.8× at 7) — our `weight` column reproduces diep only at exactly 1 point.
-The bullet needs to carry its shooter's Bullet Damage point count for this.
+**Implemented:** `entities/Bullet.js` bullets/traps now carry `bdPoints` (the shooter's Bullet
+Damage point count at fire time, `entities/Player.js`'s `upNb[4]`); the tank's `KIND.BULLET`
+collision arm derives pushFactor as `weight × 0.16 × (7/3 + bdPoints)` for `type 0`/`2` (a true
+bullet or trap — the table's `weight` column was authored at `bd = 1`, where `0.16 × (7/3+1) =
+0.53333`, the old flat constant, so this reproduces the table exactly at 1 point and the real 4×
+span either side of it), and keeps the old flat `weight / 3 * 1.6` for anything else (a drone's
+pushFactor is diep's own flat 4, not scaled by points). A Dominator's `absorbtionFactor = 0` now
+also guards the bullet-knockback arm, not just the tank-body one (it was previously still shoved by
+ordinary bullets). Mothership/Maze-wall rows have no entity to attach to yet (T2/A-chunk).
 
-### D8 — **[DIFF] `entities/Objects.js`'s `weight` mass-divisor has no diep counterpart**
+### D8 — **[DONE] `entities/Objects.js`'s `weight` mass-divisor replaced by real `absorbtionFactor`**
 
-We move shapes as `this.x += vec.x / weight` (1 / 4 / 100). diep has no mass; it has
-`absorbtionFactor` (D7). Replacing one with the other changes shape-farming feel in every mode.
-Decide whether the divisor goes away entirely when D7 lands, or stays as a custom layer.
+We used to move shapes as `this.x += vec.x / weight` (1 / 4 / 100), a divisor that suppressed a
+shape's *own* idle drift as well as its knockback response — diep only does the latter. **Decision
+(user-selected):** adopt diep's real `absorbtionFactor` for the four diep-native shapes — Pentagon
+0.5, Alpha Pentagon 0.05, Crasher small 2 / large 0.1 (previously undifferentiated), Square/Triangle
+default 1 — applied only at each `collision()` impulse site (`entities/Objects.js`'s new
+`this.absorb` field), while idle drift/orbit is now maxspeed-only, matching diep's own split.
+`Bsqr`/`Btri` (no diep counterpart, [KEEP]) were left on the old `weight` divisor exactly as before.
 
 ### D9 — **[OK, do not re-fix]** `LETHAL_EPS` (0.0001) at every hp/pene subtraction, and the shared
 proration factor in `rooms/Room.js`, are both diep's own (`Live.ts:83-85`, `:94`, `:110`). Do not
@@ -429,7 +438,7 @@ genuine threat that runs a level-1 tank down; ours drifts. Fix: give the Crasher
 state that adds `targettingSpeed` to velocity per tick and lets the normal `BODY_FRICTION`
 recurrence produce the 10× terminal, exactly like the tank integrator does.
 
-### S2 — **[BUG] Shape spawn zones are ours, not diep's**
+### S2 — **[DONE] Shape spawn zones are a diep/ours hybrid now**
 
 diep (`Misc/ShapeManager.ts:51-99`) decides a shape's **type from where it landed**, on one uniform
 random position over the whole arena:
@@ -448,9 +457,14 @@ Ours (`rooms/Room.js`'s `createObj()` + `entities/Objects.js`'s constructor):
 Interestingly our arena (`gu(451)` = 12628 units) is within 1% of diep's (22300 du = 12488 units),
 so diep's zone radii drop straight in.
 
-**Decision.** Diep's rule is simpler and self-balancing (density × zone area *is* the mix). Ours
-gives the square/triangle nests, which is a real gameplay feature nobody asked to lose. Pick one;
-if ours stays, at minimum widen the Crasher zone and put the Pentagon nest on diep's radius.
+**Implemented (user-selected hybrid):** the Pentagon Nest radius (`createObj()`'s existing `630 *
+nestScale`) already landed within 1% of diep's own `R/10`, so it was left as-is; the Crasher Zone
+(`entities/Objects.js`'s `'bull'` case) is now diep's real `R/10..R/5` annulus (`630..1249 *
+nestScale`, area-uniform sampling), replacing the old fixed 650–700 unit ring. The Square/Triangle
+corner nests are **kept** exactly as before — the user explicitly wants that identity preserved as
+an additional layer alongside diep's own zones, not replaced by diep's flat Fields mix. See PENDING
+for the two departures this leaves on record (nests kept on purpose; circular zones instead of
+diep's square `max(|x|,|y|)` ones, for consistency with every other nest/carve-out in the tree).
 
 ### S3 — **[OK]** Shape HP/XP/radius/`damagePerTick`/Shiny all confirmed exact against
 `{Square,Triangle,Pentagon,Crasher}.ts`. Radii are `du × 0.56` (Square/Triangle 21.78, Pentagon
@@ -465,21 +479,38 @@ so `public/client/entities.js` does a per-client cosmetic wobble in *frame* unit
 wire record needs an angle field. Low priority except that it blocks S1's crasher facing being
 server-authoritative.
 
-### S5 — **[ADD] Shape wall-avoidance turning**
+### S5 — **[DONE] Shape wall-avoidance turning**
 
 `AbstractShape.ts:104-124`: within 400–500 du of an arena edge a shape `turnTo()`s away, with a
 `TURN_TIMEOUT` of 300 ticks and a 10× orbit-rate boost while turning. Ours hard-clamps position and
 zeroes the velocity component — shapes pile up on the edges instead of turning away from them.
 
+**Implemented:** `entities/Objects.js`'s idle-drift branch now runs diep's own four-way edge check
+(inner ring at 224 units turns straight away from the arena centre; the four 280-unit side bands
+turn to run along that side instead) before falling back to ordinary wander, with the same 10×
+rate boost on the tick a turn starts and the same 300-reference-tick hold. The old hard
+position-clamp/zero-velocity code at the bottom of `update()` is kept as a last-resort safety net
+(covers a chasing Crasher, which bypasses this idle branch entirely) rather than removed - see
+PENDING for the one simplification this took versus diep's literal mechanic.
+
 ### S6 — **[KEEP]** `Bsqr` / `Btri` (boss square / boss triangle) have no diep counterpart. `Bpnt`
 is diep's Alpha Pentagon and *is* diep-derived. Keep the first two; don't let a fidelity pass
 delete them.
 
-### S7 — **[DIFF] Respawn cadence**
+### S7 — **[DONE] Respawn cadence**
 
 diep refills any dead shape slot on the very next tick to a flat `wantedShapes = 1000`
 (`ShapeManager.ts:112-118`). We run `generate()` every 400 ms with per-type caps and probabilistic
 gates (`Math.random() < 0.26`). Ours trickles; diep's is instant. Farming feel differs noticeably.
+
+**Implemented (user-selected partial adoption):** every ordinary-shape population gate in
+`rooms/Room.js`'s `generate()` (the per-type "does this type get checked this pass" roll and the
+nest-cluster-slot roll on top of it) now runs through `towardInstant(p) = p + 0.85 × (1 - p)`,
+closing 85% of the gap to diep's instant refill rather than all of it - the 400 ms `generate()`
+cadence itself is kept as our own engine-cost knob, not diep's true per-tick check. The rarity/
+special-spawn gates (`betaPentRng`, the Bsqr/Btri 0.992 checks, `bossRng`) are untouched - they are
+a different axis (how much of a type exists) from the cadence question this item is about. See
+PENDING for why 85% and not 100%.
 
 ---
 
@@ -706,27 +737,39 @@ drone orbit AI (G4), tank-vs-tank positional overlap resolution.
 FOV that scales to fit the viewport instead of diep's resolution-dependent fixed px/du (ours is the
 fairer design).
 
+### K5 — Square/Triangle corner nests (plan.md S2)
+diep decides a shape's type purely from where a uniformly-random point landed (S2's table); it has
+no concept of "Squares live NE, Triangles live SW". We do, and it's staying **on top of** diep's own
+Pentagon Nest/Crasher Zone radii rather than being replaced by diep's flat Fields mix - a deliberate
+user call, made when S2 landed, to keep a real gameplay feature nobody asked to lose.
+
+### K6 — Respawn cadence stays partial, not instant (plan.md S7)
+diep's shape population is effectively instant (dead slot refilled the very next tick). We close
+85% of the gap (`RESPAWN_CATCHUP` in `rooms/Room.js`) rather than all of it - a deliberate user call
+made when S7 landed, keeping some of the "farming visibly thins a patch out" feel rather than
+diep's "never looks empty".
+
 ---
 
 # Suggested execution order
 
 Dependencies first; each line is a self-contained pass with its own test/golden rebaseline.
 
-1. **D1 + D2** — put damage on diep's raw axis and replace the baked ×4 with a real `common()`
+1. ✅ **D1 + D2** — put damage on diep's raw axis and replace the baked ×4 with a real `common()`
    table. Everything downstream is measured against this, so it goes first. Expect every
    time-to-kill and every `clientDiff` golden to move.
-2. **D5** — re-derive the `pene` column as `2 × diep bullet.health`.
-3. **B1** — delete the `.93`. One character, immediately visible.
-4. **P1** — adopt diep's XP table.
-5. **S1** — give Crashers a real chase. Self-contained, high visible impact.
-6. **D3 + D4 + D6** — finish the damage model (drone multipliers, bullet-vs-bullet, contact
+2. ✅ **D5** — re-derive the `pene` column as `2 × diep bullet.health`.
+3. ✅ **B1** — delete the `.93`. One character, immediately visible.
+4. ✅ **P1** — adopt diep's XP table.
+5. ✅ **S1** — give Crashers a real chase. Self-contained, high visible impact.
+6. ✅ **D3 + D4 + D6** — finish the damage model (drone multipliers, bullet-vs-bullet, contact
    quantisation).
-7. **D7 (+ D8, B6)** — `absorbtionFactor`/`pushFactor` as a real receiver-side term.
+7. ✅ **D7 (+ D8, B6)** — `absorbtionFactor`/`pushFactor` as a real receiver-side term.
 8. **T5 + T6** — barrel-definition parity, then the addon system. Unblocks the roster.
 9. **P3 + P4 + T3 + T4** — per-tank stat sets, stat names, flags, `fieldFactor`.
 10. **T1 + T2** — the real upgrade tree and the 16 missing tanks (Smasher line first — it exercises
     the most new machinery).
-11. **S2 / S5 / S7** — shape zoning, edge turning, respawn cadence.
+11. ✅ **S2 / S5 / S7** — shape zoning, edge turning, respawn cadence.
 12. **B3** — Skimmer / Minion / Flame / CrocSkimmer projectiles.
 13. **X1 + X2 + X3** — the boss roster.
 14. **A4 + G1** — arena state machine, then Mothership / Survival.
