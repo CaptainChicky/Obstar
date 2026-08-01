@@ -8,6 +8,25 @@
 	const Palette = CLIENT.Palette;
 	const Global = CLIENT.Global;
 	const roundRect = CLIENT.roundRect;
+	// Barrel-level addon (plan.md T5/T6): a small trapezoid clipped to a trap
+	// barrel's tip, diepcustom's `trapLauncher` BarrelAddon (`Barrel.size = 65.5x
+	// sqrt2/50`, `width = 33.6/50` of the parent barrel, both x our existing
+	// 0.7 barrel-scale ratio) - Tri-Trapper and Gunner Trapper's rear barrel
+	// set `c.trapLauncher` to draw it. Cosmetic only, no server-side effect.
+	function drawTrapLauncher(ctx, c, r, recoil, canC) {
+		const tipX = (c.height * recoil) * r;
+		const nubLen = c.width * 0.458 * r, nubHalf = c.width * 0.235 * r;
+		ctx.beginPath();
+		ctx.moveTo(tipX, (c.offx - c.width / 2) * r);
+		ctx.lineTo(tipX, (c.offx + c.width / 2) * r);
+		ctx.lineTo(tipX + nubLen, (c.offx + nubHalf) * r);
+		ctx.lineTo(tipX + nubLen, (c.offx - nubHalf) * r);
+		ctx.closePath();
+		ctx.fillStyle = canC[0];
+		ctx.strokeStyle = canC[1];
+		ctx.fill();
+		ctx.stroke();
+	}
 	const Drawings = {
 		cannons: [
 			(ctx, config, param, i) => {
@@ -20,6 +39,10 @@
 				ctx.save();
 				ctx.beginPath();
 				ctx.rotate(c.offdir + param.dir);
+				// `distance` (plan.md T5) pushes the barrel's drawn origin out from the hull
+				// along its own firing axis before offx/height are laid out - 0 for every
+				// ordinary barrel (origin stays the hull center), matches Player.js's shoot().
+				if (c.distance) { ctx.translate(c.distance * r, 0); }
 				ctx.moveTo(0, (c.offx - c.width / 2) * r);
 				ctx.lineTo(0, (c.offx + c.width / 2) * r);
 				ctx.lineTo((c.height * recoil) * r, (c.offx + c.width / 2 + c.open / 2) * r);
@@ -31,6 +54,7 @@
 				ctx.lineJoin = 'round';
 				ctx.fill();
 				ctx.stroke();
+				if (c.trapLauncher) { drawTrapLauncher(ctx, c, r, recoil, param.canC); }
 				ctx.restore();
 			},
 			(ctx, config, param, i) => {
@@ -40,6 +64,7 @@
 				ctx.save();
 				ctx.beginPath();
 				ctx.rotate(c.offdir + param.dir);
+				if (c.distance) { ctx.translate(c.distance * r, 0); }
 				///
 				ctx.moveTo((c.height * recoil - c.openlength) * r, (c.offx - c.width / 2) * r);
 				ctx.lineTo(0, (c.offx - c.width / 2) * r);
@@ -57,6 +82,39 @@
 				ctx.lineJoin = 'round';
 				ctx.fill();
 				ctx.stroke();
+				if (c.trapLauncher) { drawTrapLauncher(ctx, c, r, recoil, param.canC); }
+				ctx.restore();
+			},
+			(ctx, config, param, i) => {
+				// draw-shape index 2: trapezoid (plan.md T5's `isTrapezoid`/`trapezoidDirection`)
+				// - a client-only draw namespace, unrelated to the server's own `cannons[i].type`
+				// bullet-behavior enum (0/1/1.1/2/3/3.1). `trapezoidDirection` falsy = tapers
+				// narrow toward the muzzle (an ordinary gun barrel); truthy = tapers wide toward
+				// the muzzle (a flared vent/nacelle, e.g. Stalker's rear-facing barrel).
+				const c = config.cannons[i], r = param.size / CONST.SIZE;
+				if (c.hidden) {
+					return;
+				}
+				i = config.turrets ? parseInt(i) + config.turrets.length : i;
+				const recoil = param.recoils[i] ? 1 - Math.abs(param.recoils[i]) : 1;
+				const baseHalf = c.trapezoidDirection ? c.width * 0.2 : c.width / 2;
+				const tipHalf = c.trapezoidDirection ? c.width / 2 : c.width * 0.2;
+				ctx.save();
+				ctx.beginPath();
+				ctx.rotate(c.offdir + param.dir);
+				if (c.distance) { ctx.translate(c.distance * r, 0); }
+				ctx.moveTo(0, (c.offx - baseHalf) * r);
+				ctx.lineTo(0, (c.offx + baseHalf) * r);
+				ctx.lineTo((c.height * recoil) * r, (c.offx + tipHalf + c.open / 2) * r);
+				ctx.lineTo((c.height * recoil) * r, (c.offx - tipHalf - c.open / 2) * r);
+				ctx.closePath();
+				ctx.fillStyle = param.canC[0];
+				ctx.strokeStyle = param.canC[1];
+				ctx.lineWidth = CONST.LINEWIDTH;
+				ctx.lineJoin = 'round';
+				ctx.fill();
+				ctx.stroke();
+				if (c.trapLauncher) { drawTrapLauncher(ctx, c, r, recoil, param.canC); }
 				ctx.restore();
 			},
 		],
@@ -66,6 +124,16 @@
 				const recoil = param.recoils[i] ? 1 - Math.abs(param.recoils[i]) : 1;
 				ctx.save();
 				ctx.beginPath();
+				// `distance` (plan.md T5) mounts the turret at a fixed socket on the hull
+				// (param.dir + c.offdir, body-relative and static) BEFORE the barrel itself
+				// rotates to the live aim angle below - keeps a multi-turret ring (Auto 3/5,
+				// plan.md T6) fixed in place while each barrel independently tracks its target,
+				// instead of the whole mount sliding around the hull's edge to face it. 0 for
+				// Auto Hover's single centered turret (no positional change from today).
+				if (c.distance) {
+					const mountDir = param.dir + c.offdir;
+					ctx.translate(Math.cos(mountDir) * c.distance * r, Math.sin(mountDir) * c.distance * r);
+				}
 				ctx.rotate(param.canDir[i] ? param.canDir[i] : 0);
 				ctx.moveTo(0, (c.offx - c.width / 2) * r);
 				ctx.lineTo(0, (c.offx + c.width / 2) * r);

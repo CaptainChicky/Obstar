@@ -228,7 +228,7 @@ different ceiling (`rules.xpMul` already exists for Tag ×3 / Domination ×2 and
 grant schedule `level−1` to 28 then `⌊L/3⌋+18` — all confirmed identical (`Camera.ts:168-173`,
 `config.ts:113`). `entities/Player.js`'s `pointsAtLevel()` is the one source of truth.
 
-### P3 — **[ADD] Smasher's stat set is different and we can't express it**
+### P3 — **[DONE] Smasher's stat set is different and we can't express it**
 
 diep gives each tank its own `stats[]` array with per-stat `max` (`TankDefinitions.json`). Every
 ordinary tank is 8 stats × max 7; the Smasher line is not (it has no bullet stats and a raised Body
@@ -236,11 +236,23 @@ Damage cap — `diep_wiki/Levels.txt`'s "10 Smasher"). We hardcode 8 stats × 7 
 (`entities/Player.js`'s `MAX_PER_STAT`, `public/client/config.js`'s `CONST.MAX_PER_STAT`, the
 client's 8 upgrade buttons). Needed before T2's Smasher branch can exist.
 
-### P4 — **[ADD] Per-tank stat *names* are not modelled**
+**Implemented:** an optional per-class `this.statMax` (8-length array, `this.up`'s own index
+order) in `TanksConfig.js`'s server entries — `entities/Player.js`'s `upgrade()` reads it in place
+of the bare `MAX_PER_STAT` when present, `upClass()`/`cycleClass()` clamp any already-spent point
+above a *tighter* incoming cap down to it (lost, not refunded — diep's own "becomes unspendable"
+framing), and `public/client/ui.js`'s stat panel now draws each row at its own cap width instead of
+one shared global. Smasher/Landmine/Spike are `[10,0,0,0,0,10,10,10]` (MSpeed/BodyDam/HpUp/HpRegan
+order); Auto Smasher is `[10,10,10,10,10,10,10,10]` (it has a real turret, unlike plain Smasher).
+
+### P4 — **[DONE] Per-tank stat *names* are not modelled**
 
 Overseer/Overlord/Manager/Necromancer/Factory/Mothership relabel three stats to
 `Drone Damage / Drone Health / Drone Speed`, and Necromancer's Reload slot becomes `Drone Count`
 (`TankDefinitions.json`). We show the same 8 labels for every class.
+
+**Implemented:** the mechanism (`CLASS[name].ups` overriding `exports.defaultUps`) already existed
+for Necromancer — Factory and Mothership now use it too, both relabelling Bullet Damage/Pene/Speed
+to Drone Damage/Health/Speed. No code change, data-only.
 
 ### P5 — **[DIFF] `respawnPow`, `prize`, coins**
 
@@ -253,7 +265,7 @@ death. diep gives the killer the victim's `scoreReward` and respawns you at
 
 # Chunk 3 — Tanks: roster & upgrade tree
 
-### T1 — **[BUG] Our upgrade tree is not diep's**
+### T1 — **[DONE] Our upgrade tree is not diep's**
 
 diep's tree, from `TankDefinitions.json`'s own `upgrades` arrays (authoritative):
 
@@ -283,7 +295,18 @@ and Flank Guard, `Cyclone`/`Submachine`/`Fortress`/`Auto Hover` are ours, and `A
 off Gunner only. **Decide** per branch which of ours to keep (see K1) — but the diep-native edges
 above should all exist.
 
-### T2 — **[ADD] 16 real diep tanks are missing**
+**Implemented:** `exports.tree` rebuilt to match the table above exactly for every diep-native
+edge, keeping K1's custom branches (Cyclone under Quad Tank, Submachine under Machine Gun as an
+extra level-45 branch, Auto Hover/Fortress left under the dev-only `pre launch` node exactly as
+before — neither was ever in the real tree to begin with). `Sprayer` consolidated onto Machine
+Gun only; `Triple Shot` dropped as a Flank Guard child (diep only reaches it via Twin); `Rocket`
+renamed to `Rocketeer` (PENDING.md already documented it as that class's stand-in) and re-parented
+from Flank Guard to Destroyer. `lib/gameAI.js`'s one `BOT_PATHS` entry that depended on the removed
+Assassin→Sprayer edge is retargeted to Assassin→Stalker rather than left silently stranding a bot
+mid-evolution; `test/clientDiff.js`'s golden was recaptured (moved by a few ops, expected — see
+that file's own header and PENDING.md for why).
+
+### T2 — **[DONE] 16 real diep tanks are missing**
 
 | tank | tier | notes |
 |---|---|---|
@@ -306,7 +329,20 @@ above should all exist.
 
 `Rocketeer` exists in diep and we have `Rocket` — check whether ours is meant to be it (T4).
 
-### T3 — **[ADD] Tank *flags* are not modelled**
+**Implemented:** all 16 added to `TanksConfig.js` (client + server), tree-placed per T1. Barrel
+numbers converted from `diepcustom/src/Entity/Tank/TankDefinitions.json` via the existing
+per-column identities (`damage = 7 × bullet.damage`, `pene = 2 × bullet.health`,
+`speed = 1.12 × bullet.speed`, `back = recoil(gu) × 2.8`, `canonLength = diep size(du) × 0.7` —
+the existing 35-reference scale, not diep's literal `× 0.56`, so the new tanks match the current
+roster's silhouette pending C2's whole-roster pass). Three deliberate scope cuts, all logged in
+PENDING.md: **Mothership** has no spawn path yet (needs the Mothership gamemode, chunk 9); **Skimmer**
+fires as an ordinary bullet (its sub-barrel-spawn behaviour is B3, chunk 4); **Factory**'s drones
+reuse the existing controllable-drone AI instead of true minion sub-tanks (also B3). Smasher/
+Landmine/Auto Smasher/Spike use T6's new guard-shape primitive; Auto 3/Auto 5/Auto Smasher's
+turrets use T5's new `distance` field on the existing `auto`/`autoShoot`/`autoDir` cannon pattern.
+`test/tanks.js`'s client/server geometry cross-check passes for all 16 with no whitelist growth.
+
+### T3 — **[DONE] Tank *flags* are not modelled**
 
 `TankDefinitions.json` `flags`: `invisibility` (Landmine, Stalker), `zoomAbility` (Predator,
 Hunter-line), `canClaimSquares` (Necromancer), `devOnly`. Plus the three visibility rates
@@ -315,7 +351,17 @@ diep's actual stealth model. We have a single per-class `alpha` decay and hardco
 in `entities/Player.js`. **Adopt diep's three rates** — they are exactly the three events our code
 already handles (shoot / move / idle) with real numbers behind them.
 
-### T4 — **[DIFF] Per-tank fields we don't have at all**
+**Implemented:** `CLASS[class].alpha` (one scalar) replaced by `CLASS[class].stealth =
+{decay, moving, shooting}`, read at all four sites (decay, move-regrow, shoot-regrow in both
+`entities/Player.js` and its bot-motion mirror in `lib/gameAI.js`; damage-regrow was already
+class-agnostic). Landmine gets diep's own stealthier trio (`0.003/0.16/0`); Stalker gets the
+ordinary one (`0.03/0.08/0.23`). Manager's pre-existing custom stealth (not a diep
+`flags.invisibility` tank) is preserved bit-for-bit by expressing its old hardcoded ×10/×30 as the
+same three explicit rates — PENDING.md notes it's a legacy mechanic, not this item's diep model.
+`flags.zoomAbility` (Predator)/`flags.invisibility` (Landmine/Stalker)/`flags.canClaimSquares`
+(Necromancer) are recorded as data; `zoomAbility` has no input path yet (PENDING.md).
+
+### T4 — **[DONE] Per-tank fields we don't have at all**
 
 `TankDefinitions.json` carries these per tank; `TanksConfig.js` carries none of them:
 
@@ -333,7 +379,19 @@ We do have a per-class `screen` (Basic 1408, Sniper 1664, Ranger 2208), which is
 inverted. Converting it to `base / fieldFactor` would put every class on diep's own value; decide
 whether to keep our hand-tuned numbers for the classes diep doesn't have (K1).
 
-### T5 — **[DIFF] Barrel definition fields**
+**Implemented (user-selected: adopt `base/fieldFactor` everywhere).** `BASE_SCREEN` (1408, Basic's
+own value) is now a named constant; every diep-native class carries diep's real `fieldFactor` and
+computes `screen = BASE_SCREEN / fieldFactor` (a real fix — Sniper 1664→1564, Assassin 1920→1760,
+Ranger 2208→2011, Overseer/Overlord/Manager/Necromancer/BattleShip/the whole Trapper line/Sprayer
+all moved similarly, and all three Dominators move to diep's real `fieldFactor 1`, retiring the old
+"roughly Sniper-to-Hunter" stand-in). Our 4 custom classes (K1 — Cyclone/Submachine/Auto Hover/
+Fortress) keep their exact current screen; `bodyDamage`/`sides`/`absorbtionFactor` land as
+per-class fields alongside T2's new tanks (Spike's `+2`, Factory/Mothership's `sides`,
+Mothership's `absorbtionFactor` — the last one recorded but not yet wired into `collision()`,
+PENDING.md). `speed` needed no change (diep is `1` for every tank, which we already are).
+`test/rooms.js`'s FOV formula assertion updated to match.
+
+### T5 — **[DONE] Barrel definition fields**
 
 | diep (`BarrelDefinition`) | ours (`TanksConfig.js` server) | status |
 |---|---|---|
@@ -352,7 +410,18 @@ whether to keep our hand-tuned numbers for the classes diep doesn't have (K1).
 | `canControlDrones` | class-level `necro`/type 1.1 | ⚠️ per-barrel in diep |
 | `bullet.{type,sizeRatio,health,damage,speed,scatterRate,lifeLength,absorbtionFactor}` | `type/size/pene/damage/speed/rand/life/—` | mostly ✅, `sizeRatio` and `absorbtionFactor` missing |
 
-### T6 — **[ADD] Addons (`preAddon` / `postAddon` / barrel `addon`) don't exist**
+**Implemented:** `isTrapezoid`/`trapezoidDirection` (client draw-shape index 2, cosmetic only —
+note the client `cannons[i].type` draw-shape enum and the server `cannons[i].type` bullet-behavior
+enum are different namespaces, already true before this, just newly worth stating). `distance`
+(barrel/turret origin pushed out from the hull along its own resting angle, server `shoot()` +
+client draw + canvas bounding-box, plan.md T6's auto-turret rings and Skimmer's launcher use it).
+Barrel `addon: "trapLauncher"` as a client-only cosmetic nub (`c.trapLauncher`, Tri-Trapper/Gunner
+Trapper). `sizeRatio`/`bullet.absorbtionFactor` remain missing (still blocked on B2/C2, and now
+also the reason Skimmer's low absorb isn't modelled — PENDING.md). `droneCount`/`canControlDrones`
+stayed class-level, not per-barrel — every new tank that needed them (Factory, Mothership) only
+ever has them uniform across its own barrel(s), so the simplification cost nothing this pass.
+
+### T6 — **[DONE] Addons (`preAddon` / `postAddon` / barrel `addon`) don't exist**
 
 `Entity/Tank/Addons.ts` and `BarrelAddons.ts` define: `autoturret`, `auto3`, `auto5`, `smasher`,
 `autosmasher`, `landmine`, `spike`, `pronounced`, `dombase`, `dompronounced`, `launcher`,
@@ -360,6 +429,20 @@ whether to keep our hand-tuned numbers for the classes diep doesn't have (K1).
 `autoDir`/`autoShoot`, which works but doesn't compose — an addon can be attached to any tank, and
 `Auto Smasher` needs a smasher ring *and* a turret. An addon system is the prerequisite for six of
 T2's tanks.
+
+**Implemented (user-selected: extend existing patterns, no general addon-entity system).**
+Auto-turret rings (Auto 3/Auto 5/Auto Smasher's turret) are N evenly-spaced `auto`/`autoShoot`/
+`autoDir` cannon entries reusing the same `AutoTurretDefinition`-derived row Auto Hover/Auto
+Trapper/Auto Gunner already carry, positioned via T5's new `distance` field. Smasher/Landmine/
+Spike/Auto Smasher's guard shapes are a new minimal primitive instead: a per-class `this.guards`
+array (`sizeRatio`/`sides`/`rate`/`phase`) that widens `entities/Player.js`'s `this.guardSize` (max
+`size × sizeRatio` across guards) — used as the effective radius in the existing circle-circle
+`collision()` code for both contact damage and physical overlap, no new entity or kind. A
+deliberate simplification against diep's own separate `GuardObject` physics entity, and there is no
+client-side rendering for a guard yet (plain circle) — both logged in PENDING.md. `preAddon:
+"launcher"` (Skimmer's nacelle) and the true minion/skimmer bullet behaviors were not built — they
+belong to B3 (chunk 4), out of this pass's scope; Skimmer/Factory fire as ordinary
+bullets/controllable-drones instead (PENDING.md).
 
 ---
 
@@ -765,12 +848,13 @@ Dependencies first; each line is a self-contained pass with its own test/golden 
 6. ✅ **D3 + D4 + D6** — finish the damage model (drone multipliers, bullet-vs-bullet, contact
    quantisation).
 7. ✅ **D7 (+ D8, B6)** — `absorbtionFactor`/`pushFactor` as a real receiver-side term.
-8. **T5 + T6** — barrel-definition parity, then the addon system. Unblocks the roster.
-9. **P3 + P4 + T3 + T4** — per-tank stat sets, stat names, flags, `fieldFactor`.
-10. **T1 + T2** — the real upgrade tree and the 16 missing tanks (Smasher line first — it exercises
+8. ✅ **T5 + T6** — barrel-definition parity, then the addon system. Unblocks the roster.
+9. ✅ **P3 + P4 + T3 + T4** — per-tank stat sets, stat names, flags, `fieldFactor`.
+10. ✅ **T1 + T2** — the real upgrade tree and the 16 missing tanks (Smasher line first — it exercises
     the most new machinery).
 11. ✅ **S2 / S5 / S7** — shape zoning, edge turning, respawn cadence.
-12. **B3** — Skimmer / Minion / Flame / CrocSkimmer projectiles.
+12. **B3** — Skimmer / Minion / Flame / CrocSkimmer projectiles (partially motivated now — Skimmer/
+    Factory ship as simplified stand-ins pending this, PENDING.md).
 13. **X1 + X2 + X3** — the boss roster.
 14. **A4 + G1** — arena state machine, then Mothership / Survival.
 15. **C1–C5** — the rendering/silhouette pass, in one commit, with a deliberate golden rebaseline.

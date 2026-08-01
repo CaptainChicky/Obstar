@@ -265,8 +265,16 @@
 					for (let i = 0; i < QUEUE.length; i++) { q += QUEUE[i]; }
 					return Math.max(0, CONST.MAX_UP_POINTS - spent(Ui) - q);
 				}
+				// Per-tank stat caps (plan.md P3): STATES.up[i].max is set per-row in drawAll()
+				// below, from TanksConfig.class[...].statMax when the tank has one (Smasher-line's
+				// 0/10-capped stats) - falls back to the same CONST.MAX_PER_STAT every other tank
+				// already used. STATES.up is only populated after the first drawAll()/init() call,
+				// hence the guard.
+				function statCap(wireIdx) {
+					return (STATES.up[wireIdx] && typeof STATES.up[wireIdx].max === 'number') ? STATES.up[wireIdx].max : CONST.MAX_PER_STAT;
+				}
 				function enqueue(Ui, wireIdx, n) {
-					const perStat = CONST.MAX_PER_STAT - (Ui.upNb[wireIdx] || 0) - QUEUE[wireIdx];
+					const perStat = statCap(wireIdx) - (Ui.upNb[wireIdx] || 0) - QUEUE[wireIdx];
 					const add = Math.max(0, Math.min(n, perStat, budget(Ui)));
 					QUEUE[wireIdx] += add;
 					return add;
@@ -279,7 +287,7 @@
 					if (!still) { return; }
 					for (let i = 0; i < QUEUE.length && still > 0; i++) {
 						while (QUEUE[i] > 0 && still > 0) {
-							if ((Ui.upNb[i] || 0) >= CONST.MAX_PER_STAT) { QUEUE[i] = 0; break; }
+							if ((Ui.upNb[i] || 0) >= statCap(i)) { QUEUE[i] = 0; break; }
 							QUEUE[i]--;
 							still--;
 							Ui.upNb[i] = (Ui.upNb[i] || 0) + 1;
@@ -292,10 +300,18 @@
 				// `max` is the number of segments in each stat's bar - the per-stat cap, 7 since
 				// PENDING #30. It is geometry as well as logic: the widget's width is
 				// max * (W + marge), so the whole upgrade panel grows a segment with it.
+				// `max` may also be a per-stat array (plan.md P3, e.g. Smasher-line's
+				// [10,0,0,0,0,10,10,10]) - the panel's shared width/background comes from the
+				// WIDEST entry (unchanged for every tank that still passes a plain number, since
+				// Math.max of a single value is itself), while each row's own fill/fullness cap
+				// below uses its own entry, so a 0-capped stat never lights up and a 10-capped
+				// one fills the whole widened bar.
 				function drawAll(tankClass, states, max = CONST.MAX_PER_STAT) {
 					if (tankClass === CLASS) {
 						return;
 					}
+					const maxArr = Array.isArray(max) ? max : new Array(states.length).fill(max);
+					max = Math.max(...maxArr);
 					CLASS = tankClass
 					STATES = { up: [], max: max };
 					const w = max * (W + marge);
@@ -349,7 +365,8 @@
 							nb: 0,
 							queued: 0,
 							odd: i % 2,
-							name: states[i]
+							name: states[i],
+							max: maxArr[i]
 						});
 						redraw(i, 0, 0);
 					}
@@ -357,13 +374,17 @@
 				function redraw(state, nb, isMouse, colored = 1, queued = 0) {
 					const data = STATES.up[state]
 					if (!data) { return; }
-					nb = Math.min(nb, STATES.max);
-					queued = Math.min(queued, STATES.max - nb);
-					if (data.isfull && nb >= STATES.max && data.queued === queued) { return; }
-					if (isMouse === data.isMouse && data.nb === nb && data.isfull === ((nb === STATES.max) || !colored) && data.queued === queued) { return; }
+					// `data.max` (plan.md P3, this row's own cap) drives fill/fullness; the shared
+					// `STATES.max` (widest row on this tank) stays below for the background bar's
+					// width, so every row's drawable area lines up regardless of its own cap.
+					const rowMax = typeof data.max === 'number' ? data.max : STATES.max;
+					nb = Math.min(nb, rowMax);
+					queued = Math.min(queued, rowMax - nb);
+					if (data.isfull && nb >= rowMax && data.queued === queued) { return; }
+					if (isMouse === data.isMouse && data.nb === nb && data.isfull === ((nb === rowMax) || !colored) && data.queued === queued) { return; }
 					data.isMouse = isMouse;
 					data.nb = nb;
-					data.isfull = (data.nb === STATES.max) || !colored;
+					data.isfull = (data.nb === rowMax) || !colored;
 					data.queued = queued;
 					const w = STATES.max * (W + marge);
 					///
@@ -1100,7 +1121,7 @@
 				}
 				if (!this.still && !Global.inputs.u && !Global.inputs.m && !this.UP.show && !parseInt(this.END.offy + .1)) { return; }
 				///
-				this.UP.init(User.class, CLASS[User.class].ups ? CLASS[User.class].ups : TanksConfig.defaultUps, 6);
+				this.UP.init(User.class, CLASS[User.class].ups ? CLASS[User.class].ups : TanksConfig.defaultUps, CLASS[User.class].statMax || 6);
 				///
 				const SHOW = Math.min(General['ease-in-out'](this.UP.show, 3), 1);
 				const ALPHA = ctx.globalAlpha;

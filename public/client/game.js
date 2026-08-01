@@ -69,7 +69,10 @@
 			this.vx = 0;
 			this.vy = 0;
 			this.scale = 1;
-			this.class = "Rocket";
+			// Any valid class works here - just a placeholder until the server's own class
+			// arrives on the first real update. "Basic" rather than "Rocket" (renamed to
+			// Rocketeer, plan.md T1) since it needs no maintenance if the roster changes again.
+			this.class = "Basic";
 			this.SH = {
 				lapse: -1
 			};
@@ -443,11 +446,13 @@
 						const wireIdx = CONST.UP_ORDER[parseInt(key) - 1];
 						if (Global.inputs.m) {
 							// m+digit: fill that stat's bar - spend what's banked right now, queue the
-							// remainder. Passing the per-stat cap and letting enqueue() clamp against
-							// what is already spent/queued and against the lifetime budget
-							// (CONST.MAX_UP_POINTS) is deliberate: "fill the bar" is the intent, and
-							// all three caps live in one place now.
-							Ui.UP.enqueue(Ui, wireIdx, CONST.MAX_PER_STAT);
+							// remainder. Passing Infinity and letting enqueue() clamp against the
+							// row's own real cap (plan.md P3 - no longer always CONST.MAX_PER_STAT,
+							// e.g. Smasher's Body Damage caps at 10) plus what is already
+							// spent/queued and the lifetime budget (CONST.MAX_UP_POINTS) is
+							// deliberate: "fill the bar" is the intent, and all three caps live in
+							// one place now.
+							Ui.UP.enqueue(Ui, wireIdx, Infinity);
 							Ui.UP.drain(Ui);
 						} else if (Global.inputs.u) {
 							// u+digit: queue one point on that stat, spending it now if affordable.

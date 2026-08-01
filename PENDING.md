@@ -114,15 +114,25 @@ stand-in, and **the three columns do not share one mapping** — you cannot reco
 
 | column | mapping |
 |---|---|
-| `reload`, `weight` (knockback) | Cyclone ← Octo Tank (0.4333, not parent Quad Tank — the table is monotone in barrel count and Cyclone has ten); Submachine ← Machine Gun; Rocket ← the rear-thruster row (0.1333, not Flank Guard's 0.666 — both its barrels point backwards); Gunner ← Gunner Trapper's bullet row; Fortress ← Tri-Trapper's traps / Battleship's drones; Summoner ← the drone row |
+| `reload`, `weight` (knockback) | Cyclone ← Octo Tank (0.4333, not parent Quad Tank — the table is monotone in barrel count and Cyclone has ten); Submachine ← Machine Gun; Rocketeer (renamed from "Rocket", plan.md T1) ← the rear-thruster row (0.1333, not Flank Guard's 0.666 — both its barrels point backwards); Gunner ← Gunner Trapper's bullet row; Fortress ← Tri-Trapper's traps / Battleship's drones; Summoner ← the drone row |
 | `speed`, `life`, `rand` (scatter) | Cyclone ← Octo Tank (all ten barrels identical); Submachine ← Machine Gun; Auto Hover's three manual barrels ← Tri-Angle's own three; Fortress's launchers ← Tri-Trapper's trap row (`speed 2`, `scatterRate 1`, `lifeLength 3.2`), its small drones ← Battleship's swarm row; **every auto-turret slot** ← `Entity/Tank/AutoTurret.ts`'s shared `AutoTurretDefinition` (`speed 1.2` / `scatterRate 1` / `lifeLength 1` → `1.344` / `0.174533` / `75`), not a `TankDefinitions.json` entry at all |
-| Rocket's two backward thrusters | **not** `TankDefinitions.json` — diep's Rocketeer fires a rocket that spawns its own inline exhaust sub-barrel (`Projectile/Rocket.ts`'s `RocketBarrelDefinition`: `speed 1.5`, `scatterRate 5`, `lifeLength 0.1`); *that* sub-barrel is the model |
+| Rocketeer's two backward thrusters | **not** `TankDefinitions.json` — diep's Rocketeer fires a rocket that spawns its own inline exhaust sub-barrel (`Projectile/Rocket.ts`'s `RocketBarrelDefinition`: `speed 1.5`, `scatterRate 5`, `lifeLength 0.1`); *that* sub-barrel is the model |
+
+**The 16 tanks plan.md T2 adds (landed) carry the same kind of stand-in, for the same reason —
+diep's own Knockbackfactor table (`physics.html`) predates every one of them, so `weight`/`push`
+has no row to read at all:**
+
+| column | mapping |
+|---|---|
+| `weight`, `push`, `back` | Hunter/Predator ← Sniper's own barrel row; Streamliner ← Gunner's (its other tree parent); Stalker ← Assassin's, with `back` recomputed from diep's own real recoil (3 gu) rather than inherited; Auto 3/Auto 5's turret ring ← the existing `AutoTurretDefinition` row every other auto-turret cannon in the file already shares (Auto Hover's `c[0]`); Spread Shot ← Triple Shot's; Gunner Trapper's two gunner barrels ← Gunner's own row (its trap barrel uses Trapper's); Tri-Trapper ← Trapper's trap row; Skimmer ← Destroyer's (its tree parent); Factory/Mothership's drone barrels ← Overseer's drone row |
+| Streamliner's `reload` | diepcustom does not give this class its own reload multiplier - inherited Gunner's cadence (15) rather than left unset |
+| Auto 3/Auto 5's ring `distance` (14 units) | no diepcustom source captured for the turret-ring mount radius (`Addons.ts`'s `createAutoTurrets()` is an abstract helper with no concrete offset) - an engine-quality guess, not measured |
+| Tri-Trapper's fire order (`offTime: i/3`) | evenly-thirded, no diep source - same spirit as Auto Hover's own paired-barrel stagger |
+| Spread Shot's outer-barrel `speed`/`pene`/`rand` | diepcustom's own entry gives `damage`/`width`/`reload`/`recoil` per barrel but not `bullet.speed`/`scatterRate` - inherited from Triple Shot (its tree parent) rather than left unset |
 
 **Other live stand-ins:**
 - **Annihilator's recoil** is deliberately off-table (4 gu against diep's 6.8). Its `weight` is
   on-table — the two calls are independent.
-- **Dominator FoV** — Destroyer 1664 (Sniper's), Gunner 1920 (Assassin's), Trapper 2208 (Ranger's).
-  diep gives all three `fieldFactor 1`.
 - **`DOMINATOR_RETARGET_IDLE`** (3 s) — how long a Dominator holds a target that has stopped
   shooting back. No diep number.
 - **`BASE_DRONE_LEASH`** (`gu(90)`) — diep's single 900 du filter is both acquire radius and leash;
@@ -155,6 +165,60 @@ stand-in, and **the three columns do not share one mapping** — you cannot reco
   "farming visibly thins a patch out" feel rather than diep's "a nest never looks empty". The
   400 ms `generate()` pass itself is also kept as our own engine-cost knob rather than switched to
   diep's true per-(reference-)tick check.
+- **Smasher/Landmine/Auto Smasher/Spike's guard shapes are a single enlarged collision circle,
+  not diep's separate `GuardObject` physics entity** (plan.md T6, decided simplification) -
+  `entities/Player.js`'s `this.guardSize` widens both contact-damage AND physical overlap
+  resolution to `size × sizeRatio`, reusing the existing circle-circle `collision()` code path
+  entirely rather than spawning a real child entity with its own position. Diep's own guard is a
+  genuinely separate object (can, in principle, be caught on something the tank body itself
+  isn't touching); ours cannot. Revisit if that distinction ever matters in play.
+- **Guard shapes have no client rendering yet.** Smasher/Landmine/Spike's `guards` are real and
+  enforced server-side (`guardSize`), but `public/SHARE/TanksConfig.js`'s client entries for all
+  four Smasher-line tanks draw as a plain circle - no spinning hexagon/triangle ring, unlike
+  diep's own visibly larger silhouette. The intended idiom (`PetsConfig.js`'s cosmetic
+  `ctx.rotate(Date.now()/...)`) was never wired up.
+- **Skimmer fires as an ordinary bullet - its sub-barrel-spawning behaviour (diepcustom's
+  `bullet.type: "skimmer"`) is not implemented.** Plan B3 (chunk 4, execution-order item 12) is
+  what actually adds a new bullet-AI type for this; T2 only asked for the tank's data to exist.
+  Its very low `absorbtionFactor` (diep 0.1) is also unmodelled - `T5`'s own table already flags
+  `bullet.absorbtionFactor` as a field this codebase's `Bullet.js` doesn't read at all yet, for
+  any class, not just this one.
+- **Factory's drone barrel reuses the existing controllable-drone AI (type 1), not a true minion
+  sub-tank.** diep's Factory minions can be individually selected and piloted
+  (`canControlDrones`); this codebase's only manual-drone-control precedent is "all drones from
+  this barrel steer toward the shared mouse target" (B3, same deferral as Skimmer above).
+- **Mothership has no spawn path.** Its `TanksConfig.js` entry is data-complete (barrels, stats,
+  `ups` override) but nothing in `exports.tree` reaches it and no gamemode spawns one - it needs
+  the real Mothership gamemode (plan G1, chunk 9, not yet built). Also unconfirmed: its
+  `fieldFactor` (no diepcustom value was captured for this class specifically, defaulted to 1) and
+  its `absorbtionFactor: 0.01` (recorded on the class but not read anywhere - `collision()` only
+  special-cases Dominator/Closer today, there is no generic per-class receiver-side
+  absorbtionFactor mechanism). Its 16-sided body also draws as the ordinary near-circle body
+  shape, not a true 16-gon (chunk 10/C3 cosmetic territory).
+- **Manager's stealth is not diep's `flags.invisibility`.** `entities/Player.js`'s stealth
+  mechanism (decay/moving/shooting rates, plan.md T3) now also runs Manager's pre-existing
+  custom ability, converted losslessly from its old single-constant form
+  (`stealth: {decay: 0.00727, moving: 0.00727×10, shooting: 0.00727×30}` - the exact ratios the
+  code always used). But Manager was never in T3's `flags.invisibility` table (only Landmine and
+  Stalker are diep-real stealth tanks) - it has no `flags` object, on purpose, so a future reader
+  doesn't mistake it for a cross-checked diep number.
+- **`flags.zoomAbility` (Predator) is data-only.** diep's right-click zoom has no input path in
+  this codebase yet - the flag is recorded (plan.md T3) but nothing reads it.
+- **Bots have no path to 15 of the 16 new tanks.** `lib/gameAI.js`'s `CONFIG.BOT_PATHS` only
+  reaches one (Stalker, via the fixed-up Sniper→Assassin path below) - Smasher/Landmine/Auto
+  Smasher/Spike/Hunter/Predator/Streamliner/Auto 3/Auto 5/Spread Shot/Gunner Trapper/Tri-Trapper/
+  Skimmer/Factory/Mothership are all unreachable by AI. Not a regression (no bot path referenced
+  their tree slots before they existed either) - just not authored yet.
+- **One `BOT_PATHS` entry was retargeted, not just left broken.** `['Sniper', 'Assassin',
+  'Sprayer']` stopped working the moment `Sprayer` moved off Assassin onto Machine Gun (plan.md
+  T1's tree rewrite matches diep's real edges - diep has no Assassin→Sprayer path). Repointed at
+  `['Sniper', 'Assassin', 'Stalker']`, Assassin's other real child, rather than leaving a bot
+  stranded mid-evolution. `test/clientDiff.js`'s golden moved as a result (recaptured, noted in
+  that file's own header) alongside plan.md T4/9d's FOV fix (Sniper/Assassin/Trapper/Ranger/
+  Overseer/Overlord/Manager/Necromancer/BattleShip/the rest of the Trapper line/Sprayer/every
+  Dominator all now carry diep's real `fieldFactor` instead of an uncross-checked screen literal)
+  - both are real bots the corpus's default rooms already spawn, so either alone could move it;
+  not worth separating further since both changes are deliberate and correct.
 
 ---
 
@@ -268,6 +332,24 @@ Only a stub-DOM harness has run the client. Everything below is code-tested only
 - The class picker opens at **15/30/45**.
 - Levels 29–45 grant a point only every third level — the badge stops ticking every level near the
   cap by design.
+- **Smasher/Landmine/Spike's panel** (plan.md P3) - four bars (Reload/Bullet Speed/Bullet
+  Damage/Bullet Penetration) should show as permanently empty/disabled, the other four (Movement
+  Speed/Body Damage/Max Health/Health Regen) should draw **10** segments, wider than the ordinary
+  7-segment panel. Auto Smasher's panel is ordinary (10 segments on all eight). Code-tested only
+  (`test/rooms.js`) - the widened/disabled bar rendering itself has never been seen in a browser.
+
+**New tanks (plan.md T2)**
+- The 16 new classes appear in the level-up evolution picker at the right levels (Smasher/Auto 3/
+  Hunter at 15/30/30 respectively per their real parents, the rest at 30/45 per plan.md T1's
+  table) and are selectable.
+- Auto 3/Auto 5's turret ring actually fires at a live target and each turret pivots independently
+  while the ring itself stays fixed on the hull (plan.md T5's `distance`/mount-angle split) -
+  never checked outside the unit-tested math.
+- Tri-Trapper/Gunner Trapper's `trapLauncher` nub is visible at the tip of their trap barrel(s).
+- Stalker's barrel actually draws as a flared trapezoid, not a plain rectangle.
+- Smasher-line tanks visibly look like ordinary tanks with no guard ring (known gap, see 🟠 above)
+  - confirm that reads as "missing art," not as broken collision, since the enlarged hitbox is
+  real even though nothing draws it yet.
 
 **World**
 - A green Shiny polygon and a rainbow Mythic one are visibly distinct — and turn up often enough to

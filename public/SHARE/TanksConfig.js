@@ -5,6 +5,14 @@
 	// auto-turret filters below can name KIND.PLAYER / KIND.OBJECTS instead of hardcoding the
 	// string literals - see public/SHARE/kinds.js.
 	const KIND = (platform === 'client') ? globalThis.KIND : require('./kinds.js');
+	// FOV (plan.md T4): diep derives every class's screen as `base / fieldFactor` off one
+	// shared base (Basic's own screen, fieldFactor 1). Diep-native classes below now carry
+	// diep's own real fieldFactor (TankDefinitions.json) instead of a hand-set screen literal -
+	// this is a real fix for classes that were never cross-checked (e.g. Sniper 1664 -> 1564,
+	// Ranger 2208 -> 2011). Classes with no diep counterpart (Cyclone/Submachine/Auto Hover -
+	// fieldFactor 1, unchanged; Fortress - back-solved to reproduce its current screen exactly)
+	// keep their current feel; only server entries read this, `screen` has no client use.
+	const BASE_SCREEN = 1408;
 
 	exports.class = (platform === 'client') ?
 		///CLIENTS///
@@ -320,7 +328,9 @@
 				}
 			},
 			///
-			"Rocket": {
+			// diep's real name for this class (PENDING.md, plan.md T1) - it was already our
+			// stand-in for diep's Rocketeer, just misnamed/mis-parented under Flank Guard.
+			"Rocketeer": {
 				cannons: [
 					{
 						type: 0,
@@ -1481,6 +1491,111 @@
 				body: {
 					shape: 0
 				}
+			},
+			// The 16 tanks plan.md T2 adds. No client draw exists yet for a guard shape
+			// (Smasher/Landmine/Auto Smasher/Spike, plan.md T6) - their `guardSize` is real and
+			// enforced server-side (entities/Player.js), but they draw as an ordinary plain
+			// circle for now (PENDING.md).
+			"Smasher": { cannons: [], body: { shape: 0 } },
+			"Landmine": { cannons: [], body: { shape: 0 } },
+			"Auto Smasher": {
+				cannons: [],
+				turrets: [{ type: 0, height: 38, width: 21, offx: 0, offdir: 0, open: 0, rad: 18 }],
+				body: { shape: 0 }
+			},
+			"Spike": { cannons: [], body: { shape: 0 } },
+			"Hunter": {
+				cannons: [
+					{ type: 0, height: 77, width: 29.4, offx: 0, offdir: 0, open: 0 },
+					{ type: 0, height: 66.5, width: 39.7, offx: 0, offdir: 0, open: 0 }
+				],
+				body: { shape: 0 }
+			},
+			"Predator": {
+				cannons: [
+					{ type: 0, height: 77, width: 29.4, offx: 0, offdir: 0, open: 0 },
+					{ type: 0, height: 66.5, width: 39.7, offx: 0, offdir: 0, open: 0 },
+					{ type: 0, height: 56, width: 50, offx: 0, offdir: 0, open: 0 }
+				],
+				body: { shape: 0 }
+			},
+			"Streamliner": {
+				cannons: [
+					{ type: 0, height: 77, width: 25, offx: 0, offdir: 0, open: 0 },
+					{ type: 0, height: 70, width: 25, offx: 0, offdir: 0, open: 0 },
+					{ type: 0, height: 63, width: 25, offx: 0, offdir: 0, open: 0 },
+					{ type: 0, height: 56, width: 25, offx: 0, offdir: 0, open: 0 },
+					{ type: 0, height: 49, width: 25, offx: 0, offdir: 0, open: 0 }
+				],
+				body: { shape: 0 }
+			},
+			"Stalker": {
+				cannons: [
+					{ type: 2, height: 84, width: 29.4, offx: 0, offdir: 0, open: 0, trapezoidDirection: true }
+				],
+				body: { shape: 0 }
+			},
+			"Auto 3": {
+				cannons: [],
+				turrets: [0, 1, 2].map(i => ({
+					type: 0, height: 38, width: 21, offx: 0, offdir: i * Math.PI * 2 / 3, open: 0, rad: 18, distance: 14
+				})),
+				body: { shape: 0 }
+			},
+			"Auto 5": {
+				cannons: [],
+				turrets: [0, 1, 2, 3, 4].map(i => ({
+					type: 0, height: 38, width: 21, offx: 0, offdir: i * Math.PI * 2 / 5, open: 0, rad: 18, distance: 14
+				})),
+				body: { shape: 0 }
+			},
+			"Spread Shot": {
+				cannons: [
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: -1.309, open: 0 },
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: -1.0472, open: 0 },
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: -0.7854, open: 0 },
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: -0.5236, open: 0 },
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: -0.2618, open: 0 },
+					{ type: 0, height: 66.5, width: 29.4, offx: 0, offdir: 0, open: 0 },
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: 0.2618, open: 0 },
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: 0.5236, open: 0 },
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: 0.7854, open: 0 },
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: 1.0472, open: 0 },
+					{ type: 0, height: 49, width: 20.6, offx: 0, offdir: 1.309, open: 0 }
+				],
+				body: { shape: 0 }
+			},
+			"Gunner Trapper": {
+				cannons: [
+					{ type: 0, height: 52.5, width: 14.7, offx: 10, offdir: 0, open: 0 },
+					{ type: 0, height: 52.5, width: 14.7, offx: -10, offdir: 0, open: 0 },
+					{ type: 0, height: 42, width: 38.2, offx: 0, offdir: Math.PI, open: 0, trapLauncher: true }
+				],
+				body: { shape: 0 }
+			},
+			"Tri-Trapper": {
+				cannons: [0, 1, 2].map(i => ({
+					type: 0, height: 42, width: 29.4, offx: 0, offdir: i * Math.PI * 2 / 3, open: 0, trapLauncher: true
+				})),
+				body: { shape: 0 }
+			},
+			"Skimmer": {
+				cannons: [
+					{ type: 0, height: 56, width: 50, offx: 0, offdir: 0, open: 0 }
+				],
+				body: { shape: 0 }
+			},
+			"Factory": {
+				cannons: [
+					{ type: 2, height: 49, width: 29.4, offx: 0, offdir: 0, open: 0, trapezoidDirection: false }
+				],
+				body: { shape: 1 }
+			},
+			"Mothership": {
+				cannons: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
+					type: 0, height: 42, width: 7.35, offx: 0, offdir: i * Math.PI * 2 / 16, open: 0
+				})),
+				body: { shape: 0 }
 			}
 		} :
 		///SERVER///
@@ -1707,7 +1822,7 @@
 				}
 			},
 			"Sniper": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.cannons = [];
 				this.cannons[0] = new function () {
 					this.reload = 23;
@@ -1837,7 +1952,7 @@
 				this.cannons = c;
 			},
 			"Assassin": new function () {
-				this.screen = 1920;
+				this.screen = BASE_SCREEN / 0.8;   // diep fieldFactor 0.8 (TankDefinitions.json)
 				this.cannons = [];
 				this.cannons[0] = new function () {
 					this.reload = 30;
@@ -1860,7 +1975,7 @@
 				}
 			},
 			"Overseer": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.maxDrone = 7;
 				this.cannons = [];
 				const c = new Array(2).fill(null).map(() => ({
@@ -1920,7 +2035,7 @@
 				this.cannons = c;
 			},
 			"Trapper": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.cannons = [];
 				this.cannons[0] = new function () {
 					this.reload = 23;
@@ -1944,8 +2059,10 @@
 				}
 			},
 			///
-			"Rocket": new function () {
-				this.screen = 1408;
+			"Rocketeer": new function () {
+				// diep fieldFactor 0.9 (TankDefinitions.json) - renamed from "Rocket" and
+				// re-parented from Flank Guard to Destroyer, diep's real parent (plan.md T1).
+				this.screen = BASE_SCREEN / 0.9;
 				const c = new Array(2).fill(null).map(() => ({
 					reload: 60,   // STAND-IN: diep has no Rocket class - takes Rocketeer 60 (plan.md Step 3, call 3)
 					offTime: 0,
@@ -2052,7 +2169,7 @@
 				this.cannons = c;
 			},
 			"Sprayer": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN;   // diep fieldFactor 1 (default, not in the non-default table)
 				const c = new Array(5).fill(null).map(() => ({
 					reload: 15,   // diep barrel[0] Large Bullet, reload 1 x15 - Step 3 call 2
 					offTime: 0,
@@ -2093,7 +2210,7 @@
 				this.cannons = c;
 			},
 			"Ranger": new function () {
-				this.screen = 2208;
+				this.screen = BASE_SCREEN / 0.7;   // diep fieldFactor 0.7 (TankDefinitions.json)
 				this.cannons = [];
 				this.cannons[0] = new function () {
 					this.reload = 30;
@@ -2409,7 +2526,7 @@
 				this.cannons = c;
 			},
 			"Overlord": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.maxDrone = 8;
 				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
@@ -2439,9 +2556,15 @@
 				this.cannons = c;
 			},
 			"Manager": new function () {
-				this.screen = 1824;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.maxDrone = 8;
-				this.alpha = 0.00727;
+				// Manager's own stealth is NOT diep's `flags.invisibility` (plan.md T3 only
+				// lists Landmine/Stalker) - a pre-existing custom mechanic, kept bit-for-bit
+				// identical to its old single-constant form (`alpha: 0.00727`, whose move/shoot
+				// regrow used to be hardcoded x10/x30 of it) by expressing those same two
+				// multiples explicitly now that `stealth` carries three independent rates.
+				// PENDING.md has the full note.
+				this.stealth = { decay: 0.00727, moving: 0.00727 * 10, shooting: 0.00727 * 30 };
 				this.cannons = [];
 				const c = [{
 					reload: 45,
@@ -2467,8 +2590,12 @@
 				this.cannons = c;
 			},
 			"Necromancer": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.maxDrone = 22;
+				// Data-only (plan.md T3) - `canClaimSquares` is diep's own name for exactly what
+				// Necromancer's necro-drone-on-square-kill mechanic below already does; no code
+				// reads this flag today, it just gives that existing behavior a diep-cited label.
+				this.flags = { canClaimSquares: true };
 				this.necro = {
 					type: 3,
 					necro: 1,
@@ -2482,7 +2609,7 @@
 				this.cannons = [];
 			},
 			"BattleShip": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				//this.maxDrone = 7;
 				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
@@ -2513,6 +2640,8 @@
 				this.cannons = c;
 			},
 			"Fortress": new function () {
+				// K1 - diep has no Fortress; fieldFactor back-solved to reproduce this exact
+				// screen (BASE_SCREEN / 0.846153...) rather than left un-cross-checked, plan.md T4.
 				this.screen = 1664;
 				//this.maxDrone = 7;
 				this.cannons = [];
@@ -2566,7 +2695,7 @@
 				this.cannons = c;
 			},
 			"Mega Trapper": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				//this.maxDrone = 7;
 				this.cannons = [];
 				const c = [{
@@ -2592,7 +2721,7 @@
 				this.cannons = c;
 			},
 			"Overtrapper": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.maxDrone = 4;
 				let c = [{
 					reload: 23,
@@ -2639,7 +2768,7 @@
 				this.cannons = c;
 			},
 			"Auto Trapper": new function () {
-				this.screen = 1664;
+				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.DETEC = {
 					type: [KIND.PLAYER, KIND.OBJECTS],
 					size: 1500,
@@ -2945,14 +3074,14 @@
 				CONFIG.DOMINATOR). Detector-driven auto-aim (`auto`/`autoShoot`/`autoDir`, DETEC below)
 				is the same auto-turret machinery Auto Gunner/Auto Trapper already use - see
 				lib/gameAI.js's CONFIG.DOMINATOR comment for why the AI itself needs no bespoke
-				targeting code. `screen`/FoV per variant is still ours, flagged, approximate -
-				diep_wiki gives only "roughly Sniper-to-Hunter range depending on variant", not a
-				per-variant number, and Step 11's own scope is reload/pene/damage/speed only.
+				targeting code. `screen`/FoV per variant now carries diep's real fieldFactor 1
+				(`TankDefinitions.json`, plan.md T4/X6) - the old "roughly Sniper-to-Hunter range"
+				diep_wiki stand-in is retired now that a real number exists for all three.
 			*/
 			"Destroyer Dominator": new function () {
-				// FoV "roughly Sniper-to-Hunter range" (diep_wiki) - Sniper's own screen (1664),
-				// the low end of that band; ours, flagged, no exact number given.
-				this.screen = 1664;
+				// diep gives every Dominator variant fieldFactor 1 (plan.md T4/X6) - replaces the
+				// old Sniper-borrowed stand-in screen (1664) now that a real number exists.
+				this.screen = BASE_SCREEN;
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				this.cannons = [{
 					reload: 45,   // diepcustom TankDefinitions.json: 15 x barrel.reload 3 (plan.md Step 11)
@@ -2977,7 +3106,7 @@
 				}];
 			},
 			"Gunner Dominator": new function () {
-				this.screen = 1920;   // mid Sniper-Hunter band - Assassin's own screen, ours/flagged
+				this.screen = BASE_SCREEN;   // diep fieldFactor 1 for every Dominator (plan.md T4/X6)
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				const c = new Array(3).fill(null).map((_, i) => ({
 					// diepcustom TankDefinitions.json: 15 x barrel.reload 0.3 = 4.5, rounded to the
@@ -3005,7 +3134,7 @@
 				this.cannons = c;
 			},
 			"Trapper Dominator": new function () {
-				this.screen = 2208;   // Ranger's own screen, our stand-in for diep's "Hunter"
+				this.screen = BASE_SCREEN;   // diep fieldFactor 1 for every Dominator (plan.md T4/X6)
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				const c = new Array(8).fill(null).map((_, i) => ({
 					// diepcustom TankDefinitions.json: 15 x barrel.reload 1.5 = 22.5, rounded to the
@@ -3032,6 +3161,197 @@
 					back: 0
 				}));
 				this.cannons = c;
+			},
+			///
+			// The 16 tanks plan.md T2 adds (`diepcustom/src/Entity/Tank/TankDefinitions.json` ids
+			// cited per class). canonLength/size/width below are diep's own `du x 0.7` (plan.md
+			// T5's decided scale - matches the existing roster's 35-reference rather than diep's
+			// literal du x 0.56, see plan.md's execution-order note). damage/pene/speed/rand/back
+			// go through the same per-column identities every other class already uses (top of
+			// this file's own ///SERVER/// comment block): damage = 7 x bullet.damage, pene = 2 x
+			// bullet.health, speed = 1.12 x bullet.speed, rand = scatterRate x 0.174533, back =
+			// recoil(gu) x 2.8, reload = round(15 x diep's reload multiplier). weight/push have no
+			// diep Knockbackfactor-table row for any of these 16 (that table predates them) so
+			// each inherits its nearest tree-parent donor row, same convention the existing
+			// roster's own stand-ins already use (top-of-file comment, "Seven classes have no row
+			// in diep's table at all").
+			"Smasher": new function () {   // id36 - postAddon "smasher", no barrels
+				this.screen = BASE_SCREEN / 0.9;
+				this.cannons = [];
+				this.guards = [{ sizeRatio: 1.15, sides: 6, rate: 0.1, phase: 0 }];
+				this.statMax = [10, 0, 0, 0, 0, 10, 10, 10];
+			},
+			"Landmine": new function () {   // id38 - postAddon "landmine", 2 co-rotating guards
+				this.screen = BASE_SCREEN / 0.9;
+				this.cannons = [];
+				this.guards = [
+					{ sizeRatio: 1.15, sides: 6, rate: 0.1, phase: 0 },
+					{ sizeRatio: 1.15, sides: 6, rate: 0.05, phase: 0 }
+				];
+				this.statMax = [10, 0, 0, 0, 0, 10, 10, 10];
+				this.flags = { invisibility: true };
+				// diep's own stealthier rates for this class specifically (TankDefinitions.json) -
+				// not the ordinary 0.03/0.08/0.23 trio Stalker below uses.
+				this.stealth = { decay: 0.003, moving: 0.16, shooting: 0 };
+			},
+			"Auto Smasher": new function () {   // id50 - postAddon "autosmasher" = smasher guard + one AutoTurret
+				this.screen = BASE_SCREEN / 0.9;
+				this.guards = [{ sizeRatio: 1.15, sides: 6, rate: 0.1, phase: 0 }];
+				// Full stat set (plan.md T5/T6, T2) - unlike plain Smasher, this class fires a
+				// real bullet through its embedded turret. Same AutoTurretDefinition-derived row
+				// every existing auto-turret cannon in this file already carries (Auto Hover's
+				// own c[0], reused verbatim here).
+				this.cannons = [{
+					reload: 15, offTime: 0, type: 0, life: 75,
+					auto: 1, autoShoot: 1, autoDir: 1,
+					offdir: 0, offx: 0, canonLength: 38, rand: 0.174533,
+					speed: 1.344, pene: 2.117647, damage: 3.5, size: 14,
+					weight: 1.05, push: 0.27426, back: 0.28
+				}];
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 850 };
+				this.statMax = [10, 10, 10, 10, 10, 10, 10, 10];
+			},
+			"Spike": new function () {   // id51 - postAddon "spike", 4 phase-offset guards, bodyDamage +2
+				this.screen = BASE_SCREEN / 0.9;
+				this.cannons = [];
+				this.guards = [
+					{ sizeRatio: 1.3, sides: 3, rate: 0.17, phase: 0 },
+					{ sizeRatio: 1.3, sides: 3, rate: 0.17, phase: Math.PI / 3 },
+					{ sizeRatio: 1.3, sides: 3, rate: 0.17, phase: Math.PI / 6 },
+					{ sizeRatio: 1.3, sides: 3, rate: 0.17, phase: Math.PI / 2 }
+				];
+				this.bodyDamage = 2;
+				this.statMax = [10, 0, 0, 0, 0, 10, 10, 10];
+			},
+			"Hunter": new function () {   // id19 - 2 barrels, one shorter, staggered fire
+				this.screen = BASE_SCREEN / 0.85;
+				const c = [
+					{ reload: 38, offTime: 0, offdir: 0, offx: 0, canonLength: 77, life: 75, rand: 0.05236,
+						speed: 1.568, pene: 2, damage: 5.25, size: 16, weight: 3.5, push: 0.54851, back: 0.84 },
+					{ reload: 38, offTime: 0.2, offdir: 0, offx: 0, canonLength: 66.5, life: 75, rand: 0.05236,
+						speed: 1.568, pene: 2, damage: 5.25, size: 16, weight: 3.5, push: 0.54851, back: 0.84 }
+				];
+				this.cannons = c;
+			},
+			"Predator": new function () {   // id28 - 3 stacked shrinking barrels, zoomAbility (data-only)
+				this.screen = BASE_SCREEN / 0.85;
+				this.flags = { zoomAbility: true };   // no right-click-zoom input wired yet (PENDING.md)
+				const c = [0, 0.2, 0.4].map((offTime, i) => ({
+					reload: 45, offTime, offdir: 0, offx: 0, canonLength: [77, 66.5, 56][i], life: 75, rand: 0.05236,
+					speed: 1.568, pene: 2, damage: 5.25, size: 16, weight: 3.5, push: 0.54851, back: 0.84
+				}));
+				this.cannons = c;
+			},
+			"Streamliner": new function () {   // id43 - 5 stacked shrinking barrels, weak/fast/short-lived burst
+				this.screen = BASE_SCREEN / 0.85;
+				const lens = [77, 70, 63, 56, 49];
+				const c = lens.map((canonLength, i) => ({
+					// diepcustom does not give this class's own reload multiplier - inherits
+					// Gunner's cadence (its other tree parent) as the nearest available donor.
+					reload: 15, offTime: i * 0.2, offdir: 0, offx: 0, canonLength, life: 60, rand: 0.05236,
+					speed: 1.232, pene: 2, damage: 1.4, size: 12, weight: 1.75, push: 0.45709, back: 0
+				}));
+				this.cannons = c;
+			},
+			"Stalker": new function () {   // id21 - 1 trapezoid (flared) barrel, invisibility, final tier
+				this.screen = BASE_SCREEN / 0.8;
+				this.flags = { invisibility: true };
+				this.stealth = { decay: 0.03, moving: 0.08, shooting: 0.23 };   // diep's ordinary trio
+				this.cannons = [{
+					reload: 30, offTime: 0, offdir: 0, offx: 0, canonLength: 84, life: 75, rand: 0.05236,
+					speed: 1.68, pene: 2, damage: 7, size: 19, weight: 3.5, push: 0.54851, back: 8.4
+				}];
+			},
+			"Auto 3": new function () {   // id41 - postAddon "auto3", a 3-turret ring
+				this.screen = BASE_SCREEN;
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 850 };
+				this.cannons = [0, 1, 2].map(i => ({
+					reload: 15, offTime: 0, type: 0, life: 75,
+					auto: 1, autoShoot: 1, autoDir: 1,
+					// `offdir` is this turret's fixed mount angle around the hull (plan.md T5's
+					// `distance` origin math reads it as the resting position, independent of
+					// the live aim direction); evenly spaced, diepcustom's createAutoTurrets(3).
+					offdir: i * Math.PI * 2 / 3, offx: 0, canonLength: 38, distance: 14, rand: 0.174533,
+					speed: 1.344, pene: 2.117647, damage: 3.5, size: 14,
+					weight: 1.05, push: 0.27426, back: 0.28
+				}));
+			},
+			"Auto 5": new function () {   // id40 - postAddon "auto5", a 5-turret ring
+				this.screen = BASE_SCREEN;
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 850 };
+				this.cannons = [0, 1, 2, 3, 4].map(i => ({
+					reload: 15, offTime: 0, type: 0, life: 75,
+					auto: 1, autoShoot: 1, autoDir: 1,
+					offdir: i * Math.PI * 2 / 5, offx: 0, canonLength: 38, distance: 14, rand: 0.174533,
+					speed: 1.344, pene: 2.117647, damage: 3.5, size: 14,
+					weight: 1.05, push: 0.27426, back: 0.28
+				}));
+			},
+			"Spread Shot": new function () {   // id42 - 11 barrels fanned in 5 symmetric pairs + 1 center
+				this.screen = BASE_SCREEN;
+				const outer = [-1.309, -1.0472, -0.7854, -0.5236, -0.2618, 0.2618, 0.5236, 0.7854, 1.0472, 1.309];
+				const delay = [0.833, 0.667, 0.5, 0.333, 0.167, 0.167, 0.333, 0.5, 0.667, 0.833];
+				const c = outer.map((offdir, i) => ({
+					reload: 30, offTime: delay[i], offdir, offx: 0, canonLength: 49, life: 75, rand: 0.174533,
+					speed: 1.12, pene: 1.176471, damage: 4.2, size: 14, weight: 2.45, push: 0.45709, back: 0.28
+				}));
+				c.splice(5, 0, {
+					reload: 30, offTime: 0, offdir: 0, offx: 0, canonLength: 66.5, life: 75, rand: 0.174533,
+					speed: 1.12, pene: 1.176471, damage: 7, size: 16, weight: 2.45, push: 0.45709, back: 0.28
+				});
+				this.cannons = c;
+			},
+			"Gunner Trapper": new function () {   // id32 - 2 gunner barrels + 1 rear trap launcher
+				this.screen = BASE_SCREEN / 0.9;
+				this.cannons = [
+					{ reload: 15, offTime: 0.66, offdir: 0, offx: 10, canonLength: 52.5, life: 75, rand: 0.174533,
+						speed: 1.232, pene: 2, damage: 3.5, size: 12, weight: 1.75, push: 0.45709, back: 0 },
+					{ reload: 15, offTime: 0.33, offdir: 0, offx: -10, canonLength: 52.5, life: 75, rand: 0.174533,
+						speed: 1.232, pene: 2, damage: 3.5, size: 12, weight: 1.75, push: 0.45709, back: 0 },
+					// Rear trap barrel - diep's own trapLauncher barrel addon (cosmetic nub, plan.md T5/8c).
+					{ reload: 45, offTime: 0, type: 2, life: 600, offdir: Math.PI, offx: 0, canonLength: 42,
+						rand: 0.174533, speed: 2.24, pene: 4, damage: 7, size: 12, weight: 3.5, push: 0.27426, back: 1.12 }
+				];
+			},
+			"Tri-Trapper": new function () {   // id35 - 3 identical trap barrels at 120 degrees
+				this.screen = BASE_SCREEN / 0.9;
+				this.cannons = [0, 1, 2].map(i => ({
+					// Evenly-thirded fire order is an engine-quality choice (no diep source), same
+					// spirit as Auto Hover's own paired-barrel offTime stagger.
+					reload: 23, offTime: i / 3, type: 2, life: 240,
+					offdir: i * Math.PI * 2 / 3, offx: 0, canonLength: 42, rand: 0.174533,
+					speed: 2.24, pene: 4, damage: 7, size: 12, weight: 3.5, push: 0.27426, back: 1.12
+				}));
+			},
+			"Skimmer": new function () {   // id54 - 1 barrel, low bullet absorbtionFactor unmodelled (PENDING.md)
+				this.screen = BASE_SCREEN / 0.9;
+				this.cannons = [{
+					reload: 60, offTime: 0, offdir: 0, offx: 0, canonLength: 56, life: 98, rand: 0.174533,
+					speed: 0.56, pene: 6, damage: 7, size: 27, weight: 1.05, push: 0.27426, back: 8.4
+				}];
+			},
+			"Factory": new function () {   // id52 - drone barrel reuses the existing controllable-drone AI (type 1, not a true minion sub-tank - B3, PENDING.md)
+				this.screen = BASE_SCREEN / 0.9;
+				this.maxDrone = 6;
+				this.cannons = [{
+					reload: 45, offTime: 0, type: 1, life: -1, offdir: 0, offx: 0, canonLength: 49, rand: 0,
+					speed: 0.6272, pene: 8, damage: 4.9, size: 16, weight: 4.2, push: 0.36567, back: 2.8
+				}];
+				this.ups = ['Health Regen', 'Reload', 'Max Health', 'Drone Speed', 'Movement Speed', 'Drone Damage', 'Body Damage', 'Drone Health'];
+			},
+			"Mothership": new function () {   // id27 - gamemode entity, no spawn path yet (needs chunk 9's Mothership gamemode, PENDING.md)
+				this.screen = BASE_SCREEN;   // diep fieldFactor not captured for this class - unconfirmed default
+				this.maxDrone = 32;
+				// diep's own receiver-side absorbtionFactor for this class (D7's table) - recorded
+				// but not wired into collision(), which only special-cases Dominator/Closer today
+				// (PENDING.md: no generic per-class absorbtionFactor mechanism exists yet).
+				this.absorbtionFactor = 0.01;
+				this.cannons = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
+					reload: 90, offTime: 0, type: 1, life: -1,
+					offdir: i * Math.PI * 2 / 16, offx: 0, canonLength: 42, rand: 0,
+					speed: 0.5376, pene: 4, damage: 4.9, size: 14, weight: 4.2, push: 0.36567, back: 0
+				}));
+				this.ups = ['Health Regen', 'Reload', 'Max Health', 'Drone Speed', 'Movement Speed', 'Drone Damage', 'Body Damage', 'Drone Health'];
 			}
 		};
 	///
@@ -3045,31 +3365,45 @@
 		'Body Damage',
 		'Bullet Penetration'
 	];
+	/*
+		Rebuilt to match diep's own tree verbatim (plan.md T1) for every diep-native edge, on top
+		of the pre-existing custom branches K1 keeps (Cyclone/Submachine/Auto Hover/Fortress -
+		Auto Hover/Fortress live under the dev-only `pre launch` node exactly as before, not the
+		real tree, since neither was ever player-reachable there to begin with).
+
+		Net diff from the old tree: `Sprayer` consolidated onto Machine Gun's tier-1 children only
+		(diep has no Sprayer edge off Gunner or Assassin); `Triple Shot` is no longer a Flank
+		Guard child (diep only reaches it via Twin); `Rocket` (this file's stand-in for diep's
+		Rocketeer, PENDING.md) moves from a bare Flank Guard tier-2 branch to Destroyer's, matching
+		diep's real parent. Everything else additive - see plan.md T1's table for citations.
+	*/
 	exports.tree = [
 		{
-			Basic: ['Twin', 'Machine Gun', 'Sniper', 'Flank Guard'],
+			Basic: ['Twin', 'Machine Gun', 'Sniper', 'Flank Guard', 'Smasher'],
 			testbed: ['bigView', 'shapes', 'pre launch'],
 			shapes: ['shape1', 'shape2'],
 			'pre launch': ['Fortress', 'Necromancer', 'Auto Hover']
 		},
 		{
 			Twin: ['Twin Flank', 'Triple Shot', 'Quad Tank'],
-			'Machine Gun': ['Destroyer', 'Gunner'],
-			Sniper: ['Trapper', 'Assassin', 'Overseer'],
-			'Flank Guard': ['Triple Shot', 'Triangle'],
+			'Machine Gun': ['Destroyer', 'Gunner', 'Sprayer'],
+			Sniper: ['Trapper', 'Assassin', 'Overseer', 'Hunter'],
+			'Flank Guard': ['Triangle', 'Quad Tank', 'Twin Flank', 'Auto 3'],
+			Smasher: ['Landmine', 'Auto Smasher', 'Spike'],
 		},
 		{
-			'Flank Guard': ['Rocket'],
 			'Machine Gun': ['Submachine'],
-			Gunner: ['Sprayer', 'Auto Gunner'],
-			Destroyer: ['Hybrid', 'Annihilator'],
-			Overseer: ['Manager', 'Necromancer', 'BattleShip', 'Overlord'],
+			Gunner: ['Auto Gunner', 'Gunner Trapper', 'Streamliner'],
+			Destroyer: ['Hybrid', 'Annihilator', 'Skimmer', 'Rocketeer'],
+			Overseer: ['Manager', 'Necromancer', 'BattleShip', 'Overlord', 'Overtrapper', 'Factory'],
 			'Triangle': ['Fighter', 'Booster'],
-			'Quad Tank': ['Cyclone', 'Octo Tank'],
+			'Quad Tank': ['Cyclone', 'Octo Tank', 'Auto 5'],
 			'Twin Flank': ['BattleShip', 'Triple Twin'],
-			'Triple Shot': ['Triplet', 'Penta Shot'],
-			Assassin: ['Sprayer', 'Ranger'],
-			Trapper: ['Overtrapper', 'Auto Trapper', 'Mega Trapper']
+			'Triple Shot': ['Triplet', 'Penta Shot', 'Spread Shot'],
+			Assassin: ['Ranger', 'Stalker'],
+			Trapper: ['Overtrapper', 'Auto Trapper', 'Mega Trapper', 'Tri-Trapper', 'Gunner Trapper'],
+			Hunter: ['Predator', 'Streamliner'],
+			'Auto 3': ['Auto 5', 'Auto Gunner'],
 		}
 	];
 	exports.list = [
@@ -3090,7 +3424,7 @@
 		"Gunner",
 		"Twin Flank",
 		///
-		"Rocket",
+		"Rocketeer",
 		"Hybrid",
 		"Annihilator",
 		"Sprayer",
@@ -3125,7 +3459,26 @@
 		'Arena Closer',
 		'Destroyer Dominator',
 		'Gunner Dominator',
-		'Trapper Dominator'
+		'Trapper Dominator',
+		///
+		// The 16 tanks plan.md T2 adds - appended, not inserted, so no existing wire-enum index
+		// (SocketSchema.js's `class` field) moves.
+		'Smasher',
+		'Landmine',
+		'Auto Smasher',
+		'Spike',
+		'Hunter',
+		'Predator',
+		'Streamliner',
+		'Stalker',
+		'Auto 3',
+		'Auto 5',
+		'Spread Shot',
+		'Gunner Trapper',
+		'Tri-Trapper',
+		'Skimmer',
+		'Factory',
+		'Mothership'
 	];
 
 })(typeof (exports) === 'undefined' ? function () { this['TanksConfig'] = {}; return this['TanksConfig'] }() : exports,

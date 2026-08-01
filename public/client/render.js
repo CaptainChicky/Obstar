@@ -29,7 +29,11 @@
 				if (config.cannons) {
 					for (const c of config.cannons) {
 						///
-						const len = Math.sqrt(
+						// `+ (c.distance||0)` (plan.md T5): a barrel/turret pushed out from the
+						// hull needs that much more canvas headroom or a ring member (Auto 3/5)
+						// clips at the edge of its own offscreen cache. Triangle-inequality
+						// upper bound, not exact - harmless slack, never clips.
+						const len = (c.distance || 0) + Math.sqrt(
 							Math.pow(c.height, 2) +
 							Math.pow(c.width / 2 + c.offx + c.open / 2, 2)
 						) + CONST.LINEWIDTH;
@@ -45,7 +49,11 @@
 				if (config.turrets) {
 					for (const c of config.turrets) {
 						///
-						const len = Math.sqrt(
+						// `+ (c.distance||0)` (plan.md T5): a barrel/turret pushed out from the
+						// hull needs that much more canvas headroom or a ring member (Auto 3/5)
+						// clips at the edge of its own offscreen cache. Triangle-inequality
+						// upper bound, not exact - harmless slack, never clips.
+						const len = (c.distance || 0) + Math.sqrt(
 							Math.pow(c.height, 2) +
 							Math.pow(c.width / 2 + c.offx + c.open / 2, 2)
 						) + CONST.LINEWIDTH;

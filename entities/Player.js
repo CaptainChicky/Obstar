@@ -217,6 +217,7 @@ class Player {
 		this.timer = 0;
 		///
 		this.size = 25;
+		this.guardSize = 25;
 		this.alpha = 1;
 		this.screen = 1280;
 		this.level = 0;
@@ -264,7 +265,7 @@ class Player {
 			const a = motion.norm().multiply(new Vec(accel, accel));
 			ax = a.x; ay = a.y;
 			if (this.alpha < 1 && !this.dev.invisible) {
-				this.alpha += Math.min(1, tick.perTick(CLASS[this.class].alpha * 10));
+				this.alpha += Math.min(1, tick.perTick(CLASS[this.class].stealth.moving));
 			}
 			if (this.shield) {
 				this.shield = 0;
@@ -349,7 +350,7 @@ class Player {
 				if (reload === Math.floor(can.offTime * reloadMax)) {
 					///
 					if (this.alpha < 1 && !this.dev.invisible) {
-						this.alpha += Math.min(1, tick.perTick(CLASS[this.class].alpha * 30));
+						this.alpha += Math.min(1, tick.perTick(CLASS[this.class].stealth.shooting));
 					}
 					///
 					const dir = can.autoDir ? autoDir : this.dir + can.offdir;
@@ -360,8 +361,18 @@ class Player {
 					const len = can.canonLength * ra;
 					const offlen = Math.hypot(len, offx);
 					const offdir = Math.atan2(offx, len);
-					const x = this.x + Math.cos(dir + offdir) * (offlen)//-can.size*ra);
-					const y = this.y + Math.sin(dir + offdir) * (offlen)//-can.size*ra);
+					// `distance` (plan.md T5) pushes the barrel's MOUNT point out from the hull,
+					// along the barrel's fixed resting angle (this.dir + can.offdir) - NOT the
+					// live aim `dir`, which for an autoDir cannon would otherwise drag the whole
+					// mount around the hull's edge as it tracks a target instead of pivoting in
+					// place. This is what lets an auto-turret ring (Auto 3/5, plan.md T6) sit at
+					// fixed sockets around the body while each barrel independently aims. 0 for
+					// every ordinary barrel (origin stays the hull center).
+					const mountDir = this.dir + can.offdir;
+					const originX = this.x + Math.cos(mountDir) * (can.distance || 0) * ra;
+					const originY = this.y + Math.sin(mountDir) * (can.distance || 0) * ra;
+					const x = originX + Math.cos(dir + offdir) * (offlen)//-can.size*ra);
+					const y = originY + Math.sin(dir + offdir) * (offlen)//-can.size*ra);
 					const speed = this.up.BSpeed * can.speed;
 					/*
 						Muzzle kick: diep's own baseSpeed, a one-shot impulse the bullet starts ABOVE
@@ -468,7 +479,12 @@ class Player {
 		}
 		switch (data) {
 			case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-				if (this.upNb[data] >= MAX_PER_STAT) {
+				// Per-tank stat caps (plan.md P3) - Smasher/Landmine/Spike have no barrels at
+				// all (0-capped Reload/BSpeed/BPene/BDamage) and a raised Body Damage/Health
+				// cap instead; Auto Smasher keeps every stat since its embedded turret fires
+				// real bullets. `statMax` is an 8-length array in `this.up`'s own index order;
+				// absent on every other class, which keeps the old global MAX_PER_STAT.
+				if (this.upNb[data] >= (CLASS[this.class].statMax ? CLASS[this.class].statMax[data] : MAX_PER_STAT)) {
 					break;
 				}
 				this.stillLvl += 1;
@@ -555,6 +571,7 @@ class Player {
 			}
 		}
 		if (tanks.includes(data)) {
+			const oldClass = this.class;
 			this.classLvl++;
 			this.class = data;
 			// A human evolving out of an auto-aim class must drop its vision cone: shoot()
@@ -565,11 +582,48 @@ class Player {
 			this.droneCount = 0;
 			this.necro = CLASS[this.class].necro;
 			this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
+			this.applyClassSwitchStats(oldClass);
 			// classLvl counts evolutions, one per CLASS_TREE tier (0..3) - reaching 3 means a
 			// tier 4 (final) class.
 			if (this.classLvl >= 3) { this.unlock('scary_tank'); }
 		} else {
 			return;
+		}
+	}
+	/*
+		Shared by upClass()/cycleClass() (plan.md P3/T4): a per-tank flat body-damage bonus
+		(Spike's +2, `TankDefinitions.json`'s explicit `bodyDamage` field) is folded into the
+		running `this.damage` total rather than read fresh each tick, so switching class has to
+		remove the OLD class's bonus before adding the NEW one's - straight addition/subtraction,
+		since it's a flat term. Per-tank stat caps (Smasher-line's 0-capped barrel stats) also
+		only ever get narrower on a switch, never wider - points already spent above the new
+		cap are lost, not refunded (diep's own framing: those stats simply become unspendable),
+		so this clamps `upNb`/`up` down to the new class's `statMax` using the exact inverse of
+		upgrade()'s own per-stat step.
+	*/
+	applyClassSwitchStats(oldClass) {
+		this.damage += (CLASS[this.class].bodyDamage || 0) - (CLASS[oldClass].bodyDamage || 0);
+		if (!CLASS[this.class].statMax) { return; }
+		let idx = -1;
+		for (const key in this.up) {
+			idx++;
+			const cap = CLASS[this.class].statMax[idx];
+			while (this.upNb[idx] > cap) {
+				switch (key) {
+					case "HpRegan": this.up[key] -= 1; break;
+					case "Reload": this.up[key] /= 0.914; break;
+					case "BSpeed": this.up[key] -= 0.15; break;
+					case "BDamage": this.up[key] -= 0.4285714; break;
+					case "BPene": this.up[key] -= 0.75; break;
+					case "MSpeed": this.up[key] -= 1; break;
+					case "HpUp": this.maxHp -= 20; this.hp *= this.maxHp / (this.maxHp + 20); break;
+					case "BodyDam": this.damage -= 1; break;
+				}
+				// Lost, not refunded (plan.md P3) - `stillLvl` (points spent) is untouched, so
+				// there is no free point to respend elsewhere; the stat just becomes
+				// unspendable, diep's own framing for a class with a lower cap.
+				this.upNb[idx]--;
+			}
 		}
 	}
 	/*
@@ -579,12 +633,14 @@ class Player {
 		does not touch classLvl or unlock('scary_tank') - this isn't a real evolution.
 	*/
 	cycleClass() {
+		const oldClass = this.class;
 		const i = CYCLABLE_CLASSES.indexOf(this.class);
 		this.class = CYCLABLE_CLASSES[(i + 1) % CYCLABLE_CLASSES.length];
 		if (!this.bot && this.DETEC && !CLASS[this.class].DETEC) { this.DETEC = null; }
 		this.droneCount = 0;
 		this.necro = CLASS[this.class].necro;
 		this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
+		this.applyClassSwitchStats(oldClass);
 	}
 	collision(other, option = {}) {
 		if (this.dev.ghost) { return; }
@@ -646,9 +702,14 @@ class Player {
 					// nuance 44).
 					const sepX = this.x - other.x, sepY = this.y - other.y;
 					const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;
-					const overlap = this.size + other.size - sepD;
+					// `guardSize` (plan.md T6), not `size` - a Smasher/Landmine/Spike-line
+					// tank's spinning guard is a real physical boundary, not just a bigger
+					// hitbox for damage: it holds the same overlap-resolution share diep's
+					// separate GuardObject entity would.
+					const mySize = this.guardSize || this.size, otherSize = other.guardSize || other.size;
+					const overlap = mySize + otherSize - sepD;
 					if (overlap > 0) {
-						const share = other.size / (this.size + other.size) * overlap / sepD;
+						const share = otherSize / (mySize + otherSize) * overlap / sepD;
 						this.x += sepX * share;
 						this.y += sepY * share;
 					}
@@ -884,10 +945,16 @@ class Player {
 			this.lastHp = this.hp;
 		}
 		///
-		if (CLASS[this.class].alpha) {
+		// `stealth` (plan.md T3) replaces the old single `alpha` decay constant with diep's
+		// three real, independently-valued rates (`invisibilityRate`/`visibilityRateMoving`/
+		// `visibilityRateShooting`) - its mere presence on a class is the gate that used to be
+		// `CLASS[this.class].alpha`'s truthiness, still checked here first and only here each
+		// tick, so motion()/shoot() below can read `.stealth.moving`/`.stealth.shooting`
+		// unguarded: a class switch can only ever be observed here, before either runs.
+		if (CLASS[this.class].stealth) {
 			// this.room.rules.invisFloor (PENDING #28) - 0 everywhere but Tag, where diep_wiki
 			// forbids a stealth class from ever fully vanishing so a win condition can't stall.
-			this.alpha = Math.max(this.room.rules.invisFloor, this.alpha - tick.perTick(CLASS[this.class].alpha));
+			this.alpha = Math.max(this.room.rules.invisFloor, this.alpha - tick.perTick(CLASS[this.class].stealth.decay));
 		} else if (!this.dev.invisible) { this.alpha = 1 }
 		this.motion();
 		if (this.inputs.c) {
@@ -944,6 +1011,19 @@ class Player {
 		// Continuous, not floored - `size` is a float32 on the wire and every consumer (collision
 		// radii, render's size/CONST.SIZE ratio) is fractional already.
 		this.size = 28 * Math.pow(1.01, this.level) + this.dev.size;
+		// Guard shapes (Smasher/Landmine/Spike, plan.md T5/T6) - modelled as a single
+		// enlarged collision circle rather than diep's separate `GuardObject` physics
+		// entity (decided simplification, PENDING.md): `guardSize` is the biggest
+		// `size x sizeRatio` among the class's guards, used wherever contact/overlap is
+		// decided (rooms/Room.js's broad-phase gate, this.collision()'s KIND.PLAYER
+		// overlap) so a spinning guard both deals and blocks contact out to its own edge,
+		// not just the tank body inside it. Equal to `this.size` for every other class.
+		this.guardSize = this.size;
+		if (CLASS[this.class].guards) {
+			for (const g of CLASS[this.class].guards) {
+				this.guardSize = Math.max(this.guardSize, this.size * g.sizeRatio);
+			}
+		}
 		// FOV: diep is 1.39x wider than us at level 1 and grows
 		// multiplicatively at half the tank's own growth rate, not the old
 		// flat +22/level guess.
@@ -959,7 +1039,7 @@ class Player {
 				this.prize = parseInt(this.XPLVL[this.XPLVL.length - 3] + (this.xp - this.XPLVL[this.XPLVL.length - 3]) / 10);
 			}
 		}
-		if (this.class === 'Rocket' && this.upNb[0] === MAX_PER_STAT && this.upNb[1] === MAX_PER_STAT) {
+		if (this.class === 'Rocketeer' && this.upNb[0] === MAX_PER_STAT && this.upNb[1] === MAX_PER_STAT) {
 			this.unlock('speed_demon');
 		}
 		///

@@ -1229,7 +1229,10 @@ class Room {
 							}
 						}
 					}
-					if (dis <= obj.size + other.size) {
+					// `guardSize` (plan.md T6) is a Player-only field, always >= `.size`, that
+					// widens contact for a Smasher/Landmine/Spike-line tank's spinning guard;
+					// undefined (falls back to `.size`) for every non-Player entity.
+					if (dis <= (obj.guardSize || obj.size) + (other.guardSize || other.size)) {
 						// Antisymmetric tie-break, so each unordered pair resolves through exactly one
 						// of its two (obj,other)/(other,obj) visits below - the position-sum clause is
 						// only a TIE-break (gated on size equality) now, not an independent OR: at an

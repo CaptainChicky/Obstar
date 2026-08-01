@@ -684,13 +684,13 @@ function tagTests() {
 		const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
 		const stealthClass = 'Manager';
 		check('there is a real stealth class to test the cap against',
-			CLASS[stealthClass] && CLASS[stealthClass].alpha > 0,
-			CLASS[stealthClass] && CLASS[stealthClass].alpha);
+			CLASS[stealthClass] && CLASS[stealthClass].stealth && CLASS[stealthClass].stealth.decay > 0,
+			CLASS[stealthClass] && CLASS[stealthClass].stealth);
 		check('Tag opts into a nonzero invisibility floor', room.rules.invisFloor > 0,
 			room.rules.invisFloor);
 		let alpha = 1;
 		for (let i = 0; i < 100000; i++) {
-			alpha = Math.max(room.rules.invisFloor, alpha - tick.perTick(CLASS[stealthClass].alpha));
+			alpha = Math.max(room.rules.invisFloor, alpha - tick.perTick(CLASS[stealthClass].stealth.decay));
 		}
 		check('decaying a stealth class in Tag settles at rules.invisFloor, not fully invisible',
 			alpha === room.rules.invisFloor, alpha);
