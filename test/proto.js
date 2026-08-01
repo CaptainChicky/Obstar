@@ -81,12 +81,12 @@ function golden() {
 			construc: 'Objects', id: 17, states: [0, 1, 0, 0, 0, 0, 0], shape: 'sqr',
 			hp: 0.75, x: -100.5, y: 250.125, size: 40, alpha: 1
 		}), '010011a000bfc2c90000437a200042200000ff'],
-		// PENDING #2, wall-only slice: no hp/color/states, just the geometry - construc 3, id 5,
-		// then x/y/size as raw float32 (same x/y/size as the Objects vector above, so the tail
-		// matches it byte for byte).
+		// Rectangular now (plan.md Step 12): no hp/color/states, just the geometry - construc 3,
+		// id 5, then x/y/w/h as raw float32 (x/y match the Objects vector above, so the head
+		// matches it byte for byte; w/h are the two new trailing float32s).
 		['Instance (Walls)', server.encode('Instance', {
-			construc: 'Walls', id: 5, x: -100.5, y: 250.125, size: 40
-		}), '030005c2c90000437a200042200000'],
+			construc: 'Walls', id: 5, x: -100.5, y: 250.125, w: 40, h: 25
+		}), '030005c2c90000437a20004220000041c80000'],
 		// UiUpdate's three array-count fields (leader/map/mess) moved uint8 -> uint16 (PENDING #26):
 		// Maze's wall dots can push a room's live UiUpdate.map array past 255 once combined with
 		// player dots, and a truncated uint8 count desyncs the rest of the packet instead of
@@ -135,9 +135,9 @@ const aBullet = {
 	construc: 'Bullets', id: 900, states: [1, 0, 0, 0, 0, 0, 0], type: 3, x: 5.5, y: 6.5,
 	size: 12, color: 9, alpha: 0.9, dir: -3
 };
-// PENDING #2, wall-only slice: just the geometry, no hp/color/states.
+// Rectangular now (plan.md Step 12): just the geometry, no hp/color/states.
 const aWall = {
-	construc: 'Walls', id: 42, x: -250.5, y: 999.25, size: 60
+	construc: 'Walls', id: 42, x: -250.5, y: 999.25, w: 120, h: 60
 };
 
 function sizes() {
@@ -150,8 +150,9 @@ function sizes() {
 		server.encode('Instance', anObject).length);
 	check('a Bullets record is 21 bytes', server.encode('Instance', aBullet).length === 21,
 		server.encode('Instance', aBullet).length);
-	// PENDING #2, wall-only slice: 3 (CONSTRUCTOR + id) + 3 float32 fields, no hp/color/states.
-	check('a Walls record is 15 bytes', server.encode('Instance', aWall).length === 15,
+	// Rectangular now (plan.md Step 12): 3 (CONSTRUCTOR + id) + 4 float32 fields, no
+	// hp/color/states.
+	check('a Walls record is 19 bytes', server.encode('Instance', aWall).length === 19,
 		server.encode('Instance', aWall).length);
 
 	// ...and the same numbers again, derived from the schema instead of written down. 3 is the
@@ -182,9 +183,9 @@ function sizes() {
 		Object.keys(back.data.Instances.Objects).length === 1 &&
 		Object.keys(back.data.Instances.Bullets).length === 1);
 
-	// PENDING #2, wall-only slice: a Walls instance rides the same GameUpdate instances array as
-	// every other construc and decodes under its own bucket - the decoder's Instances pre-init
-	// (SocketSchema.js) is the easy-to-miss spot that would throw here if it were forgotten.
+	// A Walls instance rides the same GameUpdate instances array as every other construc and
+	// decodes under its own bucket - the decoder's Instances pre-init (SocketSchema.js) is the
+	// easy-to-miss spot that would throw here if it were forgotten.
 	const wallPacket = server.encode('GameUpdate', {
 		head: head, main: main,
 		instances: [aPlayer, aWall].map(r => new Int8Array(server.encode('Instance', r)))
@@ -258,15 +259,16 @@ function roundTrips() {
 		inst && inst.x);
 	check('entity xp comes back as a scoreboard string', inst.xp === '123 k', inst.xp);
 
-	// PENDING #2, wall-only slice: a Walls record's own fields (raw floats, no codec) survive a
-	// full round trip under its own id.
+	// A Walls record's own fields (raw floats, no codec) survive a full round trip under its own
+	// id - w/h now, not a single radius (plan.md Step 12).
 	const wallInst = client.decode(server.encode('GameUpdate', {
 		head: { timestamp: 0, width: 0, height: 0, screen: 0, xp: 0, level: 0, still: 0, cLvl: 0, baseSize: 0 },
 		main: aPlayer,
 		instances: [new Int8Array(server.encode('Instance', aWall))]
 	})).data.Instances.Walls[42];
-	check('a Walls record decodes under its own id with x/y/size intact',
-		wallInst !== undefined && wallInst.x === aWall.x && wallInst.y === aWall.y && wallInst.size === aWall.size,
+	check('a Walls record decodes under its own id with x/y/w/h intact',
+		wallInst !== undefined && wallInst.x === aWall.x && wallInst.y === aWall.y &&
+		wallInst.w === aWall.w && wallInst.h === aWall.h,
 		JSON.stringify(wallInst));
 
 	check('a polygon shape decodes as `type`, not `shape`',

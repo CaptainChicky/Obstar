@@ -718,29 +718,42 @@ function mazeTests() {
 		room.rules.bossRng === 2 && room.rules.maxBoss === 0,
 		room.rules.bossRng + ' / ' + room.rules.maxBoss);
 
-	// The walls themselves - build() runs synchronously in the constructor (see rooms/Room.js's
-	// header), so they exist the moment makeRoom() returns, with no Init()/timer to wait on.
+	// The walls themselves (plan.md Step 12) - build() runs synchronously in the constructor
+	// (see rooms/Room.js's header), so they exist the moment makeRoom() returns, with no
+	// Init()/timer to wait on.
 	{
+		const CELL_SIZE = 635 * 0.56;
+		const expectedGrid = Math.floor(room.map.width / CELL_SIZE);
+		check('GRID_SIZE derives from our own arena at diep\'s cell size (635 du), not diep\'s hardcoded 40',
+			room.mazeGenerator.config.size === expectedGrid && expectedGrid === 35,
+			room.mazeGenerator.config.size + ' vs ' + expectedGrid);
+
 		const walls = [...room.INSTANCE.walls.live()];
-		check('build() scatters at least one wall structure across the arena', walls.length > 0,
+		check('build() places at least one wall rectangle across the arena', walls.length > 0,
 			walls.length);
-		check('every wall is a real KIND.WALL stud, ' + World.gu(3) + ' units in radius',
-			walls.every((w) => w.kind === KIND.WALL && w.size === World.gu(3)),
-			walls.map((w) => w.kind + ':' + w.size).slice(0, 5).join(' '));
+		check('every wall is a real KIND.WALL rectangle with positive width/height',
+			walls.every((w) => w.kind === KIND.WALL && w.w > 0 && w.h > 0),
+			walls.map((w) => w.kind + ':' + w.w + 'x' + w.h).slice(0, 5).join(' '));
+		check('every wall\'s broad-phase `.size` is its own half-diagonal, not either half-extent',
+			walls.every((w) => Math.abs(w.size - Math.sqrt(w.w * w.w + w.h * w.h) / 2) < 1e-6),
+			walls.slice(0, 3).map((w) => w.size.toFixed(2)).join(' '));
 		check('every wall sits inside the drawn arena, not the OOB band past it',
-			walls.every((w) => Math.abs(w.x) <= room.map.width / 2 && Math.abs(w.y) <= room.map.height / 2),
+			walls.every((w) =>
+				w.x - w.w / 2 >= -room.map.width / 2 - 1e-6 && w.x + w.w / 2 <= room.map.width / 2 + 1e-6 &&
+				w.y - w.h / 2 >= -room.map.height / 2 - 1e-6 && w.y + w.h / 2 <= room.map.height / 2 + 1e-6),
 			walls.length);
 		check('a wall is permanent geometry - never tombstoned',
 			walls.every((w) => w.destroy === 0));
 	}
 
 	// Visible on the minimap (diep_wiki: "The maze walls are also visible on the minimap") -
-	// precomputed once in build(), not walked per viewer per tick; see rooms/Room.js's
+	// one dot per merged rectangle now, far fewer than the old one-per-stud count (plan.md Step
+	// 12) - precomputed once in build(), not walked per viewer per tick; see rooms/Room.js's
 	// this.wallDots for why. 'gray' (SocketSchema's color index 4) is never a live team dot, so
 	// reusing the ordinary player-dot record needs no wire-format change of its own.
 	{
 		const walls = [...room.INSTANCE.walls.live()];
-		check('one precomputed minimap dot per wall stud', room.wallDots.length === walls.length,
+		check('one precomputed minimap dot per wall rectangle', room.wallDots.length === walls.length,
 			room.wallDots.length + ' vs ' + walls.length);
 		check('every wall dot is grey and lands inside the 0..1 map fraction',
 			room.wallDots.every((d) => d.team === 4 && d.x >= 0 && d.x <= 1 && d.y >= 0 && d.y <= 1),
@@ -4248,13 +4261,13 @@ function broadPhaseTests() {
 }
 
 /*
-	KIND.WALL, the wall-only slice of PENDING #2. No Maze room exists yet to spawn a wall inside a
-	real match, so these are direct-collision tests against hand-built entities - the same pattern
-	Tag's own Arena Closer tests (#28) use above for the same reason (arenaTests's closer.collision()
-	calls).
+	KIND.WALL (plan.md Step 12) - rectangular walls, circle-vs-AABB collision, bullet-kill on
+	contact. No Maze room exists in this suite (mazeTests() below drives the real generator), so
+	these are direct-collision tests against a hand-built rectangle - the same pattern Tag's own
+	Arena Closer tests (#28) use above for the same reason (arenaTests's closer.collision() calls).
 */
 function wallTests() {
-	console.log('\nwalls (PENDING #2, wall-only slice):');
+	console.log('\nwalls (plan.md Step 12):');
 	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const constants = require(path.join(ROOT, 'lib', 'constants.js'));
 	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
@@ -4262,92 +4275,114 @@ function wallTests() {
 	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
 	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
 
-	const WALL_FRICTION = tick.drag(constants.WALL_FRICTION);
-
 	// ffa, not sandbox: sandbox's maxPlayer is 0 (Sandbox.js), which caps SlotMap.players at the
 	// one tester seat - too small for this function's several hand-planted tanks.
 	const room = makeRoom('ffa');
-	const wall = new Wall(0, 0, 40, { GM: room.gm, sId: room.id, oId: -1 }, room);
+	// A 100x40 rectangle centred on the origin - half-extents hw=50, hh=20.
+	const wall = new Wall(0, 0, 100, 40, { GM: room.gm, sId: room.id, oId: -1 }, room);
 
-	// A tank sitting 100 units to the right of the wall's centre (sepD=100 > size sum, no overlap),
-	// so only the vec bounce/friction shape is exercised - the overlap-correction assertions below
-	// use their own, deliberately-overlapping setup.
-	function plantTank() {
+	check('Wall.size is the rectangle\'s half-diagonal, not either half-extent',
+		Math.abs(wall.size - Math.sqrt(50 * 50 + 20 * 20)) < 1e-9, wall.size);
+
+	// A fresh Player's own `this.size` (25, entities/Player.js's constructor default - update()'s
+	// `28 x 1.01^level` growth never runs, since these tests call collision() directly without
+	// ticking) is what every contact/no-contact distance below is planned against.
+	function plantTank(x, y) {
 		return room.INSTANCE.players.add((id) => new Player(
-			{ GM: room.gm, sId: room.id, oId: id }, 100, 0, 'tester', 1, room.XPLVL, room));
+			{ GM: room.gm, sId: room.id, oId: id }, x, y, 'tester', 1, room.XPLVL, room));
 	}
 
-	// ---- bounce reflects a fast tank -------------------------------------------------------
+	// ---- real contact on the x-dominant side: keep-speed, then an axis-aligned push-out ----
 	{
-		const p = plantTank();
-		p.vec.x = -5; p.vec.y = 0;   // moving straight into the wall (negative x = toward origin)
-		p.collision(wall, {});
-		const want = 5 * constants.WALL_BOUNCE;
-		check('a fast tank rebounds off the wall at WALL_BOUNCE of its inbound speed',
-			Math.abs(p.vec.x - want) < 1e-9 && Math.abs(p.vec.y) < 1e-9,
-			p.vec.x + ',' + p.vec.y + ' vs ' + want + ',0');
-		p.destroy = 1;
-	}
-
-	// ---- friction decays a grinding tank's tangential velocity -----------------------------
-	{
-		const p = plantTank();
-		p.vec.x = 0; p.vec.y = 7;   // purely tangential to the wall's normal (the x axis here)
-		p.collision(wall, {});
-		const want = 7 * WALL_FRICTION;
-		check('a grinding tank\'s tangential speed decays by WALL_FRICTION, not the normal component',
-			Math.abs(p.vec.x) < 1e-9 && Math.abs(p.vec.y - want) < 1e-9,
-			p.vec.x + ',' + p.vec.y + ' vs 0,' + want);
-		p.destroy = 1;
-	}
-
-	// ---- zero body damage, and full positional overlap correction on the tank's own side ---
-	{
-		const p = plantTank();
-		p.x = 30; p.y = 0;   // sepD=30 < size(1)+size(40), a real overlap
-		p.vec.x = 0; p.vec.y = 0;
+		// Closest point on the rect is (50,0); tank centre (73,0) -> dist 23 < tank.size(25), a
+		// real circle-vs-AABB hit.
+		const p = plantTank(73, 0);
+		p.vec.x = -5; p.vec.y = 3;
 		const hpBefore = p.hp;
 		p.collision(wall, {});
 		check('a wall deals no body damage', p.hp === hpBefore, p.hp + ' vs ' + hpBefore);
-		const overlap = p.size + wall.size - 30;
-		check('the tank absorbs the FULL positional overlap (wall never moves, unlike a tank pair)',
-			Math.abs(p.x - (30 + overlap)) < 1e-9, p.x + ' vs ' + (30 + overlap));
+		const push = tick.impulse(constants.WALL_PUSH_OUT);
+		const wantX = -5 * constants.WALL_TANK_KEEP_SPEED + push;
+		const wantY = 3 * constants.WALL_TANK_KEEP_SPEED;
+		check('a tank sheds to WALL_TANK_KEEP_SPEED of its own velocity on contact',
+			Math.abs(p.vec.y - wantY) < 1e-9, p.vec.y + ' vs ' + wantY);
+		check('...and gets shoved out along the x axis (the more-aligned one) away from the wall',
+			Math.abs(p.vec.x - wantX) < 1e-9, p.vec.x + ' vs ' + wantX);
 		p.destroy = 1;
 	}
 
-	// ---- an ordinary bullet/trap bounces without being destroyed, and the wall takes no
-	//      damage (it has none to begin with - this just confirms no pene/hp field is touched) --
+	// ---- real contact on the y-dominant side: the push picks the OTHER axis ----------------
 	{
-		const b = new Bullet({ GM: room.gm, sId: room.id, oId: -1 }, 100, 0, Math.PI, 0.5, 40, room);
+		// Closest point on the rect is (0,20); tank centre (0,33) -> dist 13 < tank.size(25).
+		const p = plantTank(0, 33);
+		p.vec.x = 4; p.vec.y = -5;
+		p.collision(wall, {});
+		const push = tick.impulse(constants.WALL_PUSH_OUT);
+		const wantX = 4 * constants.WALL_TANK_KEEP_SPEED;
+		const wantY = -5 * constants.WALL_TANK_KEEP_SPEED + push;
+		check('a tank nearer the wall\'s top/bottom edge is pushed out along y instead of x',
+			Math.abs(p.vec.x - wantX) < 1e-9 && Math.abs(p.vec.y - wantY) < 1e-9,
+			p.vec.x + ',' + p.vec.y + ' vs ' + wantX + ',' + wantY);
+		p.destroy = 1;
+	}
+
+	// ---- the broad-phase bounding circle is only a coarse gate - a candidate inside it but
+	//      outside the real rectangle must do nothing (the false-positive case the half-diagonal
+	//      approximation creates for a long/wide wall) --------------------------------------
+	{
+		// Centre (52,52): within wall.size(53.85) + tank.size(25) of the origin (broad-phase
+		// would wave this through), but the true closest point is (50,20) -> dist ~32.06 >
+		// tank.size(25) - no real contact.
+		const p = plantTank(52, 52);
+		p.vec.x = -5; p.vec.y = -5;
+		const snap = { hp: p.hp, vx: p.vec.x, vy: p.vec.y };
+		p.collision(wall, {});
+		check('a broad-phase-only candidate (inside the bounding circle, outside the real rect) is untouched',
+			p.hp === snap.hp && p.vec.x === snap.vx && p.vec.y === snap.vy,
+			p.vec.x + ',' + p.vec.y);
+		p.destroy = 1;
+	}
+
+	// ---- an ordinary bullet/trap/drone is destroyed outright on contact, no bounce, no pene
+	//      drain (diepcustom Object.ts:297-300: anything with an owner dies) -----------------
+	// A Bullet's own constructor default size is 10 (not the tank's 25 above), so the contact
+	// point is planned against that: closest point (50,0), centre (57,0) -> dist 7 < size(10).
+	{
+		const b = new Bullet({ GM: room.gm, sId: room.id, oId: -1 }, 57, 0, Math.PI, 0.5, 40, room);
 		b.type = 3;   // a trap - still an ordinary Bullet instance, per the file header
 		b.pene = 50;
 		b.vec.x = -5; b.vec.y = 0;
 		const peneBefore = b.pene;
+		const vxBefore = b.vec.x;
 		b.collision(wall, {});
-		const want = 5 * constants.WALL_BOUNCE;
-		check('an ordinary bullet/trap rebounds off a wall the same way a tank does',
-			Math.abs(b.vec.x - want) < 1e-9 && Math.abs(b.vec.y) < 1e-9,
-			b.vec.x + ',' + b.vec.y + ' vs ' + want + ',0');
-		check('...and is not destroyed, and loses no pene',
-			b.destroy === 0 && b.pene === peneBefore, b.destroy + ' / ' + b.pene + ' vs ' + peneBefore);
+		check('an ordinary bullet/trap is destroyed outright on contact, with no physics applied first',
+			b.destroy === tick.DES && b.vec.x === vxBefore && b.pene === peneBefore,
+			'destroy=' + b.destroy + ' vec.x=' + b.vec.x + ' pene=' + b.pene);
 	}
-
-	// ---- a base drone dies instantly on contact instead of bouncing ------------------------
 	{
-		const d = new Bullet({ GM: room.gm, sId: room.id, oId: -1 }, 100, 0, Math.PI, 0.5, 40, room);
-		d.type = 1.4;
+		const d = new Bullet({ GM: room.gm, sId: room.id, oId: -1 }, 57, 0, Math.PI, 0.5, 40, room);
+		d.type = 1.4;   // a base drone - same rule now, no longer a special case
 		d.pene = 2000;
 		d.vec.x = -5; d.vec.y = 0;
 		d.collision(wall, {});
-		check('a base drone dies instantly on contact with a wall, no physics',
+		check('a base drone is destroyed on contact with a wall the same way any other bullet is',
 			d.destroy === tick.DES && d.vec.x === -5,
 			'destroy=' + d.destroy + ' vec.x=' + d.vec.x);
+	}
+
+	// ---- a broad-phase-only bullet candidate is also left alone, same as the tank case ------
+	{
+		const b = new Bullet({ GM: room.gm, sId: room.id, oId: -1 }, 52, 52, Math.PI, 0.5, 40, room);
+		b.pene = 50;
+		b.collision(wall, {});
+		check('a bullet inside the bounding circle but outside the real rectangle is not destroyed',
+			b.destroy === 0, b.destroy);
 	}
 
 	// ---- an Arena Closer (#28) passes through untouched, via the same this.closer guard every
 	//      other collision kind already relies on - not a new exemption ----------------------
 	{
-		const p = plantTank();
+		const p = plantTank(73, 0);
 		p.closer = 1;
 		p.vec.x = -5; p.vec.y = 0;
 		const snap = { hp: p.hp, vx: p.vec.x, vy: p.vec.y };
@@ -4356,6 +4391,17 @@ function wallTests() {
 			p.hp === snap.hp && p.vec.x === snap.vx && p.vec.y === snap.vy,
 			p.hp + ' / ' + p.vec.x + ',' + p.vec.y);
 		p.destroy = 1;
+	}
+
+	// ---- an Arena Closer's own bullet passes through a wall the same way the closer tank does,
+	//      even in real contact (diep_wiki, PENDING #26/#28) --------------------------------
+	{
+		const b = new Bullet({ GM: room.gm, sId: room.id, oId: -1 }, 57, 0, Math.PI, 0.5, 40, room);
+		b.closer = 1;
+		b.vec.x = -5; b.vec.y = 0;
+		b.collision(wall, {});
+		check('an Arena Closer\'s own bullet is not destroyed on contact with a wall',
+			b.destroy === 0, b.destroy);
 	}
 
 	// ---- the wall itself is inert: required no-op collision()/update() (rooms/Room.js's tick

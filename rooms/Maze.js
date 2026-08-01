@@ -1,13 +1,16 @@
 /*
-	Maze - free-for-all with wall chains scattered across the arena, and a hard 5-hour close.
+	Maze - free-for-all with a generated rectangular wall layout scattered across the arena, and a
+	hard 5-hour close.
 
-	Source: diep_wiki/Maze.txt, diep_wiki/Arena Closer.txt. "works similarly to Free For All" is
-	the wiki's own framing, so every tunable below is ffa's own (rooms/Ffa.js) verbatim - same
-	arena, same shape mix/density, same bot count, same respawn curve, one nominal team. What is
-	actually new here is only:
+	Source: diep_wiki/Maze.txt, diep_wiki/Arena Closer.txt, plan.md Step 12. "works similarly to
+	Free For All" is the wiki's own framing, so every tunable below is ffa's own (rooms/Ffa.js)
+	verbatim - same arena, same shape mix/density, same bot count, same respawn curve, one nominal
+	team. What is actually new here is only:
 
-		build()           scatters KIND.WALL chains across the map (PENDING #2 shipped the entity
-		                  type and its physics; no mode ever placed one until now)
+		build()           runs lib/mazeGenerator.js's maze algorithm and places its rectangles as
+		                  real KIND.WALL entities (plan.md Step 12; PENDING #2 shipped the entity
+		                  type's physics slice, and an earlier session's own studs-and-chains
+		                  placement, both since redesigned)
 		step()/close()    the wall-clock 5-hour close, diep_wiki's own number
 		startClosing()/
 		createCloser()    the same Arena Closer swarm rooms/Tag.js's win condition already built,
@@ -24,40 +27,36 @@ const gu = World.gu;
 const clock = require('../lib/clock.js');
 const Room = require('./Room.js');
 const Wall = require('../entities/Wall.js');
+const MazeGenerator = require('../lib/mazeGenerator.js');
 const Player = require('../entities/Player.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CONFIG = require('../lib/gameAI.js');
 
 /*
-	Wall chain generation (PENDING #26 - "walls have friction and bounciness", "randomly
-	generated", "visible on the minimap" are the only concrete requirements; diep_wiki gives no
-	geometry or count, so everything below is OURS, on the same untuned-by-design footing as
-	WALL_BOUNCE/WALL_FRICTION themselves (lib/constants.js) - due a real playtest pass once this
-	mode can actually be played, not a value to defend.
+	Wall layout (plan.md Step 12, PENDING #26's reopened "wall shape is wrong" half) -
+	diepcustom/src/Misc/MazeGenerator.ts ported to lib/mazeGenerator.js: plant scattered seeds,
+	grow each into a branching/turning corridor of grid cells, sprinkle a few singular walls,
+	flood-fill from a corner to find (and fill in) unreachable pockets, then merge the wall cells
+	into the largest possible rectangles - real "rectangular chunks of various sizes forming an
+	actual maze layout", not the old chain of circular studs approximating one.
 
-	A "structure" is 1-3 straight "legs" joined end to end, each leg turning +-90 deg from the
-	last - a blocky, right-angled corridor rather than a straight diagonal bar, closer to the
-	screenshot in diep_wiki/Maze.txt than a single line would read as. Each leg is a chain of
-	Wall studs (PENDING #2's "everything in this codebase's collision pass is a circle" - a wall
-	IS a chain of these) spaced at 1.5x their own radius, which keeps every consecutive pair
-	overlapping (spacing < 2*radius) so the chain has no seam a bullet could thread - a chain
-	that only touches tangentially (spacing = 2*radius) would still be gap-free along a dead
-	straight leg, but the 90 deg joints between legs would not be without the extra overlap.
+	The five generator knobs (seed count/variation, turn/branch/termination chance) are diep's
+	own (Gamemodes/Maze.ts:45-52) verbatim - dimensionless probabilities, nothing to convert. Only
+	the GRID SIZE is unit-converted, and in the opposite direction from diep: diep's own arena
+	SIZE is a product of its GRID_SIZE (40) and CELL_SIZE (635 du); ours is already fixed at ffa's
+	own gu(451) (PENDING #26's "the mode is Ffa's own tuning, verbatim"), so GRID_SIZE is derived
+	FROM that arena at diep's own cell size instead of hardcoding diep's 40 - see buildWalls().
 */
-const WALL_STUD_R = gu(3);
-const WALL_STUD_GAP = WALL_STUD_R * 1.5;
-const WALL_LEGS_MIN = 1, WALL_LEGS_MAX = 3;
-const WALL_LEG_STUDS_MIN = 3, WALL_LEG_STUDS_MAX = 7;
-// One structure per this many gu^2 of arena - picked to keep the total stud count (and with it
-// the minimap dot count, below) in the low hundreds at ffa's own gu(451) arena (measured
-// 200-260 across repeated rolls), not against any density diep states (it states none). The
-// count has no hard ceiling to respect any more - TYPE.UiUpdate.array (SocketSchema.js) is a
-// uint16, specifically because this total was never going to stay under the old uint8's 255.
-const WALL_STRUCTURE_DENSITY_GU2 = 8000;
-// A chain stops growing once it enters the map-edge OOB inset, rather than wandering into the
-// dark band outside the drawn arena - config.OOB_MARGIN's own neighbourhood, restated here
-// rather than imported since this is a generation-time cutoff, not a runtime physics constant.
-const WALL_EDGE_MARGIN = gu(15);
+const MAZE_GEN_CONFIG = {
+	baseSeedCount: 45,
+	seedCountVariation: 30,
+	turnChance: 0.2,
+	branchChance: 0.2,
+	terminationChance: 0.2
+};
+// diepcustom/src/Gamemodes/Maze.ts:42 - CELL_SIZE 635 du, our units (x 0.56) = 355.6. At ffa's
+// own gu(451) = 12628 units, floor(12628 / 355.6) = 35 - a 35x35 grid, not diep's 40x40.
+const MAZE_CELL_SIZE = 635 * 0.56;
 
 /*
 	The wiki gives the PERIOD exactly ("Five hours after the server opened") and nothing about
@@ -105,42 +104,43 @@ class Maze extends Room {
 		this.buildWalls();
 	}
 	/*
-		Scatters wall structures across the arena and, in the same pass, precomputes their minimap
-		dots (rooms/Room.js's this.wallDots, appended by every viewer's getUi()) - safe to do once
-		here rather than per tick/per viewer, since a wall never moves and this mode's arena is
-		fixed size (arenaLive is not set), so the map-fraction coordinates below never go stale.
+		Runs the generator (lib/mazeGenerator.js), merges its grid cells into rectangles, and turns
+		each rectangle into a real Wall - and, in the same pass, precomputes their minimap dots
+		(rooms/Room.js's this.wallDots, appended by every viewer's getUi()) - safe to do once here
+		rather than per tick/per viewer, since a wall never moves and this mode's arena is fixed
+		size (arenaLive is not set), so the map-fraction coordinates below never go stale.
+
+		this.mazeGenerator is kept (not just its output) the same way diepcustom's own MazeArena
+		keeps `mazeGenerator` public - a future spawn-validity check (diep's own
+		`isValidSpawnLocation`, not built this step - see plan.md Step 12's "Moves: nothing outside
+		Maze") would read `isCellOccupied()` off it rather than re-deriving cell occupancy from the
+		placed Wall list.
 	*/
 	buildWalls() {
-		const halfW = this.map.width / 2 - WALL_EDGE_MARGIN;
-		const halfH = this.map.height / 2 - WALL_EDGE_MARGIN;
-		const areaGu = (this.map.width / World.GU) * (this.map.height / World.GU);
-		const structures = Math.floor(areaGu / WALL_STRUCTURE_DENSITY_GU2);
+		// GRID_SIZE derives from OUR arena at diep's own cell size, not diep's hardcoded 40 - see
+		// this file's header comment for why the two arenas are related in opposite directions.
+		const gridSize = Math.floor(this.map.width / MAZE_CELL_SIZE);
+		const generator = new MazeGenerator(Object.assign({ size: gridSize }, MAZE_GEN_CONFIG));
+		generator.generate();
+		const rects = generator.convertToWalls();
+		this.mazeGenerator = generator;
+
+		const cellW = this.map.width / gridSize, cellH = this.map.height / gridSize;
+		const leftX = -this.map.width / 2, topY = -this.map.height / 2;
 		const dots = [];
-		for (let s = 0; s < structures; s++) {
-			let x = (Math.random() * 2 - 1) * halfW;
-			let y = (Math.random() * 2 - 1) * halfH;
-			let dir = Math.floor(Math.random() * 4) * (Math.PI / 2);
-			const legs = WALL_LEGS_MIN + Math.floor(Math.random() * (WALL_LEGS_MAX - WALL_LEGS_MIN + 1));
-			for (let leg = 0; leg < legs; leg++) {
-				const studs = WALL_LEG_STUDS_MIN +
-					Math.floor(Math.random() * (WALL_LEG_STUDS_MAX - WALL_LEG_STUDS_MIN + 1));
-				for (let n = 0; n < studs; n++) {
-					if (Math.abs(x) > halfW || Math.abs(y) > halfH) { break; }
-					this.INSTANCE.walls.add((id) =>
-						new Wall(x, y, WALL_STUD_R, { GM: this.gm, sId: this.id, oId: id }, this));
-					dots.push({
-						x: (x + this.map.width / 2) / this.map.width,
-						y: (y + this.map.height / 2) / this.map.height,
-						team: 4,   // 'gray' (SocketSchema's color table) - no live team dot ever uses it
-						size: Math.min(255, Math.round(WALL_STUD_R))
-					});
-					x += Math.cos(dir) * WALL_STUD_GAP;
-					y += Math.sin(dir) * WALL_STUD_GAP;
-				}
-				// +-90 deg only, never a U-turn back onto the leg just laid - a blocky corridor
-				// bend, not a diagonal or a fold-back that would double a stretch of wall on itself.
-				dir += (Math.random() < 0.5 ? 1 : -1) * Math.PI / 2;
-			}
+		for (const rect of rects) {
+			const minX = rect.x * cellW + leftX, minY = rect.y * cellH + topY;
+			const maxX = (rect.x + rect.width) * cellW + leftX, maxY = (rect.y + rect.height) * cellH + topY;
+			const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+			const w = maxX - minX, h = maxY - minY;
+			this.INSTANCE.walls.add((id) =>
+				new Wall(cx, cy, w, h, { GM: this.gm, sId: this.id, oId: id }, this));
+			dots.push({
+				x: (cx + this.map.width / 2) / this.map.width,
+				y: (cy + this.map.height / 2) / this.map.height,
+				team: 4,   // 'gray' (SocketSchema's color table) - no live team dot ever uses it
+				size: Math.min(255, Math.round(Math.max(w, h) / 2))
+			});
 		}
 		this.wallDots = dots;
 	}

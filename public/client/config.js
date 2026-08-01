@@ -92,8 +92,8 @@
 		// `tri`'s dustier rose below so a Crasher still reads as its own thing next to an ordinary
 		// Triangle, not just a brighter one.
 		bull: ["#ff9fc7", "#d97ea3"],
-		// Solid grey walls (diep_wiki, PENDING #2/#26) - deliberately distinct from bull's pink
-		// above so a wall stud doesn't read as a Crasher shape.
+		// Solid grey walls (diep_wiki, plan.md Step 12) - deliberately distinct from bull's pink
+		// above so a wall doesn't read as a Crasher shape.
 		wall: ["#7d7d7d", "#5c5c5c"],
 		sqr: ["#cfcf9f", "#a6a689"],
 		alphaSqr: ["#cfcf9f", "#a6a689"],

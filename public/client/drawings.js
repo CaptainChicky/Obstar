@@ -298,11 +298,11 @@
 				ctx.stroke();
 			}
 		},
-		// A wall "stud" (PENDING #2, wall-only slice) - a filled+stroked circle, not nested under
-		// obj since it is not a farmable-shape type.
-		wall: (ctx, size) => {
+		// A Maze wall (plan.md Step 12) - a filled+stroked axis-aligned rectangle, not nested
+		// under obj since it is not a farmable-shape type.
+		wall: (ctx, w, h) => {
 			ctx.beginPath();
-			ctx.arc(0, 0, size, 0, Math.PI * 2);
+			ctx.rect(-w / 2, -h / 2, w, h);
 			ctx.closePath();
 			ctx.fillStyle = Palette.wall[0];
 			ctx.strokeStyle = Palette.wall[1];

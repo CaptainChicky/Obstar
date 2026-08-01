@@ -604,7 +604,7 @@ console.log('\nan incoming bullet is dead-reckoned, a drone is not (PENDING #24b
 	}
 }
 
-console.log('\na Walls instance creates a client Wall entity and draws without throwing (PENDING #2, wall-only slice):');
+console.log('\na Walls instance creates a client Wall entity and draws without throwing (plan.md Step 12):');
 {
 	// No shipped room spawns a wall yet (no Maze room exists), so this is a hand-built packet,
 	// same as `packet()` above builds a synthetic Bullets/Players instance for its own tests.
@@ -621,7 +621,7 @@ console.log('\na Walls instance creates a client Wall entity and draws without t
 				recoil: new Array(15).fill(0), canDir: [0]
 			},
 			instances: [new Int8Array(PROTO.encode('Instance', {
-				construc: 'Walls', id: 11, x: wall.x, y: wall.y, size: wall.size
+				construc: 'Walls', id: 11, x: wall.x, y: wall.y, w: wall.w, h: wall.h
 			}))]
 		};
 		return PROTO.encode('GameUpdate', buff);
@@ -633,16 +633,16 @@ console.log('\na Walls instance creates a client Wall entity and draws without t
 	// checks entities from a packet delivered AFTER start(), never the handoff packet itself -
 	// see the bullet/tank tests above). So: hand over on a bare packet, then deliver the one that
 	// actually carries the wall.
-	const hook = a.start(wallPacket(1, { x: 200, y: -150, size: 40 }));
+	const hook = a.start(wallPacket(1, { x: 200, y: -150, w: 100, h: 40 }));
 	check('the client hands over from the connecting screen to the game loop', !!hook);
-	a.deliver(wallPacket(2, { x: 200, y: -150, size: 40 }));
+	a.deliver(wallPacket(2, { x: 200, y: -150, w: 100, h: 40 }));
 	a.frame(FRAME);
 
 	const wall = hook.Instances.Walls[11];
 	check('a Walls instance creates a client Wall entity', !!wall);
-	check('...at the position and size the packet carried',
-		wall && wall.x === 200 && wall.y === -150 && wall.size === 40,
-		wall && (wall.x + ',' + wall.y + ',' + wall.size));
+	check('...at the position and dimensions the packet carried',
+		wall && wall.x === 200 && wall.y === -150 && wall.w === 100 && wall.h === 40,
+		wall && (wall.x + ',' + wall.y + ',' + wall.w + ',' + wall.h));
 
 	let err = null;
 	try {

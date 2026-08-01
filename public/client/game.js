@@ -773,7 +773,7 @@
 									inst[OBJ] = new Bullet(obj.x, obj.y, obj.size, obj.dir, obj.type, obj.color);
 									break;
 								}
-								case 'Walls': inst[OBJ] = new Wall(obj.x, obj.y, obj.size); break;
+								case 'Walls': inst[OBJ] = new Wall(obj.x, obj.y, obj.w, obj.h); break;
 								default: continue;    // a construc byte this client does not know
 							}
 						}

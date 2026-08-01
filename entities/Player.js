@@ -37,13 +37,12 @@ const { TANK_TANK_MULT } = require('../lib/damage.js');
 */
 const AUTOTURRET_LEAD = 15.84;
 
-// Wall contact physics (PENDING #2, wall-only slice) - see lib/constants.js for what these mean
-// and why they're ours, not diep's. WALL_FRICTION is pre-converted to a per-tick drag factor at
-// load, same as entities/Objects.js's own BODY_FRICTION; WALL_BOUNCE is a dimensionless ratio
-// applied directly to a live this.vec read, not a fresh magnitude, so it is used as-is (see the
-// KIND.WALL collision arm below).
-const WALL_BOUNCE = require('../lib/constants.js').WALL_BOUNCE;
-const WALL_FRICTION = tick.drag(require('../lib/constants.js').WALL_FRICTION);
+// Wall contact physics (plan.md Step 12) - see lib/constants.js for what these mean and the diep
+// citation behind them. WALL_TANK_KEEP_SPEED is dimensionless, applied directly to a live
+// this.vec read; WALL_PUSH_OUT is a fresh per-tick-of-contact magnitude, so it goes through
+// tick.impulse() at its own call site below, not here (see the KIND.WALL collision arm below).
+const WALL_TANK_KEEP_SPEED = require('../lib/constants.js').WALL_TANK_KEEP_SPEED;
+const WALL_PUSH_OUT = require('../lib/constants.js').WALL_PUSH_OUT;
 
 // Idle spin rate, per reference tick: an auto-turret with nothing to shoot at (shoot()), and the
 // `c` auto-spin toggle (update()). One constant, because they are meant to look like the same
@@ -733,25 +732,36 @@ class Player {
 				if (this.hp <= 0) { this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
 				break;
 			case KIND.WALL: {
-				// Solid, no body damage (diep_wiki, PENDING #26): friction while grinding along it,
-				// bounce on a fast impact, no hp -= anywhere in this arm - the one respect in which
-				// this differs from every other case above. Wall never moves, so unlike KIND.PLAYER's
-				// overlap split above the tank absorbs the full positional overlap, not a share of it.
-				const sepX = this.x - other.x, sepY = this.y - other.y;
-				const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;
-				const nx = sepX / sepD, ny = sepY / sepD;
-				const vn = this.vec.x * nx + this.vec.y * ny;
-				const tx = this.vec.x - nx * vn, ty = this.vec.y - ny * vn;
-				// WALL_BOUNCE is dimensionless and applied directly to this live vn read - unlike
-				// every knockback above it is not a fresh REF_TICK_MS-denominated magnitude, so it
-				// needs no tick.impulse()/tick.perTick() wrapping (PENDING nuance 39).
-				const newVn = (vn < 0) ? -vn * WALL_BOUNCE : vn;
-				this.vec.x = nx * newVn + tx * WALL_FRICTION;
-				this.vec.y = ny * newVn + ty * WALL_FRICTION;
-				const overlap = this.size + other.size - sepD;
-				if (overlap > 0) {
-					this.x += nx * overlap;
-					this.y += ny * overlap;
+				/*
+					Rectangular wall (plan.md Step 12) - circle-vs-AABB, diepcustom's own
+					closest-point "constrain" test (Object.ts:191-192), the same test either side of
+					the pair uses. The broad-phase gate that got this call here only bounds the wall
+					by its half-diagonal (Wall.js's own `.size`) - a merged wall chunk can run for
+					several grid cells, so its true edge can sit far from its centre - so this arm has
+					to re-check real contact itself before applying anything; a false-positive
+					broad-phase candidate must do nothing.
+				*/
+				const hw = other.w / 2, hh = other.h / 2;
+				const cx = Math.max(other.x - hw, Math.min(this.x, other.x + hw));
+				const cy = Math.max(other.y - hh, Math.min(this.y, other.y + hh));
+				const dx = this.x - cx, dy = this.y - cy;
+				if (dx * dx + dy * dy > this.size * this.size) { break; }
+				// No body damage, same as before (diep_wiki, PENDING #26) - no hp -= anywhere in
+				// this arm. Object.ts:303: a tank sheds to a flat fraction of its own speed on every
+				// tick of contact - dimensionless, applied directly to the live vec read.
+				this.vec.x *= WALL_TANK_KEEP_SPEED;
+				this.vec.y *= WALL_TANK_KEEP_SPEED;
+				// ...and gets shoved out along whichever axis the centre offset is more aligned
+				// with (Object.ts:307-326's relA/relB comparison - axis-aligned rather than
+				// diagonal, since a Maze wall is never rotated here). tick.impulse(), not
+				// tick.perTick() - this.vec routes through Physics.stepBody, see the `back` comment
+				// above.
+				const ox = this.x - other.x, oy = this.y - other.y;
+				const push = tick.impulse(WALL_PUSH_OUT);
+				if (Math.abs(ox) / hw >= Math.abs(oy) / hh) {
+					this.vec.x += (Math.sign(ox) || 1) * push;
+				} else {
+					this.vec.y += (Math.sign(oy) || 1) * push;
 				}
 				break;
 			}

@@ -1089,6 +1089,66 @@ nothing left outside this step's own files and the unrelated Summoner-boss `size
   its class graph is not ours and this is a restructuring call, which this plan does not make.
 
 ### Step 12: Maze walls — rectangles, bullet-kill on contact, and a real maze generator
+
+**Step 12 LANDED (2026-08-01).** Landed as written, with one real bug found and fixed in the same
+pass and one judgement call on the collision-resolution axis worth recording:
+
+- **`lib/mazeGenerator.js`** is a faithful port of `diepcustom/src/Misc/MazeGenerator.ts` — same
+  seed/grow/sprinkle/flood-fill/`convertToWalls()` algorithm, including its unbounded `get()`/
+  `set()` (no bounds check, so a chunk growing exactly to the grid edge reads into the next row) —
+  a port reproduces the reference's own shapes, not a hardened rewrite of it. `rooms/Maze.js`'s
+  `buildWalls()` derives `GRID_SIZE` from **our own** arena at diep's cell size (`635 du × 0.56 =
+  355.6`) instead of hardcoding diep's `40` — `Math.floor(gu(451) / 355.6) = 35`, confirmed by a new
+  `test/rooms.js` assertion, not hand-derived only. The five generator probabilities
+  (`baseSeedCount`/`seedCountVariation`/`turnChance`/`branchChance`/`terminationChance`) are diep's
+  own numbers verbatim — dimensionless, nothing to convert.
+- **`entities/Wall.js`** is now `{x, y, w, h}` plus a server-only `size` field that is the
+  rectangle's **half-diagonal** (`√(w²+h²)/2`), not either half-extent — `rooms/Room.js`'s generic
+  collision pass (the quadtree insert, the query radius, the coarse `dis <= obj.size + other.size`
+  pair gate) treats every `INSTANCE` kind as a circle of `.size` with no idea a wall is a rectangle,
+  so the half-diagonal is the smallest circle guaranteed to contain the whole rectangle — it can
+  only ever wave a few false positives through to the real narrow-phase test, never miss a genuine
+  one. That narrow-phase test (circle-vs-AABB, diepcustom's own `Object.ts:191-192` closest-point
+  "constrain" test) now lives **inside** both `KIND.WALL` collision arms themselves, since the
+  broad-phase gate is only ever a bound for a merged wall chunk that can run for several grid cells.
+- **Collision-resolution axis, the one judgement call the step body doesn't spell out.** diep's own
+  `receiveKnockback` (`Object.ts:307-326`) picks the push-out axis via
+  `cos(kbAngle)/wall.size` vs `sin(kbAngle)/wall.width` (diep's rotated-rectangle general case);
+  since a Maze wall is never rotated here, that reduces algebraically to comparing
+  `|dx|/halfWidth` vs `|dy|/halfHeight` — ported that reduced form rather than the angle-based one,
+  same result, fewer trig calls. Confirmed by direct computation, not assumed.
+- **Bullet/trap/drone**: `this.destroy = tick.DES` unconditionally on real contact — no bounce, no
+  pene drain, unifying the base-drone special case with every other bullet type (diepcustom's own
+  rule draws no distinction). **Tank**: `vec *= WALL_TANK_KEEP_SPEED` (`0.3`, diep's own
+  `Object.ts:303`), then a `tick.impulse(WALL_PUSH_OUT)` add along the resolved axis —
+  `WALL_PUSH_OUT = 1 × 2 / 0.3 × 0.56 = 3.7333...` units/ref-tick, diep's
+  `tank.absorbtionFactor(1) × wall.pushFactor(2) / 0.3` — a **pure velocity** effect with no
+  position-overlap teleport, unlike the old circular-stud model: diep's own `receiveKnockback` never
+  repositions, it only ever touches `velocity`, relying on the push being large enough to resolve
+  overlap through simulation over the next few ticks. `WALL_BOUNCE`/`WALL_FRICTION` are retired, not
+  retuned, per the step body's own instruction.
+- **Found and fixed in the same pass, because it would have silently broken the wire**:
+  `rooms/Room.js`'s per-viewer wire-buffer builder (`getBuffer()`'s `KIND.WALL` case, not the
+  `SocketSchema.js` edit itself) still built the *old* `{x, y, size}` shape after the schema moved
+  to `{x, y, w, h}` — every Walls record a real match would have sent carried `w: undefined,
+  h: undefined`. Caught by grepping `KIND.WALL` across the tree after the schema edit (nuance 37's
+  own technique) rather than by a passing test, since no existing test drove a real Maze room's own
+  `getBuffer()` path with a wall in view. Fixed at the same site the grep found it.
+- **`TYPE.UiUpdate.array` stayed `uint16`**, per the step body's own instruction — the minimap dot
+  count drops sharply (one dot per merged rectangle instead of one per stud), but shrinking the wire
+  type back is a silent-desync hazard for no gain, not a size the count actually needs any more.
+- **Test impact, as predicted**: `test/rooms.js`'s `wallTests()` and `mazeTests()` were rewritten
+  wholesale (new assertions: the half-diagonal identity, axis selection on both sides of a
+  rectangle, a broad-phase-only false positive doing nothing on both the tank and bullet arms, the
+  derived `GRID_SIZE`). `test/proto.js`'s `Walls` wire vectors moved (15 → 19 bytes; hex vectors
+  regenerated from the encoder itself, not hand-guessed) and `test/client.js`'s own hand-built Walls
+  packet test moved with it. `test/clientDiff.js`'s golden (`317552/c3c344ae`) **did not move** —
+  confirmed by the full run, not just predicted: Maze is still not one of the four modes that
+  corpus drives. `npm test` green across every suite in one run; lint clean on every touched file
+  (the repo-wide `npm run lint` run surfaces ~1000 pre-existing errors in the vendored, untouched
+  `diepindepth/` reference tree — unrelated, confirmed via `git status` showing no changes there).
+- **Moves:** nothing outside Maze, as the step body predicts.
+
 - **Resolves:** PENDING **#26's reopened halves** (wall shape and bullet contact), both of which the
   reference confirms are wrong today.
 - **Reference:**

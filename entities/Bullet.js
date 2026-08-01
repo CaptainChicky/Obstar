@@ -26,11 +26,6 @@ const { PROJECTILE_BODY_DAMAGE } = require('../lib/damage.js');
 // diep-adopted yet, plan.md step 6): the KIND.PLAYER arm's equivalent retired into
 // lib/damage.js's common(tank,bullet)=1, folded into `this.damage`'s own rebasing there.
 
-// Wall contact physics (PENDING #2, wall-only slice) - see lib/constants.js and entities/Player.js's
-// own KIND.WALL arm for what these mean and why they're ours, not diep's.
-const WALL_BOUNCE = require('../lib/constants.js').WALL_BOUNCE;
-const WALL_FRICTION = tick.drag(require('../lib/constants.js').WALL_FRICTION);
-
 // Per-tick re-aim chance for homing bullets/drones, converted to a real-tick probability once at
 // load (lib/tick.js's "chance" category).
 const REAIM_CHANCE = tick.chance(0.0012121);
@@ -655,29 +650,27 @@ class Bullet {
 					if (this.pene <= 0) { this.destroy = tick.DES; }
 					break;
 				case KIND.WALL:
-					// Drones die instantly on contact instead of bouncing (diep_wiki, PENDING #26) -
-					// no physics, no pene drain (a wall deals no body damage either way).
-					if (this.type === 1.4) {
-						this.destroy = tick.DES;
-						break;
-					}
 					// An Arena Closer's own bullet passes through a wall untouched too (diep_wiki,
 					// PENDING #26/#28) - the same exemption entities/Player.js's collision() gives
 					// the closer tank itself, set on the bullet at the shoot() site since a bullet
 					// has no live reference back to its origin here.
 					if (this.closer) { break; }
 					{
-						const sepX = this.x - other.x, sepY = this.y - other.y;
-						const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;
-						const nx = sepX / sepD, ny = sepY / sepD;
-						const vn = this.vec.x * nx + this.vec.y * ny;
-						const tx = this.vec.x - nx * vn, ty = this.vec.y - ny * vn;
-						// Same shape as entities/Player.js's own KIND.WALL arm: WALL_BOUNCE is
-						// dimensionless and applied directly to this live vn read, no
-						// tick.impulse()/tick.perTick() wrapping needed (PENDING nuance 39).
-						const newVn = (vn < 0) ? -vn * WALL_BOUNCE : vn;
-						this.vec.x = nx * newVn + tx * WALL_FRICTION;
-						this.vec.y = ny * newVn + ty * WALL_FRICTION;
+						// Same circle-vs-AABB closest-point test as entities/Player.js's own
+						// KIND.WALL arm (plan.md Step 12) - the broad-phase gate only bounds the
+						// wall by its half-diagonal, so a false-positive candidate has to be
+						// re-checked here before anything is destroyed.
+						const hw = other.w / 2, hh = other.h / 2;
+						const cx = Math.max(other.x - hw, Math.min(this.x, other.x + hw));
+						const cy = Math.max(other.y - hh, Math.min(this.y, other.y + hh));
+						const dx = this.x - cx, dy = this.y - cy;
+						if (dx * dx + dy * dy > this.size * this.size) { break; }
+						// diepcustom Object.ts:297-300: anything with an owner (bullet, trap, drone -
+						// everything this class models) is destroyed outright on contact with a real
+						// diep Maze wall, not bounced. WALL_BOUNCE/WALL_FRICTION are retired, not
+						// retuned - no physics, no pene drain (a wall deals no body damage either
+						// way, unchanged from before).
+						this.destroy = tick.DES;
 					}
 					break;
 			}

@@ -1668,14 +1668,17 @@ class Room {
 						break;
 					};
 					case KIND.WALL: {
-						// A wall never moves and never changes after spawn (PENDING #2, wall-only
-						// slice) - no hp/color/states, just the geometry.
+						// A wall never moves and never changes after spawn - no hp/color/states,
+						// just the geometry. Rectangular now (plan.md Step 12): w/h, not obj.size
+						// (which is only the entity's own broad-phase bounding radius, see
+						// entities/Wall.js - never what goes over the wire).
 						raw = {
 							construc: 'Walls',
 							id: obj.id.oId,
 							x: obj.x,
 							y: obj.y,
-							size: obj.size
+							w: obj.w,
+							h: obj.h
 						};
 						break;
 					};

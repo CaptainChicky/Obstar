@@ -229,11 +229,13 @@
 				'dir': 'int16'
 			},
 			// A wall never moves and never changes after spawn (PENDING #2, wall-only slice) - no
-			// hp/color/states, just the geometry.
+			// hp/color/states, just the geometry. Rectangular now (plan.md Step 12): w/h replace
+			// the old single radius `size`.
 			'Walls': {
 				'x': 'float32',
 				'y': 'float32',
-				'size': 'float32'
+				'w': 'float32',
+				'h': 'float32'
 			}
 		},
 		'UiUpdate': {
@@ -350,7 +352,8 @@
 			'Walls': [
 				'x',
 				'y',
-				'size'
+				'w',
+				'h'
 			]
 		},
 		'UiUpdate': {

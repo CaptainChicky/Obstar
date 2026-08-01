@@ -92,7 +92,7 @@ cookie.
 | `rooms/FourTeam.js` | 179 | 4-team: four corner bases, guard arcs, team colours. |
 | `rooms/BossMode.js` | 45 | Boss hunt: ffa with the boss knobs turned up. |
 | `rooms/Tag.js` | 360 | Tag: 4 teams, no bases, killer-tags-victim respawn, timed arena shrink, per-team leaderboard, x3 xp, Arena Closer win condition (PENDING #28, shipped). No new entity types — a Closer is a `Player` bound to `CONFIG.CLOSER`, like a boss. |
-| `rooms/Maze.js` | 211 | Maze: ffa's own tuning plus `KIND.WALL` chain generation, a precomputed minimap dot per wall, and a 5-hour close that reuses Tag's Arena Closer swarm (PENDING #26, shipped; wall geometry/bullet behaviour reopened as wrong 2026-07-31). |
+| `rooms/Maze.js` | 211 | Maze: ffa's own tuning plus a real generated rectangular wall layout (`lib/mazeGenerator.js`, plan.md Step 12), a precomputed minimap dot per wall rectangle, and a 5-hour close that reuses Tag's Arena Closer swarm (PENDING #26, shipped). |
 | `rooms/Domination.js` | ~40 | Domination: `TwoTeam`'s own base/tuning (via its new `extraRules` constructor param) plus 4 neutral Dominators placed from `build()` (PENDING #27, shipped). No new entity types — a Dominator is a `Player` bound to `CONFIG.DOMINATOR`, like a boss or Tag's Arena Closers. |
 | `entities/Player.js` | 909 | Tank entity: motion, shooting, upgrades, class changes, collision — including a Closer's invincibility/knockback-immunity guard (PENDING #28) and a `lastAttacker` write a Dominator's own AI reads (PENDING #27). Takes a `room` constructor argument (§3). `cycleClass()`'s `CYCLE_EXCLUDE` now lets Arena Closer/the 3 Dominators through (PENDING #51, 2026-07-31). |
 | `entities/Bullet.js` | 1308 | Projectiles, incl. drone/trap/necro behaviour. Takes a `room` constructor argument (§3). |
@@ -310,65 +310,86 @@ The things in this codebase that are *not* obvious from reading the code around 
   (`338725/5560688d → 297741/14e024be`) since entities now die at a different rate on contact
   (nuance 34's "how long one LIVES" case) — isolated by temporarily reverting both constants and
   confirming the prior golden reproduced exactly before trusting the new one.
-  **`KIND.WALL` — SHIPPED 2026-07-30, entity type only (PENDING #2, wall-only slice).** A new
-  entity kind, `public/SHARE/kinds.js`'s `KIND.WALL` and `entities/Wall.js` — a static circular
-  "stud" (everything in this codebase's collision pass is a circle, so a wall is a chain of these,
-  same convention as every other kind). `rooms/Room.js`'s `INSTANCE.walls` `SlotMap` is the whole
-  quadtree/collision/update wiring: all three of Room.js's own tick loops already iterate
-  `for (const kind in this.INSTANCE)` with no kind filter, so adding the SlotMap is what makes a
-  wall insert/collide/update for free. `Wall` itself is inert — `collision()`/`update()` are
-  required no-ops (both tick loops call them unconditionally on every entity) — all the physics
-  live in the *mover's* own `collision()` arm (`entities/Player.js`, `entities/Bullet.js`), the same
-  split `createBoss()`/Arena Closers use for AI vs. reaction: normal/tangential `vec` decomposition
-  against the wall's centre, `WALL_BOUNCE = 0.4` reflecting the inbound normal component (applied
-  directly to the live `vec` read — deliberately **not** wrapped in `tick.impulse()`/
-  `tick.perTick()` like every other knockback in the tree, since it is a dimensionless ratio with no
-  `REF_TICK_MS`-denominated units of its own; nuance 39's exact failure mode if that reasoning were
-  skipped), `WALL_FRICTION = 0.85` decaying the tangential component through `tick.drag()` (a
-  genuine per-reference-tick rate, unlike the bounce term). Both constants live in
-  `lib/constants.js`, flagged as ours, not diep's — diep_wiki (#26) states the *behaviour* (solid,
-  friction, bounce, no body damage) with no numbers. Zero `hp -=`/`pene -=` in either arm. A base
-  drone dies instantly on contact (`this.destroy = tick.DES`, no physics) instead of bouncing; an
-  Arena Closer passes through for free via its existing `this.closer` guard (`Player.collision()`'s
-  first line, before the `switch`); a Crasher passes through by omission (no `KIND.WALL` case on
-  either side). Wire protocol: a new minimal `Walls` record (`SocketSchema.js`,
-  `{x, y, size}` only, no hp/color/states since a wall never changes after spawn) — four schema
-  edits plus the decoder's `Instances` pre-init object (`SocketSchema.js`'s `PARSE.GameUpdate`),
-  the one easy-to-miss spot that throws on an empty packet if forgotten. Client: a minimal `Wall`
-  class (`entities.js`, no hp bar/tween-interpolation smoothing/rarity tier — it never moves or
-  changes), `Drawings.wall` (a filled+stroked circle), `Palette.wall` (grey, distinct from
-  Crasher's `bull` grey). Tested directly against hand-built entities (`test/rooms.js`'s
-  `wallTests()`) at the time, since no Maze room existed yet to spawn one in a real match —
-  `test/clientDiff.js`'s golden did not move, confirmed rather than assumed, since none of ffa/
-  2team/4team/boss's canvas-op corpus ever emits a `Walls` record.
+  **`KIND.WALL` — SHIPPED 2026-07-30 as a circular stud (PENDING #2), REBUILT 2026-08-01 as a
+  rectangle (plan.md Step 12).** `entities/Wall.js` is now `{x, y, w, h}` plus a server-only `.size`
+  — the rectangle's half-diagonal, `√(w²+h²)/2`, NOT either half-extent. `rooms/Room.js`'s generic
+  collision pass (the quadtree insert, its query radius, the coarse `dis <= obj.size + other.size`
+  pair gate) treats every `INSTANCE` kind uniformly as a circle of `.size`, with no idea a wall is a
+  rectangle — the half-diagonal is the smallest circle guaranteed to contain the whole rectangle, so
+  it can never cause a false NEGATIVE, only wave the occasional false positive through to the real
+  narrow-phase test (a merged wall chunk can run for several grid cells, so its true edge can sit far
+  from its own centre). `rooms/Room.js`'s `INSTANCE.walls` `SlotMap` is still the whole
+  quadtree/collision/update wiring (unchanged since #2) — `Wall` itself is still inert,
+  `collision()`/`update()` still required no-ops, all the physics still live in the *mover's* own
+  `collision()` arm.
+  **The real collision test is circle-vs-AABB** (diepcustom's own `Object.ts:191-192` closest-point
+  "constrain" test), done inside both `entities/Player.js`'s and `entities/Bullet.js`'s `KIND.WALL`
+  arms: clamp the mover's centre into the rectangle's extents, measure the distance from that
+  clamped point back to the centre, compare against the mover's own radius. A bullet/trap/drone
+  (anything with an owner, diepcustom's own `Object.ts:297-300`) is destroyed outright on real
+  contact — `this.destroy = tick.DES`, no bounce, no pene drain — which is what finally unifies the
+  base drone's old "dies instantly" special case with every other bullet type; diep's own rule draws
+  no distinction between them. A tank instead sheds to `WALL_TANK_KEEP_SPEED` (0.3, diep's
+  `Object.ts:303`) of its own velocity, then gets a `tick.impulse(WALL_PUSH_OUT)` add
+  (`WALL_PUSH_OUT = 1 × 2 / 0.3 × 0.56 = 3.7333...` units/ref-tick, diep's
+  `absorbtionFactor(1) × pushFactor(2) / 0.3`) along whichever axis (x or y) the centre offset is
+  more aligned with — `|dx|/halfWidth` vs `|dy|/halfHeight`, the axis-aligned reduction of diep's own
+  rotated-rectangle `relA`/`relB` comparison, since a Maze wall is never rotated here. This is a
+  **pure velocity** effect with no position-overlap teleport — diep's own `receiveKnockback` never
+  repositions an entity either, relying on the push itself being large enough to resolve overlap
+  through simulation over the next few ticks. `WALL_BOUNCE`/`WALL_FRICTION` are **retired**, replaced
+  by `WALL_TANK_KEEP_SPEED`/`WALL_PUSH_OUT` (`lib/constants.js`) — both diep's own numbers now, not
+  ours. An Arena Closer still passes through for free via its existing `this.closer` guard
+  (`Player.collision()`'s first line, before the `switch`, and its own `Bull.closer` check in
+  `entities/Bullet.js`); a Crasher still passes through by omission (no `KIND.WALL` case on either
+  side).
+  **Wire protocol**: the `Walls` record (`SocketSchema.js`) grew a second dimension — `{x, y, w, h}`,
+  no hp/color/states, since a wall still never changes after spawn — 15 bytes → 19. Client: `Wall`
+  (`entities.js`) takes `w`/`h` in place of the old single `size`; `Drawings.wall` draws a
+  filled+stroked rectangle (`ctx.rect(-w/2, -h/2, w, h)`) instead of a circle; `Palette.wall`
+  unchanged. `rooms/Room.js`'s own per-viewer wire-buffer builder (`getBuffer()`'s `KIND.WALL` case)
+  needed the same `w`/`h` fields — found by grepping `KIND.WALL` across the tree after the schema
+  edit, since it still built the old `{x, y, size}` shape and would have silently sent `w`/`h` as
+  `undefined` to a real match. Tested directly against a hand-built rectangle (`test/rooms.js`'s
+  `wallTests()` — half-diagonal identity, axis selection on both sides of a rectangle, a
+  broad-phase-only false positive doing nothing on both the tank and bullet arms) and through a real
+  generated maze (`mazeTests()`, below); `test/clientDiff.js`'s golden did not move, confirmed rather
+  than assumed, since none of ffa/2team/4team/boss's canvas-op corpus ever emits a `Walls` record.
 
-  **The `Maze` room — SHIPPED 2026-07-30 (`rooms/Maze.js`, PENDING #26).** Free-for-all's own
-  tuning verbatim (`mapSize`/`shapeMix`/`botCount`/`respawnPow`/`maxXp` all copied from
-  `rooms/Ffa.js` — diep_wiki's own framing is "works similarly to Free For All"), plus three
-  things: wall generation, a minimap dot per wall, and a 5-hour close.
-  `build()` (Room's own pre-tick hook, run once in the constructor after `this.map` is already
-  the real arena size) scatters "structures" — 1-3 straight "legs" bent ±90° from the last, each
-  leg a chain of `Wall` studs (`WALL_STUD_R = gu(3)`) spaced at 1.5× their own radius so no
-  straight run or right-angle joint has a seam a bullet could thread — at one structure per
-  `WALL_STRUCTURE_DENSITY_GU2` (8000) gu² of arena, a geometry and count diep_wiki gives no
-  reference for at all (it states the *behaviour* — solid, friction, bounce, no body damage,
-  visible on the minimap — never a layout), so both are **ours**, flagged untuned like
-  `WALL_BOUNCE`/`WALL_FRICTION` themselves, due a real playtest pass now that a room exists to
-  spawn a wall into. Measured 200-260 total studs at ffa's own `gu(451)` arena across repeated
-  rolls.
-  **The minimap dot is the same `build()` pass, precomputed rather than walked live**: each stud
-  gets one `{x, y, team: 4, size}` entry (`rooms/Room.js`'s `this.wallDots`, empty on every mode
-  but this one) in the map-fraction coordinates `getUi()`'s player-dot loop already uses, colour
-  4 (`SocketSchema`'s `'gray'`) being a colour no live team dot ever emits — so `getUi()` just
-  concatenates `this.wallDots` onto the ordinary `map` array and no new wire record was needed.
-  Safe to precompute once because a wall never moves and this mode's arena is fixed size
-  (`arenaLive` is not set), so the map-fraction coordinates never go stale.
-  **This is what forced `TYPE.UiUpdate.array` (`SocketSchema.js`) from `uint8` to `uint16`**: a
-  measured 200-260 wall dots plus a room's live player dots routinely exceeds 255, and the encoder
-  writes every real record regardless of what a truncated length-prefix byte claims — an overflowed
-  uint8 count would desync the rest of the packet silently rather than fail loudly. `test/proto.js`'s
-  `UiUpdate` hex vector moved by 3 bytes (the three count fields, one byte each) — reproduced from
-  the encoder itself, not guessed.
+  **The `Maze` room — SHIPPED 2026-07-30 (`rooms/Maze.js`, PENDING #26), wall generation REBUILT
+  2026-08-01 (plan.md Step 12) around a real maze algorithm.** Free-for-all's own tuning verbatim
+  (`mapSize`/`shapeMix`/`botCount`/`respawnPow`/`maxXp` all copied from `rooms/Ffa.js` — diep_wiki's
+  own framing is "works similarly to Free For All"), plus three things: wall generation, a minimap
+  dot per wall, and a 5-hour close.
+  **Wall generation** is now `lib/mazeGenerator.js`, a straight port of diepcustom's own
+  `Misc/MazeGenerator.ts`: plant scattered seeds (≥3 grid cells apart, off the border), grow each
+  into a branching/turning corridor of wall cells (turn/branch/termination rolls each step, diep's
+  own `baseSeedCount 45`/`seedCountVariation 30`/`turnChance 0.2`/`branchChance 0.2`/
+  `terminationChance 0.2`, verbatim — dimensionless probabilities, nothing to convert), sprinkle a
+  handful of singular walls, flood-fill from a corner to find (and wall off) unreachable pockets,
+  then merge the resulting wall cells into the largest possible rectangles (`convertToWalls()`) —
+  real "rectangular chunks of various sizes forming an actual maze layout", the shape diep_wiki's own
+  screenshot shows, not the old chain-of-circular-studs approximation. A faithful port, including the
+  reference's own unbounded `get()`/`set()` (no bounds check, so a chunk growing exactly to the grid
+  edge reads into the next row) — matching the reference's own output shapes is the point, not a
+  hardened rewrite of it.
+  **`GRID_SIZE` is derived from OUR arena, not diep's hardcoded 40**: diep's own arena size is a
+  *product* of its `GRID_SIZE` (40) and `CELL_SIZE` (635 du); ours runs the opposite direction — the
+  arena is already fixed at ffa's own `gu(451)` (12628 units), so `GRID_SIZE` is
+  `Math.floor(12628 / (635 × 0.56)) = 35`, a 35×35 grid, confirmed by a `test/rooms.js` assertion
+  rather than only hand-derived.
+  **The minimap dot is the same `build()` pass, precomputed rather than walked live** — one dot per
+  merged rectangle now (far fewer than the old one-per-stud count): each gets a
+  `{x, y, team: 4, size}` entry (`rooms/Room.js`'s `this.wallDots`, empty on every mode but this one,
+  `size` here the dot's own display radius — `max(w,h)/2`, clamped to 255 — unrelated to
+  `entities/Wall.js`'s own broad-phase `.size`) in the map-fraction coordinates `getUi()`'s
+  player-dot loop already uses, colour 4 (`SocketSchema`'s `'gray'`) being a colour no live team dot
+  ever emits — so `getUi()` just concatenates `this.wallDots` onto the ordinary `map` array and no
+  new wire record was needed. Safe to precompute once because a wall never moves and this mode's
+  arena is fixed size (`arenaLive` is not set), so the map-fraction coordinates never go stale.
+  `TYPE.UiUpdate.array` (`SocketSchema.js`) **stays `uint16`**, per plan.md Step 12's own
+  instruction — shrinking it back now that the dot count has dropped is a silent-desync hazard for
+  no gain, not a size the count actually needs any more.
   **The 5-hour close reuses `rooms/Tag.js`'s own Arena Closer machinery (PENDING #28) rather than
   re-deriving it**: `close()` counts down a flat wall-clock deadline (divided by `clock.STEP_MS`,
   the same schedule category as Tag's `SHRINK_EVERY`) and calls `startClosing()` once, spawning a
@@ -376,16 +397,16 @@ The things in this codebase that are *not* obvious from reading the code around 
   shared — the two modes' close *trigger* (a flat timer vs. a win condition) differs enough that a
   shared method would need a hook of its own for what "closing" means, for a saving of about
   twenty lines. `respawn()` no-ops once closing, same override and reasoning as Tag's own.
-  **An Arena Closer's own bullets now pass through a wall too** (diep_wiki/Arena Closer.txt: "The
+  **An Arena Closer's own bullets still pass through a wall** (diep_wiki/Arena Closer.txt: "The
   Arena Closers and their bullets can go through the Maze game mode's walls") — a `Bull.closer`
   flag set at `entities/Player.js`'s `shoot()` site (a bullet has no live reference back to its
-  origin) that `entities/Bullet.js`'s `KIND.WALL` arm checks before the bounce physics, the same
-  exemption `Player.js`'s own `collision()` already gives the closer tank itself. Bosses need no
+  origin) that `entities/Bullet.js`'s `KIND.WALL` arm checks before the destroy-on-contact rule, the
+  same exemption `Player.js`'s own `collision()` already gives the closer tank itself. Bosses need no
   exclusion code at all — `Maze` states no `bossRng`/`maxBoss` override, so it inherits
   `DEFAULT_RULES`' never-roll defaults, the same ones `Ffa` itself already runs on.
-  Tested directly (`test/rooms.js`'s `mazeTests()`) rather than only through a live match;
-  `test/clientDiff.js`'s golden did not move, since Maze is not one of the four modes that corpus
-  drives.
+  Tested directly (`test/rooms.js`'s `mazeTests()`, rewritten wholesale for the rectangle generator)
+  rather than only through a live match; `test/clientDiff.js`'s golden did not move, since Maze is
+  not one of the four modes that corpus drives.
 
   **The structure/Dominator half of item 2 — SHIPPED 2026-07-31 (`rooms/Domination.js`,
   PENDING #27), redesigned mid-session from a second static `kind` to a stationary tank** (the
