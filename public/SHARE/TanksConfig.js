@@ -1427,12 +1427,14 @@
 					shape: 0
 				}
 			},
-			// PENDING #27. A Dominator is a stationary tank (lib/gameAI.js's CONFIG.DOMINATOR),
-			// drawn the same circular boss/Closer body (shape 1) rather than an ordinary tank's
-			// octagon - the closest existing convention for a large, non-levelling scripted tank.
-			// Every cannon's client `height` is set equal to its own server `canonLength` (a
-			// small, ordinary muzzle-tip gap once run through test/tanks.js's *.93 check - no
-			// whitelist entry needed, unlike Summoner's).
+			// PENDING #27/#51. A Dominator is a stationary tank (lib/gameAI.js's CONFIG.DOMINATOR),
+			// drawn as a plain circle (shape 0, Drawings.body[0]) rather than an ordinary tank's
+			// octagon - diepcustom's Dominator.ts states `sides: 1`, the same circle TankDefinitions
+			// gives Arena Closer (plan.md Step 11; was shape 1, a rounded rectangle, the same
+			// boss-body stand-in PENDING #51 flagged as unsatisfactory). Every cannon's client
+			// `height` is set equal to its own server `canonLength` (a small, ordinary muzzle-tip
+			// gap once run through test/tanks.js's *.93 check - no whitelist entry needed, unlike
+			// Summoner's).
 			"Destroyer Dominator": {
 				cannons: [
 					{
@@ -1445,9 +1447,7 @@
 					}
 				],
 				body: {
-					shape: 1,
-					width: 1,
-					height: 1
+					shape: 0
 				}
 			},
 			// Three barrels evenly spaced (diep_wiki/Dominator.txt), not Gunner's own forward
@@ -1463,9 +1463,7 @@
 					open: 0
 				})),
 				body: {
-					shape: 1,
-					width: 1,
-					height: 1
+					shape: 0
 				}
 			},
 			// Eight launchers evenly spaced (diep_wiki/Dominator.txt), drawn like Trapper's own
@@ -1481,9 +1479,7 @@
 					open: 18
 				})),
 				body: {
-					shape: 1,
-					width: 1,
-					height: 1
+					shape: 0
 				}
 			}
 		} :
@@ -1493,15 +1489,35 @@
 			actual TICK_MS - see lib/tick.js. Three columns are worth naming because they are the
 			ones a reader is most likely to try to "fix":
 
-			`speed` is a bullet's CRUISE THRUST, an acceleration per reference tick squared. It is
-			consumed by entities/Bullet.js's motion tail as tick.quadratic(), not tick.perTick() -
-			the tail adds it to a velocity and then integrates that velocity into a position, i.e.
-			it integrates twice over ticks. The whole column was multiplied by 1.6 when that
-			category was corrected, which is why each entry is a clean diep-ish number times
-			public/SHARE/Physics.js's compound 1.462688 factor (0.31 x 1.462688 = 0.45344 for
-			Basic), the same family `back` and `weight` are already in. `exitSpeed` was NOT
-			rescaled with it - a bullet's one-time muzzle kick was correct before that fix - so
-			entities/Bullet.js divides the 1.6 back out at that one site (SPEED_RESCALE there).
+			`speed` is a bullet's CRUISE THRUST, an acceleration per reference tick squared (except
+			for a trap, type 2, whose own baseAccel is 0 - see below). It is consumed by
+			entities/Bullet.js's motion tail as tick.quadratic(), not tick.perTick() - the tail adds
+			it to a velocity and then integrates that velocity into a position, i.e. it integrates
+			twice over ticks. MEASUREMENTS.md's M1 is resolved (plan.md Step 9): diep's own bullets
+			DO carry drag (the same universal 0.9 as everything else, `lib/constants.js`'s
+			BODY_FRICTION), so `speed` is diep's `bullet.speed` multiplier converted directly -
+			`1.12 x diep bullet.speed`, since `20 du/tick x 0.56 x 0.1 = 1.12` is the identity that
+			makes it so - with nothing baked in to divide back out at any consumption site.
+			`exitSpeed` and its SPEED_RESCALE division are RETIRED, not kept alongside: a bullet's
+			one-time muzzle kick is now computed at the shoot() call site
+			(entities/Player.js) from `speed` itself plus diep's own flat `+30 du/tick` (our units
+			`+16.8`), with a drone (type 1/1.1) dividing the whole kick by 3 and a trap (type 2)
+			instead halving `speed` before the same `+16.8` - see that site's own comment for the
+			three formulas and why they differ (Bullet.ts/Drone.ts/Trap.ts).
+
+			`rand` is angular scatter, diep's own `scatterRate x 0.174533` (5 degrees in radians,
+			MEASUREMENTS.md's M2, plan.md Step 8) - `dir +- rand/2` at the shoot() site. The same
+			`scatterRate` also back-derives the muzzle kick's own speed jitter there
+			(`can.rand / 0.174533`), so the column carries both rather than doubling it.
+
+			`life` is now a REQUIRED per-cannon column (plan.md Step 9): diep's own
+			`round(lifeLength x 75)` reference ticks for an ordinary bullet/trap/swarm barrel,
+			`round(lifeLength x 88)` for a drone (type 1/1.1) barrel, and the `-1` permanent-drone
+			sentinel where diep's own lifeLength is `-1` (unchanged, checked directly by
+			entities/Bullet.js rather than going through tick.ticks()). A trap barrel's `life` also
+			drives its arming window (`life >> 3` real ticks, during which it collides with nothing -
+			diep's Trap.ts `onlySameOwnerCollision`, simplified since this engine has no other
+			same-owner physical blocking for it to preserve).
 
 			`back` is RECOIL, and it is the one column here that is fully derived rather than tuned:
 			it is diep's own per-shot recoil table (physics.html's "Tanks Recoil", in GRID SQUARES)
@@ -1556,9 +1572,10 @@
 					this.offdir = 0;
 					this.offx = 0;
 					this.canonLength = 68;
-					this.rand = 0.14;
+					this.life = 75;   // diep bullet.lifeLength 1 x 75 (plan.md Step 9)
+					this.rand = 0.174533;   // diep scatterRate 1 (plan.md Step 8)
 					///
-					this.speed = 0.45344;
+					this.speed = 1.12;   // diep bullet.speed 1 x 1.12 (plan.md Step 9)
 					this.pene = 1.7;
 					this.peneMult = 1;
 					this.damage = 4.84848;
@@ -1580,9 +1597,10 @@
 					this.offdir = 0;
 					this.offx = 0;
 					this.canonLength = 65;
-					this.rand = 0.14;
+					this.life = 75;
+					this.rand = 0.174533;
 					///
-					this.speed = 0.45344;
+					this.speed = 1.12;
 					this.pene = 1.5;
 					this.damage = 4.36364;
 					this.size = 18;
@@ -1598,9 +1616,10 @@
 					offdir: Math.PI,
 					offx: 0,
 					canonLength: 58,
-					rand: 0.13,
+					life: 75,
+					rand: 0.174533,
 					///
-					speed: 0.409552,
+					speed: 1.12,
 					pene: .6,
 					damage: 2.42424,
 					size: 17,
@@ -1620,9 +1639,10 @@
 					this.offdir = 0;
 					this.offx = -18;
 					this.canonLength = 60;
-					this.rand = 0.21;
+					this.life = 75;
+					this.rand = 0.174533;
 					///
-					this.speed = 0.45344;
+					this.speed = 1.12;
 					this.pene = 1.3;
 					this.peneMult = 1;
 					this.damage = 4.24242;
@@ -1639,9 +1659,10 @@
 					this.offdir = 0;
 					this.offx = 18;
 					this.canonLength = 60;
-					this.rand = 0.21;
+					this.life = 75;
+					this.rand = 0.174533;
 					///
-					this.speed = 0.45344;
+					this.speed = 1.12;
 					this.pene = 1.3;
 					this.peneMult = 1;
 					this.damage = 4.24242;
@@ -1662,9 +1683,10 @@
 					this.offdir = 0;
 					this.offx = 0;
 					this.canonLength = 62;
-					this.rand = 0.6;
+					this.life = 75;
+					this.rand = 0.523599;   // diep scatterRate 3
 					///
-					this.speed = 0.468064;//.22
+					this.speed = 1.12;
 					this.pene = 1.2;
 					this.damage = 3.15152;
 					this.size = 18;//17
@@ -1684,9 +1706,10 @@
 					this.offdir = 0;
 					this.offx = 0;
 					this.canonLength = 80;
-					this.rand = 0.2;
+					this.life = 75;
+					this.rand = 0.05236;   // diep scatterRate 0.3
 					///
-					this.speed = 0.585072;
+					this.speed = 1.68;
 					this.pene = 2.5;
 					this.damage = 3.27273;
 					this.size = 18;
@@ -1707,9 +1730,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 58,
-					rand: 0.2,
+					life: 75,
+					rand: 0.174533,
 					///
-					speed: 0.394928,
+					speed: 1.12,
 					pene: 1,
 					damage: 2.42424,
 					size: 16,
@@ -1729,14 +1753,14 @@
 					reload: 15,
 					offTime: 0,
 					type: 0,
-					life: 149,
+					life: 75,
 					///
 					offdir: 0,
 					offx: -18,
 					canonLength: 60,
-					rand: 0.15,
+					rand: 0.174533,
 					///
-					speed: 0.45344,
+					speed: 1.12,
 					pene: 1.2,
 					damage: 3.63636,
 					size: 16,
@@ -1760,9 +1784,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 66,
-					rand: 0.2,
+					life: 75,
+					rand: 0.174533,
 					///
-					speed: 0.394928,
+					speed: 1.12,
 					pene: 1.3,
 					damage: 4.24242,
 					size: 15,
@@ -1782,19 +1807,18 @@
 					reload: 60,
 					offTime: 0,
 					type: 0,
-					life: 149,
+					life: 75,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 62,
-					rand: 0.10,
+					rand: 0.174533,
 					///
-					speed: 0.321792,
+					speed: 0.784,
 					pene: 18,
 					damage: 1.81818,
 					size: 27,
 					///
-					exitSpeed: 53,
 					weight: 1.05,   // diep 0.2 gu (Destroyer and Hybrid's bullet share the row) - the table inverts knockback against damage
 					push: 0.27426,
 					back: 16.8
@@ -1812,9 +1836,10 @@
 					this.offdir = 0;
 					this.offx = 0;
 					this.canonLength = 85;
-					this.rand = 0.1;
+					this.life = 75;
+					this.rand = 0.05236;
 					///
-					this.speed = 0.599696;
+					this.speed = 1.68;
 					this.pene = 2.5;
 					this.damage = 3.15152;
 					this.size = 19;
@@ -1838,14 +1863,13 @@
 					offdir: Math.PI / 2,
 					offx: 0,
 					canonLength: 48,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.438816,
+					speed: 0.896,
 					pene: 5.3,
 					damage: 2.42424,
 					size: 14,
 					///
-					exitSpeed: 25,
 					weight: 4.2,   // diep 0.8 gu, the row every drone class shares
 					push: 0.36567,
 					back: 0
@@ -1858,13 +1882,14 @@
 				const c = new Array(3).fill(null).map(() => ({
 					reload: 15,
 					offTime: 0,
+					life: 38,   // diep Tri-Angle rear barrel lifeLength 0.5 x 75 (plan.md Step 9); c[0] overrides to the front's 75
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 58,
-					rand: 0.13,
+					rand: 0.174533,
 					///
-					speed: 0.409552,
+					speed: 1.12,
 					pene: .6,
 					damage: 2.42424,
 					size: 16,
@@ -1877,7 +1902,7 @@
 				// name the server never reads (Player.js:212 reads `canonLength`), so this
 				// line was a no-op and the cannon stayed at the 58 default. test/tanks.js's
 				// muzzle-tip band caught it once canonLength was corrected.
-				c[0].back = 0.28; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.45344;
+				c[0].back = 0.28; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 1.12; c[0].life = 75;
 				c[0].weight = 3.5;   // diep Tri-Angle (Front Bullet) 0.666 gu
 				c[1].offdir = -Math.PI - .4; c[1].offx = -5; c[1].offTime = .5;
 				c[2].offdir = -Math.PI + .4; c[2].offx = 5; c[2].offTime = .5;
@@ -1891,19 +1916,18 @@
 					this.reload = 23;
 					this.offTime = 0;
 					this.type = 2;
-					this.life = 297;
+					this.life = 600;   // diep Trapper (trap) lifeLength 8 x 75 (plan.md Step 9); arming window is life>>3, computed at spawn
 					///
 					this.offdir = 0;
 					this.offx = 0;
 					this.canonLength = 68;
-					this.rand = 0.3;
+					this.rand = 0.174533;
 					///
-					this.speed = 0.219408;
+					this.speed = 2.24;   // diep bullet.speed 2 x 1.12; a trap's own baseAccel is 0 (see entities/Bullet.js) - this feeds only the muzzle-kick formula
 					this.pene = 4.2;
 					this.damage = 1.57576;
 					this.size = 12;
 					///
-					this.exitSpeed = 60;
 					this.weight = 3.5;   // diep 0.666 gu, the row every manual trap shares
 					this.push = 0.27426;
 					this.back = 1.12;
@@ -1915,13 +1939,19 @@
 				const c = new Array(2).fill(null).map(() => ({
 					reload: 60,   // STAND-IN: diep has no Rocket class - takes Rocketeer 60 (plan.md Step 3, call 3)
 					offTime: 0,
+					// STAND-IN: not Rocketeer's own main barrel (type "rocket", scatter 1) but the
+					// exhaust sub-barrel diepcustom/src/Entity/Tank/Projectile/Rocket.ts defines inline
+					// (RocketBarrelDefinition: speed 1.5, scatterRate 5, lifeLength 0.1) - both of our
+					// barrels point backwards, modelling that thruster puff, not the rocket itself
+					// (plan.md Step 9).
+					life: 8,
 					///
 					offdir: -Math.PI - .4,
 					offx: -5,
 					canonLength: 56,
-					rand: 0.3,
+					rand: 0.872665,
 					///
-					speed: 0.394928,
+					speed: 1.68,
 					pene: 1.6,
 					damage: 4.24242,
 					size: 16,
@@ -1944,19 +1974,18 @@
 					reload: 60,
 					offTime: 0,
 					type: 0,
-					life: 149,
+					life: 75,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 62,
-					rand: 0.10,
+					rand: 0.174533,
 					///
-					speed: 0.321792,
+					speed: 0.784,
 					pene: 17,
 					damage: 1.81818,
 					size: 27,
 					///
-					exitSpeed: 53,
 					weight: 1.05,   // diep 0.2 gu (Destroyer and Hybrid's bullet share the row) - the table inverts knockback against damage
 					push: 0.27426,
 					back: 16.8
@@ -1971,14 +2000,13 @@
 					offdir: Math.PI,
 					offx: 0,
 					canonLength: 48,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.438816,
+					speed: 1.12,
 					pene: 5,
 					damage: 2.18182,
 					size: 14,
 					///
-					exitSpeed: 25,
 					weight: 4.2,   // diep Hybrid (Drone) 0.8 gu
 					push: 0.36567,
 					back: 0.28
@@ -1992,19 +2020,18 @@
 					reload: 60,   // Step 3 call 1: diep own 60 (Destroyer reload:4 x15) - retires the old off-table 87
 					offTime: 0,
 					type: 0,
-					life: 149,
+					life: 75,
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 62,
-					rand: 0.10,
+					rand: 0.174533,
 					///
-					speed: 0.31448,
+					speed: 0.784,
 					pene: 17,
 					damage: 1.81818,
 					size: 34,
 					///
-					exitSpeed: 53,
 					// diep 0.1 gu - the floor of the table, and the one entry where `back` stays
 					// deliberately off-table (4 gu against diep's 6.8) while `weight` does not.
 					weight: 0.525,
@@ -2023,9 +2050,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 82,
-					rand: 0.11,
+					life: 75,
+					rand: 0.174533,
 					///
-					speed: 0.585072,
+					speed: 1.12,
 					pene: .45,
 					damage: 2.66667,
 					size: 15,
@@ -2043,6 +2071,7 @@
 				// not 0-3, or the drawn barrel and the one that actually fires drift apart.
 				const d = 7;
 				c[1].reload = 8;    // diep barrel[1] Small Bullet, round(0.5 x15=7.5) - Step 3 call 2
+				c[1].rand = 0.523599;   // diep barrel[1] Small Bullet scatterRate 3, against barrel[0]'s 1 (plan.md Step 8)
 				// c[2]-c[4] have no diep counterpart barrel (diep Sprayer has only 2) - stay on
 				// the pre-Step-3 family value instead of inventing a third diep number.
 				c[2].reload = c[3].reload = c[4].reload = 23;
@@ -2063,9 +2092,10 @@
 					this.offdir = 0;
 					this.offx = 0;
 					this.canonLength = 88;
-					this.rand = 0.1;
+					this.life = 75;
+					this.rand = 0.05236;
 					///
-					this.speed = 0.599696;
+					this.speed = 1.68;
 					this.pene = 3;
 					this.damage = 3.0303;
 					this.size = 19;
@@ -2085,9 +2115,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 55,
-					rand: 0.16,
+					life: 75,
+					rand: 0.174533,
 					///
-					speed: 0.394928,
+					speed: 1.12,
 					pene: 1,
 					damage: 2.42424,
 					size: 16,
@@ -2107,14 +2138,14 @@
 					reload: 15,
 					offTime: 0,
 					type: 0,
-					life: 149,
+					life: 75,
 					///
 					offdir: 0,
 					offx: -18,
 					canonLength: 60,
-					rand: 0.15,
+					rand: 0.174533,
 					///
-					speed: 0.45344,
+					speed: 1.12,
 					pene: 1.2,
 					damage: 3.39394,
 					size: 16,
@@ -2139,9 +2170,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 55,
-					rand: 0.16,
+					life: 75,
+					rand: 0.174533,
 					///
-					speed: 0.394928,
+					speed: 1.12,
 					pene: .95,
 					damage: 2.78788,
 					size: 16,
@@ -2167,9 +2199,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 62,
-					rand: 0.2,
+					life: 75,
+					rand: 0.174533,
 					///
-					speed: 0.394928,
+					speed: 1.12,
 					pene: 1.3,
 					damage: 3.0303,
 					size: 16,
@@ -2196,9 +2229,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 52,
-					rand: 0.13,
+					life: 75,   // STAND-IN: diep has no Cyclone - takes Octo Tank's bullet.speed/scatterRate/lifeLength (plan.md Step 9)
+					rand: 0.174533,
 					///
-					speed: 0.387616,
+					speed: 1.12,
 					pene: 1,
 					damage: 4.48485,
 					size: 12,
@@ -2230,9 +2264,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 52,
-					rand: 0.13,
+					life: 38,   // diep Booster rear barrel lifeLength 0.5 x 75; c[0] overrides to the front's 75
+					rand: 0.174533,
 					///
-					speed: 0.409552,
+					speed: 1.12,
 					pene: .6,
 					damage: 2.42424,
 					size: 16,
@@ -2243,7 +2278,7 @@
 				}));
 				// Same `.height`-instead-of-`.canonLength` typo as Triangle above; these three
 				// lines were no-ops until test/tanks.js caught it.
-				c[0].back = 0.56; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].speed = 0.468064;
+				c[0].back = 0.56; c[0].canonLength = 62; c[0].pene = 1.35; c[0].damage = 4; c[0].life = 75;
 				c[0].weight = 3.5;   // diep Booster (Front Bullet) 0.666 gu
 				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
 				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
@@ -2261,9 +2296,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 57,
-					rand: 0.13,
+					life: 38,   // diep Fighter rear barrel lifeLength 0.5 x 75; c[0]-c[2] override to the front/side's 75
+					rand: 0.174533,
 					///
-					speed: 0.424192,
+					speed: 1.12,
 					pene: .5,
 					damage: 1.45455,
 					size: 16,
@@ -2277,9 +2313,9 @@
 				// up) instead of c[3]/c[4], so the rear cannons never got their splay and the
 				// side cannons silently lost theirs. test/tanks.js's index-paired offx check
 				// is what caught both.
-				c[0].back = 0.28; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 4; c[0].speed = 0.45344;
-				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 1.4; c[1].damage = 3.87879; c[1].speed = 0.438816;
-				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 1.4; c[2].damage = 3.87879; c[2].speed = 0.438816;
+				c[0].back = 0.28; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 4; c[0].life = 75;
+				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 1.4; c[1].damage = 3.87879; c[1].life = 75;
+				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 1.4; c[2].damage = 3.87879; c[2].life = 75;
 				c[1].reload = c[2].reload = 23;   // diep barrel[1]/[2] side, round(1.5 x15=22.5) - Step 3 call 2
 				c[3].offdir = -Math.PI - .4; c[3].offx = -5; c[3].offTime = .5; c[3].canonLength = 59;
 				c[4].offdir = -Math.PI + .4; c[4].offx = 5; c[4].offTime = .5; c[4].canonLength = 59;
@@ -2303,7 +2339,7 @@
 					reload: 15,   // every auto-turret reload:1 x15 - Step 3 call 3
 					offTime: 0,
 					type: 0,
-					life: 99,
+					life: 75,   // AutoTurret.ts's AutoTurretDefinition: lifeLength 1 x 75 (plan.md Step 9)
 					auto: 1,
 					autoShoot: 1,
 					autoDir: 1,
@@ -2311,9 +2347,9 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 38,
-					rand: 0.1,
+					rand: 0.174533,
 					///
-					speed: 0.52656,
+					speed: 1.344,   // AutoTurretDefinition bullet.speed 1.2 x 1.12
 					pene: 1.8,
 					damage: 3.0303,
 					size: 14,
@@ -2332,9 +2368,10 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 58,
-					rand: 0.13,
+					life: 38,   // diep Tri-Angle rear barrel lifeLength 0.5 x 75; c[1] overrides to the front's 75
+					rand: 0.174533,
 					///
-					speed: 0.409552,
+					speed: 1.12,
 					pene: .6,
 					damage: 2.42424,
 					size: 16,
@@ -2354,7 +2391,7 @@
 				// `cannons` array), which is why this one wasn't caught by the muzzle-tip
 				// band the way its siblings were - found by the same static read that fixed
 				// them.
-				c[1].back = 0.28; c[1].canonLength = 62; c[1].pene = 1.35; c[1].damage = 4;
+				c[1].back = 0.28; c[1].canonLength = 62; c[1].pene = 1.35; c[1].damage = 4; c[1].life = 75;
 				c[1].weight = 3.5;   // diep Tri-Angle (Front Bullet) 0.666 gu
 				c[2].offdir = -Math.PI - .4; c[2].offx = -5; c[2].offTime = .5;
 				c[3].offdir = -Math.PI + .4; c[3].offx = 5; c[3].offTime = .5;
@@ -2375,14 +2412,13 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 48,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.438816,
+					speed: 0.896,
 					pene: 4.5,
 					damage: 2.18182,
 					size: 14,
 					///
-					exitSpeed: 25,
 					weight: 4.2,   // diep Overlord 0.8 gu, the row every drone class shares
 					push: 0.45709,
 					back: 0.28
@@ -2407,14 +2443,13 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 48,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.438816,
+					speed: 0.896,
 					pene: 5,
 					damage: 2.42424,
 					size: 14,
 					///
-					exitSpeed: 25,
 					weight: 4.2,   // diep Manager 0.8 gu, the row every drone class shares
 					push: 0.45709,
 					back: 0.28
@@ -2428,7 +2463,7 @@
 					type: 3,
 					necro: 1,
 					///
-					speed: 0.438816,
+					speed: 0.8064,   // diep Necromancer (necrodrone) bullet.speed 0.72 x 1.12 (plan.md Step 9); life stays -1, hardcoded at the spawn site
 					pene: 4,
 					damage: 1.57576,
 					weight: 4.2,   // diep Necromancer 0.8 gu, the row every drone class shares
@@ -2444,20 +2479,19 @@
 					reload: 15,
 					offTime: 0,
 					type: 1.2,
-					life: 91,
+					life: 75,   // diep Battleship (swarm) lifeLength 1 x 75 (plan.md Step 9) - all four barrels share this now
 					auto: 0,
 					///
 					offdir: Math.PI / 2,
 					offx: 12,
 					canonLength: 48,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.760592,
+					speed: 1.12,
 					pene: .8,
 					damage: 1.09091,
 					size: 6,
 					///
-					exitSpeed: 25,
 					weight: 0.525,   // diep Battleship 0.1 gu
 					push: 0.04571,
 					back: 0
@@ -2466,7 +2500,6 @@
 				c[2].offdir = Math.PI / 2; c[2].offx = -12; c[2].offTime = .5;
 				c[3].offdir = -Math.PI / 2; c[3].offx = 12;
 				c[2].type = c[3].type = 1.3;
-				c[2].life = c[3].life = 120;
 				this.cannons = c;
 			},
 			"Fortress": new function () {
@@ -2477,19 +2510,18 @@
 					reload: 23,   // STAND-IN: diep has no Fortress - takes Tri-Trapper round(22.5)=23 (plan.md Step 3, call 3)
 					offTime: 0,
 					type: 2,
-					life: 297,
+					life: 240,   // STAND-IN: diep has no Fortress - takes Tri-Trapper's trap lifeLength 3.2 x 75 (plan.md Step 9)
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 65,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.219408,
+					speed: 2.24,
 					pene: 4,
 					damage: 0.9697,
 					size: 10,
 					///
-					exitSpeed: 60,
 					// STAND-IN: diep has no Fortress. Its three launchers are Tri-Trapper's, so they
 					// take the 0.666 gu row every manual trap carries. May want its own tune.
 					weight: 3.5,
@@ -2501,20 +2533,19 @@
 					reload: 23,   // same stand-in as launchers above - call 3
 					offTime: .5,
 					type: 1.2,
-					life: 83,
+					life: 75,   // STAND-IN: Battleship swarm lifeLength 1 x 75 (plan.md Step 9)
 					auto: 0,
 					///
 					offdir: Math.PI / 3,
 					offx: 0,
 					canonLength: 48,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.61432,
+					speed: 1.12,
 					pene: .7,
 					damage: 0.9697,
 					size: 6,
 					///
-					exitSpeed: 28,
 					// STAND-IN, same reasoning as the launchers above: these are BattleShip's small
 					// drones, so they take Battleship's 0.1 gu row. May want its own tune.
 					weight: 0.525,
@@ -2532,19 +2563,18 @@
 					reload: 50,
 					offTime: 0,
 					type: 2,
-					life: 396,
+					life: 600,   // diep Mega Trapper (trap) lifeLength 8 x 75 (plan.md Step 9)
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 68,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.219408,
+					speed: 2.24,
 					pene: 18,
 					damage: 1.69697,
 					size: 19,
 					///
-					exitSpeed: 70,
 					weight: 5.6,   // diep 1.0666 gu, the top of the whole table
 					push: 0.27426,
 					back: 3.36
@@ -2558,19 +2588,18 @@
 					reload: 23,
 					offTime: 0,
 					type: 2,
-					life: 297,
+					life: 600,   // diep Overtrapper (trap) lifeLength 8 x 75 (plan.md Step 9)
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 65,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.234032,
+					speed: 2.24,
 					pene: 5,
 					damage: 1.45455,
 					size: 10,
 					///
-					exitSpeed: 60,
 					weight: 3.5,   // diep Overtrapper (Trap) 0.666 gu
 					push: 0.27426,
 					back: 2.24
@@ -2585,14 +2614,13 @@
 					offdir: Math.PI * 2 / 3,
 					offx: 0,
 					canonLength: 48,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.438816,
+					speed: 1.12,
 					pene: 5.5,
 					damage: 1.81818,
 					size: 14,
 					///
-					exitSpeed: 25,
 					weight: 4.2,   // diep Overtrapper (Drone) 0.8 gu
 					push: 0.45709,
 					back: 0.28
@@ -2612,7 +2640,7 @@
 					reload: 15,
 					offTime: 0,
 					type: 0,
-					life: 99,
+					life: 75,   // AutoTurretDefinition lifeLength 1 x 75 (plan.md Step 9)
 					auto: 1,
 					autoShoot: 1,
 					autoDir: 1,
@@ -2620,9 +2648,9 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 38,
-					rand: 0.1,
+					rand: 0.174533,
 					///
-					speed: 0.468064,
+					speed: 1.344,   // AutoTurretDefinition bullet.speed 1.2 x 1.12
 					pene: 1.5,
 					damage: 3.15152,
 					size: 14,
@@ -2635,19 +2663,18 @@
 					reload: 23,
 					offTime: 0,
 					type: 2,
-					life: 297,
+					life: 600,   // diep Auto Trapper (trap) lifeLength 8 x 75 (plan.md Step 9)
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 65,
-					rand: 0.2,
+					rand: 0.174533,
 					///
-					speed: 0.234032,
+					speed: 2.24,
 					pene: 4,
 					damage: 1.69697,
 					size: 10,
 					///
-					exitSpeed: 60,
 					weight: 3.5,   // diep Auto Trapper (Trap) 0.666 gu
 					push: 0.27426,
 					back: 2.24
@@ -2664,9 +2691,10 @@
 					this.offdir = 0;
 					this.offx = 0;
 					this.canonLength = 60;
-					this.rand = 0.62;
+					this.life = 75;   // STAND-IN: diep has no Submachine - takes Machine Gun's lifeLength 1 x 75 (plan.md Step 9)
+					this.rand = 0.523599;   // STAND-IN: Machine Gun's scatterRate 3 (plan.md Step 8)
 					///
-					this.speed = 0.394928;//.22
+					this.speed = 1.12;
 					this.pene = 3;
 					this.damage = 1.93939;
 					this.size = 23;//17
@@ -2689,9 +2717,10 @@
 					offdir: 0,
 					offx: 24,
 					canonLength: 45,
-					rand: 0.1,
+					life: 75,
+					rand: 0.174533,
 					///
-					speed: 0.511936,
+					speed: 1.232,
 					pene: .42,
 					damage: 2.66667,
 					size: 12,
@@ -2722,7 +2751,7 @@
 					reload: 15,
 					offTime: 0,
 					type: 0,
-					life: 99,
+					life: 75,   // AutoTurretDefinition lifeLength 1 x 75 (plan.md Step 9)
 					auto: 1,
 					autoShoot: 1,
 					autoDir: 1,
@@ -2730,9 +2759,9 @@
 					offdir: 0,
 					offx: 0,
 					canonLength: 38,
-					rand: 0.1,
+					rand: 0.174533,
 					///
-					speed: 0.468064,
+					speed: 1.344,   // AutoTurretDefinition bullet.speed 1.2 x 1.12
 					pene: 1.8,
 					damage: 2.42424,
 					size: 14,
@@ -2748,9 +2777,10 @@
 					offdir: 0,
 					offx: 24,
 					canonLength: 45,
-					rand: 0.1,
+					life: 75,
+					rand: 0.174533,
 					///
-					speed: 0.599696,
+					speed: 1.232,
 					pene: .31,
 					damage: 2.66667,
 					size: 12,
@@ -2815,12 +2845,15 @@
 					canonLength: 50,
 					rand: 0.5,
 					///
+					// STALE as of plan.md Step 9: diep has no Summoner, so this speed is not
+					// diep-derived and was never touched by Step 9's conversion pass - but
+					// BODY_FRICTION 0.956532 -> 0.9 still changes what terminal speed it produces
+					// (every bullet decays through the same global constant). Flagged, not fixed.
 					speed: 0.570448,
 					pene: 5.5,
 					damage: 5.45455,
 					size: 20,
 					///
-					exitSpeed: 35,
 					// STAND-IN: diep has no Summoner and no boss of any kind. These are drones, so
 					// they take the 0.8 gu row every drone class shares. May want its own tune -
 					// a boss fields up to 35 of them at once, where Overlord fields 8.
@@ -2845,11 +2878,12 @@
 				that a bullet's `pene` IS its health pool (PENDING #18), so the wiki figure maps
 				onto this field directly.
 				size: 34 - "bullets... about as large as an Annihilator's bullet"; copied from
-				Annihilator's own cannon.size below, same reasoning for weight/push/exitSpeed (a
+				Annihilator's own cannon.size below, same reasoning for weight/push (a
 				projectile that size hits and recoils like that class's, not a new guess).
-				speed: 0.599696 (Assassin's base cannon speed) x 1.66 (the engine's own maxed
-				BSpeed multiplier, 7 points x 0.0942857/pt, entities/Player.js upgrade()) - "The
-				Bullet Speed of a maxed Assassin", computed rather than eyeballed.
+				speed: 2.24 - diep DOES give Arena Closer its own real barrel (bullet.speed 2,
+				plan.md Step 9), which supersedes the pre-Step-9 "maxed Assassin" derivation this
+				comment used to state (PENDING #52 flagged that citation as already stale before
+				this step landed - it is now simply superseded, not just stale).
 				reload: 15 - Basic own base reload (diep barrel reload:1 x15). Step 3 converts the
 				whole column to diep own numbers; this superseded the pre-Step-3 derivation of 7
 				(a maxed-Reload Basic own cadence), since Arena Closer has no diep counterpart to
@@ -2866,19 +2900,18 @@
 					offTime: 0,
 					auto: 1,
 					type: 0,
-					life: 107,
+					life: 75,   // diep Arena Closer bullet.lifeLength 1 x 75 (plan.md Step 9)
 					///
 					offdir: 0,
 					offx: 0,
 					canonLength: 68,
-					rand: 0.05,
+					rand: 0.174533,   // diep scatterRate 1 (plan.md Step 8)
 					///
-					speed: 0.995491,
+					speed: 2.24,   // diep Arena Closer bullet.speed 2 x 1.12 (plan.md Step 9) - supersedes the stale "Assassin x1.66" derivation in the comment above
 					pene: 3750,
 					damage: 196,
 					size: 34,
 					///
-					exitSpeed: 53,
 					weight: 0.525,
 					push: 0.27426,
 					back: 0
@@ -2886,19 +2919,26 @@
 				this.cannons = c;
 			},
 			/*
-				PENDING #27's three Dominator variants. `pene`/`damage` are diep_wiki/Dominator.txt's
-				own multiples of "a tank" - diep's universal 0-point bullet baseline, MEASUREMENTS.md's
-				pinned 2 HP / 7 damage per loop. Bullet magnitudes aren't diep-adopted in this tree yet
-				(MEASUREMENTS.md's M1), so - the same call PENDING #17/#18's body-damage fix already
-				made for an identical problem - the multiple is applied to OUR OWN corresponding live
-				number (Basic's own can.pene 1.7 / can.damage 4.84848, the closest thing this engine has
-				to "a tank's" baseline bullet) rather than diep's raw absolute figure, which would land
-				on the wrong scale entirely next to every other cannon in this table. `back: 0`
-				everywhere - diep_wiki: a Dominator has "no recoil" (it cannot move at all,
-				lib/gameAI.js's CONFIG.DOMINATOR). Detector-driven auto-aim (`auto`/`autoShoot`/
-				`autoDir`, DETEC below) is the same auto-turret machinery Auto Gunner/Auto Trapper
-				already use - see lib/gameAI.js's CONFIG.DOMINATOR comment for why the AI itself needs
-				no bespoke targeting code.
+				The three Dominator variants (PENDING #27/#51). `reload`/`pene`/`damage`/`speed` are
+				diepcustom's own TankDefinitions.json entries for these barrels (plan.md Step 11),
+				which happened to reproduce diep_wiki/Dominator.txt's own "multiples of a tank"
+				phrasing exactly for pene/damage - `reload` is already a reference-tick count
+				(15 x barrel.reload, fractional .5 values rounded to the nearest tick, matching the
+				reload column's existing all-integer convention, plan.md Step 3's own precedent);
+				`speed` is `1.12 x diep bullet.speed` (plan.md Step 9's identity). Bullet magnitudes
+				aren't diep-adopted on an absolute scale in this tree (MEASUREMENTS.md's M1), so pene/
+				damage are each `diep's own multiple x` OUR corresponding live number (Basic's own
+				can.pene 1.7 / can.damage 4.84848, the closest thing this engine has to "a tank's"
+				baseline bullet) rather than diep's raw absolute figure, which would land on the wrong
+				scale entirely next to every other cannon in this table - the same call PENDING #17/
+				#18's body-damage fix already made for an identical problem. `back: 0` everywhere -
+				diep_wiki: a Dominator has "no recoil" (it cannot move at all, lib/gameAI.js's
+				CONFIG.DOMINATOR). Detector-driven auto-aim (`auto`/`autoShoot`/`autoDir`, DETEC below)
+				is the same auto-turret machinery Auto Gunner/Auto Trapper already use - see
+				lib/gameAI.js's CONFIG.DOMINATOR comment for why the AI itself needs no bespoke
+				targeting code. `screen`/FoV per variant is still ours, flagged, approximate -
+				diep_wiki gives only "roughly Sniper-to-Hunter range depending on variant", not a
+				per-variant number, and Step 11's own scope is reload/pene/damage/speed only.
 			*/
 			"Destroyer Dominator": new function () {
 				// FoV "roughly Sniper-to-Hunter range" (diep_wiki) - Sniper's own screen (1664),
@@ -2906,9 +2946,7 @@
 				this.screen = 1664;
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				this.cannons = [{
-					// reload: Hybrid's own 60 at 3 Reload points (1 - 3*0.0788571 = 0.7634287),
-					// rounded - diep_wiki: "reload... approximately equal to a Hybrid with 3 points".
-					reload: 46,
+					reload: 45,   // diepcustom TankDefinitions.json: 15 x barrel.reload 3 (plan.md Step 11)
 					offTime: 0,
 					auto: 1, autoShoot: 1, autoDir: 1,
 					type: 0,
@@ -2919,14 +2957,11 @@
 					canonLength: 62,
 					rand: 0.10,
 					///
-					// Below Destroyer's own 0.321792 (diep_wiki gives no figure, only "below
-					// Destroyer's") - 0.9x, ours, flagged.
-					speed: 0.2896128,
-					pene: 170,      // 100 x tank's own 1.7 (diep_wiki: "200 HP, x100 tank")
-					damage: 48.4848,  // 10 x tank's own 4.84848 (diep_wiki: "70/hit, x10 tank")
+					speed: 1.12,   // diep bullet.speed 1.0 x 1.12 (plan.md Step 9's identity, applied Step 11)
+					pene: 170,      // diep bullet.health 100 x tank's own 1.7 (matches diep_wiki's "x100 tank")
+					damage: 48.4848,  // diep bullet.damage 10 x tank's own 4.84848 (matches diep_wiki's "x10 tank")
 					size: 27,      // Hybrid-sized bullet (diep_wiki)
 					///
-					exitSpeed: 53,
 					weight: 1.05,
 					push: 0.27426,
 					back: 0
@@ -2936,8 +2971,10 @@
 				this.screen = 1920;   // mid Sniper-Hunter band - Assassin's own screen, ours/flagged
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				const c = new Array(3).fill(null).map((_, i) => ({
-					// "High reload" (diep_wiki gives no number) - 2x Gunner's own base 27, ours/flagged.
-					reload: 54,
+					// diepcustom TankDefinitions.json: 15 x barrel.reload 0.3 = 4.5, rounded to the
+					// nearest reference tick (plan.md Step 11) - the big correction PENDING #27's own
+					// "high reload" guess (54) got wrong by 12x.
+					reload: 5,
 					offTime: 0,
 					auto: 1, autoShoot: 1, autoDir: 1,
 					type: 0,
@@ -2947,9 +2984,9 @@
 					canonLength: 45,
 					rand: 0.1,
 					///
-					speed: 0.511936,   // Gunner's own "normal" bullet speed (diep_wiki)
-					pene: 8.5,       // 5 x tank's own 1.7 (diep_wiki: "10 HP, x5 tank")
-					damage: 4.84848,   // 1 x tank's own 4.84848 (diep_wiki: "7, x1 tank")
+					speed: 1.344,   // diep bullet.speed 1.2 x 1.12 (plan.md Step 9's identity, applied Step 11)
+					pene: 8.5,       // diep bullet.health 5 x tank's own 1.7 (matches diep_wiki's "x5 tank")
+					damage: 4.84848,   // diep bullet.damage 1 x tank's own 4.84848 (matches diep_wiki's "x1 tank")
 					size: 12,
 					///
 					weight: 1.75,
@@ -2962,9 +2999,12 @@
 				this.screen = 2208;   // Ranger's own screen, our stand-in for diep's "Hunter"
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				const c = new Array(8).fill(null).map((_, i) => ({
-					reload: 25,   // Trapper's own base reload, at 0 points (diep_wiki)
+					// diepcustom TankDefinitions.json: 15 x barrel.reload 1.5 = 22.5, rounded to the
+					// nearest reference tick (plan.md Step 11, same rounding Trapper's own class
+					// entry already uses).
+					reload: 23,
 					offTime: 0,
-					auto: 1, autoShoot: 1, autoDir: 1,   // "auto-fire always on" (diep_wiki)
+					auto: 1, autoShoot: 1, autoDir: 1,   // "auto-fire always on" (diep_wiki forceFire)
 					type: 2,
 					life: 297,
 					///
@@ -2973,15 +3013,11 @@
 					canonLength: 68,
 					rand: 0.3,
 					///
-					// Above a maxed Tri-Trapper (diep_wiki) - this tree has no "Tri-Trapper" class to
-					// anchor exactly, so this is our own Trapper's maxed trap speed
-					// (0.219408 x 1.66 = 0.36421728) with headroom, ours/flagged/approximate.
-					speed: 0.45,
-					pene: 25.5,        // 15 x tank's own 1.7 (diep_wiki: "30 HP, x15 tank")
-					damage: 17.454528,   // 3.6 x tank's own 4.84848 (diep_wiki: "25.2, x3.6 tank")
+					speed: 4.48,   // diep bullet.speed 4.0 x 1.12 (plan.md Step 9's identity, applied Step 11)
+					pene: 34,          // diep bullet.health 20 x tank's own 1.7 (was 25.5/15x - a wiki paraphrase, corrected against TankDefinitions.json)
+					damage: 14.54544,   // diep bullet.damage 3 x tank's own 4.84848 (was 17.454528/3.6x - same correction)
 					size: 12,
 					///
-					exitSpeed: 60,
 					weight: 3.5,
 					push: 0.27426,
 					back: 0

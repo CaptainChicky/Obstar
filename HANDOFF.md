@@ -185,10 +185,13 @@ The things in this codebase that are *not* obvious from reading the code around 
   is the *tank's*, exactly `10/11` per 40 ms loop — derived from diep's `V_max = 10·A`, which is
   stated for tanks only — giving a **362.25 u/s** base top speed (diep's 12.94 gu/s at our 28
   units/gu). Everything diep does not model as a steered tank decays through `lib/constants.js`'s
-  `BODY_FRICTION` (0.956532) instead: bullets, traps, drones, shapes, and the Summoner boss's
-  scripted drift. diep gives a bullet no drag term at all (`V_b = ρ/t_b`), so the old single shared
-  constant was a tank recurrence running on bullets; the split *is* the faithful model, not a
-  workaround, and merging them back is not a simplification. **The tank `FRICTION` also owns
+  `BODY_FRICTION` instead: bullets, traps, drones, shapes, and the Summoner boss's scripted drift.
+  **`BODY_FRICTION` is `0.9`** (plan.md Step 9, MEASUREMENTS.md M1 resolved) — diep applies a
+  universal 10% per-tick drag to every `ObjectEntity`, bullets included, so the split is still
+  correct but the two constants are no longer the same *reason* apart: `TANK_FRICTION`/`BODY_FRICTION`
+  differ because diep applies the same 0.9 in a different order for a tank vs a body (the ordering
+  note in plan.md, stated once), not because bullets carry no drag at all — they do. Do not merge
+  them back. **The tank `FRICTION` also owns
   `TanksConfig.js`'s whole `back` (recoil) column** (plan.md step 3): recoil is a one-shot impulse
   on tank velocity, whose total displacement under `v *= F; x += v` is `v₀·F/(1−F)`, so `back` is
   diep's own per-shot recoil table in grid squares run through `back = gu × 28 × (1−F)/F` — which at
@@ -566,24 +569,24 @@ relative to the base centre (`ox,oy`), so a drone far from its ring just leans h
 curls back on — there is no separate RETURN state to enter or an explicit snap back into ORBIT.
 `orbitState` is written every tick purely for tests/the admin dump; nothing branches on it.
 
-**Chase and return are a real dash** (plan.md WP4.5.0): `BASE_DRONE_CHASE_SPEED` is **the fastest
-sustained speed any build in this game can hold** — 546.36 u/s, measured rather than asserted by
-`test/rooms.js`'s `fastestTankSpeed()`, which replays `entities/Player.js`'s own `motion()`/
-`shoot()` recurrence over every reachable class at a full Movement Speed and a full Reload bar (the
-ceiling is a Sniper at level 15 riding its own recoil; adopting diep's geometric `0.914^points`
-reload stat lowered it from 559.2, since a maxed-Reload build fires less often and so rides less
-recoil premium). It is pinned to
-exactly that ceiling on purpose: nothing can outrun a base drone on straight-line speed, and nothing
-is outrun absurdly either, so lapping an enemy base in the fastest tank in the game is still
-winnable — on the head start and the `BASE_DRONE_LEASH` boundary, not on top speed. **This pin is
-our own mechanic, not diep's**: diep's base drone runs a flat 54 du/tick = 756 u/s
-(`diepcustom/src/Entity/Misc/BaseDrones.ts`, `bullet.speed 2.7`), pinned to nothing — plan.md Step 10
-adopts that number and retires the pin. If a lap ever
-reads unfair, move `BASE_DRONE_LEASH`/`BASE_DRONE_DETECT`, **not** the chase speed, which is pinned
-to a measurement and fails `npm test` if a cannon retune moves the ceiling out from under it. A
-chasing drone uses its own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 9.11 rad/s), since the
-limiter that governs a leisurely orbit would give a 546 u/s drone a turn radius wide enough to arc
-around a strafing target instead of into it. A return is a chase back to the ring at the same speed
+**Chase and return are a real dash, and `BASE_DRONE_CHASE_SPEED` is diep's own flat number now, not
+a pin** (plan.md Step 10, closing WP4.5.0/nuance 32): diep's base drone runs a flat 54 du/tick =
+**756 u/s** (`diepcustom/src/Entity/Misc/BaseDrones.ts`, `bullet.speed 2.7`), pinned to nothing —
+that superseded the old mechanic, which held `BASE_DRONE_CHASE_SPEED` to **the fastest sustained
+speed any build in this game can hold** (546.36 u/s, measured by `test/rooms.js`'s
+`fastestTankSpeed()`) so that lapping an enemy base in the fastest tank was always winnable on the
+head start and the leash boundary, never on raw speed. That race is gone: 756 u/s outruns even a
+maxed-Movement Sniper's own 546.36 u/s dash. `BASE_DRONE_DETECT` dropped at the same time (diep's
+`ai.viewRange` 900 du = 504 units, was `gu(60)` = 1680 = 3.3× diep's), so the encounter got shorter
+and sharper rather than simply harder — flagged as a real balance consequence, not pre-tuned back;
+PENDING #6's browser checklist needs a human read on it. `test/rooms.js` still computes
+`fastestTankSpeed()` and logs it against the drone speed for context, but no longer asserts
+agreement. If a lap ever reads unfair, move `BASE_DRONE_LEASH`/`BASE_DRONE_DETECT`, not the chase
+speed, which now tracks diep's own number rather than anything measured. A chasing drone uses its
+own, much tighter turn limit (`BASE_DRONE_CHASE_TURN`, 12.6 rad/s — re-derived with the speed,
+`turn = speed_u_per_s / 60 / 25`), since the limiter that governs a leisurely orbit would give a
+756 u/s drone a turn radius wide enough to arc around a strafing target instead of into it. A
+return is a chase back to the ring at the same speed
 — no separate constant — the orbit field's own target speed blends from cruise to dash as a
 smoothstep of how far off its ring the drone is (`BASE_DRONE_RETURN_ERR`), so a knocked-off drone
 visibly sprints back and eases onto its ring rather than snapping or ringing around the radius.

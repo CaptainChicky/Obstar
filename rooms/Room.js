@@ -907,9 +907,10 @@ class Room {
 		regardless of what rules.teams this room states, since capture is what assigns it a real
 		side; lib/gameAI.js's dominatorCapture() is what moves it off team 2 later. Stats are set
 		on the instance rather than in TanksConfig.js, the same call createBoss() already makes
-		for a boss: diep_wiki/Dominator.txt states them directly (5998 HP, no per-level table
-		this engine's level cap ever reaches), not as a formula this class table's usual
-		level-driven growth could express.
+		for a boss: diepcustom's Dominator.ts (SIZE 160 du x 0.56 = 89.6; maxHealth 6000 at
+		camera.setLevel(75), so live max HP is 6000 + 2x74 = 6148, plan.md Step 11) - not a
+		formula this class table's usual level-driven growth could express, since this engine's
+		level cap never reaches diep's hypothetical level 75.
 	*/
 	createDominator(x, y, variant) {
 		const spec = CONFIG.DOMINATOR[(variant !== undefined) ? variant : Math.floor(Math.random() * CONFIG.DOMINATOR.length)];
@@ -922,12 +923,10 @@ class Room {
 				this.XPLVL,
 				this
 			);
-			d.hp = 5998;
-			d.maxHp = 5998;
+			d.hp = 6148;
+			d.maxHp = 6148;
 			d.dominator = 1;
-			d.spawnX = x;
-			d.spawnY = y;
-			d.size = 64;
+			d.size = 89.6;
 			d.class = spec[2];
 			d.screen = CLASS[d.class].screen;
 			d.shield = 0;

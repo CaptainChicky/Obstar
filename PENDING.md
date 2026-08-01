@@ -179,23 +179,32 @@ line. A Dominator is a **stationary tank** (`CONFIG.BOSS`/`CONFIG.CLOSER` patter
   `can.pene` 1.7 / `can.damage` 4.84848, the closest thing this engine has to "a tank's" baseline
   bullet) rather than diep's raw absolute figure, which would land on the wrong scale next to every
   other cannon in the table.
-  - *Destroyer Dominator* — 1 cannon; pene **170** (100× 1.7), damage **48.4848** (10× 4.84848),
-    Hybrid-sized bullet (`size: 27`), reload **46** (Hybrid's own 60 at 3 Reload points,
-    `round(60 × (1 − 3×0.0788571))`), bullet speed **0.2896128** (Destroyer's own 0.321792 × 0.9 —
-    diep_wiki gives no figure, only "below Destroyer's"; **ours, flagged, approximate**).
+  **Reload/pene/damage/speed stand-ins below — RESOLVED 2026-08-01 (plan.md Step 11)**, against
+  `diepcustom/src/Const/TankDefinitions.json` directly rather than diep_wiki's prose paraphrase.
+  Kept here as a do-not-re-fix record of the final numbers, not as open flags any more:
+  - *Destroyer Dominator* — 1 cannon; pene **170** (100× 1.7), damage **48.4848** (10× 4.84848,
+    both confirmed exactly by `TankDefinitions.json`'s own `health 100`/`damage 10`), Hybrid-sized
+    bullet (`size: 27`), reload **45** (`15 × barrel.reload 3`, was **46**, a Hybrid-at-3-points
+    approximation), bullet speed **1.12** (`1.12 × diep bullet.speed 1.0`, was **0.2896128**, an
+    ours/flagged/approximate guess).
   - *Gunner Dominator* — 3 cannons, evenly spaced (120° apart, not Gunner's own forward-cross
-    layout); pene **8.5** (5× 1.7), damage **4.84848** (1× 4.84848), reload **54** ("high reload",
-    diep_wiki gives no number — 2× Gunner's own base 27, **ours, flagged**), Gunner's own "normal"
-    bullet speed (0.511936).
-  - *Trapper Dominator* — 8 launchers, evenly spaced; trap pene **25.5** (15× 1.7), trap damage
-    **17.454528** (3.6× 4.84848), reload **25** (Trapper's own base, at 0 points), auto-fire always
-    on (`auto: 1`). Trap speed **0.45** — "above a maxed Tri-Trapper" (diep_wiki), but this tree has
-    no "Tri-Trapper" class to anchor exactly, so this is our own Trapper's maxed trap speed
-    (`0.219408 × 1.66 = 0.36421728`) with headroom — **ours, flagged, approximate**.
-  FoV (each variant's `DETEC.size`/`maxDis`, and `screen`): Destroyer 1664 (Sniper's own screen),
-  Gunner 1920 (Assassin's, a mid-band stand-in), Trapper 2208 (Ranger's, this tree's closest analog
-  to diep's "Hunter") — diep_wiki says only "roughly Sniper-to-Hunter range depending on variant",
-  so all three are **ours, flagged, approximate**.
+    layout); pene **8.5** (5× 1.7), damage **4.84848** (1× 4.84848, both confirmed exactly by
+    `TankDefinitions.json`'s `health 5`/`damage 1`), reload **5** (`15 × barrel.reload 0.3 = 4.5`,
+    rounded to the nearest reference tick — was **54**, a 12× overestimate the step body itself
+    calls out as "the big correction"), bullet speed **1.344** (`1.12 × 1.2`, was Gunner's own
+    "normal" 0.511936).
+  - *Trapper Dominator* — 8 launchers, evenly spaced; trap pene **34** (20× 1.7, was **25.5**/15×
+    — the one case `TankDefinitions.json`'s own `health 20` actually disagreed with diep_wiki's
+    "30 HP, x15 tank" prose), trap damage **14.54544** (3× 4.84848, was **17.454528**/3.6× — same
+    correction, `TankDefinitions.json`'s `damage 3` against diep_wiki's "25.2, x3.6 tank"), reload
+    **23** (`15 × barrel.reload 1.5 = 22.5`, rounded — was **25**, Trapper's own base at 0 points),
+    auto-fire always on (`auto: 1`, diep's own `forceFire: true`). Trap speed **4.48**
+    (`1.12 × diep bullet.speed 4.0`, was **0.45**, our own maxed-Trapper-with-headroom guess —
+    confirms diep_wiki's "above a maxed Tri-Trapper" was directionally right, just not quantitative).
+  FoV (each variant's `DETEC.size`/`maxDis`, and `screen`) is **still open**, not touched by Step 11:
+  Destroyer 1664 (Sniper's own screen), Gunner 1920 (Assassin's, a mid-band stand-in), Trapper 2208
+  (Ranger's, this tree's closest analog to diep's "Hunter") — diep_wiki says only "roughly
+  Sniper-to-Hunter range depending on variant", so all three stay **ours, flagged, approximate**.
 - **AI — SHIPPED, and cheaper than the spec first read.** Targeting/leading/FoV-hold needed **no
   bespoke code**: `entities/Player.js`'s own `shoot()` already does exactly that for any class whose
   cannons carry `autoDir`/`autoShoot` (the same machinery Auto Gunner/Auto Trapper already ship on)
@@ -341,8 +350,12 @@ shape count scaling with player count, bosses still spawning after 50–60 minut
      squares per tick of contact, a Destroyer's only **0.2**, a Mega Trapper's trap 1.07, a tank
      *body* 1.6); **tanks are solid now** (nuance 44) — drive into another player and confirm you're
      held apart rather than sliding through, the bigger tank yielding less, no jitter or
-     "stickiness"; and **base drones are faster three times over**
-     (`BASE_DRONE_CHASE_SPEED` 423.7 → 501.7 → 527.2 → 559.2 u/s).
+     "stickiness"; and **base drones are faster, four times over now**
+     (`BASE_DRONE_CHASE_SPEED` 423.7 → 501.7 → 527.2 → 559.2 → 546.36 → **756** u/s, the last move
+     diep's own flat number replacing a measurement-pinned ceiling entirely, plan.md Step 10 — a
+     drone now outruns even a maxed-Movement Sniper's own dash, so circling a base is no longer a
+     survivable race on speed alone; `BASE_DRONE_DETECT` shrank at the same time (#23), so judge the
+     two together, not the speed jump in isolation).
    - **Health and regen are diep's own numbers now** (#17). A fresh spawn is **50** HP, not 150 —
      confirm the bar reads that, not a stale cached number. At 0 Health Regen points, take a few HP
      off and watch the bar: it should creep back at diep's slow linear rate immediately (no more
@@ -536,11 +549,11 @@ shape count scaling with player count, bosses still spawning after 50–60 minut
     "the closest tank-scale reference already modelled, for a tank the wiki calls Dominator-sized";
     #27's `createDominator()` made the identical call, "the closest existing convention for a large,
     non-levelling scripted tank"). Nuance 42 and #29 already predicted this tension would recur for
-    any future boss-pattern entity — it now has, twice, and a human's read is that the stand-in
-    doesn't hold up for either one.
+    any future boss-pattern entity — it now has, twice. **SHAPE and SIZE are now both fixed on both
+    entities — kept only as a do-not-re-fix record; the one thing still open is below.**
     - **Arena Closer's SHAPE half — FIXED 2026-07-31, and it turned out to be a rendering bug, not a
-      design gap.** `size: 64` (the boss-scale radius) was always the right call and is unchanged —
-      what was actually wrong is that `TanksConfig.js`'s "Arena Closer" client entry drew it with
+      design gap.** `size: 64` (the boss-scale radius) was the right call at the time — what was
+      actually wrong is that `TanksConfig.js`'s "Arena Closer" client entry drew it with
       `body: {shape: 1}`. `public/client/drawings.js`'s `Drawings.body` array is `[circle, rounded
       rect, pentagon]` — shape 1 is a rounded RECTANGLE, not a circle, so the Closer was rendering as
       a square the whole time despite every comment in the tree describing it as "boss-style
@@ -549,14 +562,21 @@ shape count scaling with player count, bosses still spawning after 50–60 minut
       Summoner's own `shape: 1` square body is intentional (it's meant to be a square boss) and is
       NOT reopened by this — only Arena Closer's copy of it was wrong. `test/clientDiff.js`'s golden
       didn't move (Arena Closer never spawns in that corpus's short single-mode runs).
-    - **Still open, on both entities:** Dominator's body (still `shape: 1`, deliberately untouched
-      this pass — diep does have a real Dominator to reference, unlike Summoner, so its correct shape
-      is a real open question, not a known bug the way Arena Closer's was), size on both (still the
-      boss's flat `64`, untuned), and AI *behaviour* on both (not just the body) against diep_wiki's
-      own description. **A human's own framing, worth keeping verbatim for whoever picks this up:**
-      Arena Closer and Dominator are reusing the *boss* class as scripted-tank scaffolding, and
-      technically each deserves its own class rather than borrowing the boss's — that restructuring
-      is still undecided and unscoped, not just the shape/size numbers on top of it.
+    - **SIZE on both entities, and Dominator's own SHAPE — FIXED 2026-08-01 (plan.md Step 11), with
+      real diep citations behind both.** Arena Closer `size: 64 → 98` (`ArenaCloser.ts`'s
+      `BASE_SIZE 175 du × 0.56`, `rooms/Tag.js`'s `createCloser()` and its duplicate in
+      `rooms/Maze.js`). Dominator `size: 64 → 89.6` (`Dominator.ts`'s `SIZE 160 du × 0.56`,
+      `rooms/Room.js`'s `createDominator()`) and `body.shape: 1 → 0` — diep's own `Dominator.ts`
+      states `sides: 1`, the same circle Arena Closer's own citation gives, so the "real open
+      question" this item used to flag is answered: a Dominator is a circle too, not a rounded
+      rectangle. `test/clientDiff.js`'s golden did not move (neither entity spawns in that corpus).
+    - **Still open:** AI *behaviour* on both (not just the body) against diep_wiki's own description,
+      and the restructuring question below. **A human's own framing, worth keeping verbatim for
+      whoever picks this up:** Arena Closer and Dominator are reusing the *boss* class as
+      scripted-tank scaffolding, and technically each deserves its own class rather than borrowing
+      the boss's — that restructuring is still undecided and unscoped, not just the shape/size
+      numbers on top of it. (plan.md Step 11 also landed the last of #27's flagged reload/speed
+      stand-ins for the three Dominator variants — see #27 below.)
     - **Sandbox `'\'` preview opened up to these 4 classes — 2026-07-31, explicit ask, "for now."**
       `entities/Player.js`'s `CYCLE_EXCLUDE` no longer excludes Arena Closer or the 3 Dominator
       variants (Summoner still excluded — it wasn't part of the ask and is a boss, not a
@@ -587,23 +607,28 @@ than remembered. Anything that is genuinely a decision has its own numbered item
     `rooms/Room.js`'s base drone sets both by hand (`weight = 4.2`; `push = 2`, what the single
     field used to be) — its `push` is genuinely load-bearing, since base drones hold a ring.
 
-32. **`BASE_DRONE_CHASE_SPEED`/`_TURN` are pinned to a live measurement**
-    (`fastestTankSpeed()` in `test/rooms.js`, replaying `motion()`+`shoot()` over every class at
-    max Movement/Reload), so any retune that moves the speed ceiling moves this pair with it.
-    Current value: **546.36 u/s** (a maxed-Movement Sniper at L15), after the `back` rescale
-    (501.7 → 527.2), the one-shot-impulse fix (527.2 → 559.2), and **#15's reload-stat form becoming
-    diep's geometric `0.914^points`** (559.2 → 546.36 — a maxed-Reload build now fires less often, so
-    the fastest recoil-rider carries less recoil premium). `#16`'s `weight` column turned
-    out **not** to move the ceiling at all — knockback only enters through contact, which a solo
-    speed replay never has, and `npm test` passing with no re-pin across that whole rewrite is the
-    proof. The reload-stat candidate this note used to flag has now fired (resolved from source, not
-    a live measurement); **Step 10 retires this pin entirely** in favour of diep's own flat 756 u/s
-    base-drone speed (`diepcustom/src/Entity/Misc/BaseDrones.ts`, `bullet.speed 2.7`), which is
-    pinned to nothing. Until then, always move both constants together:
-    `turn = speed_u_per_s / 60 / 25` holds the ~60-unit turn radius; `lib/config.js`'s comment
-    carries the re-pin chain. Note the ceiling is a *maxed-Movement Sniper's own walk* (473.8 u/s)
-    plus a recoil premium, not a bare speed number — quoting "1.4×" against a level-0 walk is
-    comparing the wrong baseline.
+32. **SHIPPED — `BASE_DRONE_CHASE_SPEED`/`_TURN`'s pin to a live measurement is retired
+    (plan.md Step 10, 2026-08-01).** Kept as a *do-not-re-fix* record of the history, since the
+    numbers it built up (546.36 u/s at the pin's end) are still cited elsewhere. It used to be
+    pinned to `fastestTankSpeed()` in `test/rooms.js` (replaying `motion()`+`shoot()` over every
+    class at max Movement/Reload), so any retune that moved the speed ceiling moved this pair with
+    it: 501.7 → 527.2 (the `back` rescale) → 559.2 (the one-shot-impulse fix) → **546.36** (#15's
+    reload-stat form becoming diep's geometric `0.914^points` — a maxed-Reload build fires less
+    often, so the fastest recoil-rider carries less recoil premium). `#16`'s `weight` column never
+    moved the ceiling at all — knockback only enters through contact, which a solo speed replay
+    never has. **Now**: `BASE_DRONE_CHASE_SPEED` is diep's own flat **756 u/s**
+    (`diepcustom/src/Entity/Misc/BaseDrones.ts`, `bullet.speed 2.7` — `20 × 2.7 × 0.56` units/
+    ref-tick), pinned to nothing, outrunning even the old measured ceiling by ~38%.
+    `BASE_DRONE_CHASE_TURN` moved with it (`turn = speed_u_per_s / 60 / 25`, the same identity
+    every prior re-pin used — now **0.504** rad/ref-tick = 12.6 rad/s). `test/rooms.js`'s
+    `fastestTankSpeed()` is still computed and logged in `baseDroneAiTests()` for context (a cannon
+    retune that pushes the roster's own ceiling past 756 u/s is now at least visible), but nothing
+    asserts agreement with it any more. `BASE_DRONE_DETECT` dropped in the same step
+    (`gu(60) → gu(18)`, see #23), so the "race" this pin used to protect (circling a base in the
+    fastest tank stays survivable) is gone by design — flagged as a real balance consequence in
+    plan.md Step 10's own note, not pre-tuned back. **Do not restore this pin** — the reload-stat
+    candidate it used to flag as "the last thing that could move it again" has already fired and
+    is folded into the 546.36 figure above; there is nothing left pending on it.
 
 33. **`V_max = 10·A` is exact only at the 40 ms reference — our live 25 ms server runs 1.8% over
     it.** `Physics.stepBody`'s steady state rises from 362.25 u/s (at `d=1`) toward 380.1 u/s
@@ -633,18 +658,31 @@ than remembered. Anything that is genuinely a decision has its own numbered item
     — deliberately not done yet, since changing the corpus and the physics in the same commit would
     make neither reviewable.
 
-35. **`BODY_FRICTION` is on death row, not on a retune list.** If **M1** finds diep's bullets are
-    constant-velocity (the likely answer — `physics.html` has no drag term for them), the right
-    change is to **delete** the decay from `entities/Bullet.js`'s motion tail, not fit a new number
-    into it. That's a structural edit to the tail plus every per-cannon `speed`/`life` value, so
-    budget it as such. Two things in that file are *already* separate and must not be swept up:
-    traps decay through their own `.82`, and `entities/Objects.js` uses `vec.limit(…, BODY_FRICTION)`
-    (a capped decay, not a bare multiply). See #14 and M1.
+35. **SHIPPED — `BODY_FRICTION` moved, not deleted (plan.md Step 9, 2026-08-01), the opposite of
+    this note's own prediction.** `physics.html` has no drag term for a bullet, but
+    `diepcustom/src/Entity/Object.ts:274` and `diepindepth/physics/README.txt` §3 both confirm the
+    real diep source applies a universal 10% per-tick drag to every `ObjectEntity`, bullets
+    included — so the maintained-velocity motion tail in `entities/Bullet.js` was already the
+    right shape, and the fix was `0.956532 → 0.9`, not a structural deletion. Every per-cannon
+    `speed`/`life` value moved with it, as this note predicted the scale of, just not the
+    direction. The two things flagged here as already-separate and not-to-be-swept-up both landed
+    correctly: the trap's own hand-rolled `.82` decay **was** swept up and deleted (Step 9,
+    replaced by the same shared `BODY_FRICTION` every other bullet/drone/shape now rides — nuance
+    35's own warning not to do this *while `BODY_FRICTION` was unresolved* no longer applies, since
+    it is resolved now), while `entities/Objects.js`'s `vec.limit(…, BODY_FRICTION)` kept its
+    capped-decay shape untouched, riding the new `0.9` automatically since it reads the constant by
+    reference. Kept as a *do-not-re-fix* record of the (wrong) prediction rather than deleted, per
+    this file's own precedent for a resolved-from-source item.
 
-36. **`PET_FRICTION`'s 2×-braking relationship is against `BODY_FRICTION`, not the tank's.** Still
-    exact (1.99×). The hazard is a future reader "restoring" it against the tank's `10/11`, which
-    gives `fr = 0.8182` and a pet that brakes ~2.2× harder and parks behind its owner. Documented at
-    the constant in `lib/gameAI.js`; this is the second copy.
+36. **SHIPPED — `PET_FRICTION`'s 2×-braking relationship is against `BODY_FRICTION`, not the
+    tank's, and was recomputed (not just re-verified) when `BODY_FRICTION` moved (plan.md Step 9,
+    2026-08-01).** Still exact (1.992040×, held to six figures rather than rounded): the pre-move
+    pair gave `1 - 0.91341 = 0.08659` against `1 - 0.956532 = 0.043468`; at the new
+    `BODY_FRICTION = 0.9`, `1 - fr = (1 - 0.9) × 1.992040`, so `PET_FRICTION 0.91341 → 0.800796`.
+    The hazard this note originally warned about still stands and is unchanged by the move: a
+    future reader "restoring" the ratio against the tank's `10/11` instead gives `fr = 0.8182` and
+    a pet that brakes ~2.2× harder and parks behind its owner. Documented at the constant in
+    `lib/gameAI.js`; this is the second copy.
 
 ### Documentation and tooling drift
 

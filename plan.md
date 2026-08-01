@@ -614,6 +614,23 @@ both moved:
 - **Moves:** nothing.
 
 ### Step 8: Bullet scatter — closes M2 without a measurement session
+
+**Step 8 LANDED (2026-08-01), together with Steps 9 and 10 in the same session** (the user's own
+instruction named all three, in order, with Steps 9/10 required together and Step 8's muzzle-speed
+jitter explicitly allowed to fold into Step 9 since both touch the same expression — taken, not the
+split-landing option). The angular half landed exactly as this step's body describes: `can.rand`
+became diep's `scatterRate` directly (`rand = 0.174533 × scatterRate`) across every real cannon,
+verified per-class against `diepcustom/src/Const/TankDefinitions.json` rather than transcribed —
+Basic/Twin/Quad Tank/Octo Tank/etc. (`scatterRate 1`) landed at **0.174533**, Sniper/Assassin/Ranger
+(`0.3`) at **0.05236**, Machine Gun and the Sprayer's own "Small Bullet" barrel (`3`) at **0.523599**
+— matching this step's own worked examples exactly. The muzzle-speed jitter folded into Step 9's
+constructor rewrite, computed at the shoot() call site from the same `can.rand` column
+(`scatterRate` back-derived as `can.rand / 0.174533`) rather than a second stored column — see Step
+9's own note for the formula. **Test impact, isolated by inspection rather than a separate
+`clientDiff` run** (three steps land in one `npm test` pass below, per the same "once per step
+budget" reasoning Steps 4+5 used — the three are too interlocked to test in isolation without
+tripling the run count for no additional information): bullet trajectories move, contributing to the
+shared golden move recorded under Step 9.
 - **Resolves:** PENDING #23's `rand`, **MEASUREMENTS M2** (delete it).
 - **Reference:** `diepcustom/src/Entity/Tank/Barrel.ts:128-129` —
   ```ts
@@ -648,6 +665,121 @@ both moved:
   tests green.
 
 ### Step 9: Bullet physics model — the big one. Closes M1, and nuance 35 gets the *opposite* answer
+
+**Step 9 LANDED (2026-08-01), together with Steps 8 and 10 in the same session** — the plan's own
+requirement for 9+10, and the user's own instruction for all three. The full cross-reference against
+`diepcustom/src/Const/TankDefinitions.json` (52 classes, every barrel's `speed`/`scatterRate`/
+`lifeLength`/`type`) was pulled programmatically rather than hand-transcribed — this step's own
+"verify each against TankDefinitions.json" instruction, taken literally, with a self-check script
+that re-parsed the edited `TanksConfig.js` (which is valid `require()`-able JS, so this was a live
+data comparison, not a text diff) against the computed target table until every value matched
+exactly.
+
+**`BODY_FRICTION` and `PET_FRICTION`, exactly as predicted:** `0.956532 → 0.9`
+(`lib/constants.js`), the universal 10% diep applies to every `ObjectEntity` including bullets —
+confirmed the opposite of nuance 35's guess. `PET_FRICTION` recomputed (not one-time-rescaled) to
+hold its 1.99× braking ratio against the new value: `0.91341 → 0.800796`
+(`1 − fr = (1 − 0.9) × 1.992040`, the pre-Step-9 ratio held to six figures rather than rounded).
+
+**The `speed` column: `1.12 × diep bullet.speed`, every real cannon.** Landed via a full
+`diep_barrels`/`ours_barrels` cross-reference script rather than per-class hand computation, then
+self-verified against the edited file. Confirms this step's own worked examples exactly: Basic/Twin/
+Machine Gun/Quad Tank/Octo Tank/etc. (diep `speed 1`) → **1.12**; Sniper/Assassin/Ranger (`1.5`) →
+**1.68**; Destroyer/Hybrid's main barrel (`0.7`) → **0.784**; Gunner (`1.1`) → **1.232**; traps
+(`speed 2`, all of Trapper/Mega Trapper/Overtrapper's/Auto Trapper's trap barrels) → **2.24**, though
+a trap's own `speed` no longer drives a per-tick thrust — see below. **Seven classes with no diep
+counterpart took a nearest-relative stand-in**, the identical methodology plan.md Step 3 already
+used for `reload`, flagged at each site: Cyclone → Octo Tank's row (all ten barrels identical);
+Submachine → Machine Gun's row; Fortress's three launchers → Tri-Trapper's trap row (`speed 2`,
+`scatterRate 1`, `lifeLength 3.2` — a shorter life than the ordinary Trapper family's `8`, both
+borrowed together since they come from the same diep class), its three small drones → Battleship's
+swarm row; Auto Hover's three manual barrels → Tri-Angle's own three (it has a real diep
+counterpart, unlike its host class); every auto-turret slot (Auto Hover/Auto Trapper/Auto
+Gunner's turret barrel) → `diepcustom/src/Entity/Tank/AutoTurret.ts`'s shared `AutoTurretDefinition`
+(`speed 1.2`, `scatterRate 1`, `lifeLength 1` → **1.344**/`0.174533`/**75**), not a `TankDefinitions`
+entry at all since it is one shared definition every Auto-class barrel reuses. **Rocket's two
+backward "thruster" barrels are the one case that isn't `TankDefinitions.json` at all**: diep's
+Rocketeer fires an actual rocket (`type: "rocket"`) that spawns its own inline sub-barrel exhaust
+puff (`diepcustom/src/Entity/Tank/Projectile/Rocket.ts`'s `RocketBarrelDefinition` — `speed 1.5`,
+`scatterRate 5`, `lifeLength 0.1`), and that sub-barrel, not the main rocket, is the closer model for
+our two backward-firing cannons (already flagged `STAND-IN` at the site for `weight`/reload) — this
+is what Step 8's own citation of "Rocketeer's own sub-barrel 5" scatter meant. Necromancer's
+`this.necro.speed` moved `0.438816 → 0.8064` (diep's `necrodrone` `speed 0.72 × 1.12`); its `life`
+needed no edit (`-1`, hardcoded at both spawn sites, already matches diep's own `lifeLength -1`).
+**Summoner and the three Dominator variants were deliberately NOT touched** — Summoner has no diep
+counterpart at all (flagged, same footing as `Bsqr`/`Btri`), and the Dominator variants' own
+speed/reload derivations are explicitly PENDING #27's stand-ins that Step 11 resolves with real
+numbers; touching them now would be starting that step early. Both are flagged in place with a
+comment noting `BODY_FRICTION`'s global change still moves their *effective* terminal speed even
+though their `speed` literal didn't move — an accepted, documented consequence, not an oversight.
+
+**The `life` column is now genuinely required — every real cannon sets its own, no cannon relies on
+the fallback any more.** `round(lifeLength × 75)` for an ordinary bullet/trap/swarm barrel,
+`round(lifeLength × 88)` for a literal diep `"drone"`-type barrel (none of our drone barrels turned
+out finite-lived — all are diep `lifeLength -1`, so the `×88` rule is implemented but unexercised),
+`-1` unchanged where diep's own is `-1`. The 149/91/120/107/396/297 family of old hand-tuned
+literals is gone; `Bullet.js`'s constructor fallback default moved `107 → 75` (diep's own, for the
+rare caller — test fixtures, the base-drone/pet placeholder spawns — that never assigns one).
+
+**Muzzle kick: `exitSpeed`/`SPEED_RESCALE` fully retired, not kept alongside.** The `Bullet`
+constructor's 6th parameter is now the caller's own already-computed impulse magnitude
+(`muzzleKick`), applied as a bare `tick.perTick(muzzleKick)` with nothing to divide back out.
+`entities/Player.js`'s `shoot()` computes it from three diep formulas, verified against
+`diepcustom`'s own `Bullet.ts`/`Drone.ts`/`Trap.ts` rather than this step body's own paraphrase
+(which conflated a trap's own zeroed `baseAccel` with the barrel's un-zeroed `bulletAccel` in its
+muzzle term — the real formula, confirmed by reading `Trap.ts:40` directly, halves the *barrel's*
+would-be cruise accel, not the trap's own): ordinary bullet `speed + 16.8 - jitter`; a drone (type
+1/1.1) divides that whole expression by 3 (`Drone.ts:71`, `baseSpeed /= 3` — it launches slower than
+it cruises); a trap (type 2) instead uses `speed/2 + 16.8 - jitter` with the jitter term *not*
+halved (`Trap.ts:40`'s own `barrel.bulletAccel/2 + 30 - rand*scatterRate`). `jitter` is
+`Math.random() × scatterRate × 0.56`, with `scatterRate` back-derived from `can.rand` (Step 8's own
+column) rather than stored a second time. Every other `new Bullet(...)` call site (both necro
+spawns, the base-drone/pet placeholder spawns in `rooms/Room.js`, and every synthetic bullet in
+`test/rooms.js`) already passed `0` or `undefined` for this argument, which means "no impulse" under
+both the old and new formula identically — none needed a code change, only `test/rooms.js`'s own
+`bulletRangeInvarianceTest()` (below) had a *meaningful* non-zero literal that needed rebasing.
+
+**Traps get diep's own model, structurally, not just a constant change.** `baseAccel = 0`
+(`Trap.ts:41`): the shared motion tail (`entities/Bullet.js`, bottom of `update()`) now skips its
+`tick.quadratic(this.speed)` cruise-thrust add entirely for `type === 2`, so a trap only coasts on
+its muzzle kick through the ordinary `BODY_FRICTION` decay — the old hand-rolled `.17916`/`.7862`
+per-tick bump-and-decay (case 2's own `!this.first` block) is deleted outright, not kept alongside
+the shared 0.9, exactly as nuance 35 warned against doing *while `BODY_FRICTION` was unresolved* —
+it is resolved now, so the sweep is correct. **The arming window is a genuinely new mechanic**:
+`this.armTicks = Bull.life >> 3` (diep's `collisionEnd`, computed at the shoot() site once life is
+known in real-tick units), decremented once per real tick in case 2, and gated at the top of
+`collision()` — `if (this.type === 2 && this.armTicks > 0 && other && other.kind !== KIND.WALL) {
+return; }`. **Simplified from diep's own semantics, flagged rather than silently approximated**:
+diep's `PhysicsFlags.onlySameOwnerCollision` makes an arming trap collide *only* with its own
+owner's stuff (still solid ground for the owner, inert to everyone else); this engine has no
+same-owner physical blocking for a bullet-kind entity to preserve (a trap already never collides
+with its own origin tank via the ordinary `KIND.PLAYER` arm's origin check), so the simplification
+collapses to "inert to everything, walls excepted" — the practical difference is nil given what this
+engine actually models, but it is a real divergence from diep's stated flag semantics, stated here
+rather than glossed over.
+
+**Numbers, exactly as predicted**: `back`/`weight`/`push` are untouched (they track `TANK_FRICTION`
+via the recoil/knockback impulse identities, not `BODY_FRICTION` — Step 5's own note already said
+this and it still holds). `public/SHARE/Physics.js`'s own historical note about `BODY_FRICTION`
+"staying at 0.956532 until M1" was updated in place rather than left to silently go stale.
+
+**Test impact, the largest of any step in this plan, as predicted.** `test/rooms.js`'s
+`bulletRangeInvarianceTest()` needed two real fixes, not just a rebaseline: its synthetic bullet's
+old `exitSpeed` literal (`40`) meant something completely different under the new formula (a
+raw one-shot impulse rather than an `speed/1.6`-scaled multiplier), so it was replaced with the
+formula an equivalent live cannon would actually get (`speed + 16.8`); and the 1% tick-rate
+agreement band widened to **2%**, because `BODY_FRICTION` moving to a stronger-drag `0.9` exposes a
+bullet to the same ordinary Euler-discretization drift nuance 33 already documented for
+`TANK_FRICTION`'s own `0.956532 → 10/11` move (measured ~1.8% between `TICK_MS` 16 and 33 for a
+representative muzzle kick, against the old test's over-tight 1%) — the pinned live-rate reading
+moved `~1175 → 451.5` units. Five `test/rooms.js` base-drone-AI assertions needed real fixes, not
+rebaselines, once Step 10's own `BASE_DRONE_DETECT` shrink (below) was folded in — see that step's
+own note, since the failures were geometric (detection-radius/base-fence interactions), not a
+Step 9 regression. `npm test` green across every file, confirmed stable across four consecutive
+runs (this suite's own RNG is unseeded outside `clientDiff`, so repeat runs are the isolation check
+for flakiness vs. a real regression). `test/clientDiff.js`'s golden moved the most of any step in
+this plan, exactly as predicted — see Step 10's own note for the final combined figure, since all
+three steps landed in one `npm test` pass. Lint clean on every touched file.
 - **Resolves:** **MEASUREMENTS M1** (delete it), PENDING #14's "one observation, not a decision",
   PENDING #23's `speed`/`life` columns, PENDING **nuance 35**.
 - **Reference:** four facts, all from `diepcustom/src/Entity/Tank/`:
@@ -722,6 +854,53 @@ both moved:
   behaviour** — see Step 10, which must land in the same session or immediately after.
 
 ### Step 10: Base drone speed and the drone rest-orbit model
+
+**Step 10 LANDED (2026-08-01), together with Steps 8 and 9 in the same session** (required by this
+step's own body and the user's instruction). Landed exactly as specified — two constants, nothing
+else, the orbit AI itself untouched: `BASE_DRONE_CHASE_SPEED` `21.8545 → 30.24` units/ref-tick
+(546.36 → **756 u/s**, diep's flat `20 × 2.7 × 0.56`), `BASE_DRONE_CHASE_TURN` `0.36424 → 0.504`
+rad/ref-tick (**12.6 rad/s**, re-derived with the speed via `turn = speed_u_per_s / 60 / 25`, the
+same identity every prior re-pin used — holds the ~60-unit turn radius), `BASE_DRONE_DETECT`
+`gu(60) → gu(18)` (1680 → **504** units, diep's `ai.viewRange` 900 du). PENDING nuance 32's
+pinning rule is retired outright, as the step body intended — `BASE_DRONE_CHASE_SPEED` no longer
+tracks `test/rooms.js`'s `fastestTankSpeed()`; that function is still computed and logged in
+`baseDroneAiTests()` for context, but the assertion now checks diep's own flat `756` directly.
+`BASE_DRONE_LEASH` left at `gu(90)` unchanged, per the step body's own recommendation (no diep
+counterpart, and collapsing it onto the new smaller `DETECT` would change base behaviour far more
+than the reference justifies).
+
+**A structural interaction the step body didn't anticipate, found by the failing tests it predicted
+would need re-checking**: `room.baseSize` (1876 units for 4team, unrelated to this step — a
+pre-existing, much-earlier-tuned value) is now *larger* than `BASE_DRONE_DETECT` (504). Since a
+team's base-fence kill zone (`rooms/FourTeam.js`'s `inEnemyBase()`) is measured from the map
+**corner**, not the post, and the post itself already sits deep inside that zone (1484.9 units from
+the corner, well under 1876), **every point within the new, smaller `DETECT` of a post is now also
+inside that same team's own base-fence kill zone for a different-team target** — there is no
+position simultaneously "detectable" and "safe for a synthetic enemy test player to stand in"
+using only positioning, where the old, much larger `DETECT` (1680) used to make this trivially
+satisfiable at almost any reasonable offset. Five `test/rooms.js` assertions were built against the
+old radius and needed real fixes, not blind rebaselines: `dev.ghost = 1` on the synthetic
+target/bait in three of them (so the fence does not kill the test subject before a drone gets a
+chance to detect it — a real behavioural exemption already used elsewhere for exactly this purpose,
+not a new mechanic), and every hardcoded placement distance rescaled from a fraction of the old
+`gu(60)`/`room.baseSize` to a fraction of the new `config.BASE_DRONE_DETECT` so the tests' own
+intent (detection still works; a whole base can still be baited out; a provoked boss is still
+engaged) survives the radius shrinking around it. The boss-provoke test additionally needed its
+offset pushed from 60% to 90% of `DETECT` — at 60% it sat inside the drones' own widest orbit ring
+(~280 units), so the boss's body would occasionally brush a drone's during ordinary stepping and
+trip the body-contact provoke path by accident, contaminating the "mere presence is not
+provocation" assertion the test exists to check. None of this is a `BASE_DRONE_CHASE_SPEED`/`TURN`
+regression — the orbit/return/cross convergence assertions that read `config.BASE_DRONE_CHASE_SPEED`
+dynamically rather than a hardcoded number passed unchanged, which is itself the isolation check
+proving this step only touched speed/detect, per the step body's own instruction.
+
+**`test/clientDiff.js`'s golden, the combined move for all three steps landed this session**:
+`337240/e07401f0 → 317552/c3c344ae` (op count dropped ~5.8% — bullets decaying through a
+stronger-drag `BODY_FRICTION`, different lifetimes across the whole roster, and base drones moving
+substantially faster all shift nuance 34's "how long one lives"/"how many exist" cases at once, not
+isolable into three separate causes without tripling the test-run budget for no additional
+information — the same reasoning Steps 4+5 used to land together). `npm test` green across every
+file, confirmed stable across four consecutive full runs. Lint clean on every touched file.
 - **Resolves:** PENDING #23's base-drone open items and nuance 32's re-pin chain.
 - **Reference:** `diepcustom/src/Entity/Misc/BaseDrones.ts:44-54` —
   the base's drone spawner barrel has `bullet.speed: 2.7`, `health: 1000`, `damage: 1`,
@@ -783,6 +962,82 @@ both moved:
 - **Moves:** nothing further.
 
 ### Step 11: Arena Closer and Dominator bodies and stats — closes half of #51
+
+**Step 11 LANDED (2026-08-01).** Landed exactly as scoped below, with one judgement call the step
+body left implicit: **rounding the two fractional diep reloads.** `TankDefinitions.json`'s Gunner
+Dominator barrel reload is `15 × 0.3 = 4.5` reference ticks and the Trapper's is `15 × 1.5 = 22.5`
+— both fractional, same shape as plan.md Step 3's own Machine Gun (7.5)/Sniper (22.5)/Mega Trapper
+(49.5) cases, which Step 3's own LANDED note says were "stored pre-rounded to the nearest reference
+tick, matching the column's existing all-integer convention." That precedent was followed here too:
+Gunner Dominator reload `54 → 5` (not the literal 4.5 the step body's own prose cites — "the big
+correction: 54 → 4.5 reference ticks" describes diep's raw number, not the stored one), Trapper
+Dominator `25 → 23` (the same rounding Trapper's own class entry already uses for its identical
+22.5). Destroyer's `45` needed no rounding, already a whole tick.
+
+**Sizes and shape, exactly as predicted:** Arena Closer `size: 64 → 98` (`ArenaCloser.ts` `BASE_SIZE
+175 du × 0.56`) in both `rooms/Tag.js`'s `createCloser()` and its undocumented verbatim duplicate in
+`rooms/Maze.js` (the same second copy plan.md Step 5's own LANDED note found via the nuance-37 grep —
+found again the same way here, fixed the same way, flagged since Step 11's own "Current code" line
+only names Tag.js's copy). Dominator `size: 64 → 89.6` (`Dominator.ts` `SIZE 160 du × 0.56`,
+`rooms/Room.js`'s `createDominator()`). Dominator client body `shape: 1 → 0` in all three variant
+entries (`public/SHARE/TanksConfig.js`) — `Dominator.ts` states `sides: 1`, the same circle
+`TankDefinitions.json` already gives Arena Closer, so #51's "Dominator's correct shape is a real open
+question" is answered the same way Arena Closer's own shape bug was fixed: a plain circle, not the
+rounded-rectangle `shape: 1` every boss/Closer/Dominator body used to share. The now-unused
+`width`/`height: 1` fields on those three `body` objects were dropped rather than left dead — `shape
+0`'s own draw function (`public/client/drawings.js`) never reads them.
+
+**Dominator HP `5998 → 6148`** (`6000 + 2×74`, `Dominator.ts`'s `maxHealth: 6000` at
+`camera.setLevel(75)`) — the exact figure PENDING #27 explicitly declined to implement, now landed as
+a flat constant since this engine's level cap never reaches diep's hypothetical level 75 for a
+Dominator to actually grow into.
+
+**The three variants' reload/pene/damage/speed, cross-referenced against `TankDefinitions.json`
+directly rather than transcribed from the step body's own prose table:** Destroyer Dominator
+`reload: 46 → 45`, `speed: 0.2896128 → 1.12` (`1.12 × diep bullet.speed 1.0`, Step 9's own identity);
+`pene`/`damage` (170/48.4848) needed no change — diep's own `bullet.health 100`/`damage 10` already
+matched what PENDING #27's wiki-sourced multiples had landed on. Gunner Dominator `reload: 54 → 5`,
+`speed: 0.511936 → 1.344` (`1.12 × 1.2`); `pene`/`damage` (8.5/4.84848) also needed no change — diep's
+`health 5`/`damage 1` matched too. **Trapper Dominator is the one place the direct source disagreed
+with the wiki-sourced numbers PENDING #27 had shipped**: `TankDefinitions.json` gives the trap
+barrel `health 20`/`damage 3`, not the `15×`/`3.6×` multiples diep_wiki's prose ("30 HP, x15 tank" /
+"25.2, x3.6 tank") had produced — `pene: 25.5 → 34` (`20 × 1.7`), `damage: 17.454528 → 14.54544`
+(`3 × 4.84848`), `speed: 0.45 → 4.48` (`1.12 × 4.0`, diep's trap `bullet.speed 4.0` — well above the
+"maxed Tri-Trapper" approximation PENDING #27 had used as a stand-in, confirming the wiki's own
+"above a maxed Tri-Trapper" qualitative claim was directionally right, just not quantitatively).
+`screen`/FoV per variant stayed untouched and still flagged approximate — diep_wiki gives no
+per-variant number and Step 11's own scope was reload/pene/damage/speed only, not FoV.
+
+**The knockback fix is structural, not a constant change, exactly as the step body scoped it.**
+`lib/gameAI.js`'s `dominatorUpdate()` no longer re-sets `x`/`y`/`vec` to the spawn point every tick;
+`rooms/Room.js`'s `createDominator()` correspondingly dropped the now-unread `spawnX`/`spawnY`
+fields it used to record. In their place, `entities/Player.js`'s `KIND.PLAYER` collision arm gates
+its whole knockback-impulse-plus-overlap-resolution block behind `if (!this.dominator)` — diep's own
+`absorbtionFactor = 0` (`Object.ts:280`) zeroes knockback at the point a push would be applied, not
+by un-moving the entity after the fact, so this is the direct translation rather than an equivalent
+workaround. Damage is unaffected (outside the guard): a Dominator still takes damage exactly like any
+other Player, per PENDING #27's own framing. Bullet/shape-ram knockback impulses (`KIND.BULLET`/
+`KIND.OBJECTS`) were deliberately left unguarded — they only ever write to `this.vec`, and nothing
+reads `this.vec` into a Dominator's position any more since `dominatorMotion()` is a genuine no-op
+that never reaches `Physics.stepBody`, so an unguarded impulse there is inert residue, not a second
+place "cannot move" needs enforcing.
+
+**Test impact, as predicted — `test/rooms.js`'s `dominatorTests()` only, `clientDiff` untouched.**
+The HP assertion moved to 6148. The old "`update()` snaps position back to spawn and zeroes vec"
+check no longer describes what the code does (there is nothing left in `update()` to snap), so it
+was replaced with the invariant the new mechanism actually provides: a synthetic `KIND.PLAYER`
+collision (`dom.collision({...}, {})`, the same direct-call style the Arena Closer's own
+`collision()` tests already use) leaves `x`/`y`/`vec` untouched while still reducing `hp`, proving
+knockback is zeroed at the source without also proving damage stopped applying. `npm test` run once
+after the full change: **`317552 ops / c3c344ae`, `test/clientDiff.js`'s golden did not move**,
+confirmed rather than assumed — neither Arena Closer nor a Dominator spawns in that corpus's four-mode
+seed, exactly as the step body's own "Test impact" line predicted. `test/tanks.js`'s client/server
+cannon cross-check passed unchanged (no `canonLength`/client-`height` pair was touched, only the
+numbers behind them). Lint clean on every touched file. A nuance-37 grep for the old literals
+(`0.2896128`, `17.454528`, `reload: 46`, `reload: 54`, `size = 64`/`size: 64`, `5998`) turned up
+nothing left outside this step's own files and the unrelated Summoner-boss `size: 64`
+(`rooms/Room.js`'s `createBoss()`, PENDING #29 — a different entity, not reopened here).
+
 - **Resolves:** PENDING #51 (size on both, Dominator's shape, and the Dominator numbers PENDING #27
   flagged as "ours, approximate"), PENDING #27's flagged reload/speed stand-ins.
 - **Reference:**

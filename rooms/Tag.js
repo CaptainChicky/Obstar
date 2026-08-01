@@ -239,13 +239,10 @@ class Tag extends Room {
 	}
 	/*
 		One Arena Closer, spawned the same way createBoss() spawns a boss - a fresh Player bound to
-		CONFIG.CLOSER's motion/update instead of a class's normal ones. Two of the wiki's own stats
-		are given only as comparisons, not numbers ("about as large as a Dominator", "extremely high
-		body damage, even higher than a maxed Spike"), so - like createBoss() sets a boss's hp/size
-		on the instance rather than in TanksConfig.js - they are set here rather than guessed into
-		the shared class table:
-		  size: 64, a boss's own body radius (rooms/Room.js's createBoss()) - the closest tank-scale
-		  reference already modelled, for a tank the wiki calls Dominator-sized.
+		CONFIG.CLOSER's motion/update instead of a class's normal ones. Set here rather than guessed
+		into the shared class table, the same way createBoss() sets a boss's hp/size on the instance:
+		  size: 98, diepcustom's ArenaCloser.ts BASE_SIZE 175 du x 0.56 (plan.md Step 11) - was 64,
+		  a boss-body stand-in PENDING #51 flagged as unsatisfactory.
 		  damage: 34.632035, 10x this.damage's own diep-derived base (3.4632035, entities/Player.js,
 		  un-baked from 13.852814 by plan.md step 5's damage-multiplier-table rewrite) -
 		  "extremely high" without inventing a one-shot-everything constant from nothing.
@@ -269,7 +266,7 @@ class Tag extends Room {
 			c.closer = 1;
 			c.class = spec[2];
 			c.screen = CLASS[c.class].screen;
-			c.size = 64;
+			c.size = 98;
 			c.damage = 34.632035;
 			c.hp = c.maxHp = this.rules.bossHp;
 			c.shield = 0;

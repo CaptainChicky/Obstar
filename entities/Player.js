@@ -351,21 +351,48 @@ class Player {
 					}
 					///
 					const dir = can.autoDir ? autoDir : this.dir + can.offdir;
-					const exitSpeed = can.exitSpeed ? can.exitSpeed : 40;
 					const offx = can.offx * ra;
 					const len = can.canonLength * .93 * ra;
 					const offlen = Math.hypot(len, offx);
 					const offdir = Math.atan2(offx, len);
 					const x = this.x + Math.cos(dir + offdir) * (offlen)//-can.size*ra);
 					const y = this.y + Math.sin(dir + offdir) * (offlen)//-can.size*ra);
-					const Bull = new Bullet(this.id, x, y, dir + Math.random() * can.rand - can.rand / 2, this.up.BSpeed * can.speed, exitSpeed, this.room);
+					const speed = this.up.BSpeed * can.speed;
+					/*
+						Muzzle kick: diep's own baseSpeed, a one-shot impulse the bullet starts ABOVE
+						its cruise thrust and decays down to (Bullet.ts:89's
+						`baseAccel + 30 - rand*scatterRate` du/tick, our units `speed + 16.8`, since
+						30 du/tick x 0.56 = 16.8). A drone (type 1/1.1) divides the WHOLE expression
+						by 3 (Drone.ts:71 - it launches slower than it cruises, unlike an ordinary
+						bullet). A trap (type 2) instead halves `speed` before the flat +16.8, with
+						the jitter term left un-halved (Trap.ts:40's own
+						`barrel.bulletAccel/2 + 30 - rand*scatterRate`) - and, unlike a bullet or
+						drone, never becomes a maintained cruise thrust at all (entities/Bullet.js's
+						motion tail skips the add for type 2; `speed` is stored only so this formula
+						has something to read). `scatterRate` is back-derived from `can.rand`
+						(rand = 0.174533 x scatterRate, plan.md Step 8) rather than stored a second
+						time. (plan.md Step 9.)
+					*/
+					const scatterRate = can.rand / 0.174533;
+					const jitter = Math.random() * scatterRate * 0.56;
+					const muzzleKick = (can.type === 2) ? (speed / 2 + 16.8 - jitter)
+						: (can.type === 1 || can.type === 1.1) ? (speed + 16.8 - jitter) / 3
+							: (speed + 16.8 - jitter);
+					const Bull = new Bullet(this.id, x, y, dir + Math.random() * can.rand - can.rand / 2, speed, muzzleKick, this.room);
 					Bull.type = (can.type ? can.type : 0);
 					Bull.class = this.class;
 					Bull.pene = this.up.BPene * can.pene;
-					// 107 = 130 one-time-rescaled from the 33ms reference; -1 is the "permanent
-					// drone" sentinel (Bullet.js checks it directly) and must never go through
-					// tick.ticks(), which would turn it into a 1-real-tick lifetime instead.
-					Bull.life = (can.life === -1) ? -1 : tick.ticks(can.life ? can.life : 107);
+					// diep's own default lifeLength 1 x 75 (plan.md Step 9) - every real cannon now
+					// sets its own `life` explicitly, so this fallback should never actually fire.
+					// -1 is the "permanent drone" sentinel (Bullet.js checks it directly) and must
+					// never go through tick.ticks(), which would turn it into a 1-real-tick lifetime
+					// instead.
+					Bull.life = (can.life === -1) ? -1 : tick.ticks(can.life ? can.life : 75);
+					// A trap's arming window (diep's Trap.ts: `life >> 3` real ticks, computed here
+					// once life is known in real-tick units - see entities/Bullet.js's constructor/
+					// collision() for what it does). Left at its constructor default (0, inert/never
+					// read) for every other type.
+					if (Bull.type === 2) { Bull.armTicks = Bull.life >> 3; }
 					Bull.damage = this.up.BDamage * can.damage;
 					// A boss and a Closer (PENDING #28) both hold a fixed, non-level-derived `size` -
 					// their update() is fully replaced (lib/gameAI.js), so this class's own
@@ -570,26 +597,33 @@ class Player {
 		const oldHp = this.hp;
 		switch (other.kind) {
 			case KIND.PLAYER:
-				// 4.48 = diep's "All Tank Bodies" knockback, 1.6 gu per loop of contact, through the
-				// same `gu x 2.8` impulse identity TanksConfig.js's `weight` and `back` columns use:
-				// a one-shot impulse on tank velocity displaces v0 x F/(1-F) = 10 x v0 units at the
-				// tank F = 10/11, and 1.6 x 2.8 x 10 / 28 = 1.6 gu.
-				// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody. The
-				// hp drain below stays perTick(): it is genuine per-tick-of-contact damage, not a
-				// one-shot impulse.
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(4.48), tick.impulse(4.48))));
-				// Positional overlap resolution, on top of the velocity impulse rather than instead of
-				// it. The impulse alone cannot separate two tanks inside a normal contact window - it
-				// lands in `vec` and is then decayed by stepBody over many ticks, during which the pair
-				// is still overlapping - so two tanks visibly interpenetrate. This pushes them apart
-				// along their separation axis by the overlap, split by size so the bigger tank moves
-				// less. rooms/Room.js calls collision() on BOTH sides of a pair, so each body moves only
-				// its own share and the two shares sum to the whole overlap. The calls are sequential,
-				// so the second sees the first's move and this behaves as a relaxation rather than a
-				// snap - a deep overlap clears over about two ticks. It runs before the noDam break
-				// because teammates take up space too. No diep reference behind it, unlike everything
-				// around it - an engine-quality call, made deliberately (PENDING nuance 44).
-				{
+				// A Dominator receives zero knockback and no positional overlap push - diep's own
+				// `absorbtionFactor = 0` (Object.ts:280, kb = absorbtionFactor * pushFactor) is what
+				// makes it immovable, so the fix belongs at the source of any push rather than an
+				// after-the-fact position snap (lib/gameAI.js's dominatorUpdate() used to re-set
+				// x/y/vec to the spawn point every tick; this replaces that, plan.md Step 11). Damage
+				// below is unaffected - a Dominator takes damage exactly like any other Player.
+				if (!this.dominator) {
+					// 4.48 = diep's "All Tank Bodies" knockback, 1.6 gu per loop of contact, through
+					// the same `gu x 2.8` impulse identity TanksConfig.js's `weight` and `back` columns
+					// use: a one-shot impulse on tank velocity displaces v0 x F/(1-F) = 10 x v0 units at
+					// the tank F = 10/11, and 1.6 x 2.8 x 10 / 28 = 1.6 gu.
+					// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody. The
+					// hp drain below stays perTick(): it is genuine per-tick-of-contact damage, not a
+					// one-shot impulse.
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(4.48), tick.impulse(4.48))));
+					// Positional overlap resolution, on top of the velocity impulse rather than instead
+					// of it. The impulse alone cannot separate two tanks inside a normal contact window -
+					// it lands in `vec` and is then decayed by stepBody over many ticks, during which the
+					// pair is still overlapping - so two tanks visibly interpenetrate. This pushes them
+					// apart along their separation axis by the overlap, split by size so the bigger tank
+					// moves less. rooms/Room.js calls collision() on BOTH sides of a pair, so each body
+					// moves only its own share and the two shares sum to the whole overlap. The calls are
+					// sequential, so the second sees the first's move and this behaves as a relaxation
+					// rather than a snap - a deep overlap clears over about two ticks. It runs before the
+					// noDam break because teammates take up space too. No diep reference behind it,
+					// unlike everything around it - an engine-quality call, made deliberately (PENDING
+					// nuance 44).
 					const sepX = this.x - other.x, sepY = this.y - other.y;
 					const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;
 					const overlap = this.size + other.size - sepD;

@@ -69,11 +69,15 @@
 
 		So the constant is split, and PENDING #14 is explicit that the split IS the faithful model
 		rather than a workaround to dodge the cascade. FRICTION here is the tank's, and is the one
-		that moved; lib/constants.js's BODY_FRICTION keeps the old 0.956532 for everything diep
-		does not model as a steered tank - bullets, traps, drones, shapes, and the Summoner boss's
-		scripted drift - so all of those are bit-identical across this change. Do NOT collapse the
-		two back into one constant. Bullets stay where they are until MEASUREMENTS.md's M1 observes
-		what diep actually does with them.
+		that moved at this step; lib/constants.js's BODY_FRICTION kept the old 0.956532 at the time
+		for everything diep does not model as a steered tank - bullets, traps, drones, shapes, and
+		the Summoner boss's scripted drift - so all of those were bit-identical across this change.
+		Do NOT collapse the two back into one constant - they still differ, just not for this
+		reason any more: MEASUREMENTS.md's M1 is resolved (plan.md Step 9) and BODY_FRICTION has
+		since moved to 0.9 (diep's own universal 10% drag, which DOES apply to bullets after all -
+		M1's answer was the opposite of what this section predicted). The two constants remain
+		split because they are applied in a different ORDER (nuance stated once in plan.md), not
+		because BODY_FRICTION is still frozen at its Step-2 value.
 
 		Recoil (`back`) and knockback (`weight`) are impulses on TANK velocity, so they follow this
 		F and nothing M1 finds about bullets can move them. `back` was rescaled against this F in

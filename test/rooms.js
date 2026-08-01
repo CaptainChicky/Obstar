@@ -804,8 +804,8 @@ function dominatorTests() {
 	// the live Player instances directly (SlotMap.add() returns the entity, not an id).
 	const doms = room.dominators;
 	check('build() spawns exactly 4 Dominators', doms.length === 4, doms.length);
-	check('every Dominator is flagged, neutral, and at diep_wiki\'s own 5998 HP',
-		doms.every((d) => d.dominator === 1 && d.team === 2 && d.hp === 5998 && d.maxHp === 5998),
+	check('every Dominator is flagged, neutral, and at diepcustom\'s own 6148 HP (6000 + 2x74, plan.md Step 11)',
+		doms.every((d) => d.dominator === 1 && d.team === 2 && d.hp === 6148 && d.maxHp === 6148),
 		doms.map((d) => d.team + ':' + d.hp).join(' '));
 	check('every Dominator is one of the three cannon variants',
 		doms.every((d) => ['Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'].includes(d.class)),
@@ -822,18 +822,22 @@ function dominatorTests() {
 			d.class === 'Gunner Dominator', d.class);
 	}
 
-	// "Cannot move" - motion() is a real no-op, and update() snaps back any drift a ramming tank's
-	// own overlap-resolution or a knockback impulse would otherwise leave it with.
+	// "Cannot move" (diep_wiki/Dominator.txt) - motion() is a real no-op, and a tank ram now zeroes
+	// knockback/overlap-push at the source (entities/Player.js's KIND.PLAYER arm, diep's own
+	// absorbtionFactor = 0) instead of update() snapping position back after the fact - plan.md
+	// Step 11 replaced the old per-tick spawnX/spawnY reset with this.
 	{
 		const d = doms[0];
-		const x0 = d.x, y0 = d.y;
-		d.x += 500; d.y -= 500; d.vec.x = 12; d.vec.y = -7;
+		const x0 = d.x, y0 = d.y, hp0 = d.hp;
 		d.motion();
-		check('motion() itself touches nothing', d.x === x0 + 500 && d.y === y0 - 500);
-		d.update();
-		check('update() snaps position back to spawn and zeroes vec',
+		check('motion() is a genuine no-op', d.x === x0 && d.y === y0);
+		const rammer = { kind: KIND.PLAYER, id: { oId: -1 }, x: d.x + 10, y: d.y, size: 30, damage: 1 };
+		d.collision(rammer, {});
+		check('a tank ram gives a Dominator zero knockback and zero overlap-push',
 			d.x === x0 && d.y === y0 && d.vec.x === 0 && d.vec.y === 0,
-			d.x + ',' + d.y);
+			d.x + ',' + d.y + ' vec=' + d.vec.x + ',' + d.vec.y);
+		check('...but it still takes damage like any other Player (PENDING #27)',
+			d.hp < hp0, d.hp);
 	}
 
 	// Two real-team test players, added directly rather than trusting slot 0 to be a human -
@@ -1169,8 +1173,9 @@ function prorationTest() {
 	level its tier unlocks at (upClass's parseInt(level/15) > tier), and never below the first level
 	that can buy a full Movement Speed AND a full Reload bar - both derived from entities/Player.js's
 	own economy (PENDING #30) rather than restated here.
-	Returns u/s. This is what BASE_DRONE_CHASE_SPEED is pinned to, so a
-	cannon retune that changes the ceiling fails this test instead of silently outrunning the drones.
+	Returns u/s. BASE_DRONE_CHASE_SPEED is no longer pinned to this (plan.md Step 10 retired that
+	rule in favour of diep's own flat 756 u/s) - still computed and logged in baseDroneAiTests() for
+	context, so a cannon retune that moves the roster's ceiling past 756 u/s is at least visible.
 */
 function fastestTankSpeed() {
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
@@ -1289,24 +1294,27 @@ function baseDroneAiTests() {
 	check('...and neither does a chase/return-speed step',
 		tick.perTick(config.BASE_DRONE_CHASE_SPEED) < config.BASE_DRONE_SIZE + 20,
 		tick.perTick(config.BASE_DRONE_CHASE_SPEED) + ' vs ' + (config.BASE_DRONE_SIZE + 20));
-	// plan.md WP4.5.1: CHASE_SPEED is now pinned to the fastest tank in the game (400 u/s), well
-	// past the cross's own 370 u/s - so the bound above is being checked against the real maximum.
+	// CHASE_SPEED is well past the cross's own 370 u/s - so the bound above is being checked
+	// against the real maximum.
 	check('CHASE_SPEED is the larger of the two - the tunnelling bound is checked against the real max',
 		tick.perTick(config.BASE_DRONE_CHASE_SPEED) > tick.perTick(config.BASE_DRONE_CROSS_SPEED),
 		tick.perTick(config.BASE_DRONE_CHASE_SPEED) + ' vs ' + tick.perTick(config.BASE_DRONE_CROSS_SPEED));
 
-	// ---- WP4.5.1: the chase is exactly as fast as the fastest tank this game can build ------------
+	// ---- plan.md Step 10: CHASE_SPEED is diep's own flat number now, not a pin to the fastest
+	//      tank this game can build - PENDING nuance 32's pinning rule is retired, on purpose ------
 	{
 		const fastest = fastestTankSpeed();
 		const chaseUs = tick.perTick(config.BASE_DRONE_CHASE_SPEED) * (1000 / config.TICK_MS);
 		console.log('  note fastest sustainable build in this game: ' + fastest.speed.toFixed(1) +
-			' u/s (' + fastest.build + '); BASE_DRONE_CHASE_SPEED is ' + chaseUs.toFixed(1) + ' u/s');
-		// The whole point of measuring rather than hard-coding: a cannon or stat retune that raises
-		// the ceiling fails HERE instead of quietly leaving base drones outrunnable (or absurd). Do
-		// not pin the class, the level or the number - only the agreement.
-		check('BASE_DRONE_CHASE_SPEED is within 5% of the fastest sustainable build in this game',
-			Math.abs(chaseUs - fastest.speed) / fastest.speed < 0.05,
-			chaseUs.toFixed(1) + ' vs ' + fastest.speed.toFixed(1) + ' u/s (' + fastest.build + ')');
+			' u/s (' + fastest.build + '); BASE_DRONE_CHASE_SPEED is ' + chaseUs.toFixed(1) +
+			' u/s - no longer pinned to that number (plan.md Step 10), logged for context only.');
+		// The pin is gone (diep's own base drone runs a flat 54 du/tick = 756 u/s, pinned to
+		// nothing - diepcustom/src/Entity/Misc/BaseDrones.ts) - what's asserted now is diep's own
+		// number landing exactly, not agreement with whatever the roster's fastest build happens to
+		// be. A drone now comfortably outruns even a maxed-Movement Sniper's own dash (756 vs
+		// ~546 u/s) - flagged as a real balance consequence, not pre-tuned back (plan.md Step 10).
+		check('BASE_DRONE_CHASE_SPEED is diep\'s own flat 756 u/s',
+			Math.abs(chaseUs - 756) < 0.1, chaseUs.toFixed(1) + ' vs 756');
 	}
 
 	// ---- WP4.5.1: a chase and a return actually run at that speed ---------------------------------
@@ -2698,8 +2706,16 @@ function baseDroneAiTests() {
 		me.team = anchor.team === 0 ? 1 : 0;
 		me.shield = 0;
 		me.alpha = 1;
-		me.x = anchor.ox + 1478 * Math.cos(0.4);
-		me.y = anchor.oy + 1478 * Math.sin(0.4);
+		// A point this close to the post is also inside the OWNING team's own base square now
+		// (room.baseSize is 1876, well past BASE_DRONE_DETECT's new 504 - plan.md Step 10) - ghost
+		// so the base's own fence (rooms/FourTeam.js's inEnemyBase()) does not kill `me` before the
+		// drone ever gets a chance to see it, which would confound "not detected" with "not alive".
+		me.dev.ghost = 1;
+		// Comfortably inside BASE_DRONE_DETECT (plan.md Step 10 shrank it to gu(18) = 504 - was
+		// gu(60) = 1680, when this 1478 literal was chosen).
+		const meDist = config.BASE_DRONE_DETECT * 0.8;
+		me.x = anchor.ox + meDist * Math.cos(0.4);
+		me.y = anchor.oy + meDist * Math.sin(0.4);
 		let chased = false;
 		for (let i = 0; i < 700 && !chased; i++) {
 			room.step();
@@ -2962,13 +2978,16 @@ function baseDroneAiTests() {
 
 		// Detection still works: a player standing inside BASE_DRONE_DETECT is chased within a few
 		// scout rotations, not silently missed because it isn't the enabled drone's turn. Offset
-		// purely along X, past the base square's own half-width (room.baseSize/2) - inside the
-		// square the base fence kills the player outright each tick (a separate, pre-existing rule),
-		// which would confound "was it seen" with "did it survive to be seen".
+		// purely along X, comfortably inside BASE_DRONE_DETECT (plan.md Step 10 shrank it to
+		// gu(18) = 504, well under room.baseSize's own half-width now, so "past the square" and
+		// "inside detect range" are no longer both satisfiable at once - detect range wins, since
+		// that is what this test is actually about). That also means this point is inside the base's
+		// OWN fence (room.baseSize 1876 measured from the map corner, not the post) - ghost the
+		// target so the fence does not kill it before a drone ever gets a chance to see it.
 		const post = centre.posts[0];
 		const target = room.INSTANCE.players.add((id) => new Player(
-			{ GM: room.gm, sId: room.id, oId: id }, post.x + room.baseSize * 0.75, post.y, 'foe', 1, room.XPLVL, room));
-		target.shield = 0; target.alpha = 1;
+			{ GM: room.gm, sId: room.id, oId: id }, post.x + config.BASE_DRONE_DETECT * 0.6, post.y, 'foe', 1, room.XPLVL, room));
+		target.shield = 0; target.alpha = 1; target.dev.ghost = 1;
 		let chasedAt = -1;
 		const budget = centre.posts.length * config.BASE_DRONE_SCAN + 20;
 		for (let t = 0; t < budget && chasedAt < 0; t++) {
@@ -3064,24 +3083,34 @@ function baseDroneAiTests() {
 	// ---- WP4.5.12/13/14/16: a pursuit ends, the drone goes home NOW and keeps going home ---------
 	// The user's requirement stated directly, and the assertion this whole group is judged on: the
 	// moment a chase drops the drone turns for its orbit on that very tick and flies straight back,
-	// lingering nowhere and specifically not at the arena edge. Bait a whole 4team base out to the
-	// OOB corner, take the bait away, and hold every drone to (a) strictly closing on its ring from
-	// the FIRST tick after the drop and every tick after, (b) never holding a byte-identical
-	// position for two consecutive ticks, (c) on its ring inside 250 ticks. Measured before the
-	// fixes: (a) failed on tick 0 and kept failing for ~25 ticks, (b) 14 consecutive frozen ticks,
-	// (c) worst case 268. None of the three passes with only part of the group applied.
+	// lingering nowhere and specifically not at the arena edge. Bait a whole 4team base out (as far
+	// as BASE_DRONE_DETECT still reaches - plan.md Step 10 shrank it to gu(18) = 504, so the literal
+	// OOB corner this used to reach at gu(60) = 1680 is no longer detectable at all), take the bait
+	// away, and hold every drone to (a) strictly closing on its ring from the FIRST tick after the
+	// drop and every tick after, (b) never holding a byte-identical position for two consecutive
+	// ticks, (c) on its ring inside 250 ticks. Measured before the fixes: (a) failed on tick 0 and
+	// kept failing for ~25 ticks, (b) 14 consecutive frozen ticks, (c) worst case 268. None of the
+	// three passes with only part of the group applied.
 	{
 		const room = makeRoom('4team');
 		const bait = player(room, 0);
 		const centre = room.droneCentres.find((c) => c.posts[0].team !== bait.team);
 		const post = centre.posts[0];
-		bait.shield = 0; bait.dev.ghost = 0;
+		bait.shield = 0;
 		// The bait exists to be chased, not to fight: twelve drones in contact for 400 ticks would
 		// grind themselves to death on its body damage and confound "did it come home" with "is it
 		// still alive". Player.damage is set once in the constructor, so this sticks.
 		bait.damage = 0;
-		const bx = Math.sign(post.x) * (room.map.width / 2 + config.OOB_MARGIN);
-		const by = Math.sign(post.y) * (room.map.height / 2 + config.OOB_MARGIN);
+		// Diagonally outward from the post, toward the same corner as before, at 85% of
+		// BASE_DRONE_DETECT so every drone at the centre - not just the current scout - is well
+		// within range to acquire it. This point is well inside the drawn arena now (unlike the old
+		// literal OOB corner, which BASE_DRONE_DETECT can no longer reach at all - plan.md Step 10),
+		// so it is also inside the enemy base's own fence (room.baseSize 1876 from the map corner) -
+		// ghost the bait so the fence does not kill it before any drone gets a chance to chase it.
+		bait.dev.ghost = 1;
+		const dist = config.BASE_DRONE_DETECT * 0.85 / Math.SQRT2;
+		const bx = post.x + Math.sign(post.x) * dist;
+		const by = post.y + Math.sign(post.y) * dist;
 		const hold = () => { bait.x = bx; bait.y = by; bait.hp = bait.maxHp = 1e9; };
 		for (let t = 0; t < 400; t++) { hold(); room.step(); }
 		hold();
@@ -3162,15 +3191,16 @@ function baseDroneAiTests() {
 		const boss = room.bosses[0];
 		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
 		const post = centre.posts[0];
-		// Parked inside BASE_DRONE_DETECT but outside the base square itself, the same offset the
-		// scout test uses - inside the square the base fence would kill it outright each tick, which
-		// is a separate pre-existing rule and would confound "was it ignored" with "did it survive".
-		// Its gun is stubbed out so nothing it fires can provoke the base by accident: the point of
-		// the test is that mere PRESENCE is not provocation. Its motion() is left alone - the
-		// Summoner's own AI is what populates `detected`, which its update() reads - and its
-		// position is re-pinned every tick instead.
+		// Parked inside BASE_DRONE_DETECT (plan.md Step 10 shrank it to gu(18) = 504, well under
+		// room.baseSize's own half-width now - see the scout test's own comment) but past the
+		// widest orbit ring (BASE_DRONE_ORBIT_R + 2*LEVEL_GAP, ~280 units) with room to spare, so
+		// the boss's own body never brushes a drone's and trips the body-damage provoke path by
+		// accident - this test is about mere PRESENCE not being provocation, not about proximity.
+		// Its gun is stubbed out so nothing it fires can provoke the base by accident either. Its
+		// motion() is left alone - the Summoner's own AI is what populates `detected`, which its
+		// update() reads - and its position is re-pinned every tick instead.
 		boss.shoot = function () { };
-		const bossHold = () => { boss.x = post.x + room.baseSize * 0.75; boss.y = post.y; };
+		const bossHold = () => { boss.x = post.x + config.BASE_DRONE_DETECT * 0.9; boss.y = post.y; };
 		const budget = centre.posts.length * config.BASE_DRONE_SCAN + 40;
 		let chasedUnprovoked = false;
 		for (let t = 0; t < budget; t++) {
@@ -3358,19 +3388,26 @@ function reloadInvarianceTest() {
 	integrates this.vec into position, i.e. twice over ticks - so the thrust belongs to
 	lib/tick.js's quadratic() category, not perTick(). Under perTick() the range came out roughly
 	proportional to 1/TICK_MS (1695 / 1175 / 955 units at TICK_MS 16 / 25 / 33 for this class,
-	whose lifetime is itself correctly wall-clock-constant); under quadratic() it holds flat, and
-	the whole `speed` column was multiplied by the same 1.6 so the value at the live TICK_MS -
-	that middle 1175 - is exactly where it was. 0.48 below is the test's own 0.3 through that same
-	rescale, so the number this asserts is comparable with the pre-fix reading above.
+	whose lifetime is itself correctly wall-clock-constant); under quadratic() it holds flat.
+	0.48 is an arbitrary-but-fixed cruise speed (not tied to any live class); the muzzle kick below
+	is the ordinary-bullet formula an equivalent live cannon would get (`speed + 16.8`,
+	entities/Player.js's shoot() - plan.md Step 9), so this is a representative bullet, not an
+	extreme one - see nuance 33 for why BODY_FRICTION 0.956532 -> 0.9 (Step 9) also widens a
+	bullet's own tick-rate agreement band the same way it already widened the tank-movement one.
 
-	1% rather than the movement case's 2%: a bullet's `life` is quantised to whole ticks
-	(tick.ticks()), so the three rates round to wall-clock lifetimes 0.35% apart and the ranges
-	inherit that. Anything looser would not notice the bug coming back at, say, TICK_MS 20.
+	2% (was 1% pre-Step-9): a bullet's `life` is quantised to whole ticks (tick.ticks()), so the
+	three rates round to wall-clock lifetimes 0.35% apart and the ranges inherit that on their own -
+	but BODY_FRICTION 0.9 (plan.md Step 9) now applies enough per-tick drag to a bullet that the
+	same Euler-discretization drift nuance 33 measured for TANK_FRICTION (0.956532 -> 10/11, 1% ->
+	3%) shows up here too, measured at ~1.8% between TICK_MS 16 and 33 for a representative muzzle
+	kick. 2% still catches the bug this test was built for (PENDING #24's ~3x runaway) with room to
+	spare, and is tighter than the tank-movement band since a bullet's own life-quantisation still
+	helps it converge faster.
 */
 function bulletRangeInvarianceTest(near) {
 	function rangeAt(tickMs) {
 		return withTickMs(tickMs, ({ Bullet }) => {
-			const b = new Bullet({ oId: -1 }, 0, 0, 0, 0.48, 40, fakeRoom());
+			const b = new Bullet({ oId: -1 }, 0, 0, 0, 0.48, 0.48 + 16.8, fakeRoom());
 			b.alone = 1;   // no owning Player to look up - see TwoTeam/FourTeam's guard drones
 			let guard = 0;
 			while (b.destroy === 0 && guard++ < 1e6) { b.update(); }
@@ -3380,13 +3417,14 @@ function bulletRangeInvarianceTest(near) {
 	const r16 = rangeAt(16), r25 = rangeAt(25), r33 = rangeAt(33);
 	console.log('  note bullet range at TICK_MS 16/25/33: ' + r16.toFixed(1) + ' / ' + r25.toFixed(1) +
 		' / ' + r33.toFixed(1) + ' units');
-	check('bullet range at TICK_MS 16/25/33 agrees within 1%',
-		near(r16, r33, 0.01) && near(r25, r33, 0.01),
+	check('bullet range at TICK_MS 16/25/33 agrees within 2%',
+		near(r16, r33, 0.02) && near(r25, r33, 0.02),
 		r16.toFixed(1) + ' / ' + r25.toFixed(1) + ' / ' + r33.toFixed(1));
-	// The pre-fix reading at the live rate, which the speed rescale was solved to preserve: this
-	// is what stops the fix from being a silent balance change.
-	check('...and still matches the range this game was tuned for at TICK_MS 25 (~1175 units)',
-		near(r25, 1174.7, 0.01), r25.toFixed(1));
+	// The reading at the live rate, re-pinned for plan.md Step 9's new muzzle-kick/BODY_FRICTION
+	// model (was ~1175 units pre-Step-9) - this is what stops a future change from being a silent
+	// balance shift.
+	check('...and still matches the range this game is tuned for at TICK_MS 25 (~451.5 units)',
+		near(r25, 451.5, 0.01), r25.toFixed(1));
 }
 
 /*
@@ -3565,8 +3603,8 @@ function gridAnchorTests() {
 		config.BASE_DRONE_LEVEL_GAP === World.gu(1), config.BASE_DRONE_LEVEL_GAP);
 	check('BASE_DRONE_ORBIT_R is gu(8)', config.BASE_DRONE_ORBIT_R === World.gu(8),
 		config.BASE_DRONE_ORBIT_R);
-	check('BASE_DRONE_DETECT/LEASH are gu(60)/gu(90)',
-		config.BASE_DRONE_DETECT === World.gu(60) && config.BASE_DRONE_LEASH === World.gu(90),
+	check('BASE_DRONE_DETECT/LEASH are gu(18)/gu(90)',
+		config.BASE_DRONE_DETECT === World.gu(18) && config.BASE_DRONE_LEASH === World.gu(90),
 		config.BASE_DRONE_DETECT + '/' + config.BASE_DRONE_LEASH);
 }
 

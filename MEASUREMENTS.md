@@ -69,6 +69,21 @@ says otherwise. Scaled values are derivable; base values are not.
 
 ## M1 — Bullet range `ρ` and lifetime `t_b` *(highest value; unblocks the most)*
 
+> **RESOLVED FROM SOURCE — no measurement needed.** `diepcustom/src/Entity/Object.ts:274` applies a
+> universal 10% per-tick drag to every `ObjectEntity`, bullets included, corroborated verbatim by
+> `diepindepth/physics/README.txt` §3 ("all entities have a 10% friction rate") — the **opposite**
+> of this entry's own predicted answer ("delete `BODY_FRICTION`, bullets are constant-velocity").
+> Bullets ARE maintained-velocity under drag, exactly this tree's existing motion-tail shape
+> (thrust, decay, integrate), just at diep's own `F = 0.9` instead of the hand-tuned `0.956532`.
+> `Barrel.ts`/`Bullet.ts`/`Drone.ts`/`Trap.ts` give the rest directly: `speed` (cruise thrust) is
+> `1.12 × diep bullet.speed`; muzzle velocity is a one-shot `terminal + 16.8` (diep's flat
+> `+30 du/tick`, halved for a trap, divided by 3 for a drone); `life` is
+> `round(lifeLength × 75)` reference ticks (`× 88` for a drone, `-1` sentinel unchanged; a trap's
+> own `life >> 3` is a new arming window during which it collides with nothing). `lib/constants.js`'s
+> `BODY_FRICTION` moved `0.956532 → 0.9` (plan.md Step 9), and `PET_FRICTION` (`lib/gameAI.js`)
+> recomputed to hold its 1.99× braking ratio against the new value. Kept only until the final
+> documentation-cleanup step deletes M1–M4 wholesale.
+
 **Unblocks:** PENDING #23's `speed`/`life` columns, and closes the last of the #14/#16 FRICTION
 question. **This is the single most valuable measurement on the list**, and it is now the *only*
 thing standing between the tree and a fully diep-faithful motion model: the tank half shipped in
@@ -103,6 +118,15 @@ class (drones steer, so they are a separate model — note it, don't fit it).
 ---
 
 ## M2 — Bullet scatter `h`
+
+> **RESOLVED FROM SOURCE — no measurement needed.** `diepcustom/src/Entity/Tank/Barrel.ts:128-129`
+> gives the angular scatter directly: uniform on `±5 × scatterRate` degrees
+> (`= ±0.0872665 × scatterRate` radians), i.e. `rand = 0.174533 × scatterRate` for the existing
+> `dir + Math.random()*rand - rand/2` expression. `Bullet.ts:86` gives a second, independent
+> muzzle-speed jitter (`- Math.random() × scatterRate` du/tick, `× 0.56` in our units), folded into
+> the same muzzle-kick formula M1 resolved. Per-class `scatterRate` read from
+> `TankDefinitions.json` directly rather than transcribed (plan.md Step 8). Kept only until the
+> final documentation-cleanup step deletes M1–M4 wholesale.
 
 **Unblocks:** PENDING #23's `rand`.
 
@@ -258,9 +282,9 @@ list lives in **[plan.md](plan.md)**, which is what the work is actually being r
    landed 2026-07-30 — the latter needed only a per-point step correction in `entities/Player.js`'s
    `upgrade()`, not the column-wide `TanksConfig.js` rescale this file originally expected.
 
-**What genuinely waits for a session with diep open:** the bullet `speed`/`life` columns (M1),
-`rand` (M2), the reload stat (M3), shape drift (M4), and the two feel knobs (M5, M6).
+**What genuinely still waits for a session with diep open:** the two feel knobs (M5, M6). M1
+(bullet range/lifetime), M2 (scatter), M3 (reload stat) and M4 (shape drift) are all now resolved
+from source rather than measured (plan.md Steps 3, 7, 8, 9) — see each entry's own callout.
 
-The efficient order is therefore: **do 1–7, then one measurement session covering M1–M6 in a single
-sitting, then apply.** M1 and M3 are the only two whose answers can change a design decision rather
-than just fill in a constant, so if the session has to be cut short, do those.
+The efficient order is therefore: **do 1–7 (all done), then one measurement session covering
+M5–M6.**

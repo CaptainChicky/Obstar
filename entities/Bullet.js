@@ -37,24 +37,13 @@ const REAIM_CHANCE = tick.chance(0.0012121);
 const CHARGE_CHANCE = tick.chance(0.0006061);
 
 /*
-	The one-time factor the `speed` column in public/SHARE/TanksConfig.js gained when this file's
-	motion tail (bottom of update()) moved from tick.perTick() to tick.quadratic().
-
-	The tail is the standard "add a thrust, decay through BODY_FRICTION, then position += vec" shape,
-	which integrates the thrust TWICE over ticks - once into vec, again into position - so a single
-	SCALE is short by a factor of SCALE and a bullet's range came out proportional to 1/TICK_MS
-	(measured 955 -> 1695 units across TICK_MS 33 -> 16 for one class). tick.quadratic() is the
-	category for exactly that shape; every `speed` was multiplied by 1.6 alongside the change so
-	the numbers a player actually sees at the live TICK_MS (25) did not move at all.
-
-	NOT tick.SCALE, even though 1/1.6 happens to equal today's 25/40. It is a frozen constant: if
-	TICK_MS ever moves, this must NOT move with it - that invariance is the whole point of the fix.
-
-	It divides back out at the two sites that consume `speed` as something OTHER than the per-tick
-	cruise thrust - the muzzle kick in the constructor, and the 'god' repulsion in collision() -
-	both of which were already TICK_MS-invariant on their own and must not move.
+	SPEED_RESCALE (the old x1.6 TICK_MS-invariance fix for the `speed` column's tick.quadratic()
+	category) is RETIRED as of plan.md Step 9 - not kept alongside the new diep-derived `speed`
+	column, which needs no such rescale: it is a direct physical identity
+	(`20 du/tick x 0.56 x 0.1 = 1.12` units/ref-tick, see TanksConfig.js's header) with nothing to
+	divide back out. The two sites that used to consume `speed / SPEED_RESCALE` - the muzzle kick
+	in the constructor and the 'god' repulsion in collision() - now read `speed` directly.
 */
-const SPEED_RESCALE = 1.6;
 
 /*
 	Base drone orbit AI. All converted once at module load, not per drone per tick.
@@ -490,7 +479,7 @@ function planSwitchArc(drone, r1) {
 }
 
 class Bullet {
-	constructor(origin, x, y, direction, speed, exitSpeed, room) {
+	constructor(origin, x, y, direction, speed, muzzleKick, room) {
 		this.BUFF = {
 			timestamp: -1,
 		};
@@ -498,7 +487,9 @@ class Bullet {
 		this.room = room;
 		this.origin = origin;
 		this.class = 0;
-		this.life = tick.ticks(107);   // 107 = 130 one-time-rescaled from the 33ms reference
+		this.life = tick.ticks(75);   // diep's default lifeLength 1 x 75 (plan.md Step 9); every
+		// real cannon now sets its own `life` explicitly (public/SHARE/TanksConfig.js) - this is
+		// only the fallback for a bullet that never gets one assigned.
 		this.team = 0;
 		this.type = 0;
 		this.pene = 1;
@@ -521,12 +512,19 @@ class Bullet {
 		this.maxspeed = speed;
 		this.speed = speed;
 		this.destroy = 0;
-		// The muzzle kick: a single impulse of `exitSpeed` reference ticks' worth of thrust,
-		// decayed by the tail's own BODY_FRICTION from here on. A one-time impulse against a bare
-		// `position += vec` is already TICK_MS-invariant (it integrates only once over ticks), so
-		// it keeps tick.perTick() and divides the cruise term's own rescale back out - see
-		// SPEED_RESCALE above. `exitSpeed` itself is therefore unchanged in TanksConfig.js.
-		this.vec = new Vec(tick.perTick(speed / SPEED_RESCALE) * exitSpeed, 0).rotate(direction);
+		// Arming window for a trap (type 2 only, see case 2 in update() and the gate at the top of
+		// collision() below) - diep's Trap.ts collisionEnd, `life >> 3` ticks. 0 for every other
+		// bullet, where it is simply never read. Set for real once `this.type`/`this.life` are both
+		// known (entities/Player.js's shoot(), right after `Bull.life` is assigned) - not
+		// computable here, since the caller sets both AFTER construction.
+		this.armTicks = 0;
+		// The muzzle kick: a single impulse, already fully computed by the caller (diep's
+		// `baseSpeed`, entities/Player.js's shoot() - the ordinary/drone/trap muzzle formulas
+		// differ, plan.md Step 9), decayed by the tail's own BODY_FRICTION from here on. A one-time
+		// impulse against a bare `position += vec` is already TICK_MS-invariant (it integrates only
+		// once over ticks), so it keeps tick.perTick() with nothing to divide back out - SPEED_RESCALE
+		// and `exitSpeed` are both retired.
+		this.vec = new Vec(tick.perTick(muzzleKick), 0).rotate(direction);
 	}
 	collision(other, option = {}) {
 		if (option.type) {
@@ -536,10 +534,10 @@ class Bullet {
 						return;
 					}
 					// One impulse per tick of contact, decayed by the tail's BODY_FRICTION - the same
-					// already-invariant shape as the muzzle kick, so it stays perTick and divides
-					// the cruise term's rescale back out of its `speed` half (SPEED_RESCALE above).
+					// already-invariant shape as the muzzle kick, so it stays perTick. SPEED_RESCALE
+					// is retired (plan.md Step 9): `speed` is read directly now, nothing to divide out.
 					{
-						const push = tick.perTick(this.speed / SPEED_RESCALE * 2 + 0.91418);
+						const push = tick.perTick(this.speed * 2 + 0.91418);
 						this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(push, push)));
 					}
 					return;
@@ -547,6 +545,15 @@ class Bullet {
 		}
 		if (option.base) {
 			this.destroy = tick.DES;
+		}
+		// A trap's arming window (diep's Trap.ts: PhysicsFlags.onlySameOwnerCollision for the
+		// first `life >> 3` ticks) - inert to everything, simplified from diep's fuller
+		// same-owner-passthrough since this engine has no other same-owner physical blocking for
+		// it to preserve (a trap never collides with its own origin tank regardless, see the
+		// KIND.PLAYER arm's own origin check below). Walls are exempt so an arming trap still
+		// bounces normally, and 'god'/`option.base` above already returned/applied.
+		if (this.type === 2 && this.armTicks > 0 && other && other.kind !== KIND.WALL) {
+			return;
 		}
 		if (other) {
 			switch (other.kind) {
@@ -1140,22 +1147,19 @@ class Bullet {
 			};
 			///////////////trap
 			case 2: {
+				// diep's own trap model (Trap.ts), not a bullet's: baseAccel is 0, so there is no
+				// maintained thrust - the shared motion tail below skips its cruise-thrust add for
+				// type 2 and the trap only coasts on the muzzle kick the constructor already gave
+				// it, decaying through the ordinary BODY_FRICTION tail like everything else. The
+				// old hand-rolled `.17916`/`.7862` (.82) decay is retired, not kept alongside the
+				// shared 0.9 (plan.md Step 9 - nuance 35 flagged this exact hazard, and it no
+				// longer applies now that BODY_FRICTION itself is resolved).
 				if (!this.first) {
 					this.first = 1;
 					this.showDir = Math.random() * Math.PI * 2;
-					// A one-time bump to the cruise thrust, so it is denominated in `speed`'s own
-					// per-reference-tick units and takes no tick.perTick() of its own - the tail's
-					// tick.quadratic() applies the scale. The number is unchanged: dropping the
-					// perTick() and applying SPEED_RESCALE cancel exactly. .2 one-time-rescaled
-					// against the trap's own .82 decay, not BODY_FRICTION.
-					this.speed += Math.random() * 0.17916;
 				}
-				// NOT tick.perTick(): with the motion tail below corrected, this.vec is a
-				// per-REAL-tick displacement, so it already carries the tick scale and a second one
-				// would spin the trap faster on a finer tick. 160 = 100 * SPEED_RESCALE, which
-				// leaves the spin rate at the live TICK_MS exactly where it was.
 				this.showDir += this.vec.length() / 160;
-				this.speed *= tick.drag(0.7862);   // .82 one-time-rescaled (33ms ref)
+				if (this.armTicks > 0) { this.armTicks--; }
 				break;
 			}
 			///////////////square
@@ -1277,8 +1281,14 @@ class Bullet {
 			destroy tail coasts on it. Routing only this one line through stepBody would split
 			this.vec into two units inside one class. The two forms are algebraically the same
 			recurrence (stepBody's vec is this one divided by SCALE), so nothing is lost.
+
+			A trap (type 2) skips the thrust add entirely - diep's baseAccel is 0 for a trap
+			(Trap.ts:41), so it only coasts on its muzzle kick through the same BODY_FRICTION decay
+			below (plan.md Step 9). Every other bullet/drone keeps the maintained-velocity thrust.
 		*/
-		this.vec.add(new Vec(tick.quadratic(this.speed), 0).rotate(this.dir))
+		if (this.type !== 2) {
+			this.vec.add(new Vec(tick.quadratic(this.speed), 0).rotate(this.dir))
+		}
 		this.vec.x *= BODY_FRICTION;
 		this.vec.y *= BODY_FRICTION;
 		this.x += this.vec.x;
