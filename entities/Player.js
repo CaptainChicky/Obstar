@@ -121,7 +121,9 @@ const LEVEL_CAP = 45;
 // #51) without waiting on those classes getting their own Player subclass. Summoner stays
 // excluded - it's a boss, not a Dominator/Closer, and wasn't part of that ask.
 const CYCLE_EXCLUDE = new Set([
-	'pre launch', 'testbed', 'bigView', 'shapes', 'shape1', 'shape2', 'Summoner'
+	'pre launch', 'testbed', 'bigView', 'shapes', 'shape1', 'shape2', 'Summoner',
+	// plan.md X1's four new bosses - same reasoning as Summoner just above.
+	'Guardian', 'Defender', 'Fallen Overlord', 'Fallen Booster'
 ]);
 const CYCLABLE_CLASSES = CLASS_LIST.filter((name) => !CYCLE_EXCLUDE.has(name));
 
@@ -405,12 +407,21 @@ class Player {
 					const scatterRate = can.rand / 0.174533;
 					const jitter = Math.random() * scatterRate * 0.56;
 					const muzzleKick = (can.type === 2) ? (bulletAccel / 2 + 16.8 - jitter)
-						: (can.type === 1 || can.type === 1.1) ? (bulletAccel + 16.8 - jitter) / 3
+						: (can.type === 1 || can.type === 1.1 || can.type === 1.5) ? (bulletAccel + 16.8 - jitter) / 3
 							: (bulletAccel + 16.8 - jitter);
 					const Bull = new Bullet(this.id, x, y, dir + Math.random() * can.rand - can.rand / 2, speed, muzzleKick, this.room);
 					Bull.type = (can.type ? can.type : 0);
 					Bull.class = this.class;
 					Bull.pene = this.up.BPene * can.pene;
+					// A Skimmer (type 4)/Minion (type 1.5)'s own sub-projectiles, baked at THIS
+					// spawn from the owner's current stats (plan.md B3) - the same "read once at
+					// fire time, not live thereafter" choice this cannon's own damage/pene/speed
+					// above already make, except for `reloadRef`, which entities/Bullet.js's case
+					// 4/1.5 deliberately reads live off `play.up.Reload` every sub-shot instead
+					// (diepcustom's own barrel.reload multiplies the OWNER's live reloadTime, not a
+					// value frozen at the parent's own launch).
+					if (can.sub) { Bull.sub = { reloadRef: can.sub.reloadRef, rand: can.sub.rand, damage: this.up.BDamage * can.sub.damage, pene: this.up.BPene * can.sub.pene, speed: this.up.BSpeed * can.sub.speed, size: can.sub.size * ra, life: can.sub.life, weight: can.sub.weight, push: can.sub.push }; }
+					if (can.weapon) { Bull.weapon = { reloadRef: can.weapon.reloadRef, rand: can.weapon.rand, damage: this.up.BDamage * can.weapon.damage, pene: this.up.BPene * can.weapon.pene, speed: this.up.BSpeed * can.weapon.speed, size: can.weapon.size * ra, life: can.weapon.life, weight: can.weapon.weight, push: can.weapon.push }; }
 					// diep's own default lifeLength 1 x 75 (plan.md Step 9) - every real cannon now
 					// sets its own `life` explicitly, so this fallback should never actually fire.
 					// -1 is the "permanent drone" sentinel (Bullet.js checks it directly) and must

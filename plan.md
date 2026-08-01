@@ -466,7 +466,7 @@ diep: `bullet radius = (barrel.width / 2) × bullet.sizeRatio` (`Bullet.ts:77`).
 alongside the barrel-width/silhouette work (C2) — converting bullet size alone desyncs it from the
 barrel it leaves.
 
-### B3 — **[ADD] Projectile types we don't implement**
+### B3 — **[DONE, partial] Projectile types we don't implement**
 
 `Entity/Tank/Projectile/` has: `Bullet`, `Drone`, `Trap`, `Skimmer`, `Rocket`, `Minion`,
 `NecromancerSquare`, `Swarm`, `Flame`, `CrocSkimmer`. We have bullet (0), drone (1/1.1),
@@ -474,6 +474,25 @@ battleship-drone (1.2/1.3), base drone (1.4), trap (2), necro square (3), "bigCh
 Missing: **Skimmer** (spawns its own orbiting sub-barrels), **Minion** (Factory's controllable
 sub-tank), **Flame**, **CrocSkimmer**. `Rocket` — check whether our type-0 `Rocket` class matches
 diep's `Rocket` projectile (it has its own inline `RocketBarrelDefinition` exhaust barrel).
+
+**Implemented: Skimmer (type 4) and Minion (type 1.5).** `entities/Bullet.js`'s `case 4` spins the
+bullet's own `showDir` (independent of its straight-line `dir`, diepcustom Skimmer.ts's
+`rotationPerTick` off `positionData.angle`) while a pair of opposed sub-barrels
+(`TanksConfig.js`'s new `sub` field, `SkimmerBarrelDefinition` converted through this file's own
+damage/pene/speed/size identities) auto-fire along that spin, reload read live off the owner's
+Reload stat every shot. `case 1.5` factors the existing type-1 controllable-drone steering out into
+a shared `droneSteer1()` (case 1 now just calls it, unchanged behaviour) and adds
+`MinionBarrelDefinition`'s own weapon (`can.weapon`), fired only while that steering is actually
+engaged on a target or the owner's aim - not while idling home, matching Minion.ts's
+`AIState.idle` gate without needing a full idle-state port. Factory's cannon is `type: 1.5` now
+(was a stand-in `type: 1`, PENDING.md's old note retired). Verified by hand (script, not a
+permanent test - see PENDING.md) against a fresh Skimmer/Factory tank; `test/clientDiff.js`'s
+golden is untouched (neither class is in the seeded corpus). **Not built:** `Flame`/`CrocSkimmer` -
+both are `DevTankDefinitions.ts`-only in diepcustom (no entry in the real `TankDefinitions.json`
+roster ever sets `bullet.type: "flame"`/`"croc"`), so there is no player-reachable path to trigger
+either even in Sandbox's tank cycler (real tanks only) - building the engine surface would have
+nothing in-game to exercise it. `Rocket` cross-check against diep's own `RocketBarrelDefinition`
+also deferred, out of this pass's scope.
 
 ### B4 — **[BUG] Drone `lifeLength` sentinel and resting behaviour**
 
@@ -614,12 +633,26 @@ came from applying Sandbox's population formula to a fixed-size mode; the fixed 
 ### A3 — **[ADD] `ARENA_PADDING = 200 du`** (`Arena.ts:85`) = 112 units. Ours is
 `config.OOB_MARGIN = gu(4)` = 112 units. ✅ identical — no action, recorded so it isn't "fixed".
 
-### A4 — **[ADD] Arena state machine**
+### A4 — **[DONE, partial] Arena state machine**
 
 `Arena.ts`: `COUNTDOWN → OPEN → CLOSING → CLOSED → OVER`, with `countdownDuration = 10 s`,
 `playersNeeded`, `ticksUntilStart` on the wire. We have no countdown/closing state at all — Tag and
 Maze hand-roll their own "closing" with Arena Closers. Adding the real state machine would let both
 reuse one mechanism (M3).
+
+**Implemented (user-selected scope: additive, not a Tag/Maze migration).** `rooms/Room.js` now
+carries diep's own `state`/`ticksUntilStart`/`playersNeeded` fields and `Room.ArenaState` enum
+(diep's literal numbering: `COUNTDOWN -1, OPEN 0, OVER 1, CLOSING 2, CLOSED 3`). Every EXISTING
+mode opens straight into `OPEN` and never touches the field again - Tag's own `this.closing`
+flag/Arena-Closer-swarm mechanism is untouched, deliberately not migrated onto the new field (the
+two would otherwise have to agree on ordering/semantics they were never designed to share, for no
+behavioural gain - a real risk to an already-tested win condition for no reason beyond tidiness).
+The new field gets its first real USE in `rooms/Survival.js` (G1's Survival mode): a genuine
+`COUNTDOWN` that holds the room open for joining while it waits for `MIN_PLAYERS` (4, diep's own
+scaled-down figure) humans, ticking down diep's real `countdownDuration` (10 s) once satisfied,
+then flipping to `OPEN` and cutting off every future `respawn()` call - the first time this tree
+has had a real "waiting for players" gate at all. No client-side countdown screen was built (no
+wire exposure of the new fields either, unlike C5's other wire additions) - PENDING.md.
 
 ### A5 — **[DIFF] Spawn location choice**
 
@@ -668,7 +701,7 @@ axis-aligned push of `absorb × pushFactor / 0.3` (`Object.ts:295-326`). Matches
 
 # Chunk 8 — Bosses & scripted entities
 
-### X1 — **[ADD] Four of diep's five bosses are missing**
+### X1 — **[DONE] Four of diep's five bosses are missing**
 
 `Misc/BossManager.ts`: `[Guardian, Summoner, FallenOverlord, FallenBooster, Defender]`, one picked
 at random every `45 × 60 × tps` ticks (**45 minutes**), spawned inside the middle half of the arena,
@@ -680,16 +713,60 @@ Missing: **Guardian** (`Boss/Guardian.ts`), **Defender** (`Boss/Defender.ts`, ha
 
 Also missing: the 45-minute global spawn timer and the one-boss-at-a-time invariant.
 
-### X2 — **[DIFF] Boss body is a hardcoded circle**
+**Implemented (user-selected: full unique mechanics per boss).** All four added as ordinary
+`TanksConfig.js` classes driven by their own `[motion, update, className]` entry in
+`lib/gameAI.js`'s `CONFIG.BOSS` (the same rebind-at-spawn pattern `rooms/Room.js`'s `createBoss()`
+already used for Summoner) — `Guardian` (one oversized backward-facing self-targeting drone
+spawner, `type 3.1`, plus a real diepcustom `BossMovementControl` quadrant-corner patrol, facing
+whichever way it's driving), `Defender` (three `forceFire` trap launchers plus three mounted
+auto-turrets — diep's own separate `AutoTurret` child entities, simplified to three more
+`autoDir`/`autoShoot` cannons on the same body at diep's own real 60 du mount radius, the same call
+plan.md T6 already made for Auto 3/Auto 5's rings — stationary, `ai.viewRange 0`, spins in place at
+2× the passive rate), `Fallen Overlord` (Overlord's own 4-barrel geometry verbatim, diep's boosted
+drone stats, patrol + passive spin), `Fallen Booster` (Booster's own 5-barrel geometry verbatim,
+diep's boosted bullet stats, patrol while idle, charges and faces its nearest detected target once
+engaged, at diep's own real 2× `movementSpeed`). Global 45-minute spawn timer implemented for real
+(`rooms/Room.js`'s `BOSS_TIMER_TICKS`/`bossTimerAt`, a deterministic floor under the existing
+`bossRng` roll, on any mode with `maxBoss > 0`) — the one-boss-at-a-time invariant was already true
+via each mode's own `maxBoss: 1`, nothing to add there. `FallenAC`/`FallenMegaTrapper`/`FallenSpike`
+(the `Misc/Boss/` addon variants) not built — out of this pass's scope, no citation gathered.
+Travel speed for the three patrolling/chasing bosses reuses Summoner's own already-tuned
+`BOSS_DRIFT` magnitude rather than a fresh derivation (documented at `lib/gameAI.js`'s
+`bossThrust()` — diep's raw `movementSpeed` is an accel term for a real tank-body physics pipeline
+this engine's boss integrator diverged from entirely when Summoner was built, so there is no clean
+unit identity to convert, the same reasoning `BOSS_DRIFT` itself already rests on). No client
+rendering for a true 3/4-sided boss body — inherits Summoner/the Dominators' existing `body: {shape:
+1}` (rounded rectangle) simplification, not a new gap (`public/SHARE/TanksConfig.js`'s own comment
+at the new entries). Verified by hand (script) against all four in isolation, plus
+`test/rooms.js`'s existing boss-mode suite adapted to a 5-entry roster (was Summoner-only) — see
+PENDING.md.
+
+### X2 — **[DONE] Boss body is a hardcoded circle**
 
 `rooms/Room.js`'s `createBoss()` hardcodes `size: 64` for every boss. diep's `AbstractBoss` sizes
 each boss from its own definition. Blocks X1 — you can't add four bosses with one hardcoded radius.
 
-### X3 — **[DIFF] Boss aggro model is entirely ours**
+**Implemented:** `createBoss()` now reads `CLASS[spec[2]].bossSize || 64` — each of the four new
+bosses carries its own real diep-derived `bossSize` (world units) on its `TanksConfig.js` entry;
+Summoner keeps the old flat 64 (falls through the `||`), since it has no diep body to convert.
+
+### X3 — **[DONE] Boss aggro model is entirely ours**
 
 `lib/gameAI.js`'s Summoner uses `dis / max(1, level) < screen / 30` with a 0.5625 y-squash — no
 diep counterpart (diep bosses use the shared `AI` class with a plain `viewRange`). Worth replacing
 with `AI`-style targeting when X1 lands.
+
+**Implemented (kept the metric, shared the code).** The metric itself is unchanged — still no
+literal diep counterpart, and PENDING.md's own "aggro radius smaller than the hitbox" fix already
+lives inside it — but it is no longer Summoner's own private copy: `lib/gameAI.js`'s `bossDetect()`
+is the one implementation every boss with real aggro (Guardian/Fallen Overlord/Fallen Booster,
+plus Summoner itself) now calls, keyed off each boss's own `screen` (its `ai.viewRange` stand-in).
+Defender calls it not at all (diep's own `ai.viewRange = 0` — it never aggros, full stop; its
+turrets find targets through the ordinary per-class `CLASS.DETEC` auto-turret mechanism instead,
+same as any other auto-turret tank). This is the "replace with `AI`-style targeting" this item
+asked for, within what this engine's boss integrator can actually express — a full port of
+diepcustom's own generic `AI` class (prediction, multiple target-priority tiers, `AIState`) was not
+attempted.
 
 ### X4 — **[OK]** Arena Closer size 98 units (`BASE_SIZE 175 du × 0.56`), Dominator 89.6
 (`SIZE 160 du`), both circles (`sides: 1`), Dominator `maxHealth 6000`, four per Domination map,
@@ -709,7 +786,7 @@ this is a restructuring decision, unscoped. Also open: the `H`-key Dominator pil
 
 # Chunk 9 — Game modes
 
-### G1 — **[DIFF] Mode roster**
+### G1 — **[DONE, partial] Mode roster**
 
 | diep (`src/Gamemodes/`) | we have |
 |---|---|
@@ -720,12 +797,40 @@ this is a restructuring decision, unscoped. Also open: the `H`-key Dominator pil
 | Maze | ✅ |
 | Tag | ✅ |
 | Sandbox | ✅ |
-| **Mothership** | ❌ — needs the Mothership entity (T2) |
-| **Survival** | ❌ — shrinking arena + no respawn |
+| **Mothership** | ✅ |
+| **Survival** | ✅ |
 | Misc (`Ball`, `Jungle`, `Spikebox`, `DomTest`, `FactoryTest`, `Testing`) | ❌ — diepcustom's own test modes, not real diep |
 
 Breakout and Capture the Flag are in `diep_wiki` but not in `diepcustom` — treat as
-lower-confidence, and both are bigger than Maze + Domination combined.
+lower-confidence, and both are bigger than Maze + Domination combined. **User-selected scope:
+Mothership + Survival only this pass; Breakout/CTF deliberately deferred, not attempted.**
+
+**Mothership implemented** (`rooms/Mothership.js`) — finally gives T2's Mothership tank class a
+spawn path. Two teams, one real killable Mothership `Player` per side (diepcustom's own
+`arenaSize * 0.8` placement, `healthData.values.maxHealth = 7000` 1:1, `bossSize` derived from
+diep's own `size = 28 × 1.01^level` identity at `camera.setLevel(140)` — plan.md X2's mechanism,
+reused rather than a third one) spinning in place and auto-firing its 16 drone-spawner barrels
+(`lib/gameAI.js`'s `CONFIG.MOTHERSHIP`, sharing `bossThrust()`'s stationary-decay tail with
+Defender). Losing your Mothership starts closing — the identical Arena-Closer-swarm mechanism
+Tag's own win condition uses (`startClosing()`/`createCloser()`, copied rather than shared, see
+A4's own note on why Tag's mechanism wasn't touched). No drone-post base-strip system (`K3`'s own
+custom `TeamBase`/`G4`) — diep's real Mothership mode has no equivalent, the Mothership tank body
+itself IS the base. diep's own shape-XP-only ×3 (`shapeScoreRewardMultiplier`) has no hook to land
+in — this engine's `rules.xpMul` multiplies every award alike, so it was left at the ordinary ×1
+rather than over-applying it to kills too (PENDING.md).
+
+**Survival implemented** (`rooms/Survival.js`) — the first mode to actually use A4's state machine
+for something real: a genuine `COUNTDOWN` gate (diep's own `MIN_PLAYERS` 4, `countdownDuration`
+10 s) before the match opens, then no more respawns, ever (`ArenaFlags.noJoining`'s real effect).
+Arena size re-derives every tick from the live human count (diep's own
+`floor(25 × sqrt(max(alive,1))) × 100` du formula,×0.56), shrinking as players die via the same
+`newMap` lerp Tag's own `shrink()` already uses. Win condition and Closer-swarm ending mirror
+Mothership's own (one alive human left ⇒ `OVER` ⇒ `startClosing()`). No bots seeded at all — diep's
+own Survival has none, and the whole point of the human-only gate is "wait for real people"; a
+solo session correctly never leaves `COUNTDOWN` rather than being routed around with bot padding.
+Shape density is a static mix sized for the `MIN_PLAYERS` starting arena, not diep's own
+`SurvivalShapeManager` formula (which re-evaluates every tick as the arena resizes) — PENDING.md.
+diep's shape-XP-only ×3 has the same no-hook gap as Mothership's, same call.
 
 ### G2 — **[OK]** Maze wall generation is a verbatim port of `Misc/MazeGenerator.ts` (seed count 45
 ± 30, turn/branch/termination 0.2 each, flood-fill for unreachable pockets, merge into rectangles).
@@ -853,10 +958,10 @@ Dependencies first; each line is a self-contained pass with its own test/golden 
 10. ✅ **T1 + T2** — the real upgrade tree and the 16 missing tanks (Smasher line first — it exercises
     the most new machinery).
 11. ✅ **S2 / S5 / S7** — shape zoning, edge turning, respawn cadence.
-12. **B3** — Skimmer / Minion / Flame / CrocSkimmer projectiles (partially motivated now — Skimmer/
-    Factory ship as simplified stand-ins pending this, PENDING.md).
-13. **X1 + X2 + X3** — the boss roster.
-14. **A4 + G1** — arena state machine, then Mothership / Survival.
+12. ✅ **B3** — Skimmer / Minion projectiles (Flame/CrocSkimmer out of scope, dev-only in diepcustom -
+    see B3's own note).
+13. ✅ **X1 + X2 + X3** — the boss roster.
+14. ✅ **A4 + G1** — arena state machine, then Mothership / Survival (Breakout/CTF deferred - see G1).
 15. **C1–C5** — the rendering/silhouette pass, in one commit, with a deliberate golden rebaseline.
 
 ## Rules for executing any of it

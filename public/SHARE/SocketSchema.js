@@ -393,7 +393,10 @@
 			'sandbox',
 			'tag',
 			'maze',
-			'domination'
+			'domination',
+			// plan.md G1 - appended, matching toBUFFER.gamemode's own append below.
+			'mothership',
+			'survival'
 		],
 		'type': [
 			'init',
@@ -491,7 +494,10 @@
 			'sandbox': 4,
 			'tag': 5,
 			'maze': 6,
-			'domination': 7
+			'domination': 7,
+			// plan.md G1 - appended, not inserted, so no existing mode's wire byte moves.
+			'mothership': 8,
+			'survival': 9
 		},
 		'type': {
 			'init': 0,

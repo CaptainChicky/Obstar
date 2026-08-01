@@ -1412,6 +1412,54 @@
 					height: 1
 				}
 			},
+			// The four real diep bosses (plan.md X1) - body shape 1 (rounded rect), same known
+			// gap as Summoner/the Dominators above (PENDING #51's note): diep draws Guardian/
+			// Defender's real triangle body and Fallen Overlord/Fallen Booster's tank-shaped one,
+			// this engine has no true N-gon boss body yet (chunk 10/C3 territory).
+			"Guardian": {
+				// One oversized backward-facing drone-spawner barrel (diepcustom
+				// GuardianSpawnerDefinition, angle PI) - drawn like Summoner's own spawner
+				// cannons, just alone and wider.
+				cannons: [
+					{ type: 0, height: 70, width: 40, offx: 0, offdir: Math.PI, open: 30 }
+				],
+				body: { shape: 1, width: 1, height: 1 }
+			},
+			"Defender": {
+				// Three trap launchers (diepcustom TrapperDefinition, evenly spaced, forceFire)
+				// plus three short auto-turret nubs at the vertices between them
+				// (MountedTurretDefinition - diep's own separate AutoTurret child entities,
+				// simplified to extra cannons on the same body, same call plan.md T6 made for
+				// Auto 3/Auto 5's rings).
+				cannons: [0, 1, 2].map(i => ({
+					type: 0, height: 84, width: 28, offx: 0, offdir: Math.PI * 2 * i / 3 + Math.PI / 3, open: 0, trapLauncher: true
+				})).concat([0, 1, 2].map(i => ({
+					type: 0, height: 38.5, width: 12, offx: 0, offdir: Math.PI * 2 * i / 3, open: 0
+				}))),
+				body: { shape: 1, width: 1, height: 1 }
+			},
+			// Reuses Overlord's own 4-barrel geometry verbatim (diepcustom FallenOverlord.ts
+			// iterates TankDefinitions[Tank.Overlord].barrels directly) - only the SERVER stats
+			// (reload/speed/damage/pene) are boss-boosted, plan.md X1.
+			"Fallen Overlord": {
+				cannons: [0, 1, 2, 3].map(i => ({
+					type: 0, height: 48, width: 28, offx: 0, offdir: Math.PI * i / 2, open: 23
+				})),
+				body: { shape: 1, width: 1, height: 1 }
+			},
+			// Reuses Booster's own 5-barrel geometry verbatim (diepcustom FallenBooster.ts
+			// iterates TankDefinitions[Tank.Booster].barrels directly) - same reasoning as Fallen
+			// Overlord above.
+			"Fallen Booster": {
+				cannons: [
+					{ type: 0, height: 62, width: 32, offx: 0, offdir: 0, open: 0 },
+					{ type: 0, height: 52, width: 27, offx: -6, offdir: -Math.PI - .65, open: 0 },
+					{ type: 0, height: 52, width: 27, offx: 6, offdir: -Math.PI + .65, open: 0 },
+					{ type: 0, height: 58, width: 27, offx: -5, offdir: -Math.PI - .35, open: 0 },
+					{ type: 0, height: 58, width: 27, offx: 5, offdir: -Math.PI + .35, open: 0 }
+				],
+				body: { shape: 1, width: 1, height: 1 }
+			},
 			// PENDING #28. One forward cannon, drawn like every ordinary single-barrel class -
 			// diep_wiki/Arena Closer.txt describes the barrel as Flank-Guard-shaped, not exotic, so
 			// height mirrors Flank Guard's own forward cannon (client height == server canonLength
@@ -3006,6 +3054,124 @@
 				this.cannons = c;
 			},
 			/*
+				The four real diep bosses this codebase was missing (plan.md X1). All four are
+				ordinary Player instances with motion()/update() rebound at spawn
+				(lib/gameAI.js's CONFIG.BOSS, the same pattern Summoner above already uses) - so
+				each is just a class like any other here, driven through the ordinary
+				shoot()/cannons pipeline. `bossSize` (world units) is read by rooms/Room.js's
+				createBoss() in place of its old hardcoded 64 (plan.md X2) - Summoner keeps that
+				64 (it has no diep body to convert). `boss: true` matches Summoner's own marker.
+			*/
+			"Guardian": new function () {
+				// diepcustom Guardian.ts: no ai.viewRange override, so AbstractBoss's own default
+				// (2000 du) applies - x0.56 = 1120. bossSize: GUARDIAN_SIZE 135 du x0.56.
+				this.screen = 1120;
+				this.bossSize = 75.6;
+				this.boss = true;
+				// GuardianSpawnerDefinition: one oversized backward-facing (angle PI) drone
+				// spawner, droneCount 24, self-targeting drones (type 3.1 - the same mechanism
+				// Summoner's own spawners above already use; lib/gameAI.js's bossDetect() feeds
+				// `play.detected`, which is all type 3.1 needs, no per-boss wiring). reload
+				// 0.36x15, pene 2x12.5 (diep bullet.health), damage 7x0.56, speed 1.12x1.7, size
+				// (width/2)xsizeRatiox0.56 = 21x0.56, life 1.5x75 ref ticks (finite - diep's own
+				// lifeLength here is NOT -1, unlike Summoner's permanent drones).
+				this.cannons = [{
+					reload: 5.4, offTime: 0, auto: 1, type: 3.1, life: 112.5,
+					offdir: Math.PI, offx: 0, canonLength: 70, rand: 0.174533,
+					speed: 1.904, pene: 25, damage: 3.92, size: 11.76,
+					// No diep absorb table for a boss's own drones (same gap plan.md T2's roster
+					// left open) - Overlord's own drone row, the nearest real diep drone-knockback
+					// figure on file.
+					weight: 4.2, push: 0.45709, back: 0
+				}];
+			},
+			"Defender": new function () {
+				// diepcustom Defender.ts: ai.viewRange = 0 - never chases or aggros, so
+				// lib/gameAI.js's CONFIG.BOSS entry gives it no bossDetect() call at all and this
+				// `screen` is only the (aggro-unused) camera-FOV fallback, diep's own default
+				// fieldFactor 1. bossSize: DEFENDER_SIZE 150 du x0.56.
+				this.screen = BASE_SCREEN;
+				this.bossSize = 84;
+				this.boss = true;
+				// Three mounted auto-turrets need their own target search (MountedTurretDefinition
+				// is diep's own separate AutoTurret child entity, simplified here to three more
+				// autoDir/autoShoot cannons on this same body - the same call plan.md T6 made for
+				// Auto 3/Auto 5's rings) - reuses the ordinary class-level DETEC every other
+				// auto-turret tank already carries (Fortress's own copy, line ~2507, is the
+				// closest precedent for the shape).
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 800 };
+				// Three trap launchers (TrapperDefinition, forceFire -> `auto: 1`), evenly spaced
+				// a half-slot off the turrets below (diepcustom: `PI2*(i/count + 1/(2*count))`).
+				// damage 7x4, pene 2x12.5, speed 1.12x5, size (width/2)xsizeRatiox0.56 =
+				// (71.4/2)x0.8x0.56, life 8x75, reload 5x15, back 2gux2.8.
+				const traps = [0, 1, 2].map(i => ({
+					reload: 75, offTime: 0, auto: 1, type: 2, life: 600,
+					offdir: Math.PI * 2 * i / 3 + Math.PI / 3, offx: 0, canonLength: 84, rand: 0.174533,
+					speed: 5.6, pene: 25, damage: 28, size: 15.99,
+					weight: 4.2, push: 0.45709, back: 5.6
+				}));
+				// MountedTurretDefinition = AutoTurretDefinition (AutoTurret.ts: size 55, width
+				// 42x0.7, reload 1, recoil 0.3) with bullet speed/damage/health overridden to
+				// 2.46/1.2/5.75. `distance` (plan.md T5) is diep's own real mount radius, not a
+				// guess: `positionData.y/x = size * sin/cos(angle) * offset` where `offset =
+				// 60/(DEFENDER_SIZE*sqrt(0.5))` and `size = DEFENDER_SIZE*sqrt(0.5)` are the same
+				// value, so `size*offset` = a flat 60 du regardless of boss size - x0.56 = 33.6.
+				const turrets = [0, 1, 2].map(i => ({
+					reload: 15, offTime: 0, auto: 1, autoDir: 1, autoShoot: 1, life: 75,
+					offdir: Math.PI * 2 * i / 3, offx: 0, distance: 33.6, canonLength: 38.5, rand: 0.174533,
+					speed: 2.7552, pene: 11.5, damage: 8.4, size: 8.232,
+					weight: 4.2, push: 0.45709, back: 2.352
+				}));
+				this.cannons = traps.concat(turrets);
+			},
+			// Reuses Overlord's own barrel geometry verbatim (diepcustom FallenOverlord.ts
+			// iterates TankDefinitions[Tank.Overlord].barrels and only touches
+			// droneCount/reload/sizeRatio/speed/damage/health - canonLength/offdir/weight/push/
+			// back are Overlord's own, unchanged). bossSize: AbstractBoss's default 50 du scaled
+			// to diep's own "level 75" boss size, `50 x 1.01^74 x 0.56` (plan.md M3's own
+			// `size = 28 x 1.01^level` identity, just off AbstractBoss's 50 du base instead of a
+			// tank's 28 du one) = 58.46.
+			"Fallen Overlord": new function () {
+				this.screen = 1120;
+				this.bossSize = 58.46;
+				this.boss = true;
+				this.maxDrone = 28;   // droneCount 7 x 4 barrels
+				// reload 0.36x15 (an override, not a multiplier on Overlord's own 90). pene
+				// 2x12.5, damage 7x0.56, speed 1.12x1.7, size 14x0.5 (sizeRatio) - all diep
+				// ABSOLUTE overrides, not scaled off Overlord's own bullet stats.
+				this.cannons = [0, 1, 2, 3].map(i => ({
+					reload: 5.4, offTime: 0, type: 1, life: -1, auto: 1,
+					offdir: Math.PI * i / 2, offx: 0, canonLength: 48, rand: 0.174533,
+					speed: 1.904, pene: 25, damage: 3.92, size: 7,
+					weight: 4.2, push: 0.45709, back: 0.28
+				}));
+			},
+			// Reuses Booster's own barrel geometry verbatim (diepcustom FallenBooster.ts iterates
+			// TankDefinitions[Tank.Booster].barrels and only touches bullet speed/health/damage -
+			// damage is the one RELATIVE override, `x0.8` of Booster's own per-barrel figure).
+			// bossSize: same derivation as Fallen Overlord above (both boss classes scale
+			// AbstractBoss's own 50 du default to diep's "level 75").
+			"Fallen Booster": new function () {
+				this.screen = 1120;
+				this.bossSize = 58.46;
+				this.boss = true;
+				const c = new Array(5).fill(null).map(() => ({
+					reload: 15, offTime: 0, auto: 1,
+					offdir: 0, offx: 0, canonLength: 52, life: 38, rand: 0.174533,
+					// speed 1.12x1.7, pene 2x6.25 (diep's flat health override, every barrel) -
+					// damage stays per-barrel (below), not set here.
+					speed: 1.904, pene: 12.5, damage: 2.8, size: 16,
+					weight: 0.7, push: 0.45709, back: 2.408
+				}));
+				c[0].back = 0.56; c[0].canonLength = 62; c[0].size = 16; c[0].damage = 4.620005; c[0].life = 75;
+				c[0].weight = 3.5;
+				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
+				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
+				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 58; c[3].offTime = .5;
+				c[4].offdir = -Math.PI + .35; c[4].offx = 5; c[4].canonLength = 58; c[4].offTime = .5;
+				this.cannons = c;
+			},
+			/*
 				Tag's win-condition NPC (PENDING #28, rooms/Tag.js's createCloser()). Every number
 				below that diep_wiki/Arena Closer.txt gives directly is used verbatim rather than
 				estimated - the two genuinely vague ones ("extremely high body damage" and its own
@@ -3326,28 +3492,62 @@
 			"Skimmer": new function () {   // id54 - 1 barrel, low bullet absorbtionFactor unmodelled (PENDING.md)
 				this.screen = BASE_SCREEN / 0.9;
 				this.cannons = [{
-					reload: 60, offTime: 0, offdir: 0, offx: 0, canonLength: 56, life: 98, rand: 0.174533,
-					speed: 0.56, pene: 6, damage: 7, size: 27, weight: 1.05, push: 0.27426, back: 8.4
+					// type 4 = diepcustom's Skimmer.ts: a bullet that spins its own body
+					// (entities/Bullet.js's `showDir`, independent of its straight-line `dir`) while a
+					// pair of opposed sub-barrels auto-fire along that spin (plan.md B3). `sub` is
+					// SkimmerBarrelDefinition converted through this file's own identities: damage
+					// 7x(3/5), pene 2x0.3, speed 1.12x1.1, size (width/2)x0.56 at sizeRatio 1,
+					// reloadRef 0.35x15 (a multiplier on the OWNER's live reload cycle, exactly like
+					// Barrel.ts's calculateStatData - read live off `play.up.Reload` each sub-fire, not
+					// baked at spawn). weight/push have no diep source for a sub-projectile (B2/PENDING.md's
+					// still-missing bullet.absorbtionFactor table) so they borrow this cannon's own row.
+					reload: 60, offTime: 0, type: 4, offdir: 0, offx: 0, canonLength: 56, life: 98, rand: 0.174533,
+					speed: 0.56, pene: 6, damage: 7, size: 27, weight: 1.05, push: 0.27426, back: 8.4,
+					sub: { reloadRef: 5.25, damage: 4.2, pene: 0.6, speed: 1.232, size: 11.76, life: 18.75, rand: 0.174533, weight: 1.05, push: 0.27426 }
 				}];
 			},
-			"Factory": new function () {   // id52 - drone barrel reuses the existing controllable-drone AI (type 1, not a true minion sub-tank - B3, PENDING.md)
+			"Factory": new function () {   // id52
 				this.screen = BASE_SCREEN / 0.9;
 				this.maxDrone = 6;
 				this.cannons = [{
-					reload: 45, offTime: 0, type: 1, life: -1, offdir: 0, offx: 0, canonLength: 49, rand: 0,
-					speed: 0.6272, pene: 8, damage: 4.9, size: 16, weight: 4.2, push: 0.36567, back: 2.8
+					// type 1.5 = a true diepcustom Minion (plan.md B3): the existing type-1
+					// controllable-drone steering (entities/Bullet.js's droneSteer(), factored out of
+					// case 1 unchanged) plus MinionBarrelDefinition's own weapon, auto-fired whenever
+					// that steering is actually engaged on a target/aim rather than drifting home.
+					// `weapon` converted the same way as Skimmer's `sub` above: damage 7x0.4, pene
+					// 2x0.4, speed 1.12x0.8, size (width/2)x0.56 at sizeRatio 1, reloadRef 1x15
+					// (diep's own barrel.reload=1, i.e. the same cadence as the minion's live reload
+					// stat) - weight/push again borrow this cannon's own row, same missing-table caveat.
+					reload: 45, offTime: 0, type: 1.5, life: -1, offdir: 0, offx: 0, canonLength: 49, rand: 0,
+					speed: 0.6272, pene: 8, damage: 4.9, size: 16, weight: 4.2, push: 0.36567, back: 2.8,
+					weapon: { reloadRef: 15, damage: 2.8, pene: 0.8, speed: 0.896, size: 14.11, life: 75, rand: 0, weight: 4.2, push: 0.36567 }
 				}];
 				this.ups = ['Health Regen', 'Reload', 'Max Health', 'Drone Speed', 'Movement Speed', 'Drone Damage', 'Body Damage', 'Drone Health'];
 			},
-			"Mothership": new function () {   // id27 - gamemode entity, no spawn path yet (needs chunk 9's Mothership gamemode, PENDING.md)
+			"Mothership": new function () {   // id27 - gamemode entity, spawned by rooms/Mothership.js (plan.md G1)
 				this.screen = BASE_SCREEN;   // diep fieldFactor not captured for this class - unconfirmed default
 				this.maxDrone = 32;
+				// Mothership.ts sets no explicit body size - it comes from the ordinary tank-body
+				// growth formula (plan.md M3: size = 28 x 1.01^level) at `camera.setLevel(140)`,
+				// diep's own literal figure (mostly there to max every stat, not for the size
+				// alone) - 28 x 1.01^140 x 0.56, read by rooms/Mothership.js's createMothership()
+				// the same way every other boss-like entity's `bossSize` is (plan.md X2).
+				this.bossSize = 63.14;
 				// diep's own receiver-side absorbtionFactor for this class (D7's table) - recorded
 				// but not wired into collision(), which only special-cases Dominator/Closer today
 				// (PENDING.md: no generic per-class absorbtionFactor mechanism exists yet).
 				this.absorbtionFactor = 0.01;
+				// diep's own real HP (Mothership.ts: `healthData.values.maxHealth = 7000`) - set
+				// on the spawned instance by rooms/Mothership.js's createMothership(), the same
+				// "class table stays a template, the real value lives on the instance" pattern
+				// createBoss()/createCloser() already use, since this engine's class table has no
+				// generic per-class maxHealth field for an ordinary tank to read.
 				this.cannons = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
-					reload: 90, offTime: 0, type: 1, life: -1,
+					// auto: 1 - diep's Mothership.ts spins its own idle aim continuously
+					// (`ai.state === idle` branch), so it needs to force-fire the same way every
+					// other AI-only entity's cannons do (Overlord/the new bosses) - nothing drives
+					// `inputs.mouseL` for it otherwise.
+					reload: 90, offTime: 0, type: 1, life: -1, auto: 1,
 					offdir: i * Math.PI * 2 / 16, offx: 0, canonLength: 42, rand: 0,
 					speed: 0.5376, pene: 4, damage: 4.9, size: 14, weight: 4.2, push: 0.36567, back: 0
 				}));
@@ -3478,7 +3678,13 @@
 		'Tri-Trapper',
 		'Skimmer',
 		'Factory',
-		'Mothership'
+		'Mothership',
+		// The four real diep bosses plan.md X1 adds - appended for the same reason as the T2
+		// block above (no existing wire-enum index moves).
+		'Guardian',
+		'Defender',
+		'Fallen Overlord',
+		'Fallen Booster'
 	];
 
 })(typeof (exports) === 'undefined' ? function () { this['TanksConfig'] = {}; return this['TanksConfig'] }() : exports,

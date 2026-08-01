@@ -17,9 +17,21 @@ const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
 // Friction-ORDER compensation for the cruise thrust in update()'s motion tail - see that site and
 // lib/constants.js. Dimensionless, so no tick conversion of its own.
 const BULLET_CRUISE_ORDER = require('../lib/constants.js').BULLET_CRUISE_ORDER;
+// Same "diep's raw bulletAccel" divisor entities/Player.js's shoot() uses for an ordinary muzzle
+// kick - needed here too now that a Skimmer (type 4)/Minion (type 1.5) fires sub-projectiles of
+// its own mid-flight instead of only at the original shoot() call site (plan.md B3).
+const BULLET_MAINTAIN = require('../lib/constants.js').BULLET_MAINTAIN;
 const KIND = require('../public/SHARE/kinds.js');
 const Detector = require('./Detector.js');
 const { LETHAL_EPS, projectileCommon } = require('../lib/damage.js');
+
+// diepcustom Skimmer.ts: `static BASE_ROTATION = 0.1` rad, added to the skimmer's own facing
+// once per (diep) tick - tick.perTick(), the same category a shape's BASE_ORBIT spin uses. Drives
+// `showDir` (case 4, below), NOT `dir` - `dir` stays the bullet's straight-line heading, exactly
+// like every other bullet's cruise thrust, so the skimmer flies straight while its drawn body (and
+// its sub-barrels' fire direction) spins independently. Consumed as a rate, not baked into a
+// per-real-tick constant, since case 4 also reads it every tick.
+const SKIMMER_SPIN = tick.perTick(0.1);
 
 // diep_wiki/Stats.txt: Body Damage is "decreased by 75% when affecting projectiles (Bullets,
 // Traps, Drones)" - MEASUREMENTS.md's pinned "-75% vs projectiles" entry (PENDING #18). Applies
@@ -477,6 +489,69 @@ function planSwitchArc(drone, r1) {
 	drone.switching = true;
 }
 
+/*
+	Ordinary controllable-drone steering - what used to be case 1's own body verbatim, factored
+	out so a Minion (case 1.5, plan.md B3) can share the exact same movement decision its type-1
+	siblings (Overseer/Necromancer/Manager/BattleShip-swarm) already make instead of drifting from
+	it as a second copy. Returns whether the drone is actively aiming at something (a live DETEC
+	target, or the owner's own mouse) rather than idling near or returning to its owner - the one
+	new thing a Minion needs, to decide whether its own barrel (case 1.5) should be firing.
+*/
+function droneSteer1(bullet, play) {
+	bullet.showDir = bullet.dir;
+	if (!bullet.comingDir) {
+		bullet.comingDir = 0;
+	}
+	bullet.speed = bullet.maxspeed;
+	///
+	if (!bullet.DETEC) {
+		bullet.DETEC = new Detector(play, bullet.x, bullet.y, 300, [KIND.PLAYER, KIND.OBJECTS])
+		bullet.DETEC.team = bullet.team
+	} else {
+		bullet.DETEC.x = bullet.x;
+		bullet.DETEC.y = bullet.y;
+	}
+	///
+	if (play.inputs.mouseR) {
+		const dir = Math.PI + Math.atan2((play.y + play.inputs.mouse_y) - bullet.y, play.x + play.inputs.mouse_x - bullet.x)
+		bullet.dir = dir;
+		return true;
+	} else if (play.inputs.mouseL || play.inputs.e) {
+		const dir = Math.atan2((play.y + play.inputs.mouse_y) - bullet.y, play.x + play.inputs.mouse_x - bullet.x)
+		bullet.dir = dir;
+		return true;
+	} else {
+		if (bullet.DETEC.select) {
+			bullet.DETEC.enabled = 0;
+			const other = bullet.DETEC.select;
+			const dis = Math.sqrt(Math.pow(bullet.x - other.x, 2) + Math.pow(bullet.y - other.y, 2));
+			const playdis = Math.sqrt(Math.pow(other.x - play.x, 2) + Math.pow(other.y - play.y, 2));
+			if (dis < 300 && !other.destroy && playdis < play.screen / 4 && other.alpha) {
+				bullet.dir = Math.atan2(other.y - bullet.y, other.x - bullet.x);
+				return true;
+			} else {
+				bullet.DETEC.reset();
+				bullet.DETEC.enabled = 1;
+			}
+		}
+		const playDis = Math.sqrt(Math.pow(bullet.x - play.x, 2) + Math.pow(bullet.y - play.y, 2))
+		if (playDis < play.size * 3.5) {
+			bullet.speed = 0.117008;   // .08 one-time-rescaled, then x SPEED_RESCALE (top of file)
+			if (Math.random() < REAIM_CHANCE) {
+				bullet.comingDir += Math.PI / 2;
+			}
+			const dir = Math.atan2(play.y + Math.sin(play.autoDir * 2 + bullet.comingDir) * play.size * 3 - bullet.y,
+				play.x + Math.cos(play.autoDir * 2 + bullet.comingDir) * play.size * 3 - bullet.x);
+			bullet.dir = dir;
+			return false;
+		}
+		const dir = Math.atan2((play.y) - bullet.y, play.x - bullet.x)
+		bullet.dir = dir;
+		bullet.comingDir = bullet.dir;
+		return false;
+	}
+}
+
 class Bullet {
 	constructor(origin, x, y, direction, speed, muzzleKick, room) {
 		this.BUFF = {
@@ -735,55 +810,36 @@ class Bullet {
 		switch (this.type) {
 			case 0: break;
 			//normal//drone
-			case 1: {
-				this.showDir = this.dir;
-				if (!this.comingDir) {
-					this.comingDir = 0;
-				}
-				this.speed = this.maxspeed;
-				///
-				if (!this.DETEC) {
-					this.DETEC = new Detector(play, this.x, this.y, 300, [KIND.PLAYER, KIND.OBJECTS])
-					this.DETEC.team = this.team
-				} else {
-					this.DETEC.x = this.x;
-					this.DETEC.y = this.y;
-				}
-				///
-				if (play.inputs.mouseR) {
-					const dir = Math.PI + Math.atan2((play.y + play.inputs.mouse_y) - this.y, play.x + play.inputs.mouse_x - this.x)
-					this.dir = dir;
-				} else if (play.inputs.mouseL || play.inputs.e) {
-					const dir = Math.atan2((play.y + play.inputs.mouse_y) - this.y, play.x + play.inputs.mouse_x - this.x)
-					this.dir = dir;
-				} else {
-					if (this.DETEC.select) {
-						this.DETEC.enabled = 0;
-						const other = this.DETEC.select;
-						const dis = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
-						const playdis = Math.sqrt(Math.pow(other.x - play.x, 2) + Math.pow(other.y - play.y, 2));
-						if (dis < 300 && !other.destroy && playdis < play.screen / 4 && other.alpha) {
-							this.dir = Math.atan2(other.y - this.y, other.x - this.x);
-							break;
-						} else {
-							this.DETEC.reset();
-							this.DETEC.enabled = 1;
-						}
+			case 1: droneSteer1(this, play); break;
+			//minion//
+			case 1.5: {
+				const engaged = droneSteer1(this, play);
+				// diepcustom Minion.ts's tickMixin: `inputs.flags |= InputFlags.leftclick` whenever
+				// not idle - i.e. whenever droneSteer1 above actually found something to aim at,
+				// rather than drifting home. MinionBarrelDefinition's own weapon
+				// (TanksConfig.js's `weapon`, plan.md B3), fired from the minion's own position
+				// along its current facing, reload read LIVE off the owner's Reload stat every shot
+				// (`play.up.Reload`) exactly like Barrel.calculateStatData() reads `tank.reloadTime`.
+				if (engaged && this.weapon) {
+					this.weaponTimer = (this.weaponTimer || 0) + 1;
+					const reloadMax = tick.ticks(Math.round(this.weapon.reloadRef * play.up.Reload)) || 1;
+					if (this.weaponTimer >= reloadMax) {
+						this.weaponTimer = 0;
+						const speed = this.weapon.speed;
+						const muzzleKick = speed / BULLET_MAINTAIN + 16.8;
+						const dir = this.dir + Math.random() * this.weapon.rand - this.weapon.rand / 2;
+						const b = new Bullet(this.origin, this.x, this.y, dir, speed, muzzleKick, this.room);
+						b.type = 0;
+						b.class = this.class;
+						b.pene = this.weapon.pene;
+						b.life = tick.ticks(this.weapon.life);
+						b.damage = this.weapon.damage;
+						b.size = this.weapon.size;
+						b.weight = this.weapon.weight;
+						b.push = this.weapon.push;
+						b.bdPoints = this.bdPoints;
+						this.room.createBullet(b, { team: this.team, dev: {} });
 					}
-					const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
-					if (playDis < play.size * 3.5) {
-						this.speed = 0.117008;   // .08 one-time-rescaled, then x SPEED_RESCALE (top of file)
-						if (Math.random() < REAIM_CHANCE) {
-							this.comingDir += Math.PI / 2;
-						}
-						const dir = Math.atan2(play.y + Math.sin(play.autoDir * 2 + this.comingDir) * play.size * 3 - this.y,
-							play.x + Math.cos(play.autoDir * 2 + this.comingDir) * play.size * 3 - this.x);
-						this.dir = dir;
-						break;
-					}
-					const dir = Math.atan2((play.y) - this.y, play.x - this.x)
-					this.dir = dir;
-					this.comingDir = this.dir;
 				}
 				break;
 			};
@@ -1275,6 +1331,42 @@ class Bullet {
 					this.speed = this.maxspeed;
 				}
 				///
+				break;
+			};
+			//skimmer//
+			case 4: {
+				// diepcustom Skimmer.ts: `positionData.angle += rotationPerTick` (BASE_ROTATION,
+				// SKIMMER_SPIN above) every tick, independent of `dir` - `dir` stays this bullet's
+				// straight-line heading (untouched here, so the shared motion tail below still
+				// flies it dead straight like an ordinary bullet), while `showDir` (the wire's own
+				// `dir` field, rooms/Room.js's `dir: obj.showDir`) spins the drawn body. A pair of
+				// opposed sub-barrels (SkimmerBarrelDefinition x2, offset by PI - `sub`,
+				// TanksConfig.js) auto-fire along that spin at a cadence read LIVE off the owner's
+				// Reload stat every shot, exactly like the Minion weapon above.
+				this.showDir += SKIMMER_SPIN;
+				if (this.sub && play) {
+					this.subTimer = (this.subTimer || 0) + 1;
+					const reloadMax = tick.ticks(Math.round(this.sub.reloadRef * play.up.Reload)) || 1;
+					if (this.subTimer >= reloadMax) {
+						this.subTimer = 0;
+						for (const off of [0, Math.PI]) {
+							const dir = this.showDir + off + Math.random() * this.sub.rand - this.sub.rand / 2;
+							const speed = this.sub.speed;
+							const muzzleKick = speed / BULLET_MAINTAIN + 16.8;
+							const b = new Bullet(this.origin, this.x, this.y, dir, speed, muzzleKick, this.room);
+							b.type = 0;
+							b.class = this.class;
+							b.pene = this.sub.pene;
+							b.life = tick.ticks(this.sub.life);
+							b.damage = this.sub.damage;
+							b.size = this.sub.size;
+							b.weight = this.sub.weight;
+							b.push = this.sub.push;
+							b.bdPoints = this.bdPoints;
+							this.room.createBullet(b, { team: this.team, dev: {} });
+						}
+					}
+				}
 				break;
 			};
 		}

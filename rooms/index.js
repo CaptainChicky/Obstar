@@ -15,5 +15,7 @@ module.exports = {
 	'sandbox': require('./Sandbox.js'),
 	'tag': require('./Tag.js'),
 	'maze': require('./Maze.js'),
-	'domination': require('./Domination.js')
+	'domination': require('./Domination.js'),
+	'mothership': require('./Mothership.js'),
+	'survival': require('./Survival.js')
 };

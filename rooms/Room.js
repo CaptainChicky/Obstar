@@ -176,6 +176,16 @@ const BASE_DRONE_CROSS_TICKS = tick.ticks(config.BASE_DRONE_CROSS);
 // ticks like its neighbours above.
 const BASE_DRONE_PROVOKE_MEMORY = tick.ticks(config.BASE_DRONE_PROVOKE_MEMORY);
 
+// diep's own 45-minute global boss timer (Misc/BossManager.ts: `45 * 60 * tps` of ITS ticks,
+// plan.md X1) - a deterministic floor under the ///BOSSES/// RNG roll in generate() below: any
+// mode that allows bosses at all (rules.maxBoss > 0) is guaranteed one within 45 real minutes of
+// the last one dying, rather than left to the RNG's own (much longer, ~95 min mean at
+// bossRng 0.9999) expected wait. 45 min = 2700s / 0.04s (diep's own 40ms tick) = 67500 of ITS
+// ticks; tick.ticks() converts that reference-tick count the same way every other timer in this
+// file does. BossMode's own much faster bossRng (~10%/generate() pass) almost always wins the
+// race well before this ever fires, so its multi-boss cadence is unaffected.
+const BOSS_TIMER_TICKS = tick.ticks(67500);
+
 // A base drone is one of its own side's bullets, for the team-transparency skip below - type 1.4
 // with life -1 is otherwise indistinguishable from any other homing bullet.
 const isBaseDrone = (e) => e.kind === KIND.BULLET && e.type === 1.4;
@@ -367,6 +377,21 @@ class Room {
 		// update(), lib/gameAI.js, intercepts `destroy` and turns it into a capture instead), so
 		// unlike this.bosses nothing ever needs to be removed from this list.
 		this.dominators = [];
+		// diep's own arena state machine (Native/Arena.ts's ArenaState, plan.md A4) -
+		// COUNTDOWN/OPEN/CLOSING/CLOSED/OVER, diep's own numbering (module.exports.ArenaState
+		// below) so the wire value means the same thing a real diep client would read. Every
+		// EXISTING mode opens straight into OPEN, unaffected - Tag/Maze's own hand-rolled
+		// "closing" (this.closing, an Arena Closer swarm) is untouched machinery, just now also
+		// mirrored into this field for the wire rather than replaced by it (see Tag.js's
+		// startClosing()). Only Survival (rooms/Survival.js) actually GATES anything on
+		// COUNTDOWN - every other mode's `ticksUntilStart`/`playersNeeded` stay at their
+		// do-nothing defaults (0), which is what makes this purely additive.
+		this.state = Room.ArenaState.OPEN;
+		this.ticksUntilStart = 0;
+		this.playersNeeded = 0;
+		// Every Mothership currently alive (plan.md G1's Mothership mode) - parallel to
+		// this.bosses/this.dominators above, same reasoning.
+		this.motherships = [];
 		// Precomputed minimap dots for a mode's own static geometry (PENDING #26's Maze walls, the
 		// one consumer so far) - empty for every other mode. A wall never moves and this codebase
 		// never resizes a `walls`-bearing arena live, so build() computes these once instead of
@@ -812,6 +837,15 @@ class Room {
 		if (RNG > this.rules.bossRng) {
 			if (Math.random() > 0.3) { this.createBoss() }
 		}
+		// diep's real 45-minute guarantee (plan.md X1, BOSS_TIMER_TICKS above) - lazily
+		// initialised so a mode with maxBoss 0 never allocates the field at all.
+		if (this.rules.maxBoss > 0) {
+			if (this.bossTimerAt === undefined) { this.bossTimerAt = this.timestamp + BOSS_TIMER_TICKS; }
+			if (!this.bosses.length && this.timestamp >= this.bossTimerAt) {
+				this.createBoss();
+				this.bossTimerAt = this.timestamp + BOSS_TIMER_TICKS;
+			}
+		}
 	}
 	createObj(type, pos) {
 		let ppp = -1;
@@ -899,7 +933,13 @@ class Room {
 			b.hp = this.rules.bossHp;
 			b.maxHp = this.rules.bossHp;
 			b.boss = 1;
-			b.size = 64;
+			// diep's real per-boss body size (plan.md X2) - CLASS[...].bossSize, converted from
+			// each boss's own diepcustom source at its own TanksConfig.js entry. Summoner keeps
+			// the old flat 64 (falls through the `||`): it has no diep body to convert, and
+			// TanksConfig.js's own Summoner comment already documents why 64 is a floor, not a
+			// guess, so it stays the literal default here rather than moving into a `bossSize`
+			// field that would misleadingly imply it was ever diep-derived.
+			b.size = CLASS[spec[2]].bossSize || 64;
 			b.class = spec[2];
 			b.screen = CLASS[b.class].screen;
 			b.prize = 100000;
@@ -1044,7 +1084,11 @@ class Room {
 			// destructs, and just sits open with its Closers idling forever. A Dominator
 			// (PENDING #27) needs it for the identical reason: it never dies either, only gets
 			// captured, so an empty Domination room would otherwise never self-destruct.
-			if (!i.bot && !i.boss && !i.closer && !i.dominator) {
+			// A Mothership (plan.md G1) is destroyable, unlike a Closer/Dominator, but it is
+			// still not a "player" for this count's purpose - an empty Mothership room (every
+			// human gone, both team flagships still standing) must self-destruct exactly like
+			// an empty boss room does.
+			if (!i.bot && !i.boss && !i.closer && !i.dominator && !i.mothership) {
 				playerCount++;
 				stop = 0;
 			}
@@ -1875,5 +1919,9 @@ class Room {
 		return tank.id;
 	}
 };
+
+// diep's own Native/Arena.ts ArenaState numbering (plan.md A4) - kept as literal values, not a
+// re-numbered enum, so the wire byte means the same thing a real diep client would read.
+Room.ArenaState = { COUNTDOWN: -1, OPEN: 0, OVER: 1, CLOSING: 2, CLOSED: 3 };
 
 module.exports = Room;

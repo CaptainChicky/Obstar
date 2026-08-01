@@ -340,19 +340,25 @@ function bossTests() {
 		scenario this test describes can exist at all.
 	*/
 	{
-		const me = player(room, 0);
-		const boss = room.bosses[0];
-		me.level = 0;
-		me.shield = 0;
-		me.alpha = 1;
-		me.x = boss.x;
-		me.y = boss.y;
-		room.step();
-		me.x = boss.x;
-		me.y = boss.y;
-		room.step();
-		check('the summoner detects a level-0 (freshly respawned) player standing next to it',
-			boss.detected.includes(me), 'detected ' + boss.detected.length + ' players');
+		// room.bosses[0] used to always be a Summoner (the only boss CONFIG.BOSS had) - plan.md
+		// X1 added four real ones, one of which (Defender) diep gives ai.viewRange 0: it never
+		// aggros at all, by design, so this picks any OTHER boss the 200-pass roll above happened
+		// to fill the cap with rather than assuming index 0 is aggro-capable.
+		const boss = room.bosses.find((b) => b.class !== 'Defender');
+		if (boss) {
+			const me = player(room, 0);
+			me.level = 0;
+			me.shield = 0;
+			me.alpha = 1;
+			me.x = boss.x;
+			me.y = boss.y;
+			room.step();
+			me.x = boss.x;
+			me.y = boss.y;
+			room.step();
+			check('a boss detects a level-0 (freshly respawned) player standing next to it',
+				boss.detected.includes(me), 'detected ' + boss.detected.length + ' players');
+		}
 	}
 
 	return room;

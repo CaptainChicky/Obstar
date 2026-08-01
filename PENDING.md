@@ -182,16 +182,69 @@ has no row to read at all:**
   four Smasher-line tanks draw as a plain circle - no spinning hexagon/triangle ring, unlike
   diep's own visibly larger silhouette. The intended idiom (`PetsConfig.js`'s cosmetic
   `ctx.rotate(Date.now()/...)`) was never wired up.
-- **Skimmer fires as an ordinary bullet - its sub-barrel-spawning behaviour (diepcustom's
-  `bullet.type: "skimmer"`) is not implemented.** Plan B3 (chunk 4, execution-order item 12) is
-  what actually adds a new bullet-AI type for this; T2 only asked for the tank's data to exist.
-  Its very low `absorbtionFactor` (diep 0.1) is also unmodelled - `T5`'s own table already flags
-  `bullet.absorbtionFactor` as a field this codebase's `Bullet.js` doesn't read at all yet, for
-  any class, not just this one.
-- **Factory's drone barrel reuses the existing controllable-drone AI (type 1), not a true minion
-  sub-tank.** diep's Factory minions can be individually selected and piloted
-  (`canControlDrones`); this codebase's only manual-drone-control precedent is "all drones from
-  this barrel steer toward the shared mouse target" (B3, same deferral as Skimmer above).
+- **Skimmer (type 4) and Minion (type 1.5, Factory) are built (plan B3), with real gaps left on
+  purpose.** Both projectiles' sub-fire `weight`/`push` borrow their PARENT cannon's own row -
+  diep's real per-sub-bullet `absorbtionFactor` table (Skimmer 1, Minion 1) still has no home in
+  this codebase (T5's still-missing generic `bullet.absorbtionFactor`, same gap as ever). Neither
+  draws any different from a plain circle client-side - Skimmer's own spinning twin-barrel
+  silhouette and Minion's own barrel are not rendered, matching T6's guard-shape precedent (real
+  server mechanic, no art yet). Minion's `AIState.idle` gate is approximated as "the shared
+  `droneSteer1()` found a live target or the owner is aiming", not a ported idle-state machine -
+  cheap and behaviourally equivalent for the cases that matter (a resting minion doesn't waste
+  ammunition into empty air) without a new state field. Verified only by a hand-run script against
+  a bare Skimmer/Factory tank (see this file's own tooling notes) - never watched in a browser, and
+  not yet given a permanent `test/rooms.js` entry.
+- **The four new bosses' knockback rows (`weight`/`push`) borrow the nearest existing drone/trap
+  row on file** (Overlord's own drone row for Guardian/Fallen Overlord's drones, Fallen Booster's
+  own barrel rows unchanged from Booster's) - same "no diep table entry" gap as T2's own roster,
+  not a new one. **Travel speed for Guardian/Fallen Overlord/Fallen Booster's patrol/chase reuses
+  Summoner's own `BOSS_DRIFT` magnitude** (`lib/gameAI.js`'s `bossThrust()`), not a fresh
+  measurement - diep's raw `movementSpeed` is an accel term for AbstractBoss's real tank-body
+  physics, which this engine's boss integrator diverged from entirely when Summoner was built (no
+  `Physics.stepBody` at all); there is no clean unit conversion from one to the other. **No true
+  polygon boss body for Guardian/Defender's triangle or Fallen Overlord/Fallen Booster's own tank
+  shape** - inherits Summoner/the Dominators' pre-existing `body: {shape: 1}` (rounded rectangle)
+  simplification (PENDING #51's own note), not a new gap. **`Misc/Boss/FallenAC`/`FallenMegaTrapper`/
+  `FallenSpike`** (the `Misc/Boss/` addon variants plan.md X1 also names) were not built - no
+  citation gathered, out of this pass's scope. **`test/rooms.js`'s boss-mode suite was adapted**,
+  not just left passing by luck - one assertion used to assume `room.bosses[0]` was always a
+  Summoner (the only boss that existed); it now picks any boss other than Defender (which diep
+  gives `ai.viewRange 0` - it never aggros, correctly, not a bug) to test the shared aggro
+  mechanism against.
+- **A4's new `state`/`ticksUntilStart`/`playersNeeded` fields are not on the wire.** Survival
+  (plan.md G1) reads/writes them server-side for real (a genuine countdown gate), but no
+  `SocketSchema.js` packet carries them to the client yet, so there is no "waiting for players"
+  countdown screen - a human joining a Survival room mid-`COUNTDOWN` sees an ordinary tank with no
+  on-screen indication a match hasn't started. C5's other wire additions (`nameData`
+  flags/`StyleFlags`/etc.) were not extended to cover this.
+- **Tag/Maze's own "closing" was deliberately NOT migrated onto the new `Room.ArenaState`.** A4's
+  own note explains why - Tag's `this.closing` flag and Arena-Closer-swarm mechanism is untested
+  surface if touched for no behavioural gain, so it stays exactly as it was; Mothership/Survival
+  each carry their own independent copy of the same closing pattern (`startClosing()`/
+  `createCloser()`, duplicated three ways now across Tag/Mothership/Survival, not shared) rather
+  than factoring all three onto one mechanism. Worth a real unification pass some day, not this one.
+- **Mothership/Survival have no dedicated front-page door animation or button icon.**
+  `public/client/ui.js`'s per-mode draw-case switch falls through to its `default` arm for both
+  (views/index.ejs's own comment at the two new buttons) - functionally complete, cosmetically
+  unfinished, the same kind of gap plan.md's own C3/C4 chunk exists for.
+- **Neither new mode's diep-real shape-XP-only multiplier (`shapeScoreRewardMultiplier`, both
+  ×3.0) is modelled.** This engine's `rules.xpMul` is a single multiplier `awardXp()` applies to
+  every award alike (kills included) - there is no separate "shapes only" hook to carry either
+  figure into without touching every kill-XP call site too, so both modes were left at the
+  ordinary ×1 rather than over-applying it. Real gap, flagged rather than approximated wrong.
+- **Survival's shape density is a static mix, not diep's own live-rescaling formula.**
+  `SurvivalShapeManager`'s `floor(12.5 × ceil((width/2500)²))` re-evaluates every tick as the
+  arena shrinks; `rooms/Survival.js` instead sizes a fixed `shapeMix` for the `MIN_PLAYERS`
+  starting arena once and never touches it again as the arena grows/shrinks around it.
+- **Neither new mode has been seen in a browser.** Both are verified only by hand-run scripts
+  (spawn, tick, kill a Mothership / thin Survival down to one) - the same "code-tested only"
+  caveat every other mode in this tree's 🟢 Untested section already carries.
+- **`Flame`/`CrocSkimmer` were not built.** Both bullet types exist only in diepcustom's
+  `DevTankDefinitions.ts` (dev/test tanks) - no entry in the real, player-reachable
+  `TankDefinitions.json` roster ever sets `bullet.type: "flame"`/`"croc"`, and this codebase's own
+  Sandbox tank-cycler is real-tanks-only (PENDING checklist: "never a blank silhouette or
+  Summoner"), so there would be no in-game path to ever trigger either. B3 (plan.md) scoped them
+  out rather than add unreachable engine surface.
 - **Mothership has no spawn path.** Its `TanksConfig.js` entry is data-complete (barrels, stats,
   `ups` override) but nothing in `exports.tree` reaches it and no gamemode spawns one - it needs
   the real Mothership gamemode (plan G1, chunk 9, not yet built). Also unconfirmed: its
