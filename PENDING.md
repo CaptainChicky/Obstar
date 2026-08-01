@@ -165,9 +165,10 @@ line. A Dominator is a **stationary tank** (`CONFIG.BOSS`/`CONFIG.CLOSER` patter
   Trapper already use rather than any bespoke targeting code (see the AI paragraph below).
   **Numeric methodology, flagged rather than silent:** diep_wiki/Dominator.txt states pene/damage as
   multiples of "a tank" — diep's own universal 0-point bullet baseline, `MEASUREMENTS.md`'s pinned
-  2 HP / 7 damage per loop. Bullet magnitudes aren't diep-adopted in this tree yet (`MEASUREMENTS.md`'s
-  **M1**), so — the same call #17/#18's body-damage-magnitude fix already made for an identical
-  problem — every multiple is applied to **our own** corresponding live number (Basic's own
+  2 HP / 7 damage per loop. A bullet's own pene/damage aren't on diep's raw absolute HP/damage
+  scale in this tree (its speed/life are, since plan.md Step 9 — this is specifically about the
+  2 HP/7 damage baseline, not the motion model), so — the same call #17/#18's body-damage-magnitude
+  fix already made for an identical problem — every multiple is applied to **our own** corresponding live number (Basic's own
   `can.pene` 1.7 / `can.damage` 4.84848, the closest thing this engine has to "a tank's" baseline
   bullet) rather than diep's raw absolute figure, which would land on the wrong scale next to every
   other cannon in the table.
@@ -767,6 +768,21 @@ than remembered. Anything that is genuinely a decision has its own numbered item
     NOT survive:** the per-step `clientDiff` golden lineage (op-count/hash chain, isolation tables).
     If a future rebaseline needs that technique, nuance 34 describes it — rebuild from there.
 
+    **A new `plan.md` now exists (regenerated from `diepcustom`/`diepindepth`) — its Step numbers
+    are new and unrelated to the old ones above, and nothing in the tree should ever be commented
+    "plan.md step N" using them either.** The old work queue's steps are gone for good (this
+    paragraph, unchanged); the current `plan.md` is a *different* document with its own Steps 1-13
+    (bullet/damage/maze work, landed 2026-07-31 through 2026-08-01) and its own eventual fate —
+    once every step lands and this documentation-cleanup step finishes, it may be deleted the same
+    way its predecessor was. Do not assume a bare "plan.md step N" or "plan.md Step N" citation
+    found in the tree points at whichever `plan.md` happens to exist when you read it — the two
+    numbering schemes collide (e.g. an old "plan.md step 2" citation is about tank-magnitude work,
+    while the *current* `plan.md`'s Step 2 is the Bullet Damage/Speed slopes) — read the cited
+    content, not the number, to tell which one a given citation means. Nuance 48's rule (comments
+    describe what the code does, not cross-file references) is what stops this from recurring: no
+    *code* comment should cite a plan.md step number of either vintage, so this ambiguity is
+    confined to prose in `HANDOFF.md`/`PENDING.md`, not the source itself.
+
 48. **Comment style: a cleanup pass is wanted, and the target style is decided.** Comments should
     describe **what the code does** — the function, the invariant, the unit — not cross-file
     references (`see plan.md step 3`, `PENDING #19`), change history (`was 0.511941`), or narrative
@@ -827,6 +843,31 @@ than remembered. Anything that is genuinely a decision has its own numbered item
       doc-cleanup step) should make clear the two hashes describe different points in the sequence,
       not disagree with each other.
 
+53. **C1 and C2, preserved here rather than only in `plan.md` (nuance 47's own precedent — that file
+    may not outlive this one) — the two places a shipped mechanic and the reference disagreed,
+    worked out once so a future reader doesn't have to re-derive either.**
+    - **C1 — `damageReduction()` had no diep counterpart.** Already fully told at #18's
+      `damageReduction()` bullet above (the fix, the numbers, the reversal of #17's own lethality
+      call) — flagged here only so a reader who lands on this nuance list first knows where the
+      analysis actually lives, not as a second copy of it.
+    - **C2 — knockback's `(7/3+bd)/(7/3+1)` factor is real and still not shipped.** #16's `weight`
+      column matches diep's own "Tanks Knockbackfactor" table exactly, but only **at 1 Bullet
+      Damage point** — diep computes `pushFactor = (7/3 + bulletDamagePoints) × bullet.damage ×
+      bullet.absorbtionFactor` (`diepcustom/src/Entity/Tank/Projectile/Bullet.ts:88`), so the true
+      *base* (0-point) knockback is 0.7× today's column and the 7-point value is 2.8× — a 4× span
+      this tree does not model at all. **If it's ever taken:** replace
+      `tick.impulse(other.weight / 3 * 1.6)` with
+      `tick.impulse(other.weight * 0.112 * (7/3 + shooterBdPoints))` (`entities/Player.js`), which
+      reduces to the current expression at `bd = 1` — it needs the bullet to carry its shooter's
+      Bullet Damage point count, one more field alongside `weight`/`push`/`damage`/`pene`. **Not a
+      planned step, and #16 stays do-not-re-fix** — this is a real balance change layered on top of
+      Step 2's Bullet Damage slope, a human call rather than a bug fix. Also unmodelled from the
+      same citation: diep's receiver-side `absorbtionFactor` (Pentagon 0.5, Alpha 0.05, small
+      Crasher 2.0, large Crasher 0.1, bosses/Mothership 0.01, Arena Closers/Maze walls 0, drones 4)
+      — nuance 44's tank-vs-shape gap is the same idea on a different axis (a `weight` mass divisor
+      rather than a receiver multiplier), and the reference now supplies real numbers for it if
+      anyone ever picks it up.
+
 ## 🔴 Measured against diep.io's real physics (`physics.html`) — mismatches
 
 *Source: `physics.html`, the archived spade-squad diep.io physics page (2022). Community-derived,
@@ -853,31 +894,39 @@ What's left in this section is itemised as open at each entry.*
     (`physics.html`) — three independent cross-checks in the git history close it exactly, nothing
     here needs re-measuring.
 
-    **It is a *tank* constant, not a global one — do not merge it back with bullets.** diep does
-    not model bullets with drag at all (`physics.html`: `V_b = ρ/t_b`, no decay term); the
-    `V_max = 10 × A` identity is stated for tanks only. So `public/SHARE/Physics.js`'s `FRICTION`
-    (`10/11`) is reached only through `stepBody()` (tank motion, bot motion, client prediction);
-    `lib/constants.js`'s **`BODY_FRICTION`** keeps the old 0.956532 for bullets, traps, drones,
-    shapes and the Summoner's scripted drift. Bullet/trap/drone/shape/boss behaviour is
-    **bit-identical** across the split — verified by replaying `test/clientDiff.js`'s prior golden
-    with the magnitudes held at their old values. `PET_FRICTION`'s documented 2×-braking
-    relationship stays against `BODY_FRICTION` (nuance 36); the boss's drift stays on
-    `BODY_FRICTION` too (it never reaches `stepBody`, and diep has no Summoner to pin a speed
-    against); the client needed no edit, since it predicts through the same shared
+    **It is a *tank* constant, not a global one — do not merge it back with bullets.** The reason
+    they're split changed with plan.md Step 9's own finding, though the split itself survives:
+    diep does *not* leave bullets undamped — `diepcustom/src/Entity/Object.ts:274` applies a
+    universal 10% per-tick drag to every `ObjectEntity`, bullets included, and `diepindepth/
+    physics/README.txt` §3 confirms it in prose ("all entities have a 10% friction rate"). So
+    `public/SHARE/Physics.js`'s tank-only `FRICTION` (`10/11`) and `lib/constants.js`'s
+    **`BODY_FRICTION`** (bullets, traps, drones, shapes, the Summoner's scripted drift) are two
+    constants for the same 0.9 applied in a different integration order — diep does `v += A;
+    x += v; v *= 0.9` for a tank, this tree does `v = (v + A)·F; x += v` — not because bullets
+    carry no drag at all; they do. `BODY_FRICTION` itself moved off the old hand-tuned placeholder
+    `0.956532` to diep's own literal **`0.9`** (plan.md Step 9); do not merge the two constants back
+    together regardless of the shared origin. `PET_FRICTION`'s documented 2×-braking relationship
+    stays against `BODY_FRICTION`, recomputed against the new value (nuance 36); the boss's drift
+    stays on `BODY_FRICTION` too (it never reaches `stepBody`, and diep has no Summoner to pin a
+    speed against); the client needed no edit, since it predicts through the same shared
     `Physics.stepBody`/`Physics.moveAccel` with no accel/friction constant of its own.
 
     **Both derived columns ride the tank's `F`**: recoil `back = gu × 28 × (1−F)/F = gu × 2.8`, and
     knockback `weight = gu × 5.25` (#16, shipped). Edit `F` again and both columns, plus the
     tank-body constant in `entities/Player.js`, move with it — nothing tests that relationship.
 
-    **What's left is one observation, not a decision:** whether diep's bullets are truly
-    constant-velocity or carry their own separate drag — `MEASUREMENTS.md`'s **M1**, which also
-    yields the `ρ`/`t_b` values #23 wants. Bullets keep today's behaviour (now under
-    `BODY_FRICTION`) until M1 lands.
+    **Bullet speed/life/muzzle-kick are diep's own numbers now too, resolved from source, not
+    measured** (plan.md Step 9, closing `MEASUREMENTS.md`'s old **M1**, now deleted from that file):
+    `speed` is `1.12 × diep bullet.speed` per cannon, muzzle velocity is a one-shot
+    `terminal + 16.8`, `life` is `round(lifeLength × 75)` reference ticks. Bullets turned out to be
+    maintained-velocity under drag exactly like this tree's pre-existing motion-tail shape (thrust,
+    decay, integrate) — confirming it, not replacing it with free-flight. See plan.md Step 9 for
+    the full derivation and the trap/drone variants.
 
     **362.25 u/s is a level-0, no-upgrade walk — not this game's ceiling.** Riding your own recoil
-    is worth ~1.4× a plain walk. `BASE_DRONE_CHASE_SPEED` is pinned to the real ceiling — see
-    nuance 32 for the current value and re-pin history.
+    is worth ~1.4× a plain walk. `BASE_DRONE_CHASE_SPEED` no longer pins to that ceiling at all —
+    it is diep's own flat 756 u/s now (plan.md Step 10) — see nuance 32 for the current value and
+    the now-retired pin's history.
 
 15. **Reload — SHIPPED, whole column (plan.md Step 3).** Kept only as a *do-not-re-fix* record for
     two things that now look like bugs but aren't. **Annihilator's reload is now 60, identical to
@@ -890,7 +939,11 @@ What's left in this section is itemised as open at each entry.*
     diep has no boss of any kind). Dominator variants are Step 11's, not this step's, and were left
     alone. The reload *stat*'s geometric `0.914^points` scaling and its speed-ceiling consequences
     were already resolved by Step 1 (`test/rooms.js`'s `fastestTankSpeed()` — no further re-pin was
-    needed here; the test confirmed it, not a hand derivation).
+    needed here; the test confirmed it, not a hand derivation). **The Overseer/Overlord ambiguity is
+    also closed**: the reference's merged "90 loops" figure that used to map onto neither our old
+    182 nor our old 281 turned out to be right for both — Overseer's two barrels and Overlord's four
+    both take diep's own 90. The full per-class table (roster-wide, every judgement call spelled
+    out) lives in plan.md's Step 3 and its own contradiction C4, not transcribed a second time here.
 
 16. **Knockback and recoil — SHIPPED, both columns.** Kept only as a *do-not-re-fix* record.
 
@@ -962,8 +1015,9 @@ What's left in this section is itemised as open at each entry.*
     - **Body damage — SHIPPED 2026-07-30.** diep's tank body deals **20** vs shapes at 0 points
       (`(BodyDamagePoints+5)×4`, `diep_wiki/Stats.txt`), **2.857142857×** (20/7) a Basic bullet's
       own 7 damage/loop — ours used to deal only **1.75×** (a legacy, non-diep 7-vs-4 pair, both
-      pre-diep-adoption numbers that happened to share the tick-rate rescale's shape). Bullet
-      magnitudes themselves aren't diep-adopted yet (`MEASUREMENTS.md`'s **M1**), so the fix applies
+      pre-diep-adoption numbers that happened to share the tick-rate rescale's shape). A bullet's
+      own pene/damage aren't on diep's raw absolute HP/damage scale in this tree (unlike its
+      speed/life, adopted since plan.md Step 9), so the fix applies
       diep's **20/7** ratio to Basic's own live `can.damage` (`public/SHARE/TanksConfig.js`,
       `4.84848`) rather than converting `20` on its own unit scale — `entities/Player.js`'s
       `this.damage` base moves `8.48485 → 13.852814` (`4.84848 × 20/7`), and the `BodyDam` per-point
@@ -1103,9 +1157,64 @@ What's left in this section is itemised as open at each entry.*
 
 22. **Things that already match — do not "fix" them.** Necromancer base drone count (diep
     `22 + 2·br`; ours `maxDrone = 22`, only the growth differs, +1/reload point against diep's +2).
-    Reload quantization to whole ticks. Per-tick-of-contact damage application (diep's "law 3").
+    Per-tick-of-contact damage application (diep's "law 3"). **Reload quantization to whole ticks is
+    NOT on this list any more — see the correction below.**
 
-23. **Not covered by `physics.html` — but `diep_wiki/` has since supplied most of it.**
+    Confirmed against `diepcustom` directly (plan.md's own confirmations table, carried here so it
+    has a permanent home even if `plan.md` itself is eventually deleted the way its predecessor was
+    — nuance 47) — none of these need work:
+
+    | our value | reference | citation |
+    |---|---|---|
+    | `maxHp = 50`, `+2`/level, `+20`/point | `50 + 2·(L−1) + 20·P` | `TankBody.ts:238`; `diepindepth/extras/stats.md` |
+    | Linear regen `maxHp × (0.03 + 0.12·rr)/30` per second | algebraically identical to `(maxHp·4·rr + maxHp)/25000` per tick (0.1%/s at 0 pts, 2.9%/s at 7) | `TankBody.ts:242` |
+    | Hyper-regen threshold `tick.ticks(750)` = 30 s | `tick - lastDamageTick >= 750` | `Live.ts:132` |
+    | `up.BPene` `+0.75`/point from 1 → 6.25× at the cap | `(1.5·P + 2) × health`, `(1.5·7+2)/2 = 6.25` | `Bullet.ts:90` |
+    | `this.damage = 3.4632035`, `+0.69264`/point (2.4× at cap — diep's own raw `damagePerTick`, un-baked since Step 5) | `(P + 5) × 4` vs shapes → `(7+5)/5 = 2.4` | `TankBody.ts:235` + `Live.ts:76`'s `maxDamageMultiplier` |
+    | `common(a,b)` table's tank/shape/bullet ratios (`min(6,6)=6`, `min(6,4)=4`, `min(x,1)=1`) | the same 4/6/1 family this tree already modelled | `Live.ts:76-77`, `TankBody.ts:100`, `Bullet.ts:93` |
+    | One damage application per pair per tick | `damagedEntities`, cleared each tick | `Live.ts:70, 149` |
+    | `BASE_DRONE_HP = 2000` | `(1.5·0+2) × health 1000` = 2000 exactly | `BaseDrones.ts:51` |
+    | `BASE_DRONE_DAMAGE = 4.84848` (≡ a Basic bullet's own damage) — confirmed exact, not derived-and-unobserved | drone `damage: 1` → `(7+0)×1 = 7` = a Basic bullet's own 7 | `BaseDrones.ts:52` |
+    | 12 base drones per spawner | `droneCount = 12` default | `BaseDrones.ts:73` |
+    | Tank-body knockback `tick.impulse(4.48)` | default `pushFactor 8` × absorb 1 = 8 du/t = 4.48 our units | README §4.3.1 |
+    | `back = gu × 2.8` (recoil column) | `addVelocity(angle+π, recoil × 2)`: Basic `recoil 1` → 2 du/t = 1.12 = our literal | `Barrel.ts:132`; README §3.6 |
+    | 1 shape per 200 gu² | 22300 du (446 gu) arena, `wantedShapes = 1000` → 199 gu²/shape | `Arena.ts:87`, `ShapeManager.ts:107` |
+    | Fixed arena for ffa/2team/4team/Domination | only Sandbox/Survival/Tag resize | `Arena.ts:87`, `Team2.ts:28`, `Team4.ts:29` |
+    | Sandbox `AL = ⌊√N × 50⌋` gu, `12.5 × N` shapes | `floor(25·√N)·100` du and `floor(N × 12.5)` | `Sandbox.ts:29, 55` |
+    | Economy: 45 levels, 33 points, `level−1` to 28 then `⌊L/3⌋+18` | identical | `Camera.ts:168-173`, `config.ts:110` |
+    | `FOV_PER_LEVEL = 1.005` | `1.01^((L−1)/2)`; `√1.01 = 1.004988` | `Camera.ts:87` |
+    | `size = 28 × 1.01^level` (0-based level) | `1.01^(L−1)` × `baseSize 50 du` | `TankBody.ts:180`, README §2.2 |
+    | Shiny chance `1/1_000_000` | `shinyChance = 1/1_000_000` | `config.ts:50` |
+    | Crashers pass through Maze walls | `PositionFlags.canMoveThroughWalls` on every Crasher | `Crasher.ts:37` |
+    | Arena Closer bullets pass through walls | same flag set for `Tank.ArenaCloser` shots | `Barrel.ts:146` |
+    | Arena Closer is a circle | `sides: 1` in `TankDefinitions.json` | ✓ |
+    | Domination XP ×2, Tag XP ×3 | `shapeScoreRewardMultiplier = 2.0` / `3.0` | `Domination.ts:43`, `Tag.ts:59` |
+    | Dominator: 4 of them, neutral→captor, captured→neutral first, HP refill, own bullets despawn | identical, one-for-one | `Dominator.ts:100-145` |
+    | Trapper Dominator `auto: 1` (always fires) | `forceFire: true` on all 8 barrels | `TankDefinitions.json` |
+    | Reload denominated in 40 ms loops with base 15 | `reloadTime = 15 × barrel.reload` | `TankBody.ts:245` |
+    | Basic 15, Twin 15, Machine Gun 8 (`15×0.5`), Sniper 23 (`15×1.5`), Destroyer 60 (`15×4`) | all within rounding | `TankDefinitions.json` |
+    | Necromancer max drones `22 + growth` | `11 + reloadPoints` per barrel × 2 barrels | `TankBody.ts:172` |
+    | No boss spawning in Maze | `this.bossManager = null` | `Maze.ts:71` |
+    | Tag arena shrinks on a timer to a floor | `SHRINK_AMOUNT 100` du every `15 × tps`, `MIN_SIZE 6600` | `Tag.ts:39-41` |
+
+    **One formula confirmation, not a value:** `physics.html`'s `A₀ = 2.58825` and diepcustom's
+    `2.55` are the same number quoted at different level bases (`2.55 × 1.015 = 2.58825` exactly) —
+    see MEASUREMENTS.md's corrected `A₀` row and contradiction C3 for which one our 0-based
+    `this.level` actually wants.
+
+    **Reload quantisation is NOT already matching — corrected per contradiction C6.** We
+    `Math.round(can.reload × up.Reload)` to whole reference ticks; diep keeps `reloadTime` a float
+    and compares an integer cycle position against it (`Barrel.ts:60`) — sub-tick, and it started
+    mattering once Step 1 made `up.Reload` geometric (`0.914^p` lands on non-integers far more often
+    than the old linear form did). **Deferred, not done, in Step 1 (2026-07-31)**: dropping the
+    `round()` changes every class's effective reload cadence at non-integer point counts — a second
+    behavioural cause in the same `clientDiff` golden as the stat-form change, exactly what nuance 34
+    warns against landing in one commit — and it lives at both `entities/Player.js`'s `shoot()`
+    consumption site and its `fastestTankSpeed()` mirror in `test/rooms.js`. Left for its own
+    isolated pass, not on this "already matches" list until it's actually done.
+
+23. **Not covered by `physics.html` — `diep_wiki/` supplied most of it, and the shape table is now
+    IMPLEMENTED as code (plan.md Step 6), not merely documented.**
 
     | | HP | body damage | XP |
     |---|---|---|---|
@@ -1145,12 +1254,12 @@ What's left in this section is itemised as open at each entry.*
     bullet's base HP is **2**, damage **7** (cross-checked off `diep_wiki/Dominator.txt`'s
     Dominator-projectile-as-multiple-of-tank stats), matching #16/#18.
 
-    **Still genuinely unmeasured**, each with a written protocol in
-    [MEASUREMENTS.md](MEASUREMENTS.md): bullet range/lifetime (`ρ`/`t_b`, **M1**, also settles
-    whether diep's bullets carry drag at all — see #14), bullet spread (`rand`, **M2** — form
-    `w = h/ρ_Vb` known, only `h` missing), the reload stat's real form (**M3**), shape drift
-    (**M4**), camera lag (**M5**), `CONST.HP_BAR_HOLD` (**M6**). That file also lists the ~14
-    quantities already pinned that must **not** be re-measured.
+    **Still genuinely unmeasured: only camera lag (M5) and `CONST.HP_BAR_HOLD` (M6)**, both with a
+    written protocol in [MEASUREMENTS.md](MEASUREMENTS.md) — the only two entries left in that
+    file. Bullet range/lifetime, bullet spread, the reload stat's real form, and shape drift (the
+    file's old M1-M4) all turned out resolvable from `diepcustom`/`diepindepth` directly (plan.md
+    Steps 9, 8, 1, 7) rather than needing a live client, and are gone from that file entirely.
+    MEASUREMENTS.md also lists the quantities already pinned that must **not** be re-measured.
 
     - **`BASE_DRONE_HP` — SHIPPED at 2000, and the answer is NOT what this item used to predict.**
       The old reasoning scaled off our then-custom max-health formula (giving ~6400); #17 replaced
@@ -1158,9 +1267,12 @@ What's left in this section is itemised as open at each entry.*
       diep's own maxed pool (278) — `2000 / 278 = 7.194`, matching the wiki's "~7.1×" with no scale
       gap left to bridge. Nothing in `lib/config.js` needed to change except the comment.
     - **`BASE_DRONE_DAMAGE: 4.84848`** (was `2.97` — moved with #17's body-damage fix, see there) is
-      derived (`13.852814 × 7/20`, our tank body damage scaled by the wiki's 7-vs-20 bullet:body
-      ratio, un-baked to `3.4632035 × 7/20` since plan.md step 5 - same number either way), not
-      observed — ~121 HP/s nominal against a fresh victim. **Updated 2026-07-31 (plan.md step 5):**
+      **confirmed exact against `diepcustom` directly, not merely derived-and-unobserved** — the
+      wiki-ratio derivation below (`13.852814 × 7/20`, un-baked to `3.4632035 × 7/20` since plan.md
+      Step 5, same number either way) still holds, but `diepcustom/src/Entity/Misc/
+      BaseDrones.ts:52` gives it independently too: `damage: 1` → diep's own `(7+0)×1 = 7` ≡ a Basic
+      bullet's own 7 (plan.md Step 10's confirmations) — ~121 HP/s nominal against a fresh victim.
+      **Updated 2026-07-31 (plan.md Step 5):**
       the `dr` defensive term this bullet used to fold in (×0.4, giving ~48.5 HP/s effective) is
       gone — `dr` had no diep counterpart (contradiction C1) and was removed outright, not retuned,
       so a lone drone now deals its full ~121 HP/s (test/rooms.js pins ≈3.03 hp/tick at TICK_MS 25).

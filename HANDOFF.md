@@ -198,14 +198,22 @@ The things in this codebase that are *not* obvious from reading the code around 
   `F = 10/11` is exactly `gu × 2.8`, i.e. every entry in that column reads as its diep gu value ×
   2.8. Edit `FRICTION` and that column has to be recomputed with it; nothing tests the relationship.
   The column is consumed through `tick.impulse()`, not `tick.perTick()` (see above) — a one-time fix
-  that raised the drone-chase ceiling 527.2 → 559.2 u/s with no change to `back` itself.
+  that raised the drone-chase ceiling 527.2 → 559.2 u/s with no change to `back` itself. Directly
+  confirmed against the reference, not only re-derived: diep's own recoil impulse is
+  `addVelocity(angle+π, recoil × 2)` (`diepcustom/src/Entity/Tank/Barrel.ts:132`) — Basic's
+  `recoil 1` → 2 du/tick = **1.12** our units, exactly our own `back` literal.
   **Knockback (`weight`) is the same shape and is now derived the same way** (PENDING #16): it is
   diep's own "Tanks Knockbackfactor" table in grid squares run through `weight = gu × 5.25`, because
   `entities/Player.js`'s bullet arm turns the column into an impulse as `weight / 3 * 1.6`
   (`× 0.53333`) and `gu × 5.25 × 0.53333 × 10 / 28 = gu` at `F = 10/11`. Divide by 5.25 to read the
   table back. The tank *body* rides the same identity as a bare constant — `tick.impulse(4.48)` in
   the `KIND.PLAYER` arm, diep's "All Tank Bodies" 1.6 gu — and the sandbox `'god'` repulsion sits at
-  twice that. **A second column, `push`, was split out of `weight` in the same pass and the two must
+  twice that. **The `weight` table is a measurement at 1 Bullet Damage point, not 0** (PENDING
+  nuance 53): diep computes `pushFactor = (7/3 + bulletDamagePoints) × bullet.damage ×
+  bullet.absorbtionFactor` (`Bullet.ts:88`), and our column reproduces that exactly at `bd = 1` — so
+  the true 0-point knockback is 0.7× today's column and the 7-point value is 2.8×, a 4× span this
+  tree doesn't model. Not a planned fix (#16 stays do-not-re-fix) — flagged so the table isn't
+  mistaken for a finished conversion. **A second column, `push`, was split out of `weight` in the same pass and the two must
   not be merged back**: `weight` is knockback dealt to a tank (one consumer, that bullet arm);
   `push` is the bullet's own bounce off what it hit (three consumers, all in `entities/Bullet.js`,
   all `tick.perTick()` into its hand-rolled `BODY_FRICTION` decay). They were one overloaded field,
@@ -228,20 +236,43 @@ The things in this codebase that are *not* obvious from reading the code around 
   fire — fixed. Summoner's drawn barrel is still short of its own spawn point on purpose (closing
   it means growing a boss's silhouette, a human call); see PENDING.md's balance-call item.
 - **Health, regen and the damage-taken side of combat are diep's own numbers now** (PENDING #17/#18,
-  plan.md steps 4/9). `entities/Player.js`'s `maxHp` starts at diep's `MH₀ = 50`, gains `+2` per
-  level-up and `+20` per Max Health point (`upgrade()`'s `HpUp` case) — not a rescale of the old
-  `150`/`+3`/`+110`; there was no ratio in that formula worth preserving. Regen reads two direct
-  `tick.perTick()` rates out of `update()` — diep's linear `HPS = maxHp×(0.03+0.12×rr)/30` below a
-  `tick.ticks(750)` (30 s) no-damage threshold, and a flat `HYPER_REGEN_RATE` (8.5871%/s, the same
-  for every entity — least-squares-fit against diep_wiki's full 8-point time-to-full table, since the
-  naive "healing from 0%" reading of that table is internally inconsistent past ~2 Regen points)
-  above it — no accumulator, so the `lib/tick.js` quadratic-vs-perTick miscategorisation risk the old
-  `hpregan` accumulator carried is gone with it. `damageReduction()` (`0.4 / (1 + 0.2×bd)`, `bd` =
-  `this.upNb[5]`) is the *separate*, newly-added defensive term: every `collision()` damage site
-  multiplies by it now, so a tank's own Body Damage points reduce damage it takes from any source —
-  diep's `dr` rule, not to be confused with the wiki's similarly-worded but *offensive*
-  `(BodyDamagePoints+5)×multiplier` rule (how much damage this tank's body deals to what it hits —
-  its magnitude is the separate fix below). `entities/Bullet.js`'s `collision()` spends a bullet's
+  most recently plan.md Steps 4-5). `entities/Player.js`'s `maxHp` starts at diep's `MH₀ = 50`,
+  gains `+2` per level-up and `+20` per Max Health point (`upgrade()`'s `HpUp` case) — not a rescale
+  of the old `150`/`+3`/`+110`; there was no ratio in that formula worth preserving. Regen reads two
+  direct `tick.perTick()` rates out of `update()` — diep's linear `HPS = maxHp×(0.03+0.12×rr)/30`
+  below a `tick.ticks(750)` (30 s) no-damage threshold, unchanged since #17, above which it now ADDS
+  diep's own `maxHp/250` per reference tick on top of the linear rate instead of replacing it
+  (`diepcustom/src/Entity/Live.ts:130-135`, plan.md Step 4): hyper regen is **10%/s at 0 Regen
+  points, 12.9%/s at 7** now, point-dependent where it explicitly was not before. The old flat
+  `HYPER_REGEN_RATE` (8.5871%/s for every entity, least-squares-fit against diep_wiki's own
+  differently-captioned "time to regen to full" table, since the naive "healing from 0%" reading of
+  that table is internally inconsistent past ~2 Regen points) is retired along with the
+  flat-replacement-rate premise it was fit to — `HYPER_REGEN_RATE` is now `1/250` per reference tick,
+  diep's own figure, and `lib/gameAI.js`'s `DOMINATOR_HYPER_REGEN_RATE` moved the same way (its own
+  comment claims to mirror this formula). No accumulator either way, so the `lib/tick.js`
+  quadratic-vs-perTick miscategorisation risk the old `hpregan` accumulator carried stays gone.
+  **`damageReduction()` is GONE — it had no diep counterpart (contradiction C1, plan.md Step 5).**
+  The old `dr = 0.4 / (1 + 0.2×bd)` term (`bd` = `this.upNb[5]`) was an attempt to approximate diep
+  from first principles; the reference says diep's own `LivingEntity.damageReduction`
+  (`diepcustom/src/Entity/Live.ts:44`) is a **binary** invulnerability multiplier (`1.0` normally,
+  `0.0` for spawn shield/godmode/Arena Closers), already fully expressed by this tree's own
+  early-return guards (`dev.ghost`/`closer`/`dev.god`/`shield`) — so removing the *term* needed no
+  new guard logic. What diep actually scales damage by is `common(a,b) = max(minMultA,minMultB) ×
+  min(maxMultA,maxMultB)` (`Live.ts:74-75`, `lib/damage.js`), applied at the three sites that consume
+  a tank's own `this.damage` (tank ram → tank/shape/bullet) — the same 4/6/1 shape-vs-tank-vs-bullet
+  family this tree already modelled via `this.damage`'s baked-in ×4 plus the old
+  `TANK_BODY_DAMAGE`/`PROJECTILE_BODY_DAMAGE` factors, now re-expressed with `this.damage` un-baked
+  to diep's own raw `damagePerTick` (`13.852814 → 3.4632035`, `BodyDam`'s step `2.770563 →
+  0.69264`) so `common()` can apply the *whole* multiplier at each site instead of only the
+  adjustment on top of a baked-in one — numerically a no-op for tank-vs-tank/tank-vs-shape, so
+  removing `dr` alone is what makes every source of damage to a tank **2.5× stronger at 0 Body
+  Damage points, 6× at 7**. `rooms/Room.js`'s pair loop now also **prorates** mutual damage
+  (diep's `Live.ts:67-84`): both sides' output that tick scales by the same surviving fraction if
+  either would die mid-tick, computed once before either `collision()` call mutates anything and
+  read back as `option.dmgScale` (default `1`). Not to be confused with the wiki's similarly-worded
+  but *offensive* `(BodyDamagePoints+5)×multiplier` rule (how much damage this tank's body deals to
+  what it hits — its magnitude is the separate fix below). `entities/Bullet.js`'s `collision()`
+  spends a bullet's
   own `pene` against the *target's*
   damage output (`other.damage`) unconditionally now, not against itself — previously only base
   drones worked this way (their `pene` is a 2000-point health pool, not a spend-down budget), and
@@ -254,20 +285,26 @@ The things in this codebase that are *not* obvious from reading the code around 
   applying the same stat a second time — low-pene spam classes sat at the `×1` floor (a Basic needed
   **43** bullets to kill a fresh 52 HP tank) while a maxed-Pene Destroyer got both the
   floor-busting multiplier *and* the longest contact, one-shotting instead. The multiplier is gone
-  (not replaced): a bullet's damage per tick is now just `can.damage × up.BDamage × dr`, and its
+  (not replaced): a bullet's damage per tick is now just `can.damage × up.BDamage` (further scaled
+  by `common(a,b)` at the collision site since Step 5's table replaced `dr` — see above), and its
   total damage against a given target still scales with `pene` entirely through contact duration,
   same as it did for base drones already (below). This also retired the `BASE_DRONE_PENE`
   substitution `entities/Player.js` used to need (below). In the same pass, `MEASUREMENTS.md`'s
   pinned "body damage is −75% against projectiles" — previously applied nowhere, so bullets were
   eaten 4× faster than diep's rule — is now applied at both places `entities/Bullet.js` spends its
   own `pene` against a `damage` stat (`KIND.PLAYER` and `KIND.OBJECTS`), via the module-level
-  `PROJECTILE_BODY_DAMAGE = 0.25` constant. **Also found in the same pass and fixed 2026-07-30**:
-  `entities/Player.js`'s `KIND.PLAYER` arm (tank-vs-tank body-ram damage) applied no equivalent to
-  the wiki's "+50% against Tanks" — only the vs-shapes baseline (#17) and the vs-projectiles term
-  existed. A `TANK_BODY_DAMAGE = 1.5` constant, the same shape as `Bullet.js`'s
-  `PROJECTILE_BODY_DAMAGE`, is now multiplied in alongside `damageReduction()` at that one collision
-  site only — `KIND.OBJECTS` and `KIND.BULLET` are untouched, since the wiki multiplier is specific
-  to a tank's body hitting another tank's body.
+  `PROJECTILE_BODY_DAMAGE = 0.25` constant — this constant survives Step 5 at the shape-vs-bullet
+  site only (`entities/Bullet.js`'s `KIND.OBJECTS` arm); the tank-vs-bullet site's own equivalent
+  retired into `lib/damage.js`'s `common()` table above. **Also found in the same pass and fixed
+  2026-07-30**: `entities/Player.js`'s `KIND.PLAYER` arm (tank-vs-tank body-ram damage) applied no
+  equivalent to the wiki's "+50% against Tanks" — only the vs-shapes baseline (#17) and the
+  vs-projectiles term existed. A `TANK_BODY_DAMAGE = 1.5` constant, the same shape as `Bullet.js`'s
+  `PROJECTILE_BODY_DAMAGE`, was multiplied in alongside `damageReduction()` at that one collision
+  site — `KIND.OBJECTS` and `KIND.BULLET` were untouched, since the wiki multiplier is specific to a
+  tank's body hitting another tank's body. **Both `TANK_BODY_DAMAGE` and `PROJECTILE_BODY_DAMAGE`
+  (the tank-vs-bullet use) were retired into `lib/damage.js`'s `common()` table when `dr` was
+  removed (plan.md Step 5)** — see the `common()` paragraph above; `TANK_TANK_MULT`/
+  `TANK_SHAPE_MULT` are their replacements there.
   **`entities/Objects.js`'s own pene double-count — FIXED 2026-07-31 (PENDING #18).** The
   `KIND.PLAYER`-arm fix above (bullet damage to a *tank*) had a sibling bug in the shape-damage arm
   that was deliberately left alone at the time: `KIND.BULLET`'s `this.hp -= ((pene>1)?pene:pene/2) *
@@ -298,8 +335,9 @@ The things in this codebase that are *not* obvious from reading the code around 
   `(BodyDamagePoints+5)×4` rule above was only ever a formula name until now; the ratio it implies —
   diep's vs-shapes body damage is **2.857142857×** (20/7) a Basic bullet's own 7 damage/loop — was
   off in ours at **1.75×**, both sides being pre-diep-adoption legacy numbers that happened to share
-  the same tick-rate rescale. Since bullet magnitudes themselves aren't diep-adopted yet
-  (`MEASUREMENTS.md`'s **M1**), the fix applies diep's `20/7` ratio to Basic's own live `can.damage`
+  the same tick-rate rescale. Since a bullet's own pene/damage aren't on diep's raw absolute
+  HP/damage scale in this tree (unlike its speed/life, adopted since plan.md Step 9), the fix
+  applies diep's `20/7` ratio to Basic's own live `can.damage`
   (`TanksConfig.js`, `4.84848`) rather than converting `20` on an unrelated unit scale:
   `entities/Player.js`'s `this.damage` base moves `8.48485 → 13.852814`
   (`4.84848 × 20/7`), and the `BodyDam` per-point step to `2.770563` (`0.2 × base`, diep's own
@@ -309,7 +347,11 @@ The things in this codebase that are *not* obvious from reading the code around 
   moved with it to stay scale-consistent. `test/clientDiff.js`'s golden moved
   (`338725/5560688d → 297741/14e024be`) since entities now die at a different rate on contact
   (nuance 34's "how long one LIVES" case) — isolated by temporarily reverting both constants and
-  confirming the prior golden reproduced exactly before trusting the new one.
+  confirming the prior golden reproduced exactly before trusting the new one. **This base moved
+  again under Step 5** (`13.852814 → 3.4632035`, `BodyDam`'s step `2.770563 → 0.69264`, diep's own
+  raw `damagePerTick` ÷4) when `dr` was removed and `this.damage` was un-baked for `common()` to
+  consume — see the `damageReduction()` paragraph above; the *effective* output at
+  tank-vs-tank/tank-vs-shape is unchanged, only the intermediate representation moved.
   **`KIND.WALL` — SHIPPED 2026-07-30 as a circular stud (PENDING #2), REBUILT 2026-08-01 as a
   rectangle (plan.md Step 12).** `entities/Wall.js` is now `{x, y, w, h}` plus a server-only `.size`
   — the rectangle's half-diagonal, `√(w²+h²)/2`, NOT either half-extent. `rooms/Room.js`'s generic
@@ -451,9 +493,10 @@ The things in this codebase that are *not* obvious from reading the code around 
   **Three cannon variants** (`public/SHARE/TanksConfig.js`, client + server): pene/damage are
   diep_wiki/Dominator.txt's own multiples of "a tank" (`MEASUREMENTS.md`'s pinned 2 HP/7 damage per
   loop), applied to **our own** corresponding Basic-cannon numbers (1.7 pene / 4.84848 damage)
-  rather than diep's raw absolute figures — bullet magnitudes aren't diep-adopted in this tree yet
-  (`MEASUREMENTS.md`'s M1), so this is the same methodology #17/#18's body-damage-magnitude fix
-  already used for an identical problem. Every other per-variant number diep_wiki gives only as a
+  rather than diep's raw absolute figures — a bullet's own pene/damage aren't on diep's raw absolute
+  HP/damage scale in this tree (unlike its speed/life, adopted since plan.md Step 9), so this is the
+  same methodology #17/#18's body-damage-magnitude fix already used for an identical problem. Every
+  other per-variant number diep_wiki gives only as a
   qualitative comparison (Destroyer's bullet speed "below Destroyer's own", Gunner's "high" reload,
   Trapper's trap speed "above a maxed Tri-Trapper" — this tree has no Tri-Trapper class to anchor
   to) is ours, flagged at the constant itself in PENDING #27 rather than presented as measured.
@@ -531,6 +574,18 @@ The things in this codebase that are *not* obvious from reading the code around 
 - **No HTML is ever escaped, anywhere.** Rendering is canvas-only, so there is currently no DOM
   sink to escape *for*. If a name/chat string is ever routed into a DOM node or an EJS template,
   it needs escaping at that point — nothing upstream does it for you.
+- **Two read-only reference repos back every diep-fidelity decision in this tree — `diepcustom/`**
+  (a reverse-engineered TypeScript reimplementation of diep.io's own server, `mspt = 40`) **and
+  `diepindepth/`** (the raw RE research behind it: `physics/README.txt`, `extras/stats.md`,
+  `canvas/`). Neither is built or run here — they're read for citations only, the way `plan.md`'s
+  own "What the references resolve" section does it. **`diepcustom` is the physics authority where
+  the two disagree** — the one confirmed case is Bullet Speed: `diepindepth/extras/stats.md` states
+  `(5 + 4P) × M` (a 6.6× span at the cap) against `diepcustom`'s own `Barrel.ts:222`
+  `(20 + 3P) × M` (2.05×). `diepindepth`'s own Bullet HP row is provably on a rescaled axis (it
+  states `(8 + 6P) × M` where `diepcustom` has `(2 + 1.5P) × M` — exactly 4× on both terms, the same
+  6.25× span either way), which is the evidence that made `diepcustom`'s number the one taken for
+  speed too (plan.md Step 2). What neither reference can help with is pure client feel — camera lag,
+  health-bar hold timing — see `MEASUREMENTS.md`'s M5/M6, the only two entries left in that file.
 
 ---
 

@@ -17,8 +17,18 @@ Re-measuring these wastes a session and risks replacing an exact value with a no
 | Quantity | Value | Source |
 |---|---|---|
 | **Tank friction** | **`F = 10/11 = 0.909090…` exactly, per 40 ms loop** | Derived, not measured — see below |
-| Tank base acceleration | `A₀ = 2.58825 du/loop²` (= `1.449` at our 28 units/gu) | `physics.html` |
+| Tank base acceleration | `A₀ = 2.58825 du/loop²` (= `1.449` at our 28 units/gu) — **qualified, see contradiction C3 below; not silently exact** | `physics.html` |
 | Tank top speed | `10 × A` → 12.94 gu/s base | `physics.html` |
+| **Universal per-tick body friction** | `F = 0.9` for every `ObjectEntity` — bullets, traps, drones, shapes, the Summoner's scripted drift, not just tanks | `diepcustom/src/Entity/Object.ts:274`; `diepindepth/physics/README.txt` §3 (plan.md Step 9) |
+| Bullet lifetime | `round(lifeLength × 75)` reference ticks (`× 88` for a diep `"drone"`-type barrel, `-1` sentinel unchanged) | `diepcustom/src/Entity/Tank/Projectile/Bullet.ts:96` (plan.md Step 9) |
+| Bullet `baseAccel`/`baseSpeed` | cruise thrust `(20 + 3P) × bullet.speed` du/tick; one-shot muzzle kick `baseAccel + 30 − rand·scatterRate` du/tick | `diepcustom/src/Entity/Tank/Barrel.ts:213`; `Projectile/Bullet.ts:86` (plan.md Step 9) |
+| Bullet scatter | uniform on `±5 × scatterRate` degrees (angular) plus a uniform `[0, scatterRate)` du/tick muzzle-speed jitter | `diepcustom/src/Entity/Tank/Barrel.ts:128-129`; `Projectile/Bullet.ts:86` (plan.md Step 8) |
+| Reload stat form | `reloadTime = 15 × 0.914^points × barrel.reload` — geometric, not linear | `diepcustom/src/Entity/Tank/TankBody.ts:267` (plan.md Step 1) |
+| Hyper regen | `+ maxHp/250` per reference tick, **additive** on top of the linear rate (10%/s at 0 Regen points, stacks with base) | `diepcustom/src/Entity/Live.ts:130-135` (plan.md Step 4) |
+| Shape drift | `BASE_ROTATION 0.01`/`BASE_ORBIT 0.005` rad/tick, `BASE_VELOCITY 1` du/tick — Pentagon/Alpha Pentagon get exactly half of all three | `diepcustom/src/Entity/Shape/AbstractShape.ts:39-42,105-125`; `Entity/AI.ts:75` (plan.md Step 7) |
+| Shape table (HP/XP/body damage/radius/Shiny) | Square 10/10/8/38.891du, Triangle 30/25/8/38.891du, Pentagon 100/130/12/53.033du, Alpha Pentagon 3000/3000/20/141.421du, Crasher small 10/15/8/24.749du, Crasher large 30/25/8/38.891du; Shiny `hpMul ×10`/`prizeMul ×100` | `diepcustom/src/Entity/Shape/{Square,Triangle,Pentagon,Crasher}.ts`; `diepindepth/physics/README.txt` §2.1/§5.2.1 (plan.md Step 6) |
+| Base-drone speed / detect radius | `54` du/tick = 756 u/s terminal; `ai.viewRange 900` du = 504 units, measured from the base | `diepcustom/src/Entity/Misc/BaseDrones.ts:44-54` (plan.md Step 10) |
+| Arena Closer / Dominator size | Arena Closer `BASE_SIZE 175` du (98 units, 3.5× a base tank); Dominator `SIZE 160` du (89.6 units, 3.2×) — both circles (`sides: 1`) | `diepcustom/src/Entity/Misc/ArenaCloser.ts:21`; `Entity/Misc/Dominator.ts:26` (plan.md Step 11) |
 | Unit scale | 1 gu = 50 du (diep's own); we use 28 world units/gu | derived from the two `V_MT` forms |
 | Level / stat scaling | `A = A₀ × 1.07^vm / 1.015^lvl` | `physics.html` |
 | Base max health | `MH₀ = 50`, `+2/level`, `+20/point` | `diep_wiki/Stats.txt` |
@@ -39,6 +49,31 @@ whole time. Cross-checks: the page's two forms of top speed (`10A` du/loop and `
 1 gu = 50 du at 25 loops/s, which yields 12.94 gu/s; and `2.58825 × 28/50 = 1.449`, PENDING's `len`.
 Every number closes, so **do not spend a session confirming tank speed against the arena edge.**
 
+**`A₀ = 2.58825` is qualified, not silently exact — contradiction C3 (plan.md).** `diepcustom/src/
+Entity/Tank/TankBody.ts:249` and `diepindepth/physics/README.txt` §3.2 both give **`2.55`** with the
+level term `1.015^(L−1)` (1-based levels); `2.55 × 1.015 = 2.58825` exactly, so `physics.html`'s
+figure is the same formula quoted one level higher, not a disagreement. `entities/Player.js:856`'s
+own comment says our `this.level` is 0-based and `Physics.moveAccel` already divides by
+`1.015^this.level` with that 0-based level — i.e. it already uses diep's `1.015^(L−1)` form, so the
+coefficient it actually wants is diep's **level-1** value, `2.55 × 0.56 = 1.428` units, not `1.449`.
+That is a **1.47% high** base top speed (`362.25 → 357.0 u/s`). **Not a planned step**: this table's
+whole point is forbidding re-derivation of this pair on one's own initiative, so the correction is
+recorded here rather than applied — a one-literal change with a two-line justification whenever a
+human wants it.
+
+**The universal friction `0.9` (plan.md Step 9) is a different fact from the tank's `10/11` above,
+not a contradiction of it.** diep applies the *same* 0.9-per-tick drag to every entity, tanks
+included, but tanks and bullets integrate it in a different order: diep does `v += A; x += v;
+v *= 0.9` for a tank (`diepcustom/src/Entity/Object.ts:265-275`) versus this tree's
+`v = (v + A)·F; x += v` — both reach the *same steady state* (`10·A`, because `F = 10/11` was
+derived to make that identity hold), so `F = 10/11` remains correct for tanks and is not "really"
+0.9 in disguise. The two integration orders differ only in **transient** decay rate (diep's error
+decays ×0.9/tick, ours ×0.909/tick), which is the whole story for a *maintained-velocity* bullet,
+whose terminal speed is `thrust × F/(1−F)` — `22.0×` thrust at this tree's old `BODY_FRICTION`
+against diep's flat `10×` at `0.9`. That is why `BODY_FRICTION` needed to become diep's literal
+`0.9` (not `10/11`) while `Physics.FRICTION` (tanks) correctly stays `10/11`: same underlying
+constant, different consumption order, not two independent numbers.
+
 ---
 
 ## Methodology, read once before measuring anything
@@ -57,146 +92,14 @@ Per-frame position deltas oscillate ±50 % *even at perfectly constant speed*. M
 of ≥10 frames, or better, measure the endpoints (total distance, total time) and divide.
 
 **Averaging, because of the salt.** diep randomises bullet spawn position and direction per shot.
-Anything bullet-related needs **N ≥ 20 shots** averaged, and the spread itself is a measurement
-target (see M2) rather than noise to be eliminated. Record the individual samples, not just the
+Anything bullet-related needs **N ≥ 20 shots** averaged, and the spread itself used to be a
+measurement target in its own right (the old M2, resolved from source — see the "do NOT measure"
+table above) rather than noise to be eliminated. Record the individual samples, not just the
 mean — the distribution's *shape* tells you whether it is uniform or gaussian, which matters for
 reproducing it.
 
 **Always measure the base case:** Basic Tank, level 1, 0 points in every stat, unless the entry
 says otherwise. Scaled values are derivable; base values are not.
-
----
-
-## M1 — Bullet range `ρ` and lifetime `t_b` *(highest value; unblocks the most)*
-
-> **RESOLVED FROM SOURCE — no measurement needed.** `diepcustom/src/Entity/Object.ts:274` applies a
-> universal 10% per-tick drag to every `ObjectEntity`, bullets included, corroborated verbatim by
-> `diepindepth/physics/README.txt` §3 ("all entities have a 10% friction rate") — the **opposite**
-> of this entry's own predicted answer ("delete `BODY_FRICTION`, bullets are constant-velocity").
-> Bullets ARE maintained-velocity under drag, exactly this tree's existing motion-tail shape
-> (thrust, decay, integrate), just at diep's own `F = 0.9` instead of the hand-tuned `0.956532`.
-> `Barrel.ts`/`Bullet.ts`/`Drone.ts`/`Trap.ts` give the rest directly: `speed` (cruise thrust) is
-> `1.12 × diep bullet.speed`; muzzle velocity is a one-shot `terminal + 16.8` (diep's flat
-> `+30 du/tick`, halved for a trap, divided by 3 for a drone); `life` is
-> `round(lifeLength × 75)` reference ticks (`× 88` for a drone, `-1` sentinel unchanged; a trap's
-> own `life >> 3` is a new arming window during which it collides with nothing). `lib/constants.js`'s
-> `BODY_FRICTION` moved `0.956532 → 0.9` (plan.md Step 9), and `PET_FRICTION` (`lib/gameAI.js`)
-> recomputed to hold its 1.99× braking ratio against the new value. Kept only until the final
-> documentation-cleanup step deletes M1–M4 wholesale.
-
-**Unblocks:** PENDING #23's `speed`/`life` columns, and closes the last of the #14/#16 FRICTION
-question. **This is the single most valuable measurement on the list**, and it is now the *only*
-thing standing between the tree and a fully diep-faithful motion model: the tank half shipped in
-plan.md step 2, and what M1 decides is the fate of `lib/constants.js`'s `BODY_FRICTION`.
-
-`physics.html` parameterises bullets as `V_b = ρ/t_b` — range over lifetime, with **no drag term
-anywhere**. Our tree still runs bullets through the *tank* recurrence (`v = (v + speed)·F`), now under its own
-name (`BODY_FRICTION`) rather than sharing the tank's — the shape is still a tank model applied to
-a bullet, it is just no longer coupled to the tank's value. Confirming diep's model is what decides
-whether that recurrence should exist at all.
-
-**Protocol**
-1. Basic Tank, level 1, 0 Bullet Speed points. Sit still (recoil moves you and corrupts the range).
-2. Fire a single shot with the grid visible. Record.
-3. Frame-step: note the position at the muzzle and at despawn.
-4. **`ρ`** = distance travelled, in grid squares. **`t_b`** = frames from spawn to despawn ÷ fps.
-5. Repeat ≥20 times, average.
-
-**The question that matters most — is the speed constant?** Compare gu-per-frame just after the
-muzzle against just before despawn, over ≥10-frame spans at each end.
-- **Flat** → diep's bullets are constant-velocity with a lifetime. `ρ/t_b` is the entire model, and
-  `BODY_FRICTION` should be deleted rather than retuned — bullets stop decaying at all.
-- **Decaying** → bullets have their own drag. Fit the ratio to get `F_bullet`, which will *not* be
-  10/11 (that value is derived from a tank identity).
-
-Either answer closes the question permanently. Record which one you saw.
-
-**Then repeat for the archetypes**, since per-class `speed`/`life` both vary: Sniper (long range),
-Machine Gun (short), Destroyer (slow, heavy), Trapper (traps decay differently), and one drone
-class (drones steer, so they are a separate model — note it, don't fit it).
-
----
-
-## M2 — Bullet scatter `h`
-
-> **RESOLVED FROM SOURCE — no measurement needed.** `diepcustom/src/Entity/Tank/Barrel.ts:128-129`
-> gives the angular scatter directly: uniform on `±5 × scatterRate` degrees
-> (`= ±0.0872665 × scatterRate` radians), i.e. `rand = 0.174533 × scatterRate` for the existing
-> `dir + Math.random()*rand - rand/2` expression. `Bullet.ts:86` gives a second, independent
-> muzzle-speed jitter (`- Math.random() × scatterRate` du/tick, `× 0.56` in our units), folded into
-> the same muzzle-kick formula M1 resolved. Per-class `scatterRate` read from
-> `TankDefinitions.json` directly rather than transcribed (plan.md Step 8). Kept only until the
-> final documentation-cleanup step deletes M1–M4 wholesale.
-
-**Unblocks:** PENDING #23's `rand`.
-
-The form is known: `w = h / ρ_Vb`, i.e. scattering rate is the spread triangle's height divided by
-the bullet's range. So you need `h` at a known range, and `ρ` comes from M1.
-
-**Protocol**
-1. Same base setup. Fire ≥30 shots at a fixed aim direction without moving.
-2. At a fixed distance from the muzzle (pick a grid line several squares out), record where each
-   bullet crosses it, perpendicular to the aim.
-3. `h` = the width of the envelope containing the samples, in gu, at that distance.
-4. Note the **distribution shape**, not just the width — uniform and gaussian need different code.
-
-Machine Gun is the useful second sample here; its cone is visibly wider and makes the measurement
-far easier to read than Basic's.
-
----
-
-## M3 — Reload stat form *(resolves a live ambiguity, not just a value)*
-
-> **RESOLVED FROM SOURCE — no measurement needed.** `diepcustom/src/Entity/Tank/TankBody.ts:267`
-> gives the reload stat as `reloadTime = 15 * Math.pow(0.914, reloadPoints)` — a *geometric*
-> `0.914^points` multiplier on the base reload, **1.877× fire rate at the 7-point cap**. That
-> confirms the "≈1.875× (linear reading)" *magnitude* below, but the form is geometric, not linear:
-> 0.914 is the base per point and 1.875 is the value at the cap, not a slope. `entities/Player.js`'s
-> `up.Reload` is now `*= 0.914`/pt (was the linear `−0.0788571`, ×2.23 at the cap). Kept only until
-> the final documentation-cleanup step deletes M1–M4 wholesale.
-
-**Unblocks:** PENDING #15's reload-stat decision. **Do this after the #30 economy change**, so the
-comparison is at 7 points on both sides.
-
-`physics.html` writes `RT = ⌈X₀/1.875^br⌉`, which read literally means a Basic with 5 reload points
-fires *every loop* (25 shots/s) — not credible. `1.875 = 1 + 0.125 × 7` strongly suggests a mangled
-linear form reaching 1.875× fire rate at max stat. Only observation settles it.
-
-**Protocol**
-1. Basic Tank, hold fire, count shots over 30 s at **0** reload points. → shots/s.
-2. Repeat at **7** reload points.
-3. The ratio is either **≈1.875×** (linear reading — our ×2.23 at 6 points is close enough to leave
-   alone) or **wildly higher** (literal reading — our reload stat is unsalvageable).
-
-Also worth capturing while you are here: **Overseer and Overlord drone-summon cooldowns**, which
-PENDING #15 flags as ambiguous (the reference's merged "90 loops" maps onto neither our 182 nor our
-281, and both are summon cooldowns rather than bullet reloads).
-
----
-
-## M4 — Shape drift
-
-> **RESOLVED FROM SOURCE — no measurement needed.** `diepcustom/src/Entity/Shape/
-> AbstractShape.ts:39-42,105-125` and `Entity/AI.ts:75` give diep's own three constants directly:
-> `BASE_ROTATION = 0.01` rad/tick (the shape's own visual spin), `BASE_ORBIT = 0.005` rad/tick (the
-> drift-direction wander), `BASE_VELOCITY = 1` du/tick (drift speed) — Pentagon/Alpha Pentagon get
-> exactly half of all three. Direction persists and wanders continuously rather than resampling
-> (confirmed by the reference's own description, settling this protocol's own "how often" question
-> without observation). `entities/Objects.js` now carries `BASE_ORBIT` (`this.rotationVal`, signed
-> by the previously-unused `this.rotationDir`) and `BASE_VELOCITY` (`this.maxspeed`, diep's own
-> du/tick x 0.56) directly. `BASE_ROTATION` has no server-authoritative analog in this tree — the
-> wire's `Objects` packet carries no facing angle for a shape at all (`states`/`shape`/`hp`/`alpha`
-> only, confirmed against `public/SHARE/SocketSchema.js`) — so the closest existing thing is
-> `public/client/entities.js`'s own independent, unsynced cosmetic spin, deliberately left untouched
-> (plan.md step 7; the client's own rate is frame-denominated, not reference-tick, so it isn't even
-> the same unit as `BASE_ROTATION` to begin with). Kept only until the final documentation-cleanup
-> step deletes M1–M4 wholesale.
-
-Polygons idle-drift and slowly rotate. Nothing documents the rate.
-
-**Protocol** Park in god mode near an undisturbed Square, Triangle and Pentagon. Record 30 s of
-each untouched. Measure translation in gu/s and rotation in rad/s. Note whether drift direction
-persists or resamples, and roughly how often — that is the part that decides how it is coded.
 
 ---
 
@@ -206,6 +109,12 @@ persists or resamples, and roughly how often — that is the part that decides h
 
 Ours is an explicit placeholder, playtest-tuned on top of a since-fixed input-prediction bug, so it
 has never been calibrated against anything real.
+
+**Checked against both references — neither has anything.** `diepcustom` is server-only, so it has
+no camera code at all; `diepindepth/canvas/` covers the render scale factor, draw order and colour
+constants but says nothing about camera smoothing (`grep -rin "camera|lerp|smooth" diepindepth/
+canvas` returns nothing relevant). This is a pure client-feel knob and still needs the live
+observation below.
 
 **Protocol** Accelerate from a standstill to top speed in a straight line. Measure the offset in gu
 between the tank's drawn position and the exact screen centre, at steady state. Steady-state lag is
@@ -219,72 +128,31 @@ speed (maxed Movement Speed) to confirm the relationship is linear in speed rath
 **Unblocks:** PENDING #23. Lowest value on this list — a pure feel knob that was never measured
 against anything.
 
+**Checked against both references — neither has anything.** `diepindepth/canvas/render_order.txt`
+lists `RenderHealthBars()` with an empty body, and nothing else in either reference tree touches
+it. Still needs the live observation below.
+
 **Protocol** Damage a Pentagon once, then leave it alone. Count frames from the last hp change until
 its health bar begins to fade. Convert to seconds.
 
 ---
 
-## Sequencing — what you can finish *before* touching any of this
+## Sequencing — what's left
 
-**Almost everything.** The friction finding removed the dependency that made measurement look
-like a prerequisite. Safe to complete first, in this order — the ordered, per-site version of this
-list lives in **[plan.md](plan.md)**, which is what the work is actually being run off:
+Everything that used to gate on a measurement session is done. PENDING #30 (the 45/7/33 economy),
+#14 (tank movement magnitudes), #16 (recoil/knockback), #17 (health/regen/body damage), #19
+(arena/shape density), #24(b) (bullet dead reckoning), the gamemodes, and #18 (the damage model)
+all shipped without ever needing a live diep client — the ordered, per-step version of that work,
+with the exact numbers and golden-test outcomes, lives in **[plan.md](plan.md)**, which is what
+the work was actually run off. `physics.html`/`diep_wiki/` covered most of it; where they fell
+short, `diepcustom`/`diepindepth` (plan.md's reference repos) supplied the rest.
 
-1. ~~**PENDING #30** — the 45/7/33 economy. Wholly structural, zero measurement.~~ **DONE.**
-   Every later item's domain is now diep's: 7 points, 45 levels, 33 total, tiers at 15/30/45.
-2. ~~**#14 tank movement magnitudes** — `A₀` and `F = 10/11` are exact. Adopt tank motion *without*
-   touching bullets; that separation is the faithful model, not a workaround.~~ **DONE.**
-   `MOVE_ACCEL_BASE` 1.449 / tank `FRICTION` 10/11, base top speed 362.25 u/s. The separation
-   shipped as `lib/constants.js`'s `BODY_FRICTION` (0.956532), which is what **M1 below is
-   measuring** — bullets, traps, drones, shapes and the boss's drift are bit-identical until it
-   lands. Do not merge the two constants back together.
-3. ~~**#16 recoil** — acts on *tank* velocity, so once #14's `F` is set it is pure arithmetic
-   against the recoil table.~~ **DONE.** `back = gu × 28 × (1−F)/F` = `gu × 2.8`, all 62 entries;
-   the column divides by 2.8 straight back into `physics.html`'s "Tanks Recoil" table.
-   ~~**#16 knockback** (`weight`) is the same shape and is still open.~~ **DONE too.**
-   `weight = gu × 5.25`, every entry, divides straight back into `physics.html`'s "Tanks
-   Knockbackfactor" table — verified by replaying the recurrence, exact at the 40 ms reference for
-   all 49 distinct values, and the tank body with it at diep's 1.6 gu. The ~7-class roster question
-   and the 1.26× rescale error were both answered by a human before implementation, neither being a
-   measurement; see PENDING #16.
-4. ~~**#17 health + regen** — `MH₀`, the linear rate and the hyper threshold are all known; the
-   hyper *rate* is solvable from the published time-to-full table. Do it after #30 so the domain is
-   7.~~ **DONE.** diep's raw `MH₀=50/+2/level/+20/point` adopted directly (not a rescale); the
-   `hpregan` accumulator replaced by two direct per-tick rates. The hyper rate needed a real fit
-   against all 8 published points, not the single-point residual this line implied — that naive
-   reading breaks down past ~2 Regen points; see PENDING #17 and plan.md step 4 for the derivation.
-   Landed together with #23 (below) and #18's `dr` term (item 7) per a lethality call.
-5. ~~**#23 `BASE_DRONE_HP` → 6400** — decided.~~ **DONE, and the answer moved: stays 2000.** The
-   ~6400 figure was denominated in our OLD, custom HP scale; #17 replaced that scale with diep's own
-   rather than rescaling it, so the ratio this item is built on now resolves back to diep's raw
-   number. See PENDING #23 and plan.md step 5.
-6. ~~**#19 arena/density** — formulas known. Real work is making `baseSize` and the nest carve-out
-   radii scale, since they are absolute today and `rooms/Room.js` warns the placement loop becomes
-   unsatisfiable below ~2744 units wide.~~ **DONE, the density half; the arena resize stays open on
-   purpose.** The two formulas compose to a *constant* **1 shape per 200 gu²** (the player count
-   cancels), so the density is what transfers to our own fixed-size arenas — adopting `12.5 × N_P`
-   alone would have made them emptier, not denser. Every mode's caps are derived from that density
-   now and sit at 1 per 200.0 gu². `baseSize` and every nest radius are a fixed *fraction* of the
-   arena (`room.nestScale`), which retires the ~2744-unit floor structurally rather than by
-   clamping. Resizing ffa toward diep's AL(24) = 244 gu is a 71% area cut and is deliberately NOT
-   done — the machinery exists (`rules.arenaLive`), the call does not. See PENDING #19 and
-   plan.md step 6.
-7. **~~#24(b)~~, ~~gamemodes (Tag first)~~, ~~#18's damage model~~** — none measurement-gated.
-   **#24(b) is DONE** (plan.md step 8): incoming bullets are dead-reckoned forward by the measured
-   `NET.leadMs()` instead of being drawn a packet interval behind; drones/pets/traps stay on
-   interpolation, and your own bullets deliberately do too (the muzzle weld and a temporal lead are
-   contradictory claims about the same bullet — see PENDING #24(b)). **Tag is
-   DONE** (plan.md step 7, `rooms/Tag.js`) — no new entity types, as predicted; it lacks only the
-   win condition, which needs an Arena Closer entity, and the invisibility cap that goes with it
-   (PENDING #28). **#18 is DONE, all four fixes** (plan.md step 9): `dr`
-   (body damage reduces damage taken) and "bullet HP spent against target's DPL" landed with #17
-   above; the pene double-count + −75%-vs-projectiles fix and the `BPene` magnitude/slope fix both
-   landed 2026-07-30 — the latter needed only a per-point step correction in `entities/Player.js`'s
-   `upgrade()`, not the column-wide `TanksConfig.js` rescale this file originally expected.
+M1 (bullet range/lifetime), M2 (scatter), M3 (reload stat form) and M4 (shape drift) turned out to
+be resolvable from those same two reference repos rather than a live measurement, and are gone from
+this file entirely (plan.md Steps 9, 8, 1, 7 respectively).
 
-**What genuinely still waits for a session with diep open:** the two feel knobs (M5, M6). M1
-(bullet range/lifetime), M2 (scatter), M3 (reload stat) and M4 (shape drift) are all now resolved
-from source rather than measured (plan.md Steps 3, 7, 8, 9) — see each entry's own callout.
-
-The efficient order is therefore: **do 1–7 (all done), then one measurement session covering
-M5–M6.**
+**What's left is only M5 (camera lag) and M6 (`HP_BAR_HOLD`)** — both checked against both
+reference repos above and confirmed to have nothing (diepcustom is server-only; diepindepth's
+canvas notes don't cover either knob). Neither reference project runs a real client, so these two
+pure client-feel knobs are the only entries in this file that still need a session with diep.io
+actually open.
