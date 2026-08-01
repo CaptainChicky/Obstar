@@ -19,15 +19,16 @@ const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
 const BULLET_CRUISE_ORDER = require('../lib/constants.js').BULLET_CRUISE_ORDER;
 const KIND = require('../public/SHARE/kinds.js');
 const Detector = require('./Detector.js');
-const { PROJECTILE_BODY_DAMAGE, LETHAL_EPS } = require('../lib/damage.js');
+const { LETHAL_EPS, projectileCommon } = require('../lib/damage.js');
 
 // diep_wiki/Stats.txt: Body Damage is "decreased by 75% when affecting projectiles (Bullets,
 // Traps, Drones)" - MEASUREMENTS.md's pinned "-75% vs projectiles" entry (PENDING #18). Applies
 // to what a bullet's own `pene` (its spend-down health pool) loses per tick of contact with a
-// body-damage source below - not to what the bullet itself deals, which is untouched. Since
-// plan.md step 5, this only still applies at the KIND.OBJECTS arm below (a shape's damage isn't
-// diep-adopted yet, plan.md step 6): the KIND.PLAYER arm's equivalent retired into
-// lib/damage.js's common(tank,bullet)=1, folded into `this.damage`'s own rebasing there.
+// body-damage source below - not to what the bullet itself deals, which is untouched. common()
+// for every pairing (tank/bullet, shape/bullet, bullet/bullet) is now the single explicit table
+// in lib/damage.js (plan.md chunk 1 D2/D3/D4) - PROJECTILE_BODY_DAMAGE's old flat 0.25 is retired,
+// since it was only ever the tank/bullet and shape/bullet figure under two different bakings that
+// happened to both equal 1 once un-baked (common(tank,bullet)=1, common(shape,bullet)=1).
 
 // Per-tick re-aim chance for homing bullets/drones, converted to a real-tick probability once at
 // load (lib/tick.js's "chance" category).
@@ -619,12 +620,12 @@ class Bullet {
 							return;
 						}
 					}
-					// Same rule as the KIND.PLAYER arm above (PENDING #18, plan.md step 9): spent
-					// against the shape's own damage output, not self-referentially, and at the same
-					// -75%-vs-projectiles rate - shapes have Body Damage too (diep_wiki/Stats.txt).
-					// PROJECTILE_BODY_DAMAGE stays live here (unlike the KIND.PLAYER arm above) because
-					// a shape's own damage figure isn't diep-adopted yet (plan.md step 6 has that).
-					this.pene -= tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE * (option.dmgScale ?? 1));
+					// Same rule as the KIND.PLAYER arm above: spent against the shape's own damage
+					// output, not self-referentially. common(shape,bullet) = 1 (lib/damage.js,
+					// plan.md chunk 1 D2) - `other.damage` (the shape's) is diep's raw damagePerTick
+					// now, with no vs-tank x4 baked in, so this site needs no multiplier at all,
+					// same as the KIND.PLAYER arm above.
+					this.pene -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES }
 					break;
 				case KIND.BULLET:
@@ -651,7 +652,19 @@ class Bullet {
 							this.levels.provokedAt = this.room.timestamp;
 						}
 					}
-					this.pene -= tick.perTick(option.pene);
+					// common(this,other) via OUR `type` field (lib/damage.js's projectileCommon(),
+					// plan.md chunk 1 D3/D4) - diep's identical min/maxDamageMultiplier rule, just
+					// applied to a pene spend instead of an hp subtraction. Used to be an implicit x1
+					// for every pairing here, which is right whenever either side is a drone
+					// (common is 1 for every drone combination) but wrong for two ordinary bullets,
+					// where diep runs common(bullet,bullet) = 0.25.
+					// `option.dmg` - diep's handleCollision spends the OTHER bullet's fixed
+					// damagePerTick, not its current remaining pene pool (Live.ts:67-84, plan.md
+					// chunk 1's bullet-vs-bullet fix): a low-pene bullet used to hit softer as it
+					// died (spending `option.pene`, rooms/Room.js's old pairing setup) even though
+					// diep's pene only ever decides how many ticks of contact a bullet survives, not
+					// how hard it hits.
+					this.pene -= tick.perTick(option.dmg * projectileCommon(this.type, other.type));
 					// Same threshold as the two arms above for consistency - diep clamps every damage
 					// application, not only the prorated ones. Bullet-vs-bullet is not prorated (it
 					// resolves through this pene-vs-pene rule, not Room.js's dmgScale table).

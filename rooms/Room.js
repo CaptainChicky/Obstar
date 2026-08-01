@@ -56,7 +56,7 @@ const Objects = require('../entities/Objects.js');
 const Detector = require('../entities/Detector.js');
 const Wall = require('../entities/Wall.js');
 const CONFIG = require('../lib/gameAI.js');
-const { TANK_TANK_MULT, TANK_SHAPE_MULT, PROJECTILE_BODY_DAMAGE } = require('../lib/damage.js');
+const { TANK_TANK_MULT, TANK_SHAPE_MULT } = require('../lib/damage.js');
 
 /*
 	ARENA SIZE AND SHAPE DENSITY - PENDING #19, plan.md step 6.
@@ -193,8 +193,13 @@ function damageOutput(e, eKind, otherKind) {
 			if (otherKind === KIND.BULLET) return e.damage;
 			return 0;
 		case KIND.OBJECTS:
-			if (otherKind === KIND.PLAYER) return e.damage;
-			if (otherKind === KIND.BULLET) return e.damage * PROJECTILE_BODY_DAMAGE;
+			// A shape's own `damage` is diep's raw damagePerTick now, no vs-tank x4 baked in
+			// (plan.md chunk 1 D2) - so a shape hitting a tank needs TANK_SHAPE_MULT spelled out
+			// here same as the KIND.PLAYER case above, and a shape hitting a bullet needs no
+			// multiplier at all (common(shape,bullet) = 1, the retired PROJECTILE_BODY_DAMAGE's
+			// old 0.25 was the same number applied to the old x4-baked field).
+			if (otherKind === KIND.PLAYER) return e.damage * TANK_SHAPE_MULT;
+			if (otherKind === KIND.BULLET) return e.damage;
 			return 0;
 		case KIND.BULLET:
 			if (otherKind === KIND.PLAYER || otherKind === KIND.OBJECTS) return e.damage;
@@ -281,17 +286,22 @@ class Room {
 	constructor(id, rules, controller) {
 		this.rules = Object.assign({}, DEFAULT_RULES, rules);
 		this.controller = controller;
-		const POW = 2.5;
 		const MXLVL = this.rules.maxXp;
-		// 45 levels, diep's own cap (PENDING #30). The 30 this replaced appeared twice - as the
-		// array length and inside the curve's coefficient - and both have to be the same number or
-		// the last level stops landing exactly on maxXp.
+		// diep's own XP curve (Const/Enums.ts:301-304, plan.md P1), not a power curve normalised to
+		// land on maxXp: levelToScore[i] = levelToScore[i-1] + 40/9 x 1.06^(i-1) x min(31,i), summed
+		// as a running float and rounded once per level (rounding each step's increment first drifts
+		// off diep's own published table by a few xp past level ~10). diep's own ceiling at level 45
+		// is 23537 - every mode scales the whole curve by its own maxXp/23537 so a different per-mode
+		// ceiling keeps diep's SHAPE (early levels cheap, late levels steep) instead of overwriting it
+		// with a differently-shaped curve of our own that merely agrees at the endpoints.
+		const DIEP_MAX_XP = 23537;
+		let acc = 0;
 		this.XPLVL = new Array(Player.LEVEL_CAP).fill(0).map((x, i) => {
 			if (i === 0) {
 				return 0;
 			}
-			const a = Player.LEVEL_CAP / Math.pow(MXLVL, 1 / POW)
-			return Math.min(MXLVL, parseInt(Math.pow((i + 1) / a, POW)));
+			acc += (40 / 9) * Math.pow(1.06, i - 1) * Math.min(31, i);
+			return Math.round(Math.round(acc) * MXLVL / DIEP_MAX_XP);
 		})
 		this.gm = this.rules.gm;
 		this.id = id;
@@ -1255,11 +1265,16 @@ class Room {
 									}
 								}
 							}
+							// `.dmg`, not `.pene` - diep's handleCollision spends a bullet's own fixed
+							// damagePerTick against the OTHER side's health pool, not the other side's own
+							// remaining pool (Live.ts:67-84; entities/Bullet.js's KIND.BULLET arm is the
+							// one consumer, plan.md chunk 1's bullet-vs-bullet fix). Only ever read when
+							// both sides are bullets, but harmless to set whenever either is.
 							if (objKind === KIND.BULLET) {
-								otherOption.pene = obj.pene;
+								otherOption.dmg = obj.damage;
 							}
 							if (otherKind === KIND.BULLET) {
-								objOption.pene = other.pene;
+								objOption.dmg = other.damage;
 							}
 							other.collision(obj, otherOption);
 							obj.collision(other, objOption);

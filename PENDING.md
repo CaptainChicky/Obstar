@@ -88,16 +88,11 @@ health-model rewrite and the removal of the old defensive `dr` term, and the pai
 together. Judge against the wiki's "low damage, delivered extremely quickly". Note plan D1 moves
 this again.
 
-### 9. XP was never re-priced for the 45-level economy
-`maxXp` still spreads 25000/30000 over 45 levels instead of 30, so levelling is *finer* rather than
-slower. Superseded in scope by plan P1 (adopt diep's own XP table), but if levelling reads as too
-quick before that lands, this is the knob.
-
-### 10. Sandbox gaps still open
+### 9. Sandbox gaps still open
 Party-link invites; arena size and shape count scaling with player count; bosses spawning after
 50–60 minutes. (The four cheat keys `K`/`O`/`\`/`;` are done.)
 
-### 11. Comment-style cleanup pass
+### 10. Comment-style cleanup pass
 Comments should describe **what the code does** — the function, the invariant, the unit — not
 cross-file references (`see plan.md Step 3`, `PENDING #19`), change history (`was 0.511941`), or
 narrative about why a past approach was wrong. Much of the tree is currently the opposite
@@ -183,6 +178,17 @@ future reader "restoring" the ratio against the tank's `10/11` instead gets `0.8
 brakes ~2.2× harder and parks behind its owner. Documented at the constant in `lib/gameAI.js`; this
 is the second copy.
 
+### Per-tick contact is an approximation of diep's once-per-reference-tick quantization
+diep keeps a `damagedEntities` list per entity, cleared each 40 ms tick, so a colliding pair
+exchanges damage **exactly once** per diep tick. We run at `TICK_MS` 25 and scale each hit by
+`tick.perTick()` (x 0.625) instead - approximately the same integral, but not the same
+quantization: a bullet that dies in exactly one diep tick spends ~2 of ours, and the proration on
+the final partial tick is a different number than diep's own. Deliberately accepted rather than
+fixed - plan.md's own D6 already called it "within a few percent once D1 lands," and D1 has
+landed. The exact fix (a per-pair "already exchanged this reference tick" guard, cleared every
+reference tick) would add real state to `rooms/Room.js`'s hottest loop for a few-percent gain, so
+it stays a known, accepted gap rather than new surface. → plan D6.
+
 ### `BASE_ROTATION` (a shape's own spin) is diep's number but is not implemented
 `AbstractShape.ts:41` spins each shape `±0.01 rad/tick` **server-side**. Our `Objects` wire record
 carries no facing angle at all, so `public/client/entities.js` does a per-client cosmetic wobble in
@@ -259,9 +265,11 @@ Only a stub-DOM harness has run the client. Everything below is code-tested only
 - A green Shiny polygon and a rainbow Mythic one are visibly distinct — and turn up often enough to
   notice in a normal session.
 - The minimap shows other players' dots moving smoothly, with a thin dark frame, in every mode.
-- Crashers read as pink triangles whose point tracks the tank they're chasing, turning smoothly.
-  (The seeded 60-tick corpus never spawns one, so this is confirmed *unexercised*, not correct.
-  See plan S1 — they barely chase at all today.)
+- Crashers read as pink triangles that actually run a nearby tank down (plan S1's chase-speed/
+  detection-range fix is unit-tested, `test/rooms.js`'s `crasherChaseTests()`, but the seeded
+  60-tick `clientDiff` corpus never spawns one, so the in-browser feel is still unexercised). Their
+  point should track the tank they're chasing, turning smoothly - that part is still open, since it
+  needs a server-authoritative facing angle on the wire (plan S4), not yet built.
 - Farming speed at low level, and frame rate / room tick under a busy 4team.
 
 **Bases and base drones** — nothing here is covered by a browser-free test beyond placement:

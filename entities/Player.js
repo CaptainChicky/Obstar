@@ -16,7 +16,7 @@ const KIND = require('../public/SHARE/kinds.js');
 const ACHIEVEMENTS = require('../public/SHARE/AchievementsConfig.js').list;
 const Bullet = require('./Bullet.js');
 const Detector = require('./Detector.js');
-const { TANK_TANK_MULT, LETHAL_EPS } = require('../lib/damage.js');
+const { TANK_TANK_MULT, TANK_SHAPE_MULT, LETHAL_EPS } = require('../lib/damage.js');
 
 /*
 	Auto-turret aim lead (shoot()): the divisor in `other.vec * dis / AUTOTURRET_LEAD`, which
@@ -222,13 +222,11 @@ class Player {
 		this.level = 0;
 		this.stillLvl = 0;
 		this.droneCount = 0;
-		// diep's own raw damagePerTick (Live.ts:67-84, plan.md step 5) - no vs-shapes x4 baked in
-		// any more (that lived here from PENDING #17 until lib/damage.js's common(a,b) table took
-		// over applying it, and every other target's multiplier, at each consuming collision() site
-		// instead). 13.852814 / 4 = 3.4632035; #17's own derivation (4.84848 x 20/7, Basic's own
-		// can.damage carrying diep's 7-damage/loop anchor since bullet magnitudes aren't
-		// diep-adopted yet, MEASUREMENTS.md's M1) is otherwise unchanged, just un-baked.
-		this.damage = 3.4632035;
+		// diep's own raw damagePerTick, `bodyDamagePoints + 5` at 0 points (TankBody.ts:99,253,
+		// plan.md chunk 1 D1) - the tank-body-ram axis, not the bullet-damage axis TanksConfig.js's
+		// `can.damage` carries; the two happen to share diep's raw scale now (D1/D5) but are
+		// otherwise independent numbers.
+		this.damage = 5;
 		this.murder = -1;
 		this.up = {
 			"MSpeed": 0, //0
@@ -356,7 +354,10 @@ class Player {
 					///
 					const dir = can.autoDir ? autoDir : this.dir + can.offdir;
 					const offx = can.offx * ra;
-					const len = can.canonLength * .93 * ra;
+					// No .93 fudge (plan.md B1) - diep spawns at the barrel's FULL length
+					// (`x + cos(angle) x barrel.size + ...`, Bullet.ts:100); the old .93 put a
+					// bullet 7% inside its own drawn muzzle at level 0, growing with level.
+					const len = can.canonLength * ra;
 					const offlen = Math.hypot(len, offx);
 					const offdir = Math.atan2(offx, len);
 					const x = this.x + Math.cos(dir + offdir) * (offlen)//-can.size*ra);
@@ -505,10 +506,9 @@ class Player {
 						Bullet.ts:92), and bulletAccel = (20 + 3*points) * bullet.speed is 1 + 3/20 per
 						point (diepcustom/src/Entity/Tank/Barrel.ts:222) - neither has a 6-point span to
 						rescale from.
-						BodyDam since PENDING #17's last open piece: `this.damage`'s base and step were
-						rederived from diep's own vs-shapes formula (see the constructor), not rescaled
-						from an old span - see that comment for the derivation, and lib/damage.js for
-						how the un-baked base (plan.md step 5) still lands on the same numbers.
+						BodyDam is diep's own flat per-point slope too: `this.damage`'s base (5) and step
+						(+1) are `bodyDamagePoints + 5` read directly (TankBody.ts:99,253, plan.md chunk
+						1 D1), not a span to rescale - see the constructor's own comment.
 					*/
 					switch (i) {
 						// A point COUNT (diep_wiki/Stats.txt's "Regen Stat", read directly by update()'s
@@ -532,7 +532,7 @@ class Player {
 						// adds a fractional amount every tick, and the wire carries hp as a fraction of
 						// maxHp), so no truncation risk here.
 						case "HpUp": this.hp *= (this.maxHp + 20) / this.maxHp; this.maxHp += 20; break;
-						case "BodyDam": this.damage += 0.69264; break;   // 0.2 x the 3.4632035 base - diep's own "BS = 1+0.2xbd" slope (PENDING #17), 2.4x base at the 7-point cap
+						case "BodyDam": this.damage += 1; break;   // diep's own flat +1/point off the 5 base (TankBody.ts:253's `bodyDamagePoints + 5`), not a 0.2x-of-base slope
 					}
 					break;
 				}
@@ -703,11 +703,10 @@ class Player {
 					return;
 				}
 				if (this.shield) { return; }
-				// common(tank,shape) = 4 (lib/damage.js) - a shape's own damage figures aren't
-				// diep-adopted yet (plan.md step 6), so unlike the KIND.PLAYER arm above there is no
-				// symmetric multiplier to add here; `other.damage` (the shape's) is read as-is, same as
-				// before `damageReduction()`'s removal.
-				this.hp -= tick.perTick(other.damage * (option.dmgScale ?? 1));
+				// common(tank,shape) = 4 (lib/damage.js, plan.md chunk 1 D2) - `other.damage` (the
+				// shape's) is diep's raw damagePerTick now, with no vs-tank x4 baked in any more, so
+				// this needs the same explicit multiplier the KIND.PLAYER arm above applies.
+				this.hp -= tick.perTick(other.damage * TANK_SHAPE_MULT * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= LETHAL_EPS) {
 					this.hp = 0;

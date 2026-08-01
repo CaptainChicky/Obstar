@@ -1065,21 +1065,23 @@ function baseDroneTests() {
 	// sits after the noDam break.
 	const mate = { kind: KIND.BULLET, origin: { oId: 999 }, x: drone.x + 1, y: drone.y, type: 0 };
 	const peneBefore = drone.pene, speedBefore = drone.vec.length();
-	drone.collision(mate, { noDam: 1, pene: 50 });
+	// `dmg`, not `pene` - rooms/Room.js hands a KIND.BULLET arm the OTHER bullet's fixed
+	// damagePerTick now, not its remaining pene pool (plan.md chunk 1's bullet-vs-bullet fix).
+	drone.collision(mate, { noDam: 1, dmg: 50 });
 	check('a same-team bullet damages a base drone not at all', drone.pene === peneBefore,
 		drone.pene);
 	check('...and does not shove it either', drone.vec.length() === speedBefore);
-	drone.collision(mate, { pene: 50 });
+	drone.collision(mate, { dmg: 50 });
 	check('an enemy bullet does damage it now - they used to be exempt outright',
 		drone.pene < peneBefore, drone.pene);
 
 	// Against a player the drone must take the PLAYER's body damage, not pene/5 of its own pool:
-	// at pene 2000 the old formula was 400 a tick, i.e. dead in five ticks of contact. 3.4632035 is
-	// entities/Player.js's own this.damage base (plan.md step 5's un-baked value, not the old
-	// 13.852814) - common(tank,bullet) = 1 (lib/damage.js), so this is the number a real tank's
+	// at pene 2000 the old formula was 400 a tick, i.e. dead in five ticks of contact. 5 is
+	// entities/Player.js's own this.damage base (plan.md chunk 1 D1's diep-raw value) -
+	// common(tank,bullet) = 1 (lib/damage.js), so this is the number a real tank's
 	// collision() would actually hand a drone here.
 	drone.pene = config.BASE_DRONE_HP;
-	drone.collision({ kind: KIND.PLAYER, id: { oId: 0 }, damage: 3.4632035, x: drone.x + 1, y: drone.y }, {});
+	drone.collision({ kind: KIND.PLAYER, id: { oId: 0 }, damage: 5, x: drone.x + 1, y: drone.y }, {});
 	check('touching a player costs it that player\'s body damage, not a fifth of its own health',
 		drone.pene > config.BASE_DRONE_HP - 20, drone.pene);
 
@@ -1092,11 +1094,11 @@ function baseDroneTests() {
 		victim.collision(drone, {});
 		const perTick = 1000 - victim.hp;
 		// damageReduction() is gone (PENDING #18, plan.md step 5): a victim now takes the drone's
-		// full BASE_DRONE_DAMAGE (4.84848) per tick, tick.perTick()'d - 4.84848 * (25/40) = 3.0303 -
-		// a loose sanity band around that, not a pin (config.BASE_DRONE_DAMAGE is pinned exactly
-		// above).
+		// full BASE_DRONE_DAMAGE (7, plan.md chunk 1 D1) per tick, tick.perTick()'d - 7 * (25/40) =
+		// 4.375 - a loose sanity band around that, not a pin (config.BASE_DRONE_DAMAGE is pinned
+		// exactly above).
 		check('a base drone does one tick of body damage, not 400 of them',
-			perTick > 2.5 && perTick < 3.5, perTick);
+			perTick > 3.75 && perTick < 5, perTick);
 		// Was "over ten seconds" pre-dr-removal (~33s at the old 0.4x-damage figure); dropping dr
 		// makes every source of damage to a tank 1/dr stronger (plan.md step 5's stated balance
 		// consequence), and a lone drone's own share of that is real but not one-shot: ~8.25s at
@@ -1155,9 +1157,9 @@ function baseDroneTests() {
 	lives in rooms/Room.js's pair loop, ahead of both collision() calls.
 
 	Two fresh Basic tanks, both at 0 Body Damage points, deal diep's own tank-vs-tank damage
-	(entities/Player.js's this.damage=3.4632035 x lib/damage.js's TANK_TANK_MULT=6=20.779221 per
-	reference tick, tick.perTick()'d to 12.987 at the live TICK_MS 25) - overlapped and set to 5 hp
-	each, well under that one-tick figure, so an un-prorated hit would drive both to roughly -8. The
+	(entities/Player.js's this.damage=5 x lib/damage.js's TANK_TANK_MULT=6=30 per
+	reference tick, tick.perTick()'d to 18.75 at the live TICK_MS 25) - overlapped and set to 5 hp
+	each, well under that one-tick figure, so an un-prorated hit would drive both to roughly -13.75. The
 	scale factor is derived exactly to land each side at 0, not merely "less negative" - a tight
 	pin, not a loose sanity band, is the actual proof this is prorating rather than just happening to
 	survive.
@@ -3906,6 +3908,21 @@ function upgradeEconomyTests(rooms) {
 		room.XPLVL[room.XPLVL.length - 1] === room.rules.maxXp, room.XPLVL[room.XPLVL.length - 1]);
 	check('the per-stat cap is 7', P.MAX_PER_STAT === 7, P.MAX_PER_STAT);
 
+	// diep's own XP curve shape (Const/Enums.ts:301-304, plan.md P1), not a power curve merely
+	// agreeing at the endpoints - ffa's own maxXp (25000) IS diep's raw 23537 (this mode's scale
+	// factor is 1.0622), so these land on diep's own published table exactly once rounded.
+	{
+		const diep = { 2: 4, 5: 50, 10: 275, 15: 788, 20: 1758, 30: 6185, 45: 23537 };
+		const scale = room.rules.maxXp / 23537;
+		let ok = true, detail = '';
+		for (const lvl in diep) {
+			const want = Math.round(diep[lvl] * scale);
+			const got = room.XPLVL[lvl - 1];
+			if (got !== want) { ok = false; detail += 'lvl' + lvl + ':' + got + '!=' + want + ' '; }
+		}
+		check('the XP curve matches diep\'s own published table at every cited level', ok, detail);
+	}
+
 	// The schedule: 1/level to 28, then one at 30 and every third level to 45.
 	check('a fresh spawn has no points - a point is granted per level-UP, not per level',
 		P.pointsAtLevel(1) === 0, P.pointsAtLevel(1));
@@ -4225,6 +4242,81 @@ function spawnSamplerTests() {
 }
 
 /*
+	Crasher chase (plan.md S1): before this pass a Crasher saw under half of diep's own range and,
+	once it found something, pulled toward it at ~26x too slow to ever threaten a moving tank -
+	PENDING.md's own untested checklist flagged this as "confirmed unexercised" since the seeded
+	corpus never spawns one. Covered directly here instead.
+*/
+function crasherChaseTests() {
+	console.log('\ncrasher chase (plan.md S1):');
+	const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+	const room = makeRoom('ffa');
+
+	// diep's own ai.viewRange 2000 du x 0.56 (Crasher.ts) - was 500, under half.
+	{
+		const crasher = new Objects('bull', 'bull', { GM: room.gm, sId: room.id, oId: -1 }, room.map, room);
+		check('a Crasher\'s own detector radius is diep\'s 2000du x 0.56, not the old 500',
+			crasher.DETEC.size === 1120, crasher.DETEC.size);
+	}
+
+	// diep's own 0.2 large-Crasher chance (Crasher.ts) - was 0.15. Sampled, not read off a
+	// literal, since the roll lives inside the constructor.
+	{
+		let large = 0;
+		const N = 20000;
+		for (let i = 0; i < N; i++) {
+			if (new Objects('bull', 'bull', { GM: room.gm, sId: room.id, oId: -1 }, room.map, room).crasherLarge) { large++; }
+		}
+		const ratio = large / N;
+		check('large-Crasher chance samples near diep\'s own 0.2, not the old 0.15',
+			Math.abs(ratio - 0.2) < 0.02, ratio.toFixed(3));
+	}
+
+	// A live target drives the Crasher toward diep's own ~364 u/s terminal (10 x targettingSpeed,
+	// run through the same decay-then-add BODY_FRICTION recurrence the tank integrator uses), not
+	// the old ~14 u/s idle-drift cap (maxspeed/2). Not pinned tight against 364 - M4's own 1.8%-ish
+	// discretization slop at the live TICK_MS applies here too - just proven to be in the right
+	// regime, an order of magnitude past the old cap.
+	{
+		const crasher = new Objects('bull', 'bull', { GM: room.gm, sId: room.id, oId: -1 }, room.map, room);
+		crasher.x = 0; crasher.y = 0;
+		crasher.DETEC.select = { x: 10000, y: 0, destroy: 0, god: 0 };
+		for (let i = 0; i < 400; i++) { crasher.update(); }
+		const speed = crasher.vec.length() * (1000 / config.TICK_MS);
+		check('a chasing Crasher settles far above the old ~14 u/s idle-drift cap',
+			speed > 200, speed.toFixed(1) + ' u/s');
+	}
+
+	// Idle drift (no live target) is untouched by the chase rewrite - still bounded near the old
+	// maxspeed/2 cap, not diep's own chase terminal.
+	{
+		const sq = new Objects('bull', 'bull', { GM: room.gm, sId: room.id, oId: -1 }, room.map, room);
+		sq.x = 0; sq.y = 0; sq.vec.x = 5; sq.vec.y = 0;
+		for (let i = 0; i < 400; i++) { sq.update(); }
+		check('idle drift (no live DETEC target) is unaffected by the chase rewrite',
+			sq.vec.length() < 1, sq.vec.length());
+	}
+
+	// End to end, through the real pair loop: a target 900 units off is inside diep's own
+	// 1120-unit range but outside the old 500-unit one.
+	{
+		const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+		const r2 = makeRoom('ffa');
+		player(r2, 0).destroy = 1;
+		const crasher = new Objects('bull', 'bull', { GM: r2.gm, sId: r2.id, oId: -1 }, r2.map, r2);
+		crasher.x = 0; crasher.y = 0;
+		r2.INSTANCE.objs.add((id) => { crasher.id = { GM: r2.gm, sId: r2.id, oId: id }; return crasher; });
+		const foe = r2.INSTANCE.players.add((id) => new Player(
+			{ GM: r2.gm, sId: r2.id, oId: id }, 900, 0, 'prey', 1, r2.XPLVL, r2));
+		foe.shield = 0; foe.alpha = 1;
+		for (let i = 0; i < 5; i++) { r2.step(); }
+		check('a target 900 units off is inside diep\'s own 1120-unit range, outside the old 500',
+			crasher.DETEC.select === foe, crasher.DETEC.select && 'found' || 'not found');
+	}
+}
+
+/*
 	The broad phase (plan.md WP4.5.4): the insert()/queryCircle() rewrite is what the rest of the
 	pass's speed-up depends on, so it is verified directly here rather than trusted - "queryCircle
 	agrees with a brute-force scan" is the one test that makes every other 4.5.4 change safe.
@@ -4495,6 +4587,7 @@ upgradeEconomyTests(rooms);
 healthUpgradeTests(rooms);
 arenaDensityTests(rooms);
 spawnSamplerTests();
+crasherChaseTests();
 broadPhaseTests();
 wallTests();
 

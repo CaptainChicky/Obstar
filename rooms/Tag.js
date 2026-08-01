@@ -243,9 +243,8 @@ class Tag extends Room {
 		into the shared class table, the same way createBoss() sets a boss's hp/size on the instance:
 		  size: 98, diepcustom's ArenaCloser.ts BASE_SIZE 175 du x 0.56 (plan.md Step 11) - was 64,
 		  a boss-body stand-in PENDING #51 flagged as unsatisfactory.
-		  damage: 34.632035, 10x this.damage's own diep-derived base (3.4632035, entities/Player.js,
-		  un-baked from 13.852814 by plan.md step 5's damage-multiplier-table rewrite) -
-		  "extremely high" without inventing a one-shot-everything constant from nothing.
+		  damage: 50, 10x this.damage's own diep-derived base (5, entities/Player.js, plan.md chunk 1
+		  D1) - "extremely high" without inventing a one-shot-everything constant from nothing.
 		hp/maxHp don't matter to a Closer itself (collision() never spends them - see there) but are
 		set to a real finite number rather than left at whatever a fresh level-0 tank defaults to,
 		in case anything else ever reads them (the leaderboard, an admin command); rules.bossHp is a
@@ -267,7 +266,7 @@ class Tag extends Room {
 			c.class = spec[2];
 			c.screen = CLASS[c.class].screen;
 			c.size = 98;
-			c.damage = 34.632035;
+			c.damage = 50;
 			c.hp = c.maxHp = this.rules.bossHp;
 			c.shield = 0;
 			c.motion = spec[0].bind(c);

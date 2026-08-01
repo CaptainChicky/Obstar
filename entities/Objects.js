@@ -29,6 +29,21 @@ const { TANK_SHAPE_MULT, LETHAL_EPS } = require('../lib/damage.js');
 */
 const HOME_PULL = tick.quadratic(0.543024);
 
+/*
+	Crasher chase accel (Crasher.ts, plan.md S1) - diep's own targettingSpeed, added into `this.vec`
+	every tick a live target is held, run through the SAME decay-then-add BODY_FRICTION=0.9
+	recurrence the tank integrator uses (public/SHARE/Physics.js's stepBody; M1's own "steady state
+	is 10 x A"). That recurrence's fixed point is exactly 10x whatever's added each tick, so these
+	land on diep's own quoted terminal (10 x 2.602 x 0.56 = 14.57 units/ref-tick, small; large's
+	2.64 du/tick lands a hair higher) with no hand-tuned cap - see update()'s `chasing` branch.
+	tick.quadratic(), not tick.perTick(), for the same reason HOME_PULL above is: added every tick
+	and integrated into position again, so it integrates twice over ticks.
+*/
+const CRASHER_CHASE_ACCEL_SMALL = tick.quadratic(2.602 * 0.56);
+const CRASHER_CHASE_ACCEL_LARGE = tick.quadratic(2.64 * 0.56);
+// Crasher.ts's ai.viewRange 2000 du x 0.56 (plan.md S1) - was 500, under half diep's own range.
+const CRASHER_VIEW_RANGE = 1120;
+
 class Objects {
 	constructor(type, pos, id, map, room) {
 		this.BUFF = {
@@ -41,7 +56,12 @@ class Objects {
 		this.size = 20;
 		this.collideId = Math.random();
 		this.hp = 20;
-		this.damage = 4.84848;   // one-time-rescaled from 4 (33ms ref); tick.perTick() at each consumer
+		// diep's raw damagePerTick now (plan.md chunk 1 D2) - no vs-tank x4 baked in any more (that
+		// lived here until lib/damage.js's common(a,b) table took over applying it at each consuming
+		// collision() site). This default is only ever read by Bsqr/Btri below, which have no diep
+		// counterpart: 1.21212 = the old baked 4.84848 / 4, so their actual damage dealt to a tank
+		// is unchanged - the axis fix carries them along rather than re-tuning them.
+		this.damage = 1.21212;
 		this.alpha = 1;
 		this.hit = 0;
 		this.spawnRad = 400;
@@ -94,20 +114,21 @@ class Objects {
 		switch (this.type) {
 			// Radii are diep's own du radius x 0.56 (Square/Triangle/Crasher-large 38.891, Pentagon
 			// 53.033, Alpha Pentagon 141.421, Crasher-small 24.749 du). HP/XP are diep's raw table;
-			// damage is diep damagePerTick x common(shape,tank)=4 x (4.84848/7) - our own anchor,
-			// 4.84848 being diep's 7 on our scale (plan.md step 6). maxspeed is 2x diep's own drift
-			// terminal (0.56/0.28 units/ref-tick) since update()'s vec.limit clamps to maxspeed/2,
-			// its own fixed point (plan.md step 7).
-			case "sqr": this.size = 21.78; this.hp = 10; this.prize = 10; this.damage = 5.54112; this.maxspeed = 1.12; break;
-			case "tri": this.size = 21.78; this.hp = 30; this.prize = 25; this.maxspeed = 1.12; this.damage = 5.54112; break;
-			case "pnt": this.size = 29.70; this.hp = 100; this.prize = 130; this.maxspeed = 0.56; this.weight = 4; this.damage = 8.31168; break;   // (weight is a mass divisor, not rescaled)
-			case "Bpnt": this.size = 79.20; this.hp = 3000; this.prize = 3000; this.maxspeed = 0.56; this.weight = 100; this.damage = 13.8528; break;
+			// damage is diep's raw damagePerTick, un-baked (plan.md chunk 1 D2, common(shape,tank)=4
+			// is applied at each consuming collision() site now instead - lib/damage.js). maxspeed is
+			// 2x diep's own drift terminal (0.56/0.28 units/ref-tick) since update()'s vec.limit
+			// clamps to maxspeed/2, its own fixed point (plan.md step 7).
+			case "sqr": this.size = 21.78; this.hp = 10; this.prize = 10; this.damage = 2; this.maxspeed = 1.12; break;
+			case "tri": this.size = 21.78; this.hp = 30; this.prize = 25; this.maxspeed = 1.12; this.damage = 2; break;
+			case "pnt": this.size = 29.70; this.hp = 100; this.prize = 130; this.maxspeed = 0.56; this.weight = 4; this.damage = 3; break;   // (weight is a mass divisor, not rescaled)
+			case "Bpnt": this.size = 79.20; this.hp = 3000; this.prize = 3000; this.maxspeed = 0.56; this.weight = 100; this.damage = 5; break;   // diep's Alpha Pentagon damagePerTick
 			// Bsqr/Btri have no diep counterpart (plan.md steps 6-7) - radius, hp, prize, damage and
-			// drift (maxspeed/rotationVal below) all left exactly as they were, flagged as ours.
+			// drift (maxspeed/rotationVal below) all left exactly as they were, flagged as ours; they
+			// inherit `this.damage`'s own default above rather than setting their own.
 			case "Bsqr": this.size = 90; this.hp = 8000; this.prize = 2000; this.maxspeed = 0.01212; this.weight = 100; break;   // .01
 			case "Btri": this.size = 72; this.hp = 7000; this.prize = 1000; this.maxspeed = 0.01212; this.weight = 100; break;   // .01
-			case "bull": this.size = 13.86; this.hp = 10; this.prize = 15; this.maxspeed = 1.12; this.damage = 5.54112;
-				this.DETEC = new Detector(this, this.x, this.y, 500, type = [KIND.PLAYER]); break;
+			case "bull": this.size = 13.86; this.hp = 10; this.prize = 15; this.maxspeed = 1.12; this.damage = 2;   // diep's Crasher damagePerTick, small and large alike
+				this.DETEC = new Detector(this, this.x, this.y, CRASHER_VIEW_RANGE, type = [KIND.PLAYER]); break;
 		}
 		this.coinReward *= parseInt(this.prize / 10);
 		switch (this.type) {
@@ -118,12 +139,15 @@ class Objects {
 				this.getPlace = 1;
 				break;
 		}
+		this.crasherLarge = false;
 		if (this.type === 'bull') {
-			if (Math.random() < 0.15) {
+			// diep's own 0.2 large-Crasher chance (Crasher.ts, plan.md S1) - was 0.15.
+			if (Math.random() < 0.2) {
 				// Large Crasher: diep's own 30 hp / 25 xp, same radius as Square/Triangle (plan.md step 6).
 				this.size = 21.78;
 				this.hp = 30;
 				this.prize = 25;
+				this.crasherLarge = true;
 			}
 		}
 		// Rarity roll. Checked rarest-first:
@@ -186,12 +210,10 @@ class Objects {
 				// above) but diep_wiki is explicit that its body "can't harm shapes" - so the damage/
 				// kill half is skipped for it alone, the one KIND.PLAYER exception in this arm.
 				if (other.closer) { break; }
-				// common(tank,shape) = 4 (lib/damage.js, plan.md step 5) - newly explicit here now that
-				// `other.damage` (the tank's `this.damage`) carries diep's raw damagePerTick with no
-				// vs-shape x4 baked in any more; the old code needed no multiplier at this site because
-				// that bake-in already WAS it, so this is numerically a no-op. `option.dmgScale` is
-				// rooms/Room.js's proration factor for this tick (1 unless either side would otherwise
-				// die mid-tick, plan.md step 5 part 4).
+				// common(tank,shape) = 4 (lib/damage.js, plan.md chunk 1 D2) - `other.damage` (the
+				// tank's `this.damage`) carries diep's raw damagePerTick, so this multiplier is
+				// load-bearing now. `option.dmgScale` is rooms/Room.js's proration factor for this
+				// tick (1 unless either side would otherwise die mid-tick, plan.md step 5 part 4).
 				this.hp -= tick.perTick(other.damage * TANK_SHAPE_MULT * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
 				// LETHAL_EPS, not 0 (lib/damage.js) - a prorated killing blow lands an ulp either side
@@ -213,20 +235,15 @@ class Objects {
 						return;
 					}
 				}
-				// `pene` no longer multiplies damage here (PENDING #18, the same fix
-				// entities/Player.js's own KIND.BULLET arm already got): a bullet's `pene` already
+				// `pene` no longer multiplies damage here (PENDING #18): a bullet's `pene` already
 				// decides how many ticks of contact it survives against this shape's own body damage
-				// (entities/Bullet.js's `this.pene -= tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE)`
-				// in its own KIND.OBJECTS arm) - multiplying the per-tick hit by `pene` again
-				// double-counted it, so damage against a shape scaled roughly quadratically with
-				// `pene` instead of linearly (a maxed-pene Destroyer erasing an Alpha Pentagon in one
-				// hit instead of the ~20+ diep's own numbers call for). This also retires the
-				// base-drone-pene substitution the old formula needed to avoid reading a drone's
-				// 2000-point health pool as a 2000x multiplier - a drone's `other.damage`
+				// (entities/Bullet.js's `this.pene -= tick.perTick(other.damage)` in its own
+				// KIND.OBJECTS arm) - multiplying the per-tick hit by `pene` again double-counted it.
+				// This also covers a drone's own hit the same way - a drone's `other.damage`
 				// (BASE_DRONE_DAMAGE) is already the right per-tick number on its own. common(bullet,
-				// shape) = 1 (lib/damage.js), so still no multiplier belongs here; `option.dmgScale` is
-				// rooms/Room.js's proration factor for this tick (1 unless either side would otherwise
-				// die mid-tick, plan.md step 5 part 4).
+				// shape) = 1 (lib/damage.js, plan.md chunk 1 D2), so still no multiplier belongs here;
+				// `option.dmgScale` is rooms/Room.js's proration factor for this tick (1 unless either
+				// side would otherwise die mid-tick, plan.md step 5 part 4).
 				this.hp -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= LETHAL_EPS) { this.hp = 0; this.destroy = tick.DES; }
@@ -247,18 +264,29 @@ class Objects {
 			this.size += tick.perTick(1.21212 + this.size * 0.01212);   // one-time-rescaled from 1 + size*.01
 			return;
 		}
-		this.vec.rotate(tick.perTick(this.rotationVal));
-		this.vec.limit(tick.perTick(this.maxspeed / 2), BODY_FRICTION)
+		// A live Crasher target (plan.md S1) - room.js's broad-phase pass already ran this tick, so
+		// this.DETEC.select is fresh. Chasing replaces the idle orbit-drift/limit() pair below with a
+		// real accel run through the tank-style decay-then-add recurrence (CRASHER_CHASE_ACCEL_* above)
+		// instead of HOME_PULL, which was tuned for the slow "drag back to spawn" pull, not a chase -
+		// it added the pull AFTER the position step (for next tick), the wrong order to hit a specific
+		// terminal: this needs decay, then add, then move, all the same tick.
+		const target = this.DETEC && this.DETEC.select &&
+			!this.DETEC.select.destroy && !this.DETEC.select.god ? this.DETEC.select : null;
+		if (target) {
+			this.vec.multiply(new Vec(BODY_FRICTION, BODY_FRICTION));
+			this.vec.add(new Vec(this.crasherLarge ? CRASHER_CHASE_ACCEL_LARGE : CRASHER_CHASE_ACCEL_SMALL, 0)
+				.rotate(Math.atan2(target.y - this.y, target.x - this.x)));
+			this.DETEC.enabled = 0;
+		} else {
+			this.vec.rotate(tick.perTick(this.rotationVal));
+			this.vec.limit(tick.perTick(this.maxspeed / 2), BODY_FRICTION)
+		}
 		this.x += this.vec.x / this.weight;
 		this.y += this.vec.y / this.weight;
 		if (this.DETEC) {
 			if (this.DETEC.select) {
 				if (this.DETEC.select.destroy || this.DETEC.select.god) {
 					this.DETEC.reset();
-				} else {
-					const v = new Vec(HOME_PULL, 0).rotate(Math.atan2(this.DETEC.select.y - this.y, this.DETEC.select.x - this.x))
-					this.vec.add(v)
-					this.DETEC.enabled = 0;
 				}
 			} else if (Math.sqrt(Math.pow(this.x - this.rx, 2) + Math.pow(this.y - this.ry, 2)) > 120) {
 				const v = new Vec(HOME_PULL, 0).rotate(Math.atan2(this.ry - this.y, this.rx - this.x))
