@@ -185,7 +185,7 @@ class Maze extends Room {
 			c.class = spec[2];
 			c.screen = CLASS[c.class].screen;
 			c.size = 64;
-			c.damage = 138.52814;
+			c.damage = 34.632035;   // 10x this.damage's own diep-derived base - see rooms/Tag.js's own createCloser()
 			c.hp = c.maxHp = this.rules.bossHp;
 			c.shield = 0;
 			c.motion = spec[0].bind(c);

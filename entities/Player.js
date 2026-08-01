@@ -16,6 +16,7 @@ const KIND = require('../public/SHARE/kinds.js');
 const ACHIEVEMENTS = require('../public/SHARE/AchievementsConfig.js').list;
 const Bullet = require('./Bullet.js');
 const Detector = require('./Detector.js');
+const { TANK_TANK_MULT } = require('../lib/damage.js');
 
 /*
 	Auto-turret aim lead (shoot()): the divisor in `other.vec * dis / AUTOTURRET_LEAD`, which
@@ -36,12 +37,6 @@ const Detector = require('./Detector.js');
 */
 const AUTOTURRET_LEAD = 15.84;
 
-// diep_wiki/Stats.txt: Body Damage "is increased by 50% when affecting Tanks" - the counterpart to
-// entities/Bullet.js's PROJECTILE_BODY_DAMAGE (-75% vs projectiles), both halves of the same wiki
-// sentence (PENDING #18/nuance 50). Applies to the KIND.PLAYER collision arm only (tank-vs-tank
-// body-ram); the vs-shapes baseline this multiplies is `this.damage` below (PENDING #17).
-const TANK_BODY_DAMAGE = 1.5;
-
 // Wall contact physics (PENDING #2, wall-only slice) - see lib/constants.js for what these mean
 // and why they're ours, not diep's. WALL_FRICTION is pre-converted to a per-tick drag factor at
 // load, same as entities/Objects.js's own BODY_FRICTION; WALL_BOUNCE is a dimensionless ratio
@@ -56,32 +51,28 @@ const WALL_FRICTION = tick.drag(require('../lib/constants.js').WALL_FRICTION);
 const SPIN_RATE = 0.04;
 
 /*
-	Regen, two regimes (PENDING #17, plan.md step 4): diep_wiki/Stats.txt's linear rate below the
-	hyper-regen threshold, hyper regen above it. Both are read directly in update() - no accumulator
-	any more, so no lib/tick.js "quadratic" category is needed here either; each is a genuine
-	per-reference-tick rate, tick.perTick()'d like any other.
+	Regen, two regimes (PENDING #17/#17's HYPER_REGEN_RATE, plan.md step 4): diep_wiki/Stats.txt's
+	linear rate below the hyper-regen threshold, hyper regen ADDED on top of it above the threshold
+	- not a replacement rate. Both terms are read directly in update() - no accumulator, so no
+	lib/tick.js "quadratic" category is needed here either; each is a genuine per-reference-tick
+	rate, tick.perTick()'d like any other.
 
-	HYPER_REGEN_DELAY: "the rate of regeneration greatly increases after approximately 30 seconds"
-	of no damage taken - 30000ms / REF_TICK_MS(40) = 750 reference ticks, converted once at load via
-	tick.ticks() to whatever TICK_MS actually is.
-
-	HYPER_REGEN_RATE: NOT published, so solved from diep_wiki/Stats.txt's own two tables rather than
-	guessed. The wiki's "Time to Regen to Full Health" table (0-7 Regen points: 31.97 / 30.67 /
-	23.07 / 15.15 / 11.75 / 9.13 / 7.72 / 6.41 s) is captioned "the amount of time... to fully
-	restore its health AFTER RAMMING INTO A PENTAGON" - i.e. it is NOT healing from 0% (the reading
-	plan.md's own writeup used as a illustrative shorthand), it is healing back a single ram's fixed
-	damage fraction D of MaxHp. Taking that literally and least-squares-fitting the two unknowns (D
-	and this rate) against all 8 published times - not just the point-0 illustration - lands at
-	D = 0.2011 (a single ram costs ~20% of the pool) and this rate, with a max residual of 0.7s
-	across all 8 points (the wiki itself: "Percentages and statistics on this page are merely
-	approximate"). The naive "healing from 0%" reading is internally INCONSISTENT past 1-2 Regen
-	points (it demands the tank finish healing in negative time by point 3), which is what rules it
-	out here rather than it being an arbitrary preference between two equally-valid fits.
-	Point-independent on purpose: diep_wiki/Stats.txt says Shapes/Bullets have no slow regen of
-	their own but DO hyper regen, so a Regen stat (which they don't have) cannot gate its rate.
+	diepcustom/src/Entity/Live.ts:130-135:
+		this.healthData.health += this.regenPerTick;                          // linear, always
+		if (this.game.tick - this.lastDamageTick >= 750)                      // 750 ticks = 30s
+			this.healthData.health += this.healthData.values.maxHealth / 250; // + 0.4%/tick = 10%/s
+	Corroborated verbatim by diepindepth/extras/stats.md: "'Hyper' regen ... regenerating at 10% of
+	health/sec (stacks with base)". HYPER_REGEN_DELAY (750 reference ticks = 30s) is unchanged from
+	before this step; only the hyper term's SHAPE changed, from a flat point-independent replacement
+	rate (previously least-squares-fit against diep_wiki's own, differently-captioned time-to-heal
+	table, since that table turned out to measure a post-ram partial refill, not a 0%-to-full one -
+	see PENDING #17's SHIPPED note for that derivation) to diep's own additive maxHp/250 per
+	reference tick, which is point-independent for the same reason the old fit was: diep_wiki/
+	Stats.txt says Shapes/Bullets have no slow regen of their own but DO hyper regen, so a Regen stat
+	(which they don't have) cannot gate it.
 */
 const HYPER_REGEN_DELAY = tick.ticks(750);
-const HYPER_REGEN_RATE = 0.085871;   // fraction of maxHp healed per SECOND once hyper regen is active
+const HYPER_REGEN_RATE = 1 / 250;   // diep's own maxHp/250 per REFERENCE tick (Live.ts:134) = 10%/s
 
 // Sandbox-only practice key ('k', PENDING "Sandbox gaps") - a threshold on a per-tick hold
 // counter (same tick.ticks() category HYPER_REGEN_DELAY above uses), not a physical quantity.
@@ -227,13 +218,13 @@ class Player {
 		this.level = 0;
 		this.stillLvl = 0;
 		this.droneCount = 0;
-		// diep's own vs-shapes body-damage baseline is (BodyDamagePoints+5)x4 = 20 at 0 points
-		// (diep_wiki/Stats.txt), 2.857142857x (20/7) a Basic bullet's own 7 damage/loop. Bullet
-		// magnitudes aren't diep-adopted yet (MEASUREMENTS.md's M1), so that ratio is applied to
-		// Basic's own can.damage (public/SHARE/TanksConfig.js, 4.84848) instead of converting 20
-		// directly - 4.84848 x 20/7 = 13.852814 (PENDING #17, was 8.48485, a 1.75x ratio against
-		// the same bullet). tick.perTick() at each hp -= site, same as before.
-		this.damage = 13.852814;
+		// diep's own raw damagePerTick (Live.ts:67-84, plan.md step 5) - no vs-shapes x4 baked in
+		// any more (that lived here from PENDING #17 until lib/damage.js's common(a,b) table took
+		// over applying it, and every other target's multiplier, at each consuming collision() site
+		// instead). 13.852814 / 4 = 3.4632035; #17's own derivation (4.84848 x 20/7, Basic's own
+		// can.damage carrying diep's 7-damage/loop anchor since bullet magnitudes aren't
+		// diep-adopted yet, MEASUREMENTS.md's M1) is otherwise unchanged, just un-baked.
+		this.damage = 3.4632035;
 		this.murder = -1;
 		this.up = {
 			"MSpeed": 0, //0
@@ -472,7 +463,8 @@ class Player {
 						rescale from.
 						BodyDam since PENDING #17's last open piece: `this.damage`'s base and step were
 						rederived from diep's own vs-shapes formula (see the constructor), not rescaled
-						from an old span - see that comment for the derivation.
+						from an old span - see that comment for the derivation, and lib/damage.js for
+						how the un-baked base (plan.md step 5) still lands on the same numbers.
 					*/
 					switch (i) {
 						// A point COUNT (diep_wiki/Stats.txt's "Regen Stat", read directly by update()'s
@@ -496,7 +488,7 @@ class Player {
 						// adds a fractional amount every tick, and the wire carries hp as a fraction of
 						// maxHp), so no truncation risk here.
 						case "HpUp": this.hp *= (this.maxHp + 20) / this.maxHp; this.maxHp += 20; break;
-						case "BodyDam": this.damage += 2.770563; break;   // 0.2 x the 13.852814 base - diep's own "BS = 1+0.2xbd" slope (PENDING #17), 2.4x base at the 7-point cap
+						case "BodyDam": this.damage += 0.69264; break;   // 0.2 x the 3.4632035 base - diep's own "BS = 1+0.2xbd" slope (PENDING #17), 2.4x base at the 7-point cap
 					}
 					break;
 				}
@@ -546,16 +538,6 @@ class Player {
 		this.droneCount = 0;
 		this.necro = CLASS[this.class].necro;
 		this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
-	}
-	// Body damage reduces damage taken (PENDING #18, plan.md step 9 - landed with step 4's health
-	// model per the lethality call, since adopting the HP side alone without this would have
-	// shortened time-to-kill 4-5x). diep_wiki/Stats.txt + PENDING #18: BS = 1 + 0.2*bd, and a tank
-	// takes 0.4/BS of a nominal DPL from any source - 40% at bd 0 (BS 1), 16.7% at bd 7 (BS 2.4).
-	// `this.upNb[5]` is BodyDam's own point count (the `up` object's index, same convention as
-	// upgrade()'s switch); `this.up.BodyDam`/`this.damage` track the OFFENSIVE side (damage this
-	// tank deals) and are untouched - this is the separate DEFENSIVE term #18 says we lack.
-	damageReduction() {
-		return 0.4 / (1 + 0.2 * this.upNb[5]);
 	}
 	collision(other, option = {}) {
 		if (this.dev.ghost) { return; }
@@ -618,7 +600,13 @@ class Player {
 					}
 				}
 				if (option.noDam || this.shield) { break; }
-				this.hp -= tick.perTick(other.damage * TANK_BODY_DAMAGE * this.damageReduction());
+				// Diep's damage-multiplier table (lib/damage.js, plan.md step 5): common(tank,tank) = 6.
+				// `damageReduction()` is gone - diep's own binary equivalent (0 for the guards above,
+				// 1 otherwise) is already what those early returns/breaks express. `option.dmgScale` is
+				// rooms/Room.js's proration factor for this tick (1 unless either side would otherwise
+				// die mid-tick, PENDING #18/plan.md step 5 part 4) - defaulted here so every direct
+				// collision() call in test/rooms.js that never sets it keeps behaving as a full-tick hit.
+				this.hp -= tick.perTick(other.damage * TANK_TANK_MULT * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) {
 					this.dead = tick.DEAD_DELAY;
@@ -661,7 +649,11 @@ class Player {
 					return;
 				}
 				if (this.shield) { return; }
-				this.hp -= tick.perTick(other.damage * this.damageReduction());
+				// common(tank,shape) = 4 (lib/damage.js) - a shape's own damage figures aren't
+				// diep-adopted yet (plan.md step 6), so unlike the KIND.PLAYER arm above there is no
+				// symmetric multiplier to add here; `other.damage` (the shape's) is read as-is, same as
+				// before `damageReduction()`'s removal.
+				this.hp -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) {
 					this.dead = tick.DEAD_DELAY;
@@ -698,7 +690,11 @@ class Player {
 				// line used to need: there's no multiplier left for a drone's 2000-point health pool to
 				// blow up (entities/Objects.js still needs its own, unrelated substitution at its own
 				// shape-damage site).
-				this.hp -= tick.perTick(other.damage * this.damageReduction());
+				// common(bullet,tank) = 1 (lib/damage.js) - `other.damage` here is the BULLET's own
+				// damage (can.damage x up.BDamage), not `this.damage`, and never carried a
+				// TANK_BODY_DAMAGE/PROJECTILE_BODY_DAMAGE-style multiplier even before
+				// `damageReduction()`'s removal, so this site is unchanged beyond that removal.
+				this.hp -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
 				break;
@@ -789,14 +785,14 @@ class Player {
 				this.noDamageTicks = Math.min(this.noDamageTicks + 1, HYPER_REGEN_DELAY);
 			}
 			if (this.hp < this.maxHp) {
-				const hps = (this.noDamageTicks >= HYPER_REGEN_DELAY)
-					// Point-independent (see HYPER_REGEN_RATE's comment above) - /25 converts diep's
-					// published per-SECOND rate to per-REFERENCE-tick, then tick.perTick() below
-					// converts that to the live tick, same two-step shape the linear branch uses.
-					? this.maxHp * HYPER_REGEN_RATE / 25
-					// diep_wiki/Stats.txt: HPS = MaxHp x (0.03 + 0.12 x Regen Stat) / 30, per SECOND;
-					// /25 is the same per-reference-tick conversion as the hyper branch above.
-					: this.maxHp * (0.03 + 0.12 * this.up.HpRegan) / 30 / 25;
+				// diep_wiki/Stats.txt: HPS = MaxHp x (0.03 + 0.12 x Regen Stat) / 30, per SECOND; /25
+				// converts that to per-REFERENCE-tick, then tick.perTick() below converts that to the
+				// live tick - always on, regardless of the hyper-regen gate below.
+				let hps = this.maxHp * (0.03 + 0.12 * this.up.HpRegan) / 30 / 25;
+				// Hyper regen ADDS to the linear rate above, it does not replace it (diepcustom/src/
+				// Entity/Live.ts:130-135, plan.md step 4) - HYPER_REGEN_RATE is already per-REFERENCE-
+				// tick (1/250 = diep's maxHp/250 per tick), so no further /25 conversion belongs here.
+				if (this.noDamageTicks >= HYPER_REGEN_DELAY) { hps += this.maxHp * HYPER_REGEN_RATE; }
 				this.hp += tick.perTick(hps);
 				this.hp = Math.min(this.maxHp, this.hp);
 			} else {

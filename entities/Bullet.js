@@ -16,12 +16,15 @@ const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
 const KIND = require('../public/SHARE/kinds.js');
 const Detector = require('./Detector.js');
+const { PROJECTILE_BODY_DAMAGE } = require('../lib/damage.js');
 
 // diep_wiki/Stats.txt: Body Damage is "decreased by 75% when affecting projectiles (Bullets,
 // Traps, Drones)" - MEASUREMENTS.md's pinned "-75% vs projectiles" entry (PENDING #18). Applies
 // to what a bullet's own `pene` (its spend-down health pool) loses per tick of contact with a
-// body-damage source below - not to what the bullet itself deals, which is untouched.
-const PROJECTILE_BODY_DAMAGE = 0.25;
+// body-damage source below - not to what the bullet itself deals, which is untouched. Since
+// plan.md step 5, this only still applies at the KIND.OBJECTS arm below (a shape's damage isn't
+// diep-adopted yet, plan.md step 6): the KIND.PLAYER arm's equivalent retired into
+// lib/damage.js's common(tank,bullet)=1, folded into `this.damage`'s own rebasing there.
 
 // Wall contact physics (PENDING #2, wall-only slice) - see lib/constants.js and entities/Player.js's
 // own KIND.WALL arm for what these mean and why they're ours, not diep's.
@@ -566,10 +569,14 @@ class Bullet {
 					// drone's pene IS a 2000-point health pool rather than a spend-down budget and the
 					// old self-referential pene/5 would have killed one in five ticks of contact - that
 					// reasoning turns out to generalize to every bullet, so the ordinary branch is gone
-					// and both read the same rule now. PROJECTILE_BODY_DAMAGE applies the wiki's other
-					// pinned body-damage rule alongside it: a tank's body damage is 75% weaker against a
-					// projectile than the raw `this.damage` it was reading here (PENDING #18).
-					this.pene -= tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE);
+					// and both read the same rule now. common(tank,bullet) = 1 (lib/damage.js, plan.md
+					// step 5) - `other.damage` (the tank's `this.damage`) carries diep's raw
+					// damagePerTick now, with no vs-shape x4 baked in, so unlike before
+					// `damageReduction()`'s removal this site needs no multiplier at all; PROJECTILE_
+					// BODY_DAMAGE's old 0.25 x the x4-baked base was the same number as 1 x the un-baked
+					// one. `option.dmgScale` is rooms/Room.js's proration factor for this tick (1 unless
+					// either side would otherwise die mid-tick, plan.md step 5 part 4).
+					this.pene -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.OBJECTS:
@@ -608,7 +615,9 @@ class Bullet {
 					// Same rule as the KIND.PLAYER arm above (PENDING #18, plan.md step 9): spent
 					// against the shape's own damage output, not self-referentially, and at the same
 					// -75%-vs-projectiles rate - shapes have Body Damage too (diep_wiki/Stats.txt).
-					this.pene -= tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE);
+					// PROJECTILE_BODY_DAMAGE stays live here (unlike the KIND.PLAYER arm above) because
+					// a shape's own damage figure isn't diep-adopted yet (plan.md step 6 has that).
+					this.pene -= tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE * (option.dmgScale ?? 1));
 					if (this.pene <= 0) { this.destroy = tick.DES }
 					break;
 				case KIND.BULLET:

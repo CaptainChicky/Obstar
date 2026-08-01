@@ -908,15 +908,24 @@ What's left in this section is itemised as open at each entry.*
       `+20/point`, replacing the old `150 + 3/lvl + 110/pt` shape outright — there was no faithful
       ratio in that formula worth preserving. A maxed level-45 tank lands on exactly diep's own
       **278** (`50 + 44×2 + 7×20`), which also resolved #23's `BASE_DRONE_HP` question (see #23).
-    - **Regen — SHIPPED, both regimes.** `entities/Player.js`'s `update()` reads diep's linear
-      `HPS = MaxHp × (0.03 + 0.12·rr)/30` below the hyper-regen threshold (30 s) and a flat,
-      point-independent hyper rate above it — no accumulator, so the old `lib/tick.js`
-      quantizer-category risk is gone with it. **`HYPER_REGEN_RATE = 0.085871`** (8.5871% of
-      `maxHp`/s, point-independent per diep_wiki) was derived by least-squares-fitting a Pentagon
-      ram's damage fraction and the hyper rate together against all 8 of diep_wiki's published
-      recovery times — the naive "residual pins it from a 0%-health reading" approach doesn't
-      survive contact with the wiki's own caption (the table measures recovery after a specific
-      partial-damage ram, not from empty).
+    - **Regen — SHIPPED, both regimes; the hyper term's SHAPE was re-shipped 2026-07-31 (plan.md
+      step 4).** `entities/Player.js`'s `update()` reads diep's linear `HPS = MaxHp ×
+      (0.03 + 0.12·rr)/30` below the hyper-regen threshold (30 s) — unchanged — and now ADDS diep's
+      own `maxHp/250` per reference tick on top of it once past that threshold, rather than
+      replacing the linear term outright (`diepcustom/src/Entity/Live.ts:130-135`, corroborated by
+      `diepindepth/extras/stats.md`'s "'Hyper' regen ... stacks with base"). Still no accumulator,
+      so the old `lib/tick.js` quantizer-category risk stays gone. **`HYPER_REGEN_RATE` is now
+      `1/250`** (diep's own per-reference-tick figure = 10%/s) — the old **`0.085871`**
+      (least-squares-fit against diep_wiki's own, differently-captioned "Time to Regen to Full
+      Health" table, since that table turned out to measure a post-ram partial refill rather than a
+      0%-to-full one) is retired along with the flat-replacement-rate premise it was fit to. Hyper
+      regen is point-dependent now (it stacks on the linear term, which is), where it explicitly
+      was not before: **10.1%/s at 0 Regen points, 12.9%/s at 7** (was a flat 8.5871% regardless of
+      points). `lib/gameAI.js`'s `DOMINATOR_HYPER_REGEN_RATE` moved with it (same value, same
+      additive reshape) since its own comment claims to mirror this formula exactly.
+      `test/rooms.js`'s `regenInvarianceTest()` re-baselined its hyper-regime case to the additive
+      shape; no `clientDiff` golden entities are known to reach the 30 s threshold in the corpus, so
+      that golden did not move from this step alone.
     - **Body damage — SHIPPED 2026-07-30.** diep's tank body deals **20** vs shapes at 0 points
       (`(BodyDamagePoints+5)×4`, `diep_wiki/Stats.txt`), **2.857142857×** (20/7) a Basic bullet's
       own 7 damage/loop — ours used to deal only **1.75×** (a legacy, non-diep 7-vs-4 pair, both
@@ -927,7 +936,8 @@ What's left in this section is itemised as open at each entry.*
       `this.damage` base moves `8.48485 → 13.852814` (`4.84848 × 20/7`), and the `BodyDam` per-point
       step to `2.770563` (`0.2 × base`, diep's own `BS = 1+0.2·bd` slope, landing on exactly diep's
       **2.4×** at the 7-point cap). This is the *offensive* magnitude (how much damage this tank's
-      body deals), separate from `dr` (the *defensive* multiplier on damage taken, shipped earlier).
+      body deals), separate from the old `dr` defensive multiplier on damage taken (shipped earlier,
+      **since retired outright** — no diep counterpart, see #18's `damageReduction()` bullet below).
       **`lib/config.js`'s `BASE_DRONE_DAMAGE` moved with it** (`2.97 → 4.84848`) to stay
       scale-consistent — see #23. **`rooms/Tag.js`'s Arena Closer damage moved with it too**
       (`84.8485 → 138.52814`, still exactly 10× the base) — see #28.
@@ -936,17 +946,64 @@ What's left in this section is itemised as open at each entry.*
       reproduced exactly, so the shift is provably these two values changing how long entities
       survive contact (nuance 34's "how long one LIVES" case), not an unrelated regression.
 
-18. **The damage *model* differs structurally — SHIPPED, all four fixes.** Kept only as a
+18. **The damage *model* differs structurally — SHIPPED, all four fixes; the first was replaced
+    outright 2026-07-31 (contradiction C1, plan.md step 5), not merely retuned.** Kept only as a
     *do-not-re-fix* record — several of the numbers below look arbitrary without the derivation.
     diep resolves a collision as mutual simultaneous destruction with partial-loop proration (each
     body has a constant damage-per-loop, loses health equal to the *opponent's* DPL, prorated if it
     dies mid-loop).
-    - **Body damage reduces damage taken.** `dr = 1 − 4/(10·BS)` (`entities/Player.js`'s
-      `damageReduction()`, `0.4 / (1 + 0.2 × this.upNb[5])`) applied at all three `collision()`
-      damage sites — 40% of a bullet's nominal DPL at `bd 0`, 16.7% at `bd 7`. The wiki's separately
-      quoted "−75% against projectiles" is a *different* rule (`(BodyDamagePoints+5)×multiplier`,
-      how fast a rammed bullet's own health depletes — the offensive side, #17) and must not be
-      conflated with this defensive term.
+    - **`damageReduction()` is GONE — it had no diep counterpart (contradiction C1).** The
+      `dr = 0.4 / (1 + 0.2·bd)` term (`entities/Player.js`'s old `damageReduction()`, applied at all
+      three `collision()` damage sites) was an attempt to approximate diep from first principles;
+      the reference turned out to say diep has no Body-Damage-points term on the *receiving* side at
+      all — `LivingEntity.damageReduction` (`Live.ts:44`) is a **binary** invulnerability multiplier
+      (`1.0` normally, `0.0` for spawn shield/godmode/Arena Closers), already fully expressed by this
+      tree's own early-return guards (`dev.ghost`/`closer`/`dev.god`/`shield`), which is why removing
+      the *term* needed no new guard logic. What diep actually scales damage by is
+      `common(a,b) = max(minMultA,minMultB) × min(maxMultA,maxMultB)` (`Live.ts:74-75`,
+      `lib/damage.js`'s `TANK_TANK_MULT=6`/`TANK_SHAPE_MULT=4`/`PROJECTILE_BODY_DAMAGE=0.25`, per a
+      table of tank `max 6`/shape `max 4`/bullet-drone-trap `max 1`, all `min 1` except bullets'
+      `0.25`) — the same 4/6/1 family this tree already modelled via `this.damage`'s baked-in ×4 vs
+      shapes plus the old `TANK_BODY_DAMAGE`/`PROJECTILE_BODY_DAMAGE` adjustment factors, just
+      re-expressed with `this.damage` un-baked to diep's own raw `damagePerTick` (`13.852814 →
+      3.4632035`, `BodyDam`'s step `2.770563 → 0.69264`) so `common()` can apply the *whole*
+      multiplier at each site instead of only the adjustment on top of a baked-in one.
+      **Numerically a no-op for tank-vs-tank and tank-vs-shape** (proven via `node -e`: both land on
+      the exact pre-existing figures, 20.779221 and 13.852814) — `rooms/Tag.js`/`rooms/Maze.js`'s
+      Arena Closer damage moved the same way (`138.52814 → 34.632035`, still exactly 10× the base).
+      **Not a no-op for shape-vs-tank or shape-vs-bullet**: those two sites read `other.damage`
+      un-multiplied still (a shape's own damage figures are not diep-adopted yet, plan.md step 6),
+      so **every source of damage to a tank is now `1/dr` stronger** — 2.5× at 0 Body Damage points,
+      6× at 7 — a flat factor because none of the three tank-damaging sites (tank ram, shape ram,
+      bullet hit) picked up a *new* multiplier, only lost the old defensive one; verified against
+      `test/rooms.js`'s base-drone-vs-shape figures, which moved from ~1.212 hp/tick to the plain
+      `tick.perTick(BASE_DRONE_DAMAGE)` ≈3.03 hp/tick, exactly `1/0.4`. **Balance consequence, stated
+      not hidden**: time-to-kill drops by roughly that factor — the same magnitude of lethality
+      change #17's own health-model rewrite made deliberately, now reversed on reference grounds by
+      the user. Playtest before step 6's shape table lands on top of it.
+    - **Proration — SHIPPED, the structural half of the same step.** diep's mutual, simultaneous
+      resolution (`Live.ts:67-84`) — both sides can only ever spend the SAME shared tick, so if
+      either would die mid-tick, BOTH sides' damage that tick scales down together by the same
+      factor, rather than each landing an independent, un-shortened full hit. Lives in
+      `rooms/Room.js`'s pair loop (`damageOutput()`/`damageGuarded()`, right before the two
+      `collision()` calls) since it needs both sides' current health and both sides' raw per-tick
+      output before either mutates anything — the per-kind `collision()` arms just read
+      `option.dmgScale` (default `1` via `??`, so every direct-call test that never sets it is
+      unaffected) as one more multiplier at their existing damage line. Found and fixed in the same
+      pass: the pair-loop's own `obj.size > other.size || obj.x+obj.y >= other.x+other.y` tie-break
+      double-processed any pair tied exactly on both size-ordering *and* position-sum (harmless
+      before proration existed, since each `collision()` call was independent; not harmless once
+      proration's own `dmgScale` computation assumes the pair it prorates is resolved exactly once)
+      — gated the position clause behind `obj.size === other.size` so it only tie-breaks a genuine
+      tie instead of independently satisfying both (obj,other) role assignments. `test/rooms.js`
+      gained a dedicated `prorationTest()` (two tanks overlapped at 5 hp each, well under one tank's
+      full-tick ram damage, both proven to land at ~0 hp exactly rather than deeply negative) since
+      no existing test drove the real pair loop into a mutual-death tick.
+      Note for whoever next touches `PROJECTILE_BODY_DAMAGE`: the wiki's "−75% against projectiles"
+      is a *different* rule from the now-gone `dr` (`(BodyDamagePoints+5)×multiplier`, how fast a
+      rammed bullet's own health depletes — the offensive side, #17) and must not be conflated with
+      it; the constant itself survives, but only at the shape-vs-bullet site (`entities/Bullet.js`'s
+      `KIND.OBJECTS` arm) — the tank-vs-bullet site's own equivalent retired into `common()` above.
     - **A bullet's health spends against the target's damage output.** `entities/Bullet.js`'s
       `collision()` reads `pene -= tick.perTick(other.damage)` unconditionally now (both
       `KIND.PLAYER` and `KIND.OBJECTS` arms) — the old base-drone-only special case (`type === 1.4`)
@@ -955,9 +1012,9 @@ What's left in this section is itemised as open at each entry.*
       *both* how many ticks of contact a bullet survives (via the point above) *and* was a separate
       damage multiplier at `Math.max(1, pene / 5)` — the same stat spent twice, ~quadratic in `pene`
       above 5. That multiplier is gone from `entities/Player.js` entirely (not replaced): damage per
-      tick is now just `can.damage × up.BDamage × dr`, and total damage scales with `pene` purely
-      through contact duration — the same shape base drones already used, so numerically a no-op
-      for them. `entities/Objects.js`'s differently-shaped shape-damage formula
+      tick is now just `can.damage × up.BDamage` (`× dr` too, at the time this was written — `dr`
+      itself is gone since, see above), and total damage scales with `pene` purely through contact
+      duration — the same shape base drones already used, so numerically a no-op for them. `entities/Objects.js`'s differently-shaped shape-damage formula
       (`(pene>1)?pene:pene/2`) was untouched, deliberately, **until a human flagged shapes as too
       fragile against upgraded/high-pene bullets and this was found to be why, 2026-07-31**: the
       identical double-count was live there too (a shape's damage taken was multiplied by the
@@ -973,10 +1030,14 @@ What's left in this section is itemised as open at each entry.*
       with it.
       Bundled in the same fix: the wiki's pinned "−75% against projectiles"
       (`PROJECTILE_BODY_DAMAGE = 0.25`) had been applied nowhere, so bullets were eaten 4× faster
-      than diep's rule — now applied at both `Bullet.js` collision sites. Also found and fixed in
-      the same pass: diep_wiki's "+50% against Tanks" for tank-vs-tank body-ram damage had no
-      equivalent — added as `TANK_BODY_DAMAGE = 1.5`, multiplied in alongside `damageReduction()` at
-      that one site only (not shapes, not bullets).
+      than diep's rule — applied at both `Bullet.js` collision sites at the time (plan.md step 5
+      later retired the tank-vs-bullet one of the two into `lib/damage.js`'s `common()` table
+      instead, leaving only the shape-vs-bullet site reading this constant directly — see #18's
+      `damageReduction()` bullet above). Also found and fixed in the same pass: diep_wiki's "+50%
+      against Tanks" for tank-vs-tank body-ram damage had no equivalent — added as
+      `TANK_BODY_DAMAGE = 1.5`, multiplied in alongside `damageReduction()` at that one site only
+      (not shapes, not bullets) — also retired into `lib/damage.js` by the same later step, as
+      `TANK_TANK_MULT`.
     - **Penetration → damage magnitude.** diep's stat slope is linear, `1 + 0.75×points` on a
       bullet's own HP (`diep_wiki/Dominator.txt`); ours accumulated `+1.0714286`/point from a base
       of 1 (an old 6→7-cap rescale carried through unrelated to diep). Fixing the per-point step to
@@ -1046,10 +1107,15 @@ What's left in this section is itemised as open at each entry.*
       gap left to bridge. Nothing in `lib/config.js` needed to change except the comment.
     - **`BASE_DRONE_DAMAGE: 4.84848`** (was `2.97` — moved with #17's body-damage fix, see there) is
       derived (`13.852814 × 7/20`, our tank body damage scaled by the wiki's 7-vs-20 bullet:body
-      ratio), not observed — ~121 HP/s nominal, ~48.5 HP/s effective against a fresh victim after
-      #18's `dr` (×0.4). A swarm of twelve still kills a maxed tank well under a second
-      (`278 / (12 × 121 × 0.4) ≈ 0.48 s`). **Playtest before treating as settled** — #17 and #18's
-      combined effect here was never separately checked.
+      ratio, un-baked to `3.4632035 × 7/20` since plan.md step 5 - same number either way), not
+      observed — ~121 HP/s nominal against a fresh victim. **Updated 2026-07-31 (plan.md step 5):**
+      the `dr` defensive term this bullet used to fold in (×0.4, giving ~48.5 HP/s effective) is
+      gone — `dr` had no diep counterpart (contradiction C1) and was removed outright, not retuned,
+      so a lone drone now deals its full ~121 HP/s (test/rooms.js pins ≈3.03 hp/tick at TICK_MS 25).
+      A swarm of twelve kills a maxed tank in about a fifth of a second
+      (`278 / (12 × 121) ≈ 0.19 s`), down from the already-fast ~0.48s this bullet used to predict.
+      **Playtest before treating as settled** — #17 and #18's combined effect here was never
+      separately checked, and is now more extreme than when this note was first written.
     - `CONST.MAX_UP_POINTS` (33) and `CONST.MAX_PER_STAT` (7) are hand-mirrored between client and
       server; `test/rooms.js` cross-checks both against `entities/Player.js` so the pair can't drift
       silently.

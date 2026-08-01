@@ -14,6 +14,7 @@ const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
 const KIND = require('../public/SHARE/kinds.js');
 const RARITY = require('../public/SHARE/ObjectsConfig.js').rarity;
 const Detector = require('./Detector.js');
+const { TANK_SHAPE_MULT } = require('../lib/damage.js');
 
 /*
 	update()'s DETEC-driven pull - a polygon boss chasing what its detector found, and any shape
@@ -162,7 +163,13 @@ class Objects {
 				// above) but diep_wiki is explicit that its body "can't harm shapes" - so the damage/
 				// kill half is skipped for it alone, the one KIND.PLAYER exception in this arm.
 				if (other.closer) { break; }
-				this.hp -= tick.perTick(other.damage);
+				// common(tank,shape) = 4 (lib/damage.js, plan.md step 5) - newly explicit here now that
+				// `other.damage` (the tank's `this.damage`) carries diep's raw damagePerTick with no
+				// vs-shape x4 baked in any more; the old code needed no multiplier at this site because
+				// that bake-in already WAS it, so this is numerically a no-op. `option.dmgScale` is
+				// rooms/Room.js's proration factor for this tick (1 unless either side would otherwise
+				// die mid-tick, plan.md step 5 part 4).
+				this.hp -= tick.perTick(other.damage * TANK_SHAPE_MULT * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.destroy = tick.DES; this.room.awardXp(other, this.prize); other.coins += this.coinReward }
 				break;
@@ -191,8 +198,11 @@ class Objects {
 				// hit instead of the ~20+ diep's own numbers call for). This also retires the
 				// base-drone-pene substitution the old formula needed to avoid reading a drone's
 				// 2000-point health pool as a 2000x multiplier - a drone's `other.damage`
-				// (BASE_DRONE_DAMAGE) is already the right per-tick number on its own.
-				this.hp -= tick.perTick(other.damage);
+				// (BASE_DRONE_DAMAGE) is already the right per-tick number on its own. common(bullet,
+				// shape) = 1 (lib/damage.js), so still no multiplier belongs here; `option.dmgScale` is
+				// rooms/Room.js's proration factor for this tick (1 unless either side would otherwise
+				// die mid-tick, plan.md step 5 part 4).
+				this.hp -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
 				if (this.hp <= 0) { this.destroy = tick.DES; }
 				if (this.type[0] === 'B') {

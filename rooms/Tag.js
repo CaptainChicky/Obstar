@@ -246,7 +246,8 @@ class Tag extends Room {
 		the shared class table:
 		  size: 64, a boss's own body radius (rooms/Room.js's createBoss()) - the closest tank-scale
 		  reference already modelled, for a tank the wiki calls Dominator-sized.
-		  damage: 138.52814, 10x this.damage's own diep-derived base (13.852814, entities/Player.js) -
+		  damage: 34.632035, 10x this.damage's own diep-derived base (3.4632035, entities/Player.js,
+		  un-baked from 13.852814 by plan.md step 5's damage-multiplier-table rewrite) -
 		  "extremely high" without inventing a one-shot-everything constant from nothing.
 		hp/maxHp don't matter to a Closer itself (collision() never spends them - see there) but are
 		set to a real finite number rather than left at whatever a fresh level-0 tank defaults to,
@@ -269,7 +270,7 @@ class Tag extends Room {
 			c.class = spec[2];
 			c.screen = CLASS[c.class].screen;
 			c.size = 64;
-			c.damage = 138.52814;
+			c.damage = 34.632035;
 			c.hp = c.maxHp = this.rules.bossHp;
 			c.shield = 0;
 			c.motion = spec[0].bind(c);

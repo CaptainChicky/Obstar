@@ -56,6 +56,7 @@ const Objects = require('../entities/Objects.js');
 const Detector = require('../entities/Detector.js');
 const Wall = require('../entities/Wall.js');
 const CONFIG = require('../lib/gameAI.js');
+const { TANK_TANK_MULT, TANK_SHAPE_MULT, PROJECTILE_BODY_DAMAGE } = require('../lib/damage.js');
 
 /*
 	ARENA SIZE AND SHAPE DENSITY - PENDING #19, plan.md step 6.
@@ -165,6 +166,52 @@ const BASE_DRONE_PROVOKE_MEMORY = tick.ticks(config.BASE_DRONE_PROVOKE_MEMORY);
 // A base drone is one of its own side's bullets, for the team-transparency skip below - type 1.4
 // with life -1 is otherwise indistinguishable from any other homing bullet.
 const isBaseDrone = (e) => e.kind === KIND.BULLET && e.type === 1.4;
+
+/*
+	Diep resolves a colliding pair's damage mutually and simultaneously (Live.ts:67-84, PENDING #18,
+	plan.md step 5 part 4) - both sides can only ever spend the SAME shared tick, so if either would
+	die mid-tick, BOTH sides' damage this tick prorates down together, rather than (as calling
+	collision() on each side independently and unconditionally would do) letting the survivor land
+	its own full, un-shortened hit past the moment its target actually died. That needs both raw
+	per-tick amounts AND both current healths before either side mutates anything, so it has to run
+	here, once, ahead of both collision() calls below - by the time the first of those two calls ran
+	under the pre-step-5 code, it had already spent the pair's shared health budget for the second.
+
+	damageOutput() mirrors, read-only, the same per-tick magnitude (pre proration, pre tick.perTick())
+	each collision() arm below is about to subtract - entities/Player.js's KIND.PLAYER/OBJECTS/BULLET
+	arms, entities/Bullet.js's KIND.PLAYER/OBJECTS arms, entities/Objects.js's KIND.PLAYER/BULLET arms
+	- using the same lib/damage.js constants those arms do, so the two can never drift on the numbers.
+	Bullet-vs-bullet is deliberately not one of the pairings here: that resolves through
+	entities/Bullet.js's own separate pene-vs-pene KIND.BULLET arm, not this table, so it returns 0
+	(inert) rather than being taught the wrong formula.
+*/
+function damageOutput(e, eKind, otherKind) {
+	switch (eKind) {
+		case KIND.PLAYER:
+			if (otherKind === KIND.PLAYER) return e.damage * TANK_TANK_MULT;
+			if (otherKind === KIND.OBJECTS) return e.damage * TANK_SHAPE_MULT;
+			if (otherKind === KIND.BULLET) return e.damage;
+			return 0;
+		case KIND.OBJECTS:
+			if (otherKind === KIND.PLAYER) return e.damage;
+			if (otherKind === KIND.BULLET) return e.damage * PROJECTILE_BODY_DAMAGE;
+			return 0;
+		case KIND.BULLET:
+			if (otherKind === KIND.PLAYER || otherKind === KIND.OBJECTS) return e.damage;
+			return 0;
+		default:
+			return 0;
+	}
+}
+// Whether `e`'s own collision() is guaranteed to skip its hp -= line entirely regardless of what
+// hits it - mirrors entities/Player.js's dev.ghost/closer/dev.god early-returns and its shield
+// check, since Room.js has to know BEFORE calling collision() whether either side's damage this
+// tick will really land. Only ever true for a KIND.PLAYER entity: nothing else in this tree
+// carries `.dev`/`.shield`, and a BULLET's own `.closer` flag (a Closer's own bullet) guards wall
+// passthrough only (entities/Bullet.js's KIND.WALL arm), not this.
+function damageGuarded(e, eKind) {
+	return eKind === KIND.PLAYER && (e.dev.ghost || e.dev.god || e.closer || e.shield);
+}
 
 // Caller-owned scratch array for the collision pass's quadTree.queryCircle() calls - reused and
 // cleared (length = 0) before every query rather than allocated fresh, since
@@ -1161,7 +1208,17 @@ class Room {
 						}
 					}
 					if (dis <= obj.size + other.size) {
-						if (obj.size > other.size || obj.x + obj.y >= other.x + other.y) {
+						// Antisymmetric tie-break, so each unordered pair resolves through exactly one
+						// of its two (obj,other)/(other,obj) visits below - the position-sum clause is
+						// only a TIE-break (gated on size equality) now, not an independent OR: at an
+						// exact position tie (obj.x+obj.y === other.x+other.y) between entities of
+						// DIFFERENT sizes, the un-gated `||` used to let BOTH visits satisfy this guard
+						// (`>=` holds in both directions when the sums are equal), double-processing the
+						// pair - harmless before proration existed (each collision() call was
+						// independent), but proration's own dmgScale computation above assumes the pair
+						// it is prorating is resolved once, per plan.md step 5's own "must be resolved
+						// once" requirement, so a double resolution would double-apply it too.
+						if (obj.size > other.size || (obj.size === other.size && obj.x + obj.y >= other.x + other.y)) {
 							///
 							if (other.getPlace || obj.getPlace) {
 								if (other.getPlace && objKind === KIND.PLAYER) {
@@ -1182,6 +1239,22 @@ class Room {
 							if (this.rules.teamPlay && objKind !== KIND.OBJECTS && otherKind !== KIND.OBJECTS && obj.team === other.team) {
 								objOption.noDam = 1;
 								otherOption.noDam = 1;
+							}
+							// Proration (PENDING #18, plan.md step 5 part 4) - see damageOutput()/
+							// damageGuarded() above for why this has to run before either collision() call.
+							if (!objOption.noDam && !damageGuarded(obj, objKind) && !damageGuarded(other, otherKind)) {
+								const dObjToOther = tick.perTick(damageOutput(obj, objKind, otherKind));
+								const dOtherToObj = tick.perTick(damageOutput(other, otherKind, objKind));
+								if (dObjToOther > 0 && dOtherToObj > 0) {
+									const objHp = objKind === KIND.BULLET ? obj.pene : obj.hp;
+									const otherHp = otherKind === KIND.BULLET ? other.pene : other.hp;
+									const ratio = Math.max(1 - objHp / dOtherToObj, 1 - otherHp / dObjToOther);
+									const scale = Math.min(1, 1 - ratio);
+									if (scale < 1) {
+										objOption.dmgScale = scale;
+										otherOption.dmgScale = scale;
+									}
+								}
 							}
 							if (objKind === KIND.BULLET) {
 								otherOption.pene = obj.pene;

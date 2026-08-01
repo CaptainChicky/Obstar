@@ -1057,9 +1057,12 @@ function baseDroneTests() {
 		drone.pene < peneBefore, drone.pene);
 
 	// Against a player the drone must take the PLAYER's body damage, not pene/5 of its own pool:
-	// at pene 2000 the old formula was 400 a tick, i.e. dead in five ticks of contact.
+	// at pene 2000 the old formula was 400 a tick, i.e. dead in five ticks of contact. 3.4632035 is
+	// entities/Player.js's own this.damage base (plan.md step 5's un-baked value, not the old
+	// 13.852814) - common(tank,bullet) = 1 (lib/damage.js), so this is the number a real tank's
+	// collision() would actually hand a drone here.
 	drone.pene = config.BASE_DRONE_HP;
-	drone.collision({ kind: KIND.PLAYER, id: { oId: 0 }, damage: 13.852814, x: drone.x + 1, y: drone.y }, {});
+	drone.collision({ kind: KIND.PLAYER, id: { oId: 0 }, damage: 3.4632035, x: drone.x + 1, y: drone.y }, {});
 	check('touching a player costs it that player\'s body damage, not a fifth of its own health',
 		drone.pene > config.BASE_DRONE_HP - 20, drone.pene);
 
@@ -1071,14 +1074,18 @@ function baseDroneTests() {
 		victim.hp = victim.maxHp = 1000; victim.shield = 0; victim.dev.ghost = 0;
 		victim.collision(drone, {});
 		const perTick = 1000 - victim.hp;
-		// Bounds carry PENDING #18's dr term: a fresh (0 body-damage-point) victim takes 0.4/BS =
-		// 0.4 of the nominal hit. PENDING #17's body-damage-magnitude fix moved BASE_DRONE_DAMAGE
-		// (2.97 -> 4.84848) with it, landing the nominal-hit-with-dr figure at ~1.21212 - a loose
-		// sanity band around that, not a pin (config.BASE_DRONE_DAMAGE is pinned exactly above).
+		// damageReduction() is gone (PENDING #18, plan.md step 5): a victim now takes the drone's
+		// full BASE_DRONE_DAMAGE (4.84848) per tick, tick.perTick()'d - 4.84848 * (25/40) = 3.0303 -
+		// a loose sanity band around that, not a pin (config.BASE_DRONE_DAMAGE is pinned exactly
+		// above).
 		check('a base drone does one tick of body damage, not 400 of them',
-			perTick > 0.8 && perTick < 2, perTick);
-		check('...so a maxed tank survives a lone drone for over ten seconds',
-			1000 / (perTick * (1000 / config.TICK_MS)) > 10);
+			perTick > 2.5 && perTick < 3.5, perTick);
+		// Was "over ten seconds" pre-dr-removal (~33s at the old 0.4x-damage figure); dropping dr
+		// makes every source of damage to a tank 1/dr stronger (plan.md step 5's stated balance
+		// consequence), and a lone drone's own share of that is real but not one-shot: ~8.25s at
+		// TICK_MS 25, still "low damage, delivered extremely quickly" (diep_wiki), not lethal alone.
+		check('...so a maxed tank survives a lone drone for at least 5 seconds',
+			1000 / (perTick * (1000 / config.TICK_MS)) > 5);
 	}
 
 	// Respawn: the post empties, then refills a wall-clock second later.
@@ -1121,6 +1128,36 @@ function baseDroneTests() {
 		four.inEnemyBase(diag) === true);
 	check('...and a point past the square on one axis only is outside',
 		four.inEnemyBase({ team: 0, x: c.x - Math.sign(c.x) * (four.baseSize + 10), y: c.y }) === false);
+}
+
+/*
+	Damage proration (PENDING #18, plan.md step 5 part 4): diep resolves a colliding pair's damage
+	mutually and simultaneously, so if either side would die mid-tick, BOTH sides' damage that tick
+	scales down together rather than each landing an un-shortened full hit. Drives a real room.step()
+	(not a direct collision() call, unlike the base-drone tests above) since the resolver this pins
+	lives in rooms/Room.js's pair loop, ahead of both collision() calls.
+
+	Two fresh Basic tanks, both at 0 Body Damage points, deal diep's own tank-vs-tank damage
+	(entities/Player.js's this.damage=3.4632035 x lib/damage.js's TANK_TANK_MULT=6=20.779221 per
+	reference tick, tick.perTick()'d to 12.987 at the live TICK_MS 25) - overlapped and set to 5 hp
+	each, well under that one-tick figure, so an un-prorated hit would drive both to roughly -8. The
+	scale factor is derived exactly to land each side at 0, not merely "less negative" - a tight
+	pin, not a loose sanity band, is the actual proof this is prorating rather than just happening to
+	survive.
+*/
+function prorationTest() {
+	console.log('\ndamage proration (plan.md step 5 part 4):');
+	const room = makeRoom('ffa');
+	room.ask({ name: 'tester2', key: '1'.repeat(25), pet: -1, gm: 'ffa' });
+	const a = player(room, 0), b = player(room, 1);
+	a.class = 'Basic'; b.class = 'Basic';
+	a.shield = 0; b.shield = 0;
+	a.dev.ghost = 0; b.dev.ghost = 0;
+	a.x = 0; a.y = 0; b.x = 1; b.y = 0;   // deep overlap - well inside size(28) + size(28)
+	a.hp = a.maxHp = 5; b.hp = b.maxHp = 5;
+	room.step();
+	check('a mutual near-lethal ram prorates both sides to (near) exactly 0, not deeply negative',
+		Math.abs(a.hp) < 0.1 && Math.abs(b.hp) < 0.1, a.hp + ' / ' + b.hp);
 }
 
 /*
@@ -3388,6 +3425,9 @@ function autoTurretLeadInvarianceTest(near) {
 
 	Mirrors entities/Player.js's own two formulas rather than calling the full update() (which would
 	couple this to motion()/shoot()/xp - unrelated systems this test has no reason to depend on).
+	"Hyper" below means the ADDITIVE regime (linear + maxHp/250, diepcustom's Live.ts:130-135) now,
+	not the old flat replacement rate - healedHyper() includes the linear term on purpose so its
+	total is directly comparable to healedLinear()'s (it should always heal more, never less).
 */
 function regenInvarianceTest() {
 	function healedLinear(tickMs, wallMs) {
@@ -3406,7 +3446,9 @@ function regenInvarianceTest() {
 			const p = new Player({ oId: 0 }, 0, 0, 'x', 1, [0, 1e9], fakeRoom());
 			p.update();
 			let healed = 0;
-			const hps = p.maxHp * Player.HYPER_REGEN_RATE / 25;
+			// HYPER_REGEN_RATE is already per-REFERENCE-tick (diep's maxHp/250) - no /25 here, unlike
+			// the linear term above, which still converts from diep's published per-SECOND rate.
+			const hps = p.maxHp * (0.03 + 0.12 * p.up.HpRegan) / 30 / 25 + p.maxHp * Player.HYPER_REGEN_RATE;
 			const steps = Math.round(wallMs / tickMs);
 			for (let i = 0; i < steps; i++) { healed += tick.perTick(hps); }
 			return healed;
@@ -3420,9 +3462,11 @@ function regenInvarianceTest() {
 		l16.toFixed(3) + ' / ' + l25.toFixed(3) + ' / ' + l33.toFixed(3));
 
 	const h16 = healedHyper(16, 10000), h25 = healedHyper(25, 10000), h33 = healedHyper(33, 10000);
-	check('hyper-regime regen over 10s agrees within 1% at TICK_MS 16/25/33',
+	check('hyper-regime (additive) regen over 10s agrees within 1% at TICK_MS 16/25/33',
 		near(h16, h33, 0.01) && near(h25, h33, 0.01),
 		h16.toFixed(3) + ' / ' + h25.toFixed(3) + ' / ' + h33.toFixed(3));
+	check('hyper-regime heals strictly more than linear-regime alone over the same window',
+		h25 > l25, h25 + ' vs ' + l25);
 
 	// The threshold itself: tick.ticks(750) must span the same ~30s of wall clock at every rate,
 	// same property test/rooms.js already checks for tick.DES/DEAD_DELAY/KEEP_PLACE elsewhere.
@@ -4303,6 +4347,7 @@ modeTableTests(rooms);
 gridAnchorTests();
 baseDroneTests();
 baseDroneAiTests();
+prorationTest();
 tickScaleTests();
 fovTests(rooms);
 oobTests(rooms);

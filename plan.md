@@ -252,6 +252,23 @@ golden move is attributed to the reload column with nothing else to isolate agai
   it is worth a playtest before Step 9's bullet work lands on top of it.
 
 ### Step 4: Hyper regen is additive, not a replacement rate
+
+**Step 4 LANDED (2026-07-31).** Landed exactly as the step body predicts, including the two-regime
+`test/rooms.js` numbers (`regenInvarianceTest()`'s `healedHyper()` re-baselined to sum the linear
+term with the additive one, plus a new "heals strictly more than linear alone" check). `lib/
+gameAI.js`'s `DOMINATOR_HYPER_REGEN_RATE` was found duplicating the OLD flat rate verbatim (its own
+comment claims to mirror `entities/Player.js`'s formula) and was moved the same way — not named in
+the step body, but caught by the nuance-37 old-literal grep and clearly in-scope once found.
+**Golden isolation, done properly since this step landed in the same session as Step 5**: with
+Step 5's code in place, temporarily reverting *only* this step's regen formula back to the old flat
+replacement rate and re-running `test/clientDiff.js` reproduced the post-Step-5 golden
+(`302780/70b95d70`) exactly — confirming, as the step body's own "verify, don't assume" note asked
+for, that no corpus entity in the four-room seed actually reaches the 30 s hyper-regen threshold
+undamaged. **This step's own contribution to the golden is provably zero**; the whole shift belongs
+to Step 5 (see its own LANDED note). `npm test` was run once, after both steps 4 and 5 landed
+together (see Step 5's LANDED note for why they were implemented in the same pass rather than
+tested separately) — code, lint and every test file are green.
+
 - **Resolves:** PENDING #17's `HYPER_REGEN_RATE`.
 - **Reference:** `diepcustom/src/Entity/Live.ts:130-135` —
   ```ts
@@ -288,6 +305,79 @@ golden move is attributed to the reload column with nothing else to isolate agai
 - **Moves:** nothing.
 
 ### Step 5: The damage model becomes diep's — `damageReduction()` out, multiplier table + proration in
+
+**Step 5 LANDED (2026-07-31), together with Step 4 in the same session** (the user's own instruction
+for this session named both steps in order; implementation for both was written before either was
+tested, then `npm test` was run once against the combined result - see Step 4's own LANDED note for
+the golden-isolation check proving Step 4 contributed nothing to the shared golden move, so
+attributing the whole shift to Step 5 below is sound despite the untested-in-isolation order).
+
+**Parts 1-3 (`dr` deletion, multiplier table, `max(min1,min2)`) landed as one change, not three
+separate isolation-pass commits** - `npm test` runs a whole `node` process per file, so a literal
+three-`clientDiff`-run isolation (as nuance 34's nearby steps did) would have meant three full
+`npm test` cycles against the session's own "`npm test` once per step" constraint. Verified instead
+by direct computation (`node -e`, not a test file - see below) that the "numerically a no-op for
+tank-vs-shape and tank-vs-tank" claim holds exactly, which is the same fact a revert-and-diff
+isolation pass would have proven, cheaper. `max(min1,min2)` was never wired to a live call site at
+all (see the judgement call below) so there was nothing to isolate for it.
+
+**The one judgement call the step body doesn't spell out explicitly, made here and worth recording:**
+the multiplier table's `common(a,b)` only actually got wired in at the THREE sites that consume
+`this.damage` (tank ram → tank, tank ram → shape, tank ram → bullet) - not at the two sites where a
+*shape's* own damage is what's flowing (shape ram → tank, `entities/Player.js`'s `KIND.OBJECTS` arm;
+shape damage → bullet, `entities/Bullet.js`'s `KIND.OBJECTS` arm keeping `PROJECTILE_BODY_DAMAGE`
+unchanged). Reasoning: `entities/Objects.js`'s shape damage figures are not diep-adopted yet (that's
+Step 6's job, and Step 6's own body already plans to bake a `x4` common-multiplier into the shape's
+*value itself*, the same convention `this.damage` used before this step un-baked it) - multiplying
+an un-rebased legacy number by `common()` now would invent a number Step 6 would immediately have to
+un-invent. **Verified, not just argued**: the step body's own stated balance consequence -
+"every source of damage to a tank becomes 2.5x stronger at 0 points and 6x at 7" - is only true as a
+single FLAT factor across tank/shape/bullet sources if none of the three tank-damaging sites picked
+up a new multiplier alongside `dr`'s removal; a shape-ram site that also gained `common(shape,tank)=4`
+would make that source 4/dr (10x-24x), not 1/dr (2.5x-6x), contradicting the step body's own number.
+The flat factor holding is the proof this call was the one intended.
+
+**Part 4 (proration) landed as the structural piece the step body flags it as**, in
+`rooms/Room.js`'s pair loop (`damageOutput()`/`damageGuarded()`, mirroring - not reusing, since
+Room.js has to know both sides' numbers before either `collision()` call mutates anything - the same
+`lib/damage.js` constants each `collision()` arm consumes). `entities/{Player,Bullet,Objects}.js`'s
+damage lines now read `option.dmgScale` (default `1` via `??`, never `||`, since a legitimate scale
+can be exactly `0`) as one more multiplier - the "per-kind arms keep only the non-damage physics"
+instruction from the step body turned out not to require moving the magnitude *formulas* out of
+`collision()`, only adding one more read-only factor to lines that were already there.
+**Found and fixed in the same pass, because it broke proration's own "resolved once" assumption**:
+`rooms/Room.js`'s pair-processing tie-break (`obj.size > other.size || obj.x+obj.y >= other.x+other.y`)
+double-processed any pair tied exactly on position-sum, regardless of size, because the position
+clause was an independent `||` term rather than a tie-break gated on a genuine size tie - harmless
+before proration existed (each `collision()` call was independent of the other), not harmless once
+a shared `dmgScale` is computed once and assumed applied once. Gated the position clause behind
+`obj.size === other.size`. This is a pre-existing bug in code Step 5 did not otherwise touch, in
+scope only because Step 5's own design depends on the guarantee it broke - flagged here rather than
+silently bundled. Verified with a new `test/rooms.js` `prorationTest()`: two tanks overlapped at 5 hp
+each (both well under one tank's own full-tick ram damage, ~13 hp at the live TICK_MS), asserted to
+land at (near-)exactly 0 hp rather than deeply negative - a tight pin, since the scale factor is
+derived to land there exactly, not a loose survival check.
+
+**Numbers, exactly as predicted**: `this.damage` base `13.852814 → 3.4632035`, `BodyDam` step
+`2.770563 → 0.69264`, `rooms/Tag.js`'s Arena Closer damage `138.52814 → 34.632035` (found a second,
+undocumented copy in `rooms/Maze.js`'s own `createCloser()` via the nuance-37 grep - fixed the same
+way, flagged since the step body's "Moves" list didn't know it existed). `lib/config.js`'s
+`BASE_DRONE_DAMAGE` comment (not the constant - `BASE_DRONE_DAMAGE` itself was already independently
+correct, see PENDING #23) cited the old `13.852814` and was updated to explain the un-baking rather
+than silently going stale.
+
+**Test impact, as predicted - the largest golden move of the pre-bullet steps**:
+`test/clientDiff.js`'s golden moved `362003/99aea12d → 302780/70b95d70` - op count *dropped* ~16%
+(entities die faster with `dr` gone, so fewer are alive to draw at any tick - nuance 34's "how long
+one LIVES" case, the same direction Step 2's `BDamage` slope moved it). `test/rooms.js`'s base-drone-
+vs-shape damage-to-a-tank figure moved from ~1.212 hp/tick to the plain `tick.perTick(BASE_DRONE_
+DAMAGE)` ≈3.03 hp/tick (exactly `1/0.4`, confirming the flat-factor claim above numerically, not just
+by argument) - its "survives a lone drone" bound dropped from "over ten seconds" (~33 s pre-removal)
+to "at least 5 seconds" (~8.25 s actual), still comfortably non-lethal alone. **Balance consequence,
+as the step body warns**: time-to-kill drops sharply across the whole roster. Not yet playtested by a
+human - both this step's own note and PENDING #23's pre-existing "playtest before treating as
+settled" flag on `BASE_DRONE_DAMAGE` still stand, now compounded (a swarm of twelve base drones kills
+a maxed tank in ~0.19 s instead of the already-fast ~0.48 s `dr` used to allow - see PENDING #23).
 - **Resolves:** contradiction C1. **Decided by the user, 2026-07-31:** `damageReduction()` was an
   attempt to approximate diep; the reference says diep has no such term, so it goes and diep's real
   model goes in. This reopens PENDING #18's `dr` bullet (SHIPPED, but on a premise now known false)
