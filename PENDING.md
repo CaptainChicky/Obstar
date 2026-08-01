@@ -533,6 +533,10 @@ shape count scaling with player count, bosses still spawning after 50–60 minut
     drawn-height-vs-spawn-radius gap deliberately for any new boss cannon table instead of assuming
     the ordinary 0-12 band applies. #51 below is this same tension arriving in practice, for two
     entities that aren't bosses at all.
+    **A related, separate mismatch on the same axis:** a bullet's own drawn *size* was never
+    converted to diep's radius formula either, for the identical reason (our barrel widths are drawn
+    on a different scale than diep's) — see nuance 54's last paragraph for the numbers. Belongs with
+    whichever session does the barrel/silhouette pass, not fixed on its own.
 
 51. **Arena Closer and Dominator both reuse the boss's stand-in body — a human has now looked at
     both and flagged them as unsatisfactory: shape, size, and behaviour all worth revisiting.**
@@ -768,20 +772,22 @@ than remembered. Anything that is genuinely a decision has its own numbered item
     NOT survive:** the per-step `clientDiff` golden lineage (op-count/hash chain, isolation tables).
     If a future rebaseline needs that technique, nuance 34 describes it — rebuild from there.
 
-    **A new `plan.md` now exists (regenerated from `diepcustom`/`diepindepth`) — its Step numbers
-    are new and unrelated to the old ones above, and nothing in the tree should ever be commented
-    "plan.md step N" using them either.** The old work queue's steps are gone for good (this
-    paragraph, unchanged); the current `plan.md` is a *different* document with its own Steps 1-13
-    (bullet/damage/maze work, landed 2026-07-31 through 2026-08-01) and its own eventual fate —
-    once every step lands and this documentation-cleanup step finishes, it may be deleted the same
-    way its predecessor was. Do not assume a bare "plan.md step N" or "plan.md Step N" citation
-    found in the tree points at whichever `plan.md` happens to exist when you read it — the two
-    numbering schemes collide (e.g. an old "plan.md step 2" citation is about tank-magnitude work,
-    while the *current* `plan.md`'s Step 2 is the Bullet Damage/Speed slopes) — read the cited
-    content, not the number, to tell which one a given citation means. Nuance 48's rule (comments
-    describe what the code does, not cross-file references) is what stops this from recurring: no
-    *code* comment should cite a plan.md step number of either vintage, so this ambiguity is
-    confined to prose in `HANDOFF.md`/`PENDING.md`, not the source itself.
+    **The second `plan.md` (regenerated from `diepcustom`/`diepindepth`, Steps 1-13, bullet/damage/
+    maze work) is ALSO now deleted — 2026-08-01, its own Step 13 finished — same fate as its
+    predecessor, same reason.** Its own Step 13 was a checklist of exactly what to fold into
+    `MEASUREMENTS.md`/`PENDING.md`/`HANDOFF.md` §3 before deletion; that checklist was carried out
+    (M1-M4 deleted from MEASUREMENTS, the do-not-measure table and universal-friction/`A₀` notes
+    added there, PENDING's #15/#23/#26/#27/#51 and nuances 32/35/36/47/48/53 updated, HANDOFF §3's
+    friction/back/weight/health-regen/`KIND.WALL`/reference-repos paragraphs rewritten) — nuance 54
+    below is the one piece that check missed on the first pass, added when this deletion happened.
+    **What did NOT survive, same as the first deletion:** the per-step `clientDiff` golden lineage
+    (op-count/hash chain, isolation tables) — nuance 34 describes the technique if a future
+    rebaseline needs it. A comment citing "plan.md Step N" of *this* vintage is now also a historical
+    citation with nothing to open — same handling as the first paragraph's old-vintage citations,
+    and the same two schemes can still collide, so read the cited content, not the number, if an old
+    comment surfaces. **If a third `plan.md` is ever created, expect the same lifecycle**: a
+    reference-driven work queue, landed step by step with its reasoning mirrored out as it goes, then
+    deleted once a documentation-cleanup step confirms nothing was left stranded in it alone.
 
 48. **Comment style: a cleanup pass is wanted, and the target style is decided.** Comments should
     describe **what the code does** — the function, the invariant, the unit — not cross-file
@@ -867,6 +873,84 @@ than remembered. Anything that is genuinely a decision has its own numbered item
       — nuance 44's tank-vs-shape gap is the same idea on a different axis (a `weight` mass divisor
       rather than a receiver multiplier), and the reference now supplies real numbers for it if
       anyone ever picks it up.
+
+54. **Step 9's bullet `speed`/`life`/`scatter` columns needed their own stand-in judgement calls,
+    separate from — and mapped differently than — #15's reload stand-ins and #16's knockback
+    stand-ins. All three columns hit the same seven no-diep-counterpart classes but don't share a
+    mapping**, so "it's a stand-in like the others" is not enough to reconstruct a value from memory:
+    Cyclone → Octo Tank's row (all ten barrels identical); Submachine → Machine Gun's row; Auto
+    Hover's three manual barrels → Tri-Angle's own three (a real diep counterpart, unlike its host
+    class); Fortress's three launchers → Tri-Trapper's trap row (`speed 2`, `scatterRate 1`,
+    `lifeLength 3.2` — shorter than the ordinary Trapper family's 8, borrowed together since both
+    come from the same diep class), its three small drones → Battleship's swarm row; every
+    auto-turret slot (Auto Hover/Auto Trapper/Auto Gunner's turret barrel) →
+    `diepcustom/src/Entity/Tank/AutoTurret.ts`'s shared `AutoTurretDefinition` (`speed 1.2`/
+    `scatterRate 1`/`lifeLength 1` → `1.344`/`0.174533`/`75`), not a `TankDefinitions.json` entry at
+    all since every Auto-class barrel reuses the one shared definition. **Rocket's two backward
+    "thruster" barrels are the one case that isn't `TankDefinitions.json` at all**: diep's Rocketeer
+    fires an actual rocket that spawns its own inline sub-barrel exhaust puff
+    (`Entity/Tank/Projectile/Rocket.ts`'s `RocketBarrelDefinition` — `speed 1.5`, `scatterRate 5`,
+    `lifeLength 0.1`), and that sub-barrel — not the main rocket — is the model for our two
+    backward-firing cannons. Necromancer's `this.necro.speed` moved `0.438816 → 0.8064` (diep's
+    `necrodrone speed 0.72 × 1.12`); its `life` needed no edit (`-1` already matches diep's own
+    sentinel). Summoner and the three Dominator variants were deliberately left untouched (Summoner
+    has no diep counterpart at all; the Dominators' speed is #27/#51's own, resolved separately in
+    Step 11) — both still ride `BODY_FRICTION`'s global change on their *effective* terminal speed
+    even though their `speed` literal didn't move.
+
+    **The muzzle-kick impulse is a three-way split by barrel type, and `exitSpeed`/`SPEED_RESCALE`
+    are retired, not kept alongside — do not reintroduce either.** An ordinary bullet's one-shot
+    impulse is `speed + 16.8 − jitter`; a drone (type 1/1.1) divides that whole expression by 3
+    (`Drone.ts:71`, `baseSpeed /= 3` — a drone launches slower than it cruises); a trap (type 2)
+    instead uses `speed/2 + 16.8 − jitter` with the jitter term *not* halved (`Trap.ts:40`).
+    `jitter = Math.random() × scatterRate × 0.56`, with `scatterRate` back-derived from `can.rand`
+    (the reload-adjacent scatter column) rather than stored a second time. The three formulas do not
+    reduce to one shared expression — verify against `Bullet.ts`/`Drone.ts`/`Trap.ts` directly if
+    this is ever touched again rather than generalizing from one of the three.
+
+    **A trap's arming window is a genuinely new mechanic, not a retune of the old hand-rolled
+    decay.** `this.armTicks = Bull.life >> 3` (diep's `collisionEnd`), decremented once per real
+    tick, gates the top of a trap's `collision()`:
+    `if (this.type === 2 && this.armTicks > 0 && other && other.kind !== KIND.WALL) return;`.
+    **Simplified from diep's own semantics, on purpose, not silently:** diep's own
+    `PhysicsFlags.onlySameOwnerCollision` makes an arming trap solid ground for its own owner and
+    inert to everyone else; this engine has no same-owner physical blocking for a bullet-kind entity
+    to begin with (a trap already never collides with its own origin tank via the ordinary
+    `KIND.PLAYER` arm's origin check), so the simplification collapses to "inert to everything, walls
+    excepted" — practically nil difference given what this engine already models, but a real
+    divergence from diep's stated flag semantics if a future owner-collision feature is ever added.
+
+    **Two C6 loose ends, resolved during Step 6/9 but never written down outside plan.md:**
+    `diepindepth/physics/README.txt` §5.2.1 states small-Crasher `damagePerTick 4`, but
+    `diepcustom/src/Entity/Shape/Crasher.ts:52` sets **2** (matching every other small shape) — the
+    shape table (#23) took diepcustom's 2 (→ 5.5411 in our scale); the README row is the flagged
+    outlier, not a second value anyone still needs to reconcile. **Bullet radius was deliberately
+    left unconverted** — diep's own formula is `(barrel.width/2) × sizeRatio` du (Basic → 11.76 our
+    units) against our `can.size 18 × ra` (≈14.4, ~22% larger), but our barrel widths are drawn on a
+    different scale entirely from diep's (`canonLength 68` against a 28 body radius vs diep's `95`
+    against 50), so converting bullet size alone would desync it from the barrel it leaves — the same
+    silhouette-scale problem #29 already flags for the Summoner's own barrel, and left for whoever
+    does that pass rather than fixed in isolation here.
+
+55. **Step 7's shape drift adopted diep's `BASE_ORBIT`/`BASE_VELOCITY` but deliberately did NOT
+    implement `BASE_ROTATION` (the shape's own visual spin) — a scope decision, not an oversight,
+    and `MEASUREMENTS.md`'s own pinned-value row for this doesn't say so on its own.** This tree's
+    `Objects` wire packet carries no facing angle for a shape at all (`public/SHARE/SocketSchema.js`:
+    `states`/`shape`/`hp`/`alpha` only), so there is no server-authoritative "which way is this
+    polygon facing" for a per-tick spin to drive. The nearest existing thing is
+    `public/client/entities.js`'s own `this.rotate` — an independent, per-client,
+    frame-denominated (`Global.dtFrames`, 60 Hz frames, NOT `tick.perTick()`'s reference ticks,
+    confirmed by `public/client/game.js`'s own `FRAMES_PER_TICK` conversion, which `this.rotate`
+    never goes through) cosmetic wobble that predates the reference-driven work entirely. Converting
+    it would touch a file no other Step 7 change named, use a unit `tick.perTick()` doesn't describe,
+    and — for `Bpnt`, which decodes client-side to `'alphaPnt'` sharing one `switch` case with
+    `Bsqr`/`Btri`'s own `'alphaSqr'`/`'alphaTri'` (`SocketSchema.js`'s asymmetric encode/decode,
+    `toBUFFER.shapes` vs `toSTRING.shapes`) — would need to split a case that currently treats a real
+    diep entity and two of ours identically. None of that is "one constant"; left alone.
+    **Read `MEASUREMENTS.md`'s "Shape drift" row accordingly**: it lists `BASE_ROTATION 0.01`
+    alongside `BASE_ORBIT`/`BASE_VELOCITY` (the two constants that *were* adopted) with no
+    distinction in the table itself — that row is "diep's own number, on record if this is ever
+    picked up," not a claim that `BASE_ROTATION` is live anywhere in this tree.
 
 ## 🔴 Measured against diep.io's real physics (`physics.html`) — mismatches
 
