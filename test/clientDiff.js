@@ -89,12 +89,6 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// Rebuilt for plan.md's item 8-10 pass (T5/T6 barrel+addon parity, P3/P4/T3/T4 stats/flags/
-// fieldFactor, T1/T2 real tree + 16 tanks) - the FOV fix (9d) changes several existing classes'
-// screen (Sniper/Assassin/Trapper/Ranger/... - a deliberate diep-cross-check, not a bug) and the
-// tree rewrite (10) retargets one BOT_PATHS entry off the now-removed Assassin->Sprayer edge onto
-// Assassin->Stalker; either is enough to shift bot AI/detection state and, with it, this corpus's
-// canvas-op count by a few ops. Expected per this file's own rule above.
 const GOLDEN = { count: 293485, hash: '74b6324b' };
 
 console.log('canvas-call differential');
