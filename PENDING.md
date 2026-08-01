@@ -17,6 +17,11 @@ dev needs a migration path. Old conventions are defaults to improve on, not cons
 
 ---
 
+## Notes
+crashers spawn too fast? and on top of people? chrck this
+also bullets dont seem to do enough damage? a destroyer bullet cant even kill a pentagon
+also sizes arent right. triangles seem too big, pentagons too small, and alpha pentagons are wayy too small???
+
 ## 🟣 Needs a human decision
 
 ### 1. Arena Closer and Dominator borrow the boss's scaffolding
