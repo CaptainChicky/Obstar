@@ -776,6 +776,24 @@ than remembered. Anything that is genuinely a decision has its own numbered item
     live map (rebuild on resize, or store as ratios of `baseSize` and recompute each tick) — real
     engineering, not a one-line rules change. ffa has no base and wouldn't hit this at all.
 
+52. **Two stale citations found by plan.md Step 2's nuance-37 grep, left alone since they're outside
+    that step's own file (`entities/Player.js`'s `upgrade()` switch) — not fixed, just flagged.**
+    - `public/SHARE/TanksConfig.js`'s Arena Closer comment (~line 2846) derives its hardcoded
+      `speed: 0.995491` as "Assassin's base cannon speed x 1.66 (the engine's own maxed BSpeed
+      multiplier, 7 points x 0.0942857/pt)". Step 2 moved that per-point step to diep's own
+      `0.15` (7-point cap now 2.05x, not 1.66x) — the literal `0.995491` is untouched (an Arena
+      Closer never calls `upgrade()`, so nothing reads `up.BSpeed` for it), but the comment's own
+      derivation now cites a multiplier the live engine no longer has. Whoever next touches that
+      comment block should either recompute the derivation note against 2.05x or drop the "computed
+      rather than eyeballed" framing since it no longer reproduces from current constants.
+    - `plan.md`'s "Step 1 LANDED" note (top of the trial-run section) states the reload-only
+      `clientDiff` golden as `327834/bccb68b0` and calls it "Final Step 1 golden." Step 2 moved the
+      same golden to `286816/e047b820` (`test/clientDiff.js`'s `GOLDEN`) — the note is accurate for
+      what Step 1 alone produced but is no longer the tree's current golden. Leave as a historical
+      record of Step 1's own isolation, but whoever adds a "Step 2 LANDED" note (or does the final
+      doc-cleanup step) should make clear the two hashes describe different points in the sequence,
+      not disagree with each other.
+
 ## 🔴 Measured against diep.io's real physics (`physics.html`) — mismatches
 
 *Source: `physics.html`, the archived spade-squad diep.io physics page (2022). Community-derived,

@@ -106,6 +106,24 @@ story for bullets, whose terminal speed is `thrust × F/(1−F)` and therefore 2
   `BASE_DRONE_TURN` (0.10).
 
 ### Step 2: The two remaining stat slopes — Bullet Damage and Bullet Speed
+
+**Step 2 LANDED (2026-07-31).** Both citations below were off by a handful of lines against the
+actual `diepcustom` files — confirmed rather than transcribed: `damagePerTick = (7 + bulletDamage *
+3) * bulletDefinition.damage` is `Bullet.ts:92`, not `:91`; `bulletAccel = (20 + ... * 3) *
+definition.bullet.speed` is `Barrel.ts:222`, not `:213`. The two literals landed as predicted —
+`BDamage → 0.4285714`, `BSpeed → 0.15` — and the switch-block comment above them now names all
+eight non-6/7-rescale exceptions (Reload/MSpeed/HpRegan/HpUp/BPene/BodyDam/BDamage/BSpeed). `npm
+test` moved exactly one golden: `test/clientDiff.js`'s `327834/bccb68b0 → 286816/e047b820` (op
+count *dropped* — entities die faster at higher Bullet Damage, so fewer are alive to draw at any
+given tick, nuance 34's "how long one LIVES" case). `test/rooms.js`'s `fastestTankSpeed()` passed
+untouched, confirming the prediction that Movement/Reload-maxed builds never read `up.BDamage`/
+`up.BSpeed` — `BASE_DRONE_CHASE_SPEED`/`_TURN` did **not** need a re-pin this step. The whole commit
+is Step 2 alone (`git diff --stat` shows only `entities/Player.js`), so the golden move is
+attributed to these two constants with nothing else to isolate against. Two stale citations the
+nuance-37 grep turned up outside this step's own file — `TanksConfig.js`'s Arena Closer speed
+derivation comment, and `plan.md`'s own Step 1 golden note above — are flagged, not fixed; see
+PENDING nuance 52.
+
 - **Resolves:** PENDING #18's magnitude family (the `BPene` slope already landed and is confirmed
   correct — see the confirmations section).
 - **Reference:**

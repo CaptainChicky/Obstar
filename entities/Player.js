@@ -439,14 +439,14 @@ class Player {
 					nb++;
 					if (nb !== data) { continue; }
 					/*
-						Every step below except MSpeed/Reload/HpRegan/HpUp/BPene/BodyDam is the old
-						6-point-span value x 6/7 (PENDING #30): the cap moved to 7, so an unchanged step
-						would have handed a maxed stat ~17% more than it was ever tuned to give. Scaling
-						the step instead keeps each stat's *maxed* value exactly where it was and only
-						changes the granularity, which is the conversion this item asks for and not a
-						stealth buff.
+						Every step below except MSpeed/Reload/HpRegan/HpUp/BPene/BodyDam/BDamage/BSpeed
+						is the old 6-point-span value x 6/7 (PENDING #30): the cap moved to 7, so an
+						unchanged step would have handed a maxed stat ~17% more than it was ever tuned
+						to give. Scaling the step instead keeps each stat's *maxed* value exactly where
+						it was and only changes the granularity, which is the conversion this item asks
+						for and not a stealth buff.
 
-						Six exceptions, none of them a 6->7 rescale of an old step. Reload is diep's own
+						Eight exceptions, none of them a 6->7 rescale of an old step. Reload is diep's own
 						geometric form: up.Reload = 0.914^points, a multiplier on can.reload consumed in
 						shoot() (diepcustom/src/Entity/Tank/TankBody.ts:267, `15 * Math.pow(0.914, ...)`),
 						so 0.53287 at the 7-point cap = 1.877x fire rate - not a linear step with a span
@@ -464,6 +464,12 @@ class Player {
 						the multiplier's 0-point baseline was already 1 under the old step too, so those
 						tables already sit at diep's base-HP value - only the MAXED multiplier moves
 						(8.5x -> 6.25x), which is the actual fidelity fix, not a value to compensate for.
+						BDamage and BSpeed are diep's own per-point slopes, already linear on the
+						1-based multiplier up.BDamage/up.BSpeed carry: damagePerTick = (7 + 3*points) *
+						bullet.damage is 1 + 3/7 per point (diepcustom/src/Entity/Tank/Projectile/
+						Bullet.ts:92), and bulletAccel = (20 + 3*points) * bullet.speed is 1 + 3/20 per
+						point (diepcustom/src/Entity/Tank/Barrel.ts:222) - neither has a 6-point span to
+						rescale from.
 						BodyDam since PENDING #17's last open piece: `this.damage`'s base and step were
 						rederived from diep's own vs-shapes formula (see the constructor), not rescaled
 						from an old span - see that comment for the derivation.
@@ -474,8 +480,8 @@ class Player {
 						// per-tick rate any more.
 						case "HpRegan": this.up[i] += 1; break;
 						case "Reload": this.up[i] *= 0.914; break;         // up.Reload = 0.914^points, a multiplier on can.reload (diepcustom/src/Entity/Tank/TankBody.ts:267)
-						case "BSpeed": this.up[i] += 0.0942857; break;     // 0.11 x 6/7
-						case "BDamage": this.up[i] += .1714286; break;     // 0.2 x 6/7
+						case "BSpeed": this.up[i] += 0.15; break;          // bulletAccel = (20 + 3*points) * bullet.speed, i.e. 1 + 3/20 per point (diepcustom/src/Entity/Tank/Barrel.ts:222)
+						case "BDamage": this.up[i] += 0.4285714; break;    // damagePerTick = (7 + 3*points) * bullet.damage, i.e. 1 + 3/7 per point (diepcustom/src/Entity/Tank/Projectile/Bullet.ts:92)
 						case "BPene": this.up[i] += 0.75; break;           // diep's own per-point slope (PENDING #18), not a 6/7 rescale
 						// A point COUNT, not a bonus: Physics.moveAccel() raises MOVE_STAT_MUL to it
 						// (PENDING #14). It used to accumulate an accel term (0.029254/pt) because
