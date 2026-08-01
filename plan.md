@@ -450,6 +450,46 @@ a maxed tank in ~0.19 s instead of the already-fast ~0.48 s `dr` used to allow -
   Step 6's shape table lands on top of it.
 
 ### Step 6: The shape table — HP, XP, body damage, size, and the shiny multipliers
+
+**Step 6 LANDED (2026-07-31).** Landed in the two isolated sub-passes the step body calls for
+(nuance 34's technique), each rebaselining `test/clientDiff.js` on its own so the golden move is
+attributed to one cause:
+- **Pass 1, radius alone**: `entities/Objects.js`'s `this.size` for every diep-mapped type
+  (`sqr`/`tri`/`pnt`/`Bpnt`/`bull`, both the default small-Crasher spawn and the 15%-roll large one)
+  moved to the table's already-converted units (`21.78`/`21.78`/`29.70`/`79.20`/`13.86`/`21.78`).
+  `Bsqr`/`Btri` untouched (no diep counterpart). Golden: `302780/70b95d70 → 351362/3c7d9a51` — op
+  count *rose* sharply, larger than a pure "how entities MOVE" case; plausible and not a red flag,
+  since radius is read by collision (`entities/Player.js`/`entities/Bullet.js`/`Objects.js`'s own
+  arms all compare against `size`), so a radius-only change still moves nuance 34's "how long one
+  LIVES" needle — Pentagon and Alpha Pentagon shrank (fewer/later contacts), Square/Triangle/small
+  Crasher grew (more/earlier ones), and the two directions don't cancel in the op count.
+- **Pass 2, HP/XP/damage/Shiny together**: HP and XP moved to diep's raw table (Square 10/10,
+  Triangle 30/25, Pentagon 100/130, Alpha Pentagon 3000/3000, Crasher small 10/15, Crasher large
+  30/25); damage moved to `diep damagePerTick × common(shape,tank)=4 × (4.84848/7)` —
+  Square/Triangle/Crasher **5.54112**, Pentagon **8.31168**, Alpha Pentagon **13.8528** (computed via
+  `node -e`, not hand-rounded, so the trailing digits are exact for the given inputs).
+  `public/SHARE/ObjectsConfig.js`'s `Shiny` moved `hpMul: 2 → 10`, `prizeMul: 3 → 100`; `chance:
+  1/1000000` untouched per the session's own instruction. `Bsqr`/`Btri` untouched on every field
+  (HP, XP, damage — the un-overridden `4.84848` default), flagged at their own site in the source.
+  Golden: `351362/3c7d9a51 → 331911/396262f1` — op count *dropped* back down (shapes die faster with
+  the real damage numbers in, nuance 34's "how long one LIVES" case, the same direction Steps 2/5
+  moved it).
+  **One judgement call the step body doesn't spell out**: Pentagon's XP was a hand-tuned
+  `100 + Math.floor(Math.random() * 100)` (100-199) band; diep's own table gives a single flat value
+  (130), so the range is retired in favour of the flat number — a range invents variance the
+  reference doesn't have. The large-Crasher branch (the existing 15%-roll `if` in the constructor)
+  previously never wrote `this.prize`, silently inheriting the small variant's; it now sets `25`
+  explicitly, matching the table's own small/large split which that branch already existed to model.
+- **Test impact, as predicted**: `test/rooms.js`'s base-drone-vs-shape assertions (`BASE_DRONE_DAMAGE`
+  × a shape's `maxHp`) re-checked against Square's new, smaller `maxHp` (10) and passed with no
+  changes needed — the assertion is a loose "under half of `maxHp` in one tick" bound, not a tight
+  pin the HP drop could threaten. `npm test` green across every file after both passes landed
+  together (one full run, per the session's "once per step" budget — only the two `clientDiff`
+  sub-passes ran twice, as the step body's own isolation instruction asks for). Lint clean on
+  `entities/Objects.js`, `public/SHARE/ObjectsConfig.js`, `test/clientDiff.js`.
+- **Moves:** nothing outside this step's own files — the nuance-37 grep for the old shape literals
+  (`6.06061`, `8.48485`, `hpMul: 2`, `prizeMul: 3`) turned up no other consumer.
+
 - **Resolves:** PENDING #23's table (partially already shipped as *documentation*, never as code) and
   its "green variants ×10 HP ×100 XP — worth checking against `ObjectsConfig.js`'s tuned chances".
 - **Reference:** `diepcustom/src/Entity/Shape/{Square,Triangle,Pentagon,Crasher}.ts`, and
@@ -494,7 +534,57 @@ a maxed tank in ~0.19 s instead of the already-fast ~0.48 s `dr` used to allow -
   breaks structurally, but it is a visible density change on top of #19's.
 
 ### Step 7: Shape idle drift — closes M4 without a measurement session
-- **Resolves:** PENDING #23's "shape drift", **MEASUREMENTS M4** (delete it).
+
+**Step 7 LANDED (2026-07-31).** `entities/Objects.js`'s two server-authoritative drift constants
+both moved:
+- **`BASE_VELOCITY` (drift speed)**: `this.maxspeed` for Square/Triangle/Crasher (both size variants)
+  → **`1.12`**, Pentagon/Alpha Pentagon → **`0.56`** — 2× diep's own stated terminal (`0.56`/`0.28`
+  units/ref-tick) because `update()`'s `vec.limit(tick.perTick(this.maxspeed / 2), BODY_FRICTION)`
+  clamps to `maxspeed/2`, confirmed as the system's own fixed point by the pre-existing comment on
+  the neighbouring `collision()` threshold. `Bsqr`/`Btri` (no diep counterpart) kept their old
+  `0.01212` unchanged.
+- **`BASE_ORBIT` (drift-direction wander)**: `this.rotationVal`, consumed unchanged at
+  `vec.rotate(tick.perTick(this.rotationVal))`, is now type-dependent instead of one shared
+  random-range value for every shape — **`0.005 × this.rotationDir`** for Square/Triangle/Crasher,
+  **`0.0025 × this.rotationDir`** for Pentagon/Alpha Pentagon (exactly half, per the reference).
+  `this.rotationDir` (`Math.sign(Math.random() - 0.5)`, "sign randomised per shape at spawn") already
+  existed in the constructor and was dead code — computed, never read — until now; wiring it in as
+  the sign is the one genuinely new piece of behaviour this step adds, not an invented mechanic.
+  `Bsqr`/`Btri` kept the old unsigned `0.00242 + Math.random() * 0.00061` range verbatim, flagged as
+  ours.
+- **`BASE_ROTATION` (the shape's own visual spin) was NOT implemented — a scope decision, not an
+  oversight.** This tree's `Objects` wire packet carries no facing angle for a shape at all
+  (`public/SHARE/SocketSchema.js`: `states`/`shape`/`hp`/`alpha` only), so there is no
+  server-authoritative "which way is this polygon facing" for a per-tick spin to drive. The nearest
+  existing thing is `public/client/entities.js`'s own `this.rotate` — an independent, per-client,
+  frame-denominated (`Global.dtFrames`, 60 Hz frames, NOT `tick.perTick()`'s reference ticks —
+  confirmed by `public/client/game.js`'s own `FRAMES_PER_TICK` conversion, which `this.rotate` never
+  goes through) cosmetic wobble that predates this reference-driven work entirely. Converting it
+  would touch a file this step's own "Current code" citation never named, changes units the step
+  body's "the two angular rates are `tick.perTick()`" line does not describe, and — for `Bpnt`, which
+  decodes client-side to `'alphaPnt'` sharing one `switch` case with `Bsqr`/`Btri`'s own
+  `'alphaSqr'`/`'alphaTri'` (`SocketSchema.js`'s asymmetric encode/decode, `toBUFFER.shapes` vs
+  `toSTRING.shapes`) — would need to split a case that currently treats a real diep entity and two
+  of ours identically. None of that is "one constant"; left alone and flagged here rather than
+  silently skipped or half-wired.
+- **Edge-avoidance turn**: confirmed still out of scope, per the step body's own note — `clampToMap`
+  behaviour (the map-edge clamp already at the bottom of `update()`) is untouched.
+- **Test impact, checked rather than assumed**: the step body's own isolation check ("entity counts
+  should be unchanged") does **not** hold exactly here, and that is worth recording rather than
+  silently squaring away. A direct measurement (`Math.random()` call-count instrumentation across
+  the same seeded 4-mode/60-tick corpus `test/clientDiff.js` drives) showed live-object counts
+  shifting by 1 in three of the four modes (`ffa` 1063→1062, `4team` 1058→1057, `boss` 657→658,
+  `2team` unchanged) and the total `Math.random()` draw count dropping ~8.5% (42092 → 38511) — the
+  drift-speed increase is large enough (up to **46×** for Alpha Pentagon, `0.00606 → 0.28`) that
+  within the corpus's short window it measurably changes which shapes wander into a bullet's or a
+  base drone's path, which is a real (if indirect) "how long one lives" effect, not the pure
+  "how existing entities move" case nuance 34 usually predicts for a motion-only change. `test/
+  clientDiff.js`'s golden moved accordingly: `331911/396262f1 → 337240/e07401f0`. `npm test` green
+  across every file afterward. Lint clean on `entities/Objects.js`.
+- **Moves:** nothing outside `entities/Objects.js` and this documentation.
+
+- **Resolves:** PENDING #23's "shape drift", **MEASUREMENTS M4** (resolved from source, kept per
+  M3's own precedent until the final documentation step deletes M1-M4 wholesale).
 - **Reference:** `diepcustom/src/Entity/Shape/AbstractShape.ts:39-42, 105-125` and
   `Entity/AI.ts:75` (`AI.PASSIVE_ROTATION = 0.01`):
   - `BASE_ROTATION = 0.01` rad/tick — the shape's own **spin**. Sign randomised per shape at spawn.

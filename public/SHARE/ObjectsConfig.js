@@ -17,6 +17,6 @@
 (function (exports) {
 	exports.rarity = [
 		{ id: 0, name: null, chance: 0, hpMul: 1, prizeMul: 1, weight: null, color: null },
-		{ id: 1, name: 'Shiny', chance: 1 / 1000000, hpMul: 2, prizeMul: 3, weight: null, color: 'shiny' }
+		{ id: 1, name: 'Shiny', chance: 1 / 1000000, hpMul: 10, prizeMul: 100, weight: null, color: 'shiny' }
 	];
 })(typeof (exports) === 'undefined' ? function () { this['ObjectsConfig'] = {}; return this['ObjectsConfig']; }() : exports);

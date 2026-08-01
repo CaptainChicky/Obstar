@@ -28,6 +28,9 @@ into #26 (Maze/`KIND.WALL`) and #27 (Domination/Dominator) as each half's own sc
 both are now fully documented at their own numbers below — deleted here rather than kept as a
 redundant pointer, per this file's own rule that a fully-resolved entry doesn't linger.
 
+## MAJOR BUG
+I'm unsure of what the penentration values there are, but when testing, I upgraded to max bullet penetration, and this caused me to not be able to kill shapes. the shapes i attacked coudlnt be killed after getting them downto some small amoutn of health. i tried shooting them and also ramming them but they take 0 damage (their helath bardissapears). this applies to a lot of shapes but some shapes dont. 
+
 ## 🟠 Wiki cross-check: GAME MODES — pick what goes in, strike what doesn't
 
 *Source: `diep_wiki/` (`Game Modes.txt`, `Maze.txt`, `Domination.txt`, `Dominator.txt`,
@@ -1084,8 +1087,27 @@ What's left in this section is itemised as open at each entry.*
     | Crasher (small) | = Square | = Square | 15 |
     | Crasher (large) | = Triangle | = Triangle | 25 |
 
-    Green ("shiny") variants: **×10 HP, ×100 XP**, body damage unchanged — worth checking against
-    `public/SHARE/ObjectsConfig.js`'s tuned chances (ours were picked by feel, item 6). Gamemode XP
+    **This table's HP/XP columns, and the shape radii alongside them, SHIPPED as code 2026-07-31
+    (plan.md step 6)** — `entities/Objects.js` now carries these HP/XP figures directly (Hexagon has
+    no entity in this tree and stays undocumented-as-code) and diep's own collision radii
+    (`du × 0.56`). The "body damage" column here is expressed in diep's own per-point units
+    (`BodyDamagePoints + 5`); step 6 instead bakes diep's flat `damagePerTick × common(shape,tank)=4`
+    straight into each shape's `this.damage` (our own anchor, `× 4.84848/7`) since shapes never read
+    a Body-Damage-points term the way a tank's own ram does — Square/Triangle/Crasher **5.54112**,
+    Pentagon **8.31168**, Alpha Pentagon **13.8528**. `Bsqr`/`Btri` (this tree's own boss-square/
+    boss-triangle, no diep counterpart) were left untouched at every figure, flagged at their own
+    site rather than converted. Green ("shiny") variants: **×10 HP, ×100 XP** is now
+    `public/SHARE/ObjectsConfig.js`'s own `hpMul`/`prizeMul` (was `2`/`3`, picked by feel — the
+    "worth checking" this note used to flag is resolved, not still open); `chance: 1/1000000` needed
+    no change, it was already exact. `test/clientDiff.js`'s golden moved twice, in two isolated
+    passes per nuance 34 (radius alone, then HP/XP/damage/Shiny together) so each golden move is
+    attributed to one cause: `302780/70b95d70 → 351362/3c7d9a51` (radius), then
+    `351362/3c7d9a51 → 331911/396262f1` (HP/damage). `test/rooms.js`'s base-drone-vs-shape damage
+    assertions (`BASE_DRONE_DAMAGE` × a shape's `maxHp`) were re-checked against the new, smaller
+    Square `maxHp` (10) and pass unchanged — the assertion is a loose "under half of maxHp in one
+    tick" bound, not a pin tight enough for the HP change to threaten it.
+
+    Gamemode XP
     multipliers: **Tag ×3, Breakout ×3, Domination ×2**, everything else ×1. Body damage is
     `(BodyDamagePoints + 5) × multiplier` — **4 vs shapes** (20 at 0 points, confirming #17),
     **+50% vs tanks**, **−75% vs projectiles** (the "body damage reduces damage taken" term #18

@@ -90,15 +90,23 @@ class Objects {
 				this.pos = 1;
 				break;
 		}
-		this.maxspeed = 0.36364;   // one-time-rescaled from .30 (33ms ref)
+		this.maxspeed = 0.36364;   // one-time-rescaled from .30 (33ms ref) - Bsqr/Btri only now, see below
 		switch (this.type) {
-			case "sqr": this.size = 20; this.hp = 13; this.prize = 15; break;
-			case "tri": this.size = 18; this.hp = 25; this.prize = 50; this.maxspeed = 0.31515; break;   // .26
-			case "pnt": this.size = 42; this.hp = 190; this.prize = 100 + Math.floor(Math.random() * 100); this.maxspeed = 0.09697; this.weight = 4; this.damage = 6.06061; break;   // .08 / 5 (weight is a mass divisor, not rescaled)
-			case "Bpnt": this.size = 115; this.hp = 9000; this.prize = 3000; this.maxspeed = 0.01212; this.weight = 100; break;   // .01
+			// Radii are diep's own du radius x 0.56 (Square/Triangle/Crasher-large 38.891, Pentagon
+			// 53.033, Alpha Pentagon 141.421, Crasher-small 24.749 du). HP/XP are diep's raw table;
+			// damage is diep damagePerTick x common(shape,tank)=4 x (4.84848/7) - our own anchor,
+			// 4.84848 being diep's 7 on our scale (plan.md step 6). maxspeed is 2x diep's own drift
+			// terminal (0.56/0.28 units/ref-tick) since update()'s vec.limit clamps to maxspeed/2,
+			// its own fixed point (plan.md step 7).
+			case "sqr": this.size = 21.78; this.hp = 10; this.prize = 10; this.damage = 5.54112; this.maxspeed = 1.12; break;
+			case "tri": this.size = 21.78; this.hp = 30; this.prize = 25; this.maxspeed = 1.12; this.damage = 5.54112; break;
+			case "pnt": this.size = 29.70; this.hp = 100; this.prize = 130; this.maxspeed = 0.56; this.weight = 4; this.damage = 8.31168; break;   // (weight is a mass divisor, not rescaled)
+			case "Bpnt": this.size = 79.20; this.hp = 3000; this.prize = 3000; this.maxspeed = 0.56; this.weight = 100; this.damage = 13.8528; break;
+			// Bsqr/Btri have no diep counterpart (plan.md steps 6-7) - radius, hp, prize, damage and
+			// drift (maxspeed/rotationVal below) all left exactly as they were, flagged as ours.
 			case "Bsqr": this.size = 90; this.hp = 8000; this.prize = 2000; this.maxspeed = 0.01212; this.weight = 100; break;   // .01
 			case "Btri": this.size = 72; this.hp = 7000; this.prize = 1000; this.maxspeed = 0.01212; this.weight = 100; break;   // .01
-			case "bull": this.size = 12; this.hp = 15; this.prize = 12; this.maxspeed = 0.50909; this.damage = 8.48485;   // .42 / 7
+			case "bull": this.size = 13.86; this.hp = 10; this.prize = 15; this.maxspeed = 1.12; this.damage = 5.54112;
 				this.DETEC = new Detector(this, this.x, this.y, 500, type = [KIND.PLAYER]); break;
 		}
 		this.coinReward *= parseInt(this.prize / 10);
@@ -112,8 +120,10 @@ class Objects {
 		}
 		if (this.type === 'bull') {
 			if (Math.random() < 0.15) {
-				this.size = 23;
-				this.hp = 32;
+				// Large Crasher: diep's own 30 hp / 25 xp, same radius as Square/Triangle (plan.md step 6).
+				this.size = 21.78;
+				this.hp = 30;
+				this.prize = 25;
 			}
 		}
 		// Rarity roll. Checked rarest-first:
@@ -132,12 +142,25 @@ class Objects {
 		this.map = map;
 		this.maxHp = this.hp;
 		//
+		// diep's BASE_ORBIT (drift-direction wander, plan.md step 7): 0.005 rad/ref-tick, halved for
+		// Pentagon/Alpha Pentagon, sign randomised per shape at spawn - this.rotationDir was already
+		// rolled for exactly that and had no consumer until now.
 		this.rotationDir = Math.sign(Math.random() - 0.5);
 		this.vec = new Vec(tick.perTick(this.maxspeed), 0).rotate(Math.random() * Math.PI * 2);
 		this.destroy = 0;
 		this.rx = this.x;
 		this.ry = this.y;
-		this.rotationVal = 0.00242 + Math.random() * 0.00061;   // one-time-rescaled from .002 / .0005 (33ms ref)
+		switch (this.type) {
+			case 'pnt':
+			case 'Bpnt':
+				this.rotationVal = 0.0025 * this.rotationDir; break;
+			case 'Bsqr':
+			case 'Btri':
+				// No diep counterpart (plan.md step 7) - unchanged, own random-range wander, unsigned.
+				this.rotationVal = 0.00242 + Math.random() * 0.00061; break;   // one-time-rescaled from .002 / .0005 (33ms ref)
+			default:
+				this.rotationVal = 0.005 * this.rotationDir; break;
+		}
 		this.TOSEND = {
 			"public": {}
 		}

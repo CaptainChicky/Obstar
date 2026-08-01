@@ -152,7 +152,21 @@ PENDING #15 flags as ambiguous (the reference's merged "90 loops" maps onto neit
 
 ## M4 — Shape drift
 
-**Unblocks:** PENDING #23's shape drift.
+> **RESOLVED FROM SOURCE — no measurement needed.** `diepcustom/src/Entity/Shape/
+> AbstractShape.ts:39-42,105-125` and `Entity/AI.ts:75` give diep's own three constants directly:
+> `BASE_ROTATION = 0.01` rad/tick (the shape's own visual spin), `BASE_ORBIT = 0.005` rad/tick (the
+> drift-direction wander), `BASE_VELOCITY = 1` du/tick (drift speed) — Pentagon/Alpha Pentagon get
+> exactly half of all three. Direction persists and wanders continuously rather than resampling
+> (confirmed by the reference's own description, settling this protocol's own "how often" question
+> without observation). `entities/Objects.js` now carries `BASE_ORBIT` (`this.rotationVal`, signed
+> by the previously-unused `this.rotationDir`) and `BASE_VELOCITY` (`this.maxspeed`, diep's own
+> du/tick x 0.56) directly. `BASE_ROTATION` has no server-authoritative analog in this tree — the
+> wire's `Objects` packet carries no facing angle for a shape at all (`states`/`shape`/`hp`/`alpha`
+> only, confirmed against `public/SHARE/SocketSchema.js`) — so the closest existing thing is
+> `public/client/entities.js`'s own independent, unsynced cosmetic spin, deliberately left untouched
+> (plan.md step 7; the client's own rate is frame-denominated, not reference-tick, so it isn't even
+> the same unit as `BASE_ROTATION` to begin with). Kept only until the final documentation-cleanup
+> step deletes M1–M4 wholesale.
 
 Polygons idle-drift and slowly rotate. Nothing documents the rate.
 
