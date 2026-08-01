@@ -156,6 +156,25 @@ PENDING nuance 52.
 > `1 + 0.15P` for speed** and treat stats.md's speed row as unreliable. Flagged rather than silent.
 
 ### Step 3: The whole `reload` column becomes diep's — roster-wide
+
+**Step 3 LANDED (2026-07-31).** The roster-wide table below landed as written, plus the four
+judgement calls: (1) Annihilator took diep's 60, identical to Destroyer's, retiring the old
+deliberate 87. (2) Sprayer's extra three barrels (diep only defines 2) stayed on the pre-Step-3
+family value `23`, not a diep number; Fighter's five barrels matched diep's five 1:1 with no
+mismatch to resolve. (3) The six no-counterpart classes (Cyclone, Submachine, Auto Hover, Fortress,
+Summoner, Rocket) took a nearest-relative stand-in, flagged `STAND-IN` at each site — Summoner alone
+stays untouched. (4) Dominator variants were left alone for Step 11. Fractional diep values (`7.5`,
+`22.5`, `49.5`) were stored pre-rounded to the nearest reference tick (`8`, `23`, `50`), matching the
+column's existing all-integer convention and C6's deferred `round()` removal — Machine Gun (`8`) and
+Sniper (`23`) needed no edit at all since they already sat at that rounding. `npm test` moved exactly
+one golden: `test/clientDiff.js`'s `286816/e047b820 → 362003/99aea12d` (op count *rose* sharply —
+most of the roster fires 35-65% faster, so far more bullets are alive at any tick, nuance 34's "how
+many ENTITIES exist" case). `test/rooms.js`'s `fastestTankSpeed()` passed untouched — no
+`BASE_DRONE_CHASE_SPEED`/`_TURN` re-pin was needed this step, contrary to this section's own
+prediction below; the test said so, not a hand derivation. The whole commit is Step 3 alone
+(`git diff --stat` shows only `public/SHARE/TanksConfig.js` + `test/clientDiff.js`'s golden), so the
+golden move is attributed to the reload column with nothing else to isolate against.
+
 - **Resolves:** PENDING #15 entirely — both the Overseer/Overlord ambiguity *and* the "left off the
   conversion on purpose" list. **Decided by the user, 2026-07-31: reload should be diep's reload.**
   That reverses #15's third bullet ("do not 'finish the job' without re-deciding") — it has now been

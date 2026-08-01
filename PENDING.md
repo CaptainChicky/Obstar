@@ -846,30 +846,18 @@ What's left in this section is itemised as open at each entry.*
     is worth ~1.4× a plain walk. `BASE_DRONE_CHASE_SPEED` is pinned to the real ceiling — see
     nuance 32 for the current value and re-pin history.
 
-15. **Reload.** Base per-cannon values are done for Basic/Twin/Machine Gun/Sniper/Assassin/
-    Destroyer/Hybrid. `can.reload` is denominated in reference-ticks (40 ms loops, the same unit
-    diep's own "loops" use), so diep's raw loop counts drop in unconverted.
-    - **Overlord/Overseer are still unconverted, and need a decision first.** The reference's merged
-      "90 loops" row doesn't map cleanly: Overseer's cannon is 182, Overlord's is a different 281,
-      and both are drone-*summon* cooldowns rather than a bullet reload, so it's ambiguous which (or
-      whether both) the figure describes.
-    - **The reload *stat*'s scaling — RESOLVED from source, no measurement needed.**
-      `diepcustom/src/Entity/Tank/TankBody.ts:267` gives `reloadTime = 15 * Math.pow(0.914, points)`,
-      a *geometric* `0.914^points` multiplier on the base reload (0.53287 at the 7-point cap =
-      **1.877× fire rate**). That confirms the "mangled linear form reaching 1.875× at max stat"
-      reading's *magnitude* but not its shape: the base is 0.914 per point, and 1.875 is the value at
-      the cap, not a linear slope. `entities/Player.js`'s `up.Reload` is now `*= 0.914`/pt (was the
-      linear `−0.0788571`, ×2.23 at the cap). As nuance 32 predicted, this moved the `#14/#32` speed
-      ceiling that pins `BASE_DRONE_CHASE_SPEED`: the fastest sustainable build dropped
-      559.2 → **546.36 u/s** (still a maxed-Movement Sniper L15, which rides less recoil now that a
-      maxed-Reload build fires less often), and the pin was moved with it. M3 is settled by this.
-    - **Left off the conversion on purpose — do not "finish the job" without re-deciding.**
-      Annihilator keeps its 87 (its other stats are already tuned away from Destroyer's, so its
-      reload reads as its own number, unlike Hybrid which is a literal stat-clone). Likewise every
-      tree descendant that merely *shared* a tier-1's old value by coincidence (Flank Guard, Twin
-      Flank/Triple Shot/Quad Tank/Triple Twin/Sprayer/Triplet/Penta Shot/Octo Tank, Ranger,
-      Booster) — each has its own barrel count/damage/pene, so a shared reload is a family trait,
-      not a copy-paste bug.
+15. **Reload — SHIPPED, whole column (plan.md Step 3).** Kept only as a *do-not-re-fix* record for
+    two things that now look like bugs but aren't. **Annihilator's reload is now 60, identical to
+    Destroyer's** — the user re-decided 2026-07-31 that the whole column converts to diep's own
+    numbers, which retires the old deliberate 87 (this entry used to warn against "finishing the
+    job"; that warning is now reversed). **The six classes with no diep counterpart** (Cyclone,
+    Submachine, Auto Hover, Fortress, Summoner, Rocket) each inherit a nearest-relative stand-in
+    value instead of a diep citation — flagged with a `STAND-IN` comment at each site in
+    `public/SHARE/TanksConfig.js`, not silently copied. Summoner alone is untouched (it stays ours;
+    diep has no boss of any kind). Dominator variants are Step 11's, not this step's, and were left
+    alone. The reload *stat*'s geometric `0.914^points` scaling and its speed-ceiling consequences
+    were already resolved by Step 1 (`test/rooms.js`'s `fastestTankSpeed()` — no further re-pin was
+    needed here; the test confirmed it, not a hand derivation).
 
 16. **Knockback and recoil — SHIPPED, both columns.** Kept only as a *do-not-re-fix* record.
 

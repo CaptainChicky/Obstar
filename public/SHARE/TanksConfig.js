@@ -1573,7 +1573,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 26;
+					this.reload = 15;
 					this.offTime = 0;
 					this.type = 0;
 					///
@@ -1592,7 +1592,7 @@
 					this.back = 1.12;
 				}
 				this.cannons[1] = {
-					reload: 26,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: Math.PI,
@@ -1701,7 +1701,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(3).fill(null).map(() => ({
-					reload: 23,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1726,7 +1726,7 @@
 			"Twin Flank": new function () {
 				this.screen = 1408;
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 23,
+					reload: 15,
 					offTime: 0,
 					type: 0,
 					life: 149,
@@ -1754,7 +1754,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 23,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1829,7 +1829,7 @@
 				this.maxDrone = 7;
 				this.cannons = [];
 				const c = new Array(2).fill(null).map(() => ({
-					reload: 182,
+					reload: 90,
 					offTime: 0,
 					type: 1,
 					life: -1,
@@ -1856,7 +1856,7 @@
 			"Triangle": new function () {
 				this.screen = 1408;
 				const c = new Array(3).fill(null).map(() => ({
-					reload: 25,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -1888,7 +1888,7 @@
 				this.screen = 1664;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 25;
+					this.reload = 23;
 					this.offTime = 0;
 					this.type = 2;
 					this.life = 297;
@@ -1913,7 +1913,7 @@
 			"Rocket": new function () {
 				this.screen = 1408;
 				const c = new Array(2).fill(null).map(() => ({
-					reload: 17,
+					reload: 60,   // STAND-IN: diep has no Rocket class - takes Rocketeer 60 (plan.md Step 3, call 3)
 					offTime: 0,
 					///
 					offdir: -Math.PI - .4,
@@ -1962,7 +1962,7 @@
 					back: 16.8
 				}));
 				c.push({
-					reload: 165,
+					reload: 90,
 					offTime: 0,
 					type: 1.1,
 					life: -1,
@@ -1989,7 +1989,7 @@
 			"Annihilator": new function () {
 				this.screen = 1408;
 				const c = new Array(1).fill(null).map(() => ({
-					reload: 87,
+					reload: 60,   // Step 3 call 1: diep own 60 (Destroyer reload:4 x15) - retires the old off-table 87
 					offTime: 0,
 					type: 0,
 					life: 149,
@@ -2017,7 +2017,7 @@
 			"Sprayer": new function () {
 				this.screen = 1664;
 				const c = new Array(5).fill(null).map(() => ({
-					reload: 23,
+					reload: 15,   // diep barrel[0] Large Bullet, reload 1 x15 - Step 3 call 2
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2042,6 +2042,10 @@
 				// firing first); test/tanks.js cross-checks the two. Shorten indices 1-4,
 				// not 0-3, or the drawn barrel and the one that actually fires drift apart.
 				const d = 7;
+				c[1].reload = 8;    // diep barrel[1] Small Bullet, round(0.5 x15=7.5) - Step 3 call 2
+				// c[2]-c[4] have no diep counterpart barrel (diep Sprayer has only 2) - stay on
+				// the pre-Step-3 family value instead of inventing a third diep number.
+				c[2].reload = c[3].reload = c[4].reload = 23;
 				c[1].canonLength -= d;     c[1].offTime = .2;
 				c[2].canonLength -= d * 2; c[2].offTime = .4;
 				c[3].canonLength -= d * 3; c[3].offTime = .6;
@@ -2053,7 +2057,7 @@
 				this.screen = 2208;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 45;
+					this.reload = 30;
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -2075,7 +2079,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(3).fill(null).map(() => ({
-					reload: 23,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2100,7 +2104,7 @@
 			"Triple Twin": new function () {
 				this.screen = 1408;
 				const c = new Array(6).fill(null).map(() => ({
-					reload: 23,
+					reload: 15,
 					offTime: 0,
 					type: 0,
 					life: 149,
@@ -2129,7 +2133,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(5).fill(null).map(() => ({
-					reload: 23,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2157,7 +2161,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				const c = new Array(8).fill(null).map(() => ({
-					reload: 23,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2186,7 +2190,7 @@
 			"Cyclone": new function () {
 				this.screen = 1408;
 				this.cannons = new Array(10).fill(null).map(() => ({
-					reload: 27,
+					reload: 15,   // STAND-IN: diep has no Cyclone - takes Octo Tank 15 (plan.md Step 3, call 3)
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2220,7 +2224,7 @@
 			"Booster": new function () {
 				this.screen = 1408;
 				const c = new Array(5).fill(null).map(() => ({
-					reload: 26,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2251,7 +2255,7 @@
 			"Fighter": new function () {
 				this.screen = 1408;
 				const c = new Array(5).fill(null).map(() => ({
-					reload: 22,
+					reload: 15,   // diep barrel front/rear, reload 1 x15 - Step 3 call 2
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2276,6 +2280,7 @@
 				c[0].back = 0.28; c[0].canonLength = 65; c[0].pene = 1.30; c[0].damage = 4; c[0].speed = 0.45344;
 				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 1.4; c[1].damage = 3.87879; c[1].speed = 0.438816;
 				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 1.4; c[2].damage = 3.87879; c[2].speed = 0.438816;
+				c[1].reload = c[2].reload = 23;   // diep barrel[1]/[2] side, round(1.5 x15=22.5) - Step 3 call 2
 				c[3].offdir = -Math.PI - .4; c[3].offx = -5; c[3].offTime = .5; c[3].canonLength = 59;
 				c[4].offdir = -Math.PI + .4; c[4].offx = 5; c[4].offTime = .5; c[4].canonLength = 59;
 				c[3].back = c[4].back = 3.92;
@@ -2295,7 +2300,7 @@
 					maxDis: 850,
 				};
 				let c = [{
-					reload: 29,
+					reload: 15,   // every auto-turret reload:1 x15 - Step 3 call 3
 					offTime: 0,
 					type: 0,
 					life: 99,
@@ -2321,7 +2326,7 @@
 					back: 0.28
 				}];
 				c = c.concat(new Array(3).fill(null).map(() => ({
-					reload: 25,
+					reload: 15,   // STAND-IN: Tri-Angle own new value (Step 3) - call 3
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2361,7 +2366,7 @@
 				this.maxDrone = 8;
 				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 281,
+					reload: 90,
 					offTime: 0,
 					type: 1,
 					life: -1,
@@ -2393,7 +2398,7 @@
 				this.alpha = 0.00727;
 				this.cannons = [];
 				const c = [{
-					reload: 116,
+					reload: 45,
 					offTime: 0,
 					type: 1,
 					life: -1,
@@ -2436,7 +2441,7 @@
 				//this.maxDrone = 7;
 				this.cannons = [];
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 22,
+					reload: 15,
 					offTime: 0,
 					type: 1.2,
 					life: 91,
@@ -2469,7 +2474,7 @@
 				//this.maxDrone = 7;
 				this.cannons = [];
 				let c = new Array(3).fill(null).map(() => ({
-					reload: 41,
+					reload: 23,   // STAND-IN: diep has no Fortress - takes Tri-Trapper round(22.5)=23 (plan.md Step 3, call 3)
 					offTime: 0,
 					type: 2,
 					life: 297,
@@ -2493,7 +2498,7 @@
 				}));
 				c[1].offdir = Math.PI * 2 / 3; c[2].offdir = Math.PI * 4 / 3;
 				c = c.concat(new Array(3).fill(null).map(() => ({
-					reload: 33,
+					reload: 23,   // same stand-in as launchers above - call 3
 					offTime: .5,
 					type: 1.2,
 					life: 83,
@@ -2524,7 +2529,7 @@
 				//this.maxDrone = 7;
 				this.cannons = [];
 				const c = [{
-					reload: 70,
+					reload: 50,
 					offTime: 0,
 					type: 2,
 					life: 396,
@@ -2550,7 +2555,7 @@
 				this.screen = 1664;
 				this.maxDrone = 4;
 				let c = [{
-					reload: 40,
+					reload: 23,
 					offTime: 0,
 					type: 2,
 					life: 297,
@@ -2571,7 +2576,7 @@
 					back: 2.24
 				}];
 				c = c.concat(new Array(2).fill(null).map(() => ({
-					reload: 206,
+					reload: 90,
 					offTime: 0,
 					type: 1,
 					life: -1,
@@ -2604,7 +2609,7 @@
 					maxDis: 800,
 				};
 				const c = [{
-					reload: 29,
+					reload: 15,
 					offTime: 0,
 					type: 0,
 					life: 99,
@@ -2627,7 +2632,7 @@
 					back: 0.28
 				}];
 				c.push({
-					reload: 30,
+					reload: 23,
 					offTime: 0,
 					type: 2,
 					life: 297,
@@ -2653,7 +2658,7 @@
 				this.screen = 1408;
 				this.cannons = [];
 				this.cannons[0] = new function () {
-					this.reload = 17;
+					this.reload = 8;   // STAND-IN: diep has no Submachine - takes Machine Gun round(7.5)=8 (plan.md Step 3, call 3)
 					this.offTime = 0;
 					///
 					this.offdir = 0;
@@ -2678,7 +2683,7 @@
 				this.screen = 1408;
 				let c = [];
 				c = c.concat(new Array(4).fill(null).map(() => ({
-					reload: 27,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2714,7 +2719,7 @@
 					maxDis: 800,
 				};
 				let c = [{
-					reload: 29,
+					reload: 15,
 					offTime: 0,
 					type: 0,
 					life: 99,
@@ -2737,7 +2742,7 @@
 					back: 0.28
 				}];
 				c = c.concat(new Array(4).fill(null).map(() => ({
-					reload: 27,
+					reload: 15,
 					offTime: 0,
 					///
 					offdir: 0,
@@ -2845,9 +2850,10 @@
 				speed: 0.599696 (Assassin's base cannon speed) x 1.66 (the engine's own maxed
 				BSpeed multiplier, 7 points x 0.0942857/pt, entities/Player.js upgrade()) - "The
 				Bullet Speed of a maxed Assassin", computed rather than eyeballed.
-				reload: round(15 x 0.448) = 7 reference ticks - Basic's base reload (15) x the
-				engine's maxed Reload multiplier (7 points x -0.0788571/pt = 0.448 remaining) -
-				"The Reload of a maxed reload Basic Tank".
+				reload: 15 - Basic own base reload (diep barrel reload:1 x15). Step 3 converts the
+				whole column to diep own numbers; this superseded the pre-Step-3 derivation of 7
+				(a maxed-Reload Basic own cadence), since Arena Closer has no diep counterpart to
+				anchor a maxed-stat reading to and the column is now flat diep base values throughout.
 				back: 0 - "Complete resistance to knockback" is about what it TAKES
 				(entities/Player.js's `this.closer` collision() guard), but a self-recoil on firing
 				would still visibly kick it, so this is 0 too rather than leaving diep's own back
@@ -2856,7 +2862,7 @@
 			"Arena Closer": new function () {
 				this.screen = 2000;
 				const c = new Array(1).fill(null).map(() => ({
-					reload: 7,
+					reload: 15,
 					offTime: 0,
 					auto: 1,
 					type: 0,
