@@ -14,9 +14,12 @@ const CLASS = require('../public/SHARE/TanksConfig.js').class;
 // hand-tuned number and is deliberately NOT the tank's 10/11. It stays put until MEASUREMENTS.md's
 // M1 says what diep actually does; every number in this file is denominated against it.
 const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
+// Friction-ORDER compensation for the cruise thrust in update()'s motion tail - see that site and
+// lib/constants.js. Dimensionless, so no tick conversion of its own.
+const BULLET_CRUISE_ORDER = require('../lib/constants.js').BULLET_CRUISE_ORDER;
 const KIND = require('../public/SHARE/kinds.js');
 const Detector = require('./Detector.js');
-const { PROJECTILE_BODY_DAMAGE } = require('../lib/damage.js');
+const { PROJECTILE_BODY_DAMAGE, LETHAL_EPS } = require('../lib/damage.js');
 
 // diep_wiki/Stats.txt: Body Damage is "decreased by 75% when affecting projectiles (Bullets,
 // Traps, Drones)" - MEASUREMENTS.md's pinned "-75% vs projectiles" entry (PENDING #18). Applies
@@ -579,7 +582,9 @@ class Bullet {
 					// one. `option.dmgScale` is rooms/Room.js's proration factor for this tick (1 unless
 					// either side would otherwise die mid-tick, plan.md step 5 part 4).
 					this.pene -= tick.perTick(other.damage * (option.dmgScale ?? 1));
-					if (this.pene <= 0) { this.destroy = tick.DES }
+					// LETHAL_EPS, not 0 (lib/damage.js) - pene is the bullet's health pool for
+					// proration purposes, so a prorated spend has the same ulp-short hazard hp does.
+					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES }
 					break;
 				case KIND.OBJECTS:
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.push), tick.perTick(this.push))));
@@ -620,7 +625,7 @@ class Bullet {
 					// PROJECTILE_BODY_DAMAGE stays live here (unlike the KIND.PLAYER arm above) because
 					// a shape's own damage figure isn't diep-adopted yet (plan.md step 6 has that).
 					this.pene -= tick.perTick(other.damage * PROJECTILE_BODY_DAMAGE * (option.dmgScale ?? 1));
-					if (this.pene <= 0) { this.destroy = tick.DES }
+					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES }
 					break;
 				case KIND.BULLET:
 					if (other.origin.oId === this.origin.oId) {
@@ -647,7 +652,10 @@ class Bullet {
 						}
 					}
 					this.pene -= tick.perTick(option.pene);
-					if (this.pene <= 0) { this.destroy = tick.DES; }
+					// Same threshold as the two arms above for consistency - diep clamps every damage
+					// application, not only the prorated ones. Bullet-vs-bullet is not prorated (it
+					// resolves through this pene-vs-pene rule, not Room.js's dmgScale table).
+					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES; }
 					break;
 				case KIND.WALL:
 					// An Arena Closer's own bullet passes through a wall untouched too (diep_wiki,
@@ -1278,9 +1286,18 @@ class Bullet {
 			A trap (type 2) skips the thrust add entirely - diep's baseAccel is 0 for a trap
 			(Trap.ts:41), so it only coasts on its muzzle kick through the same BODY_FRICTION decay
 			below (plan.md Step 9). Every other bullet/drone keeps the maintained-velocity thrust.
+
+			BULLET_CRUISE_ORDER (lib/constants.js, where the derivation is) is the friction-ORDER
+			compensation this tail was missing. diep displaces the PRE-friction velocity and so
+			cruises at `10 x thrust`; this tail displaces the POST-friction one and cruised at
+			`thrust x F/(1-F)` = 9x, a flat 10% shortfall on every projectile in the game - the one
+			the tank never had, because TANK_FRICTION's 10/11 IS that same compensation, made at the
+			constant instead of at the site. Applied here rather than in TanksConfig.js's `speed`
+			column so the column stays readable as diep's own `1.12 x bullet.speed`, and rather than
+			by reordering the two lines below, which would cost real TICK_MS invariance.
 		*/
 		if (this.type !== 2) {
-			this.vec.add(new Vec(tick.quadratic(this.speed), 0).rotate(this.dir))
+			this.vec.add(new Vec(tick.quadratic(this.speed * BULLET_CRUISE_ORDER), 0).rotate(this.dir))
 		}
 		this.vec.x *= BODY_FRICTION;
 		this.vec.y *= BODY_FRICTION;

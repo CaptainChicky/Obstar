@@ -14,7 +14,7 @@ const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
 const KIND = require('../public/SHARE/kinds.js');
 const RARITY = require('../public/SHARE/ObjectsConfig.js').rarity;
 const Detector = require('./Detector.js');
-const { TANK_SHAPE_MULT } = require('../lib/damage.js');
+const { TANK_SHAPE_MULT, LETHAL_EPS } = require('../lib/damage.js');
 
 /*
 	update()'s DETEC-driven pull - a polygon boss chasing what its detector found, and any shape
@@ -194,7 +194,9 @@ class Objects {
 				// die mid-tick, plan.md step 5 part 4).
 				this.hp -= tick.perTick(other.damage * TANK_SHAPE_MULT * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
-				if (this.hp <= 0) { this.destroy = tick.DES; this.room.awardXp(other, this.prize); other.coins += this.coinReward }
+				// LETHAL_EPS, not 0 (lib/damage.js) - a prorated killing blow lands an ulp either side
+				// of exactly this.hp, and an ulp short used to leave the shape alive at ~1e-16 forever.
+				if (this.hp <= LETHAL_EPS) { this.hp = 0; this.destroy = tick.DES; this.room.awardXp(other, this.prize); other.coins += this.coinReward }
 				break;
 			case KIND.OBJECTS:
 				if (other.type === 'bull') {
@@ -227,7 +229,7 @@ class Objects {
 				// die mid-tick, plan.md step 5 part 4).
 				this.hp -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
-				if (this.hp <= 0) { this.destroy = tick.DES; }
+				if (this.hp <= LETHAL_EPS) { this.hp = 0; this.destroy = tick.DES; }
 				if (this.type[0] === 'B') {
 					break;
 				}

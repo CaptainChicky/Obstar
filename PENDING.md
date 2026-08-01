@@ -29,8 +29,90 @@ into #26 (Maze/`KIND.WALL`) and #27 (Domination/Dominator) as each half's own sc
 both are now fully documented at their own numbers below — deleted here rather than kept as a
 redundant pointer, per this file's own rule that a fully-resolved entry doesn't linger.
 
-## MAJOR BUG
-I'm unsure of what the penentration values there are, but when testing, I upgraded to max bullet penetration, and this caused me to not be able to kill shapes. the shapes i attacked coudlnt be killed after getting them downto some small amoutn of health. i tried shooting them and also ramming them but they take 0 damage (their helath bardissapears). this applies to a lot of shapes but some shapes dont. 
+## 🔴 Immortal shapes at ~0 HP — FIXED 2026-08-01
+
+*Reported: "I upgraded to max bullet penetration and couldn't kill shapes. After getting them down
+to some small amount of health they take 0 damage from shooting AND ramming (their health bar
+disappears). This applies to a lot of shapes but some shapes don't."*
+
+Kept as a **do-not-re-fix record**, not an open flag. **Nothing to do with penetration values** —
+penetration was only what made it reachable.
+
+- **Root cause: the port took half of diep's collision resolver.** `rooms/Room.js`'s proration
+  (`dmgScale`, PENDING #18 / plan.md step 5 part 4) is `diepcustom/src/Entity/Live.ts:83-85`, and it
+  deliberately sizes a killing blow to land on the dying side's remaining hp **exactly**. Floating
+  point does not deliver "exactly": Room.js computes `dObjToOther = perTick(damage * MULT)` then
+  `scale = hp / dObjToOther`, and the collision arm subtracts `perTick(damage * MULT * scale)` — the
+  same product with a different association, so it comes out an ulp either side of `hp`. Diep's own
+  `receiveDamage` (`Live.ts:94` and `:110`) guards both ends of exactly this with a **0.0001**
+  threshold and a clamp to 0; the port kept `hp <= 0`.
+- **Why it presented as total immunity, on both sides.** When the subtraction landed an ulp SHORT the
+  shape settled at ~1e-16 instead of dying. Next tick, proration read that residual as the binding
+  health and collapsed `scale` to ~1e-17 — and because **one shared scale prorates both directions**,
+  the attacker stopped taking body damage too. Hence "ramming does no damage either".
+- **Why max penetration was the trigger.** A low-pene bullet dies first, making `pene` rather than the
+  target's hp the binding side, so the target never reaches the stuck state. A maxed-pene bullet parks
+  on the target indefinitely. A ramming tank's own hp is likewise never the smaller pool against a
+  nearly-dead shape. **"Some shapes don't"** is not a shape-type rule — it is pure per-pair
+  floating-point luck: swept over the real code path, **37 of 200** starting-hp values stuck against a
+  fresh Basic's own ram, and **2087 of 13500** (hp, damage) pairs across the roster's health pools.
+- **The fix** is `lib/damage.js`'s **`LETHAL_EPS`** (diep's own 0.0001, which drops in unconverted —
+  hp here is on diep's raw scale, a fresh spawn is 50), applied at all eight hp/pene subtraction sites
+  (`entities/Objects.js` ×2, `entities/Player.js` ×3, `entities/Bullet.js` ×3) as `<= LETHAL_EPS` plus
+  a clamp to exactly 0, the same shape `receiveDamage` has. **Do not "simplify" any of those back to
+  `<= 0`** — the proration above is what makes the bare comparison wrong.
+- Pinned by `test/rooms.js`'s `prorationTest()`, which now sweeps 200 starting-hp values through a
+  real `room.step()` and asserts every one dies. The pre-existing assertion next to it did not catch
+  this and could not: `Math.abs(hp) < 0.1` passes just as happily on 1e-16 as on 0.
+
+## 🔴 A Basic could outrun its own bullet — FIXED 2026-08-01
+
+*Reported: "our basic tank seems to move faster than diep's basic one? i can outrun my bullets but
+in diep i cant (as a level 0 basic)."*
+
+Kept as a **do-not-re-fix record**. **The tank was not the problem** — measured against
+`diepcustom`, our tank displaces 14.49 units/ref-tick against diep's `25.5 du × 0.56` = 14.28, i.e.
+#14's magnitudes are right. **Both defects were on the bullet**, and both were unit slips in
+plan.md Step 9's port:
+
+| over the bullet's 75-tick life | tank travels | bullet travels | outcome |
+|---|---|---|---|
+| diep (reference) | 943 u | 1005 u | never outrun |
+| ours, as reported | 942 u | 827 u | **outrun at tick 48** |
+| muzzle fix only | 942 u | 917 u | outrun at tick 69 |
+| both fixes | 942 u | 991 u | never outrun |
+
+- **The muzzle kick dropped a factor of ten.** `entities/Player.js`'s `shoot()` wrote diep's
+  `baseSpeed` (`Bullet.ts:89`, `bulletAccel + 30 - rand*scatterRate`) as `speed + 16.8` — but
+  `TanksConfig.js`'s `speed` column is **not** `bulletAccel`, it is `bulletAccel` with
+  `maintainVelocity`'s own 0.1 already folded in (`20 du/tick × 0.56 × 0.1 = 1.12`, that file's own
+  stated identity). It is a cruise *thrust*, not a speed. A Basic launched at `1.12 + 16.8` = 17.92
+  against diep's `(20 + 30) × 0.56` = **28**, a 36% shortfall on every projectile's launch. Now
+  `speed / BULLET_MAINTAIN + 16.8`, with the drone (÷3 on the whole expression) and trap (halve the
+  accel term only) variants unchanged in shape.
+- **The cruise thrust never got the friction-ORDER compensation the tank has.** diep displaces the
+  **pre**-friction velocity (`Object.ts:274-282`: `pos += v; v *= 0.9`), so it cruises at `10 × A`;
+  both our integrators apply friction **before** the position step and so cruise at `A × F/(1-F)`.
+  That is exactly why `TANK_FRICTION` is 10/11 rather than diep's 0.9 — `lib/constants.js` already
+  said so in as many words. `entities/Bullet.js`'s tail runs the same our-order recurrence on
+  `BODY_FRICTION` = 0.9 and got no such treatment, so every projectile cruised at `9A` where diep
+  cruises at `10A`: a flat **10% shortfall on every bullet, trap and drone in the game**. Fixed by
+  `lib/constants.js`'s **`BULLET_CRUISE_ORDER`** = `(1-F)/(F × BULLET_MAINTAIN)`, applied at the one
+  consumption site.
+  **Deliberately NOT fixed by reordering the tail** — that makes the tail's steady speed genuinely
+  TICK_MS-dependent (3.3% spread across TICK_MS 25/33 against the current recurrence's 0.45%),
+  because the un-decayed thrust add rides along in the displacement and does not scale linearly.
+  **Nor by restating `TanksConfig.js`'s `speed` column** ×1/0.9, which would cost ~50 entries their
+  readable `1.12 × diep bullet.speed` identity. Same shape of correction the `back` (recoil) column
+  already carries as `gu × 28 × (1-F)/F`, applied to the other friction.
+- Live readings now: tank 14.755, bullet cruise **11.427** (diep 11.200), muzzle kick **28.000**
+  (diep 28.000) units/ref-tick. `test/rooms.js`'s `bulletRangeInvarianceTest()` re-pinned 451.5 →
+  **523.7** units at TICK_MS 25 (its ≤2% cross-tick-rate band was never in danger and still passes);
+  `test/clientDiff.js`'s golden rebaselined, since bullet positions move on every frame of the corpus.
+- **Still open, and NOT touched by this pass:** the tank's own 14.49 vs diep's 14.28 is a real 1.5%,
+  and it is `MOVE_ACCEL_BASE`'s `A0 = 2.58825` (diep's physics.html) against `diepcustom`'s own
+  hardcoded `2.55` (`TankBody.ts:271`). Two diep sources disagreeing by 1.5% is a reference call for a
+  human, not a bug — left on physics.html's figure, which is what #14 chose deliberately.
 
 ## 🟠 Wiki cross-check: GAME MODES — pick what goes in, strike what doesn't
 

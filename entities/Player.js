@@ -16,7 +16,7 @@ const KIND = require('../public/SHARE/kinds.js');
 const ACHIEVEMENTS = require('../public/SHARE/AchievementsConfig.js').list;
 const Bullet = require('./Bullet.js');
 const Detector = require('./Detector.js');
-const { TANK_TANK_MULT } = require('../lib/damage.js');
+const { TANK_TANK_MULT, LETHAL_EPS } = require('../lib/damage.js');
 
 /*
 	Auto-turret aim lead (shoot()): the divisor in `other.vec * dis / AUTOTURRET_LEAD`, which
@@ -43,6 +43,11 @@ const AUTOTURRET_LEAD = 15.84;
 // tick.impulse() at its own call site below, not here (see the KIND.WALL collision arm below).
 const WALL_TANK_KEEP_SPEED = require('../lib/constants.js').WALL_TANK_KEEP_SPEED;
 const WALL_PUSH_OUT = require('../lib/constants.js').WALL_PUSH_OUT;
+
+// diep's maintainVelocity() factor, already folded into TanksConfig.js's `speed` column - dividing
+// it back out recovers diep's own raw `bulletAccel`, which is what shoot()'s muzzle-kick formulas
+// below are written against. See lib/constants.js and that site.
+const BULLET_MAINTAIN = require('../lib/constants.js').BULLET_MAINTAIN;
 
 // Idle spin rate, per reference tick: an auto-turret with nothing to shoot at (shoot()), and the
 // `c` auto-spin toggle (update()). One constant, because they are meant to look like the same
@@ -360,10 +365,11 @@ class Player {
 					/*
 						Muzzle kick: diep's own baseSpeed, a one-shot impulse the bullet starts ABOVE
 						its cruise thrust and decays down to (Bullet.ts:89's
-						`baseAccel + 30 - rand*scatterRate` du/tick, our units `speed + 16.8`, since
-						30 du/tick x 0.56 = 16.8). A drone (type 1/1.1) divides the WHOLE expression
-						by 3 (Drone.ts:71 - it launches slower than it cruises, unlike an ordinary
-						bullet). A trap (type 2) instead halves `speed` before the flat +16.8, with
+						`baseAccel + 30 - rand*scatterRate` du/tick, our units `bulletAccel + 16.8`,
+						since 30 du/tick x 0.56 = 16.8). A drone (type 1/1.1) divides the WHOLE
+						expression by 3 (Drone.ts:71 - it launches slower than it cruises, unlike an
+						ordinary bullet). A trap (type 2) instead halves the accel term before the
+						flat +16.8, with
 						the jitter term left un-halved (Trap.ts:40's own
 						`barrel.bulletAccel/2 + 30 - rand*scatterRate`) - and, unlike a bullet or
 						drone, never becomes a maintained cruise thrust at all (entities/Bullet.js's
@@ -371,12 +377,24 @@ class Player {
 						has something to read). `scatterRate` is back-derived from `can.rand`
 						(rand = 0.174533 x scatterRate, plan.md Step 8) rather than stored a second
 						time. (plan.md Step 9.)
+
+						`bulletAccel`, NOT `speed`, is what diep's three formulas are written against,
+						and conflating the two was worth a factor of TEN on the accel term:
+						TanksConfig.js's `speed` column is diep's `bulletAccel` with maintainVelocity's
+						own 0.1 already folded in (`20 du/tick x 0.56 x 0.1 = 1.12`, that file's stated
+						identity), so it is a cruise THRUST and not a speed at all. A Basic launched at
+						`1.12 + 16.8` = 17.92 units/ref-tick against diep's own `(20 + 30) x 0.56` = 28,
+						a 36% shortfall on every projectile's launch - and, together with the cruise
+						shortfall lib/constants.js's BULLET_CRUISE_ORDER fixes, the reason a Basic could
+						outrun its own shot here and cannot in diep. BULLET_MAINTAIN (lib/constants.js)
+						is that folded-in 0.1, so dividing by it recovers diep's raw figure.
 					*/
+					const bulletAccel = speed / BULLET_MAINTAIN;
 					const scatterRate = can.rand / 0.174533;
 					const jitter = Math.random() * scatterRate * 0.56;
-					const muzzleKick = (can.type === 2) ? (speed / 2 + 16.8 - jitter)
-						: (can.type === 1 || can.type === 1.1) ? (speed + 16.8 - jitter) / 3
-							: (speed + 16.8 - jitter);
+					const muzzleKick = (can.type === 2) ? (bulletAccel / 2 + 16.8 - jitter)
+						: (can.type === 1 || can.type === 1.1) ? (bulletAccel + 16.8 - jitter) / 3
+							: (bulletAccel + 16.8 - jitter);
 					const Bull = new Bullet(this.id, x, y, dir + Math.random() * can.rand - can.rand / 2, speed, muzzleKick, this.room);
 					Bull.type = (can.type ? can.type : 0);
 					Bull.class = this.class;
@@ -641,7 +659,10 @@ class Player {
 				// collision() call in test/rooms.js that never sets it keeps behaving as a full-tick hit.
 				this.hp -= tick.perTick(other.damage * TANK_TANK_MULT * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
-				if (this.hp <= 0) {
+				// LETHAL_EPS, not 0 (lib/damage.js) - a prorated killing blow lands an ulp either side
+				// of exactly this.hp, and an ulp short used to leave the tank alive at ~1e-16.
+				if (this.hp <= LETHAL_EPS) {
+					this.hp = 0;
 					this.dead = tick.DEAD_DELAY;
 					this.murder = ["players", other.id];
 					this.destroy = tick.DES;
@@ -688,7 +709,8 @@ class Player {
 				// before `damageReduction()`'s removal.
 				this.hp -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
-				if (this.hp <= 0) {
+				if (this.hp <= LETHAL_EPS) {
+					this.hp = 0;
 					this.dead = tick.DEAD_DELAY;
 					this.murder = ["objs", other.id];
 					this.destroy = tick.DES;
@@ -729,7 +751,7 @@ class Player {
 				// `damageReduction()`'s removal, so this site is unchanged beyond that removal.
 				this.hp -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
-				if (this.hp <= 0) { this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
+				if (this.hp <= LETHAL_EPS) { this.hp = 0; this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
 				break;
 			case KIND.WALL: {
 				/*

@@ -1164,6 +1164,8 @@ function baseDroneTests() {
 */
 function prorationTest() {
 	console.log('\ndamage proration (plan.md step 5 part 4):');
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
 	const room = makeRoom('ffa');
 	room.ask({ name: 'tester2', key: '1'.repeat(25), pet: -1, gm: 'ffa' });
 	const a = player(room, 0), b = player(room, 1);
@@ -1175,6 +1177,51 @@ function prorationTest() {
 	room.step();
 	check('a mutual near-lethal ram prorates both sides to (near) exactly 0, not deeply negative',
 		Math.abs(a.hp) < 0.1 && Math.abs(b.hp) < 0.1, a.hp + ' / ' + b.hp);
+
+	/*
+		...and the prorated side actually DIES, which the band above does not pin: it passes just as
+		happily on hp = 1e-16 as on hp = 0, and that gap is exactly where the bug lived. Proration
+		sizes the killing blow to land on the target's remaining hp exactly, so the subtraction comes
+		out an ulp either side of 0 depending on the hp/damage pair; the old `hp <= 0` death test
+		missed every case that landed an ulp SHORT, and the survivor was then permanently immortal -
+		next tick's scale collapses to ~1e-17 and, since ONE shared scale prorates both directions,
+		its attacker stopped taking body damage too. lib/damage.js's LETHAL_EPS (diep's own
+		Live.ts:94/:110 threshold) is what closes it.
+
+		Swept, not spot-checked: which hp values are pathological is pure floating-point luck of the
+		particular hp/damage pair - 37 of the 200 below stuck under the old rule, and 1.0 hp against
+		a fresh Basic's own ram is one of them, so a single hand-picked value would prove nothing
+		about the next one. Every shape is fed to the same real room.step() the resolver lives in.
+	*/
+	const dmgRoom = makeRoom('ffa');
+	const rammer = player(dmgRoom, 0);
+	rammer.class = 'Basic';
+	rammer.shield = 0; rammer.dev.ghost = 0;
+	rammer.x = 0; rammer.y = 0;
+	let survived = 0, worstHp = 0, worstResidual = 0;
+	for (let i = 1; i <= 200; i++) {
+		const startHp = i * 0.05;
+		const sq = dmgRoom.INSTANCE.objs.add((id) => {
+			const o = new Objects('sqr', -1, { GM: dmgRoom.gm, sId: dmgRoom.id, oId: id }, dmgRoom.map, dmgRoom);
+			o.x = rammer.x; o.y = rammer.y;
+			o.hp = startHp;
+			return o;
+		});
+		// Enough ticks to clear the one-tick getPlace handshake and land the killing blow; a healthy
+		// kill takes 2-3. The rammer is topped back up each tick so its OWN death (the shape's body
+		// damage is real) can never be what ends the loop early.
+		for (let t = 0; t < 12 && !sq.destroy; t++) {
+			rammer.hp = rammer.maxHp = 1e6;
+			dmgRoom.step();
+		}
+		if (!sq.destroy) {
+			survived++;
+			if (sq.hp > worstResidual) { worstResidual = sq.hp; worstHp = startHp; }
+			sq.destroy = tick.DES;   // don't leave an immortal shape parked on the rammer for the next round
+		}
+	}
+	check('every prorated killing blow actually kills - no shape survives at a floating-point residual',
+		survived === 0, survived + '/200 survived, worst: ' + worstHp + ' hp -> ' + worstResidual);
 }
 
 /*
@@ -3403,10 +3450,14 @@ function reloadInvarianceTest() {
 	proportional to 1/TICK_MS (1695 / 1175 / 955 units at TICK_MS 16 / 25 / 33 for this class,
 	whose lifetime is itself correctly wall-clock-constant); under quadratic() it holds flat.
 	0.48 is an arbitrary-but-fixed cruise speed (not tied to any live class); the muzzle kick below
-	is the ordinary-bullet formula an equivalent live cannon would get (`speed + 16.8`,
-	entities/Player.js's shoot() - plan.md Step 9), so this is a representative bullet, not an
-	extreme one - see nuance 33 for why BODY_FRICTION 0.956532 -> 0.9 (Step 9) also widens a
-	bullet's own tick-rate agreement band the same way it already widened the tank-movement one.
+	is the ordinary-bullet formula an equivalent live cannon would get (`speed / BULLET_MAINTAIN +
+	16.8`, entities/Player.js's shoot()), so this is a representative bullet, not an extreme one -
+	see nuance 33 for why BODY_FRICTION 0.956532 -> 0.9 (Step 9) also widens a bullet's own
+	tick-rate agreement band the same way it already widened the tank-movement one. That `/
+	BULLET_MAINTAIN` is the 2026-08-01 muzzle-kick fix: Step 9 wrote the formula as `speed + 16.8`,
+	conflating TanksConfig.js's cruise-THRUST column with diep's own raw `bulletAccel` (the column
+	is that figure with maintainVelocity's 0.1 already folded in), which cost every projectile in
+	the game a factor of ten on the accel term of its launch impulse.
 
 	2% (was 1% pre-Step-9): a bullet's `life` is quantised to whole ticks (tick.ticks()), so the
 	three rates round to wall-clock lifetimes 0.35% apart and the ranges inherit that on their own -
@@ -3418,9 +3469,10 @@ function reloadInvarianceTest() {
 	helps it converge faster.
 */
 function bulletRangeInvarianceTest(near) {
+	const BULLET_MAINTAIN = require(path.join(ROOT, 'lib', 'constants.js')).BULLET_MAINTAIN;
 	function rangeAt(tickMs) {
 		return withTickMs(tickMs, ({ Bullet }) => {
-			const b = new Bullet({ oId: -1 }, 0, 0, 0, 0.48, 0.48 + 16.8, fakeRoom());
+			const b = new Bullet({ oId: -1 }, 0, 0, 0, 0.48, 0.48 / BULLET_MAINTAIN + 16.8, fakeRoom());
 			b.alone = 1;   // no owning Player to look up - see TwoTeam/FourTeam's guard drones
 			let guard = 0;
 			while (b.destroy === 0 && guard++ < 1e6) { b.update(); }
@@ -3433,11 +3485,13 @@ function bulletRangeInvarianceTest(near) {
 	check('bullet range at TICK_MS 16/25/33 agrees within 2%',
 		near(r16, r33, 0.02) && near(r25, r33, 0.02),
 		r16.toFixed(1) + ' / ' + r25.toFixed(1) + ' / ' + r33.toFixed(1));
-	// The reading at the live rate, re-pinned for plan.md Step 9's new muzzle-kick/BODY_FRICTION
-	// model (was ~1175 units pre-Step-9) - this is what stops a future change from being a silent
-	// balance shift.
-	check('...and still matches the range this game is tuned for at TICK_MS 25 (~451.5 units)',
-		near(r25, 451.5, 0.01), r25.toFixed(1));
+	// The reading at the live rate, re-pinned again (~1175 pre-Step-9, ~451.5 after it) for the
+	// two 2026-08-01 projectile-speed fixes: the muzzle-kick `/ BULLET_MAINTAIN` above and
+	// entities/Bullet.js's BULLET_CRUISE_ORDER thrust compensation. Both are corrections toward
+	// diep's own figures, so the range growing is the point - this pin exists to stop the NEXT
+	// change from being a silent balance shift, not to freeze this one out.
+	check('...and still matches the range this game is tuned for at TICK_MS 25 (~523.7 units)',
+		near(r25, 523.7, 0.01), r25.toFixed(1));
 }
 
 /*
