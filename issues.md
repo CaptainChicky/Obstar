@@ -1,5 +1,10 @@
 additional issues are present:
 - intro options screen tries to slide down, fails, then snaps into position? this wasnt here previously
+- smasher should only appear as an upgrade option once you get to level 30 (so you stay basic until level 30 without upgrading at level 15)
+- sprayer should only appear as an upgrade option once you get to level 45 (so you stay machine gun until level 45 without upgrading at level 30)
+- bullet deaccleeration once dead should only be applied to bullets physically destroyed by shapes and hitting tanks (so bullets hitting bosses, enemy tanks, and shapes, maze walls). bullets destroyed by other bullets or dissapearing on their own once their lifetime is reached should not deaccelerate.
+- when you take control of a dominator or mothership, your FOV/identity physically transfers to the dominator, and your old tank will die. currently your fov/id still stays the old tank and you simply control both dominator and your old tank. your old tank still dies, so you quickly die/get brought to the death screen too. instead whats supposed to happen is youre supposed to be transferred over to the dominator as your FOV or mothership as your OFV and control it, your old tank is dead but you dont die because you are now the dominator/mothership and your fov is that boss tank. (you shouldnt be brought ot the death screen when your old tank dies)
+- battleship drones should not have knockback and interact with anything on its own team
 - arena closer should be bright yellow and on the same team as neutral dominators. they should not be beige and attack neutral dominators, only attack dominators taken by some team. in a normal game they should be attacking all colored teams/players/nonneutral things. they will not attack and will be ignored by base drones.
 - mark bosses on the minimap, mark teams on the minimap too (on the tester gamemode) so i know what is where when observing
 - player should not even have the possibilty of spawning in a maze wall. player spawn area should be decided after maze walls are drawn
