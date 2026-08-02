@@ -1623,7 +1623,14 @@ class Room {
 			cLvl: RAW.main.dead ? 0 : parseInt(RAW.main.level / 15),
 			// 0 in ffa/boss/sandbox, which have no bases - the client reads that as "draw none"
 			// rather than needing to know which gamemodes have them.
-			baseSize: this.baseSize || 0
+			baseSize: this.baseSize || 0,
+			// plan.md A4/C5 - the arena state machine's own fields, real since A4 landed but not on
+			// the wire until now (PENDING.md). Every existing mode sits fixed at OPEN/0/0 (A4's own
+			// note: opens straight into OPEN and never touches these again), so this is a no-op for
+			// them; Survival's real COUNTDOWN is the first consumer.
+			arenaState: this.state,
+			ticksUntilStart: Math.max(0, this.ticksUntilStart),
+			playersNeeded: this.playersNeeded
 		};
 		///
 		const lvl = RAW.main.level, xp = RAW.main.xp, arr = RAW.main.XPLVL;
@@ -1718,6 +1725,9 @@ class Room {
 							y: obj.y,
 							size: obj.size,
 							alpha: obj.alpha,
+							// plan.md C5/S4 - the shape's own real facing (idle BASE_ROTATION spin, or a
+							// Crasher's live atan2-to-target while chasing), server-authoritative now.
+							dir: obj.dir,
 						};
 						break;
 					};

@@ -87,20 +87,19 @@
 		Grid: ["#d0cdcd", "#c1bebe"],
 
 		hit: ['#d82626', '#d82626'],//red when you get hitted
-		// Crashers - diep_wiki's own light pink, not a grey oval (PENDING "Sandbox gaps"/#10):
-		// this used to be a plain grey circle standing in for the real shape. Kept distinct from
-		// `tri`'s dustier rose below so a Crasher still reads as its own thing next to an ordinary
-		// Triangle, not just a brighter one.
-		bull: ["#ff9fc7", "#d97ea3"],
+		// diep's own exact shape palette (plan.md C3, diepindepth/canvas/color_constants.md's
+		// "Shapes" table - canvas-measured, supersedes the diep_wiki-sourced pink this used to
+		// carry) - previously muted/desaturated stand-ins with no diep citation behind them.
+		bull: ["#f177dd", "#b459a5"],
 		// Solid grey walls (diep_wiki, plan.md Step 12) - deliberately distinct from bull's pink
 		// above so a wall doesn't read as a Crasher shape.
 		wall: ["#7d7d7d", "#5c5c5c"],
-		sqr: ["#cfcf9f", "#a6a689"],
-		alphaSqr: ["#cfcf9f", "#a6a689"],
-		tri: ["#d1adb2", "#a38a8e"],
-		alphaTri: ["#d1adb2", "#a38a8e"],
-		pnt: ["#b2b2cc", "#8686ab"],
-		alphaPnt: ["#b2b2cc", "#8686ab"],
+		sqr: ["#ffe869", "#bfae4e"],
+		alphaSqr: ["#ffe869", "#bfae4e"],
+		tri: ["#fc7677", "#bd5859"],
+		alphaTri: ["#fc7677", "#bd5859"],
+		pnt: ["#768dfc", "#5869bd"],
+		alphaPnt: ["#768dfc", "#5869bd"],
 		// Objects rarity tier 1 (public/SHARE/ObjectsConfig.js) - deliberately a brighter,
 		// more saturated green than the muted tank `green` above so a shiny reads as loot,
 		// not as a friendly tank.
@@ -163,6 +162,11 @@
 		// 2team, the square's side in 4team. 0 means the mode has no bases, which is what
 		// render.js/ui.js check rather than testing POST.gm again.
 		baseSize: 0,
+		// Room.ArenaState's own numbering (plan.md A4/C5) - OPEN (0) until the first real
+		// GameUpdate head lands.
+		arenaState: 0,
+		ticksUntilStart: 0,
+		playersNeeded: 0,
 	};
 	///
 	CLIENT.CONST = CONST;

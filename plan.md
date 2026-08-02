@@ -852,7 +852,7 @@ of our better custom features, but know that none of it is diep.
 
 # Chunk 10 — Client & rendering
 
-### C1 — **[BUG] Bullets appear to leave beside the barrel, not from it** *(the reported bug)*
+### C1 — **[BUG, partial] Bullets appear to leave beside the barrel, not from it** *(the reported bug)*
 
 Three separate causes, all live:
 1. **B1** — the server spawns at 93% of barrel length.
@@ -868,7 +868,13 @@ Three separate causes, all live:
 
 Do (1) first; it's one character. Then re-judge (2)/(3) in a browser.
 
-### C2 — **[DIFF] Barrel/bullet silhouette scale**
+**Status:** (1) confirmed still fixed this pass (`entities/Player.js:363` — `const len =
+can.canonLength * ra;`, no `.93`, re-checked directly). (2)/(3) need a real browser session to
+re-judge, per this item's own instruction — untouched again this pass for the same reason: no
+browser available, and the prediction math is carefully measured (its own comments, `test/client.js`
+pins part of it) so it is not a safe target to blind-tune from source reading alone.
+
+### C2 — **[DONE] Barrel/bullet silhouette scale**
 
 Our barrel lengths are drawn against a reference tank radius of 35 (`CONST.SIZE`) where diep's are
 against 50 du. The *ratios* happen to agree for Basic (68/35 = 1.94 vs 95/50 = 1.90), but every
@@ -880,25 +886,104 @@ Known casualty of not doing it: the **Summoner**'s drawn barrel (`height: 44`) i
 own spawn radius (`canonLength 50 × 0.93 = 46.5`), the only class in the roster that runs that way —
 its drones visibly spawn past the muzzle. Fixing it means growing a boss's silhouette.
 
-### C3 — **[ADD] Render features from `diepindepth/canvas/`**
+**Implemented (user-selected: full roster, carefully, accept the time cost).** Every diep-native
+class's client `height`/`width` and server `canonLength`/`can.size` in `TanksConfig.js` now reads
+`diep_barrel.size(du) × 0.56` / `diep_barrel.width(du) × 0.56` / `(diep_barrel.width/2) ×
+bullet.sizeRatio × 0.56`, cross-referenced barrel-by-barrel against
+`diepcustom/src/Const/TankDefinitions.json` (46 classes converted; verified both directions by a
+throwaway script that loads the client/server halves via `test/clientTanks.js`/`require()` and
+diffs every resolved barrel against the JSON, then a second pass checking the CLIENT/SERVER
+multisets agree — both came back clean). One real bug caught mid-pass and fixed: several
+symmetric-fan classes (**Spread Shot**, both client and server) have diep listing their centre
+barrel *last* in `barrels[]`, not first — a naive index-zip mispaired barrel lengths by one
+position; barrels are matched by angle magnitude now, with a comment at the site. Auto-turret
+cannons (Auto 3/5/Trapper/Gunner/Smasher/Hover) convert against `AutoTurret.ts`'s shared
+`AutoTurretDefinition` (size 55, width 29.4) rather than a per-tank barrel row, the same source
+their speed/life/rand already used. **Skipped, no source to convert against:** K1 (Cyclone/
+Submachine/Auto Hover's own 3 manual barrels/Fortress), Summoner, Arena Closer, the 3 Dominators,
+and Rocketeer's two barrels (they model `Rocket.ts`'s exhaust sub-barrel, not a tank barrel — see
+PENDING.md, unchanged). Fallen Overlord/Fallen Booster's own barrels were converted alongside
+Overlord/Booster to keep their "reuses the parent class's geometry verbatim" comment true. Two
+already-diep-sourced sub-barrel defs (Skimmer's `sub`, Factory's `weapon`) were already on the
+0.56 identity from B3 and were left alone. `test/tanks.js` (631 assertions) and
+`test/clientDiff.js`'s golden (rebaselined, reason documented at the constant) both green.
+
+### C3 — **[DONE, partial] Render features from `diepindepth/canvas/`**
 
 `render_order.txt`, `scaling.md`, `shape_sizes.md` and `color_constants.md` document diep's actual
 draw order, the `0.55 × zoom` scaling law, per-shape drawn sizes, and the exact palette. We have not
 cross-checked any of it. Cheap wins for "it looks like diep": exact colours (`extras/colors.js`),
 health-bar geometry, damage-flash timing (`StyleFlags.hasBeenDamaged`).
 
-### C4 — **[DIFF] Camera lag & HP-bar hold**
+**Implemented, two of three.** **Shape sizes (real bug, fixed):** every diep shape's drawn
+circumradius is its own physics/hit radius × `Math.SQRT2` — `{Square,Triangle,Pentagon,Crasher}.ts`
+all set `physicsData.values.size = drawnDu × Math.SQRT1_2`, the same identity inverted, and
+`shape_sizes.md`'s raw drawn radii confirm it independent of side count. `public/client/drawings.js`
+already satisfied this by construction for `sqr`/`alphaSqr`; `tri`/`pnt`/`alphaPnt`/`alphaTri` did
+not (their hand-picked scale divisors implied ratios of 1.78/1.24/1.24/1.92 instead of √2 ≈ 1.41) —
+triangles were drawn ~26% oversized, pentagons/alpha pentagons ~12.5% undersized, exactly matching
+PENDING.md's own long-standing "sizes arent right" note. Fixed by correcting each shape's divisor
+(comment at the site cites the identity); crosschecking the corrected triangle formula against
+`shape_sizes.md`'s small/large Crasher figures reproduces both exactly, confirming the fix.
+**Colours (real bug, fixed):** `public/client/config.js`'s `sqr`/`tri`/`pnt`/`alphaSqr`/`alphaTri`/
+`alphaPnt`/`bull` were muted, uncited stand-ins; swapped for diep's own hex codes verbatim from
+`color_constants.md`'s "Shapes" table. **Health-bar geometry: not touched** — `render_order.txt`
+lists `RenderHealthBars()` with an empty body (diepindepth's own RE effort found no extractable
+geometry there either), and `color_constants.md`'s one "Health bar / stroke #85e37d" entry doesn't
+say whether it's the player tank's bar, a shape's, or both, and our shape bars are deliberately
+coloured to match the shape's own palette entry — not enough of a citation to act on, left alone
+rather than guessed. **Damage-flash timing: investigated, no client rewrite this pass** — see C5's
+own note; the wire signal already exists (`Objects`/`Players` `states[0]`), the gap is that the
+client re-times its own flash instead of trusting the server's real hold window, and fixing that
+touches the same animation-timing code C1 declined to blind-tune, for the same reason.
+`test/clientDiff.js`'s golden moved again for this (pure numeric/colour change, same op count,
+hash-only) — rebaselined, reason documented at the constant.
+
+### C4 — **[SKIP] Camera lag & HP-bar hold**
 
 `CONST.CAM_SMOOTH` and `CONST.HP_BAR_HOLD` are the only two quantities in the tree with no
 reference at all — `diepcustom` is server-only and `diepindepth/canvas` doesn't cover either. They
 need a session with diep.io actually open. Protocols are in MEASUREMENTS.md.
 
-### C5 — **[ADD] Wire fields diep has that we don't**
+**Confirmed still un-measurable this pass** — no browser session available. Left exactly as
+MEASUREMENTS.md documents; do not guess a number here.
+
+### C5 — **[DONE, partial] Wire fields diep has that we don't**
 
 From `diepindepth/protocol/`: entity `angle` for shapes (S4), `nameData` flags, `StyleFlags`
 (`isFlashing`, `hasBeenDamaged`, `isStar`, `isTrapezoid`), `HealthFlags.hiddenHealthbar`,
 `ArenaFlags`/`ticksUntilStart` (A4), scoreboard entries. Each is a small `SocketSchema.js` addition
 that unblocks a visual behaviour above.
+
+**Implemented: entity `angle` for shapes, and `ArenaFlags`/`ticksUntilStart`/`playersNeeded`.**
+`Objects` now carries a real `dir` field (`SocketSchema.js`, reusing the same `CODECS.angle` int16
+codec `Players`/`Bullets` already use) — `entities/Objects.js` tracks it server-side exactly like
+`AbstractShape.ts`: an idle spin (`this.spin`, diep's own `AI.PASSIVE_ROTATION` 0.01 rad/ref-tick,
+sign-rolled independently of the existing drift-direction roll) that runs every idle tick regardless
+of S5's edge-turning state, replaced by a live `atan2(target − self)` while a Crasher is chasing
+(`Crasher.ts:74`, verbatim) — this is the "S4" this item names AND the literal fix S1's own text
+asked for ("facing tracks the tank it's chasing"). The client's old per-frame cosmetic wobble and
+Crasher motion-diff approximation (`entities.js`'s `this.rotate`/`this.pdx`/`this.pdy`) are gone,
+replaced by nothing — the wire value lands directly on `this.dir`, same as a Bullet's `dir` already
+did. `rooms/Room.js`'s `state`/`ticksUntilStart`/`playersNeeded` (A4, real server-side since that
+item landed) are now on the `GameUpdate` head too, PENDING.md's own "would be a good pairing with
+C5" suggestion. **Investigated, not added — already covered or no real signal to expose:**
+`StyleFlags.isStar` is fully redundant with the `Objects` `states[1..3]` tier bits already on the
+wire (tier 1 *is* Shiny — nothing to add). `StyleFlags.hasBeenDamaged` is, in substance, already the
+existing `states[0]`/`this.hit` bit on both `Players` and `Objects` (a real "currently in the
+post-hit flash window" signal) — the gap is that the client re-times its own flash independently
+(`entities.js`'s `hit()`, fixed 50/16 ms) instead of trusting how long the server actually holds the
+bit (`tick.ticks(1.65)` — 3 real ticks / ~75 ms at `TICK_MS` 25), not a missing field; left for a
+session that can watch the result in a browser, same reasoning as C1. `StyleFlags.isFlashing` (diep's
+spawn-shield visual) has no server mechanic behind it at all in this tree — adding the bit with
+nothing driving it would be a stub, not a wire fix, so it was left out; a real gap, not a decision.
+`PhysicsFlags.isTrapezoid` (plan.md's own C5 wording groups it with `StyleFlags`, imprecisely — it's
+per-*barrel*, not per-entity) is already static client-config data (T5's `cannons[i].type`/
+`trapezoidDirection`), with nothing dynamic to put on the wire. `NameFlags` were investigated with no
+citable trigger found for a tank: diep's own default (`AbstractShape`'s constructor) is that every
+*shape* already has `hiddenName` set, which our engine already satisfies by construction (`Objects`
+carries no `name` field at all) — nothing to add there either. `HealthFlags.hiddenHealthbar` and the
+scoreboard-entry fields were not attempted this pass (out of time, not a decision) — see PENDING.md.
 
 ---
 
@@ -962,7 +1047,9 @@ Dependencies first; each line is a self-contained pass with its own test/golden 
     see B3's own note).
 13. ✅ **X1 + X2 + X3** — the boss roster.
 14. ✅ **A4 + G1** — arena state machine, then Mothership / Survival (Breakout/CTF deferred - see G1).
-15. **C1–C5** — the rendering/silhouette pass, in one commit, with a deliberate golden rebaseline.
+15. ✅ **C1–C5** — the rendering/silhouette pass (C2/C3/C5 done or partially done, C4 confirmed
+    still un-measurable, C1's cause 1 re-confirmed fixed and causes 2/3 left for a browser session -
+    see each item's own note), with a deliberate golden rebaseline at each numeric/visual change.
 
 ## Rules for executing any of it
 

@@ -77,10 +77,11 @@ function golden() {
 		['UpdateUp', server.encode('UpdateUp', [1, 2, 3]), '0803010203'],
 		['comResponse', server.encode('comResponse', ['ab']), '0c01026162'],
 		['chatUpdate', server.encode('chatUpdate', [['bo', 'hi']]), '0e02020062006f0200680069'],
+		// plan.md C5/S4 - `dir` appended (a shape's own server-authoritative facing), +2 bytes.
 		['Instance (Objects)', server.encode('Instance', {
 			construc: 'Objects', id: 17, states: [0, 1, 0, 0, 0, 0, 0], shape: 'sqr',
-			hp: 0.75, x: -100.5, y: 250.125, size: 40, alpha: 1
-		}), '010011a000bfc2c90000437a200042200000ff'],
+			hp: 0.75, x: -100.5, y: 250.125, size: 40, alpha: 1, dir: 0.5
+		}), '010011a000bfc2c90000437a200042200000ff145f'],
 		// Rectangular now (plan.md Step 12): no hp/color/states, just the geometry - construc 3,
 		// id 5, then x/y/w/h as raw float32 (x/y match the Objects vector above, so the head
 		// matches it byte for byte; w/h are the two new trailing float32s).
@@ -129,7 +130,7 @@ const aPlayer = {
 };
 const anObject = {
 	construc: 'Objects', id: 17, states: [0, 1, 0, 0, 0, 0, 0], shape: 'sqr', hp: 0.75,
-	x: -100.5, y: 250.125, size: 40, alpha: 1
+	x: -100.5, y: 250.125, size: 40, alpha: 1, dir: 0.5
 };
 const aBullet = {
 	construc: 'Bullets', id: 900, states: [1, 0, 0, 0, 0, 0, 0], type: 3, x: 5.5, y: 6.5,
@@ -146,7 +147,8 @@ function sizes() {
 	check('a Players record is 37 + name*2 + canDir*2 bytes',
 		server.encode('Instance', aPlayer).length === 37 + aPlayer.name.length * 2 + aPlayer.canDir.length * 2,
 		server.encode('Instance', aPlayer).length);
-	check('an Objects record is 19 bytes', server.encode('Instance', anObject).length === 19,
+	// plan.md C5/S4 - +2 bytes for the new `dir` field (int16).
+	check('an Objects record is 21 bytes', server.encode('Instance', anObject).length === 21,
 		server.encode('Instance', anObject).length);
 	check('a Bullets record is 21 bytes', server.encode('Instance', aBullet).length === 21,
 		server.encode('Instance', aBullet).length);

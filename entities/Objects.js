@@ -201,6 +201,14 @@ class Objects {
 		// rolled for exactly that and had no consumer until now.
 		this.rotationDir = Math.sign(Math.random() - 0.5);
 		this.vec = new Vec(tick.perTick(this.maxspeed), 0).rotate(Math.random() * Math.PI * 2);
+		// The shape's own drawn facing (plan.md C5/S4) - independent of `vec`'s drift direction,
+		// diep's own split (AbstractShape.ts: `orbitAngle` steers drift, `positionData.angle` is a
+		// separate slow spin). `dir` starts random like diep's own `positionData.angle = random(0,
+		// 2pi)` at spawn, folded into (-pi,pi] for CODECS.angle's wire range; `spin` is diep's
+		// `AI.PASSIVE_ROTATION` (0.01 rad/ref-tick), sign-rolled independently of `rotationDir`
+		// above, same as diepcustom rolls its own two rates apart.
+		this.dir = Math.random() * Math.PI * 2 - Math.PI;
+		this.spin = (Math.random() < .5 ? -1 : 1) * 0.01;
 		// Edge-avoidance turning (plan.md S5) - 0 outside a turn; while turning, `turning` counts
 		// down from EDGE_TURN_TIMEOUT and `turnAngle` is the heading update()'s idle branch is
 		// steering this.vec toward.
@@ -316,6 +324,9 @@ class Objects {
 			this.vec.add(new Vec(this.crasherLarge ? CRASHER_CHASE_ACCEL_LARGE : CRASHER_CHASE_ACCEL_SMALL, 0)
 				.rotate(Math.atan2(target.y - this.y, target.x - this.x)));
 			this.DETEC.enabled = 0;
+			// diep's own Crasher.ts:74 - faces the target directly while chasing, no idle spin
+			// (plan.md C5/S4, unblocks S1's own "facing tracks the tank it's chasing" note).
+			this.dir = Math.atan2(target.y - this.y, target.x - this.x);
 		} else {
 			// diep's own edge-avoidance (AbstractShape.ts:104-124, plan.md S5): within
 			// EDGE_TURN_INNER of any wall, turn to point straight away from the arena centre; within
@@ -363,6 +374,11 @@ class Objects {
 				this.vec.rotate(tick.perTick(this.rotationVal));
 			}
 			this.vec.limit(tick.perTick(this.maxspeed / 2), BODY_FRICTION)
+			// diep's own AbstractShape.ts:120 - the idle spin runs every idle tick regardless of
+			// edge-turning state (plan.md C5/S4), independent of `vec`'s own rotation above.
+			// Re-normalised into (-pi,pi] every tick (lib/gameAI.js's own idiom) - left to
+			// accumulate unbounded, this would eventually overflow CODECS.angle's int16 wire range.
+			this.dir = Math.atan2(Math.sin(this.dir + tick.perTick(this.spin)), Math.cos(this.dir + tick.perTick(this.spin)));
 		}
 		this.x += this.vec.x / this.weight;
 		this.y += this.vec.y / this.weight;

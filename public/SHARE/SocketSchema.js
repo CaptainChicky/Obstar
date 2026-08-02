@@ -186,7 +186,13 @@
 				// this.baseSize - the strip's width in 2team, the square's side in 4team, 0 in any
 				// mode without bases. Sent rather than re-derived client-side from a hardcoded
 				// 600 and could not draw 4team's at all.
-				'baseSize': 'uint16'
+				'baseSize': 'uint16',
+				// plan.md A4/C5 - diep's own ArenaFlags/ticksUntilStart, real server-side since A4
+				// but not exposed until now. `arenaState` is Room.ArenaState's own literal numbering
+				// (COUNTDOWN -1, OPEN 0, OVER 1, CLOSING 2, CLOSED 3), hence int8, not uint8.
+				'arenaState': 'int8',
+				'ticksUntilStart': 'uint16',
+				'playersNeeded': 'uint8'
 			},
 			///////////
 			'CONSTRUCTOR': 'uint8',
@@ -217,6 +223,10 @@
 				'y': 'float32',
 				'size': 'float32',
 				'alpha': 'uint8',
+				// plan.md C5/S4 - a shape's own drawn facing (diep's AbstractShape.ts
+				// `positionData.angle`), server-authoritative now instead of the client's own
+				// approximated cosmetic spin.
+				'dir': 'int16',
 			},
 			'Bullets': {
 				'states': 'uint8',
@@ -310,6 +320,9 @@
 				'still',
 				'cLvl',
 				'baseSize',
+				'arenaState',
+				'ticksUntilStart',
+				'playersNeeded',
 			],
 			///////////
 			'Players': [
@@ -338,6 +351,7 @@
 				'y',
 				'size',
 				'alpha',
+				'dir',
 			],
 			'Bullets': [
 				'states',
@@ -618,7 +632,7 @@
 			dir: CODECS.angle, hp: CODECS.unit, alpha: CODECS.unit,
 			xp: CODECS.xpMag, recoil: CODECS.bits, canDir: CODECS.angles
 		},
-		'Objects': { states: CODECS.bits, shape: CODECS.shape, hp: CODECS.unit, alpha: CODECS.unit },
+		'Objects': { states: CODECS.bits, shape: CODECS.shape, hp: CODECS.unit, alpha: CODECS.unit, dir: CODECS.angle },
 		'Bullets': { states: CODECS.bits, dir: CODECS.angle, color: CODECS.color, alpha: CODECS.unit },
 		// Everything is a raw float - no codec needed.
 		'Walls': {},

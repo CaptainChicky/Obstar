@@ -274,10 +274,21 @@
 				ctx.stroke();
 			}
 		],
+		// plan.md C3: every shape's drawn circumradius in diep is its own physics/hit radius x
+		// Math.SQRT2 - diepcustom's {Square,Triangle,Pentagon,Crasher}.ts all set
+		// `physicsData.values.size = drawnDu x Math.SQRT1_2`, the same identity inverted, and
+		// diepindepth/canvas/shape_sizes.md's raw drawn radii (55 square/triangle/crasher-large,
+		// 75 pentagon, 200 alpha, 35 crasher-small du) confirm it independent of side count. `$1`
+		// below is the entity's own hit radius (plan.md S3's du x 0.56 figures); each shape's
+		// divisor is `(that shape's own hardcoded vertex distance) / Math.SQRT2`, so dividing by
+		// it and multiplying by the vertex coordinates reproduces exactly that ratio. Square's
+		// divisor (20, vertex distance 20*sqrt(2)=28.28) already happened to satisfy this by
+		// construction; tri/pnt/alphaPnt/alphaTri did not - triangles were drawn 26% oversized,
+		// pentagons/alpha pentagons 12.5% undersized (PENDING.md's own "sizes arent right" note).
 		obj: {
 			tri: (ctx, $0, $1, $2) => {
 				ctx.rotate($2);
-				$1 /= 18;
+				$1 /= 22.6274;   // 32 / Math.SQRT2
 				ctx.beginPath();
 				ctx.moveTo(32 * $1, 0)
 				ctx.lineTo(-16 * $1, 27.7 * $1)
@@ -305,7 +316,7 @@
 			},
 			pnt: (ctx, $0, $1, $2) => {
 				ctx.rotate($2)
-				$1 /= 42;
+				$1 /= 36.7696;   // 52 / Math.SQRT2
 				ctx.beginPath();
 				ctx.moveTo(52 * $1, 0);
 				ctx.lineTo(16.1 * $1, 49.5 * $1);
@@ -322,7 +333,7 @@
 			},
 			alphaPnt: (ctx, $0, $1, $2) => {
 				ctx.rotate($2)
-				$1 /= 150;
+				$1 /= 131.32;   // 185.7 / Math.SQRT2
 				ctx.beginPath();
 				ctx.moveTo(185.7 * $1, 0);
 				ctx.lineTo(57.5 * $1, 176.8 * $1);
@@ -352,7 +363,7 @@
 			},
 			alphaTri: (ctx, $0, $1, $2) => {
 				ctx.rotate($2);
-				$1 /= 72;
+				$1 /= 97.5809;   // 138 / Math.SQRT2
 				ctx.beginPath()
 				ctx.moveTo(138 * $1, 0)
 				ctx.lineTo(-69 * $1, 119.5 * $1)

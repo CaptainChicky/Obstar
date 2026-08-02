@@ -20,7 +20,15 @@ dev needs a migration path. Old conventions are defaults to improve on, not cons
 ## Notes
 crashers spawn too fast? and on top of people? chrck this
 also bullets dont seem to do enough damage? a destroyer bullet cant even kill a pentagon
-also sizes arent right. triangles seem too big, pentagons too small, and alpha pentagons are wayy too small???
+~~also sizes arent right. triangles seem too big, pentagons too small, and alpha pentagons are wayy
+too small???~~ **Root cause found and fixed (plan.md C3).** Every diep shape's drawn circumradius is
+its own hit radius × `Math.SQRT2` (`{Square,Triangle,Pentagon,Crasher}.ts` all set
+`physicsData.values.size = drawnDu × Math.SQRT1_2`) - `public/client/drawings.js`'s `sqr` already
+satisfied that ratio by construction, `tri`/`pnt`/`alphaPnt`/`alphaTri` did not (ratios of
+1.78/1.24/1.24/1.92 instead of √2 ≈ 1.41 - triangles ~26% oversized, pentagons/alpha ~12.5%
+undersized, exactly this complaint). Fixed at the four wrong divisors; cross-checked against
+`shape_sizes.md`'s Crasher figures (small/large both land exactly on 19.6/30.8 units with the
+corrected triangle formula, since a Crasher draws through the same `tri` function).
 
 ## 🟣 Needs a human decision
 
@@ -104,6 +112,43 @@ historical blocks). **Scope:** strip references and history, keep and sharpen th
 statement (units, ranges, why a value is what it is *in terms of the formula*, genuinely non-obvious
 invariants like "`pene` IS a drone's health pool"). Worth one deliberate pass — it touches nearly
 every file and would make any other diff in the same commit unreviewable.
+
+### 11. C1's causes 2/3 and C4 still need a real browser session
+Re-checked this pass (plan.md's chunk 10, C1/C3/C5): cause 1 (`.93`) is confirmed still fixed.
+Causes 2/3 (the client muzzle-weld ramp being tuned against a since-changed prediction path, and
+the local tank's own reference frame under strafing) are exactly what plan.md's own C1 text says to
+"re-judge in a browser" - still nobody has. Left untouched again rather than blind-tuned from source
+reading alone, since the prediction math is carefully measured (its own comments, `test/client.js`
+pins part of it) and a wrong guess here is worse than the current bug. `C4` (`CONST.CAM_SMOOTH`/
+`HP_BAR_HOLD`) is the same story - MEASUREMENTS.md's protocol is ready, nobody has run it.
+
+### 12. Damage-flash duration is client-timed, not server-timed
+Investigated this pass (plan.md C3/C5): the *signal* diep calls `StyleFlags.hasBeenDamaged` is, in
+substance, already on the wire - both `Players` and `Objects`' `states[0]` bit is exactly "this
+entity is inside its post-hit flash window" (`entities/Objects.js`'s `this.hit`, similarly on
+`Player.js`), so there is no missing field. What's actually missing is that
+`public/client/entities.js`'s `hit()` re-times its own animation independently (a fixed
+`sleep(50)` then `sleep(16)`) instead of trusting how long the server actually holds the bit
+(`tick.ticks(1.65)` - 3 real ticks, ~75 ms at `TICK_MS` 25, and moves if `TICK_MS` does). Fixing it
+means rewriting `hit()` to extend the flash for as long as consecutive packets keep reporting the
+bit set, instead of firing a fixed one-shot timer - real, scoped work, not attempted this pass for
+the same reason as #11 above (an animation-timing change nobody could watch happen).
+
+### 13. `StyleFlags.isFlashing` (diep's spawn-shield visual) has no mechanic behind it
+Investigated for plan.md C5 alongside the other `StyleFlags`. Diep sets this on tank spawn
+(`TankBody.ts:95`) and clears it on the first move/shoot or after 374 ticks - a temporary
+invulnerability-adjacent visual (`Dominator.ts` clears the same flag on capture, similarly). This
+engine has no spawn-shield concept at all to drive the bit, so it was left off the wire rather than
+added as a stub with nothing behind it - a real gap (an actual feature this tree doesn't have), not
+a decision to revisit.
+
+### 14. `HealthFlags.hiddenHealthbar` and scoreboard-entry wire fields not attempted
+Named in plan.md C5 alongside the fields that did land this pass (`Objects.dir`, the arena-state
+head fields). Not a decision - just ran out of session before reaching them. diep's own uses
+(`Bullet.ts` hides every bullet's bar - moot for us, `Bullets` has no `hp` field to begin with;
+`TeamBase.ts` hides the base's; `TankBody.ts`'s Necromancer-claim case hides a square's mid-deletion)
+are all narrow and entity-specific, so whoever picks this up should decide the mapping per entity
+rather than adding one blanket bit.
 
 ---
 
@@ -211,12 +256,13 @@ has no row to read at all:**
   Summoner (the only boss that existed); it now picks any boss other than Defender (which diep
   gives `ai.viewRange 0` - it never aggros, correctly, not a bug) to test the shared aggro
   mechanism against.
-- **A4's new `state`/`ticksUntilStart`/`playersNeeded` fields are not on the wire.** Survival
-  (plan.md G1) reads/writes them server-side for real (a genuine countdown gate), but no
-  `SocketSchema.js` packet carries them to the client yet, so there is no "waiting for players"
-  countdown screen - a human joining a Survival room mid-`COUNTDOWN` sees an ordinary tank with no
-  on-screen indication a match hasn't started. C5's other wire additions (`nameData`
-  flags/`StyleFlags`/etc.) were not extended to cover this.
+- **A4's `state`/`ticksUntilStart`/`playersNeeded` fields are on the wire now (plan.md C5)** -
+  `GameUpdate`'s head carries `arenaState`/`ticksUntilStart`/`playersNeeded` and the client stores
+  them on `Game` (`game.js`, mirroring how `Game.baseSize` already works) - but there is still **no
+  "waiting for players" countdown screen**, just the data sitting there unused. A human joining a
+  Survival room mid-`COUNTDOWN` still sees an ordinary tank with no on-screen indication a match
+  hasn't started; someone needs to actually draw it (`public/client/ui.js`, in the spirit of diep's
+  own `RenderWaitingForPlayers()`/`RenderCountdown()`).
 - **Tag/Maze's own "closing" was deliberately NOT migrated onto the new `Room.ArenaState`.** A4's
   own note explains why - Tag's `this.closing` flag and Arena-Closer-swarm mechanism is untested
   surface if touched for no behavioural gain, so it stays exactly as it was; Mothership/Survival
@@ -319,13 +365,6 @@ landed. The exact fix (a per-pair "already exchanged this reference tick" guard,
 reference tick) would add real state to `rooms/Room.js`'s hottest loop for a few-percent gain, so
 it stays a known, accepted gap rather than new surface. → plan D6.
 
-### `BASE_ROTATION` (a shape's own spin) is diep's number but is not implemented
-`AbstractShape.ts:41` spins each shape `±0.01 rad/tick` **server-side**. Our `Objects` wire record
-carries no facing angle at all, so `public/client/entities.js` does a per-client cosmetic wobble in
-*frame* units instead. MEASUREMENTS.md lists `BASE_ROTATION` beside `BASE_ORBIT`/`BASE_VELOCITY`
-(which *are* live) with no distinction — that row is "on record if this is ever picked up", not a
-claim it runs anywhere. → plan S4.
-
 ### A boss's aggro radius is smaller than its own hitbox at low level
 `lib/gameAI.js`'s Summoner test is `dis / max(1, level) < screen / 30` — **65.6 units** for a
 level-0/1 tank, against a boss body radius of 64 plus a ~28-radius tank. It only ever passed because
@@ -416,8 +455,16 @@ Only a stub-DOM harness has run the client. Everything below is code-tested only
 - Crashers read as pink triangles that actually run a nearby tank down (plan S1's chase-speed/
   detection-range fix is unit-tested, `test/rooms.js`'s `crasherChaseTests()`, but the seeded
   60-tick `clientDiff` corpus never spawns one, so the in-browser feel is still unexercised). Their
-  point should track the tank they're chasing, turning smoothly - that part is still open, since it
-  needs a server-authoritative facing angle on the wire (plan S4), not yet built.
+  point should track the tank they're chasing, turning smoothly - the server-authoritative facing
+  angle this needed (plan S4) is now built and on the wire (plan.md C5), replacing the client's old
+  motion-diff approximation entirely, but nobody has watched a live Crasher's point actually track
+  its target in a browser yet - code-tested only.
+- Every shape's own slow idle spin (plan.md S4/C5, `AbstractShape.ts`'s `BASE_ROTATION`) is now
+  server-driven end to end (`entities/Objects.js`'s `this.dir`/`this.spin`, the wire's new `Objects`
+  `dir` field, `entities.js` drawing it directly) instead of a client-only per-frame wobble - never
+  seen running in a browser, only exercised by `test/tanks.js`/`test/rooms.js`/`test/proto.js`'s
+  code-level checks and the `clientDiff` corpus (which never lets one spin long enough to notice a
+  visible stutter or direction flip, if there is one).
 - Farming speed at low level, and frame rate / room tick under a busy 4team.
 
 **Bases and base drones** — nothing here is covered by a browser-free test beyond placement:

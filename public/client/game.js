@@ -719,6 +719,12 @@
 			Game.width = data.head.width;
 			Game.height = data.head.height;
 			Game.baseSize = data.head.baseSize;
+			// plan.md A4/C5 - real since A4, on the wire since C5; fixed at OPEN/0/0 for every mode
+			// except Survival's own COUNTDOWN. No consumer yet (no "waiting for players" screen
+			// built - PENDING.md), stored here so one has the data the moment it's written.
+			Game.arenaState = data.head.arenaState;
+			Game.ticksUntilStart = data.head.ticksUntilStart;
+			Game.playersNeeded = data.head.playersNeeded;
 			if (General['Ui']) {
 				General['Ui'].xp = data.head.xp;
 				General['Ui'].still = data.head.still;
