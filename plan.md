@@ -1,1071 +1,411 @@
-# plan.md — Obstar → diep.io fidelity plan
+# plan.md — the rescale & silhouette-repair pass
 
-**Goal.** Make the layer underneath Obstar a near-exact diep.io replica, then keep our custom
-features bolted on top of it. This file is the diff between what this tree does today and what
-diep does, split into chunks you can execute one at a time.
+The previous plan.md (the diep.io fidelity diff, chunks D/P/T/B/S/A/M/X/G/C) ran all 15 of its
+execution steps and was deleted. Its surviving decisions live in
+**[PENDING.md](PENDING.md) → "📕 plan.md's surviving nuances"**.
 
-**Reference authority, in order.** `diepcustom/src/` (a reverse-engineered TS reimplementation of
-diep's own server — this is the *code*, and it wins every disagreement) → `diepindepth/` (raw RE
-notes: `physics/README.txt`, `extras/stats.md`, `canvas/`) → `physics.html` (community physics
-page, 2022) → `diep_wiki/` (prose, official pages only).
-
-> **`diep_wiki/` contains fan-made pages.** Anything under `Draft_*`, `Fanon*`, `Fannon*`,
-> `Fandom_*`, `Fanob_*`, `Ernesto's bosses`, `Guerilla soldier`, `Caseoh`, `Mike Tyson`,
-> `Tapeworm`, `Baritone`, `Bergenconfusung`, `Matrauth`, `Vaylio`, `Heptazoid`, `Trapangle`,
-> `Penthraster`, `Pentamancer`, `Overstorm`, `Decade`, `Constellation`, `Guillotine`,
-> `The spike factory tank`, `Unnamed * Upgrade *`, `Tri-Angle Upgrade 1`, `Assembler`,
-> `Ambulance`, `Dropship`, `Battle Carrier`, `Sidewinder`, `Glider`, `Boomer`, `Firework(s)`,
-> `Flamethrower`, `Minigun`, `Medic`, `Ball`, `Vanguard`, `Tree-Topper`, `X Hunter`,
-> `Super elite`, `Nest Janitor`, `Guerilla*` and similar is **fanon — ignore completely.**
-> Nothing in this plan cites one. When in doubt, if it isn't in `diepcustom`'s
-> `TankDefinitions.json` / `Entity/` tree, it isn't in diep.
+**This file is the corrective pass for what that plan's step 15 (item C2) broke, plus the six
+graphics defects that pass left standing.** Everything here is a **[BUG]** — a thing we meant to
+match and don't, or a thing that throws. There is exactly one **[DECIDE]** (shape palette), at the
+end.
 
 ---
 
-## How to read an item
+## What actually went wrong
 
-| Tag | Meaning |
-|---|---|
-| **[BUG]** | We meant to match diep and don't. Just fix it; no decision needed. |
-| **[ADD]** | diep has a feature we don't have at all. Build it. |
-| **[DIFF]** | Both have it, and they differ **on purpose or plausibly on purpose**. **You decide** — the item states both sides and what the decision costs. |
-| **[KEEP]** | Ours, deliberately non-diep. Listed so a later "fidelity" pass doesn't delete it. |
+### One sentence
 
-Every item has an ID (`D3`, `T7`, …). Items reference each other by ID; the dependency order is at
-the end of the file.
+`C2` converted the whole barrel roster with **0.56 units/du**, the factor for *absolute* lengths,
+into fields that the renderer and the shooter both **divide by `CONST.SIZE = 35`** before using —
+where the correct factor is **0.70 units/du**. Every barrel and bullet it touched came out **0.8×
+too small**, and the fields it *didn't* touch stayed on 0.70, so a single barrel now mixes two
+scales.
 
-## Unit conversions you need for every chunk
+### The derivation, so nobody re-litigates it
 
-| Quantity | Conversion |
-|---|---|
-| Length | 1 diep grid square (gu) = 50 du = **28 Obstar units**; so **1 du = 0.56 units** |
-| Time | diep tick = 40 ms = our `REF_TICK_MS`. Our sim steps at `TICK_MS` = 25 ms; every raw constant is per-*reference*-tick and converted at the consumption site by `lib/tick.js` |
-| Bullet cruise thrust | our `speed` column = **1.12 × diep `bullet.speed`** (`20 du/tick × 0.56 × 0.1`) |
-| Recoil | our `back` column = diep `recoil` (gu) **× 2.8** |
-| Knockback | our `weight` column = diep Knockbackfactor (gu) **× 5.25** |
-| **Damage** | our numbers are **0.692640 ×** diep's raw (`4.84848 / 7`) — **this is a defect, see D1** |
-| HP | 1 : 1 with diep's raw (a fresh tank is 50 both sides) |
-
----
-
-# Chunk 1 — Damage & combat model
-
-This is the highest-leverage chunk. Everything about "it takes N bullets to kill X" lives here,
-and one defect (D1) shifts every kill time in the game by ~1.44×.
-
-### D1 — **[BUG] All damage is on a 0.6926× axis while all HP is on diep's raw axis**
-
-`entities/Player.js:231` sets `this.damage = 3.4632035`; `public/SHARE/TanksConfig.js` sets Basic's
-`can.damage = 4.84848`; `entities/Objects.js:101-109` sets Square/Triangle `damage = 5.54112`.
-Every one of those is diep's own number times `4.84848/7 = 0.692640` — an "our scale" anchor
-adopted when HP was *also* on a custom scale. HP has since become diep's raw scale
-(`maxHp = 50`, Square 10, Triangle 30, Pentagon 100, Alpha 3000), and the damage anchor was never
-retired with it.
-
-Net effect: **everything in the game takes ~1.44× longer to kill than in diep.**
-
-The reported symptom reproduces exactly. Basic level 0, vs a Triangle (30 HP):
-
-| | bullet damage/diep-tick | contact | total per bullet | bullets to kill |
-|---|---|---|---|---|
-| diep (`Live.ts:69-89`) | 7 | 1 tick (bullet health 2, triangle `damagePerTick` 2 → dead same tick) | **7.0** | **5** |
-| Obstar today | 4.84848 | ~2 real ticks (`pene` 1.7 vs 0.866/tick drain) | **5.95** | **6** |
-
-**Fix.** Multiply the whole damage axis by `7/4.84848 = 1.44378` so it becomes diep's raw:
-
-| site | today | diep raw |
-|---|---|---|
-| `entities/Player.js` `this.damage` (tank body base) | 3.4632035 | **5** (`TankBody.ts:253` `bodyDamagePoints + 5`) |
-| `entities/Player.js` `BodyDam` per-point step | 0.69264 | **1** (same line — a flat +1/point, not `0.2 × base`) |
-| `TanksConfig.js` every `can.damage` | `0.69264 × diep` | `(7 + 3P) × bullet.damage` at P=0 → **`7 × bullet.damage`** |
-| `entities/Objects.js` shape `damage` | `2/3/5 × 4 × 0.69264` | drop the baked ×4 entirely — see D2 |
-| `lib/config.js` `BASE_DRONE_DAMAGE` | 4.84848 | **7** (`BaseDrones.ts` `damage: 1`) |
-| `rooms/Tag.js`/`rooms/Maze.js` Arena Closer damage | `10 × base` | recompute off the new base |
-
-Note the tank-body step also changes *shape*: diep is `+1 per point` off a base of 5 (a 2.4× span
-at 7 points), ours is `+0.2 × base` — the span is the same, so this is a rename, not a rebalance,
-once the base is 5.
-
-### D2 — **[BUG] Shapes bake `common(shape,tank)=4` into their own `damage` field**
-
-`entities/Objects.js:98` bakes the ×4 multiplier into each shape's `this.damage`, then
-`entities/Player.js`'s `KIND.OBJECTS` arm reads it un-multiplied while `entities/Bullet.js`'s
-`KIND.OBJECTS` arm multiplies by `PROJECTILE_BODY_DAMAGE = 0.25` to undo it.
-
-diep has one rule and no baking (`Live.ts:77-78`):
+diep draws a barrel at `definition.size × scaleFactor`, `scaleFactor = tank.physicsData.size / 50`.
+A tank's body radius *is* `physicsData.size`. So in diep:
 
 ```
-common(a,b) = max(a.minDamageMultiplier, b.minDamageMultiplier)
-            × min(a.maxDamageMultiplier, b.maxDamageMultiplier)
+barrelLength / bodyRadius  =  definition.size / 50          ← the only ratio that matters
 ```
 
-with the table:
+We draw a barrel at `c.height × r`, `r = param.size / CONST.SIZE` ([drawings.js:33](public/client/drawings.js#L33)),
+and the body at radius `param.size` ([drawings.js:166](public/client/drawings.js#L166)), where
+`param.size = 28 × 1.01^level` ([entities/Player.js:1024](entities/Player.js#L1024)). So for us:
 
-| entity | `minDamageMultiplier` | `maxDamageMultiplier` | citation |
+```
+barrelLength / bodyRadius  =  c.height / CONST.SIZE  =  c.height / 35
+```
+
+Equate them: **`height = definition.size × 35/50 = definition.size × 0.70`.**
+
+`0.56` is `28/50` — the du→unit conversion for a length that is used *as a world length* (arena
+size, `bossSize`, drone resting radius). It is correct there and only there. The `35` in the
+denominator is what makes barrels a different case, and plan.md's own C2 text **noticed** it —
+*"Our barrel lengths are drawn against a reference tank radius of 35 where diep's are against
+50 du. The ratios happen to agree for Basic (68/35 = 1.94 vs 95/50 = 1.90)"* — and then converted
+with 0.56 anyway. The ratio it wrote down *is* the fix; the factor it applied is a different
+quantity.
+
+The server has the identical structure — `ra = this.size / 35`,
+`len = can.canonLength * ra`, `Bull.size = can.size * ra`
+([entities/Player.js:323,363,442](entities/Player.js#L323)) — so `canonLength` and `can.size` are
+on the same 0.70 axis, and B2's bullet-radius identity is
+`(barrel.width / 2) × bullet.sizeRatio × **0.70**`, not `× 0.56`.
+
+### The evidence that 0.70 is what the tree was already built on
+
+Measured across the whole pre-C2 roster (`git show e5a1804~1`), client `height ÷ diep barrel.size`:
+
+```
+n = 132 barrels    min 0.551    median 0.692    mean 0.6938    max 1.133
+```
+
+and the **ten classes T2 added most recently** — Hunter, Predator, Streamliner, Stalker,
+Spread Shot, Gunner Trapper, Tri-Trapper, Skimmer, Factory, Mothership — sat on **exactly 0.700**,
+every barrel. Someone had already derived the right factor one step earlier in the same plan.
+Three more independent confirmations, all of which C2 left untouched and therefore still read 0.70
+today:
+
+| field | ours | diep | implied factor |
 |---|---|---|---|
-| Tank body | 1 | **6** | `TankBody.ts:100` |
-| Shape (all, incl. Crasher) | 1 | **4** | `AbstractShape.ts:78` |
-| Bullet / Trap | **0.25** | 1 | `Bullet.ts:93-94` |
-| Drone | 1 | 1 | `Drone.ts:77-78` |
+| Twin `offx` | 18 | `offset 26` | 0.692 |
+| auto-turret `rad` | 18 | `AutoTurret.ts:87` `baseSize = 25` | 0.720 |
+| Auto 3/5 `distance` | 14 | ~20 du socket | 0.700 |
+| `drawTrapLauncher`'s own comment | — | — | says *"× our existing **0.7** barrel-scale ratio"* out loud ([drawings.js:14](public/client/drawings.js#L14)) |
 
-**Fix.** Store diep's raw `damagePerTick` on every entity (Square 2, Triangle 2, Pentagon 3, Alpha
-5, Crasher 2 — `{Square,Triangle,Pentagon,Crasher}.ts`) and let `lib/damage.js` compute `common()`
-from a pair of multipliers at each site. Retire `PROJECTILE_BODY_DAMAGE` and the baked ×4 together.
-This also makes D3 and D4 expressible at all.
+So the roster is now **0.56 for `height`/`width`/`canonLength`/`can.size`** and **0.70 for
+`offx`/`open`/`distance`/`rad`** — mixed inside the same barrel. That is the "proportions are way
+off" you are seeing, and it is worse than a uniform 20% shrink because the *taper* fields no longer
+match the widths they taper.
 
-### D3 — **[BUG] Drones use the bullet multipliers, not the drone ones**
+### Why every test stayed green
 
-`Drone.ts:77-78` sets `minDamageMultiplier = maxDamageMultiplier = 1`. We treat every projectile as
-a bullet, so a drone currently gets `min 0.25 / max 1`. Against a shape diep gives a drone
-`common = 1 × min(1,4) = 1` — same as a bullet — but against **another projectile** diep gives a
-drone `common = max(1, 0.25) × 1 = 1` where a bullet-vs-bullet pair gets `0.25`. Drones punch
-through projectiles 4× harder than bullets do, and we don't model that.
+`test/tanks.js` (631 assertions) compares client `height` against server `canonLength × 0.93` and
+nothing else. Both halves moved together, so all 631 held. **A test that only compares our two
+halves against each other cannot catch a scale error** — that is now a standing rule in PENDING.md,
+and R7 below adds the assertion that would have caught this one.
 
-### D4 — **[BUG] Bullet-vs-bullet is a bespoke mechanic instead of the same rule**
+### Why "bullets spawn away from the barrel"
 
-`entities/Bullet.js`'s `KIND.BULLET` arm does `this.pene -= tick.perTick(option.pene)` — a
-hand-rolled pene-vs-pene exchange with its own path through `rooms/Room.js`. diep has no such
-special case: bullet-vs-bullet goes through the identical `handleCollision`, with
-`common = max(0.25, 0.25) × min(1,1) = 0.25`, so each bullet loses `0.25 × the other's
-damagePerTick` from its own health. Collapse it into the one resolver (D2).
+Three distinct causes, only one of which is the old C1:
 
-### D5 — **[BUG] `pene` is on a third, inconsistent scale**
-
-A bullet's health pool in diep is `(1.5 × penetrationPoints + 2) × bullet.health` (`Bullet.ts:91`),
-i.e. **2** for a Basic at 0 points, on the same units as everything else's HP. Our base-drone pool
-is diep's raw `2000` (`lib/config.js`), but `TanksConfig.js`'s Basic `can.pene` is **1.7** — 0.85×
-diep's, from neither the damage anchor (0.6926) nor 1:1. Every `can.pene`/`necro.pene` entry needs
-re-deriving as `2 × diep bullet.health`, at which point `up.BPene`'s existing flat `+0.75`/point
-step is already exactly diep's `1 + 0.75P` multiplier.
-
-### D6 — **[DIFF] Per-tick contact vs diep's once-per-pair-per-tick**
-
-diep keeps a `damagedEntities` list per entity, cleared each tick (`Live.ts:73, 157`), so a pair
-exchanges damage **exactly once per 40 ms tick**. We run at 25 ms and scale each hit by
-`tick.perTick()` (× 0.625), which is *approximately* the same integral but not the same
-quantisation — a bullet that dies in exactly one diep tick spends ~2 of our ticks, and the
-proration on the final partial tick is a different number.
-
-**Decision.** Either (a) accept the approximation (it is within a few percent once D1 lands), or
-(b) add a per-pair "already exchanged this reference tick" guard so contact is quantised to
-reference ticks the way diep quantises it to its own. (b) is more faithful and makes every
-"N hits to kill" figure exactly reproducible; it costs a per-pair set per tick.
-
-### D7 — **[DONE] `absorbtionFactor` / `pushFactor` are now modelled per entity**
-
-diep's knockback is `receiveKnockback`: `kbMagnitude = this.absorbtionFactor × other.pushFactor`
-(`Object.ts:287`). We had a single `weight` column on the *bullet* and no receiver-side term at
-all. Missing receiver values, all from source:
-
-| entity | `absorbtionFactor` | `pushFactor` |
-|---|---|---|
-| Tank (default) | 1 (`TankDefinitions.json`) | 8 (`diepindepth` §4.3.1) |
-| Mothership | 0.01 | — |
-| Dominator / Arena Closer | 0 (immovable) | — |
-| Pentagon | 0.5 | 11 |
-| Alpha Pentagon | 0.05 | 11 |
-| Crasher (small) | 2 | 8 |
-| Crasher (large) | 0.1 | 12 |
-| Drone | (bullet's) | 4 |
-| Bullet | `bullet.absorbtionFactor` | `((7/3) + bulletDamagePoints) × bullet.damage × bullet.absorbtionFactor` |
-| Maze wall | — | 2, then `/= 0.3` |
-
-**Implemented:** `entities/Bullet.js` bullets/traps now carry `bdPoints` (the shooter's Bullet
-Damage point count at fire time, `entities/Player.js`'s `upNb[4]`); the tank's `KIND.BULLET`
-collision arm derives pushFactor as `weight × 0.16 × (7/3 + bdPoints)` for `type 0`/`2` (a true
-bullet or trap — the table's `weight` column was authored at `bd = 1`, where `0.16 × (7/3+1) =
-0.53333`, the old flat constant, so this reproduces the table exactly at 1 point and the real 4×
-span either side of it), and keeps the old flat `weight / 3 * 1.6` for anything else (a drone's
-pushFactor is diep's own flat 4, not scaled by points). A Dominator's `absorbtionFactor = 0` now
-also guards the bullet-knockback arm, not just the tank-body one (it was previously still shoved by
-ordinary bullets). Mothership/Maze-wall rows have no entity to attach to yet (T2/A-chunk).
-
-### D8 — **[DONE] `entities/Objects.js`'s `weight` mass-divisor replaced by real `absorbtionFactor`**
-
-We used to move shapes as `this.x += vec.x / weight` (1 / 4 / 100), a divisor that suppressed a
-shape's *own* idle drift as well as its knockback response — diep only does the latter. **Decision
-(user-selected):** adopt diep's real `absorbtionFactor` for the four diep-native shapes — Pentagon
-0.5, Alpha Pentagon 0.05, Crasher small 2 / large 0.1 (previously undifferentiated), Square/Triangle
-default 1 — applied only at each `collision()` impulse site (`entities/Objects.js`'s new
-`this.absorb` field), while idle drift/orbit is now maxspeed-only, matching diep's own split.
-`Bsqr`/`Btri` (no diep counterpart, [KEEP]) were left on the old `weight` divisor exactly as before.
-
-### D9 — **[OK, do not re-fix]** `LETHAL_EPS` (0.0001) at every hp/pene subtraction, and the shared
-proration factor in `rooms/Room.js`, are both diep's own (`Live.ts:83-85`, `:94`, `:110`). Do not
-"simplify" a `<= LETHAL_EPS` back to `<= 0` — proration deliberately lands a killing blow on the
-target's exact remaining HP, and float error then leaves it alive at ~1e-16 forever.
+1. **Defender** ships `distance: 33.6` on its three turret cannons server-side and **no `distance`
+   at all** on the client draw — bullets literally spawn 33.6 units out from a barrel drawn at the
+   hull centre. Pure client/server desync, R5.
+2. **The bullet is now 20% smaller than the muzzle it leaves** (`can.size` on 0.56, muzzle `width`
+   on 0.56 but `open` on 0.70), so it no longer visually plugs the barrel mouth the way it used to.
+   R1 fixes it.
+3. The genuine prediction/strafe error C1 named (causes 2 and 3) is still there and still needs a
+   browser session. Do not blind-tune it. It is now the *smallest* of the three.
 
 ---
 
-# Chunk 2 — Progression & economy
+## Why porting from diepcustom keeps producing errors
 
-### P1 — **[BUG] The XP curve is nothing like diep's**
+This is worth writing down once, because it explains every item below and it is not obvious.
 
-diep (`Const/Enums.ts:301-304`):
-`levelToScore[i] = levelToScore[i-1] + (40/9 × 1.06^(i-1) × min(31, i))`
+**diepcustom is a complete reimplementation of diep.io's *server*. It has no renderer.** There is
+no draw code anywhere in `diepcustom/src` — the real diep.io client draws everything, and
+diepcustom only produces the *entity state* that client consumes: `physicsData.size`, `sides`,
+`positionData.x/y/angle` (relative to a **parent**), `styleData.flags`, `isTrapezoid`. It is a
+faithful source for **what exists and how it behaves**, and it is *silent* on **how any of it
+becomes pixels**. Every drawing rule we need has to be reconstructed from the outside — from
+`diepindepth/canvas/` (a separate, partial RE effort) or by inference. Three examples that bit us:
 
-Ours (`rooms/Room.js:289`): a power curve `((i+1)/a)^1.8` normalised so level 45 lands on
-`rules.maxXp` (25000).
+- **the `× √2` circumradius identity** — a polygon's *drawn* radius is `physicsData.size × √2`.
+  Never stated; recovered by noticing every shape sets `size = drawnDu × √½`.
+- **`showsAboveParent`** — a z-order flag on the wire. What it means for draw order is the client's
+  business, and it decides whether an Auto 3 turret base sits under or over the hull (R9).
+- **the `35` vs `50` reference** — *this* pass's defect. diep's numbers are relative to a 50 du
+  body; ours are relative to a 35-unit drawing constant. Nothing in diepcustom mentions either,
+  because on diep's side the ratio never has to be written down.
 
-| level | diep XP | ours | ratio |
+**And the architectures are shaped differently.** diep is a **scene graph**: a barrel, a turret, a
+guard, a launcher, a Dominator's base are each their own `ObjectEntity` with `setParent(...)`, their
+own `scaleFactor`, their own `angle`, their own `tick()`, and their own z-order. Ours is **flat**:
+one `Player` entity, one static `cannons[]`/`turrets[]` table in `TanksConfig.js`, one draw function
+that iterates it. Porting therefore means **flattening a tree into a table** — and everything that
+needed its own `tick()` has no slot to flatten into. That is exactly where the losses are:
+
+| diep | what flattening lost |
+|---|---|
+| `GuardObject` — a child polygon that spins at its own rate | R4: guards exist server-side as data and are drawn nowhere |
+| `createAutoTurrets`'s invisible **rotator** parent | R9: the ring doesn't rotate, mounts at a fixed distance instead of `0.8 × size`, ignores z-order and owner input |
+| `AutoTurret` with `influencedByOwnerInputs` + `targetFilter` | R9: no click-to-aim, no 90° arc |
+| addon barrel defs living in `Entity/Tank/*.ts`, not `Const/TankDefinitions.json` | R3: six classes were marked "no diep source" when the source was one directory over |
+
+**So: you are not missing anything.** The previous pass converted what it could match one-to-one
+against `Const/TankDefinitions.json`, marked everything else "no source to convert against", and
+stopped — when Arena Closer and all three Dominators are *in* that JSON (ids 16, 45, 46, 47), and
+Summoner/Guardian/Defender/Fallen*/Mothership/the addons all have real definitions in
+`src/Entity/`. Combine that with one wrong conversion factor applied uniformly, and you get exactly
+what you're looking at: a roster that is 20% wrong everywhere it was touched, untouched and
+therefore *inconsistent* where it wasn't, and missing every feature that needed more than a row in
+a table.
+
+---
+
+## The plan
+
+### R1 — **[BUG] Rescale every reference-relative barrel field from 0.56 to 0.70** ⭐ the big one
+
+**Multiply by `1.25` (= 0.70/0.56) every value C2 wrote**, in both halves of
+[public/SHARE/TanksConfig.js](public/SHARE/TanksConfig.js):
+
+| field | half | today (Basic) | after |
 |---|---|---|---|
-| 2 | **4** | 92 | 23× |
-| 5 | 50 | 478 | 9.6× |
-| 10 | 275 | 1667 | 6.1× |
-| 15 | 788 | 3460 | 4.4× |
-| 20 | 1758 | 5807 | 3.3× |
-| 30 | 6185 | 12049 | 1.9× |
-| 45 | **23537** | 25000 | 1.06× |
+| `cannons[i].height` | client | 53.2 | **66.5** (`95 du × 0.7`) |
+| `cannons[i].width` | client | 23.52 | **29.4** (`42 du × 0.7`) |
+| `turrets[i].height` / `.width` | client | 30.8 / 16.464 | **38.5 / 20.58** (`AutoTurretDefinition` 55 / 29.4) |
+| `cannons[i].canonLength` | server | 53.2 | **66.5** |
+| `cannons[i].size` | server | 11.76 | **14.7** (`(42/2) × sizeRatio 1 × 0.7`) |
+| `sub` / `weapon` sub-barrel `size` | server | Skimmer 11.76, Factory 14.11 | **× 1.25** — these were built on the 0.56 identity in B3 and inherit the same defect |
 
-The *totals* nearly agree; the *shape* does not. In diep one Square (10 XP) takes you past level 2
-and most of the way to 3; here it takes nine. Early game is ~10–20× slower than diep's and the
-curve then catches up, which is why levelling reads as a grind at the bottom and a rush at the top.
+**Do not touch** `offx`, `open`, `offdir`, `distance`, `rad`, `openlength`, `trapezoidDirection`,
+`body.width/height`, or any `bossSize` — those are already on 0.70 (or are absolute), and R1's whole
+point is to bring the converted fields *back* to them. `open` in particular is a hand-authored
+taper in 0.70 units with no diep counterpart; leaving it alone is what makes BattleShip
+(`width 16.464, open -16` → a **0.46-unit-wide muzzle spike** today) and Machine Gun/Overseer/
+Overlord/Necromancer/Manager/Mega Trapper/Overtrapper/Trapper come back to their intended shape for
+free.
 
-**Fix.** Adopt diep's table verbatim, per-mode-scaled by `rules.maxXp / 23537` if a mode wants a
-different ceiling (`rules.xpMul` already exists for Tag ×3 / Domination ×2 and is a separate knob).
+Rewrite the file-head comment block that states the 0.56 identity — it is the thing a future reader
+will trust. State **both** rows of the unit table (PENDING.md has the wording) and say why they
+differ.
 
-### P2 — **[OK]** 45 levels, 7 points/stat, 33 points over a life, class tier every 15 levels,
-grant schedule `level−1` to 28 then `⌊L/3⌋+18` — all confirmed identical (`Camera.ts:168-173`,
-`config.ts:113`). `entities/Player.js`'s `pointsAtLevel()` is the one source of truth.
+**Sanity check after:** Basic `66.5` vs its hand-drawn original `68` — within 2.3%. The whole
+roster should land within a few percent of the pre-C2 silhouettes you liked, except where C2 caught
+a *real* error (Spread Shot's fan ramp, which diep lists centre-barrel-last — keep C2's
+angle-magnitude pairing, it was right).
 
-### P3 — **[DONE] Smasher's stat set is different and we can't express it**
+### R2 — **[BUG] Bosses are a third reference, not 50 du**
 
-diep gives each tank its own `stats[]` array with per-stat `max` (`TankDefinitions.json`). Every
-ordinary tank is 8 stats × max 7; the Smasher line is not (it has no bullet stats and a raised Body
-Damage cap — `diep_wiki/Levels.txt`'s "10 Smasher"). We hardcode 8 stats × 7 everywhere
-(`entities/Player.js`'s `MAX_PER_STAT`, `public/client/config.js`'s `CONST.MAX_PER_STAT`, the
-client's 8 upgrade buttons). Needed before T2's Smasher branch can exist.
+`Summoner.ts`/`Guardian.ts`/`Defender.ts` define `sizeFactor = (physicsData.size / √½) / BOSS_SIZE`
+— a boss's barrels are denominated against **its own** base size, not 50. So for a boss:
 
-**Implemented:** an optional per-class `this.statMax` (8-length array, `this.up`'s own index
-order) in `TanksConfig.js`'s server entries — `entities/Player.js`'s `upgrade()` reads it in place
-of the bare `MAX_PER_STAT` when present, `upClass()`/`cycleClass()` clamp any already-spent point
-above a *tighter* incoming cap down to it (lost, not refunded — diep's own "becomes unspendable"
-framing), and `public/client/ui.js`'s stat panel now draws each row at its own cap width instead of
-one shared global. Smasher/Landmine/Spike are `[10,0,0,0,0,10,10,10]` (MSpeed/BodyDam/HpUp/HpRegan
-order); Auto Smasher is `[10,10,10,10,10,10,10,10]` (it has a real turret, unlike plain Smasher).
+```
+height = definition.size × 35 / BOSS_SIZE
+```
 
-### P4 — **[DONE] Per-tank stat *names* are not modelled**
+| boss | `BASE_SIZE` (du) | source | barrel |
+|---|---|---|---|
+| Summoner | 150 | `Summoner.ts:56` | `size 135, width 71.4`, ×4 at `PI2 × i/4`, sides **4** |
+| Guardian | 135 | `Guardian.ts:53` | `size 100, width 71.4`, sides **3** |
+| Defender | 150 | `Defender.ts:75` | `size 120, width 71.4`, sides **3** |
+| Dominator | 160 | `Dominator.ts:40` | ids 45/46/47 in `TankDefinitions.json` |
+| Arena Closer | 175 | `ArenaCloser.ts:31` | id 16 |
+| Mothership | (level 140 body) | `Mothership.ts` | id 27 |
 
-Overseer/Overlord/Manager/Necromancer/Factory/Mothership relabel three stats to
-`Drone Damage / Drone Health / Drone Speed`, and Necromancer's Reload slot becomes `Drone Count`
-(`TankDefinitions.json`). We show the same 8 labels for every class.
+This also closes Summoner's long-standing `height 44` vs `canonLength 50` gap (`135 × 35/150 =
+31.5` for both) — the one class in the roster whose drones visibly spawn *past* the muzzle.
+`bossSize` itself is an **absolute** length and stays on 0.56 (Defender 150 → 84 ✓, Dominator 160 →
+89.6 ✓, Closer 175 → 98 ✓). Do not convert it twice — see R6.
 
-**Implemented:** the mechanism (`CLASS[name].ups` overriding `exports.defaultUps`) already existed
-for Necromancer — Factory and Mothership now use it too, both relabelling Bullet Damage/Pene/Speed
-to Drone Damage/Health/Speed. No code change, data-only.
+### R3 — **[BUG] "No diep source to convert against" was wrong for six classes**
 
-### P5 — **[DIFF] `respawnPow`, `prize`, coins**
+C2's own comment excludes *"Summoner; Arena Closer; the 3 Dominators"* as having no diep counterpart.
+They all do:
 
-`entities/Player.js`'s `prize` (the XP another player wins for killing you) uses a bespoke
-`pow(xp/mlx, 1.8)` curve, and `rules.respawnPow` (0.9) decides how much XP you keep through a
-death. diep gives the killer the victim's `scoreReward` and respawns you at
-`respawnLevel` (`Camera.ts`). Coins are entirely ours. Decide per-mode; nothing here is a bug.
+- **Arena Closer** is `TankDefinitions.json` **id 16**: one barrel, `size 75, width 42`, `sides 1`,
+  ordinary `bullet`. Ours draws `height 68, width 34, **open 34**` — a flared machine-gun muzzle
+  invented from a wiki trivia line ("shortest and widest cannons"). **You are right: diep's is a
+  plain Flank-Guard-shaped rectangle.** Set `height 52.5, width 29.4, open 0` (and
+  `canonLength 52.5`).
+- **Dominator** is **ids 45 / 46 / 47** — Destroyer (`size 80, width 35`), Gunner (`75/17.5` ×2 at
+  `offset ∓6` + `80/17.5` centre, with real `delay` values 0.666/0.333/0.001), Trapper (8 ×
+  `60/21` at `i × π/4`, every one with `addon: "trapLauncher"`). All three carry
+  `preAddon: "dombase"` (R4) and 45/46 carry `postAddon: "dompronounced"`.
+- **Summoner / Guardian / Defender / Fallen Overlord / Fallen Booster** all have inline
+  `BarrelDefinition`s in `diepcustom/src/Entity/Boss/*.ts` (R2's table). Fallen Overlord's bullet
+  overrides are right there too: `sizeRatio 0.5, speed 1.7, damage 0.56, health 12.5`
+  (`FallenOverlord.ts:38`).
 
----
+Convert all six through R2's per-boss factor. K1 (Cyclone / Submachine / Auto Hover / Fortress)
+genuinely has no counterpart and stays a stand-in — that part of C2's exclusion list was correct.
+While here, fix **Submachine**'s `height 65` vs `canonLength 60` (a stand-in, so pick one; make the
+drawn tip the authority).
 
-# Chunk 3 — Tanks: roster & upgrade tree
+### R4 — **[BUG] Guard addons are not drawn at all** *(Smasher/Spike's "rotating black outer things")*
 
-### T1 — **[DONE] Our upgrade tree is not diep's**
+The **server already models them exactly** —
+[`TanksConfig.js:3370`](public/SHARE/TanksConfig.js#L3370) has
+`guards: [{ sizeRatio, sides, rate, phase }]` and `entities/Player.js:1032` derives `guardSize` from
+it for collision. The client half of the same file has no `guards` key and
+[drawings.js](public/client/drawings.js) has no renderer, so a Smasher is a bare circle.
 
-diep's tree, from `TankDefinitions.json`'s own `upgrades` arrays (authoritative):
+diep's geometry, verbatim from `Addons.ts` (`createGuard(sides, sizeRatio, offsetAngle, radiansPerTick)`):
 
-| from | at level | to |
-|---|---|---|
-| Tank | 15 | Twin, Sniper, Machine Gun, Flank Guard, **Smasher** |
-| Twin | 30 | Triple Shot, Quad Tank, Twin Flank |
-| Sniper | 30 | Assassin, Overseer, **Hunter**, Trapper |
-| Machine Gun | 30 | Destroyer, Gunner, **Sprayer** |
-| Flank Guard | 30 | Tri-Angle, Quad Tank, Twin Flank, **Auto 3** |
-| Smasher | 30 | **Landmine, Auto Smasher, Spike** |
-| Triple Shot | 45 | Triplet, Penta Shot, **Spread Shot** |
-| Quad Tank | 45 | Octo Tank, **Auto 5** |
-| Tri-Angle | 45 | Booster, Fighter |
-| Destroyer | 45 | Hybrid, Annihilator, **Skimmer**, **Rocketeer** |
-| Overseer | 45 | Overlord, Necromancer, Manager, Overtrapper, Battleship, **Factory** |
-| Twin Flank | 45 | Triple Twin, Battleship |
-| Assassin | 45 | Ranger, **Stalker** |
-| Hunter | 45 | **Predator**, **Streamliner** |
-| Gunner | 45 | Auto Gunner, **Gunner Trapper**, **Streamliner** |
-| Trapper | 45 | **Tri-Trapper**, **Gunner Trapper**, Overtrapper, Mega Trapper, Auto Trapper |
-| Auto 3 | 45 | **Auto 5**, Auto Gunner |
-
-Ours (`TanksConfig.js`'s `exports.tree`) differs structurally, not just in contents:
-`Sprayer` hangs off Gunner *and* Assassin, `Rocket` off Flank Guard, `Triple Shot` off both Twin
-and Flank Guard, `Cyclone`/`Submachine`/`Fortress`/`Auto Hover` are ours, and `Auto Gunner` hangs
-off Gunner only. **Decide** per branch which of ours to keep (see K1) — but the diep-native edges
-above should all exist.
-
-**Implemented:** `exports.tree` rebuilt to match the table above exactly for every diep-native
-edge, keeping K1's custom branches (Cyclone under Quad Tank, Submachine under Machine Gun as an
-extra level-45 branch, Auto Hover/Fortress left under the dev-only `pre launch` node exactly as
-before — neither was ever in the real tree to begin with). `Sprayer` consolidated onto Machine
-Gun only; `Triple Shot` dropped as a Flank Guard child (diep only reaches it via Twin); `Rocket`
-renamed to `Rocketeer` (PENDING.md already documented it as that class's stand-in) and re-parented
-from Flank Guard to Destroyer. `lib/gameAI.js`'s one `BOT_PATHS` entry that depended on the removed
-Assassin→Sprayer edge is retargeted to Assassin→Stalker rather than left silently stranding a bot
-mid-evolution; `test/clientDiff.js`'s golden was recaptured (moved by a few ops, expected — see
-that file's own header and PENDING.md for why).
-
-### T2 — **[DONE] 16 real diep tanks are missing**
-
-| tank | tier | notes |
-|---|---|---|
-| **Smasher** | 30 | `postAddon: smasher`, body-only. Needs P3 (stat set) + T6 (addons). |
-| **Landmine** | 45 | `postAddon: landmine` + invisibility-on-idle |
-| **Auto Smasher** | 45 | `postAddon: autosmasher` (smasher ring + auto turret) |
-| **Spike** | 45 | `postAddon: spike`, `bodyDamage: +2` |
-| **Hunter** | 30 | two barrels, `delay` staggered, `fieldFactor 0.85` |
-| **Predator** | 45 | 3 stacked barrels + zoom ability (`flags.zoomAbility`) |
-| **Streamliner** | 45 | 5 stacked barrels, `fieldFactor 0.85` |
-| **Stalker** | 45 | `flags.invisibility`, `fieldFactor 0.8` |
-| **Auto 3** | 30 | `postAddon: auto3` |
-| **Auto 5** | 45 | `postAddon: auto5` |
-| **Spread Shot** | 45 | 7 barrels fanned |
-| **Gunner Trapper** | 45 | |
-| **Tri-Trapper** | 45 | |
-| **Skimmer** | 45 | `preAddon: launcher`, `bullet.type: "skimmer"` (spawns sub-barrels) |
-| **Factory** | 45 | `sides: 4`, `bullet.type: "minion"` (spawns controllable minions) |
-| **Mothership** | — | gamemode entity, `sides: 16`, `absorbtionFactor 0.01` |
-
-`Rocketeer` exists in diep and we have `Rocket` — check whether ours is meant to be it (T4).
-
-**Implemented:** all 16 added to `TanksConfig.js` (client + server), tree-placed per T1. Barrel
-numbers converted from `diepcustom/src/Entity/Tank/TankDefinitions.json` via the existing
-per-column identities (`damage = 7 × bullet.damage`, `pene = 2 × bullet.health`,
-`speed = 1.12 × bullet.speed`, `back = recoil(gu) × 2.8`, `canonLength = diep size(du) × 0.7` —
-the existing 35-reference scale, not diep's literal `× 0.56`, so the new tanks match the current
-roster's silhouette pending C2's whole-roster pass). Three deliberate scope cuts, all logged in
-PENDING.md: **Mothership** has no spawn path yet (needs the Mothership gamemode, chunk 9); **Skimmer**
-fires as an ordinary bullet (its sub-barrel-spawn behaviour is B3, chunk 4); **Factory**'s drones
-reuse the existing controllable-drone AI instead of true minion sub-tanks (also B3). Smasher/
-Landmine/Auto Smasher/Spike use T6's new guard-shape primitive; Auto 3/Auto 5/Auto Smasher's
-turrets use T5's new `distance` field on the existing `auto`/`autoShoot`/`autoDir` cannon pattern.
-`test/tanks.js`'s client/server geometry cross-check passes for all 16 with no whitelist growth.
-
-### T3 — **[DONE] Tank *flags* are not modelled**
-
-`TankDefinitions.json` `flags`: `invisibility` (Landmine, Stalker), `zoomAbility` (Predator,
-Hunter-line), `canClaimSquares` (Necromancer), `devOnly`. Plus the three visibility rates
-(`visibilityRateShooting 0.23`, `visibilityRateMoving 0.08`, `invisibilityRate 0.03`) which are
-diep's actual stealth model. We have a single per-class `alpha` decay and hardcoded ×10/×30 bumps
-in `entities/Player.js`. **Adopt diep's three rates** — they are exactly the three events our code
-already handles (shoot / move / idle) with real numbers behind them.
-
-**Implemented:** `CLASS[class].alpha` (one scalar) replaced by `CLASS[class].stealth =
-{decay, moving, shooting}`, read at all four sites (decay, move-regrow, shoot-regrow in both
-`entities/Player.js` and its bot-motion mirror in `lib/gameAI.js`; damage-regrow was already
-class-agnostic). Landmine gets diep's own stealthier trio (`0.003/0.16/0`); Stalker gets the
-ordinary one (`0.03/0.08/0.23`). Manager's pre-existing custom stealth (not a diep
-`flags.invisibility` tank) is preserved bit-for-bit by expressing its old hardcoded ×10/×30 as the
-same three explicit rates — PENDING.md notes it's a legacy mechanic, not this item's diep model.
-`flags.zoomAbility` (Predator)/`flags.invisibility` (Landmine/Stalker)/`flags.canClaimSquares`
-(Necromancer) are recorded as data; `zoomAbility` has no input path yet (PENDING.md).
-
-### T4 — **[DONE] Per-tank fields we don't have at all**
-
-`TankDefinitions.json` carries these per tank; `TanksConfig.js` carries none of them:
-
-| field | what it does | who is non-default |
-|---|---|---|
-| `fieldFactor` | FOV multiplier (lower = sees further) | Sniper/Overseer/Overlord/Necro/Manager/Trapper-line/Battleship/Smasher-line/Skimmer/Rocketeer/Factory **0.9**; Hunter/Predator/Streamliner **0.85**; Assassin/Stalker **0.8**; Ranger **0.7** |
-| `absorbtionFactor` | knockback taken (D7) | Mothership 0.01, Arena Closer/Dominator 0 |
-| `maxHealth` | base HP | Dominator 6000; everything else 50 |
-| `bodyDamage` | flat body-damage bonus | Spike +2 |
-| `sides` | body polygon | Necromancer 4, Factory 4, Mothership 16 |
-| `borderWidth` | drawn outline | 15 default |
-| `speed` | movement multiplier | 1 for every tank in `diepcustom` |
-
-We do have a per-class `screen` (Basic 1408, Sniper 1664, Ranger 2208), which is `fieldFactor`
-inverted. Converting it to `base / fieldFactor` would put every class on diep's own value; decide
-whether to keep our hand-tuned numbers for the classes diep doesn't have (K1).
-
-**Implemented (user-selected: adopt `base/fieldFactor` everywhere).** `BASE_SCREEN` (1408, Basic's
-own value) is now a named constant; every diep-native class carries diep's real `fieldFactor` and
-computes `screen = BASE_SCREEN / fieldFactor` (a real fix — Sniper 1664→1564, Assassin 1920→1760,
-Ranger 2208→2011, Overseer/Overlord/Manager/Necromancer/BattleShip/the whole Trapper line/Sprayer
-all moved similarly, and all three Dominators move to diep's real `fieldFactor 1`, retiring the old
-"roughly Sniper-to-Hunter" stand-in). Our 4 custom classes (K1 — Cyclone/Submachine/Auto Hover/
-Fortress) keep their exact current screen; `bodyDamage`/`sides`/`absorbtionFactor` land as
-per-class fields alongside T2's new tanks (Spike's `+2`, Factory/Mothership's `sides`,
-Mothership's `absorbtionFactor` — the last one recorded but not yet wired into `collision()`,
-PENDING.md). `speed` needed no change (diep is `1` for every tank, which we already are).
-`test/rooms.js`'s FOV formula assertion updated to match.
-
-### T5 — **[DONE] Barrel definition fields**
-
-| diep (`BarrelDefinition`) | ours (`TanksConfig.js` server) | status |
-|---|---|---|
-| `angle` | `offdir` | ✅ |
-| `offset` | `offx` | ✅ |
-| `size` (length, du) | `canonLength` (drawn units) | ⚠️ different scale, see B1 |
-| `width` | client `width` only | ⚠️ server has no width; bullet radius derives from it in diep |
-| `delay` (fraction of reload) | `offTime` | ✅ |
-| `reload` (multiplier on 15) | `reload` (absolute ref ticks) | ✅ equivalent |
-| `recoil` | `back` (`× 2.8`) | ✅ |
-| `isTrapezoid` / `trapezoidDirection` | — | **[ADD]** drawn barrel shape |
-| `addon` (barrel addon) | — | **[ADD]** see T6 |
-| `distance` | — | **[ADD]** barrel pushed out from the hull (Auto turret bases, Skimmer launchers) |
-| `droneCount` | class-level `maxDrone` | ⚠️ diep is per-*barrel* |
-| `forceFire` | `auto` | ✅ |
-| `canControlDrones` | class-level `necro`/type 1.1 | ⚠️ per-barrel in diep |
-| `bullet.{type,sizeRatio,health,damage,speed,scatterRate,lifeLength,absorbtionFactor}` | `type/size/pene/damage/speed/rand/life/—` | mostly ✅, `sizeRatio` and `absorbtionFactor` missing |
-
-**Implemented:** `isTrapezoid`/`trapezoidDirection` (client draw-shape index 2, cosmetic only —
-note the client `cannons[i].type` draw-shape enum and the server `cannons[i].type` bullet-behavior
-enum are different namespaces, already true before this, just newly worth stating). `distance`
-(barrel/turret origin pushed out from the hull along its own resting angle, server `shoot()` +
-client draw + canvas bounding-box, plan.md T6's auto-turret rings and Skimmer's launcher use it).
-Barrel `addon: "trapLauncher"` as a client-only cosmetic nub (`c.trapLauncher`, Tri-Trapper/Gunner
-Trapper). `sizeRatio`/`bullet.absorbtionFactor` remain missing (still blocked on B2/C2, and now
-also the reason Skimmer's low absorb isn't modelled — PENDING.md). `droneCount`/`canControlDrones`
-stayed class-level, not per-barrel — every new tank that needed them (Factory, Mothership) only
-ever has them uniform across its own barrel(s), so the simplification cost nothing this pass.
-
-### T6 — **[DONE] Addons (`preAddon` / `postAddon` / barrel `addon`) don't exist**
-
-`Entity/Tank/Addons.ts` and `BarrelAddons.ts` define: `autoturret`, `auto3`, `auto5`, `smasher`,
-`autosmasher`, `landmine`, `spike`, `pronounced`, `dombase`, `dompronounced`, `launcher`,
-`weaponrack`, `megasmasher`, `spiesk`, `bumper`. We hand-model auto turrets as extra cannons with
-`autoDir`/`autoShoot`, which works but doesn't compose — an addon can be attached to any tank, and
-`Auto Smasher` needs a smasher ring *and* a turret. An addon system is the prerequisite for six of
-T2's tanks.
-
-**Implemented (user-selected: extend existing patterns, no general addon-entity system).**
-Auto-turret rings (Auto 3/Auto 5/Auto Smasher's turret) are N evenly-spaced `auto`/`autoShoot`/
-`autoDir` cannon entries reusing the same `AutoTurretDefinition`-derived row Auto Hover/Auto
-Trapper/Auto Gunner already carry, positioned via T5's new `distance` field. Smasher/Landmine/
-Spike/Auto Smasher's guard shapes are a new minimal primitive instead: a per-class `this.guards`
-array (`sizeRatio`/`sides`/`rate`/`phase`) that widens `entities/Player.js`'s `this.guardSize` (max
-`size × sizeRatio` across guards) — used as the effective radius in the existing circle-circle
-`collision()` code for both contact damage and physical overlap, no new entity or kind. A
-deliberate simplification against diep's own separate `GuardObject` physics entity, and there is no
-client-side rendering for a guard yet (plain circle) — both logged in PENDING.md. `preAddon:
-"launcher"` (Skimmer's nacelle) and the true minion/skimmer bullet behaviors were not built — they
-belong to B3 (chunk 4), out of this pass's scope; Skimmer/Factory fire as ordinary
-bullets/controllable-drones instead (PENDING.md).
-
----
-
-# Chunk 4 — Projectiles
-
-### B1 — **[BUG] Bullets spawn 7% short of the barrel tip**
-
-`entities/Player.js:359` — `const len = can.canonLength * .93 * ra`. diep spawns at the barrel's
-**full** length: `x + cos(angle) × barrel.size + …` where `barrel.size = definition.size ×
-scaleFactor` (`Bullet.ts:100`). The `.93` puts a Basic's bullet 3.8 units inside its own drawn
-muzzle at level 0 and scales with level. **Remove the `.93`.**
-
-Related, same site: `ra = this.size / 35` uses a magic 35 (the *drawn* reference tank radius) where
-diep's `scaleFactor = size / 50 du = size / 28 units`. The two agree today only because
-`canonLength` is denominated against 35. Either is fine, but write down which.
-
-### B2 — **[BUG] Bullet radius is not derived from the barrel**
-
-diep: `bullet radius = (barrel.width / 2) × bullet.sizeRatio` (`Bullet.ts:77`). Basic → 21 du =
-11.76 units. Ours: a free-standing `can.size` (Basic 18) × `ra` ≈ 14.4 units, **22% larger**. Fix
-alongside the barrel-width/silhouette work (C2) — converting bullet size alone desyncs it from the
-barrel it leaves.
-
-### B3 — **[DONE, partial] Projectile types we don't implement**
-
-`Entity/Tank/Projectile/` has: `Bullet`, `Drone`, `Trap`, `Skimmer`, `Rocket`, `Minion`,
-`NecromancerSquare`, `Swarm`, `Flame`, `CrocSkimmer`. We have bullet (0), drone (1/1.1),
-battleship-drone (1.2/1.3), base drone (1.4), trap (2), necro square (3), "bigCheese" (3.1).
-Missing: **Skimmer** (spawns its own orbiting sub-barrels), **Minion** (Factory's controllable
-sub-tank), **Flame**, **CrocSkimmer**. `Rocket` — check whether our type-0 `Rocket` class matches
-diep's `Rocket` projectile (it has its own inline `RocketBarrelDefinition` exhaust barrel).
-
-**Implemented: Skimmer (type 4) and Minion (type 1.5).** `entities/Bullet.js`'s `case 4` spins the
-bullet's own `showDir` (independent of its straight-line `dir`, diepcustom Skimmer.ts's
-`rotationPerTick` off `positionData.angle`) while a pair of opposed sub-barrels
-(`TanksConfig.js`'s new `sub` field, `SkimmerBarrelDefinition` converted through this file's own
-damage/pene/speed/size identities) auto-fire along that spin, reload read live off the owner's
-Reload stat every shot. `case 1.5` factors the existing type-1 controllable-drone steering out into
-a shared `droneSteer1()` (case 1 now just calls it, unchanged behaviour) and adds
-`MinionBarrelDefinition`'s own weapon (`can.weapon`), fired only while that steering is actually
-engaged on a target or the owner's aim - not while idling home, matching Minion.ts's
-`AIState.idle` gate without needing a full idle-state port. Factory's cannon is `type: 1.5` now
-(was a stand-in `type: 1`, PENDING.md's old note retired). Verified by hand (script, not a
-permanent test - see PENDING.md) against a fresh Skimmer/Factory tank; `test/clientDiff.js`'s
-golden is untouched (neither class is in the seeded corpus). **Not built:** `Flame`/`CrocSkimmer` -
-both are `DevTankDefinitions.ts`-only in diepcustom (no entry in the real `TankDefinitions.json`
-roster ever sets `bullet.type: "flame"`/`"croc"`), so there is no player-reachable path to trigger
-either even in Sandbox's tank cycler (real tanks only) - building the engine surface would have
-nothing in-game to exercise it. `Rocket` cross-check against diep's own `RocketBarrelDefinition`
-also deferred, out of this pass's scope.
-
-### B4 — **[BUG] Drone `lifeLength` sentinel and resting behaviour**
-
-- `Drone.ts:61-65`: a drone's life is `88 × lifeLength`, or `Infinity` when `lifeLength === -1`. ✅ we match.
-- `Drone.ts:36`: `MAX_RESTING_RADIUS = 400²` — a drone within 400 du (224 units) of its owner
-  enters a *resting* orbit. Ours uses `play.size * 3.5` (≈98 units at level 0) — 2.3× tighter, and
-  scaled off tank size where diep's is absolute.
-- `Drone.ts:52`: `ai.targetFilter` restricts a drone's target to within **900 du (504 units) of the
-  owner tank**, not of the drone. Ours checks `playdis < play.screen / 4` — a screen-relative
-  distance, not diep's absolute one.
-- `Drone.ts:70`: `physicsData.pushFactor = 4` (D7).
-
-### B5 — **[OK]** Trap arming window (`life >> 3` ticks), trap `baseAccel = 0` (coast only), trap
-`lifeLength = 75 × bullet.lifeLength`, and the three muzzle-kick formulas (bullet
-`accel + 30 − jitter`; drone `÷3`; trap `accel/2 + 30 − jitter`) all match `Trap.ts` / `Drone.ts` /
-`Bullet.ts:89`. Do not re-derive.
-
-### B6 — **[DIFF] `push` (self-bounce) is ours**
-
-`TanksConfig.js`'s `push` column has no diep counterpart — diep's only separation force is
-`receiveKnockback` (D7). It is load-bearing for base drones (keeps a swarm from stacking). When D7
-lands, decide whether `push` collapses into `pushFactor` or stays.
-
----
-
-# Chunk 5 — Shapes & Crashers
-
-### S1 — **[BUG] Crashers do not chase. This is the big one.**
-
-diep (`Entity/Shape/Crasher.ts`):
-
-| | diep | Obstar (`entities/Objects.js`, type `'bull'`) |
-|---|---|---|
-| detection | `ai.viewRange = 2000 du` = **1120 units** | `Detector(…, 500, [KIND.PLAYER])` = **500 units** |
-| target re-scan | every `tps` (25) ticks | on detector reset |
-| chase speed | `velocity.add(movement × targettingSpeed)` each tick, `targettingSpeed` = **2.602 du/tick** small / **2.64** large → terminal **10 × 2.602 × 0.56 = 14.57 units/ref-tick ≈ 364 u/s** (a Basic tank's own top speed) | `HOME_PULL = 0.543` added per tick, then `vec.limit(maxspeed/2)` = **0.56 units/ref-tick ≈ 14 u/s** |
-| facing | `positionData.angle = atan2(target − self)` while chasing; idle spin otherwise | client derives facing from movement delta |
-| idle | ordinary shape drift (`BASE_VELOCITY 1 du/tick`) | ✅ matches |
-| walls | `PositionFlags.canMoveThroughWalls` | ✅ matches (by omission) |
-| large chance | **0.2** | 0.15 |
-| knockback | small `absorb 2 / push 8`, large `absorb 0.1 / push 12` | not modelled (D7) |
-
-**Our crashers are ~26× too slow when chasing and see less than half as far.** A diep Crasher is a
-genuine threat that runs a level-1 tank down; ours drifts. Fix: give the Crasher a real target-chase
-state that adds `targettingSpeed` to velocity per tick and lets the normal `BODY_FRICTION`
-recurrence produce the 10× terminal, exactly like the tank integrator does.
-
-### S2 — **[DONE] Shape spawn zones are a diep/ours hybrid now**
-
-diep (`Misc/ShapeManager.ts:51-99`) decides a shape's **type from where it landed**, on one uniform
-random position over the whole arena:
-
-| zone (half-arena `R` = 11150 du = 6244 units) | contents |
+| addon | guards |
 |---|---|
-| `max(\|x\|,\|y\|) < R/10` (inner square, 624 units) | **Pentagon Nest** — Pentagon, 5% Alpha |
-| `R/10 ≤ max(\|x\|,\|y\|) < R/5` (624–1249 units) | **Crasher Zone** — Crasher, 20% large |
-| everything else | **Fields** — 4% Pentagon, 16% Triangle, 80% Square |
+| `smasher` (Smasher, and inside `autosmasher`) | `(6, 1.15, 0, 0.10)` |
+| `landmine` | `(6, 1.15, 0, 0.10)` **and** `(6, 1.15, 0, 0.05)` — two hexes at different rates |
+| `spike` | `(3, 1.3, 0, 0.17)`, `(3, 1.3, π/3, 0.17)`, `(3, 1.3, π/6, 0.17)`, `(3, 1.3, π/2, 0.17)` |
+| `dombase` (all 3 Dominators) | `(6, 1.24, 0, 0)` — static |
 
-Ours (`rooms/Room.js`'s `createObj()` + `entities/Objects.js`'s constructor):
-- Squares cluster at `(+W/4, +H/4)` r=490, Triangles at `(−W/4, −H/4)` r=490, Pentagons at `(0,0)` r=630 — **three separate nests**, and every type also spawns scattered.
-- Crashers spawn in a **650–700 unit annulus** — the right ballpark, but a thin ring where diep's zone is 624–1249 wide.
-- Type counts come from fixed per-type caps (`shapeMix`), not from where the point landed.
+`GuardObject` sets `size = owner.size × sizeRatio × √½` and `styleData.color = Color.Border`, and a
+polygon's drawn circumradius is `size × √2` (the same identity C3 already fixed the shapes with) —
+so **the drawn circumradius is exactly `owner.size × sizeRatio`**, no √2 bookkeeping needed at the
+draw site. `radiansPerTick` is per 40 ms reference tick; run it through `lib/tick.js`.
 
-Interestingly our arena (`gu(451)` = 12628 units) is within 1% of diep's (22300 du = 12488 units),
-so diep's zone radii drop straight in.
+Work: mirror `guards` into the client half, add `Drawings.guards` (an n-gon at circumradius
+`param.size × sizeRatio`, filled with the **border/outline** colour, drawn **before** the body so
+the body sits on top), and call it first in `render.js`'s draw order. `Auto Smasher` needs its guard
+*and* its existing turret. Also add the `launcher` preAddon (Skimmer/Rocketeer) while the mechanism
+is open: `Addons.ts:232` — a trapezoid at `sizeRatio 65.5×√2/50`, `widthRatio 33.6/50`, positioned
+at `size/2`, barrel-coloured.
 
-**Implemented (user-selected hybrid):** the Pentagon Nest radius (`createObj()`'s existing `630 *
-nestScale`) already landed within 1% of diep's own `R/10`, so it was left as-is; the Crasher Zone
-(`entities/Objects.js`'s `'bull'` case) is now diep's real `R/10..R/5` annulus (`630..1249 *
-nestScale`, area-uniform sampling), replacing the old fixed 650–700 unit ring. The Square/Triangle
-corner nests are **kept** exactly as before — the user explicitly wants that identity preserved as
-an additional layer alongside diep's own zones, not replaced by diep's flat Fields mix. See PENDING
-for the two departures this leaves on record (nests kept on purpose; circular zones instead of
-diep's square `max(|x|,|y|)` ones, for consistency with every other nest/carve-out in the tree).
+### R5 — **[BUG] Six classes render as *nothing*: a divide-by-zero in `setCoord`**
 
-### S3 — **[OK]** Shape HP/XP/radius/`damagePerTick`/Shiny all confirmed exact against
-`{Square,Triangle,Pentagon,Crasher}.ts`. Radii are `du × 0.56` (Square/Triangle 21.78, Pentagon
-29.70, Alpha 79.20, Crasher small 13.86 / large 21.78). Shiny `1/1_000_000`, ×10 HP, ×100 XP.
-`BASE_ORBIT 0.005` (halved for Pentagon/Alpha) and `BASE_VELOCITY 1 du/tick` (also halved) are live.
+[render.js:29-47](public/client/render.js#L29): `if (config.cannons)` is **true for an empty array**,
+the loop body never runs, and then `middleX /= config.cannons.length * 2` → **`0/0` = `NaN`**. The
+`if (!config.cannons && !config.turrets)` fallback below can never fire for the same reason. `mX`/
+`mY` reach `ui.js:928`'s `ctx.translate(w/2 - NaN, ...)` and the entity draws nowhere.
 
-### S4 — **[ADD] `BASE_ROTATION` (the shape's own spin) is server-side in diep, client-side here**
+Hits every class with `cannons: []`: **Smasher, Landmine, Spike, Auto Smasher, Auto 3, Auto 5.**
+That is your "the smasher class is empty and not even drawn" — the guard (R4) is missing *and* the
+tank itself is not rendered at all.
 
-`AbstractShape.ts:41,120` spins each shape by `±0.01 rad/tick` on the server and sends the angle.
-Our `Objects` wire record carries no facing angle at all (`SocketSchema.js`: `states/shape/hp/alpha`),
-so `public/client/entities.js` does a per-client cosmetic wobble in *frame* units. To match, the
-wire record needs an angle field. Low priority except that it blocks S1's crasher facing being
-server-authoritative.
+Same block, second bug: the `turrets` loop also divides by **`config.cannons.length`**, not
+`turrets.length` — copy-paste. Fix both; guard on `.length`, not truthiness.
 
-### S5 — **[DONE] Shape wall-avoidance turning**
+### R6 — **[BUG] Mothership: body 44% too small, wrong body shape, wrong drones**
 
-`AbstractShape.ts:104-124`: within 400–500 du of an arena edge a shape `turnTo()`s away, with a
-`TURN_TIMEOUT` of 300 ticks and a 10× orbit-rate boost while turning. Ours hard-clamps position and
-zeroes the velocity component — shapes pile up on the edges instead of turning away from them.
+- **Size.** `bossSize: 63.14` is `28 × 1.01^140 × 0.56` — but `28 × 1.01^140` is *already* in our
+  units (28 **is** the level-0 radius). The 0.56 is applied twice. Correct value: **`112.8`**
+  (cross-check: diep's `50 × 1.01^139 du × 0.56 = 111.6`). Fix the literal and the comment.
+- **Body.** `Mothership` is `sides: 16` in `TankDefinitions.json`; we draw `body.shape: 0`, a
+  circle. `Drawings.body` only has circle / roundRect / pentagon — **`sides` isn't modelled at all**.
+  Add a generic n-gon body (`shape: 3`, `body.sides`), which also gives Guardian (3), Defender (3),
+  Summoner (4) and Mothership (16) their real silhouettes instead of the circle/rounded-rect
+  stand-ins.
+- **Barrels.** diep's 16 are `size 60, width 10.5`, **`isTrapezoid: true`**, and at
+  `angle = π/16 + i·2π/16` — a half-step offset ours doesn't have. Ours are draw-`type: 0`
+  rectangles at `i·2π/16`. Use draw-type 2 (trapezoid) and add the half-step.
+- **Drones.** `droneCount: 2` per barrel × 16 = 32 ✓ matches `maxDrone`. But `can.size: 2.94` is
+  `(10.5/2) × 0.56`; on R1's axis it is **3.675**, and the diep bullet block gives
+  `health 2, damage 0.7, speed 0.48, lifeLength -1, sizeRatio 1` — re-derive the row against that
+  rather than the hand-set numbers.
 
-**Implemented:** `entities/Objects.js`'s idle-drift branch now runs diep's own four-way edge check
-(inner ring at 224 units turns straight away from the arena centre; the four 280-unit side bands
-turn to run along that side instead) before falling back to ordinary wander, with the same 10×
-rate boost on the tick a turn starts and the same 300-reference-tick hold. The old hard
-position-clamp/zero-velocity code at the bottom of `update()` is kept as a last-resort safety net
-(covers a chasing Crasher, which bypasses this idle branch entirely) rather than removed - see
-PENDING for the one simplification this took versus diep's literal mechanic.
+### R7 — **[BUG] Skimmer crashes the client: `Drawings.bullet[4]` doesn't exist**
 
-### S6 — **[KEEP]** `Bsqr` / `Btri` (boss square / boss triangle) have no diep counterpart. `Bpnt`
-is diep's Alpha Pentagon and *is* diep-derived. Keep the first two; don't let a fidelity pass
-delete them.
+`Drawings.bullet` is a 4-element array (0 bullet / 1 drone / 2 trap / 3 square).
+`rooms/Room.js:1793,1746` sends `type: parseInt(obj.type)`, and **Skimmer's cannon is `type: 4`** —
+the only type in the whole roster that `parseInt`s outside `0..3`. `render.js:125,135` then calls
+`Drawings.bullet[4](...)` → `TypeError: not a function` the instant a Skimmer bullet enters view.
+**That is the crash.**
 
-### S7 — **[DONE] Respawn cadence**
+Two fixes, both needed:
+1. Add a real draw entry for the Skimmer projectile (diep draws it as a circle with its own two
+   opposed sub-barrels, spun by `showDir` — the server already tracks that spin).
+2. Make the dispatch total: clamp/fallback to `bullet[0]` for an unknown type rather than throwing,
+   so the next projectile type added can't take the client down again.
 
-diep refills any dead shape slot on the very next tick to a flat `wantedShapes = 1000`
-(`ShapeManager.ts:112-118`). We run `generate()` every 400 ms with per-type caps and probabilistic
-gates (`Math.random() < 0.26`). Ours trickles; diep's is instant. Farming feel differs noticeably.
+Related, no crash but wrong art: **Factory's Minion is `type: 1.5` → `parseInt` → `1`**, so it draws
+as a drone triangle. diep draws a Minion as a small tank body with its own barrel. Give it its own
+entry (the wire field is `uint8`, so a fractional type can never survive the trip — either widen the
+codec or map to a dedicated integer draw-id at the encode site; prefer the latter).
 
-**Implemented (user-selected partial adoption):** every ordinary-shape population gate in
-`rooms/Room.js`'s `generate()` (the per-type "does this type get checked this pass" roll and the
-nest-cluster-slot roll on top of it) now runs through `towardInstant(p) = p + 0.85 × (1 - p)`,
-closing 85% of the gap to diep's instant refill rather than all of it - the 400 ms `generate()`
-cadence itself is kept as our own engine-cost knob, not diep's true per-tick check. The rarity/
-special-spawn gates (`betaPentRng`, the Bsqr/Btri 0.992 checks, `bossRng`) are untouched - they are
-a different axis (how much of a type exists) from the cadence question this item is about. See
-PENDING for why 85% and not 100%.
+### R8 — **[BUG] Defender's turrets fire from 33.6 units off the drawn barrel**
 
----
+Server cannons carry `distance: 33.6`; the client `Defender` entry has no `distance` on its three
+turret nubs. Mirror it. Then add the standing check below so this class of desync is caught.
 
-# Chunk 6 — Arena & spawning
+### R9 — **[BUG] Auto 3 / Auto 5's turret ring is flattened wrong in every respect**
 
-### A1 — **[DIFF] Arena size**
+You described this correctly, and `Addons.ts:66-108`'s `createAutoTurrets(count)` backs up every
+part of it. Ours is three or five *static* turret sockets at a hardcoded `distance: 14`. diep's is:
 
-diep: `22300 × 22300 du` = 12488 × 12488 units, fixed, for FFA/Team2/Team4/Domination; only
-Sandbox/Survival/Tag resize (`Arena.ts:87`, `Team2.ts:28`, `Team4.ts:29`, `Sandbox.ts:29`).
-Ours: ffa/maze `gu(451)` = 12628 (**within 1.1% of diep — effectively identical**), 2team
-`gu(450)`, 4team `gu(400)`. The earlier concern that diep's `AL = ⌊√N × 50⌋` would shrink us by 71%
-came from applying Sandbox's population formula to a fixed-size mode; the fixed modes are diep's
-22300 and we already match it. **Nothing to do beyond confirming 4team's `gu(400)` is intentional.**
+| diep | source | ours today |
+|---|---|---|
+| Mount radius is **`owner.size × 0.8`** — a **ratio**, so the base circle always pokes ~halfway out of the hull at every level | `base.positionData.x/y = owner.physicsData.size × cos/sin(angle) × ROT_OFFSET`, `ROT_OFFSET = 0.8` | flat `distance: 14`, doesn't scale with the tank |
+| The turret base circle draws **under** the body — `showsAboveParent` is explicitly **XOR'd off** for ring turrets (a *centered* turret, Auto Gunner/Trapper/Smasher/Hover, keeps it **on** and draws above) | `if (base.styleData.values.flags & StyleFlags.showsAboveParent) ... ^= showsAboveParent` | drawn above, and z-order isn't modelled at all |
+| The whole ring **slowly rotates**: all turrets are parented to an *invisible* `GuardObject` (`sides 1, sizeRatio 0.1`, `isVisible` XOR'd off) spinning at `AI.PASSIVE_ROTATION = 0.01` rad/ref-tick | `const rotator = this.createGuard(1, .1, 0, rotPerTick)` | static |
+| Idle: each turret points **radially outward**, at `mountAngle + rotator.angle` | the wrapped `base.tick` | idle aim is whatever our autoDir search returns |
+| **Clicking aims them at your mouse** — `influencedByOwnerInputs = true`, so `attemptingShot()` overrides the AI and sets `angle = atan2(mouse − turretWorldPos)` | `AutoTurret.tick`'s `useAI` branch | no owner-input coupling |
+| …but only for turrets that **can** reach that way: `targetFilter` rejects a target more than **90° either side** of that turret's own mount angle (`MAX_ANGLE_RANGE = PI2/4`); rejected turrets fall back to AI | `base.ai.targetFilter` | no arc limit |
+| The ring uses **`AutoTurretMiniDefinition`**, not the shared `AutoTurretDefinition` — identical geometry (`size 55, width 29.4, delay 0.01, reload 1, recoil 0.3`) but **`bullet.damage 0.4` vs `0.3`** | `Addons.ts:110`, `AutoTurret.ts:32` | converted against the shared def, so the ring's bullets are 25% weak |
 
-### A2 — **[OK]** Shape density: 1 per 200 gu² (22300 du arena ÷ 1000 shapes = 199 gu²), live in
-`rooms/Room.js`'s `SHAPE_DENSITY_GU2`.
+Work, in increasing order of how much machinery it needs: mount ratio and the mini-definition's
+damage are literals; the arc limit and mouse override are a `targetFilter` + an `attemptingShot`
+branch in the existing autoDir search ([entities/Player.js:323-380](entities/Player.js#L323) already
+has `can.autoDir`/`can.autoShoot`/`canDir[]`, so there is a slot for both); the ring's own slow
+rotation needs a per-tank rotating frame that `canDir` can be offset by — the same machinery R4's
+guards need, so **do R4 first and reuse it**. Draw order (base circle under the body, barrel over)
+falls out of R4's "guards draw before the body" change.
 
-### A3 — **[ADD] `ARENA_PADDING = 200 du`** (`Arena.ts:85`) = 112 units. Ours is
-`config.OOB_MARGIN = gu(4)` = 112 units. ✅ identical — no action, recorded so it isn't "fixed".
+### R10 — **[ADD] The regression test that would have caught all of this**
 
-### A4 — **[DONE, partial] Arena state machine**
+Extend `test/tanks.js` with assertions anchored **outside** our own tree:
 
-`Arena.ts`: `COUNTDOWN → OPEN → CLOSING → CLOSED → OVER`, with `countdownDuration = 10 s`,
-`playersNeeded`, `ticksUntilStart` on the wire. We have no countdown/closing state at all — Tag and
-Maze hand-roll their own "closing" with Arena Closers. Adding the real state machine would let both
-reuse one mechanism (M3).
+1. For every diep-native class, `client.height / CONST.SIZE` **==** `diep barrel.size / 50`
+   (per-boss: `/ BOSS_SIZE`), read live from
+   `diepcustom/src/Const/TankDefinitions.json`. Same for `width`, and for
+   `server.can.size` vs `(barrel.width/2) × bullet.sizeRatio`.
+2. Every server field that positions a barrel (`offx`, `distance`, `offdir`) has an equal client
+   counterpart, and vice versa — R8's bug, generalised.
+3. Every `parseInt(type)` a cannon can emit has a `Drawings.bullet` entry — R7's crash, as an
+   assertion.
+4. `setCoord` returns finite `mX`/`mY` for every class in the roster — R5's bug, as an assertion.
 
-**Implemented (user-selected scope: additive, not a Tag/Maze migration).** `rooms/Room.js` now
-carries diep's own `state`/`ticksUntilStart`/`playersNeeded` fields and `Room.ArenaState` enum
-(diep's literal numbering: `COUNTDOWN -1, OPEN 0, OVER 1, CLOSING 2, CLOSED 3`). Every EXISTING
-mode opens straight into `OPEN` and never touches the field again - Tag's own `this.closing`
-flag/Arena-Closer-swarm mechanism is untouched, deliberately not migrated onto the new field (the
-two would otherwise have to agree on ordering/semantics they were never designed to share, for no
-behavioural gain - a real risk to an already-tested win condition for no reason beyond tidiness).
-The new field gets its first real USE in `rooms/Survival.js` (G1's Survival mode): a genuine
-`COUNTDOWN` that holds the room open for joining while it waits for `MIN_PLAYERS` (4, diep's own
-scaled-down figure) humans, ticking down diep's real `countdownDuration` (10 s) once satisfied,
-then flipping to `OPEN` and cutting off every future `respawn()` call - the first time this tree
-has had a real "waiting for players" gate at all. No client-side countdown screen was built (no
-wire exposure of the new fields either, unlike C5's other wire additions) - PENDING.md.
+Then rebaseline `test/clientDiff.js`'s golden (R1/R6 move real numbers) and document the reason at
+the constant, per the standing rule.
 
-### A5 — **[DIFF] Spawn location choice**
+### R11 — **[DECIDE] Shape palette: revert to yours?**
 
-`Arena.findSpawnLocation()`: uniform random over the arena, retried up to **20 times** against
-`isValidSpawnLocation` (which rejects near other tanks). Ours is `rejectSample()` against nest
-keep-out circles with a 128-try cap. Different intent — diep keeps you away from *players*, we keep
-you away from *nests*. Consider doing both.
+C3 replaced your muted shape palette with diep's canvas-measured hexes. This was never a bug — it
+was a taste call made in a fidelity pass, and you own it.
 
----
+| | yours (pre-C3) | diep's (today) |
+|---|---|---|
+| `sqr` | `#cfcf9f` / `#a6a689` | `#ffe869` / `#bfae4e` |
+| `tri` | `#d1adb2` / `#a38a8e` | `#fc7677` / `#bd5859` |
+| `pnt` | `#b2b2cc` / `#8686ab` | `#768dfc` / `#5869bd` |
+| `bull` (Crasher) | `#ff9fc7` / `#d97ea3` | `#f177dd` / `#b459a5` |
 
-# Chunk 7 — Physics & movement
+**Recommendation: revert `sqr`/`tri`/`pnt` (and their `alpha*` twins) to yours.** Your palette is a
+coherent muted set that reads as *your* game; diep's saturated primaries were adopted only because
+they were citable, not because anything was wrong. Reverting costs nothing — it is six lines in
+[public/client/config.js:87-102](public/client/config.js#L87) and a golden rebaseline. `bull` is a
+closer call: the old light pink was deliberately picked to sit apart from `tri`'s rose so a Crasher
+doesn't read as a bright Triangle, and diep's magenta does that job too — keep whichever you
+prefer, they both work.
 
-### M1 — **[OK, do not re-derive]** Tank `FRICTION = 10/11` (per 40 ms), universal
-`BODY_FRICTION = 0.9`, `moveAccel = A₀ × 1.07^points / 1.015^level`. The two frictions differ only
-because we apply drag *before* the position step and diep applies it after; both reach the same
-`10 × A` steady state. Do not merge them.
-
-### M2 — **[DIFF] `A₀` is 1.47% high**
-
-`physics.html` gives `A₀ = 2.58825 du/loop²`; `diepcustom`'s `TankBody.ts:271` gives **`2.55`** with
-a `1.015^(L−1)` level term. `2.55 × 1.015 = 2.58825` — the same formula quoted one level apart. Our
-`this.level` is 0-based, i.e. already diep's `L−1` form, so the coefficient we actually want is
-`2.55 × 0.56 = 1.428`, not `1.449`. Base top speed `362.25 → 357.0 u/s`. One literal in
-`public/SHARE/Physics.js`. Left as a decision because `physics.html` was chosen deliberately.
-
-### M3 — **[OK]** `size = 28 × 1.01^level`, `FOV_PER_LEVEL = 1.005` (= `√1.01`), tank body radius
-50 du. Confirmed.
-
-### M4 — **[DIFF] Semi-implicit Euler drag error at 25 ms**
-
-`Physics.stepBody`'s steady state is 362.25 u/s at the 40 ms reference but **368.9 u/s** at our
-live 25 ms step (+1.8%). Every impulse column (`back`, `weight`) reads ~1.8% high in-game for the
-same reason. Fixing it properly means an exponential integrator, which redefines every
-per-reference-tick constant in the tree. Probably not worth 1.8% — recorded so nobody chases it.
-
-### M5 — **[ADD] Velocity floor**
-
-`Object.ts:275`: `if (velocity.magnitude < 0.01) velocity.magnitude = 0`, and a deleting entity
-halves its speed each tick (`:277`). We have neither; our entities coast asymptotically forever.
-Cheap to add, and it removes a class of "sliding at 1e-9" float noise.
-
-### M6 — **[OK]** Wall contact: bullet destroyed outright, tank keeps `0.3 ×` speed and gets an
-axis-aligned push of `absorb × pushFactor / 0.3` (`Object.ts:295-326`). Matches.
+**Keep C3's shape *sizes* either way.** The `× √2` circumradius identity was a genuine bug fix
+(triangles were drawn 26% oversized, pentagons 12.5% undersized) and is independent of colour.
 
 ---
 
-# Chunk 8 — Bosses & scripted entities
+## Execution order
 
-### X1 — **[DONE] Four of diep's five bosses are missing**
+Dependencies first; one behavioural cause per commit, per PENDING.md's rules.
 
-`Misc/BossManager.ts`: `[Guardian, Summoner, FallenOverlord, FallenBooster, Defender]`, one picked
-at random every `45 × 60 × tps` ticks (**45 minutes**), spawned inside the middle half of the arena,
-at most one alive. We ship **Summoner** only, on a per-mode `bossRng`/`maxBoss` roll.
+1. **R5** — the `setCoord` NaN. One `if`, six classes go from invisible to visible, no numbers move,
+   no golden shifts. Do it first; it makes everything after it observable.
+2. **R7** — the Skimmer crash + a total dispatch. Second, for the same reason: you cannot inspect
+   what crashes.
+3. **R1** — the 0.56 → 0.70 rescale, whole roster, both halves, one commit. The file-head comment
+   is part of the commit, not a follow-up.
+4. **R2 + R3** — bosses on their own reference, and the six classes that did have a source after
+   all (Arena Closer's flared muzzle dies here).
+5. **R8** — Defender's `distance`. Trivial once R3's boss pass is open.
+6. **R4** — guard addons: client `guards` data, the renderer, draw order. The first thing here that
+   adds a *feature* rather than repairing a number, and it builds the rotating-child machinery R9
+   then reuses.
+7. **R9** — the Auto 3/5 turret ring, on top of R4's machinery: mount ratio, z-order, the rotator,
+   the 90° arc filter, the click-to-aim override, the mini-definition's damage.
+8. **R6** — Mothership: size literal, n-gon body (`sides`), trapezoid barrels, drone row.
+9. **R10** — the regression tests, then rebaseline the golden once for the whole pass.
+10. **R11** — palette, whenever you decide. Independent of everything above.
 
-Missing: **Guardian** (`Boss/Guardian.ts`), **Defender** (`Boss/Defender.ts`, has
-`Misc/Boss/FallenSpike` style addons), **Fallen Overlord**, **Fallen Booster** — plus the
-`Misc/Boss/` variants `FallenAC`, `FallenMegaTrapper`, `FallenSpike`.
+## Explicitly not in scope
 
-Also missing: the 45-minute global spawn timer and the one-boss-at-a-time invariant.
-
-**Implemented (user-selected: full unique mechanics per boss).** All four added as ordinary
-`TanksConfig.js` classes driven by their own `[motion, update, className]` entry in
-`lib/gameAI.js`'s `CONFIG.BOSS` (the same rebind-at-spawn pattern `rooms/Room.js`'s `createBoss()`
-already used for Summoner) — `Guardian` (one oversized backward-facing self-targeting drone
-spawner, `type 3.1`, plus a real diepcustom `BossMovementControl` quadrant-corner patrol, facing
-whichever way it's driving), `Defender` (three `forceFire` trap launchers plus three mounted
-auto-turrets — diep's own separate `AutoTurret` child entities, simplified to three more
-`autoDir`/`autoShoot` cannons on the same body at diep's own real 60 du mount radius, the same call
-plan.md T6 already made for Auto 3/Auto 5's rings — stationary, `ai.viewRange 0`, spins in place at
-2× the passive rate), `Fallen Overlord` (Overlord's own 4-barrel geometry verbatim, diep's boosted
-drone stats, patrol + passive spin), `Fallen Booster` (Booster's own 5-barrel geometry verbatim,
-diep's boosted bullet stats, patrol while idle, charges and faces its nearest detected target once
-engaged, at diep's own real 2× `movementSpeed`). Global 45-minute spawn timer implemented for real
-(`rooms/Room.js`'s `BOSS_TIMER_TICKS`/`bossTimerAt`, a deterministic floor under the existing
-`bossRng` roll, on any mode with `maxBoss > 0`) — the one-boss-at-a-time invariant was already true
-via each mode's own `maxBoss: 1`, nothing to add there. `FallenAC`/`FallenMegaTrapper`/`FallenSpike`
-(the `Misc/Boss/` addon variants) not built — out of this pass's scope, no citation gathered.
-Travel speed for the three patrolling/chasing bosses reuses Summoner's own already-tuned
-`BOSS_DRIFT` magnitude rather than a fresh derivation (documented at `lib/gameAI.js`'s
-`bossThrust()` — diep's raw `movementSpeed` is an accel term for a real tank-body physics pipeline
-this engine's boss integrator diverged from entirely when Summoner was built, so there is no clean
-unit identity to convert, the same reasoning `BOSS_DRIFT` itself already rests on). No client
-rendering for a true 3/4-sided boss body — inherits Summoner/the Dominators' existing `body: {shape:
-1}` (rounded rectangle) simplification, not a new gap (`public/SHARE/TanksConfig.js`'s own comment
-at the new entries). Verified by hand (script) against all four in isolation, plus
-`test/rooms.js`'s existing boss-mode suite adapted to a 5-entry roster (was Summoner-only) — see
-PENDING.md.
-
-### X2 — **[DONE] Boss body is a hardcoded circle**
-
-`rooms/Room.js`'s `createBoss()` hardcodes `size: 64` for every boss. diep's `AbstractBoss` sizes
-each boss from its own definition. Blocks X1 — you can't add four bosses with one hardcoded radius.
-
-**Implemented:** `createBoss()` now reads `CLASS[spec[2]].bossSize || 64` — each of the four new
-bosses carries its own real diep-derived `bossSize` (world units) on its `TanksConfig.js` entry;
-Summoner keeps the old flat 64 (falls through the `||`), since it has no diep body to convert.
-
-### X3 — **[DONE] Boss aggro model is entirely ours**
-
-`lib/gameAI.js`'s Summoner uses `dis / max(1, level) < screen / 30` with a 0.5625 y-squash — no
-diep counterpart (diep bosses use the shared `AI` class with a plain `viewRange`). Worth replacing
-with `AI`-style targeting when X1 lands.
-
-**Implemented (kept the metric, shared the code).** The metric itself is unchanged — still no
-literal diep counterpart, and PENDING.md's own "aggro radius smaller than the hitbox" fix already
-lives inside it — but it is no longer Summoner's own private copy: `lib/gameAI.js`'s `bossDetect()`
-is the one implementation every boss with real aggro (Guardian/Fallen Overlord/Fallen Booster,
-plus Summoner itself) now calls, keyed off each boss's own `screen` (its `ai.viewRange` stand-in).
-Defender calls it not at all (diep's own `ai.viewRange = 0` — it never aggros, full stop; its
-turrets find targets through the ordinary per-class `CLASS.DETEC` auto-turret mechanism instead,
-same as any other auto-turret tank). This is the "replace with `AI`-style targeting" this item
-asked for, within what this engine's boss integrator can actually express — a full port of
-diepcustom's own generic `AI` class (prediction, multiple target-priority tiers, `AIState`) was not
-attempted.
-
-### X4 — **[OK]** Arena Closer size 98 units (`BASE_SIZE 175 du × 0.56`), Dominator 89.6
-(`SIZE 160 du`), both circles (`sides: 1`), Dominator `maxHealth 6000`, four per Domination map,
-neutral→captor with a two-knockdown rule for an enemy-held one, HP refill + own-bullet despawn on
-capture. All confirmed against `ArenaCloser.ts` / `Dominator.ts`.
-
-### X5 — **[DIFF] Arena Closer / Dominator borrow the boss scaffolding**
-
-Both are `Player` instances with `motion`/`update` rebound at spawn. They deserve their own classes;
-this is a restructuring decision, unscoped. Also open: the `H`-key Dominator piloting mechanic
-(designed, not built — see PENDING).
-
-### X6 — **[ADD] `Dominator` FOV** — our three variants' `screen`/`DETEC.maxDis` are stand-ins
-(Sniper's/Assassin's/Ranger's screen). diep gives Dominators `fieldFactor 1`.
-
----
-
-# Chunk 9 — Game modes
-
-### G1 — **[DONE, partial] Mode roster**
-
-| diep (`src/Gamemodes/`) | we have |
-|---|---|
-| FFA | ✅ |
-| Team2 | ✅ |
-| Team4 | ✅ |
-| Domination | ✅ |
-| Maze | ✅ |
-| Tag | ✅ |
-| Sandbox | ✅ |
-| **Mothership** | ✅ |
-| **Survival** | ✅ |
-| Misc (`Ball`, `Jungle`, `Spikebox`, `DomTest`, `FactoryTest`, `Testing`) | ❌ — diepcustom's own test modes, not real diep |
-
-Breakout and Capture the Flag are in `diep_wiki` but not in `diepcustom` — treat as
-lower-confidence, and both are bigger than Maze + Domination combined. **User-selected scope:
-Mothership + Survival only this pass; Breakout/CTF deliberately deferred, not attempted.**
-
-**Mothership implemented** (`rooms/Mothership.js`) — finally gives T2's Mothership tank class a
-spawn path. Two teams, one real killable Mothership `Player` per side (diepcustom's own
-`arenaSize * 0.8` placement, `healthData.values.maxHealth = 7000` 1:1, `bossSize` derived from
-diep's own `size = 28 × 1.01^level` identity at `camera.setLevel(140)` — plan.md X2's mechanism,
-reused rather than a third one) spinning in place and auto-firing its 16 drone-spawner barrels
-(`lib/gameAI.js`'s `CONFIG.MOTHERSHIP`, sharing `bossThrust()`'s stationary-decay tail with
-Defender). Losing your Mothership starts closing — the identical Arena-Closer-swarm mechanism
-Tag's own win condition uses (`startClosing()`/`createCloser()`, copied rather than shared, see
-A4's own note on why Tag's mechanism wasn't touched). No drone-post base-strip system (`K3`'s own
-custom `TeamBase`/`G4`) — diep's real Mothership mode has no equivalent, the Mothership tank body
-itself IS the base. diep's own shape-XP-only ×3 (`shapeScoreRewardMultiplier`) has no hook to land
-in — this engine's `rules.xpMul` multiplies every award alike, so it was left at the ordinary ×1
-rather than over-applying it to kills too (PENDING.md).
-
-**Survival implemented** (`rooms/Survival.js`) — the first mode to actually use A4's state machine
-for something real: a genuine `COUNTDOWN` gate (diep's own `MIN_PLAYERS` 4, `countdownDuration`
-10 s) before the match opens, then no more respawns, ever (`ArenaFlags.noJoining`'s real effect).
-Arena size re-derives every tick from the live human count (diep's own
-`floor(25 × sqrt(max(alive,1))) × 100` du formula,×0.56), shrinking as players die via the same
-`newMap` lerp Tag's own `shrink()` already uses. Win condition and Closer-swarm ending mirror
-Mothership's own (one alive human left ⇒ `OVER` ⇒ `startClosing()`). No bots seeded at all — diep's
-own Survival has none, and the whole point of the human-only gate is "wait for real people"; a
-solo session correctly never leaves `COUNTDOWN` rather than being routed around with bot padding.
-Shape density is a static mix sized for the `MIN_PLAYERS` starting arena, not diep's own
-`SurvivalShapeManager` formula (which re-evaluates every tick as the arena resizes) — PENDING.md.
-diep's shape-XP-only ×3 has the same no-hook gap as Mothership's, same call.
-
-### G2 — **[OK]** Maze wall generation is a verbatim port of `Misc/MazeGenerator.ts` (seed count 45
-± 30, turn/branch/termination 0.2 each, flood-fill for unreachable pockets, merge into rectangles).
-`GRID_SIZE = 35` is derived from *our* arena rather than diep's hardcoded 40, correctly.
-
-### G3 — **[OK]** Tag XP ×3, Domination XP ×2, Tag arena shrink to a floor, no bosses in Maze — all
-confirmed (`Tag.ts:39-59`, `Domination.ts:43`, `Maze.ts:71`).
-
-### G4 — **[ADD] Team base mechanics**
-
-`Misc/TeamBase.ts` + `Misc/BaseDrones.ts`. Confirmed matching: `BASE_DRONE_HP 2000`
-(`(1.5×0+2) × 1000`), `BASE_DRONE_DAMAGE` ≡ a Basic bullet's own damage, 12 drones per spawner,
-chase speed 54 du/tick = 756 u/s, `ai.viewRange 900 du` = 504 units. **What is entirely ours:** the
-five-level energy-ring orbit system, the binomial level sorter, the C² diameter-cross "swoosh",
-the leash, the per-centre scout. diep's base drones just orbit and chase. **[KEEP]** — this is one
-of our better custom features, but know that none of it is diep.
-
----
-
-# Chunk 10 — Client & rendering
-
-### C1 — **[BUG, partial] Bullets appear to leave beside the barrel, not from it** *(the reported bug)*
-
-Three separate causes, all live:
-1. **B1** — the server spawns at 93% of barrel length.
-2. `public/client/entities.js`'s two-phase muzzle weld — a fresh own-bullet is welded to the drawn
-   muzzle for one packet interval, then hands off to `predic`. The ramp (`BULLET_LEAD_DECAY`) exists
-   and is tested, but was tuned against a since-changed prediction path.
-3. **Strafing.** The local tank is drawn at `server position + predic`, where `predic` points along
-   your *movement*; the bullet's lead is temporal (along its own velocity). Strafing perpendicular
-   to aim makes the error entirely sideways, which is exactly "the bullet came out of empty space
-   next to me". The structural fix is arras.io's: set **one** lag-compensation clock per frame and
-   run *every* entity, local tank included, through the same predict — instead of putting the local
-   tank in its own reference frame.
-
-Do (1) first; it's one character. Then re-judge (2)/(3) in a browser.
-
-**Status:** (1) confirmed still fixed this pass (`entities/Player.js:363` — `const len =
-can.canonLength * ra;`, no `.93`, re-checked directly). (2)/(3) need a real browser session to
-re-judge, per this item's own instruction — untouched again this pass for the same reason: no
-browser available, and the prediction math is carefully measured (its own comments, `test/client.js`
-pins part of it) so it is not a safe target to blind-tune from source reading alone.
-
-### C2 — **[DONE] Barrel/bullet silhouette scale**
-
-Our barrel lengths are drawn against a reference tank radius of 35 (`CONST.SIZE`) where diep's are
-against 50 du. The *ratios* happen to agree for Basic (68/35 = 1.94 vs 95/50 = 1.90), but every
-class was hand-drawn on our scale, so converting one number (bullet radius, B2) desyncs it from the
-barrel. This is one deliberate pass: convert `canonLength`/`width`/`can.size` for the whole roster
-to `diep du × 0.56` at once, or convert none of them.
-
-Known casualty of not doing it: the **Summoner**'s drawn barrel (`height: 44`) is *shorter* than its
-own spawn radius (`canonLength 50 × 0.93 = 46.5`), the only class in the roster that runs that way —
-its drones visibly spawn past the muzzle. Fixing it means growing a boss's silhouette.
-
-**Implemented (user-selected: full roster, carefully, accept the time cost).** Every diep-native
-class's client `height`/`width` and server `canonLength`/`can.size` in `TanksConfig.js` now reads
-`diep_barrel.size(du) × 0.56` / `diep_barrel.width(du) × 0.56` / `(diep_barrel.width/2) ×
-bullet.sizeRatio × 0.56`, cross-referenced barrel-by-barrel against
-`diepcustom/src/Const/TankDefinitions.json` (46 classes converted; verified both directions by a
-throwaway script that loads the client/server halves via `test/clientTanks.js`/`require()` and
-diffs every resolved barrel against the JSON, then a second pass checking the CLIENT/SERVER
-multisets agree — both came back clean). One real bug caught mid-pass and fixed: several
-symmetric-fan classes (**Spread Shot**, both client and server) have diep listing their centre
-barrel *last* in `barrels[]`, not first — a naive index-zip mispaired barrel lengths by one
-position; barrels are matched by angle magnitude now, with a comment at the site. Auto-turret
-cannons (Auto 3/5/Trapper/Gunner/Smasher/Hover) convert against `AutoTurret.ts`'s shared
-`AutoTurretDefinition` (size 55, width 29.4) rather than a per-tank barrel row, the same source
-their speed/life/rand already used. **Skipped, no source to convert against:** K1 (Cyclone/
-Submachine/Auto Hover's own 3 manual barrels/Fortress), Summoner, Arena Closer, the 3 Dominators,
-and Rocketeer's two barrels (they model `Rocket.ts`'s exhaust sub-barrel, not a tank barrel — see
-PENDING.md, unchanged). Fallen Overlord/Fallen Booster's own barrels were converted alongside
-Overlord/Booster to keep their "reuses the parent class's geometry verbatim" comment true. Two
-already-diep-sourced sub-barrel defs (Skimmer's `sub`, Factory's `weapon`) were already on the
-0.56 identity from B3 and were left alone. `test/tanks.js` (631 assertions) and
-`test/clientDiff.js`'s golden (rebaselined, reason documented at the constant) both green.
-
-### C3 — **[DONE, partial] Render features from `diepindepth/canvas/`**
-
-`render_order.txt`, `scaling.md`, `shape_sizes.md` and `color_constants.md` document diep's actual
-draw order, the `0.55 × zoom` scaling law, per-shape drawn sizes, and the exact palette. We have not
-cross-checked any of it. Cheap wins for "it looks like diep": exact colours (`extras/colors.js`),
-health-bar geometry, damage-flash timing (`StyleFlags.hasBeenDamaged`).
-
-**Implemented, two of three.** **Shape sizes (real bug, fixed):** every diep shape's drawn
-circumradius is its own physics/hit radius × `Math.SQRT2` — `{Square,Triangle,Pentagon,Crasher}.ts`
-all set `physicsData.values.size = drawnDu × Math.SQRT1_2`, the same identity inverted, and
-`shape_sizes.md`'s raw drawn radii confirm it independent of side count. `public/client/drawings.js`
-already satisfied this by construction for `sqr`/`alphaSqr`; `tri`/`pnt`/`alphaPnt`/`alphaTri` did
-not (their hand-picked scale divisors implied ratios of 1.78/1.24/1.24/1.92 instead of √2 ≈ 1.41) —
-triangles were drawn ~26% oversized, pentagons/alpha pentagons ~12.5% undersized, exactly matching
-PENDING.md's own long-standing "sizes arent right" note. Fixed by correcting each shape's divisor
-(comment at the site cites the identity); crosschecking the corrected triangle formula against
-`shape_sizes.md`'s small/large Crasher figures reproduces both exactly, confirming the fix.
-**Colours (real bug, fixed):** `public/client/config.js`'s `sqr`/`tri`/`pnt`/`alphaSqr`/`alphaTri`/
-`alphaPnt`/`bull` were muted, uncited stand-ins; swapped for diep's own hex codes verbatim from
-`color_constants.md`'s "Shapes" table. **Health-bar geometry: not touched** — `render_order.txt`
-lists `RenderHealthBars()` with an empty body (diepindepth's own RE effort found no extractable
-geometry there either), and `color_constants.md`'s one "Health bar / stroke #85e37d" entry doesn't
-say whether it's the player tank's bar, a shape's, or both, and our shape bars are deliberately
-coloured to match the shape's own palette entry — not enough of a citation to act on, left alone
-rather than guessed. **Damage-flash timing: investigated, no client rewrite this pass** — see C5's
-own note; the wire signal already exists (`Objects`/`Players` `states[0]`), the gap is that the
-client re-times its own flash instead of trusting the server's real hold window, and fixing that
-touches the same animation-timing code C1 declined to blind-tune, for the same reason.
-`test/clientDiff.js`'s golden moved again for this (pure numeric/colour change, same op count,
-hash-only) — rebaselined, reason documented at the constant.
-
-### C4 — **[SKIP] Camera lag & HP-bar hold**
-
-`CONST.CAM_SMOOTH` and `CONST.HP_BAR_HOLD` are the only two quantities in the tree with no
-reference at all — `diepcustom` is server-only and `diepindepth/canvas` doesn't cover either. They
-need a session with diep.io actually open. Protocols are in MEASUREMENTS.md.
-
-**Confirmed still un-measurable this pass** — no browser session available. Left exactly as
-MEASUREMENTS.md documents; do not guess a number here.
-
-### C5 — **[DONE, partial] Wire fields diep has that we don't**
-
-From `diepindepth/protocol/`: entity `angle` for shapes (S4), `nameData` flags, `StyleFlags`
-(`isFlashing`, `hasBeenDamaged`, `isStar`, `isTrapezoid`), `HealthFlags.hiddenHealthbar`,
-`ArenaFlags`/`ticksUntilStart` (A4), scoreboard entries. Each is a small `SocketSchema.js` addition
-that unblocks a visual behaviour above.
-
-**Implemented: entity `angle` for shapes, and `ArenaFlags`/`ticksUntilStart`/`playersNeeded`.**
-`Objects` now carries a real `dir` field (`SocketSchema.js`, reusing the same `CODECS.angle` int16
-codec `Players`/`Bullets` already use) — `entities/Objects.js` tracks it server-side exactly like
-`AbstractShape.ts`: an idle spin (`this.spin`, diep's own `AI.PASSIVE_ROTATION` 0.01 rad/ref-tick,
-sign-rolled independently of the existing drift-direction roll) that runs every idle tick regardless
-of S5's edge-turning state, replaced by a live `atan2(target − self)` while a Crasher is chasing
-(`Crasher.ts:74`, verbatim) — this is the "S4" this item names AND the literal fix S1's own text
-asked for ("facing tracks the tank it's chasing"). The client's old per-frame cosmetic wobble and
-Crasher motion-diff approximation (`entities.js`'s `this.rotate`/`this.pdx`/`this.pdy`) are gone,
-replaced by nothing — the wire value lands directly on `this.dir`, same as a Bullet's `dir` already
-did. `rooms/Room.js`'s `state`/`ticksUntilStart`/`playersNeeded` (A4, real server-side since that
-item landed) are now on the `GameUpdate` head too, PENDING.md's own "would be a good pairing with
-C5" suggestion. **Investigated, not added — already covered or no real signal to expose:**
-`StyleFlags.isStar` is fully redundant with the `Objects` `states[1..3]` tier bits already on the
-wire (tier 1 *is* Shiny — nothing to add). `StyleFlags.hasBeenDamaged` is, in substance, already the
-existing `states[0]`/`this.hit` bit on both `Players` and `Objects` (a real "currently in the
-post-hit flash window" signal) — the gap is that the client re-times its own flash independently
-(`entities.js`'s `hit()`, fixed 50/16 ms) instead of trusting how long the server actually holds the
-bit (`tick.ticks(1.65)` — 3 real ticks / ~75 ms at `TICK_MS` 25), not a missing field; left for a
-session that can watch the result in a browser, same reasoning as C1. `StyleFlags.isFlashing` (diep's
-spawn-shield visual) has no server mechanic behind it at all in this tree — adding the bit with
-nothing driving it would be a stub, not a wire fix, so it was left out; a real gap, not a decision.
-`PhysicsFlags.isTrapezoid` (plan.md's own C5 wording groups it with `StyleFlags`, imprecisely — it's
-per-*barrel*, not per-entity) is already static client-config data (T5's `cannons[i].type`/
-`trapezoidDirection`), with nothing dynamic to put on the wire. `NameFlags` were investigated with no
-citable trigger found for a tank: diep's own default (`AbstractShape`'s constructor) is that every
-*shape* already has `hiddenName` set, which our engine already satisfies by construction (`Objects`
-carries no `name` field at all) — nothing to add there either. `HealthFlags.hiddenHealthbar` and the
-scoreboard-entry fields were not attempted this pass (out of time, not a decision) — see PENDING.md.
-
----
-
-# Chunk 11 — Ours, on purpose
-
-**[KEEP] — do not let a fidelity pass remove these.**
-
-### K1 — Custom tanks
-`Cyclone`, `Submachine`, `Auto Hover`, `Fortress` — no diep counterpart. Their reload / knockback /
-speed / life columns are all nearest-relative stand-ins (Cyclone ← Octo Tank, Submachine ← Machine
-Gun, Auto Hover's manual barrels ← Tri-Angle, Fortress ← Tri-Trapper + Battleship, every auto-turret
-slot ← `AutoTurret.ts`'s shared definition). Keep them; keep the stand-in markers.
-
-### K2 — Custom shapes
-`Bsqr`, `Btri` (boss square / boss triangle).
-
-### K3 — Custom systems
-Bots (`lib/gameAI.js` — diep has none), pets (`PetsConfig.js`), coins/shop, accounts &
-achievements, the dev console, rarity tiers beyond Shiny (`ObjectsConfig.js`), the five-level base
-drone orbit AI (G4), tank-vs-tank positional overlap resolution.
-
-### K4 — Engine choices
-`TICK_MS` 25 vs `REF_TICK_MS` 40 (we sample finer than diep and denominate against diep's loop);
-FOV that scales to fit the viewport instead of diep's resolution-dependent fixed px/du (ours is the
-fairer design).
-
-### K5 — Square/Triangle corner nests (plan.md S2)
-diep decides a shape's type purely from where a uniformly-random point landed (S2's table); it has
-no concept of "Squares live NE, Triangles live SW". We do, and it's staying **on top of** diep's own
-Pentagon Nest/Crasher Zone radii rather than being replaced by diep's flat Fields mix - a deliberate
-user call, made when S2 landed, to keep a real gameplay feature nobody asked to lose.
-
-### K6 — Respawn cadence stays partial, not instant (plan.md S7)
-diep's shape population is effectively instant (dead slot refilled the very next tick). We close
-85% of the gap (`RESPAWN_CATCHUP` in `rooms/Room.js`) rather than all of it - a deliberate user call
-made when S7 landed, keeping some of the "farming visibly thins a patch out" feel rather than
-diep's "never looks empty".
-
----
-
-# Suggested execution order
-
-Dependencies first; each line is a self-contained pass with its own test/golden rebaseline.
-
-1. ✅ **D1 + D2** — put damage on diep's raw axis and replace the baked ×4 with a real `common()`
-   table. Everything downstream is measured against this, so it goes first. Expect every
-   time-to-kill and every `clientDiff` golden to move.
-2. ✅ **D5** — re-derive the `pene` column as `2 × diep bullet.health`.
-3. ✅ **B1** — delete the `.93`. One character, immediately visible.
-4. ✅ **P1** — adopt diep's XP table.
-5. ✅ **S1** — give Crashers a real chase. Self-contained, high visible impact.
-6. ✅ **D3 + D4 + D6** — finish the damage model (drone multipliers, bullet-vs-bullet, contact
-   quantisation).
-7. ✅ **D7 (+ D8, B6)** — `absorbtionFactor`/`pushFactor` as a real receiver-side term.
-8. ✅ **T5 + T6** — barrel-definition parity, then the addon system. Unblocks the roster.
-9. ✅ **P3 + P4 + T3 + T4** — per-tank stat sets, stat names, flags, `fieldFactor`.
-10. ✅ **T1 + T2** — the real upgrade tree and the 16 missing tanks (Smasher line first — it exercises
-    the most new machinery).
-11. ✅ **S2 / S5 / S7** — shape zoning, edge turning, respawn cadence.
-12. ✅ **B3** — Skimmer / Minion projectiles (Flame/CrocSkimmer out of scope, dev-only in diepcustom -
-    see B3's own note).
-13. ✅ **X1 + X2 + X3** — the boss roster.
-14. ✅ **A4 + G1** — arena state machine, then Mothership / Survival (Breakout/CTF deferred - see G1).
-15. ✅ **C1–C5** — the rendering/silhouette pass (C2/C3/C5 done or partially done, C4 confirmed
-    still un-measurable, C1's cause 1 re-confirmed fixed and causes 2/3 left for a browser session -
-    see each item's own note), with a deliberate golden rebaseline at each numeric/visual change.
-
-## Rules for executing any of it
-
-- **One behavioural cause per commit.** `test/clientDiff.js` seeds one RNG across four rooms in
-  sequence, so a change to how many entities exist — or how long one *lives* — shifts every later
-  mode's positions. Isolate by overriding the suspect constant at load time and re-running the
-  corpus once per candidate cause; a cause that contributes nothing is then *proved* to contribute
-  nothing. Changes to how existing entities *move* usually don't shift the stream.
-- **Grep for the old number, not just the constant's name** when a value moves. Two known
-  false-positive near-collisions: Gunner's bullet `speed 0.511936` vs the old `MOVE_ACCEL_BASE`
-  `0.511941`; a retired knockback impulse `0.43881` vs a bullet `speed 0.438816` shared by eight
-  drone/trap cannons.
-- **Get the `lib/tick.js` category right** (`perTick`/`impulse`/`drag`/`ticks`/`chance`/`quadratic`/
-  `lead`/`smoothing`). It never fails loudly — the value just silently stops being
-  real-world-correct at the live tick rate. A one-shot impulse into a body that reaches
-  `Physics.stepBody` is `impulse()`; the same impulse into a body that integrates its own `vec`
-  directly (`entities/Bullet.js`, `entities/Objects.js`) is `perTick()`.
-- **Cite the file and line** in the code comment, `diepcustom/src/…:NN`. Say when a number is a
-  stand-in with no diep counterpart, at the site.
+- **C1 causes 2 and 3** (prediction/strafe lead). Still needs a browser session; still must not be
+  blind-tuned from source. R5/R7/R8 remove the three *other* things that were being mistaken for it.
+- **C4** (`CAM_SMOOTH`, `HP_BAR_HOLD`). No reference exists. Do not guess. See MEASUREMENTS.md.
+- **B1's `.93` removal** — verified still correct, leave it.
+- **C3's shape sizes** — a real fix, leave it (see R10).
+- **K1's stand-ins** (Cyclone / Submachine / Auto Hover / Fortress) — no diep source, and that
+  exclusion was correct. R1 does not touch them, which means they are the one place the roster
+  legitimately stays hand-authored. Eyeball them against a rescaled Basic once R1 lands.

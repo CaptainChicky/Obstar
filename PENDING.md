@@ -3,8 +3,12 @@
 What's **left**: things needing a human call, things nobody has watched happen, and places the tree
 is knowingly in a wrong or stand-in state.
 
-- The **diep.io fidelity diff** — everything we do differently from diep, chunked and ordered —
-  lives in **[plan.md](plan.md)**, not here. Items below cross-reference it by ID (`D1`, `S2`, …).
+- The **diep.io fidelity diff** used to live in `plan.md`. That plan ran to completion and was
+  **deleted**; everything of its that was still live — open decisions, [KEEP] list, execution rules
+  — is archived in *this* file under "📕 plan.md's surviving nuances" below. Items elsewhere in this
+  file still cross-reference it by ID (`D1`, `S2`, …) and those IDs are still meaningful — the
+  archive keeps them. **[plan.md](plan.md) is now the *rescale* plan**: the corrective pass for the
+  barrel/silhouette scale defect that plan.md's own C2 step introduced.
 - The **codebase map and invariants** live in **[HANDOFF.md](HANDOFF.md)**.
 - The two quantities that still need a real diep client live in **[MEASUREMENTS.md](MEASUREMENTS.md)**.
 
@@ -20,6 +24,153 @@ dev needs a migration path. Old conventions are defaults to improve on, not cons
 ## Notes
 crashers spawn too fast? and on top of people? chrck this
 also bullets dont seem to do enough damage? a destroyer bullet cant even kill a pentagon
+
+---
+
+## 📕 plan.md's surviving nuances
+
+*plan.md ran all 15 of its own execution steps and was deleted. Everything below is what did not
+die with it. Steps whose outcome is now simply the state of the tree (D1/D2/D5/P1/S1/D3/D4/D6/D7/
+D8/T1–T6/S2/S5/S7/B3/X1–X3/A4/G1) are **not** repeated here — the code and its comments are the
+record. What is here is: the unit table (with the error C2 made written into it), every **[DIFF]**
+that was a real decision and how it was called, every **[ADD]** never built, the **[KEEP]** list,
+and the execution rules that are worth more than the plan was.*
+
+### The unit table — and the mistake C2 made in it
+
+| Quantity | Conversion |
+|---|---|
+| **Absolute length** (arena, body radius, boss `bossSize`, drone resting radius, `ARENA_PADDING`) | 1 gu = 50 du = **28 units**; **1 du = 0.56 units** |
+| **Reference-relative length** (everything divided by `CONST.SIZE` at the consumption site — barrel `height`/`width`/`open`/`offx`/`distance`/`rad`, server `canonLength`/`can.size`) | **1 du = 0.70 units** (`CONST.SIZE 35 ÷ diep's 50 du body`) |
+| Time | diep tick = 40 ms = `REF_TICK_MS`; sim steps at `TICK_MS` 25; raw constants are per-*reference*-tick, converted at the consumption site by `lib/tick.js` |
+| Bullet cruise thrust | `speed` column = **1.12 × diep `bullet.speed`** (`20 du/tick × 0.56 × 0.1`) |
+| Recoil | `back` column = diep `recoil` (gu) **× 2.8** |
+| Knockback | `weight` column = diep Knockbackfactor (gu) **× 5.25** |
+| Damage | diep's raw (D1 landed; the old 0.692640 axis is retired) |
+| HP | 1 : 1 with diep's raw |
+
+**The two length rows are not interchangeable, and plan.md only ever wrote down the first one.**
+C2 converted the whole barrel roster with 0.56 — the *absolute* factor — into fields that are
+divided by `CONST.SIZE = 35` before they are drawn or fired. Everything it touched came out
+**0.8× too small**, and the fields it *didn't* touch (`offx`, `open`, `distance`, `rad`) stayed on
+0.70, so the same barrel now mixes two scales. See plan.md (the rescale plan) for the full account.
+Do not re-derive: a boss is a third case again — its barrels are denominated against its *own*
+`BASE_SIZE` (Summoner 150 du, Guardian 135, Defender 150, Dominator 160, Arena Closer 175), not
+against 50, so its factor is `35 / BASE_SIZE`.
+
+### [DIFF]s — decided
+
+- **D8 — shape `weight` mass-divisor → real `absorbtionFactor`.** *Decided: adopt diep's.* Pentagon
+  0.5, Alpha Pentagon 0.05, Crasher small 2 / large 0.1, Square/Triangle 1, applied only at the
+  `collision()` impulse site; idle drift is maxspeed-only, matching diep's own split. `Bsqr`/`Btri`
+  stay on the old divisor (K2).
+- **C2 — barrel/bullet silhouette scale.** *Decided: convert the full roster carefully, accept the
+  time cost* (the alternative offered was "convert nothing"). The decision was right; **the
+  execution used the wrong factor** — that is what plan.md now exists to fix.
+- **S2 / K5, S7 / K6** — both called in favour of keeping ours; see the [KEEP] list below.
+- **B3 — Flame / CrocSkimmer.** *Decided: not built.* Both are `DevTankDefinitions.ts`-only in
+  diepcustom; no entry in the real roster sets `bullet.type: "flame"`/`"croc"`, so there is no
+  player-reachable path to exercise them even in Sandbox's cycler.
+- **C4 — camera lag & HP-bar hold.** *Decided: SKIP, permanently, until someone opens diep.io.*
+  `CONST.CAM_SMOOTH` and `CONST.HP_BAR_HOLD` are the only two quantities in the tree with **no
+  reference at all** — diepcustom is server-only, diepindepth/canvas covers neither. **Do not guess
+  a number here.** Protocols are in MEASUREMENTS.md.
+
+### [DIFF]s — still open, nothing is a bug
+
+- **D6 — contact quantisation.** diep exchanges damage exactly once per pair per 40 ms tick
+  (`Live.ts:73,157`); we run at 25 ms and prorate with `tick.perTick()` (×0.625). Same integral,
+  different quantisation — a bullet that dies in one diep tick spends ~2 of ours. Option (b), a
+  per-pair "already exchanged this reference tick" guard, makes every "N hits to kill" exactly
+  reproducible and costs a per-pair set per tick.
+- **P5 — `respawnPow` / `prize` / coins.** Our `prize` is a bespoke `pow(xp/mlx, 1.8)`;
+  `rules.respawnPow` (0.9) sets how much XP survives a death. diep gives the killer the victim's
+  `scoreReward` and respawns at `respawnLevel` (`Camera.ts`). Coins are entirely ours. Decide
+  per-mode.
+- **A1 — arena size.** ffa/maze `gu(451)` = 12628 units is **within 1.1% of diep's fixed
+  22300 du** — effectively identical, nothing to do. The only open question is whether 4team's
+  `gu(400)` is intentional. (The old "diep's `AL = ⌊√N × 50⌋` shrinks us 71%" scare was a
+  misapplication of *Sandbox's* population formula to a fixed-size mode. Do not re-raise it.)
+- **A5 — spawn location.** diep: uniform random, ≤20 retries against `isValidSpawnLocation`, which
+  rejects near **other tanks**. Ours: `rejectSample()` against **nest** keep-out circles, 128-try
+  cap. Different intent; consider doing both.
+- **M2 — `A₀` is 1.47% high.** `physics.html` says `2.58825 du/loop²`; `TankBody.ts:271` says
+  `2.55` with a `1.015^(L−1)` level term — the same formula quoted one level apart. Our `level` is
+  already 0-based (diep's `L−1`), so the coefficient we want is `2.55 × 0.56 = 1.428`, not `1.449`.
+  Base top speed `362.25 → 357.0 u/s`. One literal in `public/SHARE/Physics.js`. Open only because
+  `physics.html` was chosen deliberately.
+- **M4 — semi-implicit Euler drag error.** `Physics.stepBody` settles at 362.25 u/s at the 40 ms
+  reference but **368.9 u/s** at the live 25 ms step (+1.8%); every impulse column (`back`,
+  `weight`) reads ~1.8% high in-game for the same reason. Fixing it properly means an exponential
+  integrator, which redefines every per-reference-tick constant in the tree. **Recorded so nobody
+  chases it.**
+- **B6 — `push` (self-bounce) is ours.** No diep counterpart (diep's only separation force is
+  `receiveKnockback`). Load-bearing for base drones — it keeps a swarm from stacking. Now that D7
+  has landed, the open call is whether `push` collapses into `pushFactor` or stays.
+- **X5 — Arena Closer / Dominator borrow the boss scaffolding.** Duplicated as decision #1 above.
+
+### [ADD]s — diep has it, we still don't
+
+- **A3 — `ARENA_PADDING = 200 du`** (`Arena.ts:85`) = 112 units. Ours differs.
+- **M5 — velocity floor.** `Object.ts:275`: `if (velocity.magnitude < 0.01) velocity.magnitude = 0`,
+  and a deleting entity halves its speed each tick (`:277`). We have neither — our entities coast
+  asymptotically forever. Cheap, and it removes a class of "sliding at 1e-9" float noise.
+- **G4 — team base mechanics.**
+- **X6 — Dominator FOV.** Our three variants' `screen`/`DETEC.maxDis` are stand-ins borrowed from
+  Sniper/Assassin/Ranger. diep gives Dominators `fieldFactor 1`.
+
+### [KEEP] — ours on purpose; a fidelity pass must not delete these
+
+- **K1 — custom tanks.** `Cyclone`, `Submachine`, `Auto Hover`, `Fortress`. Every column is a
+  nearest-relative stand-in (Cyclone ← Octo Tank, Submachine ← Machine Gun, Auto Hover's manual
+  barrels ← Tri-Angle, Fortress ← Tri-Trapper + Battleship, every auto-turret slot ←
+  `AutoTurret.ts`'s shared definition). Keep the tanks; keep the stand-in markers.
+- **K2 — custom shapes.** `Bsqr`, `Btri`. (`Bpnt` *is* diep's Alpha Pentagon and is not custom.)
+- **K3 — custom systems.** Bots (`lib/gameAI.js` — diep has none), pets, coins/shop, accounts &
+  achievements, the dev console, rarity tiers beyond Shiny, the five-level base-drone orbit AI,
+  tank-vs-tank positional overlap resolution.
+- **K4 — engine choices.** `TICK_MS` 25 vs `REF_TICK_MS` 40 (we sample finer than diep and
+  denominate against diep's loop); FOV that scales to fit the viewport instead of diep's
+  resolution-dependent fixed px/du — ours is the fairer design.
+- **K5 — Square/Triangle corner nests.** diep decides a shape's type purely from where a uniformly
+  random point landed; it has no concept of "Squares live NE, Triangles live SW". We do, layered
+  **on top of** diep's own Pentagon Nest / Crasher Zone radii rather than replaced by diep's flat
+  Fields mix. Deliberate user call.
+- **K6 — respawn cadence stays partial.** diep refills a dead shape slot the very next tick; we
+  close 85% of the gap (`RESPAWN_CATCHUP`), keeping some "farming visibly thins a patch out" feel.
+  Deliberate user call.
+- **D9 — `LETHAL_EPS`.** The 0.0001 at every hp/pene subtraction and the shared proration factor in
+  `rooms/Room.js` are both diep's own (`Live.ts:83-85,:94,:110`). **Do not "simplify" a
+  `<= LETHAL_EPS` back to `<= 0`** — proration deliberately lands a killing blow on the target's
+  exact remaining HP, and float error then leaves it alive at ~1e-16 forever.
+- **M1 — the two frictions.** Tank `FRICTION = 10/11` per 40 ms and universal `BODY_FRICTION = 0.9`
+  differ *only* because we apply drag before the position step and diep applies it after; both
+  reach the same `10 × A` steady state. **Do not merge them.**
+- **M6, A2, B5, M3, S3** — confirmed exact against source. Do not re-derive.
+
+### Rules for executing any pass in this tree
+
+- **One behavioural cause per commit.** `test/clientDiff.js` seeds one RNG across four rooms in
+  sequence, so a change to how many entities exist — or how long one *lives* — shifts every later
+  mode's positions. Isolate by overriding the suspect constant at load time and re-running the
+  corpus once per candidate cause; a cause that contributes nothing is then *proved* to.
+- **Grep for the old number, not just the constant's name** when a value moves. Known
+  near-collisions: Gunner's bullet `speed 0.511936` vs the retired `MOVE_ACCEL_BASE 0.511941`; a
+  retired knockback impulse `0.43881` vs a bullet `speed 0.438816` shared by eight drone/trap
+  cannons.
+- **Get the `lib/tick.js` category right** (`perTick`/`impulse`/`drag`/`ticks`/`chance`/`quadratic`/
+  `lead`/`smoothing`). It never fails loudly — the value just silently stops being correct at the
+  live tick rate. A one-shot impulse into a body that reaches `Physics.stepBody` is `impulse()`;
+  the same impulse into a body that integrates its own `vec` (`entities/Bullet.js`,
+  `entities/Objects.js`) is `perTick()`.
+- **Cite the file and line** in the code comment, `diepcustom/src/…:NN`. Say at the site when a
+  number is a stand-in with no diep counterpart.
+- **A test that only compares our two halves against each other cannot catch a scale error.**
+  `test/tanks.js` stayed green through the entire C2 defect because every assertion it makes about
+  a barrel is client-`height` vs server-`canonLength` — both of which moved together. Any pass that
+  changes a drawn quantity needs at least one assertion anchored **outside** the tree.
+
+---
 
 ## 🟣 Needs a human decision
 
