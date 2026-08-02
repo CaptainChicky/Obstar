@@ -779,5 +779,111 @@ console.log('\nevery class in the roster renders without a non-finite transform 
 		a.record.badTransform + ' transforms, ' + a.record.badTranslate + ' translates');
 }
 
+console.log('\nno class draws outside its own sprite cache (render.js\'s setCoord vs what drawings.js actually draws):');
+{
+	/*
+		setCoord() states how far a class's silhouette reaches; drawings.js decides where the
+		silhouette actually goes. Nothing checked that those two agree, and they did not: setCoord
+		had no idea `trapLauncher` existed, so every trap barrel's arrowhead - which sits entirely
+		PAST the barrel tip - was drawn outside the offscreen canvas and cut off, in the world as
+		well as in the class picker and the death screen.
+
+		This drives drawTank down its `isOpac` branch (draw straight into a context we own, no
+		offscreen canvas) through a context that tracks the affine transform, and collects every
+		path coordinate in the tank's own body frame. Then it asserts the two radii setCoord
+		promises really do contain them:
+
+		  canSize  half the sprite canvas, measured from the hull centre - what decides clipping.
+		  mR       reach from the visual centre (mX/mY) - the radius ui.js's class picker and
+		           death screen spin the sprite about, and so the radius they size their tiles to.
+
+		Deliberately independent of setCoord's own arithmetic: it reads coordinates back out of the
+		draw calls rather than recomputing the bound a second way. Curve control points count as
+		path points, which only ever over-states the extent (a quadratic stays inside its hull), so
+		this can be too strict but never too lenient.
+	*/
+	const clientTanks = require('./clientTanks.js')();
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+	const CLIENT = a.sandbox.window.CLIENT;
+	const CONST = CLIENT.CONST;
+	CLIENT.initRender();
+	const drawTank = CLIENT.General.drawTank;
+
+	// The minimum a 2D context needs to be for drawings.js to run against it: a transform stack
+	// and the path calls, with every point pushed through the live matrix.
+	function trackingCtx(out) {
+		let m = [1, 0, 0, 1, 0, 0];              // a b c d e f
+		const stack = [];
+		const mul = (n) => [
+			n[0] * m[0] + n[1] * m[2], n[0] * m[1] + n[1] * m[3],
+			n[2] * m[0] + n[3] * m[2], n[2] * m[1] + n[3] * m[3],
+			n[4] * m[0] + n[5] * m[2] + m[4], n[4] * m[1] + n[5] * m[3] + m[5]
+		];
+		// Every recorded entry is [x, y, r]: a path point (r = 0) or a circle of radius r about
+		// that point. Keeping a circle AS a circle matters - sampling its bounding square instead
+		// over-states a body's reach by a factor of sqrt(2) and would make this assert something
+		// stricter than "the silhouette fits".
+		const at = (x, y, r) => out.push([
+			m[0] * x + m[2] * y + m[4],
+			m[1] * x + m[3] * y + m[5],
+			r ? r * Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) : 0
+		]);
+		const real = {
+			save: () => stack.push(m.slice()),
+			restore: () => { if (stack.length) { m = stack.pop(); } },
+			setTransform: (a1, b, c, d, e, f) => { m = [a1, b, c, d, e, f]; },
+			translate: (x, y) => { m = mul([1, 0, 0, 1, x, y]); },
+			scale: (x, y) => { m = mul([x, 0, 0, y, 0, 0]); },
+			rotate: (r) => { m = mul([Math.cos(r), Math.sin(r), -Math.sin(r), Math.cos(r), 0, 0]); },
+			moveTo: at, lineTo: at,
+			quadraticCurveTo: (cx, cy, x, y) => { at(cx, cy); at(x, y); },
+			bezierCurveTo: (c1x, c1y, c2x, c2y, x, y) => { at(c1x, c1y); at(c2x, c2y); at(x, y); },
+			rect: (x, y, w, h) => { at(x, y); at(x + w, y); at(x, y + h); at(x + w, y + h); },
+			arc: (x, y, r) => at(x, y, r)
+		};
+		return new Proxy(real, {
+			get: (t, k) => (k in t ? t[k] : () => undefined),
+			set: () => true
+		});
+	}
+
+	// Both radii are sums of square roots in one order here and another in setCoord, so an exact
+	// touch (a body circle's own edge against the bound derived from it) lands an ulp either side.
+	const EPS = 1e-9;
+	let worstCan = null, worstM = null;
+	for (const cls of Object.keys(clientTanks.class)) {
+		// size = CONST.SIZE, so `r` is 1 inside every draw function and the coordinates that come
+		// back are already in setCoord's own reference units.
+		const param = {
+			class: cls, tankC: CLIENT.Palette.green, canC: CLIENT.Palette.gray,
+			size: CONST.SIZE, dir: 0, recoils: [], canDir: []
+		};
+		const cached = drawTank(null, 0, param);          // the real sprite cache, for its size
+		const pts = [];
+		drawTank(trackingCtx(pts), 1, param);             // ...and the same draw, tracked
+		const half = cached.can.width / (2 * CONST.OFFCAN);
+		const mX = cached.mX, mY = cached.mY, mR = cached.pR / CONST.OFFCAN;
+		for (const p of pts) {
+			// A polyline in drawings.js is STROKED, so its outline straddles the path by
+			// LINEWIDTH/2; every arc there is a FILL at a radius that already has that half
+			// folded in (`size +- LINEWIDTH/2`), so adding it again would double-count.
+			const pad = p[2] ? p[2] : CONST.LINEWIDTH / 2;
+			const r = Math.sqrt(p[0] * p[0] + p[1] * p[1]) + pad;
+			if (r > half + EPS && (!worstCan || r - half > worstCan.by)) {
+				worstCan = { cls: cls, by: r - half };
+			}
+			const dx = p[0] - mX, dy = p[1] - mY;
+			const rm = Math.sqrt(dx * dx + dy * dy) + pad;
+			if (rm > mR + EPS && (!worstM || rm - mR > worstM.by)) {
+				worstM = { cls: cls, by: rm - mR };
+			}
+		}
+	}
+	check('every class fits inside its own offscreen sprite canvas',
+		!worstCan, worstCan && worstCan.cls + ' overflows by ' + worstCan.by.toFixed(2));
+	check('...and inside the spin radius the UI panels size their tiles to',
+		!worstM, worstM && worstM.cls + ' overflows by ' + worstM.by.toFixed(2));
+}
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

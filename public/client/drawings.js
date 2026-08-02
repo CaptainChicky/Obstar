@@ -28,8 +28,11 @@
 	// body against a 14-unit flare - the "stub is not visible" report. Past the tip, the visible
 	// neck and the flare are the same length, exactly as in diep (barrel 60 du out of a 50 du
 	// body radius, launcher 10 du). Cosmetic only, no server-side effect.
+	function trapLauncherLen(c) {
+		return c.width * 20 / 42;
+	}
 	function drawTrapLauncher(ctx, c, r, recoil, canC) {
-		const len = c.width * 20 / 42;
+		const len = trapLauncherLen(c);
 		const nearX = c.height * recoil, farX = c.height * recoil + len;
 		const nearHalf = c.width / 2, farHalf = c.width / 2 * TAPER_RATIO;
 		ctx.beginPath();
@@ -689,6 +692,12 @@
 	// entities.js used to special-case this type to General['drawBullet']'s circle sprite instead
 	// of dispatching through this table like every other Obj type.
 	Drawings.obj.bull = Drawings.obj.tri;
+	// Shared with render.js's setCoord(), which has to know how far past a barrel's own tip the
+	// launcher reaches to size the offscreen sprite cache for it. Exported rather than restated
+	// there: a second copy of the 5/3 taper or the 20/42 length is exactly the kind of drift that
+	// clipped every trapper barrel in the first place.
+	Drawings.TAPER_RATIO = TAPER_RATIO;
+	Drawings.trapLauncherLen = trapLauncherLen;
 	///
 	CLIENT.Drawings = Drawings;
 })(typeof (exports) === 'undefined'

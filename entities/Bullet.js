@@ -595,6 +595,13 @@ class Bullet {
 		this.maxspeed = speed;
 		this.speed = speed;
 		this.destroy = 0;
+		// Whether this projectile's death was an IMPACT against something solid - a tank, a boss,
+		// a shape, a Maze wall, a base fence - as opposed to running out of `life` or being shot
+		// down by another projectile. Only an impact death drags (see DEATH_DRAG in update()):
+		// diep's deletion animation halves velocity per tick so a bullet dies where it HIT, and a
+		// bullet that hit nothing has no such place to die at - it should keep coasting through
+		// its fade at the speed it was already travelling.
+		this.impactDeath = 0;
 		// Arming window for a trap (type 2 only, see case 2 in update() and the gate at the top of
 		// collision() below) - diep's Trap.ts collisionEnd, `life >> 3` ticks. 0 for every other
 		// bullet, where it is simply never read. Set for real once `this.type`/`this.life` are both
@@ -639,6 +646,7 @@ class Bullet {
 		}
 		if (option.base) {
 			this.destroy = tick.DES;
+			this.impactDeath = 1;
 		}
 		// A trap's arming window used to make it inert to EVERYTHING for its first `life >> 3`
 		// ticks. That was a stand-in for diep's Trap.ts flag swap, taken because this engine had no
@@ -679,7 +687,7 @@ class Bullet {
 					this.pene -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 					// LETHAL_EPS, not 0 (lib/damage.js) - pene is the bullet's health pool for
 					// proration purposes, so a prorated spend has the same ulp-short hazard hp does.
-					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES }
+					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES; this.impactDeath = 1; }
 					break;
 				case KIND.OBJECTS:
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.push), tick.perTick(this.push))));
@@ -720,7 +728,7 @@ class Bullet {
 					// now, with no vs-tank x4 baked in, so this site needs no multiplier at all,
 					// same as the KIND.PLAYER arm above.
 					this.pene -= tick.perTick(other.damage * (option.dmgScale ?? 1));
-					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES }
+					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES; this.impactDeath = 1; }
 					break;
 				case KIND.BULLET:
 					if (other.origin.oId === this.origin.oId) {
@@ -786,6 +794,7 @@ class Bullet {
 						// retuned - no physics, no pene drain (a wall deals no body damage either
 						// way, unchanged from before).
 						this.destroy = tick.DES;
+						this.impactDeath = 1;
 					}
 					break;
 			}
@@ -805,8 +814,16 @@ class Bullet {
 			// past whatever it hit; halving it geometrically, the total coast is ~one tick of
 			// travel, i.e. it dies where it hit. DEATH_DRAG is that 0.5 per REFERENCE tick, so
 			// the distance covered is the same at any TICK_MS.
-			this.vec.x *= DEATH_DRAG;
-			this.vec.y *= DEATH_DRAG;
+			//
+			// IMPACT DEATHS ONLY (`impactDeath`, set at the collision arms that destroy this
+			// projectile against something solid). The whole point of the drag is to plant the
+			// fade where the hit happened; a bullet that simply ran out of `life`, or that was
+			// shot down by another projectile, has no impact point to be planted at, and braking
+			// it mid-flight reads as the shot hitting an invisible wall.
+			if (this.impactDeath) {
+				this.vec.x *= DEATH_DRAG;
+				this.vec.y *= DEATH_DRAG;
+			}
 			this.x += this.vec.x;
 			this.y += this.vec.y;
 			this.destroy -= 1;

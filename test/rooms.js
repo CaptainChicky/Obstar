@@ -1362,6 +1362,26 @@ function respawnCarryoverTests(rooms) {
 	after.motion();
 	check('...and clears immediately given the carried-over held key', after.shield === 0,
 		after.shield);
+
+	/*
+		Enter respawns you the moment you are dead, not once the death animation and
+		config.DEAD_DELAY have both run out. The request to respawn is a one-shot keyup
+		(net/gameSocket.js), so anything the room refuses is not retried - a gated respawn() read
+		as "Enter did nothing" rather than as "Enter is on cooldown". Both halves are asserted:
+		a LIVE tank still cannot respawn (that gate is what stops a `force: 0` respawn packet
+		from being a free teleport), and a tank on its very first dead tick can.
+	*/
+	const live = player(room, 0);
+	live.dead = 0; live.destroy = 0;
+	check('a living tank cannot respawn', room.respawn(0) === undefined);
+	const dying = player(room, 0);
+	dying.hp = 0;
+	dying.dead = require(path.join(ROOT, 'lib', 'tick.js')).DEAD_DELAY;
+	dying.destroy = require(path.join(ROOT, 'lib', 'tick.js')).DES;
+	dying.xp = 1234;
+	check('...but a tank respawns on its first dead tick, mid death animation',
+		room.respawn(0) === 1234);
+	check('...and that really is a new Player', player(room, 0) !== dying);
 }
 
 /*

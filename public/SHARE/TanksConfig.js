@@ -955,11 +955,19 @@
 				}
 			},
 			// type 2 (plan.md A2): a real trapezoid, wide at the muzzle - see Machine Gun above.
+			//
+			// `height` is a deliberate DEPARTURE from diep here, by request, not a derived figure:
+			// diep's own barrel size 70 x 0.70 is 49, which against this class's own taller-than-
+			// wide body (`height: 1.05`, so 36.75 of the 49 is buried) leaves only 12.25 units of
+			// barrel actually poking out - visibly less stub than Overseer gets from the identical
+			// 70 over a round body. 61.25 is that 49 x 1.25, which doubles the visible protrusion
+			// to 24.5. Decorative only either way: the server fires through `this.necro`, not
+			// through a cannon, so nothing about the drone spawn moves with it.
 			"Necromancer": {
 				cannons: [
 					{
 						type: 2,
-						height: 49,   // decorative only (server fires through this.necro, not a cannon) - still diep's real barrel size 70 x 0.70 (plan.md C2/R1)
+						height: 55,
 						width: 29.4,
 						offx: 0,
 						offdir: Math.PI / 2,
@@ -968,7 +976,7 @@
 					},
 					{
 						type: 2,
-						height: 49,
+						height: 55,
 						width: 29.4,
 						offx: 0,
 						offdir: -Math.PI / 2,
@@ -3879,22 +3887,40 @@
 		Rocketeer, PENDING.md) moves from a bare Flank Guard tier-2 branch to Destroyer's, matching
 		diep's real parent. Everything else additive - see plan.md T1's table for citations.
 	*/
+	/*
+		A tier index IS its level gate: entities/Player.js's upClass() unions every tier up to
+		`parseInt(level / 15)`, so tier 0 opens at 15, tier 1 at 30, tier 2 at 45. That makes an
+		edge's tier a statement about WHEN it unlocks, not about how many evolutions precede it -
+		which is what lets two edges out of the SAME parent open at different levels, exactly as
+		diep does:
+
+		  * Basic -> Smasher is a level-30 edge, not a level-15 one. A player who wants Smasher
+		    stays Basic through the whole first tier rather than being offered it alongside Twin.
+		  * Machine Gun -> Sprayer is a level-45 edge, so Machine Gun holds through tier 1.
+
+		Both were sitting one tier early. `classLvl` is unaffected either way - it counts
+		evolutions taken, not tiers skipped.
+	*/
 	exports.tree = [
 		{
-			Basic: ['Twin', 'Machine Gun', 'Sniper', 'Flank Guard', 'Smasher'],
+			Basic: ['Twin', 'Machine Gun', 'Sniper', 'Flank Guard'],
 			testbed: ['bigView', 'shapes', 'pre launch'],
 			shapes: ['shape1', 'shape2'],
 			'pre launch': ['Fortress', 'Necromancer', 'Auto Hover']
 		},
 		{
+			Basic: ['Smasher'],
 			Twin: ['Twin Flank', 'Triple Shot', 'Quad Tank'],
-			'Machine Gun': ['Destroyer', 'Gunner', 'Sprayer'],
+			'Machine Gun': ['Destroyer', 'Gunner'],
 			Sniper: ['Trapper', 'Assassin', 'Overseer', 'Hunter'],
 			'Flank Guard': ['Triangle', 'Quad Tank', 'Twin Flank', 'Auto 3'],
-			Smasher: ['Landmine', 'Auto Smasher', 'Spike'],
 		},
 		{
-			'Machine Gun': ['Submachine'],
+			// Smasher itself is a tier-1 (level 30) edge above, so its own children move down here
+			// with it - otherwise they would open at the same level 30 Smasher does, and a Basic
+			// could take Smasher and Spike in the same breath.
+			Smasher: ['Landmine', 'Auto Smasher', 'Spike'],
+			'Machine Gun': ['Submachine', 'Sprayer'],
 			Gunner: ['Auto Gunner', 'Gunner Trapper', 'Streamliner'],
 			Destroyer: ['Hybrid', 'Annihilator', 'Skimmer', 'Rocketeer'],
 			Overseer: ['Manager', 'Necromancer', 'BattleShip', 'Overlord', 'Overtrapper', 'Factory'],

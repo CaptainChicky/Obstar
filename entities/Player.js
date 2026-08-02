@@ -54,6 +54,15 @@ const BULLET_MAINTAIN = require('../lib/constants.js').BULLET_MAINTAIN;
 // motion - PENDING #21 retunes both together or neither.
 const SPIN_RATE = 0.04;
 
+// What fraction of the ordinary tank-body knockback a TEAM MATE's body deals (the KIND.PLAYER
+// collision arm below). Ours, flagged - diep's own same-team physics filter (rooms/Room.js's
+// teamPassThrough(), diepcustom Object.ts:154-171) is about PROJECTILES and leaves two friendly
+// tanks colliding at full strength. Full strength plus this tree's own positional overlap
+// resolution makes a friendly crowd bounce off itself hard enough that a team cannot stack
+// through a chokepoint, so a team mate is a soft body here: this shove only, no positional
+// separation. Not zero - two tanks resting exactly on top of each other reads as a bug.
+const TEAM_SOFT_PUSH = 0.2;
+
 // diep's own flat per-hit invisibility reveal (TankDefinitions.ts's `visibilityRateDamage`,
 // plan.md C8) - a single global constant, not a per-class rate like `stealth.decay/moving/
 // shooting`: TankBody.ts's receiveDamage() adds this once per tick real damage landed (guarded
@@ -804,7 +813,18 @@ class Player {
 					// hp drain below stays perTick(): it is genuine per-tick-of-contact damage, not a
 					// one-shot impulse. `* this.absorb` (plan.md Part D) scales it down for a boss/
 					// Mothership (0.05/0.01) - 1 for an ordinary tank, so this is a no-op there.
-					const tankKb = tick.impulse(4.48) * this.absorb;
+					//
+					// A TEAM MATE is a soft body, not a solid one (`option.noDam` is rooms/Room.js's
+					// own same-team flag, set only where rules.teamPlay is on). diep's own team
+					// filter - rooms/Room.js's teamPassThrough() - covers PROJECTILES passing through
+					// their own side and says nothing about two tanks, which do still collide; but a
+					// full-strength body shove plus hard positional separation between team mates is
+					// what makes a friendly crowd feel like a pinball table, and it is what stops a
+					// team from stacking up to push through a chokepoint together. So the pair keeps a
+					// gentle shove to stop bodies resting exactly on top of each other, and drops the
+					// positional resolution entirely - overlap between friends is allowed.
+					const soft = option.noDam ? TEAM_SOFT_PUSH : 1;
+					const tankKb = tick.impulse(4.48) * this.absorb * soft;
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tankKb, tankKb)));
 					// Positional overlap resolution, on top of the velocity impulse rather than instead
 					// of it. The impulse alone cannot separate two tanks inside a normal contact window -
@@ -814,22 +834,23 @@ class Player {
 					// moves less. rooms/Room.js calls collision() on BOTH sides of a pair, so each body
 					// moves only its own share and the two shares sum to the whole overlap. The calls are
 					// sequential, so the second sees the first's move and this behaves as a relaxation
-					// rather than a snap - a deep overlap clears over about two ticks. It runs before the
-					// noDam break because teammates take up space too. No diep reference behind it,
-					// unlike everything around it - an engine-quality call, made deliberately (PENDING
-					// nuance 44).
-					const sepX = this.x - other.x, sepY = this.y - other.y;
-					const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;
-					// `guardSize` (plan.md T6), not `size` - a Smasher/Landmine/Spike-line
-					// tank's spinning guard is a real physical boundary, not just a bigger
-					// hitbox for damage: it holds the same overlap-resolution share diep's
-					// separate GuardObject entity would.
-					const mySize = this.guardSize || this.size, otherSize = other.guardSize || other.size;
-					const overlap = mySize + otherSize - sepD;
-					if (overlap > 0) {
-						const share = otherSize / (mySize + otherSize) * overlap / sepD;
-						this.x += sepX * share;
-						this.y += sepY * share;
+					// rather than a snap - a deep overlap clears over about two ticks. No diep reference
+					// behind it, unlike everything around it - an engine-quality call, made deliberately
+					// (PENDING nuance 44). Enemies only: see the team-mate note above.
+					if (!option.noDam) {
+						const sepX = this.x - other.x, sepY = this.y - other.y;
+						const sepD = Math.sqrt(sepX * sepX + sepY * sepY) || 1;
+						// `guardSize` (plan.md T6), not `size` - a Smasher/Landmine/Spike-line
+						// tank's spinning guard is a real physical boundary, not just a bigger
+						// hitbox for damage: it holds the same overlap-resolution share diep's
+						// separate GuardObject entity would.
+						const mySize = this.guardSize || this.size, otherSize = other.guardSize || other.size;
+						const overlap = mySize + otherSize - sepD;
+						if (overlap > 0) {
+							const share = otherSize / (mySize + otherSize) * overlap / sepD;
+							this.x += sepX * share;
+							this.y += sepY * share;
+						}
 					}
 				}
 				if (option.noDam || this.shield) { break; }

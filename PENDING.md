@@ -65,6 +65,12 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   Stalker, Auto 3/5, Spread Shot, Gunner Trapper, Tri-Trapper, Skimmer, Factory, Mothership,
   the bosses' drone/trap rows): diep's knockback table predates them; each borrows its nearest
   relative's row.
+- **`TEAM_SOFT_PUSH`** (`entities/Player.js`, 0.2) — two tanks on the SAME team exchange a fifth of
+  the ordinary body knockback and skip this tree's positional overlap resolution entirely. Diep has
+  no such rule: its same-team filter (`Object.ts:154-171`, our `teamPassThrough()`) is about
+  projectiles, and two friendly tanks there collide at full strength. Ours, by request — at full
+  strength plus hard separation a friendly crowd cannot stack through a chokepoint. Nothing outside
+  a `rules.teamPlay` mode is affected (the flag rides `option.noDam`, which only team modes set).
 - **`DOMINATOR_RETARGET_IDLE`** (3 s), **`BASE_DRONE_LEASH`** (`gu(90)`), Tag's `INVIS_FLOOR`,
   `CLOSER_COUNT 4`, Domination's Dominator layout (diamond; diep gives no coordinates) — all
   unreferenced knobs.
@@ -141,6 +147,41 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   in the wide overlaps. If a flat #404040 is ever actually wanted, it is one entry in
   `public/client/config.js`'s `Palette.guard`.
 
+## Settled by the third issues.md pass (kept only for the nuance)
+
+- **Every trapper's barrel was clipped in the world, not just in a panel.** `render.js`'s
+  `setCoord()` sized the offscreen sprite cache from a per-barrel
+  `sqrt(height² + (width/2 + offx + open/2)²)` bound that had never heard of `trapLauncher` — and
+  a trap launcher sits ENTIRELY past the barrel tip, so its arrowhead was drawn outside the canvas
+  and cut off everywhere the sprite appears. It also read `offx` signed (a barrel offset the other
+  way shrank the bound). Rewritten to reduce each feature to a point set or a disc in the body
+  frame and take real maxima; the cache grows 29–52 reference units across
+  Trapper/Tri-Trapper/Mega Trapper/Gunner Trapper/Overtrapper/Defender/Guardian/Summoner and
+  shrinks 4 everywhere else (a stroke owes LINEWIDTH/2, not LINEWIDTH). It now also returns `mR` —
+  reach from the VISUAL centre, which is the radius the two spinning panels pivot about — and
+  `pX/pY/pR`, the same three figures in the offscreen canvas's own pixels, because both panels
+  were mixing reference units and pixels in one expression. `test/client.js` asserts the invariant
+  by reading coordinates back out of `drawings.js`'s own draw calls through a transform-tracking
+  context, so it cannot be satisfied by recomputing setCoord's arithmetic a second way.
+- **The death screen sized its canvas to the sprite's own square** and then rotated the sprite
+  inside it (−π/8), losing everything past the inscribed circle, and wrote the class name into
+  that same width — which is why "Necromancer" lost both ends. It now sizes to `pR` plus a real
+  band for the name.
+- **Smasher and Sprayer were each one tier early.** `exports.tree`'s index IS its level gate
+  (`upClass()` unions every tier up to `parseInt(level/15)`), which is what lets two edges out of
+  the same parent open at different levels: Basic→Smasher is now a level-30 edge and Machine
+  Gun→Sprayer a level-45 one, with Smasher's own children moved down with it so a Basic can't take
+  Smasher and Spike in the same breath.
+- **A bullet only brakes if it hit something.** diep's deletion animation halves velocity per tick
+  so a projectile dies where it HIT; applying that to one that ran out of `life`, or that was shot
+  down by another projectile, brakes it in mid-air for no reason. `Bullet.impactDeath` is set at
+  the four arms that destroy against something solid (tank/boss, shape, Maze wall, base fence) and
+  nowhere else.
+- **Enter respawns you on your first dead tick.** The old gate made you wait out `tick.DES` AND
+  `config.DEAD_DELAY`, and because the request is a one-shot keyup an early press was dropped
+  rather than queued — so it read as "Enter does nothing", not as a cooldown. `dead` and `destroy`
+  are written at the same moments everywhere, so the gate is now just `!tank.dead`.
+
 ## Still open from issues.md (second batch)
 
 Not started, in rough descending order of how visible each is. Each is a real, specific job, not a
@@ -161,9 +202,10 @@ research question - the source for every one of them is cited here so nobody has
 - **Skimmer** (`Skimmer.ts`): `SkimmerBarrelDefinition` size 70 / width 42, two opposed sub-barrels,
   drawn BELOW the main bullet. `skimmerandbullet.png` at the repo root is the reference, with
   measured proportions in issues.md.
-- **Necromancer**: barrels want `size: 70` (they currently sit shorter than Overseer's, which is the
-  same 70 in diep); drones must come from killed squares (`NecromancerSquare.ts`) and take the beige
-  `necro` colour outside team modes, the team colour inside.
+- **Necromancer drones**: must come from killed squares (`NecromancerSquare.ts`) and take the beige
+  `necro` colour outside team modes, the team colour inside. (The barrel LENGTH half of this is
+  done — 49 → 61.25, a deliberate departure from diep's own 70×0.70, see the entry's own comment
+  in `TanksConfig.js`.)
 - **Guardian drones** should be visually indistinguishable from a small Crasher - same triangle,
   same `bull`/Color.EnemyCrasher pink, `sizeRatio 21 / (71.4/2)` off a 71.4-wide barrel.
 - **Overseer/Overlord symmetric drone batching** - spawn opposed barrels in one batch (2 for
@@ -172,14 +214,25 @@ research question - the source for every one of them is cited here so nobody has
 - **Dominator**: the cosmetic trapezoid barrel wants the same z-order the attacking barrels got
   (under the circular body, over the black hexagon); traps want to be destructible rather than
   effectively immortal.
-- **Minimap**: mark bosses, and mark teams in `tester` so an observer can tell what is where.
 - **Maze**: choose the player spawn area AFTER the walls are generated so a spawn inside a wall is
   impossible, and remove the remaining minor wall-on-wall visual overlap.
 - **Base drones overshoot** a target they cannot kill quickly, circling too fast - the user is
   unsure whether the fix is the chase speed or the steering, and so am I without watching it.
-- **Respawn flow**: Enter should respawn immediately rather than after a delay, and the death screen
-  wants a gamemode switcher.
+- **A gamemode switcher on the death screen.** Not started. It is not a drawing job: `ui.js`'s
+  `END` is canvas-only with no hit-testing of its own, and the only path into a different mode is
+  `POST /play` (`web/app.js`), which sets the `preference` cookie and re-renders `play.ejs` — so
+  this needs a click region, a form POST or an equivalent navigation, and a decision about whether
+  the socket closes cleanly first. The "Enter respawns immediately" half of the same issues.md
+  line is done (`rooms/Room.js`'s `respawn()` gate, pinned by `test/rooms.js`).
 - **Intro options screen** tries to slide down, fails, then snaps into place.
+- **Trap/drone-spawner recoil** (issues.md "incredibly incredibly small", "1/10th of a tile") was
+  **already settled** by the `back`-column rescale and is left alone deliberately. Every trap and
+  drone barrel in diep carries `recoil: 1` (`TankDefinitions.json`) — the same figure a Basic
+  carries, against Destroyer's 15 and Annihilator's 17 — and this tree's own identity
+  `back = recoil × 0.4 × 2.8` puts all of them at 1.12, i.e. 0.4 grid squares of total
+  displacement per shot. Moving it to the eyeballed 0.1 would break that anchor for one class
+  family only. If 0.4 really does read as too much in a browser, the thing that is wrong is the
+  whole column's scale (and `Physics.FRICTION` with it), not the trapper rows.
 
 ## Test determinism
 
@@ -188,6 +241,13 @@ research question - the source for every one of them is cited here so nobody has
   builds takes a random spawn point, so whether its idle path trips `Objects.update()`'s
   edge-avoidance turn (and the `HOME_PULL` oscillation around it) is a coin toss. Pin the
   shape's `x/y/rx/ry` before the loop to make it deterministic.
+- **`test/rooms.js`'s "a drone that kills a shape on contact still takes its level change from
+  the hit" fails roughly 1 run in 17** — same family, same fix. It parks a nearly-dead square one
+  step ahead of a base drone on its own ring and then steps a real 4team room for 120 ticks; the
+  drone's ring phase and every OTHER shape in that room come from an unseeded RNG, so the drone
+  can be pulled off the meeting (a chase, a wall, another shape) before it arrives. Observed once
+  in 17 consecutive runs while the batch below was landing, then not again in 16. Pin the room's
+  RNG, or the drone's ring phase, before the loop.
 
 ## Untested — nobody has watched these happen
 

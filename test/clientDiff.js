@@ -128,7 +128,18 @@ const hash = fnv1a(blob);
 //   * Tri-Trapper's three barrels fire together (diep id35 delay 0) instead of thirded.
 //   * an Arena Closer and an uncaptured Dominator draw in Color.Neutral #FFE869 instead of
 //     team 9's `necro` beige, and a Closer now sits on the arena's own team.
-const GOLDEN = { count: 281738, hash: '4384c622' };
+//
+// Rebaselined again for the third issues.md batch. The op COUNT is unchanged (281738) this time -
+// every entry is a coordinate change, nothing draws more or fewer shapes:
+//   * render.js's setCoord() is rewritten to measure the sprite's real extent instead of a
+//     per-barrel triangle-inequality bound. It knows about `trapLauncher` now, so every trapper's
+//     arrowhead stopped being clipped at the offscreen canvas edge (the sprite cache grows 29-52
+//     reference units across the Trapper/Tri-Trapper/Mega Trapper/Gunner Trapper/Overtrapper/
+//     Defender/Guardian/Summoner line), and it owes the stroke LINEWIDTH/2 rather than a whole
+//     LINEWIDTH, which shrinks every other class's cache by 4. A sprite canvas's size is a
+//     drawImage argument, so all of that reaches the op stream.
+//   * Necromancer's decorative barrels are 49 -> 61.25 long, by request.
+const GOLDEN = { count: 281738, hash: '3e2fc0d8' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

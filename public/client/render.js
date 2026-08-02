@@ -22,74 +22,132 @@
 			const R = CONST.OFFCAN;
 			const Coord = {};
 			///
+			/*
+				Every drawn feature reduced to one of two primitives, both in the tank's OWN body
+				frame (the frame Drawings draws in before `param.dir` is applied):
+
+				  * a POINT the outline actually reaches - the corners of a barrel quad, a
+				    launcher/pronounced trapezoid, a rectangular body. These rotate rigidly with
+				    the hull, so their positions relative to each other (and to `mX/mY` below)
+				    are fixed and can be compared directly.
+				  * a DISC around the hull centre, for anything that spins or aims independently
+				    of the hull: a guard polygon, an auto turret (its barrel tracks a target), a
+				    ring turret (its whole mount spins), and a round/near-round body.
+
+				Two different radii fall out, and they are NOT the same number:
+
+				  canSize  furthest reach from the HULL CENTRE. The offscreen sprite cache is
+				           centred there, so this is what decides whether the sprite clips at its
+				           own canvas edge - in the world as well as in a UI panel.
+				  mR       furthest reach from the VISUAL centre (mX/mY). The two panels that
+				           spin a sprite in a fixed-size tile (ui.js's class picker and death
+				           screen) pivot about that point, so this is the radius they have to fit.
+
+				The old version computed only canSize, as `sqrt(height^2 + (width/2+offx+open/2)^2)`
+				per barrel: it read `offx` signed (so a barrel offset the other way shrank the
+				bound instead of growing it) and, more visibly, it did not know about
+				`trapLauncher` at all - so every trap barrel's arrowhead, which sits ENTIRELY PAST
+				the barrel tip, was cut off at the canvas edge. That is the "tri-trapper and
+				trappers have the furthest points of their barrels cut off" report, and it was
+				never only a panel problem.
+			*/
 			function setCoord(config) {
-				let middleX = 0, middleY = 0, canSize = CONST.SIZE / 2 + CONST.LINEWIDTH;
+				let middleX = 0, middleY = 0;
 				const marge = 2;
-				///
+				const S = CONST.SIZE, LW = CONST.LINEWIDTH;
+				const pts = [];
+				let disc = 0;
+				// A barrel/turret quad in its own local frame: `distance` out along the firing
+				// axis, then the quad itself, then rotated onto `offdir`. Matches
+				// Drawings.cannons[*] exactly - same base/tip half-widths per draw shape.
+				function barrelPoints(c, offdir) {
+					if (c.hidden) { return; }
+					const narrowHalf = c.width / 2, wideHalf = c.width / 2 * Drawings.TAPER_RATIO;
+					let baseHalf = narrowHalf, tipHalf = narrowHalf;
+					if (c.type === 2) {
+						baseHalf = c.trapezoidDirection ? wideHalf : narrowHalf;
+						tipHalf = c.trapezoidDirection ? narrowHalf : wideHalf;
+					}
+					tipHalf += c.open / 2;
+					const local = [
+						[0, c.offx - baseHalf], [0, c.offx + baseHalf],
+						[c.height, c.offx - tipHalf], [c.height, c.offx + tipHalf]
+					];
+					if (c.trapLauncher) {
+						const far = c.height + Drawings.trapLauncherLen(c);
+						local.push([far, c.offx - wideHalf], [far, c.offx + wideHalf]);
+					}
+					const cos = Math.cos(offdir), sin = Math.sin(offdir);
+					for (const p of local) {
+						const lx = (c.distance || 0) + p[0], ly = p[1];
+						pts.push([cos * lx - sin * ly, sin * lx + cos * ly]);
+					}
+				}
 				if (config.cannons && config.cannons.length) {
 					for (const c of config.cannons) {
-						///
-						// `+ (c.distance||0)` (plan.md T5): a barrel/turret pushed out from the
-						// hull needs that much more canvas headroom or a ring member (Auto 3/5)
-						// clips at the edge of its own offscreen cache. Triangle-inequality
-						// upper bound, not exact - harmless slack, never clips.
-						const len = (c.distance || 0) + Math.sqrt(
-							Math.pow(c.height, 2) +
-							Math.pow(c.width / 2 + c.offx + c.open / 2, 2)
-						) + CONST.LINEWIDTH;
-						canSize = Math.max(canSize, len);
+						barrelPoints(c, c.offdir);
 						///
 						const cos = Math.cos(c.offdir), sin = Math.sin(c.offdir);
-						middleX += cos * Math.max(0, c.height - CONST.SIZE / 2) + sin * c.offx;
-						middleY += sin * Math.max(0, c.height - CONST.SIZE / 2) + cos * c.offx;
+						middleX += cos * Math.max(0, c.height - S / 2) + sin * c.offx;
+						middleY += sin * Math.max(0, c.height - S / 2) + cos * c.offx;
 					}
 					middleX /= config.cannons.length * 2;
 					middleY /= config.cannons.length * 2;
 				}
 				if (config.turrets && config.turrets.length) {
 					for (const c of config.turrets) {
-						///
-						// `+ (c.distance||0)` (plan.md T5): a barrel/turret pushed out from the
-						// hull needs that much more canvas headroom or a ring member (Auto 3/5)
-						// clips at the edge of its own offscreen cache. Triangle-inequality
-						// upper bound, not exact - harmless slack, never clips.
-						const len = (c.distance || 0) + Math.sqrt(
-							Math.pow(c.height, 2) +
-							Math.pow(c.width / 2 + c.offx + c.open / 2, 2)
-						) + CONST.LINEWIDTH;
-						canSize = Math.max(canSize, len);
+						// A turret's barrel swings to whatever it is aiming at and a ring turret's
+						// mount spins on its own phase, so neither has a fixed position in the body
+						// frame - both are discs of their whole reach, base circle included.
+						const reach = Math.sqrt(
+							c.height * c.height +
+							Math.pow(Math.abs(c.offx) + c.width / 2 + c.open / 2, 2)
+						);
+						disc = Math.max(disc, (c.distance || 0) + Math.max(reach, c.rad || 0));
 						///
 						const cos = Math.cos(c.offdir), sin = Math.sin(c.offdir);
-						middleX += cos * Math.max(0, c.height - CONST.SIZE / 2) + sin * c.offx;
-						middleY += sin * Math.max(0, c.height - CONST.SIZE / 2) + cos * c.offx;
+						middleX += cos * Math.max(0, c.height - S / 2) + sin * c.offx;
+						middleY += sin * Math.max(0, c.height - S / 2) + cos * c.offx;
 					}
 					middleX /= config.turrets.length * 2;
 					middleY /= config.turrets.length * 2;
 				}
-				// Guards/launcher (plan.md R4) - drawn at `sizeRatio x param.size`, so in these
-				// same reference units their headroom contribution is `sizeRatio x CONST.SIZE`.
-				// Smasher/Landmine/Spike have no cannons/turrets at all, so without this their
-				// spinning guard shape clips at the tiny default canvas edge.
+				// Guards (plan.md R4) spin on their own phase - a disc, at Drawings.guards' own
+				// radius. Smasher/Landmine/Spike have no cannons/turrets at all, so without this
+				// their guard shape clips at the bare body's edge.
 				if (config.guards) {
 					for (const g of config.guards) {
-						// Matches Drawings.guards' own radius: `sizeRatio x (size + LINEWIDTH/2)`,
-						// plus its stroke's own outward half.
-						canSize = Math.max(canSize,
-							g.sizeRatio * (CONST.SIZE + CONST.LINEWIDTH / 2) + CONST.LINEWIDTH);
+						disc = Math.max(disc, g.sizeRatio * (S + LW / 2));
 					}
 				}
+				// launcher/pronounced/dompronounced (plan.md R4/A4/E2) all rotate rigidly with the
+				// hull, so they are point sets like a barrel. Coordinates mirror their own draw
+				// functions in drawings.js with `param.size` at CONST.SIZE.
 				if (config.launcher) {
-					canSize = Math.max(canSize, 1.852 * CONST.SIZE + CONST.LINEWIDTH);
+					pts.push([0, -0.336 * S], [0, 0.336 * S],
+						[1.852 * S, -0.1344 * S], [1.852 * S, 0.1344 * S]);
 				}
-				// `pronounced` (plan.md A4) reaches `centre + len/2 = 1.3 x size` at most - same
-				// headroom reasoning as guards/launcher above.
 				if (config.pronounced) {
-					canSize = Math.max(canSize, 1.3 * CONST.SIZE + CONST.LINEWIDTH);
+					const wide = 0.42 * S * Drawings.TAPER_RATIO;
+					pts.push([0.3 * S, -wide], [0.3 * S, wide],
+						[1.3 * S, -0.42 * S], [1.3 * S, 0.42 * S]);
 				}
-				// `dompronounced` (plan.md E2) reaches `centre + len/2 = 1.22 x size` at most -
-				// same headroom reasoning as guards/launcher/pronounced above.
 				if (config.dompronounced) {
-					canSize = Math.max(canSize, 1.22 * CONST.SIZE + CONST.LINEWIDTH);
+					const wide = 0.35 * S * Drawings.TAPER_RATIO;
+					pts.push([0.78 * S, -wide], [0.78 * S, wide],
+						[1.22 * S, -0.35 * S], [1.22 * S, 0.35 * S]);
+				}
+				// The body, per Drawings.body's own shapes: a rounded rect reaches its corners,
+				// everything else is round enough to bound as a disc at its circumradius.
+				switch (config.body.shape) {
+					case 1: {
+						const bw = S * config.body.width, bh = S * config.body.height;
+						pts.push([-bw, -bh], [-bw, bh], [bw, -bh], [bw, bh]);
+						break;
+					}
+					case 2: disc = Math.max(disc, S * 1.236); break;
+					case 3: disc = Math.max(disc, S / Math.cos(Math.PI / config.body.sides)); break;
+					default: disc = Math.max(disc, S); break;
 				}
 				// mX/mY is the sprite's own visual centre-of-mass OFFSET from the hull centre -
 				// how far the barrels drag the silhouette off-centre - and the two panels that
@@ -103,12 +161,24 @@
 					middleX = 0;
 					middleY = 0;
 				};
-				canSize = canSize * 2 + marge * 2;
+				const mLen = Math.sqrt(middleX * middleX + middleY * middleY);
+				let canSize = disc, mR = disc + mLen;
+				for (const p of pts) {
+					canSize = Math.max(canSize, Math.sqrt(p[0] * p[0] + p[1] * p[1]));
+					const dx = p[0] - middleX, dy = p[1] - middleY;
+					mR = Math.max(mR, Math.sqrt(dx * dx + dy * dy));
+				}
+				// Every figure above is a path coordinate; a stroke straddles it, and `lineJoin:
+				// round` carries that same half-width around a corner, so both radii owe one
+				// LINEWIDTH/2 outward.
+				canSize += LW / 2;
+				mR += LW / 2;
 				///
 				return {
 					mX: middleX,
 					mY: middleY,
-					size: canSize,
+					mR: mR,
+					size: canSize * 2 + marge * 2,
 					marge: marge
 				}
 			};
@@ -175,10 +245,20 @@
 						Drawings.turrets[tank.turrets[i].type](ctx, tank, param, i);
 					}
 				};
+				// `pX/pY/pR` are mX/mY/mR converted into the offscreen canvas's OWN pixels - the
+				// units `can.width` is already in - so a panel that wants to centre or fit the
+				// sprite can do it against `can.width` directly instead of re-deriving the
+				// param.size/CONST.SIZE/OFFCAN chain (which both panels used to get subtly wrong,
+				// mixing reference units and pixels in the same expression). mX/mY stay in
+				// reference units for anything that still wants them raw.
+				const px = param.size / CONST.SIZE * R;
 				return {
 					can: isOpac ? 0 : can,
-					mX: Coord[param.class].mX,
-					mY: Coord[param.class].mY,
+					mX: coord.mX,
+					mY: coord.mY,
+					pX: coord.mX * px,
+					pY: coord.mY * px,
+					pR: coord.mR * px,
 				}
 			};
 		})();

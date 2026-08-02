@@ -298,6 +298,16 @@ class Tester extends Room {
 	leaderColor(player, viewerId) {
 		return player.team;
 	}
+	/*
+		A diagnostic room is watched, not played, so its minimap says what each dot IS rather than
+		how it relates to the viewer: entityColor() for everything, which gives every boss its own
+		diep colour, an uncaptured Dominator and the Arena Closer Color.Neutral, and every ordinary
+		tank its real team - including the godmode observer, who is otherwise the one dot on the
+		map that lies about which side it is on.
+	*/
+	mapDotColor(player) {
+		return this.entityColor(player);
+	}
 };
 
 module.exports = Tester;

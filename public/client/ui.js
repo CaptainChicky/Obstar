@@ -701,12 +701,23 @@
 									canDir: []
 								}
 							);
+							// The tile SPINS (getImage() below rotates this square about its own
+							// centre), so the sprite has to fit the clip box's inscribed CIRCLE,
+							// not just the box - a barrel parked in a corner at bake time sweeps
+							// straight out of frame a moment later. `pR` is the sprite's own
+							// furthest-reaching outline point measured from the visual centre the
+							// offsets below park at the tile centre, so `fit` is the largest scale
+							// that keeps every class whole. tankS stays the default: only a class
+							// that would otherwise clip (the trapper line, the long snipers) is
+							// scaled down at all, and only by as much as it takes.
+							const fit = Math.min(1 / tankS, (size / 2 - 1) / img.pR);
+							const dw = img.can.width * fit, dh = img.can.height * fit;
 							ctx.drawImage(
 								img.can,
-								size / 2 - img.can.width / 2 / tankS - img.mX / tankS,
-								size / 2 - img.can.height / 2 / tankS - img.mY / tankS,
-								img.can.width / tankS,
-								img.can.height / tankS
+								size / 2 - dw / 2 - img.pX * fit,
+								size / 2 - dh / 2 - img.pY * fit,
+								dw,
+								dh
 							);
 							ctx.restore();
 							ctx.translate(0, size + lw + 2);
@@ -950,23 +961,43 @@
 							canDir: []
 						}
 					);
-					can.width = img.can.width;
-					can.height = img.can.height;
+					if (!img || !img.can) { return can; }
+					const nameF = parseInt(20 * R);
+					ctx.font = '700 ' + nameF + 'px Catamaran';
+					const m = ctx.measureText(tank).width;
+					/*
+						Two separate reasons this canvas has to be sized rather than just inherited
+						from the sprite's own, both of which used to cut the panel off:
+
+						  * the sprite is drawn ROTATED about its visual centre, so what it needs is
+						    a disc of its own reach (`pR`) in every direction. Taking the sprite
+						    canvas's own square and spinning it inside itself loses everything past
+						    the inscribed circle - a flat 29% of the half-diagonal at this angle.
+						  * the class NAME underneath is wider than the tank for any long name
+						    (Necromancer, Auto Smasher), and it used to be written into the sprite
+						    canvas's own width and clipped at both ends. It also sat ON the tank,
+						    in the bottom band of the same square, instead of below it.
+					*/
+					const rad = img.pR + lw;
+					can.width = Math.ceil(Math.max(rad * 2, m + lw * 2));
+					can.height = Math.ceil(rad * 2 + nameF + lw * 2);
 					ctx.save();
-					ctx.translate(img.can.width / 2 - img.mX, img.can.height / 2 - img.mY);
+					ctx.translate(can.width / 2, rad);
 					ctx.rotate(-Math.PI / 8);
-					ctx.drawImage(img.can, -img.can.width / 2, -img.can.height / 2);
+					// Centre the sprite's VISUAL centre (hull centre + pX/pY) on the pivot, so a
+					// barrel-heavy class spins about the middle of its silhouette rather than about
+					// its hull and hanging off one side.
+					ctx.drawImage(img.can, -img.can.width / 2 - img.pX, -img.can.height / 2 - img.pY);
 					ctx.restore();
 					///
-					ctx.font = '700 ' + parseInt(20 * R) + 'px Catamaran';
-					const m = ctx.measureText(tank).width;
+					ctx.font = '700 ' + nameF + 'px Catamaran';
 					ctx.textBaseline = 'middle';
 					ctx.lineJoin = 'round';
 					ctx.lineWidth = 4;
 					ctx.fillStyle = fill;
 					ctx.strokeStyle = stroke;
-					ctx.strokeText(tank, img.can.width / 2 - m / 2, img.can.height - parseInt(20 * R) / 2);
-					ctx.fillText(tank, img.can.width / 2 - m / 2, img.can.height - parseInt(20 * R) / 2);
+					ctx.strokeText(tank, can.width / 2 - m / 2, rad * 2 + lw / 2 + nameF / 2);
+					ctx.fillText(tank, can.width / 2 - m / 2, rad * 2 + lw / 2 + nameF / 2);
 					return can;
 				};
 				function setEnter() {

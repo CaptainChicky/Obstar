@@ -1749,7 +1749,16 @@ class Room {
 	}
 	respawn(id, force = 0, bot = 0) {
 		const tank = this.INSTANCE.players.get(id);
-		if (!tank || (!force && !tank.destroy) || tank.dead > 1) return;
+		// `!tank.dead`, not `!tank.destroy || tank.dead > 1`. The old pair made a player wait out
+		// the whole death animation (`destroy` counting down from tick.DES) AND then
+		// config.DEAD_DELAY on top of it - and because the Enter that asks for a respawn is a
+		// one-shot keyup, an early press was simply dropped rather than queued, so it read as
+		// "Enter does nothing, press it again". `dead` and `destroy` are written at exactly the
+		// same moments (every site in entities/Player.js sets both), so testing `dead` alone is
+		// the same liveness question with none of the waiting: Enter now respawns you the instant
+		// you are dead. DEAD_DELAY still runs - it is what paces the death camera drifting toward
+		// your killer in step() - it just no longer gates this.
+		if (!tank || (!force && !tank.dead)) return;
 		///
 		const pos = this.spawnPoint(tank);
 		// respawnTeam(), not tank.team, so Tag can put you on your killer's side. Every other mode
@@ -2129,6 +2138,19 @@ class Room {
 		return (player.id.oId === viewerId) ? 0 : player.team;
 	}
 	/*
+		Colour of one minimap dot. The default is leaderColor()'s answer - you in your own colour,
+		everyone else by team - with one exception it has to make itself: a BOSS has no meaningful
+		team (they all sit on team 9), so it takes its own diep body colour from entityColor(),
+		which is what makes a Guardian read as pink and a Defender as coral on the minimap instead
+		of both being an indistinguishable gold dot.
+
+		A hook rather than an inline branch because rooms/Tester.js wants the whole thing to be
+		absolute - see its own override.
+	*/
+	mapDotColor(player, viewerId) {
+		return player.boss ? this.entityColor(player) : this.leaderColor(player, viewerId);
+	}
+	/*
 		The leaderboard's rows, as the wire's {xp, name, nameC, team} records. Ordinarily one row
 		per top-10 player, which is what `this.leader` is already sorted into by step().
 
@@ -2162,11 +2184,17 @@ class Room {
 		// fractions of the current map size (TYPE.UiUpdate.map, CODECS.unit), so they still land
 		// in the right place after this.map.width/height finish lerping toward a resize.
 		for (const i of this.INSTANCE.players.live()) {
-			if (i.destroy || i.boss) { continue; }
+			if (i.destroy) { continue; }
 			buff.map.push({
 				x: (i.x + this.map.width / 2) / this.map.width,
 				y: (i.y + this.map.height / 2) / this.map.height,
-				team: i.dev.color ? i.dev.color - 1 : this.leaderColor(i, id),
+				// A BOSS is on the minimap now (it used to be filtered out alongside destroyed
+				// tanks) and carries its own diep colour rather than a viewer-relative one, so an
+				// observer can see where the Guardian/Defender/Summoner/Fallen pair actually are.
+				// entityColor(), not leaderColor(): leaderColor answers "is this you", which is a
+				// question about a player, and it collapses every boss onto team 9's gold.
+				// `mapDotColor()` is the per-mode hook around the whole choice - see there.
+				team: i.dev.color ? i.dev.color - 1 : this.mapDotColor(i, id),
 				size: Math.min(255, Math.round(i.size)),
 				// A player is a round dot, not a rectangle - see TYPE.UiUpdate.map.
 				w: 0,
