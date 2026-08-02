@@ -285,7 +285,7 @@ The things in this codebase that are *not* obvious from reading the code around 
   similar) — treat as unreliable; `diepcustom`/`diepindepth` win every disagreement. See
   [plan.md](plan.md)'s header for the full exclusion list.
   What neither reference repo can help with is pure client feel — camera lag, health-bar hold
-  timing — see [MEASUREMENTS.md](MEASUREMENTS.md).
+  timing — see PENDING.md's "Needs a real browser session" list (measurement protocols included).
 
 ---
 

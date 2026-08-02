@@ -6,9 +6,33 @@ class tree.
 
 The codebase has been through a substantial refactor and cleanup pass (single entry point,
 Postgres instead of the old MySQL wiring, a real test suite, linting). It's still a
-work-in-progress game, not a finished product — see [PENDING.md](PENDING.md) for what's
-decided-but-not-built and what's untested, and [HANDOFF.md](HANDOFF.md) for the full
-architecture map and gotcha list.
+work-in-progress game, not a finished product — see [plan.md](plan.md) for the active
+diep-fidelity work plan, [PENDING.md](PENDING.md) for open decisions and what's untested, and
+[HANDOFF.md](HANDOFF.md) for the full architecture map and gotcha list.
+
+## Departures from diep (deliberate — a fidelity pass must not "fix" these)
+
+Everything else aims to match diep.io exactly (truth sources: `diepcustom/`, `diepindepth/`,
+non-fanon `diep_wiki/` pages). The following are ours on purpose:
+
+- **Custom tanks** — Cyclone, Submachine, Auto Hover, Fortress (stand-in stats, flagged in
+  PENDING.md). **Custom shapes** — `Bsqr`, `Btri`, and rarity tiers beyond Shiny.
+- **Custom systems** — bots, pets, coins/shop, accounts & achievements, the dev console, the
+  five-level base-drone orbit AI, tank-vs-tank positional overlap resolution.
+- **Muted shape palette** (+ alpha square/triangle variants) instead of diep's saturated
+  primaries; Crasher pink chosen to sit apart from Triangle rose.
+- **Base drone energy levels** — quantised five-ring orbit system instead of diep's single ring.
+- **Engine choices** — 25 ms tick sampling against diep's 40 ms reference (`lib/tick.js`
+  converts); viewport-fit FOV instead of resolution-dependent fixed px/du.
+- **Square/Triangle corner nests** layered on top of diep's Pentagon Nest / Crasher Zone;
+  nests/zones are circles, not diep's squares.
+- **Shape respawn closes 85% of the gap** to diep's instant refill (`RESPAWN_CATCHUP`), so
+  farming visibly thins a patch.
+- **Guard collision is one enlarged circle** (`guardSize`), not a separate physics child.
+- **Shape edge-avoidance clamps to the target angle** instead of diep's occasionally-overshooting
+  fixed-sign turn.
+- **Tag mode details** — `INVIS_FLOOR` (stealth never fully vanishes), 4 Arena Closers instead
+  of "up to 16".
 
 ## Running it
 ```bash
