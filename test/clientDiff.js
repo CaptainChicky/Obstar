@@ -89,12 +89,13 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// Rebaselined for plan.md Part A (A1-A5): the pre-body/post-body z-order split (ring turrets,
-// Dominator `aboveBody` cannons), the trapezoid taper ratio/direction fix (Drawings.cannons[2]),
-// real trapLauncher geometry (Trapper line + Trapper Dominator), Ranger's `pronounced` postAddon
-// replacing its fake second cannon, and Machine Gun/Necromancer/Overseer/Overlord/Manager/Fallen
-// Overlord moving from a type-0 `open` flare fake onto real type-2 trapezoids.
-const GOLDEN = { count: 309623, hash: '0c1d9595' };
+// Rebaselined for plan.md Part B/C0 (execution-order step 5): Sprayer rebuilt from a 5-barrel
+// Streamliner fake to diep's real 2-barrel layout (fewer canvas ops), Spread Shot's centre
+// barrel moved to the end of its own draw order (Part B), Battleship's rear pair converted from
+// type-0 fake-flare cannons to real type-2 trapezoids, plus Triple Shot/Penta Shot's angle
+// corrections - none of C0's own damage/pene/speed/back/rand column fixes touch drawing, only
+// these geometry-shaped changes do.
+const GOLDEN = { count: 297158, hash: 'fe719ff9' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

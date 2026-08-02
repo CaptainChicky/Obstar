@@ -290,6 +290,70 @@ function diepCitations() {
 }
 
 /*
+	plan.md C0/F2 - the server bullet-stat identities (damage = 7 x bullet.damage, pene = 2 x
+	bullet.health, speed = 1.12 x bullet.speed, back = recoil x 2.8, rand = scatterRate x
+	0.174533), anchored per barrel against diepcustom/TankDefinitions.json directly for every
+	diep-native class with a real barrel list there - the same "outside the tree" reasoning as
+	diepCitations() above, generalised from geometry to the combat-facing columns C0's generator
+	regenerated. `reload`/`life` are deliberately NOT checked here: both are intentionally
+	Math.round()ed to a whole tick (PENDING.md #2 and the tick-count requirement respectively),
+	so a literal identity comparison would fail on the rounding itself, not a real bug. Compared
+	as sorted multisets per class (not by index) for the same reason diepCitations() is: a
+	legitimate reordering (Spread Shot's centre-last convention) must not read as a mismatch.
+*/
+const STAT_TOL = 0.01;
+const RAND_K = 0.174533;   // 10deg in rad - Barrel.ts's scatterAngle range, see TanksConfig.js's own header comment
+const DIEP_STAT_CITED = [
+	{ class: 'Basic', diepId: 0 }, { class: 'Twin', diepId: 1 }, { class: 'Machine Gun', diepId: 7 },
+	{ class: 'Sniper', diepId: 6 }, { class: 'Flank Guard', diepId: 8 }, { class: 'Triple Shot', diepId: 3 },
+	{ class: 'Twin Flank', diepId: 13 }, { class: 'Quad Tank', diepId: 4 }, { class: 'Destroyer', diepId: 10 },
+	{ class: 'Assassin', diepId: 15 }, { class: 'Overseer', diepId: 11 }, { class: 'Triangle', diepId: 9 },
+	{ class: 'Trapper', diepId: 31 }, { class: 'Hybrid', diepId: 25 }, { class: 'Annihilator', diepId: 49 },
+	{ class: 'Sprayer', diepId: 29 }, { class: 'Ranger', diepId: 22 }, { class: 'Triplet', diepId: 2 },
+	{ class: 'Triple Twin', diepId: 18 }, { class: 'Penta Shot', diepId: 14 }, { class: 'Octo Tank', diepId: 5 },
+	{ class: 'Booster', diepId: 23 }, { class: 'Fighter', diepId: 24 }, { class: 'Overlord', diepId: 12 },
+	{ class: 'Manager', diepId: 26 }, { class: 'BattleShip', diepId: 48 }, { class: 'Mega Trapper', diepId: 34 },
+	{ class: 'Overtrapper', diepId: 33 }, { class: 'Auto Trapper', diepId: 44 }, { class: 'Gunner', diepId: 20 },
+	{ class: 'Auto Gunner', diepId: 39 },
+	// Auto Smasher/Auto 3/Auto 5 all cite an empty `barrels: []` (their fire comes entirely from
+	// the postAddon's own AutoTurret(Mini)Definition, not a per-class barrel) - included so a
+	// future barrel actually appearing there gets checked, not to assert anything today.
+	{ class: 'Auto Smasher', diepId: 50 }, { class: 'Auto 3', diepId: 41 }, { class: 'Auto 5', diepId: 40 },
+	// The rest of DIEP_CITED minus Arena Closer/the 3 Dominators: those four are boss-scale
+	// entities whose class-table stats are baked at their own (non-zero, non-standard) effective
+	// stat level rather than diep's raw 0-point barrel identity - plan.md Part E's job, not C0's.
+	...DIEP_CITED.filter(({ class: name }) => !['Arena Closer', 'Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'].includes(name)),
+];
+
+function diepBulletStats() {
+	console.log('\ndiep bullet-stat identity check (damage/pene/speed/back/rand, plan.md C0):');
+	for (const { class: name, diepId } of DIEP_STAT_CITED) {
+		const s = server.class[name];
+		const barrels = diepTank(diepId).barrels;
+		if (!barrels.length) { continue; }
+		const serverCannons = s.cannons.slice(s.cannons.length - barrels.length);
+		if (serverCannons.length !== barrels.length) {
+			check(name + ': server cannon count allows a diep bullet-stat comparison',
+				false, serverCannons.length + ' vs ' + barrels.length);
+			continue;
+		}
+		const cols = [
+			['damage', sc => sc.damage, b => 7 * b.bullet.damage],
+			['pene', sc => sc.pene, b => 2 * b.bullet.health],
+			['speed', sc => sc.speed, b => 1.12 * b.bullet.speed],
+			['back', sc => sc.back, b => b.recoil * 2.8],
+			['rand', sc => sc.rand, b => RAND_K * b.bullet.scatterRate],
+		];
+		for (const [label, getServer, getDiep] of cols) {
+			const got = serverCannons.map(getServer);
+			const want = barrels.map(getDiep);
+			const r = sortedNear(got, want, STAT_TOL);
+			check(name + ': server ' + label + ' agrees with diep\'s identity', r.ok, r.detail);
+		}
+	}
+}
+
+/*
 	plan.md R10 item 2 - R8's bug (Defender's turret `distance` present server-side, absent
 	client-side, so bullets spawned 33.6 units off the drawn barrel), generalised: every
 	position-affecting field a cannon carries on one side must carry the same value on the
@@ -334,6 +398,7 @@ order(names);
 distances(names);
 bulletTypes(names);
 diepCitations();
+diepBulletStats();
 
 // count/order entries report their own staleness here; geom entries already did it inline above
 // (they need the recomputed comparison, not just "was this looked up").
