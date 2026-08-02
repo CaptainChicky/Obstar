@@ -7,6 +7,7 @@
 */
 const Vec = require('victor');
 const tick = require('../lib/tick.js');
+const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 // NOT public/SHARE/Physics.js's tank FRICTION - see lib/constants.js. A shape is not a steered
 // tank, so it keeps the hand-tuned drag rather than diep's derived tank 10/11.
@@ -52,6 +53,13 @@ const EDGE_TURN_TIMEOUT = tick.ticks(300);
 // The angle within which a turn is considered "arrived" and released back to ordinary idle drift -
 // diep's own 0.20 rad (AbstractShape.ts:83,119).
 const EDGE_TURN_DONE = 0.20;
+// diep's shapes have NO regen at all (`regenPerTick` stays 0, AbstractShape.ts) - this engine
+// keeps a slow self-heal as a deliberate departure instead (plan.md C14, a user decision; the
+// client's own health-bar fade already existed and needed no change - only the heal itself was
+// missing). Full recovery from 0 in 1500 reference ticks (60s) - a feel knob, not a diep number,
+// picked slow enough that farming a patch still visibly thins it (README's own RESPAWN_CATCHUP
+// departure already makes that promise) while a shape left alone for a while is whole again.
+const SHAPE_REGEN_TICKS = 1500;
 
 class Objects {
 	constructor(type, pos, id, map, room) {
@@ -311,6 +319,13 @@ class Objects {
 			this.size *= tick.drag(1.1);   // diep's own DeletionAnimation.scale(1.1), Object.ts (plan.md C1)
 			return;
 		}
+		// Slow self-heal (plan.md C14, SHAPE_REGEN_TICKS's own comment) - unconditional, not
+		// gated behind a no-damage delay the way a tank's regen is: diep gives shapes no regen at
+		// all, so there is no diep timing to be faithful to here, and the simpler always-on shape
+		// is what the departure decision asked to keep.
+		if (this.hp < this.maxHp) {
+			this.hp = Math.min(this.maxHp, this.hp + tick.perTick(this.maxHp / SHAPE_REGEN_TICKS));
+		}
 		// A live Crasher target (plan.md S1) - room.js's broad-phase pass already ran this tick, so
 		// this.DETEC.select is fresh. Chasing replaces the idle orbit-drift/limit() pair below with a
 		// real accel run through the tank-style decay-then-add recurrence (CRASHER_CHASE_ACCEL_* above)
@@ -397,20 +412,27 @@ class Objects {
 			this.DETEC.y = this.y;
 		}
 
-		if (this.x < -this.map.width / 2) {
-			this.x = -this.map.width / 2;
+		// A chasing Crasher gets the same config.OOB_MARGIN allowance a tank's own motion()/a
+		// chasing base drone already get (plan.md C12 - diepcustom's Crasher.ts:44
+		// `canMoveThroughWalls` while it has a target) - it can follow a target out into the
+		// dark-grey band and hit them there, then drifts back home and re-clamps at the drawn
+		// edge the instant it goes idle again. Every other shape (`target` always null - only a
+		// Crasher's DETEC ever selects a KIND.PLAYER target) keeps the old hard clamp exactly.
+		const margin = target ? config.OOB_MARGIN : 0;
+		if (this.x < -this.map.width / 2 - margin) {
+			this.x = -this.map.width / 2 - margin;
 			this.vec.x = 0;
 		};
-		if (this.y < -this.map.height / 2) {
-			this.y = -this.map.height / 2;
+		if (this.y < -this.map.height / 2 - margin) {
+			this.y = -this.map.height / 2 - margin;
 			this.vec.y = 0;
 		};
-		if (this.x > this.map.width / 2) {
-			this.x = this.map.width / 2;
+		if (this.x > this.map.width / 2 + margin) {
+			this.x = this.map.width / 2 + margin;
 			this.vec.x = 0;
 		};
-		if (this.y > this.map.height / 2) {
-			this.y = this.map.height / 2;
+		if (this.y > this.map.height / 2 + margin) {
+			this.y = this.map.height / 2 + margin;
 			this.vec.y = 0;
 		};
 	}

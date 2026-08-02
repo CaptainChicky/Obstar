@@ -54,6 +54,15 @@ const BULLET_MAINTAIN = require('../lib/constants.js').BULLET_MAINTAIN;
 // motion - PENDING #21 retunes both together or neither.
 const SPIN_RATE = 0.04;
 
+// diep's own flat per-hit invisibility reveal (TankDefinitions.ts's `visibilityRateDamage`,
+// plan.md C8) - a single global constant, not a per-class rate like `stealth.decay/moving/
+// shooting`: TankBody.ts's receiveDamage() adds this once per tick real damage landed (guarded
+// there by `game.tick !== lastDamageTick`, i.e. at most once per tick no matter how many hits),
+// same category as those other stealth rates so it goes through tick.perTick() too. Replaces the
+// old `(oldHp-hp)/maxHp*5` guess, which scaled with the fraction of max HP lost instead of being
+// flat, and had no diep citation behind it.
+const VISIBILITY_RATE_DAMAGE = 0.2;
+
 /*
 	plan.md R9 - Auto 3/Auto 5's turret ring. diepcustom Addons.ts's createAutoTurrets:
 
@@ -211,7 +220,13 @@ class Player {
 			this.state = {
 				"disconnect": 0,
 			};
-		this.shield = tick.ticks(4950);   // 4950 = 6000 one-time-rescaled from the 33ms reference
+		// Spawn protection (plan.md C15, diepcustom TankBody.ts:95,357): `isFlashing` +
+		// damage immunity until first move/shoot, or a hard cap - diep's own cap is 374
+		// reference ticks (~15s). This flag/countdown/clear-on-move/clear-on-shoot/damage-immunity
+		// machinery already existed (an old pre-fidelity-pass ad-hoc "newbie protection" feature,
+		// `this.shield = 6000` at the original 33ms reference - a ~198s cap with no diep citation
+		// behind it) - only the duration itself needed converging onto diep's real number.
+		this.shield = tick.ticks(374);
 		this.inputs = {
 			"mouse_x": 0,
 			"mouse_y": 0,
@@ -241,6 +256,20 @@ class Player {
 		this.dir = 0;
 		this.canDir = [];
 		this.timer = 0;
+		// Predator zoom (plan.md C9) - `zooming`/`zoomX`/`zoomY` are the locked camera point
+		// while a zoomAbility class holds right-click; see the flag's own update() site.
+		this.zooming = 0;
+		this.zoomX = 0;
+		this.zoomY = 0;
+		// H-key piloting (plan.md E4) - the Dominator/Mothership Player instance this tank is
+		// currently driving, or null. `pilotedBy` is the reverse pointer (meaningful only on a
+		// Dominator/Mothership instance): the human Player currently driving THIS one, or null.
+		// `possessionStartTick`/`possessionWarned` are Mothership's own 5-minute clock (plan.md
+		// E3) - Dominator possession has no timer, so they simply never get read for one.
+		this.piloting = null;
+		this.pilotedBy = null;
+		this.possessionStartTick = -1;
+		this.possessionWarned = false;
 		///
 		this.size = 25;
 		this.guardSize = 25;
@@ -254,6 +283,14 @@ class Player {
 		// `can.damage` carries; the two happen to share diep's raw scale now (D1/D5) but are
 		// otherwise independent numbers.
 		this.damage = 5;
+		// diep's `absorbtionFactor` (Object.ts:280, `kb = absorbtionFactor * pushFactor`) - a
+		// multiplier on every knockback impulse this entity RECEIVES, 1 for an ordinary tank.
+		// Dominators keep their own separate `!this.dominator` gate (0 knockback, a documented
+		// binary case predating this field); a boss sets this to 0.05 (plan.md Part D's shared
+		// AbstractBoss scaffolding - "nearly immovable but not fixed", not literally 0) and the
+		// Mothership to 0.01 (plan.md E3) at their own spawn sites, rooms/Room.js's
+		// createBoss()/createDominator() and rooms/Mothership.js's createMothership().
+		this.absorb = 1;
 		this.murder = -1;
 		this.up = {
 			"MSpeed": 0, //0
@@ -338,6 +375,13 @@ class Player {
 		if (this.state.disconnect) {
 			return;
 		}
+		// diep's own per-tick reveal-while-shooting (TankBody.ts:347-355, plan.md C8):
+		// `inputs.flags & leftclick` is checked once every tick the fire input is HELD, regardless
+		// of whether a bullet actually reloads/launches that tick - not once per shot event, which
+		// is what the per-cannon `offTime` gate further down used to tie this to.
+		if (CLASS[this.class].stealth && this.alpha < 1 && !this.dev.invisible && (this.inputs.e || this.inputs.mouseL)) {
+			this.alpha = Math.min(1, this.alpha + tick.perTick(CLASS[this.class].stealth.shooting));
+		}
 		for (let r = 0; r < CLASS[this.class].cannons.length; r++) {
 			if (typeof this.shootTimer[r] === 'undefined') { this.shootTimer[r] = 0; }
 			const can = CLASS[this.class].cannons[r];
@@ -413,10 +457,6 @@ class Player {
 				}
 				///
 				if (reload === Math.floor(can.offTime * reloadMax)) {
-					///
-					if (this.alpha < 1 && !this.dev.invisible) {
-						this.alpha += Math.min(1, tick.perTick(CLASS[this.class].stealth.shooting));
-					}
 					///
 					const dir = can.autoDir ? autoDir : this.dir + can.offdir;
 					const offx = can.offx * ra;
@@ -762,8 +802,10 @@ class Player {
 					// the tank F = 10/11, and 1.6 x 2.8 x 10 / 28 = 1.6 gu.
 					// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody. The
 					// hp drain below stays perTick(): it is genuine per-tick-of-contact damage, not a
-					// one-shot impulse.
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(4.48), tick.impulse(4.48))));
+					// one-shot impulse. `* this.absorb` (plan.md Part D) scales it down for a boss/
+					// Mothership (0.05/0.01) - 1 for an ordinary tank, so this is a no-op there.
+					const tankKb = tick.impulse(4.48) * this.absorb;
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tankKb, tankKb)));
 					// Positional overlap resolution, on top of the velocity impulse rather than instead
 					// of it. The impulse alone cannot separate two tanks inside a normal contact window -
 					// it lands in `vec` and is then decayed by stepBody over many ticks, during which the
@@ -825,8 +867,11 @@ class Player {
 				const len = (this.vec.length() < 0.5) ? 2.92538 : .73134;   // one-time-rescaled from 2 / .5 (stepBody factor)
 				// tick.impulse(), not tick.perTick() - see the `back` comment above and PENDING #43.
 				// (The 0.5 threshold above this.vec.length() is a separate, correctly-unwrapped read
-				// of this.vec's own magnitude - untouched.)
-				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(len), tick.impulse(len))));
+				// of this.vec's own magnitude - untouched.) `* this.absorb` (plan.md Part D) - this arm
+				// had no Dominator/boss guard at all before absorb existed, so a Dominator used to
+				// take full shape knockback despite its own diep absorbtionFactor being 0.
+				const shapeKb = tick.impulse(len) * this.absorb;
+				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(shapeKb, shapeKb)));
 				if (this.necro && other.type === 'sqr' && this.droneCount < CLASS[this.class].maxDrone + this.upNb[1]) {
 					this.droneCount++;
 					const Bull = new Bullet(this.id, other.x, other.y, Math.random() * Math.PI * 2, this.up.BSpeed * this.necro.speed, 0, this.room);
@@ -886,7 +931,8 @@ class Player {
 						? other.weight * 0.16 * (7 / 3 + other.bdPoints)
 						: other.weight / 3 * 1.6;
 					// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody.
-					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(pushBase), tick.impulse(pushBase))));
+					const bulletKb = tick.impulse(pushBase) * this.absorb;   // `* this.absorb`, plan.md Part D
+					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(bulletKb, bulletKb)));
 				}
 				if (this.shield) { return; }
 				// `pene` no longer multiplies damage here (PENDING #18): entities/Bullet.js's own
@@ -942,8 +988,10 @@ class Player {
 				break;
 			}
 		}
-		if (this.alpha < 1 && !this.dev.invisible) {
-			this.alpha = Math.min(1, this.alpha + (oldHp - this.hp) / this.maxHp * 5)
+		// Only on actual damage this collision (oldHp > this.hp), not every collision() call
+		// regardless of outcome (e.g. a WALL contact never touches hp) - see VISIBILITY_RATE_DAMAGE.
+		if (this.alpha < 1 && !this.dev.invisible && oldHp > this.hp) {
+			this.alpha = Math.min(1, this.alpha + tick.perTick(VISIBILITY_RATE_DAMAGE));
 		}
 		// Who most recently landed a hit - inert for every ordinary Player, the one consumer
 		// being a Dominator's own update() (lib/gameAI.js, PENDING #27), which drops a target
@@ -989,6 +1037,30 @@ class Player {
 			this.size *= tick.drag(1.1);   // diep's own DeletionAnimation.scale(1.1), Object.ts (plan.md C1)
 			this.screen = config.FOV_MUL * 2194;
 			return;
+		} else if (this.piloting) {
+			/*
+				H-key piloting (plan.md E4, diepcustom TankBody.ts:324-336's `inputs.deleted`
+				branch): while `this.piloting` (the Dominator/Mothership this tank is currently
+				driving, rooms/Room.js's togglePossession()) is set, this vacated tank takes no
+				input, gets no regen, and just bleeds - `2 + maxHp/500` HP per reference tick,
+				diep's own flat rate, until it dies or the pilot releases (H again). diep's own
+				anti-exploit floor: level <=5 dies outright rather than slowly bleeding, so a
+				fresh spawn can't grab a Dominator/Mothership risk-free. No `this.motion()`/
+				`this.shoot()` this tick either way - this IS "your inputs are deleted".
+			*/
+			if (this.level <= 5) {
+				this.hp = 0;
+			} else {
+				this.hp -= tick.perTick(2 + this.maxHp / 500);
+			}
+			if (this.hp <= 0) {
+				this.hp = 0;
+				this.dead = 1;
+				this.destroy = tick.DES;
+				this.murder = -1;
+				this.room.releasePossession(this);
+			}
+			return;
 		} else {
 			if (this.hp <= 0) {
 				this.destroy = tick.DES;
@@ -1032,6 +1104,26 @@ class Player {
 			// forbids a stealth class from ever fully vanishing so a win condition can't stall.
 			this.alpha = Math.max(this.room.rules.invisFloor, this.alpha - tick.perTick(CLASS[this.class].stealth.decay));
 		} else if (!this.dev.invisible) { this.alpha = 1 }
+		/*
+			Predator zoom (plan.md C9, diepcustom TankBody.ts:338-345's `usesCameraCoords`): while
+			right-click is held, the camera locks to a point 1500 du (840 units, this file's own
+			du->unit axis) out along the mouse direction, computed ONCE at the moment right-click
+			is first pressed - diep's own gate is `if (!(flags & usesCameraCoords))`, i.e. it does
+			NOT keep re-aiming the lock point while held, only latches it once and releases on
+			mouse-up. Gated on the class's own `flags.zoomAbility` (Predator; data-recorded since
+			plan.md T-series, wired here for the first time) so Overseer's unrelated existing
+			right-click drone-repel input (`this.inputs.mouseR`, entities/Bullet.js's case 1.1/1.3)
+			is untouched - that class has no `flags.zoomAbility`, so this block never triggers for it.
+		*/
+		if (CLASS[this.class].flags && CLASS[this.class].flags.zoomAbility && this.inputs.mouseR) {
+			if (!this.zooming) {
+				this.zooming = 1;
+				this.zoomX = this.x + Math.cos(this.dir) * 840;
+				this.zoomY = this.y + Math.sin(this.dir) * 840;
+			}
+		} else if (this.zooming) {
+			this.zooming = 0;
+		}
 		this.motion();
 		if (this.inputs.c) {
 			if (!this.spinning) {

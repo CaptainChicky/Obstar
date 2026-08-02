@@ -63,6 +63,16 @@
 			// update, which snaps instead of chasing from a fake (0,0) origin. See User.update().
 			this.camx = null;
 			this.camy = null;
+			// Predator zoom (plan.md C9) - `zooming` is the server's own states[4] bit; `zoomOffX/Y`
+			// is a SEPARATE eased offset from the tank's own camera position out to the server's
+			// locked point (Game.camX/Y), added on top at the render site rather than folded into
+			// camx/camy's own teleport-guarded chase above - a zoom engaging/releasing is a
+			// deliberate large excursion, not a teleport, and keeping it additive means it can
+			// never trip camx/camy's teleport-snap (Interp.TELEPORT) or change that logic's
+			// behaviour for anyone not holding a zoomAbility class's right-click.
+			this.zooming = 0;
+			this.zoomOffX = 0;
+			this.zoomOffY = 0;
 			this.dx = 0;
 			this.dy = 0;
 			this.tween = new Interp(0, 0);
@@ -303,6 +313,15 @@
 					this.camx += (this.gx - this.camx) * camK;
 					this.camy += (this.gy - this.camy) * camK;
 				}
+				// Predator zoom (plan.md C9) - eased independently of camx/camy above (see this.zooming's
+				// own declaration for why), toward Game.camX/Y's offset from the tank while `zooming`
+				// is on, back to (0,0) the instant it isn't. Same smoothing constant as the ordinary
+				// camera chase, so a zoom engaging/releasing reads as the same kind of motion.
+				const zoomTargetX = (this.zooming && !isNaN(Game.camX)) ? Game.camX - this.gx : 0;
+				const zoomTargetY = (this.zooming && !isNaN(Game.camY)) ? Game.camY - this.gy : 0;
+				const zoomK = General['lerpK'](CONST.CAM_SMOOTH);
+				this.zoomOffX += (zoomTargetX - this.zoomOffX) * zoomK;
+				this.zoomOffY += (zoomTargetY - this.zoomOffY) * zoomK;
 			};
 			this.draw = function () {
 				ctx.translate(this.dx + this.predic.x, this.dy + this.predic.y)
@@ -340,10 +359,13 @@
 		// The tank's screen position relative to the true centre, in window pixels (the space
 		// Global.mouse_x/y and winW/winH live in) - zero when the camera has caught up, growing
 		// with speed as CONST.CAM_SMOOTH's lag falls behind. Anything that used to assume "the
-		// tank is at the screen centre" has to subtract this instead.
+		// tank is at the screen centre" has to subtract this instead. `zoomOffX/Y` (plan.md C9)
+		// is folded in too - the tank keeps drawing at gx/gy regardless of a Predator zoom lock,
+		// so its offset from the (now possibly panned-out) screen centre has to account for that
+		// pan, or aiming while zoomed would read the mouse against the wrong on-screen position.
 		General['tankOff'] = () => ({
-			x: (User.gx - User.camx) * Global.RATIO / CONST.RESOLUTION,
-			y: (User.gy - User.camy) * Global.RATIO / CONST.RESOLUTION
+			x: (User.gx - User.camx - User.zoomOffX) * Global.RATIO / CONST.RESOLUTION,
+			y: (User.gy - User.camy - User.zoomOffY) * Global.RATIO / CONST.RESOLUTION
 		});
 		///
 		General['Interact'] = {
@@ -432,6 +454,9 @@
 					// what gates them to a sandbox room.
 					case '\\':
 					case ';':
+					// H-key piloting (plan.md E4) - claim/release the nearest same-team
+					// claimable AI. Not sandbox-only; net/gameSocket.js handles it in any mode.
+					case 'h':
 					case 'arrowup':
 					case 'arrowdown':
 					case 'arrowleft':
@@ -545,9 +570,12 @@
 			///
 			ctx.setTransform(1, 0, 0, 1, 0, 0);
 			ctx.clearRect(0, 0, Global.canW, Global.canH);
-			General['background'](User.camx, User.camy, World.GU);
+			// Predator zoom (plan.md C9): the actual render centre is the ordinary tank-trailing
+			// camera plus the eased zoom offset (0,0 whenever not zooming, see User.zoomOffX/Y).
+			const viewX = User.camx + User.zoomOffX, viewY = User.camy + User.zoomOffY;
+			General['background'](viewX, viewY, World.GU);
 			///
-			const sx = -User.camx * Global.RATIO + (Global.canW / 2), sy = -User.camy * Global.RATIO + (Global.canH / 2);
+			const sx = -viewX * Global.RATIO + (Global.canW / 2), sy = -viewY * Global.RATIO + (Global.canH / 2);
 			for (const c in Instances) {
 				for (const i in Instances[c]) {
 					///
@@ -694,6 +722,15 @@
 			}
 			/// DELETE OLD DATA ///
 			for (const category in Instances) {
+				// A wall never moves and is never destroyed server-side (entities/Wall.js: "never
+				// tombstoned - permanent geometry") - it only drops out of a given packet because
+				// the per-viewer buffer is view-distance-limited, not because it stopped existing
+				// (plan.md C13). Keeping it drawn from the last packet that DID include it is what
+				// "last-known walls until told otherwise" means; deleting it here the instant one
+				// packet omits it is what made a wall flicker in and out at the very culling
+				// boundary the buffer margin (rooms/Room.js's per-viewer `rest` query) exists to
+				// avoid.
+				if (category === 'Walls') { continue; }
 				for (const id in Instances[category]) {
 					if (typeof (data.Instances[category][id]) === 'undefined') {
 						delete Instances[category][id];
@@ -725,6 +762,11 @@
 			Game.arenaState = data.head.arenaState;
 			Game.ticksUntilStart = data.head.ticksUntilStart;
 			Game.playersNeeded = data.head.playersNeeded;
+			// Predator zoom (plan.md C9) - the world point the server wants the viewport centred
+			// on this tick; read every packet, but only actually used by User.update()'s own
+			// camera-target blend while User.zooming (states[4], below) says the lock is live.
+			Game.camX = data.head.camX;
+			Game.camY = data.head.camY;
 			if (General['Ui']) {
 				General['Ui'].xp = data.head.xp;
 				General['Ui'].still = data.head.still;
@@ -750,6 +792,9 @@
 							}
 							///
 							User.shield = data.User[param][3];
+							// Predator zoom (plan.md C9) - see states[4]'s own comment in
+							// rooms/Room.js's getBuffer().
+							User.zooming = data.User[param][4];
 							break;
 						};
 						case 'recoil': {

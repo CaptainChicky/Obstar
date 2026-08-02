@@ -163,7 +163,7 @@ class FourTeam extends Room {
 		};
 	}
 	entityColor(player) {
-		return player.team;
+		return player.boss ? Room.bossColor(player) : player.team;
 	}
 	mainColor(player) {
 		return player.team;

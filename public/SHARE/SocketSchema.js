@@ -192,7 +192,17 @@
 				// (COUNTDOWN -1, OPEN 0, OVER 1, CLOSING 2, CLOSED 3), hence int8, not uint8.
 				'arenaState': 'int8',
 				'ticksUntilStart': 'uint16',
-				'playersNeeded': 'uint8'
+				'playersNeeded': 'uint8',
+				// Predator zoom (plan.md C9, diepcustom TankBody.ts:338-345's `usesCameraCoords`):
+				// the world point the viewport should actually be centred on this tick - equal to
+				// the viewer's own x/y whenever they are not holding a zoomAbility lock (states[4]
+				// on the `main`/`Players` record carries whether that lock is currently active),
+				// so an unzoomed client can ignore this entirely and keep tracking its own tank the
+				// way it always has. Sent every tick rather than only while zoomed, same reasoning
+				// as baseSize being 0 in a mode with no bases - one shape, no client-side branch on
+				// whether the field is meaningful this tick.
+				'camX': 'float32',
+				'camY': 'float32'
 			},
 			///////////
 			'CONSTRUCTOR': 'uint8',
@@ -323,6 +333,8 @@
 				'arenaState',
 				'ticksUntilStart',
 				'playersNeeded',
+				'camX',
+				'camY',
 			],
 			///////////
 			'Players': [
@@ -449,7 +461,16 @@
 			'white',
 			'black',
 			'lila',
-			'necro'
+			'necro',
+			// Real per-boss diep colours (plan.md Part D), appended rather than inserted so no
+			// existing index shifts: 'bull' is already Color.EnemyCrasher's own hex (Guardian),
+			// 'coral'/'square'/'fallen' are new Palette entries for Color.EnemyTriangle (Defender)/
+			// Color.EnemySquare (Summoner)/Color.Fallen (Fallen Overlord/Fallen Booster) -
+			// rooms/Room.js's entityColor() is what actually picks one per boss class.
+			'bull',
+			'coral',
+			'square',
+			'fallen'
 		],
 		'reason': [
 			'ERR_GAMEMODE',
@@ -484,7 +505,11 @@
 			// take-no-contact-damage god mode entities/Player.js's collision() already had a
 			// dead branch for. Both gated sandbox-only in net/gameSocket.js, same as 'k'/'o'.
 			'classcycle',
-			'god'
+			'god',
+			// H-key piloting (plan.md E4) - claim/release the nearest same-team claimable AI
+			// (a captured Dominator, or your own team's Mothership). Not sandbox-gated: diep's
+			// own possess() works in any mode with a claimable AI nearby.
+			'h'
 		],
 		'xpExt': [
 			'',
@@ -572,7 +597,8 @@
 			// to the same short server-side names ('classcycle'/'god') toSTRING.key above uses -
 			// the same long-name/short-name split the arrow keys already have.
 			'\\': 15,
-			';': 16
+			';': 16,
+			'h': 17
 		}
 	};
 	///

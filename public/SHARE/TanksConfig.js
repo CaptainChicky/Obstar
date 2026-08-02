@@ -1395,42 +1395,44 @@
 				}
 			},
 			///boss
-			// height 44 draws the barrel a little SHORT of the server's spawn radius
-			// (canonLength: 50 * .93 = 46.5) instead of a little past it like every other class -
-			// left alone on purpose. See PENDING.md's boss balance-call item: the server's 50 is a
-			// floor (a boss's body radius is 64 - rooms/Room.js - and shortening it draws drones
-			// spawning inside their own boss), so closing the gap means growing the drawn barrel
-			// instead, which is a visible silhouette change on a boss and a human call, not a sync.
+			// SummonerSpawnerDefinition (Summoner.ts:29-54, plan.md Part D): size 135, width
+			// 71.4, and Summoner's own sizeFactor override denominates both against its OWN base
+			// size (35/150) rather than the ordinary 35/50 - height 135x35/150=31.5 (equal to the
+			// server's own canonLength, the same "client height === server canonLength" pattern
+			// Guardian's own spawner barrel uses just below), width 71.4x35/150=16.66. Used to be
+			// a flat 44/20 stand-in that undershot the server's THEN-current canonLength (a since-
+			// fixed 50) by enough to need a test/tanks.js whitelist entry - both sides converge on
+			// the real definition now, so that whitelist entry is gone too.
 			Summoner: {
 				cannons: [
 					{
 						type: 0,
-						height: 44,
-						width: 20,
+						height: 31.5,
+						width: 16.66,
 						offx: 0,
 						offdir: 0,
 						open: 28,
 					},
 					{
 						type: 0,
-						height: 44,
-						width: 20,
+						height: 31.5,
+						width: 16.66,
 						offx: 0,
 						offdir: Math.PI / 2,
 						open: 28
 					},
 					{
 						type: 0,
-						height: 44,
-						width: 20,
+						height: 31.5,
+						width: 16.66,
 						offx: 0,
 						offdir: Math.PI,
 						open: 28
 					},
 					{
 						type: 0,
-						height: 44,
-						width: 20,
+						height: 31.5,
+						width: 16.66,
 						offx: 0,
 						offdir: -Math.PI / 2,
 						open: 28
@@ -1441,10 +1443,11 @@
 					sides: 4   // TankDefinitions.json/Summoner.ts: sides 4 (plan.md R6)
 				}
 			},
-			// The four real diep bosses (plan.md X1). Guardian/Defender now draw their real
-			// triangle body (shape 3, `body.sides`, plan.md R6) - Fallen Overlord/Fallen
-			// Booster's own tank-shaped body is still the rounded-rect stand-in (PENDING #51's
-			// note), out of this pass's scope.
+			// The four real diep bosses (plan.md X1). Guardian/Defender draw their real triangle
+			// body (shape 3, `body.sides`, plan.md R6); Fallen Overlord/Fallen Booster draw their
+			// real body too now (plan.md Part D) - a plain circle (shape 0), the same body every
+			// ordinary diep tank (including the Overlord/Booster classes these two are scaled
+			// copies of) already has, not the rounded-rect stand-in PENDING #51 flagged.
 			"Guardian": {
 				// One oversized backward-facing drone-spawner barrel (diepcustom
 				// GuardianSpawnerDefinition, angle PI) - drawn like Summoner's own spawner
@@ -1486,7 +1489,7 @@
 				cannons: [0, 1, 2, 3].map(i => ({
 					type: 2, height: 49, width: 29.4, offx: 0, offdir: Math.PI * i / 2, open: 0, trapezoidDirection: false
 				})),
-				body: { shape: 1, width: 1, height: 1 }
+				body: { shape: 0 }
 			},
 			// Reuses Booster's own 5-barrel geometry verbatim (diepcustom FallenBooster.ts
 			// iterates TankDefinitions[Tank.Booster].barrels directly) - same reasoning as Fallen
@@ -1501,7 +1504,7 @@
 					{ type: 0, height: 56, width: 29.4, offx: -5, offdir: -Math.PI - .35, open: 0 },
 					{ type: 0, height: 56, width: 29.4, offx: 5, offdir: -Math.PI + .35, open: 0 }
 				],
-				body: { shape: 1, width: 1, height: 1 }
+				body: { shape: 0 }
 			},
 			// PENDING #28. Arena Closer IS `TankDefinitions.json` id 16 (plan.md R3 - it does have a
 			// diep source, the "no counterpart" call in this file's top comment was wrong for this
@@ -1548,6 +1551,9 @@
 			"Destroyer Dominator": {
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
+				// postAddon "dompronounced" (plan.md E2, diepcustom Addons.ts's PronouncedDomAddon)
+				// - Destroyer + Gunner Dominator only, NOT Trapper.
+				dompronounced: true,
 				cannons: [
 					{
 						type: 0,
@@ -1572,9 +1578,11 @@
 			"Gunner Dominator": {
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
+				// postAddon "dompronounced" (plan.md E2) - see Destroyer Dominator's own note.
+				dompronounced: true,
 				cannons: [
-					{ type: 0, height: 52.5, width: 12.25, offx: -6, offdir: 0, open: 0, aboveBody: true },
-					{ type: 0, height: 52.5, width: 12.25, offx: 6, offdir: 0, open: 0, aboveBody: true },
+					{ type: 0, height: 52.5, width: 12.25, offx: -4.2, offdir: 0, open: 0, aboveBody: true },
+					{ type: 0, height: 52.5, width: 12.25, offx: 4.2, offdir: 0, open: 0, aboveBody: true },
 					{ type: 0, height: 56, width: 12.25, offx: 0, offdir: 0, open: 0, aboveBody: true }
 				],
 				body: {
@@ -2724,13 +2732,14 @@
 			"Manager": new function () {
 				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.maxDrone = 8;
-				// Manager's own stealth is NOT diep's `flags.invisibility` (plan.md T3 only
-				// lists Landmine/Stalker) - a pre-existing custom mechanic, kept bit-for-bit
-				// identical to its old single-constant form (`alpha: 0.00727`, whose move/shoot
-				// regrow used to be hardcoded x10/x30 of it) by expressing those same two
-				// multiples explicitly now that `stealth` carries three independent rates.
-				// PENDING.md has the full note.
-				this.stealth = { decay: 0.00727, moving: 0.00727 * 10, shooting: 0.00727 * 30 };
+				// Manager DOES have a real diepcustom source after all (plan.md C8 - the same
+				// "no counterpart" call this file's Arena Closer entry made and later retracted):
+				// TankDefinitions.json id26 gives `invisibilityRate 0.03, visibilityRateMoving
+				// 0.08, visibilityRateShooting 0` - identical decay/moving to Stalker's own row
+				// below, but shooting does NOT reveal it (Stalker's does, at 0.23). The old
+				// `0.00727`-derived custom trio was a stand-in from before this class's real
+				// source was found; retired now that one exists.
+				this.stealth = { decay: 0.03, moving: 0.08, shooting: 0 };
 				this.cannons = [];
 				const c = [{
 					reload: 45,
@@ -3130,16 +3139,27 @@
 			},
 			///Boss
 			"Summoner": new function () {
-				this.screen = 2400;
+				this.screen = 1120;   // diep AbstractBoss's own default viewRange 2000 du x0.56 (plan.md Part D) - was a hand-picked 2400
+				// SUMMONER_SIZE 150 du x0.56 (plan.md Part D, Summoner.ts:56) - was missing
+				// entirely, so rooms/Room.js's createBoss() fell through to a flat, ~24%-undersized
+				// literal 64.
+				this.bossSize = 84;
 				this.cannons = [];
 				this.boss = true;
-				this.maxDrone = 35;
+				this.maxDrone = 28;   // droneCount 7 x 4 barrels (Summoner.ts, plan.md Part D - was 35)
 				const c = new Array(4).fill(null).map(() => ({
-					reload: 7,
+					// reload 0.36x15, pene 2x12.5, damage 7x0.56, speed 1.12x1.7 (plan.md Part D,
+					// SummonerSpawnerDefinition - Summoner.ts:29-54) - these (and `rand`/`life` below)
+					// were never re-derived against the real definition when R3 found it and were
+					// still the pre-R3 engine stand-ins; now converged the same way Guardian/Fallen
+					// Overlord/Fallen Booster's own spawners already were.
+					reload: 5.4,
 					offTime: 0,
 					auto: 1,
 					type: 3.1,
-					life: 107,
+					// -1 = permanent (Bullet.js's own sentinel) - SummonerSpawnerDefinition's bullet
+					// lifeLength is -1, unlike Guardian's finite 1.5 (plan.md Part D).
+					life: -1,
 					///
 					offdir: 0,
 					offx: 0,
@@ -3151,25 +3171,25 @@
 					// same as the client `height` this closes the long-standing gap against
 					// (plan.md R2). Not 50 (an engine floor from before the real source was found).
 					canonLength: 31.5,
-					rand: 0.5,
-					///
-					// STALE as of plan.md Step 9: these were never re-derived against
-					// SummonerSpawnerDefinition's own bullet block when R3 found it - reload/rand/
-					// speed/pene/damage/life below are still the pre-R3 engine stand-ins, flagged
-					// but out of this pass's scope (plan.md R2/R3 is the size-reference fix only).
-					speed: 0.570448,
-					pene: 6.470588,
-					damage: 7.875014,
+					// scatterRate 1 (the same default every other spawner in this file bakes into
+					// 0.174533 = 0.174533 x scatterRate) - 0.5 was the same pre-R3 stand-in as
+					// reload/speed/pene/damage/life above, not a real SummonerSpawnerDefinition figure.
+					rand: 0.174533,
+					speed: 1.904,
+					pene: 25,
+					damage: 3.92,
 					// (width/2)xsizeRatiox(35/150): SummonerSpawnerDefinition's own sizeRatio
 					// (55xsqrt(1/2)/(71.4/2)) is built so this reduces to 55xsqrt(1/2)x(35/150)
 					// (plan.md R2) - was a hand-tuned 20 before R3 found the real source.
 					size: 9.074537,
 					///
-					// STAND-IN: diep has no Summoner and no boss of any kind. These are drones, so
-					// they take the 0.8 gu row every drone class shares. May want its own tune -
-					// a boss fields up to 35 of them at once, where Overlord fields 8.
+					// "diep Overlord 0.8 gu, the row every drone class shares" (Overlord's own
+					// non-boss comment, line ~2720) - Summoner's drones take the same universal
+					// drone Knockbackfactor row every other permanent/finite drone in this file
+					// does (Guardian/Fallen Overlord/Fallen Booster all use the identical pair);
+					// push 0.18283 was a stand-in from before Summoner.ts was known to be real.
 					weight: 4.2,
-					push: 0.18283,
+					push: 0.45709,
 					back: 0
 				}));
 				c[1].offdir = Math.PI / 2; c[1].offTime = .5;
@@ -3344,10 +3364,13 @@
 			*/
 			"Arena Closer": new function () {
 				this.screen = 2000;
+				// No `auto` here (plan.md C10) - diep's AC is an ordinary tank; its own AI
+				// (lib/gameAI.js's CONFIG.CLOSER) drives `inputs.e` directly when it has a target,
+				// the same way a human's mouse click would, so a sandbox-cycled AC only fires
+				// when actually told to instead of forcing fire from the shared class table.
 				const c = new Array(1).fill(null).map(() => ({
 					reload: 15,
 					offTime: 0,
-					auto: 1,
 					type: 0,
 					life: 75,   // diep Arena Closer bullet.lifeLength 1 x 75 (plan.md Step 9)
 					///
@@ -3400,7 +3423,11 @@
 				this.cannons = [{
 					reload: 45,   // diepcustom TankDefinitions.json: 15 x barrel.reload 3 (plan.md Step 11)
 					offTime: 0,
-					auto: 1, autoShoot: 1, autoDir: 1,
+					// No auto/autoShoot/autoDir here (plan.md C10) - a real Dominator is an ordinary
+					// tank aimed by its own AI (lib/gameAI.js's dominatorUpdate(), which turns
+					// `this.dir` toward DETEC's target and sets `inputs.e` directly), not a per-
+					// barrel auto-turret; that is also what lets a sandbox-cycled human aim/fire it
+					// with their own mouse/click instead of it auto-aiming and firing itself.
 					type: 0,
 					life: 149,
 					///
@@ -3425,28 +3452,31 @@
 				// preAddon "dombase" (plan.md R3/R4) - static hexagonal guard, see Destroyer's own note.
 				this.guards = [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }];
 				// TankDefinitions.json id46 (plan.md R3): three FORWARD barrels (angle 0), offset
-				// -6/+6/0 (our offx, not an angle spread as this used to draw) with real per-barrel
-				// delay 0.666/0.333/0.001 (`offTime`, diepcustom's own fraction-of-reload-cycle
-				// convention every other multi-barrel class here already uses). reload 15 x
-				// barrel.reload 0.3 = 4.5, rounded to the nearest reference tick (plan.md Step 11).
-				// Dominator.ts scales like an ordinary tank, so canonLength/size convert on the
-				// ordinary 0.7 axis: 75x0.7=52.5, 80x0.7=56 (centre), size (17.5/2)x0.6x0.7=3.675
-				// (uniform - all three share bullet sizeRatio 0.6).
+				// -6/+6/0 x 0.7 = -4.2/+4.2/0 (our offx, not an angle spread as this used to draw,
+				// and not the un-converted raw -6/+6 this table baked before E2 - every other
+				// du-denominated field on this axis gets the same x0.7, offset is no exception)
+				// with real per-barrel delay 0.666/0.333/0.001 (`offTime`, diepcustom's own
+				// fraction-of-reload-cycle convention every other multi-barrel class here already
+				// uses). reload 15 x barrel.reload 0.3 = 4.5, rounded to the nearest reference tick
+				// (plan.md Step 11). Dominator.ts scales like an ordinary tank, so canonLength/size
+				// convert on the ordinary 0.7 axis: 75x0.7=52.5, 80x0.7=56 (centre),
+				// size (17.5/2)x0.6x0.7=3.675 (uniform - all three share bullet sizeRatio 0.6).
+				// No auto/autoShoot/autoDir (plan.md C10) - see Destroyer Dominator's own note above.
 				this.cannons = [
 					{
-						reload: 5, offTime: 0.666, auto: 1, autoShoot: 1, autoDir: 1, type: 0,
-						offdir: 0, offx: -6, canonLength: 52.5, rand: 0.1,
+						reload: 5, offTime: 0.666, type: 0,
+						offdir: 0, offx: -4.2, canonLength: 52.5, rand: 0.1,
 						speed: 1.344, pene: 10, damage: 7, size: 3.675,
 						weight: 1.75, push: 0.45709, back: 0
 					},
 					{
-						reload: 5, offTime: 0.333, auto: 1, autoShoot: 1, autoDir: 1, type: 0,
-						offdir: 0, offx: 6, canonLength: 52.5, rand: 0.1,
+						reload: 5, offTime: 0.333, type: 0,
+						offdir: 0, offx: 4.2, canonLength: 52.5, rand: 0.1,
 						speed: 1.344, pene: 10, damage: 7, size: 3.675,
 						weight: 1.75, push: 0.45709, back: 0
 					},
 					{
-						reload: 5, offTime: 0.001, auto: 1, autoShoot: 1, autoDir: 1, type: 0,
+						reload: 5, offTime: 0.001, type: 0,
 						offdir: 0, offx: 0, canonLength: 56, rand: 0.1,
 						speed: 1.344, pene: 10, damage: 7, size: 3.675,
 						weight: 1.75, push: 0.45709, back: 0
@@ -3464,7 +3494,12 @@
 					// entry already uses).
 					reload: 23,
 					offTime: 0,
-					auto: 1, autoShoot: 1, autoDir: 1,   // "auto-fire always on" (diep_wiki forceFire)
+					// `auto: 1` only (plan.md C10/E2) - diep's own `forceFire` (TankDefinitions.json
+					// id47), always shooting regardless of input, but no autoDir/autoShoot: each
+					// barrel fires along its OWN fixed offdir (i x PI/4) relative to the body, not
+					// toward a detected target, so the 8 traps launch radially in every direction
+					// rather than all funnelling toward whatever DETEC last picked.
+					auto: 1,
 					type: 2,
 					life: 297,
 					///
@@ -3721,12 +3756,32 @@
 				// "class table stays a template, the real value lives on the instance" pattern
 				// createBoss()/createCloser() already use, since this engine's class table has no
 				// generic per-class maxHealth field for an ordinary tank to read.
+				//
+				// diep's own generic AI.findTarget() (plan.md E3) - the same shared shape
+				// Dominator's own DETEC below uses, so an unpossessed Mothership only fires once
+				// it actually has a live enemy in range instead of always (see the cannons' own
+				// note on why `auto: 1` retired) - `screen`/BASE_SCREEN doubles as its own view
+				// range for lack of a captured diep fieldFactor for this class.
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				this.cannons = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
-					// auto: 1 - diep's Mothership.ts spins its own idle aim continuously
-					// (`ai.state === idle` branch), so it needs to force-fire the same way every
-					// other AI-only entity's cannons do (Overlord/the new bosses) - nothing drives
-					// `inputs.mouseL` for it otherwise.
-					reload: 90, offTime: 0, type: 1, life: -1, auto: 1,
+					// No `auto` (plan.md E3) - diep's shared AI.tick() only force-shoots
+					// (`inputs.flags |= leftclick`) once it actually HAS a target
+					// (`state === hasTarget`), passively spinning with no firing otherwise
+					// (`state === idle`) - `auto: 1` baked a wrong "always attacking" reading of
+					// "spins its own idle aim continuously" onto every cannon, which also meant a
+					// pilot (H-key piloting, plan.md E4) could never hold fire. lib/gameAI.js's
+					// mothershipUpdate() now sets `inputs.e` itself, the same shape
+					// dominatorUpdate() already uses.
+					reload: 90, offTime: 0,
+					// `canControlDrones` (TankDefinitions.json id27, plan.md E3): true on even
+					// barrels, false on odd - when a player pilots the Mothership, half its drones
+					// obey the mouse and half stay AI. Type 1 (droneSteer1, entities/Bullet.js)
+					// already reads the owner's mouseR/mouseL/e to override its AI steering - that
+					// IS this engine's "canControlDrones: true". Type 1.1 shares the same idle/
+					// DETEC-chase/return-home logic (its own copy, Hybrid's own drones) but never
+					// reads the owner's inputs at all, so it's the "false" half; no new drone type
+					// needed; both wire back an identical droneCount cap through `maxD` in shoot().
+					type: (i % 2 === 0) ? 1 : 1.1, life: -1,
 					// `+ Math.PI/16` (plan.md R6): TankDefinitions.json id27's own barrel angles
 					// are a half-step OFF the plain i x 2pi/16 spacing (barrel 0 sits at
 					// 0.19634954... rad = pi/16, not 0) - matches the trapezoid body's own

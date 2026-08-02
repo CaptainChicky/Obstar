@@ -89,17 +89,28 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// Rebaselined for plan.md C2/C3/C6 (execution-order step 7): the upgrade panel's per-stat cap
-// plumbing was fixed (ui.js's `statCap()`/`drawAll()` now translate TanksConfig's wire-ordered
-// `statMax` into panel row order via CONST.UP_ORDER instead of indexing it directly), Smasher/
-// Landmine/Spike/Auto Smasher gained the client-side `statMax` they never had, `Ui.UP.up` is now
-// a stable reference across class changes instead of a one-time snapshot, and the class-evolution
-// picker keeps existing option cards in place on a level-up instead of hiding and refilling the
-// whole tray (only genuinely new rows get a per-row slide-in now) - the last one adds real op
-// count (each row's own dshow easing/positioning), the others only change which segments draw
-// filled/empty for any bot that rolls a smasher-line class. C7 needed no code change (verified,
-// not fixed - see the new client.js regression test) so it contributes nothing here.
-const GOLDEN = { count: 282474, hash: '7601b52b' };
+// Rebaselined for plan.md execution-order steps 8-10 (C10-C13, C8/C9, E2/E3/E4): the only op-
+// count-affecting change in this batch is C12's Crasher population fix - `room.obj.bull.max1`
+// is now derived from the shared SHAPE_DENSITY_GU2 formula (crasherTotal()) instead of a fixed
+// literal 39, so ffa/2team/4team/boss all spawn a different number of Crashers under this
+// suite's own seeded RNG, shifting every draw call downstream of that in the same run (fewer
+// ops overall: the derived cap is lower than 39 at these arena sizes). Every other change in
+// this batch (Dominator dompronounced/aim fixes, Mothership drone control/possession, C13's
+// wall culling/colour/minimap, C8's invisibility rates, C9's Predator zoom) either touches no
+// rendering path at all or never engages for the classes/entities this suite's own bot rolls
+// happen to hit.
+// Rebaselined again for plan.md execution-order steps 11-12 (Part D boss fidelity + C14/C15):
+// Fallen Overlord/Fallen Booster now draw a real circular body (shape 0) instead of the
+// rounded-rect stand-in (a different Drawings.body[] path, different op count/shapes entirely);
+// every boss now draws in its own real diep colour (Guardian/Defender/Summoner/both Fallen
+// bosses each get a distinct fillStyle/strokeStyle instead of one shared team-9 gold) whenever
+// this suite's own seeded RNG happens to spawn one in 'boss'/'2team'/'4team'; and Summoner's own
+// client cannon geometry (height 44->31.5, width 20->16.66, converging onto the real
+// SummonerSpawnerDefinition alongside the server side) redraws its barrels at different
+// dimensions. C14/C15 (shape regen, spawn-shield duration) are both server-only timing/state
+// changes with no new canvas call shape of their own, so they contribute no op-count delta on
+// their own - the whole count/hash move here is boss rendering.
+const GOLDEN = { count: 311491, hash: 'fe15ff99' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

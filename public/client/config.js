@@ -91,9 +91,20 @@
 		// diepindepth/canvas/color_constants.md's "Shapes" table) - it already reads distinct
 		// from tri's rose below, same job the old muted pink did.
 		bull: ["#f177dd", "#b459a5"],
-		// Solid grey walls (diep_wiki, plan.md Step 12) - deliberately distinct from bull's pink
-		// above so a wall doesn't read as a Crasher shape.
-		wall: ["#7d7d7d", "#5c5c5c"],
+		// diepcustom's own Color.Box (Enums.ts: 0xBBBBBB, plan.md C13) - lighter grid-grey than
+		// the near-black this used to be, still nowhere near bull's pink above so a wall doesn't
+		// read as a Crasher shape. Stroke is fill x0.75 (this codebase's own verified universal
+		// stroke rule, plan.md's Smasher-guard note - checked against every fill/stroke pair in
+		// diepindepth/canvas/color_constants.md's "Colors" table): 0xBB x0.75 = 0x8C.
+		wall: ["#bbbbbb", "#8c8c8c"],
+		// Real per-boss diep colours (plan.md Part D, diepcustom Const/Enums.ts's own hex table -
+		// every boss used to render in flat team-9 `necro` gold regardless of class). Stroke is
+		// fill x0.75 per component, this codebase's own verified universal stroke rule (see
+		// `wall` above). Guardian reuses `bull` (Color.EnemyCrasher, 0xF177DD) directly - it is
+		// already this exact hex, not a coincidence (README's "Crasher pink" departure note).
+		coral: ["#fc7677", "#bd5959"],   // Color.EnemyTriangle (0xFC7677) - Defender
+		square: ["#ffe869", "#bfae4f"],   // Color.EnemySquare (0xFFE869) - Summoner
+		fallen: ["#c0c0c0", "#909090"],   // Color.Fallen (0xC0C0C0) - Fallen Overlord/Fallen Booster
 		// sqr/tri/pnt reverted to the original muted palette (plan.md R11 - a taste call, not a
 		// bug: C3's diep-measured saturated hexes were adopted only because they were citable,
 		// not because anything was wrong with these). Kept: C3's shape SIZE fix (the x sqrt(2)

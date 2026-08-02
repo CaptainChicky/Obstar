@@ -12,10 +12,6 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
 
 ## Needs a human decision
 
-1. **`H`-key piloting** — designed (see plan.md E4: possess nearest same-team
-   Dominator/Mothership, your own tank bleeds `2 + maxHP/500` HP/tick, `H` again releases;
-   Mothership capped at 5 min, Dominator uncapped). Open: input-redirect site
-   (`net/gameSocket.js` vs `rooms/Room.js`).
 2. **Reload quantisation** — we `Math.round()` reload ticks; diep compares a float cycle
    (`Barrel.ts:60`). Dropping the round changes every class's cadence at non-integer point
    counts; two sites (`entities/Player.js` `shoot()`, `test/rooms.js`). Deferred so it isn't a
@@ -70,9 +66,18 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
 - **Bots** (`lib/gameAI.js`) have no path to most post-T2 tanks — not authored yet.
 - **Boss travel speed** reuses Summoner's `BOSS_DRIFT` (our boss integrator has no
   `Physics.stepBody`); diep's `movementSpeed` accel term has no clean conversion into it.
-- **Fallen Overlord/Booster bodies** draw as rounded rects, not tank-shaped hulls with their
-  own barrels' silhouettes — plan.md Part D tightens the armament, the body shape is still a
-  simplification.
+- **Boss `canControlDrones` possession** (Guardian's rear spawner, Summoner's 4 spawners) — diep
+  lets a player pilot these two bosses and steer their drones by hand (`AbstractBoss.ts:186-192`),
+  the same `H`-key claim flow plan.md E4 built for Dominator/Mothership. `rooms/Room.js`'s
+  `togglePossession()` only iterates `this.dominators.concat(this.motherships)` — a boss was left
+  out deliberately (plan.md Part D scoped E4 to Dominator/Mothership only), not by oversight.
+  Extending it would need a third claimable-entity list, a possession-timer decision (Guardian/
+  Summoner have no diep precedent for one the way Mothership's 5-minute clock does), and the
+  drone-steering path (`entities/Bullet.js`'s `droneSteer1`) taught to read a piloted boss's own
+  inputs the way it already does for Mothership's even-numbered barrels.
+- **Optional Fallen variants** (`Entity/Misc/Boss/FallenAC.ts`/`FallenMegaTrapper.ts`/
+  `FallenSpike.ts`) — plan.md Part D explicitly marks these optional; not built. Cite their own
+  files (`movementSpeed`/barrel-reuse/`damagePerTick` overrides) if/when they are.
 - **Survival/Mothership modes**: no waiting-room countdown UI (data is on the wire), no
   per-mode front-page door art, no `shapeScoreRewardMultiplier` (×3 shapes-only XP has no hook
   in `awardXp()`), Survival's shape density doesn't rescale with the arena.

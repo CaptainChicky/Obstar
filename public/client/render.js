@@ -83,6 +83,11 @@
 				if (config.pronounced) {
 					canSize = Math.max(canSize, 1.3 * CONST.SIZE + CONST.LINEWIDTH);
 				}
+				// `dompronounced` (plan.md E2) reaches `centre + len/2 = 1.22 x size` at most -
+				// same headroom reasoning as guards/launcher/pronounced above.
+				if (config.dompronounced) {
+					canSize = Math.max(canSize, 1.22 * CONST.SIZE + CONST.LINEWIDTH);
+				}
 				if (!(config.cannons && config.cannons.length) && !(config.turrets && config.turrets.length)) {
 					middleX = canSize;
 					middleY = canSize;
@@ -126,9 +131,10 @@
 				//   6. postAddon `pronounced` (Ranger)                                  - above the
 				//      barrel, under the body
 				//   7. body
-				//   8. a centered auto turret (Auto Gunner/Trapper/Smasher/Auto Hover) and any
-				//      cannon flagged `aboveBody` (the 3 Dominators) - `showsAboveParent` stays ON,
-				//      drawn above the body
+				//   8. a centered auto turret (Auto Gunner/Trapper/Smasher/Auto Hover), any cannon
+				//      flagged `aboveBody` (the 3 Dominators), and postAddon `dompronounced`
+				//      (Destroyer/Gunner Dominator only, plan.md E2) - `showsAboveParent` stays
+				//      ON for all three, drawn above the body
 				Drawings.guards(ctx, tank, param);
 				for (const i in tank.turrets) {
 					if (tank.turrets[i].ring) {
@@ -149,6 +155,7 @@
 						Drawings.cannons[tank.cannons[i].type](ctx, tank, param, i);
 					}
 				};
+				Drawings.dompronounced(ctx, tank, param);
 				// for...in, not an indexed loop: `turrets` is an optional field, absent on most
 				// tanks, and for...in over undefined is a no-op where `.length` would throw. The
 				// index is only ever a subscript in the turret draw fn, so its string type is moot.

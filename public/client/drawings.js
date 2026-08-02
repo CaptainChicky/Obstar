@@ -126,6 +126,35 @@
 			ctx.stroke();
 			ctx.restore();
 		},
+		// The thing above Destroyer + Gunner Dominator's barrel (plan.md E2, diepcustom
+		// Addons.ts's PronouncedDomAddon - postAddon `dompronounced`, `sizeRatio 22/50`,
+		// `widthRatio 35/50`, `offsetRatio 50/50` of the Dominator's OWN live body radius,
+		// `angle PI`). Same shape family as `pronounced` above (wide end nearest the hull,
+		// narrow end poking out) but drawn in the Dominator's own post-body pass (A1/E2: dombase
+		// -> body -> barrel + dompronounced on top) instead of pre-body like Ranger's - render.js
+		// calls this alongside the `aboveBody` cannon loop, not through Drawings.pronounced.
+		dompronounced: (ctx, config, param) => {
+			if (!config.dompronounced) { return; }
+			const size = param.size;
+			const len = 0.44 * size, center = size, width = 0.7 * size;
+			const nearX = center - len / 2, farX = center + len / 2;
+			const wideHalf = width / 2 * TAPER_RATIO, narrowHalf = width / 2;
+			ctx.save();
+			ctx.rotate(param.dir);
+			ctx.beginPath();
+			ctx.moveTo(nearX, -wideHalf);
+			ctx.lineTo(nearX, wideHalf);
+			ctx.lineTo(farX, narrowHalf);
+			ctx.lineTo(farX, -narrowHalf);
+			ctx.closePath();
+			ctx.fillStyle = param.canC[0];
+			ctx.strokeStyle = param.canC[1];
+			ctx.lineWidth = CONST.LINEWIDTH;
+			ctx.lineJoin = 'round';
+			ctx.fill();
+			ctx.stroke();
+			ctx.restore();
+		},
 		cannons: [
 			(ctx, config, param, i) => {
 				const c = config.cannons[i], r = param.size / CONST.SIZE;

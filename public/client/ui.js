@@ -1106,8 +1106,16 @@
 					for (const dot of this.mapInfo) {
 						ctx.fillStyle = Palette[dot.team] ? Palette[dot.team][0] : '#222222';
 						ctx.beginPath();
+						// A wall dot (plan.md C13 - rooms/Room.js's wallDots sends `team: 4`/'gray',
+						// a colour no live player dot ever carries) is sized proportionally to the
+						// map's own current scale (its world-unit half-width / Game.width, times the
+						// minimap's own pixel size) - `dot.size / 12` below is a flat heuristic tuned
+						// for tank-sized dots, and bloats a multi-cell-long wall into a giant blob.
+						const r = (dot.team === 'gray')
+							? Math.max(1, dot.size / Game.width * this.MAP.size)
+							: Math.max(2, dot.size / 12);
 						ctx.arc(-this.MAP.size / 2 + (dot.x - 0.5) * this.MAP.size,
-							this.MAP.size / 2 + (dot.y - 0.5) * this.MAP.size, Math.max(2, dot.size / 12), 0, Math.PI * 2)
+							this.MAP.size / 2 + (dot.y - 0.5) * this.MAP.size, r, 0, Math.PI * 2)
 						ctx.closePath();
 						ctx.fill();
 					}

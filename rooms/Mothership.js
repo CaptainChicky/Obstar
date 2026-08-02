@@ -90,10 +90,33 @@ class Mothership extends Room {
 			m.hp = MOTHERSHIP_HP;
 			m.maxHp = MOTHERSHIP_HP;
 			m.mothership = 1;
+			// diepcustom Mothership.ts's own `absorbtionFactor = 0.01` (plan.md E3) - "nearly
+			// immovable but not fixed", the entities/Player.js knockback arms' new `absorb`
+			// multiplier (plan.md Part D) is what actually reads this back.
+			m.absorb = 0.01;
 			m.size = CLASS['Mothership'].bossSize;
 			m.class = 'Mothership';
 			m.screen = CLASS['Mothership'].screen;
 			m.shield = 0;
+			/*
+				diep's own stats while piloted (plan.md E3/E4, Mothership.ts:66): all seven non-
+				regen stats at 7 points, Health Regen at 1 - baked directly onto the spawned
+				instance (the same "real diep number, not stat-point-derived" pattern MOTHERSHIP_HP
+				above already uses for max health) rather than routed through upgrade()'s own
+				pointsAtLevel() gate, which a scripted entity with no real XP/level would never
+				clear. Values are upgrade()'s own per-point formulas evaluated at 7 points (that
+				method's own comment block has the citations): MSpeed a point count, Reload
+				0.914^7, BSpeed 1+0.15x7, BPene 1+0.75x7, BDamage 1+(3/7)x7, BodyDam (this.damage)
+				5+1x7. HpUp is left alone - maxHp is already the real 7000 above, not stat-derived.
+			*/
+			m.up.MSpeed = 7;
+			m.up.Reload = Math.pow(0.914, 7);
+			m.up.BSpeed = 1 + 0.15 * 7;
+			m.up.BPene = 1 + 0.75 * 7;
+			m.up.BDamage = 1 + (3 / 7) * 7;
+			m.damage = 5 + 7;
+			m.up.HpRegan = 1;
+			m.upNb = [7, 7, 7, 7, 7, 7, 0, 1];
 			const spec = CONFIG.MOTHERSHIP;
 			m.motion = spec[0].bind(m);
 			m.update = spec[1].bind(m);

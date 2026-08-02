@@ -189,8 +189,38 @@ function teamTests() {
 	check('a boss can be summoned', room.bosses.length === Math.min(1, before + 1) && !!boss && boss.boss === 1,
 		room.bosses.length);
 	check('the boss is on nobody\'s side', boss && boss.team === 9, boss && boss.team);
-	check('the boss keeps its own colour, not the enemy red', room.entityColor(boss) === 9,
+	check('the boss keeps its own colour, not the enemy red', room.entityColor(boss) !== 1,
 		room.entityColor(boss));
+	check('...and it is a real per-class diep colour (plan.md Part D), not team-9 gold',
+		room.entityColor(boss) === { Guardian: 10, Defender: 11, Summoner: 12, 'Fallen Overlord': 13, 'Fallen Booster': 13 }[boss.class],
+		boss.class + ' -> ' + room.entityColor(boss));
+	// AbstractBoss.ts's own shared scaffolding (plan.md Part D): HP 3000, damagePerTick 10,
+	// absorbtionFactor 0.05, reloadTime's 15x0.914^7 multiplier (baked onto up.Reload, the same
+	// site rooms/Mothership.js's own createMothership() already uses), scoreReward 30000.
+	check('a boss is diep\'s own flat 3000 HP, not a legacy 20000/30000 balance figure',
+		boss.hp === 3000 && boss.maxHp === 3000, boss.hp + '/' + boss.maxHp);
+	check('a boss deals diep\'s own 10 body damage/tick, not the ordinary tank default of 5',
+		boss.damage === 10, boss.damage);
+	check('a boss is nearly immovable (absorbtionFactor 0.05), not a Dominator\'s literal 0',
+		boss.absorb === 0.05, boss.absorb);
+	check('a boss reloads at its own maxed 15x0.914^7 rate',
+		boss.up.Reload === Math.pow(0.914, 7), boss.up.Reload);
+	check('a boss\'s kill/score reward is diep\'s own 30000, not the old 100000',
+		boss.prize === 30000 && boss.xp === 30000, boss.prize + '/' + boss.xp);
+	check('a Dominator is fully immovable (absorbtionFactor 0)', (function () {
+		const dom = room.createDominator(0, 0, 0);
+		return dom.absorb === 0;
+	})());
+	{
+		// AbstractBoss.ts:204 - flat maxHP/25000 regen every tick, unconditional (no hyper-regen
+		// gate/no-damage delay, unlike an ordinary tank - plan.md Part D). Damage it, then step
+		// the room and confirm it heals back up on its own with no player input.
+		boss.hp = 1000;
+		const before = boss.hp;
+		for (let i = 0; i < 50; i++) { room.step(); }
+		check('a boss regenerates continuously (maxHP/25000/tick), even freshly damaged',
+			boss.hp > before && boss.hp <= boss.maxHp, before + ' -> ' + boss.hp);
+	}
 	check('a second boss does not stack - 2team caps at one', (function () {
 		room.createBoss();
 		return room.bosses.length === 1;
@@ -322,6 +352,21 @@ function bossTests() {
 		room.bosses.every((b) => b.id.oId < room.rules.botIdStart),
 		room.bosses.map((b) => b.id.oId).join(','));
 	check('a boss stays off the leaderboard', room.leader.every((p) => !p.boss));
+
+	// Direct table sweep (plan.md Part D/F2), not dependent on the random 200-pass roll above
+	// having actually filled every class: every real diep boss now states its own diep-derived
+	// bossSize (Summoner used to fall through to a flat, ~24%-undersized 64).
+	{
+		const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+		const sizes = { Guardian: 75.6, Defender: 84, Summoner: 84, 'Fallen Overlord': 58.46, 'Fallen Booster': 58.46 };
+		for (const name of Object.keys(sizes)) {
+			check(name + ' has its own diep-derived bossSize',
+				Math.abs(CLASS[name].bossSize - sizes[name]) < 0.01,
+				CLASS[name].bossSize + ' vs ' + sizes[name]);
+		}
+		check('Summoner\'s drone cap is droneCount 7 x 4 barrels (Summoner.ts), not the old 35',
+			CLASS['Summoner'].maxDrone === 28, CLASS['Summoner'].maxDrone);
+	}
 
 	/*
 		lib/gameAI.js's Summoner detection divided by n.level with no floor, so raw/0 is
@@ -934,6 +979,285 @@ function dominatorTests() {
 	return room;
 }
 
+function mothershipTests() {
+	console.log('\nrooms (mothership):');
+	const room = makeRoom('mothership');
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+
+	check('two teams, friendly fire on, no bases',
+		room.rules.teams.join(',') === '0,1' && room.rules.teamPlay === true,
+		room.rules.teams.join(','));
+
+	const ships = room.motherships;
+	check('build() spawns exactly one Mothership per team', ships.length === 2, ships.length);
+	check('every Mothership is flagged, at diepcustom\'s own 7000 HP (Mothership.ts), and diep\'s own bossSize',
+		ships.every((m) => m.mothership === 1 && m.hp === 7000 && m.maxHp === 7000 && m.size === CLASS['Mothership'].bossSize),
+		ships.map((m) => m.hp + '/' + m.size).join(' '));
+	check('one per rules.teams, each on its own team',
+		new Set(ships.map((m) => m.team)).size === room.rules.teams.length,
+		ships.map((m) => m.team).join(','));
+	check('every Mothership is an ordinary Player, not a new entity kind',
+		ships.every((m) => m.kind === require(path.join(ROOT, 'public', 'SHARE', 'kinds.js')).PLAYER));
+	check('a Mothership is nearly immovable (absorbtionFactor 0.01, plan.md E3)',
+		ships.every((m) => m.absorb === 0.01), ships.map((m) => m.absorb).join(','));
+
+	// plan.md E3 - `canControlDrones` (TankDefinitions.json id27): true on even barrels, false on
+	// odd. Type 1 (droneSteer1, entities/Bullet.js) already reads the owner's mouseR/mouseL/e to
+	// override its AI steering - that's this engine's "true"; type 1.1 has its own equivalent
+	// idle/chase/return logic but never reads the owner's inputs - that's "false".
+	{
+		const cannons = CLASS['Mothership'].cannons;
+		check('16 barrels', cannons.length === 16, cannons.length);
+		check('even-indexed barrels are canControlDrones-true (type 1)',
+			cannons.every((c, i) => i % 2 !== 0 || c.type === 1),
+			cannons.map((c) => c.type).join(','));
+		check('odd-indexed barrels are canControlDrones-false (type 1.1)',
+			cannons.every((c, i) => i % 2 === 0 || c.type === 1.1),
+			cannons.map((c) => c.type).join(','));
+	}
+
+	// diep's own stats while piloted (Mothership.ts:66, plan.md E3/E4) - all seven non-regen
+	// stats at 7 points, Health Regen at 1, baked directly since a scripted entity never clears
+	// upgrade()'s own pointsAtLevel() gate.
+	{
+		const m = ships[0];
+		check('MSpeed at 7 points', m.up.MSpeed === 7, m.up.MSpeed);
+		check('Reload at 0.914^7', Math.abs(m.up.Reload - Math.pow(0.914, 7)) < 1e-9, m.up.Reload);
+		check('BSpeed at 7 points (1+0.15x7)', Math.abs(m.up.BSpeed - 2.05) < 1e-9, m.up.BSpeed);
+		check('BPene at 7 points (1+0.75x7)', Math.abs(m.up.BPene - 6.25) < 1e-9, m.up.BPene);
+		check('BDamage at 7 points (1+3/7x7)', Math.abs(m.up.BDamage - 4) < 1e-9, m.up.BDamage);
+		check('BodyDam (this.damage) at 7 points (5+1x7)', m.damage === 12, m.damage);
+		check('HpRegan at 1 point, not 7', m.up.HpRegan === 1, m.up.HpRegan);
+		check('maxHp stays the real 7000, not stat-derived', m.maxHp === 7000, m.maxHp);
+	}
+
+	// Death animation - mothershipUpdate() fully replaces Player.prototype.update(), so the
+	// ordinary tank's own destroy-countdown (which lives inside that function) has to be
+	// reproduced here too, or a "dead" Mothership sat frozen at its post-death `destroy` value
+	// forever instead of ever reaching the 1 rooms/Room.js's own INSTANCE sweep waits for -
+	// this was a real, reproduced gap (not hypothetical), found while wiring E4's own pilot
+	// force-eject-on-death path into the same branch.
+	{
+		const doomed = ships[1];
+		doomed.destroy = 5;
+		const x0 = doomed.x;
+		for (let i = 0; i < 10; i++) { doomed.update(); }
+		check('a dying Mothership\'s destroy countdown actually decrements',
+			doomed.destroy === 1, doomed.destroy);
+		check('...moving on its last velocity while it does, same as an ordinary tank',
+			doomed.x !== x0 || doomed.vec.x === 0, doomed.x + ' vs ' + x0);
+	}
+
+	// The win condition - losing a side's Mothership starts the same Arena Closer swarm Tag's
+	// own win condition uses (createCloser(), CLOSER_COUNT above).
+	{
+		const loser = ships[0];
+		loser.destroy = tick.DES;
+		room.step();
+		check('losing a side\'s Mothership starts closing', room.closing === true, room.closing);
+		check('...and spawns the Arena Closer swarm', room.closers.length === 4, room.closers.length);
+	}
+
+	return room;
+}
+
+/*
+	H-key piloting (plan.md E4, diepcustom Client.ts's possess()/TakeTank + Dominator.ts's
+	onDeath()/Mothership.ts's possessionStartTick). rooms/Room.js's togglePossession()/
+	releasePossession() are the claim/release mechanism; lib/gameAI.js's dominatorUpdate()/
+	mothershipUpdate() are what actually redirect aim/fire(/movement) once claimed; entities/
+	Player.js's own update() is what bleeds the vacated pilot's tank.
+*/
+function possessionTests() {
+	console.log('\nH-key piloting (plan.md E4):');
+	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const room = makeRoom('domination');   // build() seats 4 neutral Dominators already
+
+	// Neutral (team 2) Dominators match no real player's team, so a fresh pilot on team 0/1
+	// has nothing claimable yet - capture one first, the same way dominatorTests() does.
+	const dom = room.dominators[0];
+	dom.hp = 0; dom.destroy = 1; dom.murder = ['players', { oId: 999 }];
+	// A fake killer id (999) with no live player behind it still credits the team via
+	// dominatorCapture()'s own `this.room.INSTANCE.players.get(...)` miss -> killerTeam stays
+	// null -> heals with no team change. Use a REAL teammate instead so the capture actually
+	// assigns a team a pilot can match.
+	const teamA = room.INSTANCE.players.add((id) => new Player(
+		{ GM: room.gm, sId: room.id, oId: id }, dom.x + 20, dom.y, 'captor', 0, room.XPLVL, room));
+	teamA.shield = 0; teamA.alpha = 1;
+	dom.hp = 0; dom.destroy = 1; dom.murder = ['players', teamA.id];
+	dom.update();
+	check('captured the Dominator onto team 0', dom.team === 0, dom.team);
+
+	const pilot = room.INSTANCE.players.add((id) => new Player(
+		{ GM: room.gm, sId: room.id, oId: id }, dom.x + 50, dom.y, 'pilot', 0, room.XPLVL, room));
+	pilot.shield = 0; pilot.alpha = 1; pilot.level = 20;   // well above the level-5 insta-kill floor
+
+	{
+		const enemyDom = room.dominators.find((d) => d !== dom);
+		room.togglePossession(pilot);
+		check('claims the nearest same-team claimable Dominator, not a neutral/enemy one',
+			pilot.piloting === dom, pilot.piloting === dom);
+		check('...and marks it pilotedBy the claimer', dom.pilotedBy === pilot, dom.pilotedBy);
+		check('a neutral Dominator is not claimable (team mismatch)',
+			enemyDom.pilotedBy === null, enemyDom.pilotedBy);
+		check('a notification was pushed', pilot.mess.length > 0 && /Press H/.test(pilot.mess[pilot.mess.length - 1]),
+			pilot.mess[pilot.mess.length - 1]);
+	}
+
+	// Aim/fire mirroring: the possessed Dominator's own dir/fire follow the pilot, not DETEC/AI.
+	{
+		pilot.dir = 1.234;
+		pilot.inputs.mouseL = 1;
+		const x0 = dom.x, y0 = dom.y;
+		dom.update();
+		check('a possessed Dominator aims wherever its pilot does', dom.dir === 1.234, dom.dir);
+		check('...fires when the pilot clicks (inputs.mouseL mirrored)', dom.inputs.mouseL === 1, dom.inputs.mouseL);
+		check('...but still never moves, piloted or not (Dominator.ts ai.movementSpeed=0)',
+			dom.x === x0 && dom.y === y0, dom.x + ',' + dom.y);
+		pilot.inputs.mouseL = 0;
+	}
+
+	// The vacated pilot tank's own tank bleeds HP while piloting (diepcustom TankBody.ts:324-336).
+	{
+		const hpBefore = pilot.hp;
+		pilot.update();
+		check('the vacated pilot tank bleeds HP while piloting, above the level-5 floor',
+			pilot.hp < hpBefore, pilot.hp + ' vs ' + hpBefore);
+		check('...at exactly 2 + maxHp/500 per reference tick',
+			Math.abs((hpBefore - pilot.hp) - tick.perTick(2 + pilot.maxHp / 500)) < 1e-9,
+			(hpBefore - pilot.hp) + ' vs ' + tick.perTick(2 + pilot.maxHp / 500));
+	}
+
+	// Releasing (H again) hands the Dominator back to plain AI and stops the bleed.
+	{
+		room.togglePossession(pilot);
+		check('toggling again releases the Dominator', pilot.piloting === null && dom.pilotedBy === null,
+			pilot.piloting + ',' + dom.pilotedBy);
+		const hpBefore = pilot.hp;
+		pilot.inputs.w = 0; pilot.inputs.a = 0; pilot.inputs.s = 0; pilot.inputs.d = 0;
+		pilot.update();
+		check('...and the pilot\'s own tank stops bleeding', pilot.hp >= hpBefore, pilot.hp + ' vs ' + hpBefore);
+	}
+
+	// A Dominator flip (onDeath) force-ejects its pilot (plan.md E4).
+	{
+		room.togglePossession(pilot);
+		check('re-claimed for the ejection test', pilot.piloting === dom, pilot.piloting === dom);
+		dom.hp = 0; dom.destroy = 1; dom.murder = ['players', { oId: 987654 }];   // no live killer -> heals, no team change, but onDeath still fires
+		dom.update();
+		check('a Dominator knockdown force-ejects its pilot even when it stays on the same team',
+			pilot.piloting === null && dom.pilotedBy === null, pilot.piloting + ',' + dom.pilotedBy);
+	}
+
+	// The level-5-and-under insta-kill floor (diepcustom's own anti-exploit rule).
+	{
+		room.togglePossession(pilot);
+		pilot.level = 3;
+		pilot.hp = 50;
+		pilot.update();
+		check('a level<=5 pilot\'s vacated tank dies outright instead of slowly bleeding',
+			pilot.hp === 0 && pilot.destroy > 0, pilot.hp + ',' + pilot.destroy);
+		check('...and that death auto-releases the possession',
+			dom.pilotedBy === null, dom.pilotedBy);
+	}
+
+	// Mothership possession: movement is allowed (unlike a Dominator), and the 5-minute timer.
+	{
+		// No `player(mroom, 0).destroy = 1` here, unlike every other test's tester-seat cleanup -
+		// build() seats both Motherships in players slots 0-1 before ask()'s own tester joins
+		// (mothershipTests() already documents this for player(room,0)), so slot 0 IS a
+		// Mothership here, not the tester; destroying it would corrupt the very entity under test.
+		const mroom = makeRoom('mothership');
+		const ship = mroom.motherships[0];
+		const p2 = mroom.INSTANCE.players.add((id) => new Player(
+			{ GM: mroom.gm, sId: mroom.id, oId: id }, ship.x, ship.y, 'p2', ship.team, mroom.XPLVL, mroom));
+		p2.shield = 0; p2.alpha = 1; p2.level = 20;
+		mroom.togglePossession(p2);
+		check('claims the Mothership on the same team', p2.piloting === ship, p2.piloting === ship);
+
+		p2.inputs.w = 1;
+		const x0 = ship.x, y0 = ship.y;
+		for (let i = 0; i < 20; i++) { ship.update(); }
+		check('a possessed Mothership DOES move (no ai.movementSpeed=0 override, unlike a Dominator)',
+			ship.x !== x0 || ship.y !== y0, ship.x + ',' + ship.y + ' vs ' + x0 + ',' + y0);
+		p2.inputs.w = 0;
+
+		// Fast-forward past the 5-minute mark directly rather than looping the real tick count.
+		ship.possessionStartTick = mroom.timestamp - (tick.ticks(7500) + 1);
+		ship.update();
+		check('the 5-minute possession timer force-releases the pilot',
+			p2.piloting === null && ship.pilotedBy === null, p2.piloting + ',' + ship.pilotedBy);
+		check('...with a notification', /time piloting/i.test(p2.mess[p2.mess.length - 1]), p2.mess[p2.mess.length - 1]);
+
+		// A Mothership dying (not just timing out) also force-ejects its pilot - there's nothing
+		// left to fly once its own death animation starts.
+		mroom.togglePossession(p2);
+		check('re-claimed for the death-eject test', p2.piloting === ship, p2.piloting === ship);
+		ship.destroy = 5;
+		ship.update();
+		check('a dying Mothership force-ejects its pilot too',
+			p2.piloting === null && ship.pilotedBy === null, p2.piloting + ',' + ship.pilotedBy);
+	}
+}
+
+/*
+	plan.md F1/E2 - the server half of the roster sweep (test/client.js's own "every class in the
+	roster renders without a non-finite transform" is the client half). Every class in
+	TanksConfig.js's own list spawns as a real Player, gets a live target inside its own DETEC
+	range (so an autoDir/DETEC-driven cannon - the exact code path a Dominator's own aim used to
+	run through before C10 moved it out of the class table - actually engages instead of idling),
+	and fires long enough for every one of its barrels to complete at least one reload cycle
+	(90 reference ticks, Overseer's own longest, is the ceiling - run well past it). This is what
+	would have caught the reported Gunner Dominator sandbox-cycle crash permanently, rather than
+	relying on a human happening to cycle to it in a browser with a target nearby.
+*/
+function rosterSweepTests() {
+	console.log('\nroster sweep (plan.md F1 - server half):');
+	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const CLASS_LIST = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).list;
+	// ffa, not sandbox: sandbox's own maxPlayer:0 caps it at exactly the one seat makeRoom()
+	// already took (a deliberate single-player cap, rooms/Sandbox.js), so a second `foe` to
+	// actually populate DETEC.select could never be added there - ffa has no such cap and this
+	// sweep needs nothing else sandbox-specific (upClass()'s tree/level gating isn't in play
+	// either way, since this sets `.class` directly like cycleClass()/the '\' preview do).
+	const room = makeRoom('ffa');
+	player(room, 0).destroy = 1;
+	// A live target for every class's DETEC (auto-turrets, Dominators) to actually find and aim
+	// at, rather than idling on the branch that never touches this.canDir's DETEC.select path.
+	const foe = room.INSTANCE.players.add((id) => new Player(
+		{ GM: room.gm, sId: room.id, oId: id }, 60, 0, 'sweepTarget', 5, room.XPLVL, room));
+	foe.shield = 0; foe.alpha = 1;
+
+	let err = null, checked = 0;
+	for (const cls of CLASS_LIST) {
+		try {
+			const p = room.INSTANCE.players.add((id) => new Player(
+				{ GM: room.gm, sId: room.id, oId: id }, 0, 0, 'sweep', 1, room.XPLVL, room));
+			p.class = cls;
+			p.shield = 0; p.alpha = 1;
+			p.shootTimer = new Array(CLASS[cls].cannons.length).fill(0);
+			p.necro = CLASS[cls].necro;
+			p.inputs.e = 1; p.inputs.mouseL = 1;
+			for (let i = 0; i < 200; i++) { p.update(); }
+			// Freed outright, not just marked destroy=1 - ffa's own maxPlayer:24 cap (rooms/
+			// Room.js) means a merely-dying slot never actually vacates without a room.step()
+			// to process the tombstone, and this sweep intentionally never calls step() (every
+			// class gets an isolated, deterministic 200-update run, not one sharing a tick with
+			// its neighbours).
+			room.INSTANCE.players.delete(p.id.oId);
+		} catch (e) {
+			err = cls + ': ' + e.message + ' | ' + e.stack.split('\n')[1];
+			break;
+		}
+		checked++;
+	}
+	check('every class in the roster spawns and fires every barrel without throwing', !err, err);
+	check('checked every class in the roster', checked === CLASS_LIST.length, checked + '/' + CLASS_LIST.length);
+}
+
 function respawnTests(rooms) {
 	console.log('rooms (shared):');
 	for (const room of rooms) {
@@ -1013,6 +1337,7 @@ function modeTableTests(rooms) {
 */
 function respawnCarryoverTests(rooms) {
 	console.log('\nrespawn carries live player state:');
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const room = rooms[0];
 	const before = player(room, 0);
 	before.inputs.w = 1;
@@ -1029,6 +1354,11 @@ function respawnCarryoverTests(rooms) {
 	check('kill-count progress survives the respawn', after.killCounts.sqr === 42,
 		JSON.stringify(after.killCounts));
 	check('spawn protection still starts fresh', after.shield > 0, after.shield);
+	// diepcustom TankBody.ts:357 (plan.md C15): a fresh spawn's shield/isFlashing window is
+	// diep's own flat 374 reference ticks, not the old ad-hoc ~198s (6000 ticks at the original
+	// 33ms reference) this engine carried from before the fidelity pass had a real number for it.
+	check('...and it is diep\'s own 374-reference-tick cap, not the old ~198s ad-hoc one',
+		after.shield === tick.ticks(374), after.shield + ' vs ' + tick.ticks(374));
 	after.motion();
 	check('...and clears immediately given the carried-over held key', after.shield === 0,
 		after.shield);
@@ -1476,6 +1806,23 @@ function baseDroneAiTests() {
 			(hpBefore - sq.hp) + ' of ' + sq.maxHp);
 	}
 
+	// plan.md C14 - diep itself gives shapes no regen at all, but this engine keeps a slow
+	// self-heal as a deliberate departure; the health-bar fade (public/client/entities.js's own
+	// hpAlpha/hpHold) already existed, only the heal itself was missing.
+	{
+		const room = makeRoom('ffa');
+		const sq = new Objects('sqr', -1, { GM: room.gm, sId: room.id, oId: 502 }, room.map, room);
+		sq.hp = 1;
+		const before = sq.hp;
+		for (let i = 0; i < 100; i++) { sq.update(); }
+		check('a damaged shape slowly regenerates on its own (plan.md C14)',
+			sq.hp > before && sq.hp <= sq.maxHp, before + ' -> ' + sq.hp);
+		sq.hp = sq.maxHp;
+		sq.update();
+		check('...and a full-health shape does not overheal past its own max',
+			sq.hp === sq.maxHp, sq.hp + ' vs ' + sq.maxHp);
+	}
+
 	// 4.5.2 - the cross ploughs through shapes, it does not phase through them: damage and shove
 	// still happen mid-swoosh, only the drone's own 60-degree deflection reaction is suppressed.
 	{
@@ -1597,6 +1944,74 @@ function baseDroneAiTests() {
 			check('two same-team base drones do not damage each other',
 				droneA.pene === aBefore && droneB.pene === bBefore,
 				droneA.pene + '/' + aBefore + ', ' + droneB.pene + '/' + bBefore);
+		}
+		/*
+			plan.md C11 - diep's Drone/Minion/Trap/NecromancerSquare all carry
+			onlySameOwnerCollision (diepcustom's Object.ts:165), the same "transparent to a
+			different owner on the same team" rule base drones (type 1.4) already got a dedicated
+			whole-pair skip for in Room.js's step(). An ORDINARY class drone/trap/minion has no such
+			dedicated skip - it relies entirely on entities/Bullet.js's/Player.js's own `noDam`
+			early-breaks (set by this same pair loop whenever `rules.teamPlay && obj.team ===
+			other.team` and neither side is a shape), which sit before every vec.add()/pene/hp
+			mutation in each arm. These assertions exercise that path directly (not just the base-
+			drone-specific one above) for every onlySameOwnerCollision type this engine has: an
+			ordinary drone (type 1), a trap (type 2, post-arming) and a minion (type 1.5) - both
+			against a teammate's tank and against a different owner's same-type projectile.
+		*/
+		// type 1/1.5 both steer through droneSteer1 (entities/Bullet.js), which needs a live
+		// owning Player to build its own Detector from - unlike a base drone or a trap, `alone`
+		// is not an option here, so each gets a real (distant, otherwise inert) owner.
+		function plantDrone(room, owner, x, y, type) {
+			const b = new Bullet({ GM: room.gm, sId: room.id, oId: owner.id.oId }, x, y, 0, 0, 0, room);
+			b.team = owner.team; b.life = -1; b.type = type; b.class = owner.class;
+			b.pene = 100; b.damage = 5; b.size = 10; b.weight = 5; b.push = 5; b.map = room.map;
+			room.INSTANCE.bullets.add((id) => { b.id = { GM: room.gm, sId: room.id, oId: id }; return b; });
+			return b;
+		}
+		for (const type of [1, 1.5]) {
+			{
+				const room = isolatedRoom();
+				const owner = plantPlayer(room, 0, 900, 900);
+				const drone = plantDrone(room, owner, 0, 0, type);
+				const mate = plantPlayer(room, 0, 0, 0);
+				const mateBefore = mate.hp, droneBefore = drone.pene, vecBefore = drone.vec.length();
+				room.step();
+				check('an ordinary type-' + type + ' drone does not damage a teammate\'s tank, nor it it',
+					mate.hp >= mateBefore && drone.pene === droneBefore,
+					mate.hp + '/' + mateBefore + ', ' + drone.pene + '/' + droneBefore);
+				check('...nor does either side get knocked back',
+					drone.vec.length() === vecBefore && mate.vec.length() === 0,
+					drone.vec.length() + ' vs ' + vecBefore);
+			}
+			{
+				// Different owner, same team, same type - the drone-vs-drone case.
+				const room = isolatedRoom();
+				const ownerA = plantPlayer(room, 1, 900, 900);
+				const ownerB = plantPlayer(room, 1, -900, -900);
+				const droneA = plantDrone(room, ownerA, 0, 0, type);
+				const droneB = plantDrone(room, ownerB, 0, 0, type);
+				const aBefore = droneA.pene, bBefore = droneB.pene;
+				room.step();
+				check('two same-team, different-owner type-' + type + ' drones do not damage each other',
+					droneA.pene === aBefore && droneB.pene === bBefore,
+					droneA.pene + '/' + aBefore + ', ' + droneB.pene + '/' + bBefore);
+			}
+		}
+		{
+			// A trap (type 2) past its arming window - `armTicks` starts at 0 here (already armed),
+			// the state every trap reaches for the vast majority of its life. Its own update()
+			// branch never reads its owner, so `alone` is fine (matches plantBullet's own pattern).
+			const room = isolatedRoom();
+			const trap = new Bullet({ GM: room.gm, sId: room.id, oId: 0 }, 0, 0, 0, 0, 0, room);
+			trap.team = 0; trap.alone = 1; trap.life = 1000; trap.type = 2; trap.armTicks = 0;
+			trap.pene = 100; trap.damage = 5; trap.size = 10; trap.weight = 5; trap.push = 5; trap.map = room.map;
+			room.INSTANCE.bullets.add((id) => { trap.id = { GM: room.gm, sId: room.id, oId: id }; return trap; });
+			const mate = plantPlayer(room, trap.team, 0, 0);
+			const mateBefore = mate.hp, trapBefore = trap.pene;
+			room.step();
+			check('an armed trap does not damage a teammate\'s tank, nor it it',
+				mate.hp >= mateBefore && trap.pene === trapBefore,
+				mate.hp + '/' + mateBefore + ', ' + trap.pene + '/' + trapBefore);
 		}
 	}
 
@@ -4326,6 +4741,124 @@ function crasherChaseTests() {
 		check('a target 900 units off is inside diep\'s own 1120-unit range, outside the old 500',
 			crasher.DETEC.select === foe, crasher.DETEC.select && 'found' || 'not found');
 	}
+
+	// plan.md C12 - a Crasher's own population is the Crasher Zone annulus's share of the SAME
+	// SHAPE_DENSITY_GU2 every other shape draws from (diepcustom's ShapeManager.spawnShape():
+	// one shared pool, classified by where the random point landed), not an independent knob -
+	// ffa's old hand-picked literal (39) never scaled with the arena and had no diep citation.
+	{
+		check('the Crasher population cap is derived from the shape density formula, not a fixed 39',
+			room.obj.bull.max1 !== 39 && room.obj.bull.max1 > 0, room.obj.bull.max1);
+	}
+
+	// plan.md C12 - OOB chase: a chasing Crasher gets the same config.OOB_MARGIN allowance a
+	// tank's own motion()/a chasing base drone already get (diepcustom Crasher.ts:44
+	// `canMoveThroughWalls`), so it can follow a target out past the drawn edge - and re-clamps
+	// the instant it goes idle again (no live DETEC target), so a stray drifts back inside.
+	{
+		const crasher = new Objects('bull', 'bull', { GM: room.gm, sId: room.id, oId: -1 }, room.map, room);
+		crasher.x = room.map.width / 2 + 1; crasher.y = 0; crasher.vec.x = 50; crasher.vec.y = 0;
+		crasher.DETEC.select = { x: room.map.width, y: 0, vec: { x: 0, y: 0 }, destroy: 0, god: 0 };
+		crasher.update();
+		check('a chasing Crasher is not hard-clamped at the drawn edge',
+			crasher.x > room.map.width / 2, crasher.x + ' vs edge ' + room.map.width / 2);
+		check('...but still capped at config.OOB_MARGIN past it, not unbounded',
+			crasher.x <= room.map.width / 2 + config.OOB_MARGIN + 1,
+			crasher.x + ' vs cap ' + (room.map.width / 2 + config.OOB_MARGIN));
+	}
+	{
+		const idle = new Objects('bull', 'bull', { GM: room.gm, sId: room.id, oId: -1 }, room.map, room);
+		idle.x = room.map.width / 2 + config.OOB_MARGIN; idle.y = 0; idle.vec.x = 50; idle.vec.y = 0;
+		idle.update();
+		check('an idle Crasher (no DETEC target) still hard-clamps at the drawn edge, unchanged',
+			idle.x === room.map.width / 2, idle.x + ' vs ' + room.map.width / 2);
+	}
+}
+
+/*
+	Predator zoom (plan.md C9, diepcustom TankBody.ts:338-345) - right-click locks the camera to
+	a point 1500 du out along the mouse direction, latched once at press and released on mouse-up.
+	Server-side this is entities/Player.js's `zooming`/`zoomX`/`zoomY` (gated on the class's own
+	`flags.zoomAbility`, so it never fires for an ordinary class holding right-click for some other
+	reason - Overseer's own drone-repel input in particular) and rooms/Room.js's per-viewer buffer/
+	getBuffer() reading them instead of the tank's own x/y so the client actually receives entities
+	near the locked point, not an empty view.
+*/
+function predatorZoomTests() {
+	console.log('\npredator zoom (plan.md C9):');
+	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+	const room = makeRoom('ffa');
+	player(room, 0).destroy = 1;
+
+	{
+		const p = room.INSTANCE.players.add((id) => new Player(
+			{ GM: room.gm, sId: room.id, oId: id }, 4000, 4000, 'predatorTest', 1, room.XPLVL, room));
+		p.class = 'Predator';   // the constructor's 4th arg is the display NAME, not the class
+		p.shield = 0; p.alpha = 1;
+		p.dir = 0;   // aiming due "east"
+		p.inputs.mouseR = 1;
+		p.update();
+		check('holding right-click on a zoomAbility class latches a zoom lock',
+			p.zooming === 1, p.zooming);
+		check('...840 units (1500 du x 0.56) out along the aim direction',
+			Math.abs(p.zoomX - (p.x + 840)) < 0.01 && Math.abs(p.zoomY - p.y) < 0.01,
+			p.zoomX + ',' + p.zoomY);
+		// Re-aiming while still held does NOT move the lock (diep's own `usesCameraCoords` gate:
+		// computed once at press, not re-latched every tick it stays held).
+		p.dir = Math.PI / 2;
+		p.update();
+		check('the lock does not track the mouse while still held, only at the moment of press',
+			Math.abs(p.zoomX - (p.x + 840)) < 0.01 && Math.abs(p.zoomY - p.y) < 0.01,
+			p.zoomX + ',' + p.zoomY);
+		// Release, then re-press at the new aim: a fresh lock at the new direction.
+		p.inputs.mouseR = 0;
+		p.update();
+		check('releasing right-click clears the lock', p.zooming === 0, p.zooming);
+		p.inputs.mouseR = 1;
+		p.update();
+		check('pressing again re-latches at the CURRENT aim direction',
+			Math.abs(p.zoomX - p.x) < 0.01 && Math.abs(p.zoomY - (p.y + 840)) < 0.01,
+			p.zoomX + ',' + p.zoomY);
+	}
+
+	// A class with no flags.zoomAbility (Overseer, which has its own unrelated right-click
+	// drone-repel input) must never engage a camera lock from the same input.
+	{
+		const o = room.INSTANCE.players.add((id) => new Player(
+			{ GM: room.gm, sId: room.id, oId: id }, -4000, -4000, 'overseerTest', 1, room.XPLVL, room));
+		o.class = 'Overseer';
+		o.shield = 0; o.alpha = 1;
+		o.inputs.mouseR = 1;
+		o.update();
+		check('Overseer\'s own right-click input does not engage a Predator-style zoom lock',
+			o.zooming === 0, o.zooming);
+	}
+
+	// End to end through getBuffer(): the buffer centres on the locked point, not the tank's own
+	// position, while zoomed - otherwise the client would pan its camera to a point the server
+	// never sent any entities for.
+	{
+		const pr = room.INSTANCE.players.add((id) => new Player(
+			{ GM: room.gm, sId: room.id, oId: id }, 0, 0, 'predatorTest2', 1, room.XPLVL, room));
+		pr.class = 'Predator';
+		pr.shield = 0; pr.alpha = 1;
+		pr.dir = 0;
+		pr.inputs.mouseR = 1;
+		room.step();
+		const buff = room.getBuffer(pr.id.oId);
+		check('getBuffer() head.camX/camY track the lock point while zoomed, not the tank\'s own x/y',
+			Math.abs(buff.head.camX - pr.zoomX) < 1 && Math.abs(buff.head.camY - pr.zoomY) < 1 &&
+			Math.abs(buff.head.camX - pr.x) > 1,
+			buff.head.camX + ',' + buff.head.camY + ' vs tank ' + pr.x + ',' + pr.y + ' vs lock ' + pr.zoomX + ',' + pr.zoomY);
+		check('...and main.states[4] tells the client a lock is actually active',
+			buff.main.states[4] === 1, buff.main.states[4]);
+		pr.inputs.mouseR = 0;
+		room.step();
+		const buff2 = room.getBuffer(pr.id.oId);
+		check('releasing right-click returns head.camX/camY to the tank\'s own position',
+			buff2.head.camX === pr.x && buff2.head.camY === pr.y, buff2.head.camX + ',' + buff2.head.camY);
+		check('...and clears main.states[4]', buff2.main.states[4] === 0, buff2.main.states[4]);
+	}
 }
 
 /*
@@ -4583,6 +5116,9 @@ rooms.push(sandboxTests()); console.log('');
 rooms.push(tagTests()); console.log('');
 rooms.push(mazeTests()); console.log('');
 rooms.push(dominatorTests()); console.log('');
+rooms.push(mothershipTests()); console.log('');
+possessionTests();
+rosterSweepTests();
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);
@@ -4602,6 +5138,7 @@ spawnSamplerTests();
 crasherChaseTests();
 broadPhaseTests();
 wallTests();
+predatorZoomTests();
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

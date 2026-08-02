@@ -338,10 +338,12 @@ class Tag extends Room {
 		own default, so it is inherited rather than written; noted here because "no spawnPoint()
 		override" is a deliberate statement about this mode, not an omission.
 
-		Colours are by team, like every other team mode.
+		Colours are by team, like every other team mode - except a boss, which keeps its own real
+		diep colour (Room.bossColor(), plan.md Part D) rather than falling through to team 9's
+		flat gold.
 	*/
 	entityColor(player) {
-		return player.team;
+		return player.boss ? Room.bossColor(player) : player.team;
 	}
 	mainColor(player) {
 		return player.team;

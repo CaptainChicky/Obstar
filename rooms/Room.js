@@ -96,6 +96,21 @@ const { TANK_TANK_MULT, TANK_SHAPE_MULT } = require('../lib/damage.js');
 const SHAPE_DENSITY_GU2 = 200;
 function shapeTotal(widthGu, heightGu) { return Math.floor(widthGu * heightGu / SHAPE_DENSITY_GU2); }
 /*
+	diep's Crasher Zone (ShapeManager.ts:56-71, plan.md C12) is not a separately-tuned population -
+	`spawnShape()` draws ONE shared pool uniformly by area over the whole arena and classifies
+	whatever lands in this annulus as a Crasher, so its count is just that annulus's share of the
+	very same SHAPE_DENSITY_GU2 every other shape draws from, not an independent knob. Radii mirror
+	entities/Objects.js's own crasher-zone constants (630/1249 x nestScale, contiguous with the
+	Pentagon Nest circle) - kept in sync by comment cross-reference, the same convention Room.js's
+	own Pentagon-nest radius (630, in createObj() below) already uses to stay aligned with
+	Objects.js's carve-out of that same circle.
+*/
+const CRASHER_ZONE_R_IN = 630, CRASHER_ZONE_R_OUT = 1249;
+function crasherTotal(nestScale) {
+	const areaWorld2 = Math.PI * (Math.pow(CRASHER_ZONE_R_OUT * nestScale, 2) - Math.pow(CRASHER_ZONE_R_IN * nestScale, 2));
+	return Math.max(0, Math.floor(areaWorld2 / (World.GU * World.GU) / SHAPE_DENSITY_GU2));
+}
+/*
 	AL() for the modes that do scale with population. The floor is a PLAYABILITY minimum, not a
 	satisfiability one: 150 gu is Sandbox's own long-standing tuned size, and also the smallest
 	arena this tree has ever shipped, so an empty live-scaled room lands exactly where Sandbox
@@ -296,7 +311,11 @@ const DEFAULT_RULES = {
 	betaPentRng: 0.98,   // RNG above this may spawn a beta pentagon
 	bossRng: 2,      // ... and above this calls createBoss(). 2 = never.
 	maxBoss: 0,      // how many bosses may be alive at once. 0 = the mode has none.
-	bossHp: 20000,
+	// diepcustom AbstractBoss.ts:141 `health = maxHealth = 3000` (plan.md Part D's shared boss
+	// scaffolding) - flat, not level-derived (unlike a Dominator's 6148, which does scale off a
+	// hypothetical level 75). Was 20000/30000 (rooms/BossMode.js's own override), an unreconciled
+	// legacy balance figure from before this fidelity pass had a real number to check it against.
+	bossHp: 3000,
 	bossTeam: 9,      // bosses are on nobody's side; 9 is the 'necro' colour
 	botCount: 10,
 	botIdStart: 10,     // bots occupy a fixed slot range so respawn can find them
@@ -361,9 +380,10 @@ class Room {
 		// no-op until one of those two asks for something different.
 		this.newMap = { width: this.map.width, height: this.map.height };
 		// sqr/tri/pnt's caps are derived (tickArena() below, called once here so the room is fully
-		// sized before build()/Init() run). Bpnt/Bsqr/Btri/bull are deliberately NOT: giant nest
-		// constructs and landmines are a separate, rarer mechanic that #19's density formula says
-		// nothing about, so their caps stay the literals they have always been.
+		// sized before build()/Init() run), and so now is bull's (plan.md C12 - a Crasher is a real
+		// diep shape with a real density formula, not a stand-in). Bpnt/Bsqr/Btri are still
+		// deliberately NOT: giant nest constructs have no diep counterpart and #19's density
+		// formula says nothing about them, so their caps stay the literals they have always been.
 		this.obj = {
 			"sqr": { "0": 0, "1": 0, "max0": 0, "max1": 0 },
 			"tri": { "0": 0, "1": 0, "max0": 0, "max1": 0 },
@@ -371,7 +391,7 @@ class Room {
 			"Bpnt": { '1': 0, 'max1': 3 },
 			"Bsqr": { '1': 0, 'max1': 2 },
 			"Btri": { '1': 0, 'max1': 2 },
-			"bull": { '1': 0, 'max1': 39 }
+			"bull": { '1': 0, 'max1': 0 }
 		};
 		this.baseSize = 0;
 		this.nestScale = 1;
@@ -942,17 +962,30 @@ class Room {
 			b.hp = this.rules.bossHp;
 			b.maxHp = this.rules.bossHp;
 			b.boss = 1;
-			// diep's real per-boss body size (plan.md X2) - CLASS[...].bossSize, converted from
-			// each boss's own diepcustom source at its own TanksConfig.js entry. Summoner keeps
-			// the old flat 64 (falls through the `||`): it has no diep body to convert, and
-			// TanksConfig.js's own Summoner comment already documents why 64 is a floor, not a
-			// guess, so it stays the literal default here rather than moving into a `bossSize`
-			// field that would misleadingly imply it was ever diep-derived.
+			// diep's real per-boss body size (plan.md X2/Part D) - CLASS[...].bossSize, converted
+			// from each boss's own diepcustom source at its own TanksConfig.js entry. Summoner now
+			// has a real one too (Summoner.ts's SUMMONER_SIZE, plan.md Part D); the `|| 64` is dead
+			// weight now that every CONFIG.BOSS entry sets bossSize, kept only as a defensive floor.
 			b.size = CLASS[spec[2]].bossSize || 64;
 			b.class = spec[2];
 			b.screen = CLASS[b.class].screen;
-			b.prize = 100000;
-			b.xp = 100000;
+			// diepcustom AbstractBoss.ts:125-126/139 (plan.md Part D's shared boss scaffolding):
+			// scoreReward 30000 (was 100000, an unreconciled legacy balance figure), damagePerTick
+			// 10 (entities/Player.js's own `this.damage` constructor default is 5, the ordinary
+			// tank figure - upClass() is what would normally raise it per class, but createBoss()
+			// spawns a boss directly without ever routing through upClass()), and reloadTime's own
+			// `15 * 0.914^7` multiplier - every boss cannon's `reload` field in TanksConfig.js was
+			// converted assuming the OWNER'S `up.Reload` carries this maxed figure (the same reason
+			// rooms/Mothership.js's createMothership() sets it), which createBoss() never did, so
+			// every boss fired ~1.877x slower than its own TanksConfig.js comments were computed
+			// against until now.
+			b.prize = 30000;
+			b.xp = 30000;
+			b.damage = 10;
+			b.up.Reload = Math.pow(0.914, 7);
+			// diepcustom AbstractBoss.ts:123 `absorbtionFactor = 0.05` - nearly immovable, not
+			// literally 0 like a Dominator (entities/Player.js's collision() arms read this back).
+			b.absorb = 0.05;
 			b.shield = 0;
 			b.motion = spec[0].bind(b);
 			b.update = spec[1].bind(b);
@@ -998,6 +1031,13 @@ class Room {
 			d.hp = 6148;
 			d.maxHp = 6148;
 			d.dominator = 1;
+			// diep's own `absorbtionFactor = 0` for a Dominator (Object.ts:280, plan.md Part D's
+			// shared boss table cites the same field for a real boss at 0.05) - immovable. The
+			// KIND.PLAYER/KIND.BULLET collision arms in entities/Player.js also keep their own
+			// separate `!this.dominator` gate (predates `absorb`, redundant with 0 here but left
+			// alone rather than removed); the KIND.OBJECTS arm has no such gate, so this is what
+			// actually stops a shape from shoving a Dominator.
+			d.absorb = 0;
 			d.size = 89.6;
 			d.class = spec[2];
 			d.screen = CLASS[d.class].screen;
@@ -1008,6 +1048,54 @@ class Room {
 		});
 		if (dom) { this.dominators.push(dom); }
 		return dom;
+	}
+	/*
+		H-key piloting (plan.md E4, diepcustom Client.ts's possess()/TakeTank): claim the
+		nearest same-team claimable AI (a captured Dominator, or your own team's Mothership),
+		sorted by distance the same way diep's own AIs.sort() is - no fixed claim radius, just
+		whichever is closest. Toggling while already piloting one releases it instead - net/
+		gameSocket.js's 'h' keydown calls this unconditionally either way.
+
+		`pilot`'s own tank keeps existing (entities/Player.js's own update() bleeds its HP while
+		`piloting` is set) rather than being replaced - releasing (here or the vacated tank
+		dying, see that same update()) hands it back exactly where it was left.
+	*/
+	togglePossession(pilot) {
+		if (pilot.destroy || pilot.dead) { return; }
+		if (pilot.piloting) {
+			this.releasePossession(pilot);
+			return;
+		}
+		let best = null, bestD = Infinity;
+		for (const e of this.dominators.concat(this.motherships)) {
+			if (e.destroy || e.team !== pilot.team || e.pilotedBy) { continue; }
+			const d = (e.x - pilot.x) ** 2 + (e.y - pilot.y) ** 2;
+			if (d < bestD) { bestD = d; best = e; }
+		}
+		if (!best) {
+			pilot.mess.push('Someone has already taken that tank');
+			return;
+		}
+		best.pilotedBy = pilot;
+		// Mothership's own 5-minute possession clock (plan.md E3/E4, Mothership.ts's
+		// possessionStartTick) - Dominator possession has no timer, so these two just never get
+		// read for one (lib/gameAI.js's dominatorUpdate() doesn't check them at all).
+		if (best.mothership) {
+			best.possessionStartTick = this.timestamp;
+			best.possessionWarned = false;
+		}
+		pilot.piloting = best;
+		pilot.mess.push('Press H to surrender control of the tank');
+	}
+	/* The other half of togglePossession() above - also the auto-release path when the
+	   vacated pilot's own tank finally bleeds out, and Mothership's own timer-expiry kick
+	   (lib/gameAI.js's mothershipUpdate()). Safe to call on an already-released pilot. */
+	releasePossession(pilot) {
+		const target = pilot.piloting;
+		if (!target) { return; }
+		target.pilotedBy = null;
+		target.possessionStartTick = -1;
+		pilot.piloting = null;
 	}
 	/*
 		Everything that is derived from the arena's current size, recomputed together (PENDING #19,
@@ -1043,6 +1131,10 @@ class Room {
 			this.obj[type].max0 = caps[type].max0;
 			this.obj[type].max1 = caps[type].max1;
 		}
+		// Crashers scale with the arena the same way sqr/tri/pnt do (plan.md C12) - unlike
+		// Bpnt/Bsqr/Btri just below, a Crasher IS a real diep shape with a real density to be
+		// faithful to, not a stand-in this file gets to leave at a hand-picked literal.
+		this.obj.bull.max1 = crasherTotal(this.nestScale);
 	}
 	createBullet(bullet, origin) {
 		this.assignBulletTeam(bullet, origin);
@@ -1399,7 +1491,13 @@ class Room {
 				continue;
 			}
 
-			const x = player.x - player.screen / 2 - 200, y = player.y - player.screen / 2 * 0.5625 - 200;
+			// Predator zoom (plan.md C9): the per-viewer buffer is centred on the locked zoom
+			// point while one is active, not the tank's own position, or the client would pan its
+			// camera out to an area the server never sent any entities for. The FoV SIZE (screen)
+			// is unchanged - diep's zoom moves where you're looking, not how far you can see.
+			const camX = player.zooming ? player.zoomX : player.x;
+			const camY = player.zooming ? player.zoomY : player.y;
+			const x = camX - player.screen / 2 - 200, y = camY - player.screen / 2 * 0.5625 - 200;
 			const w = player.screen + 400, h = player.screen * 0.5625 + 400;
 
 			this.BUFFER[id] = {
@@ -1639,17 +1737,24 @@ class Room {
 			// them; Survival's real COUNTDOWN is the first consumer.
 			arenaState: this.state,
 			ticksUntilStart: Math.max(0, this.ticksUntilStart),
-			playersNeeded: this.playersNeeded
+			playersNeeded: this.playersNeeded,
+			// Predator zoom (plan.md C9) - the world point the client's own camera should track
+			// this tick; equal to the viewer's own x/y whenever `main.states[4]` (zooming) is off.
+			camX: RAW.main.zooming ? RAW.main.zoomX : RAW.main.x,
+			camY: RAW.main.zooming ? RAW.main.zoomY : RAW.main.y
 		};
 		///
 		const lvl = RAW.main.level, xp = RAW.main.xp, arr = RAW.main.XPLVL;
 		buff.head.level = (!lvl ? 1 : ((lvl >= arr.length - 1) ? lvl : lvl + Math.max(Math.min(1, (xp - arr[lvl - 1]) / (arr[lvl] - arr[lvl - 1])), 0)));
 		///
 		buff.main = {
+			// states[4]: Predator zoom (plan.md C9) - whether head.camX/camY is currently a real
+			// zoom lock point rather than just this tank's own x/y (the unzoomed default), so the
+			// client knows whether to pan its camera out to it or keep tracking its own tank.
 			states: [!!RAW.main.hit * 1,
 			!!RAW.main.spinning * 1,
 			!!RAW.main.dead * 1,
-			!!RAW.main.shield * 1, 0, 0],
+			!!RAW.main.shield * 1, !!RAW.main.zooming * 1, 0],
 			class: RAW.main.class,
 			color: RAW.main.dev.color ? RAW.main.dev.color - 1 : this.mainColor(RAW.main),
 			x: RAW.main.x,
@@ -1820,11 +1925,18 @@ class Room {
 		};
 		return buff;
 	}
-	/* Colour of another tank, as everyone sees it. Cached, so it cannot depend on the viewer.
-		 Bosses keep their own team colour in every mode - they are on nobody's side, and a boss
-		 that renders as just another red tank is not readable. */
+	/*
+		Colour of another tank, as everyone sees it. Cached, so it cannot depend on the viewer.
+		A boss draws in its own real diep colour now (plan.md Part D, SocketSchema.js's own
+		comment on the 4 appended enum entries) rather than the flat team-9 gold every boss used
+		to share - Guardian pink, Defender coral, Summoner square-yellow, both Fallen bosses grey.
+		The lookup itself is Room.bossColor() (a static, below the class) so every team mode's own
+		entityColor() override (TwoTeam/FourTeam/Tag - each colours an ordinary tank by
+		player.team, which a boss's team 9 would otherwise just fall through to unchanged) can
+		special-case a boss the same way without repeating this switch four times.
+	*/
 	entityColor(player) {
-		return player.boss ? player.team : 1;
+		return player.boss ? Room.bossColor(player) : 1;
 	}
 	/* Colour of your own tank on your own screen. */
 	mainColor(player) {
@@ -1942,5 +2054,23 @@ class Room {
 // diep's own Native/Arena.ts ArenaState numbering (plan.md A4) - kept as literal values, not a
 // re-numbered enum, so the wire byte means the same thing a real diep client would read.
 Room.ArenaState = { COUNTDOWN: -1, OPEN: 0, OVER: 1, CLOSING: 2, CLOSED: 3 };
+
+/*
+	A boss's real per-diep-class colour (plan.md Part D) - shared by every mode's own
+	entityColor() override (this file's own default above, plus TwoTeam/FourTeam/Tag's, which
+	each colour an ordinary tank by player.team and need this to special-case a boss rather than
+	just falling through to team 9's flat gold). Falls back to player.team for a boss class not
+	in the table (there is none today) rather than crashing.
+*/
+Room.bossColor = function (player) {
+	switch (player.class) {
+		case 'Guardian': return 10;      // 'bull' - Color.EnemyCrasher
+		case 'Defender': return 11;      // 'coral' - Color.EnemyTriangle
+		case 'Summoner': return 12;      // 'square' - Color.EnemySquare
+		case 'Fallen Overlord':
+		case 'Fallen Booster': return 13; // 'fallen' - Color.Fallen
+		default: return player.team;
+	}
+};
 
 module.exports = Room;

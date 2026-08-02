@@ -55,19 +55,9 @@ const WHITELIST = [
 	// - both fixed and removed. Twin Flank/Triple Twin's was a real bug (the client's offx sign
 	// was mirrored against the server's, so the recoil bitfield animated the wrong barrel); the
 	// angle false positives are gone now that offdir is compared with sameAngle() below instead
-	// of a literal !==.
-	...[0, 1, 2, 3].map(i => ({
-		class: 'Summoner', index: i, kind: 'geom', reason:
-			"height 44 vs canonLength 50 (gap -2.50): every other class in the table has the " +
-			"drawn barrel a little *longer* than the spawn radius (band 0-12) so bullets appear " +
-			"at the tip; Summoner is the one class where it runs the other way, drawn shorter " +
-			"than the spawn point. canonLength: 50 is a floor (a boss's body radius is 64 - " +
-			"rooms/Room.js - and shortening it spawns drones inside their own boss), so closing " +
-			"the gap means growing the drawn barrel instead, a visible silhouette change on a " +
-			"boss - a human balance call, not a mechanical sync. Left deliberately unfixed " +
-			"(PENDING.md); flagged there as a pattern to re-check for any future boss class too, " +
-			"not just this one."
-	})),
+	// of a literal !==. Summoner[0..3]'s own geom entry (client height 44 vs a since-fixed server
+	// canonLength) is gone too now (plan.md Part D) - both sides converge on
+	// SummonerSpawnerDefinition's real 31.5/16.66 (client) === 31.5 (server canonLength).
 ];
 /* Marks a WHITELIST entry as having actually excused something this run, so the size pin below
 	 can't hide a mismatch by whitelisting more than is needed. */
@@ -84,7 +74,9 @@ console.log('tanks whitelist: ' + WHITELIST.length + ' entries\n');
 // Was 12 - Ranger's own entry (plan.md A4) is gone now that its client cannon count for real:
 // one cannon, matching the server's one barrel, the fake second "cannon" replaced by a real
 // `pronounced` postAddon overlay instead of a cannon-shaped stand-in.
-check('the whitelist has not grown', WHITELIST.length === 11, WHITELIST.length);
+// 11 -> 7 (plan.md Part D): Summoner[0..3]'s own geom entries are gone, both sides now converge
+// on SummonerSpawnerDefinition's real numbers instead of excusing a stale mismatch.
+check('the whitelist has not grown', WHITELIST.length === 7, WHITELIST.length);
 
 /* offdir is an angle: -PI/2 and 3*PI/2 are the same barrel, and two float64 expressions for the
 	 same rotation (Fortress[5]) differ by an ULP. A literal !== calls both a mismatch and used to
@@ -399,6 +391,15 @@ distances(names);
 bulletTypes(names);
 diepCitations();
 diepBulletStats();
+
+// Fallen Overlord/Fallen Booster draw a plain circle now (plan.md Part D), the same body every
+// ordinary diep tank - including the Overlord/Booster classes these two are scaled copies of -
+// already has, not the rounded-rect (shape 1) stand-in PENDING #51 flagged.
+console.log('\nFallen Overlord/Fallen Booster draw a real circular body (plan.md Part D):');
+for (const name of ['Fallen Overlord', 'Fallen Booster']) {
+	check(name + ' body is shape 0 (a plain circle), not the shape 1 rounded-rect stand-in',
+		client.class[name].body.shape === 0, client.class[name].body.shape);
+}
 
 // count/order entries report their own staleness here; geom entries already did it inline above
 // (they need the recomputed comparison, not just "was this looked up").

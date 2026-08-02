@@ -100,6 +100,11 @@ function attach(httpServer, controller) {
 						}
 						break;
 					};
+					// H-key piloting (plan.md E4) - not sandbox-gated, unlike the cheats above:
+					// diep's own possess() works in any mode with a claimable AI nearby.
+					case 'h':
+						tank.room.togglePossession(tank);
+						break;
 				}
 				break;
 			};
