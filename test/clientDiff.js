@@ -89,7 +89,12 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-const GOLDEN = { count: 309263, hash: '82d3d11f' };
+// Rebaselined for plan.md Part A (A1-A5): the pre-body/post-body z-order split (ring turrets,
+// Dominator `aboveBody` cannons), the trapezoid taper ratio/direction fix (Drawings.cannons[2]),
+// real trapLauncher geometry (Trapper line + Trapper Dominator), Ranger's `pronounced` postAddon
+// replacing its fake second cannon, and Machine Gun/Necromancer/Overseer/Overlord/Manager/Fallen
+// Overlord moving from a type-0 `open` flare fake onto real type-2 trapezoids.
+const GOLDEN = { count: 309623, hash: '0c1d9595' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

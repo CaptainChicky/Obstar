@@ -80,15 +80,18 @@
 					shape: 0,
 				}
 			},
+			// type 2 (plan.md A2): a real trapezoid, wide at the muzzle, instead of the old
+			// type-0-plus-`open` flare fake - see drawings.js's TAPER_RATIO.
 			"Machine Gun": {
 				cannons: [
 					{
-						type: 0,
+						type: 2,
 						height: 66.5,
 						width: 29.4,
 						offx: 0,
 						offdir: 0,
-						open: 21
+						open: 0,
+						trapezoidDirection: false
 					}
 				],
 				body: {
@@ -279,23 +282,26 @@
 					shape: 0,
 				}
 			},
+			// type 2 (plan.md A2): a real trapezoid, wide at the muzzle - see Machine Gun above.
 			"Overseer": {
 				cannons: [
 					{
-						type: 0,
+						type: 2,
 						height: 49,
 						width: 29.4,
 						offx: 0,
 						offdir: Math.PI / 2,
-						open: 23,
+						open: 0,
+						trapezoidDirection: false
 					},
 					{
-						type: 0,
+						type: 2,
 						height: 49,
 						width: 29.4,
 						offx: 0,
 						offdir: -Math.PI / 2,
-						open: 23
+						open: 0,
+						trapezoidDirection: false
 					},
 				],
 				body: {
@@ -335,16 +341,18 @@
 					shape: 0,
 				}
 			},
+			// type 0 + trapLauncher (plan.md A3): a short plain rectangle plus the real
+			// TrapLauncher arrowhead addon, not the type-1 flared-muzzle fake.
 			"Trapper": {
 				cannons: [
 					{
-						type: 1,
+						type: 0,
 						height: 42,
 						width: 29.4,
-						openlength: 16,
 						offx: 0,
 						offdir: 0,
-						open: 18
+						open: 0,
+						trapLauncher: true
 					}
 				],
 				body: {
@@ -465,7 +473,11 @@
 					shape: 0,
 				}
 			},
+			// postAddon "pronounced" (plan.md A4, diepcustom Addons.ts's PronouncedAddon) - a
+			// barrel-coloured trapezoid overlay above the main barrel/below the body, not a
+			// second cannon (there was never a second barrel to fire from server-side).
 			"Ranger": {
+				pronounced: true,
 				cannons: [
 					{
 						type: 0,
@@ -474,14 +486,6 @@
 						offx: 0,
 						offdir: 0,
 						open: 0
-					},
-					{
-						type: 0,
-						height: 56.25,
-						width: 75,
-						offx: 0,
-						offdir: 0,
-						open: -30
 					}
 				],
 				body: {
@@ -925,62 +929,70 @@
 					shape: 0,
 				}
 			},
+			// type 2 (plan.md A2): a real trapezoid, wide at the muzzle - see Machine Gun above.
 			"Overlord": {
 				cannons: [
 					{
-						type: 0,
+						type: 2,
 						height: 49,
 						width: 29.4,
 						offx: 0,
 						offdir: 0,
-						open: 23,
+						open: 0,
+						trapezoidDirection: false
 					},
 					{
-						type: 0,
+						type: 2,
 						height: 49,
 						width: 29.4,
 						offx: 0,
 						offdir: Math.PI / 2,
-						open: 23
+						open: 0,
+						trapezoidDirection: false
 					},
 					{
-						type: 0,
+						type: 2,
 						height: 49,
 						width: 29.4,
 						offx: 0,
 						offdir: Math.PI,
-						open: 23
+						open: 0,
+						trapezoidDirection: false
 					},
 					{
-						type: 0,
+						type: 2,
 						height: 49,
 						width: 29.4,
 						offx: 0,
 						offdir: Math.PI * 3 / 2,
-						open: 23
+						open: 0,
+						trapezoidDirection: false
 					},
 				],
 				body: {
 					shape: 0,
 				}
 			},
+			// type 2 (plan.md A2): a real trapezoid, wide at the muzzle - see Machine Gun above.
 			"Necromancer": {
 				cannons: [
 					{
-						type: 0,
+						type: 2,
 						height: 49,   // decorative only (server fires through this.necro, not a cannon) - still diep's real barrel size 70 x 0.70 (plan.md C2/R1)
 						width: 29.4,
 						offx: 0,
 						offdir: Math.PI / 2,
-						open: 28,
+						open: 0,
+						trapezoidDirection: false
 					},
 					{
-						type: 0,
+						type: 2,
 						height: 49,
 						width: 29.4,
 						offx: 0,
 						offdir: -Math.PI / 2,
-						open: 28
+						open: 0,
+						trapezoidDirection: false
 					},
 				],
 				body: {
@@ -999,15 +1011,17 @@
 					'Bullet Penetration'
 				]
 			},
+			// type 2 (plan.md A2): a real trapezoid, wide at the muzzle - see Machine Gun above.
 			"Manager": {
 				cannons: [
 					{
-						type: 0,
+						type: 2,
 						height: 49,
 						width: 29.4,
 						offx: 0,
 						offdir: 0,
-						open: 23,
+						open: 0,
+						trapezoidDirection: false
 					},
 				],
 				body: {
@@ -1111,32 +1125,35 @@
 					shape: 0,
 				}
 			},
+			// type 0 + trapLauncher (plan.md A3) - see Trapper above.
 			"Mega Trapper": {
 				cannons: [
 					{
-						type: 1,
+						type: 0,
 						height: 42,
 						width: 38.22,
-						openlength: 20,
 						offx: 0,
 						offdir: 0,
-						open: 30
+						open: 0,
+						trapLauncher: true
 					}
 				],
 				body: {
 					shape: 0,
 				}
 			},
+			// type 0 + trapLauncher on the trap barrel (plan.md A3) - see Trapper above; the two
+			// side barrels are ordinary bullet cannons, untouched.
 			"Overtrapper": {
 				cannons: [
 					{
-						type: 1,
+						type: 0,
 						height: 42,
 						width: 29.4,
-						openlength: 15,
 						offx: 0,
 						offdir: 0,
-						open: 14
+						open: 0,
+						trapLauncher: true
 					},
 					{
 						type: 0,
@@ -1159,16 +1176,17 @@
 					shape: 0,
 				}
 			},
+			// type 0 + trapLauncher (plan.md A3) - see Trapper above.
 			"Auto Trapper": {
 				cannons: [
 					{
-						type: 1,
+						type: 0,
 						height: 42,
 						width: 29.4,
-						openlength: 16,
 						offx: 0,
 						offdir: 0,
-						open: 18
+						open: 0,
+						trapLauncher: true
 					}
 				],
 				turrets: [
@@ -1481,7 +1499,7 @@
 			// - was on the wrong 0.56 axis before).
 			"Fallen Overlord": {
 				cannons: [0, 1, 2, 3].map(i => ({
-					type: 0, height: 49, width: 29.4, offx: 0, offdir: Math.PI * i / 2, open: 23
+					type: 2, height: 49, width: 29.4, offx: 0, offdir: Math.PI * i / 2, open: 0, trapezoidDirection: false
 				})),
 				body: { shape: 1, width: 1, height: 1 }
 			},
@@ -1539,6 +1557,9 @@
 			// Dominator.ts scales like an ordinary tank (no sizeFactor override), so this converts
 			// on the ordinary 0.7 axis: 80x0.7=56, 35x0.7=24.5 - was a hand-tuned guess before R3
 			// found the real source.
+			// `aboveBody: true` on every Dominator cannon (plan.md A1/E2): diep's own z-order is
+			// dombase (bottom) -> body -> barrel(+dompronounced) on top, not barrel-under-body
+			// like an ordinary tank.
 			"Destroyer Dominator": {
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
@@ -1549,7 +1570,8 @@
 						width: 24.5,
 						offx: 0,
 						offdir: 0,
-						open: 0
+						open: 0,
+						aboveBody: true
 					}
 				],
 				body: {
@@ -1566,9 +1588,9 @@
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
 				cannons: [
-					{ type: 0, height: 52.5, width: 12.25, offx: -6, offdir: 0, open: 0 },
-					{ type: 0, height: 52.5, width: 12.25, offx: 6, offdir: 0, open: 0 },
-					{ type: 0, height: 56, width: 12.25, offx: 0, offdir: 0, open: 0 }
+					{ type: 0, height: 52.5, width: 12.25, offx: -6, offdir: 0, open: 0, aboveBody: true },
+					{ type: 0, height: 52.5, width: 12.25, offx: 6, offdir: 0, open: 0, aboveBody: true },
+					{ type: 0, height: 56, width: 12.25, offx: 0, offdir: 0, open: 0, aboveBody: true }
 				],
 				body: {
 					shape: 0
@@ -1579,17 +1601,19 @@
 			// own trap barrel (type 1, the same openlength/open shape). Dominator.ts scales like an
 			// ordinary tank (no sizeFactor override), so height/width convert on the ordinary 0.7
 			// axis: 60x0.7=42, 21x0.7=14.7 - was a hand-tuned guess before R3 found the real source.
+			// type 0 + trapLauncher (plan.md A3) - see Trapper above.
 			"Trapper Dominator": {
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
 				cannons: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({
-					type: 1,
+					type: 0,
 					height: 42,
 					width: 14.7,
-					openlength: 16,
 					offx: 0,
 					offdir: i * Math.PI / 4,
-					open: 18
+					open: 0,
+					trapLauncher: true,
+					aboveBody: true
 				})),
 				body: {
 					shape: 0

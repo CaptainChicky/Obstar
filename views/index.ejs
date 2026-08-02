@@ -8,6 +8,17 @@
 	<script type='text/javascript' src='./SHARE/PetsConfig.js'></script>
 	<script type='text/javascript' src='./SHARE/AchievementsConfig.js'></script>
 	<script type='text/javascript' src='./SHARE/AchievementBadge.js'></script>
+	<!-- The menu background (font.js) draws its tanks through the real client render pipeline
+		 (plan.md A5) instead of a private geometry table, so it stays honest with in-game
+		 silhouettes. kinds.js before TanksConfig.js: TanksConfig's DETEC filters read KIND at
+		 load time (same requirement as views/play.ejs). -->
+	<script type='text/javascript' src='./SHARE/kinds.js'></script>
+	<script type='text/javascript' src='./SHARE/TanksConfig.js'></script>
+	<script type='text/javascript' src='./motion.js'></script>
+	<script type='text/javascript' src='./client/config.js'></script>
+	<script type='text/javascript' src='./client/util.js'></script>
+	<script type='text/javascript' src='./client/drawings.js'></script>
+	<script type='text/javascript' src='./client/render.js'></script>
 </head>
 
 <body>

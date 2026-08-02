@@ -1,5 +1,8 @@
 var canvas = document.getElementById('font');
 var ctx = canvas.getContext('2d');
+// Builds CLIENT.General.drawTank et al. (plan.md A5) - safe to call here since it only builds
+// closures/off-screen canvases, nothing that needs the game's own Run() state.
+CLIENT.initRender();
 window.onresize = resize;
 function resize() {
 	canvas.width = window.innerWidth;
@@ -90,8 +93,8 @@ function draw() {
 	ctx.translate(Width / 2, Height / 2)
 	{
 		///left
-		tank(-400 + Math.sin(T / 220) * 30, -200 + Math.sin(T / 350) * 30, Math.sin(T / 140) * 15 + 30, 38, 'Rogue', [C.red, C.dkred]);
-		tank(-500 + Math.cos((T + 20) / 180) * 30, 100 + Math.sin(T / 350) * 20, Math.sin((T + 1) / 170) * 25 - 40, 30, 'Doble', [C.red, C.dkred]);
+		tank(-400 + Math.sin(T / 220) * 30, -200 + Math.sin(T / 350) * 30, Math.sin(T / 140) * 15 + 30, 38, 'Hybrid', [C.red, C.dkred]);
+		tank(-500 + Math.cos((T + 20) / 180) * 30, 100 + Math.sin(T / 350) * 20, Math.sin((T + 1) / 170) * 25 - 40, 30, 'Twin', [C.red, C.dkred]);
 		tank(-250 + Math.sin((T + 21) / 150) * 40, 300 + Math.sin((T + 3) / 220) * 10, Math.sin((T + 1) / 170) * 30 - 180, 25, 'Basic', [C.red, C.dkred]);
 
 		obj(-220 + Math.cos(T / 510) * 10, -370 + Math.sin(T / 500) * 20, (-T + 4) / 9, 'triangle');
@@ -123,9 +126,9 @@ function draw() {
 		bull(-400 + Math.sin(0.2 + T / 100) * 22, 320 - Math.sin(.2 + T / 100) * 4, 28, [C.red, C.dkred]);
 		bull(-300 + Math.sin(1 + T / 100) * 12, 250 + Math.sin(.8 + T / 100) * 15, 28, [C.red, C.dkred]);
 		///right
-		tank(450 + Math.sin(T / 200) * 17, -250 - Math.cos(0.1 + T / 220) * 20, -T / 9, 32, 'Octop', [C.red, C.dkred]);
-		tank(290 + Math.cos(0.1 - T / 200) * 10, -50 - Math.cos(0.1 + T / 220) * 10, Math.sin(T / 200) * 10 + 20, 32, 'Pilote', [C.red, C.dkred]);
-		tank(350 + Math.sin(T / 130) * 20, 320 - Math.sin(T / 130) * 15, -Math.cos(T / 130) * 10 - 40, 32, 'Bolly', [C.red, C.dkred]);
+		tank(450 + Math.sin(T / 200) * 17, -250 - Math.cos(0.1 + T / 220) * 20, -T / 9, 32, 'Octo Tank', [C.red, C.dkred]);
+		tank(290 + Math.cos(0.1 - T / 200) * 10, -50 - Math.cos(0.1 + T / 220) * 10, Math.sin(T / 200) * 10 + 20, 32, 'Flank Guard', [C.red, C.dkred]);
+		tank(350 + Math.sin(T / 130) * 20, 320 - Math.sin(T / 130) * 15, -Math.cos(T / 130) * 10 - 40, 32, 'Destroyer', [C.red, C.dkred]);
 
 		obj(40 - Math.sin(2 - T / 400) * 20, -385 - Math.cos(0.1 + T / 390) * 10, 200 - T / 9, 'square');
 		obj(610 + Math.sin(T / 400) * 20, -220 - Math.cos(0.1 - T / 490) * 10, 20 + T / 9, 'square');
@@ -479,322 +482,25 @@ function draw() {
 	}
 }
 
+// Draws through the real client render pipeline (plan.md A5) - TanksConfig.class for geometry,
+// CLIENT.General.drawTank (public/client/render.js) for the shapes - instead of a private,
+// hand-authored CLASS table that had drifted from every in-game silhouette. isOpac=1 makes
+// drawTank draw straight into the passed ctx (no off-screen sprite cache, unneeded for a fully
+// opaque background tank - see render.js's own isOpac branch).
 function tank(x, y, angle, size, type, color) {
-	var CLASS = {
-		"Basic": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 24;
-				this.height = 60,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 0;
-			}
-		},
-		"Doble": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 22;
-				this.height = 60,
-					this.offx = -15;
-				this.offdir = 0;
-				this.openWidth = 0;
-			}
-			this.cannons[1] = new function () {
-				this.width = 22;
-				this.height = 60,
-					this.offx = 15;
-				this.offdir = 0;
-				this.openWidth = 0;
-			}
-		},
-		"Sniper": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 25;
-				this.height = 70,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 0;
-			}
-		},
-		"Rocket": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 23;
-				this.height = 55,
-					this.offx = 0;
-				this.offdir = Math.PI * 4 / 5;
-				this.openWidth = 0;
-			}
-			this.cannons[1] = new function () {
-				this.width = 23;
-				this.height = 55,
-					this.offx = 0;
-				this.offdir = -Math.PI * 4 / 5;
-				this.openWidth = 0;
-			}
-		},
-		"Uzid": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 22;
-				this.height = 60,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 20;
-			}
-		},
-		"Bolly": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 45;
-				this.height = 58,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 0;
-			}
-		},
-		"Submachine": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 38;
-				this.height = 55,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 13;
-			};
-		},
-		"Fire-box": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 14;
-				this.height = 58,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 6;
-			};
-			this.cannons[1] = new function () {
-				this.width = 32;
-				this.height = 50,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 18;
-			};
-		},
-		"Vulcan": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 12;
-				this.height = 58,
-					this.offx = 10;
-				this.offdir = 0;
-				this.openWidth = 2;
-			};
-			this.cannons[1] = new function () {
-				this.width = 12;
-				this.height = 58,
-					this.offx = -10;
-				this.offdir = 0;
-				this.openWidth = 2;
-			};
-			this.cannons[2] = new function () {
-				this.width = 32;
-				this.height = 50,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 18;
-			};
-		},
-		"Quade": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 24;
-				this.height = 60,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 0;
-			};
-			this.cannons[1] = new function () {
-				this.width = 24;
-				this.height = 60,
-					this.offx = 0;
-				this.offdir = Math.PI * 1 / 2;
-				this.openWidth = 0;
-			};
-			this.cannons[2] = new function () {
-				this.width = 24;
-				this.height = 60,
-					this.offx = 0;
-				this.offdir = Math.PI;
-				this.openWidth = 0;
-			};
-			this.cannons[3] = new function () {
-				this.width = 24;
-				this.height = 60,
-					this.offx = 0;
-				this.offdir = Math.PI * 3 / 2;
-				this.openWidth = 0;
-			};
-		},
-		"Octop": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 26;
-				this.height = 62,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 0;
-			};
-			this.cannons[1] = new function () {
-				this.width = 26;
-				this.height = 62,
-					this.offx = 0;
-				this.offdir = Math.PI * 1 / 2;
-				this.openWidth = 0;
-			};
-			this.cannons[2] = new function () {
-				this.width = 26;
-				this.height = 62,
-					this.offx = 0;
-				this.offdir = Math.PI;
-				this.openWidth = 0;
-			};
-			this.cannons[3] = new function () {
-				this.width = 26;
-				this.height = 62,
-					this.offx = 0;
-				this.offdir = Math.PI * 3 / 2;
-				this.openWidth = 0;
-			};
-			this.cannons[4] = new function () {
-				this.width = 26;
-				this.height = 62,
-					this.offx = 0;
-				this.offdir = Math.PI / 4;
-				this.openWidth = 0;
-			};
-			this.cannons[5] = new function () {
-				this.width = 26;
-				this.height = 62,
-					this.offx = 0;
-				this.offdir = Math.PI * 1 / 2 + Math.PI / 4;
-				this.openWidth = 0;
-			};
-			this.cannons[6] = new function () {
-				this.width = 26;
-				this.height = 62,
-					this.offx = 0;
-				this.offdir = Math.PI + Math.PI / 4;
-				this.openWidth = 0;
-			};
-			this.cannons[7] = new function () {
-				this.width = 26;
-				this.height = 62,
-					this.offx = 0;
-				this.offdir = Math.PI * 3 / 2 + Math.PI / 4;
-				this.openWidth = 0;
-			};
-		},
-		"Pilote": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 50;
-				this.height = 48,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = -10;
-			}
-			this.cannons[1] = new function () {
-				this.width = 50;
-				this.height = 48,
-					this.offx = 0;
-				this.offdir = Math.PI;
-				this.openWidth = -10;
-			}
-		},
-		"X-wing": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 50;
-				this.height = 48,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = -10;
-			}
-			this.cannons[1] = new function () {
-				this.width = 50;
-				this.height = 48,
-					this.offx = 0;
-				this.offdir = Math.PI * 2 / 3;
-				this.openWidth = -10;
-			}
-			this.cannons[2] = new function () {
-				this.width = 50;
-				this.height = 48,
-					this.offx = 0;
-				this.offdir = Math.PI * 4 / 3;
-				this.openWidth = -10;
-			}
-		},
-		"Thief": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 27;
-				this.height = 75,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 0;
-			}
-		},
-		"Rogue": new function () {
-			this.cannons = [];
-			this.cannons[0] = new function () {
-				this.width = 27;
-				this.height = 78,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = 0;
-			};
-			this.cannons[1] = new function () {
-				this.width = 60;
-				this.height = 42,
-					this.offx = 0;
-				this.offdir = 0;
-				this.openWidth = -26;
-			};
-		},
-	}
-	for (let c of CLASS[type].cannons) {
-		ctx.save();
-		ctx.translate(x, y);
-		ctx.rotate((angle / 360 * Math.PI * 2) + c.offdir);
-		ctx.beginPath();
-		ctx.moveTo(0, (c.offx - c.width / 2) * size / 35);
-		ctx.lineTo(0, (c.offx + c.width / 2) * size / 35);
-		ctx.lineTo(c.height * size / 35, (c.offx + c.width / 2 + c.openWidth / 2) * size / 35);
-		ctx.lineTo(c.height * size / 35, (c.offx - c.width / 2 - c.openWidth / 2) * size / 35);
-		ctx.closePath();
-		ctx.lineWidth = LW;
-		ctx.lineJoin = 'bevel';
-		ctx.fillStyle = C.gray;
-		ctx.strokeStyle = C.dkgray;
-		ctx.fill();
-		ctx.stroke();
-		ctx.restore();
-	}
-	switch (type) {
-		default:
-			ctx.beginPath()
-			ctx.arc(x, y, size, 0, Math.PI * 2);
-			ctx.closePath();
-			ctx.fillStyle = color[0];
-			ctx.strokeStyle = color[1];
-			ctx.lineWidth = LW;
-			ctx.fill();
-			ctx.stroke();
-			break;
-	}
+	if (!TanksConfig.class[type]) { return; }
+	ctx.save();
+	ctx.translate(x, y);
+	CLIENT.General.drawTank(ctx, 1, {
+		class: type,
+		tankC: color,
+		canC: [C.gray, C.dkgray],
+		size: size,
+		dir: angle / 360 * Math.PI * 2,
+		recoils: [],
+		canDir: []
+	});
+	ctx.restore();
 }
 function obj(x, y, angle, type) {
 	ctx.save()

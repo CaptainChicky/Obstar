@@ -8,19 +8,27 @@
 	const Palette = CLIENT.Palette;
 	const Global = CLIENT.Global;
 	const roundRect = CLIENT.roundRect;
-	// Barrel-level addon (plan.md T5/T6): a small trapezoid clipped to a trap
-	// barrel's tip, diepcustom's `trapLauncher` BarrelAddon (`Barrel.size = 65.5x
-	// sqrt2/50`, `width = 33.6/50` of the parent barrel, both x our existing
-	// 0.7 barrel-scale ratio) - Tri-Trapper and Gunner Trapper's rear barrel
-	// set `c.trapLauncher` to draw it. Cosmetic only, no server-side effect.
+	// The uniform base<->tip taper ratio behind every trapezoid shape in this file (plan.md A2):
+	// pixel-measured off the wiki reference renders (Mothership, Trapper Dominator's launcher
+	// flare), the wide end is 5/3 the narrow end's half-width - not our old 0.4x/2x guesses.
+	const TAPER_RATIO = 5 / 3;
+	// Barrel-level addon (plan.md A3): a short arrowhead clipped onto a trap barrel's tip,
+	// diepcustom's `TrapLauncher` BarrelAddon (`BarrelAddons.ts:49-74`) - every `bullet.type:
+	// "trap"` barrel sets `c.trapLauncher` to draw it. The launcher's own width at its base
+	// (attaching to the barrel with no seam) equals the barrel's own width; it flares to
+	// TAPER_RATIO x that at the outward mouth. Its length is the barrel's own width x 20/42
+	// (`TrapLauncher`'s `size = barrel.width x 20/42`), centered on the barrel's tip so it
+	// replaces the last half of its own length off the end of the plain-rectangle neck and
+	// extends the other half past it. Cosmetic only, no server-side effect.
 	function drawTrapLauncher(ctx, c, r, recoil, canC) {
-		const tipX = (c.height * recoil) * r;
-		const nubLen = c.width * 0.458 * r, nubHalf = c.width * 0.235 * r;
+		const len = c.width * 20 / 42;
+		const nearX = c.height * recoil - len / 2, farX = c.height * recoil + len / 2;
+		const nearHalf = c.width / 2, farHalf = c.width / 2 * TAPER_RATIO;
 		ctx.beginPath();
-		ctx.moveTo(tipX, (c.offx - c.width / 2) * r);
-		ctx.lineTo(tipX, (c.offx + c.width / 2) * r);
-		ctx.lineTo(tipX + nubLen, (c.offx + nubHalf) * r);
-		ctx.lineTo(tipX + nubLen, (c.offx - nubHalf) * r);
+		ctx.moveTo(nearX * r, (c.offx - nearHalf) * r);
+		ctx.lineTo(nearX * r, (c.offx + nearHalf) * r);
+		ctx.lineTo(farX * r, (c.offx + farHalf) * r);
+		ctx.lineTo(farX * r, (c.offx - farHalf) * r);
 		ctx.closePath();
 		ctx.fillStyle = canC[0];
 		ctx.strokeStyle = canC[1];
@@ -89,6 +97,35 @@
 			ctx.stroke();
 			ctx.restore();
 		},
+		// The thing above Ranger's barrel (plan.md A4, diepcustom Addons.ts's PronouncedAddon -
+		// postAddon `pronounced`, `sizeRatio 50/50`, `widthRatio 42/50`, `offsetRatio 40/50` of
+		// the tank's OWN body radius, `angle PI`). Centered `offsetRatio x size` out along the
+		// tank's forward axis, spanning its own `+-sizeRatio/2 x size`; angle PI flips which end
+		// of the shared trapezoid template is wide - same effect a barrel's own `trapezoidDirection:
+		// PI` has (A2) - putting the wide end nearest the hull (mostly hidden under the body) and
+		// the narrow end poking out past it.
+		pronounced: (ctx, config, param) => {
+			if (!config.pronounced) { return; }
+			const size = param.size;
+			const len = size, center = 0.8 * size, width = 0.84 * size;
+			const nearX = center - len / 2, farX = center + len / 2;
+			const wideHalf = width / 2 * TAPER_RATIO, narrowHalf = width / 2;
+			ctx.save();
+			ctx.rotate(param.dir);
+			ctx.beginPath();
+			ctx.moveTo(nearX, -wideHalf);
+			ctx.lineTo(nearX, wideHalf);
+			ctx.lineTo(farX, narrowHalf);
+			ctx.lineTo(farX, -narrowHalf);
+			ctx.closePath();
+			ctx.fillStyle = param.canC[0];
+			ctx.strokeStyle = param.canC[1];
+			ctx.lineWidth = CONST.LINEWIDTH;
+			ctx.lineJoin = 'round';
+			ctx.fill();
+			ctx.stroke();
+			ctx.restore();
+		},
 		cannons: [
 			(ctx, config, param, i) => {
 				const c = config.cannons[i], r = param.size / CONST.SIZE;
@@ -147,19 +184,23 @@
 				ctx.restore();
 			},
 			(ctx, config, param, i) => {
-				// draw-shape index 2: trapezoid (plan.md T5's `isTrapezoid`/`trapezoidDirection`)
+				// draw-shape index 2: trapezoid (plan.md A2's `isTrapezoid`/`trapezoidDirection`)
 				// - a client-only draw namespace, unrelated to the server's own `cannons[i].type`
-				// bullet-behavior enum (0/1/1.1/2/3/3.1). `trapezoidDirection` falsy = tapers
-				// narrow toward the muzzle (an ordinary gun barrel); truthy = tapers wide toward
-				// the muzzle (a flared vent/nacelle, e.g. Stalker's rear-facing barrel).
+				// bullet-behavior enum (0/1/1.1/2/3/3.1). `c.width` is always the NARROW end's
+				// full width (the same figure Bullet.ts's `bulletRadius = width/2` uses, since a
+				// bullet spawns at whichever end is the muzzle); the wide end is TAPER_RATIO x
+				// that. `trapezoidDirection` falsy = wide end at the muzzle/tip (Machine Gun,
+				// Mothership, drone spawners); truthy = wide end at the base/hull, narrow at the
+				// muzzle (Stalker, Rocketeer, Battleship's rear pair).
 				const c = config.cannons[i], r = param.size / CONST.SIZE;
 				if (c.hidden) {
 					return;
 				}
 				i = config.turrets ? parseInt(i) + config.turrets.length : i;
 				const recoil = param.recoils[i] ? 1 - Math.abs(param.recoils[i]) : 1;
-				const baseHalf = c.trapezoidDirection ? c.width * 0.2 : c.width / 2;
-				const tipHalf = c.trapezoidDirection ? c.width / 2 : c.width * 0.2;
+				const narrowHalf = c.width / 2, wideHalf = c.width / 2 * TAPER_RATIO;
+				const baseHalf = c.trapezoidDirection ? wideHalf : narrowHalf;
+				const tipHalf = c.trapezoidDirection ? narrowHalf : wideHalf;
 				ctx.save();
 				ctx.beginPath();
 				ctx.rotate(c.offdir + param.dir);

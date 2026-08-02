@@ -41,10 +41,6 @@ function check(name, ok, detail) {
 	  'order'  - the class's two length lists are equal as sets but not as sequences
 */
 const WHITELIST = [
-	{ class: 'Ranger', index: 'count', kind: 'count', reason:
-		"cannon 1 (height 45, width 60, open -30) is a decorative shield/guard shape that " +
-		"reuses the cannon drawer - the server has nothing to spawn from it, same pattern as " +
-		"Necromancer below." },
 	{ class: 'Necromancer', index: 'count', kind: 'count', reason:
 		"its two cannons are decorative only; Necromancer attacks through the this.necro " +
 		"summon mechanic in Player.js, not canonLength cannons, so the server has none." },
@@ -85,7 +81,10 @@ function whitelisted(className, index, kind) {
 	return !!entry;
 }
 console.log('tanks whitelist: ' + WHITELIST.length + ' entries\n');
-check('the whitelist has not grown', WHITELIST.length === 12, WHITELIST.length);
+// Was 12 - Ranger's own entry (plan.md A4) is gone now that its client cannon count for real:
+// one cannon, matching the server's one barrel, the fake second "cannon" replaced by a real
+// `pronounced` postAddon overlay instead of a cannon-shaped stand-in.
+check('the whitelist has not grown', WHITELIST.length === 11, WHITELIST.length);
 
 /* offdir is an angle: -PI/2 and 3*PI/2 are the same barrel, and two float64 expressions for the
 	 same rotation (Fortress[5]) differ by an ULP. A literal !== calls both a mismatch and used to
