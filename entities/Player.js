@@ -55,6 +55,25 @@ const BULLET_MAINTAIN = require('../lib/constants.js').BULLET_MAINTAIN;
 const SPIN_RATE = 0.04;
 
 /*
+	plan.md R9 - Auto 3/Auto 5's turret ring. diepcustom Addons.ts's createAutoTurrets:
+
+	- RING_ROTATION is AI.PASSIVE_ROTATION, the rate the whole ring (an invisible parent
+	  GuardObject every ring turret is mounted to) spins at, independent of the tank's own
+	  facing - `this.ringDir` is that parent's accumulated angle. A ring cannon's structural
+	  mount angle is `can.offdir + this.ringDir`, NOT `this.dir + can.offdir` like an ordinary
+	  barrel - see shoot()'s `can.ring` branch below.
+	- RING_ARC is MAX_ANGLE_RANGE (PI2/4, 90 either side): a ring turret's own targetFilter,
+	  kept out of reach of anything more than that from its own mount angle - both for the
+	  DETEC auto-target (targetFilter proper) and for the owner's click-to-aim override
+	  (influencedByOwnerInputs's own targetFilter call).
+*/
+const RING_ROTATION = 0.01;
+const RING_ARC = Math.PI / 2;
+// Smallest signed angular difference, in [-PI, PI] - the atan2(sin,cos) idiom
+// entities/Objects.js's own edge-avoidance turn already uses for the same purpose.
+function angleDelta(a, b) { return Math.atan2(Math.sin(a - b), Math.cos(a - b)); }
+
+/*
 	Regen, two regimes (PENDING #17/#17's HYPER_REGEN_RATE, plan.md step 4): diep_wiki/Stats.txt's
 	linear rate below the hyper-regen threshold, hyper regen ADDED on top of it above the threshold
 	- not a replacement rate. Both terms are read directly in update() - no accumulator, so no
@@ -177,6 +196,10 @@ class Player {
 		this.lastHp = this.hp;
 		this.prize = 100;
 		this.autoDir = 0;
+		// plan.md R9 - the auto-turret ring's own slow, hull-independent rotation (see
+		// RING_ROTATION's own comment above). Free-running for every class, same as autoDir;
+		// only `can.ring` cannons ever read it.
+		this.ringDir = 0;
 		// The `c` auto-spin's own phase. Seeded from wherever the barrel is pointing the moment the
 		// toggle goes on and turned from there, so engaging it reads as the tank starting to spin
 		// rather than snapping onto some counter that has been running since you spawned. `spinning`
@@ -278,6 +301,7 @@ class Player {
 		this.x = body.x; this.y = body.y;
 		this.vec.x = body.vx; this.vec.y = body.vy;
 		this.autoDir += tick.perTick(SPIN_RATE);
+		this.ringDir += tick.perTick(RING_ROTATION);
 		// Players alone get to leave the drawn arena, up to config.OOB_MARGIN - a measured diep
 		// behaviour, not a spring: the real wall is just further out than
 		// the visible edge, and still a hard stop.
@@ -322,7 +346,45 @@ class Player {
 			let autoDir, shoot;
 			const ra = this.size / 35;
 			if (can.autoDir) {
-				if (this.DETEC.select) {
+				if (can.ring) {
+					// plan.md R9 - a ring turret (Auto 3/5) aims off its OWN structural mount
+					// angle, not `this.autoDir` (which every ordinary single auto-turret shares
+					// tank-wide) - see RING_ROTATION's own comment.
+					const mountAngle = can.offdir + this.ringDir;
+					if (this.inputs.mouseL && Math.abs(angleDelta(this.dir, mountAngle)) <= RING_ARC) {
+						// Click-to-aim (diepcustom AutoTurret.tick's `influencedByOwnerInputs`
+						// branch): while the owner is actively holding fire, a ring turret that
+						// CAN reach the mouse direction points there, overriding DETEC's target.
+						autoDir = this.dir;
+						this.canDir[r] = autoDir;
+						shoot = 1;
+					} else if (this.DETEC.select) {
+						this.DETEC.enabled = 0;
+						const other = this.DETEC.select;
+						const dis = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
+						if (!other.destroy && other.alpha && dis <= CLASS[this.class].DETEC.maxDis) {
+							const targetDir = Math.atan2(other.y + other.vec.y * dis / AUTOTURRET_LEAD - this.y, other.x + other.vec.x * dis / AUTOTURRET_LEAD - this.x);
+							if (Math.abs(angleDelta(targetDir, mountAngle)) <= RING_ARC) {
+								autoDir = targetDir;
+								this.canDir[r] = autoDir;
+								shoot = 1;
+							} else {
+								// targetFilter (Addons.ts): outside THIS turret's own 90 arc -
+								// fall back to idle radial aim for this cannon only, without
+								// resetting DETEC - another ring cannon may still be in-arc.
+								this.canDir[r] = mountAngle;
+								shoot = 0;
+							}
+						} else {
+							this.DETEC.reset();
+							this.DETEC.enabled = 1;
+							this.canDir[r] = mountAngle;
+							shoot = 0;
+						}
+					} else {
+						this.canDir[r] = mountAngle;
+					}
+				} else if (this.DETEC.select) {
 					this.DETEC.enabled = 0;
 					const other = this.DETEC.select;
 					const dis = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
@@ -370,7 +432,9 @@ class Player {
 					// place. This is what lets an auto-turret ring (Auto 3/5, plan.md T6) sit at
 					// fixed sockets around the body while each barrel independently aims. 0 for
 					// every ordinary barrel (origin stays the hull center).
-					const mountDir = this.dir + can.offdir;
+					// A ring cannon's mount instead resolves off `this.ringDir` (plan.md R9) -
+					// its socket is independent of the hull's own facing, not fixed to it.
+					const mountDir = can.ring ? (can.offdir + this.ringDir) : (this.dir + can.offdir);
 					const originX = this.x + Math.cos(mountDir) * (can.distance || 0) * ra;
 					const originY = this.y + Math.sin(mountDir) * (can.distance || 0) * ra;
 					const x = originX + Math.cos(dir + offdir) * (offlen)//-can.size*ra);

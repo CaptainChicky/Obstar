@@ -87,19 +87,23 @@
 		Grid: ["#d0cdcd", "#c1bebe"],
 
 		hit: ['#d82626', '#d82626'],//red when you get hitted
-		// diep's own exact shape palette (plan.md C3, diepindepth/canvas/color_constants.md's
-		// "Shapes" table - canvas-measured, supersedes the diep_wiki-sourced pink this used to
-		// carry) - previously muted/desaturated stand-ins with no diep citation behind them.
+		// bull kept on diep's own exact canvas-measured colour (plan.md C3/R11,
+		// diepindepth/canvas/color_constants.md's "Shapes" table) - it already reads distinct
+		// from tri's rose below, same job the old muted pink did.
 		bull: ["#f177dd", "#b459a5"],
 		// Solid grey walls (diep_wiki, plan.md Step 12) - deliberately distinct from bull's pink
 		// above so a wall doesn't read as a Crasher shape.
 		wall: ["#7d7d7d", "#5c5c5c"],
-		sqr: ["#ffe869", "#bfae4e"],
-		alphaSqr: ["#ffe869", "#bfae4e"],
-		tri: ["#fc7677", "#bd5859"],
-		alphaTri: ["#fc7677", "#bd5859"],
-		pnt: ["#768dfc", "#5869bd"],
-		alphaPnt: ["#768dfc", "#5869bd"],
+		// sqr/tri/pnt reverted to the original muted palette (plan.md R11 - a taste call, not a
+		// bug: C3's diep-measured saturated hexes were adopted only because they were citable,
+		// not because anything was wrong with these). Kept: C3's shape SIZE fix (the x sqrt(2)
+		// circumradius identity) - independent of colour, see drawings.js's own body-vertex code.
+		sqr: ["#cfcf9f", "#a6a689"],
+		alphaSqr: ["#cfcf9f", "#a6a689"],
+		tri: ["#d1adb2", "#a38a8e"],
+		alphaTri: ["#d1adb2", "#a38a8e"],
+		pnt: ["#b2b2cc", "#8686ab"],
+		alphaPnt: ["#b2b2cc", "#8686ab"],
 		// Objects rarity tier 1 (public/SHARE/ObjectsConfig.js) - deliberately a brighter,
 		// more saturated green than the muted tank `green` above so a shiny reads as loot,
 		// not as a friendly tank.

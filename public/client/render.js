@@ -26,7 +26,7 @@
 				let middleX = 0, middleY = 0, canSize = CONST.SIZE / 2 + CONST.LINEWIDTH;
 				const marge = 2;
 				///
-				if (config.cannons) {
+				if (config.cannons && config.cannons.length) {
 					for (const c of config.cannons) {
 						///
 						// `+ (c.distance||0)` (plan.md T5): a barrel/turret pushed out from the
@@ -46,7 +46,7 @@
 					middleX /= config.cannons.length * 2;
 					middleY /= config.cannons.length * 2;
 				}
-				if (config.turrets) {
+				if (config.turrets && config.turrets.length) {
 					for (const c of config.turrets) {
 						///
 						// `+ (c.distance||0)` (plan.md T5): a barrel/turret pushed out from the
@@ -63,10 +63,22 @@
 						middleX += cos * Math.max(0, c.height - CONST.SIZE / 2) + sin * c.offx;
 						middleY += sin * Math.max(0, c.height - CONST.SIZE / 2) + cos * c.offx;
 					}
-					middleX /= config.cannons.length * 2;
-					middleY /= config.cannons.length * 2;
+					middleX /= config.turrets.length * 2;
+					middleY /= config.turrets.length * 2;
 				}
-				if (!config.cannons && !config.turrets) {
+				// Guards/launcher (plan.md R4) - drawn at `sizeRatio x param.size`, so in these
+				// same reference units their headroom contribution is `sizeRatio x CONST.SIZE`.
+				// Smasher/Landmine/Spike have no cannons/turrets at all, so without this their
+				// spinning guard shape clips at the tiny default canvas edge.
+				if (config.guards) {
+					for (const g of config.guards) {
+						canSize = Math.max(canSize, g.sizeRatio * CONST.SIZE + CONST.LINEWIDTH);
+					}
+				}
+				if (config.launcher) {
+					canSize = Math.max(canSize, 1.852 * CONST.SIZE + CONST.LINEWIDTH);
+				}
+				if (!(config.cannons && config.cannons.length) && !(config.turrets && config.turrets.length)) {
 					middleX = canSize;
 					middleY = canSize;
 				};
@@ -99,6 +111,15 @@
 					ctx.setTransform(R, 0, 0, R, can.width / 2, can.height / 2)
 				}
 				///
+				// Guards (plan.md R4) and a ring turret's own base circle (plan.md R9) draw
+				// first, before the body, so the body sits on top of them - diepcustom's
+				// GuardObject/AutoTurret base are separate children the body simply happens
+				// to be drawn over, not under.
+				Drawings.guards(ctx, tank, param);
+				Drawings.launcher(ctx, tank, param);
+				for (const i in tank.turrets) {
+					if (tank.turrets[i].ring) { Drawings.ringBase(ctx, tank, param, i); }
+				}
 				for (let i = 0; i < tank.cannons.length; i++) {
 					Drawings.cannons[tank.cannons[i].type](ctx, tank, param, i);
 				};
@@ -122,12 +143,17 @@
 				const ctx = can.getContext('2d');
 				can.width = can.height = (param.size * 2 + CONST.LINEWIDTH + 2) * CONST.OFFCAN;
 				ctx.setTransform(CONST.OFFCAN, 0, 0, CONST.OFFCAN, can.width / 2, can.height / 2);
-				Drawings.bullet[param.type](ctx, param.color, param.size, param.recoil);
+				(Drawings.bullet[param.type] || Drawings.bullet[0])(ctx, param.color, param.size, param.recoil);
 			}
 			function draw(ctx, param) {
+				// Total dispatch (plan.md R7): `Drawings.bullet` is a fixed-length array indexed by
+				// a value that came off the wire - a type this client build doesn't have an entry
+				// for (a newer server, a malformed packet) falls back to the plain bullet instead of
+				// throwing and taking the whole client down the instant one enters view.
+				const type = Drawings.bullet[param.type] ? param.type : 0;
 				if (param.alpha < 1) {
-					switch (param.type) {
-						case 0: case 1: case 2: case 3: {
+					switch (type) {
+						case 0: case 1: case 2: case 3: case 4: case 5: {
 							break;
 						}
 						default: {
@@ -135,7 +161,7 @@
 						}
 					}
 				}
-				Drawings.bullet[param.type](ctx, param);
+				Drawings.bullet[type](ctx, param);
 			}
 			///
 			return {

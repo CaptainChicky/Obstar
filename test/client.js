@@ -654,5 +654,41 @@ console.log('\na Walls instance creates a client Wall entity and draws without t
 		a.record.badTransform + ' transforms, ' + a.record.badTranslate + ' translates');
 }
 
+console.log('\nevery class in the roster renders without a non-finite transform (plan.md R10 - render.js\'s setCoord, R5\'s bug, as an assertion):');
+{
+	// R5's own bug (`if (config.cannons)` true for an empty array -> `middleX /=
+	// config.cannons.length` -> 0/0 -> NaN reaching ctx.translate) only showed up for classes
+	// with an empty `cannons` array and no `turrets` either (Smasher/Landmine/Spike) - a random
+	// bot roll in the "real packets from a real room" test above could easily never spawn one.
+	// This walks every class in the roster explicitly instead of hoping one comes up.
+	const clientTanks = require('./clientTanks.js')();
+	const classNames = Object.keys(clientTanks.class);
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+	let err = null, checked = 0;
+	for (const cls of classNames) {
+		const buff = {
+			head: { timestamp: 1, width: 8000, height: 8000, screen: 1920, xp: 500, level: 5, still: 0, cLvl: 0 },
+			main: {
+				states: [0, 0, 0, 0, 0, 0], class: cls, color: 0,
+				x: 0, y: 0, vx: 0, vy: 0, dir: 0,
+				size: 25, alpha: 1, hp: 1, name: 'tester', nameC: 0,
+				recoil: new Array(15).fill(0), canDir: [0]
+			},
+			instances: []
+		};
+		try {
+			if (checked === 0) { a.start(PROTO.encode('GameUpdate', buff)); }
+			else { a.deliver(PROTO.encode('GameUpdate', buff)); }
+			for (let f = 0; f < FPP; f++) { a.frame(FRAME); }
+		} catch (e) { err = cls + ': ' + e.message + ' | ' + e.stack.split('\n')[1]; break; }
+		checked++;
+	}
+	check('every class in the roster rendered without throwing', !err, err);
+	check('checked every class in the roster', checked === classNames.length, checked + '/' + classNames.length);
+	check('no non-finite value reached a canvas transform, for any class',
+		a.record.badTransform === 0 && a.record.badTranslate === 0,
+		a.record.badTransform + ' transforms, ' + a.record.badTranslate + ' translates');
+}
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

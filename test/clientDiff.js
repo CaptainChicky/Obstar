@@ -89,7 +89,10 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-const GOLDEN = { count: 309453, hash: '038e0b1f' };
+// Rebaselined for plan.md R4/R6/R9 (guards, the auto-turret ring, Mothership's n-gon body and
+// trapezoid barrels) and R11 (sqr/tri/pnt reverted to the pre-C3 muted palette) - real,
+// intended visual changes, not regressions.
+const GOLDEN = { count: 309263, hash: '82d3d11f' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

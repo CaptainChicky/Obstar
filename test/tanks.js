@@ -221,10 +221,120 @@ function order(names) {
 	}
 }
 
+/*
+	plan.md R10 item 1/3 - anchored OUTSIDE our own tree, unlike everything above (this file's
+	own opening comment: two internally-consistent halves can still both be wrong the same way,
+	which is exactly how the 0.56/0.70 mixup - plan.md R1 - got past all 631 assertions above).
+	For a curated set of classes with a real, unambiguous diepcustom TankDefinitions.json
+	barrel list, client height/width and server can.size must reproduce diep's own du figures
+	through the derived `CONST.SIZE/ref` identity (ref 50 for every ordinary tank; a boss with
+	its own sizeFactor override - Summoner/Guardian/Defender, plan.md R2 - lives in
+	Entity/Boss/*.ts, not this JSON, so it's out of this particular check's reach, as is Auto
+	3/5's own AutoTurretMiniDefinition addon - `barrels: []` for both in the JSON itself).
+	Compared as sorted multisets per class, not by index, so a legitimate reordering (Spread
+	Shot's own centre-barrel-last convention, symmetric fan pairs) can't read as a mismatch -
+	only the magnitudes have to agree.
+*/
+const CONST_SIZE = 35;   // public/client/config.js's CONST.SIZE - see drawings.js's own REF_TICK_MS comment for why this is a hand-copy, not a require().
+const DIEP_TANKS = require(path.join(ROOT, 'diepcustom', 'src', 'Const', 'TankDefinitions.json'));
+function diepTank(id) {
+	// A few array slots are `null` (retired ids) rather than absent.
+	const t = DIEP_TANKS.find(t => t && t.id === id);
+	if (!t) { throw new Error('no diepcustom TankDefinitions.json entry for id ' + id); }
+	return t;
+}
+const DIEP_CITED = [
+	{ class: 'Hunter', diepId: 19 }, { class: 'Predator', diepId: 28 },
+	{ class: 'Streamliner', diepId: 43 }, { class: 'Stalker', diepId: 21 },
+	{ class: 'Spread Shot', diepId: 42 }, { class: 'Gunner Trapper', diepId: 32 },
+	{ class: 'Tri-Trapper', diepId: 35 }, { class: 'Skimmer', diepId: 54 },
+	{ class: 'Factory', diepId: 52 }, { class: 'Mothership', diepId: 27 },
+	{ class: 'Arena Closer', diepId: 16 },
+	{ class: 'Destroyer Dominator', diepId: 45 }, { class: 'Gunner Dominator', diepId: 46 },
+	{ class: 'Trapper Dominator', diepId: 47 },
+];
+const REF = 50;
+const TOL = 0.02;   // absolute, in height/CONST.SIZE units - generous against hand-rounded literals, tight against a 0.56-vs-0.70-scale (0.14) regression.
+
+function sortedNear(a, b, tol) {
+	if (a.length !== b.length) { return { ok: false, detail: 'count ' + a.length + ' vs ' + b.length }; }
+	const sa = [...a].sort((x, y) => x - y), sb = [...b].sort((x, y) => x - y);
+	for (let i = 0; i < sa.length; i++) {
+		if (Math.abs(sa[i] - sb[i]) > tol) {
+			return { ok: false, detail: JSON.stringify(sa.map(n => +n.toFixed(4))) + ' vs ' + JSON.stringify(sb.map(n => +n.toFixed(4))) };
+		}
+	}
+	return { ok: true };
+}
+
+function diepCitations() {
+	console.log('\ndiep citation check (client/server against diepcustom/TankDefinitions.json directly):');
+	for (const { class: name, diepId } of DIEP_CITED) {
+		const c = client.class[name], s = server.class[name];
+		const barrels = diepTank(diepId).barrels;
+		const clientCannons = c.cannons;
+		const heights = clientCannons.map(cc => cc.height / CONST_SIZE);
+		const widths = clientCannons.map(cc => cc.width / CONST_SIZE);
+		const diepSizes = barrels.map(b => b.size / REF);
+		const diepWidths = barrels.map(b => b.width / REF);
+		let r = sortedNear(heights, diepSizes, TOL);
+		check(name + ': client height agrees with diep barrel.size (x CONST.SIZE/' + REF + ')', r.ok, r.detail);
+		r = sortedNear(widths, diepWidths, TOL);
+		check(name + ': client width agrees with diep barrel.width (x CONST.SIZE/' + REF + ')', r.ok, r.detail);
+
+		const serverCannons = s.cannons.slice(s.cannons.length - clientCannons.length);
+		const sizes = serverCannons.map(sc => sc.size / CONST_SIZE);
+		const diepBulletSizes = barrels.map(b => (b.width / 2) * b.bullet.sizeRatio / REF);
+		r = sortedNear(sizes, diepBulletSizes, TOL);
+		check(name + ': server can.size agrees with (barrel.width/2) x bullet.sizeRatio (x CONST.SIZE/' + REF + ')', r.ok, r.detail);
+	}
+}
+
+/*
+	plan.md R10 item 2 - R8's bug (Defender's turret `distance` present server-side, absent
+	client-side, so bullets spawned 33.6 units off the drawn barrel), generalised: every
+	position-affecting field a cannon carries on one side must carry the same value on the
+	other. offdir/offx are already checked in geometry() above; `distance` (plan.md T5) never
+	was.
+*/
+function distances(names) {
+	console.log('\ndistance agrees, client vs server (plan.md R8, generalised):');
+	for (const name of names) {
+		for (const [cc, sc, i] of pairs(name)) {
+			const cd = cc.distance || 0, sd = sc.distance || 0;
+			check(name + '[' + i + '] distance agrees', cd === sd, 'client ' + cd + ' vs server ' + sd);
+		}
+	}
+}
+
+/*
+	plan.md R10 item 3 - every `parseInt(type)` a cannon can emit has a Drawings.bullet entry
+	(R7's crash - Skimmer's `type: 4` reaching an undefined array slot - as an assertion rather
+	than something that only shows up live). Mirrors rooms/Room.js's own bulletWireType(): a
+	fractional `type` (Factory's Minion, 1.5) is remapped to MINION_WIRE_TYPE (5) at the encode
+	site, so the client-side type space is the post-remap integer, not the raw config value.
+*/
+function bulletTypes(names) {
+	console.log('\nevery cannon type reaches a real Drawings.bullet entry (plan.md R7, as an assertion):');
+	const BULLET_ENTRIES = 6;   // public/client/drawings.js's Drawings.bullet.length (0-5)
+	const MINION_WIRE_TYPE = 5;
+	for (const name of names) {
+		const c = client.class[name];
+		for (const cc of c.cannons) {
+			const wireType = cc.type === 1.5 ? MINION_WIRE_TYPE : parseInt(cc.type || 0);
+			check(name + ': cannon type ' + cc.type + ' -> wire type ' + wireType + ' has a Drawings.bullet entry',
+				wireType >= 0 && wireType < BULLET_ENTRIES, wireType);
+		}
+	}
+}
+
 const names = classSet();
 cannonCounts(names);
 geometry(names);
 order(names);
+distances(names);
+bulletTypes(names);
+diepCitations();
 
 // count/order entries report their own staleness here; geom entries already did it inline above
 // (they need the recomputed comparison, not just "was this looked up").

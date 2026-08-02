@@ -156,6 +156,15 @@ function apportionShapes(total, mix) {
 const RESPAWN_CATCHUP = 0.85;
 const towardInstant = (p) => p + RESPAWN_CATCHUP * (1 - p);
 
+// plan.md R7: the wire's Bullets.type is a uint8, so Factory's Minion (cannon
+// `type: 1.5`, TanksConfig.js) can't survive parseInt(obj.type) as anything but
+// 1 (an ordinary drone triangle). Give it its own integer draw-id here, at the
+// encode site, rather than widening the codec for one fractional value.
+const MINION_WIRE_TYPE = 5;
+function bulletWireType(type) {
+	return type === 1.5 ? MINION_WIRE_TYPE : parseInt(type);
+}
+
 // generate() is a simulation event, so it rides the simulation clock: one pass every this many fixed steps. These divide by the
 // actual wall-clock step (clock.STEP_MS, 25ms/40Hz), not a reference tick,
 // so they stay wall-clock-correct with no rescale of their own.
@@ -1742,7 +1751,7 @@ class Room {
 							construc: 'Bullets',
 							id: obj.id.oId,
 							states: [!!obj.pet * 1, 0, 0, 0, 0, 0, 0],
-							type: parseInt(obj.type),
+							type: bulletWireType(obj.type),
 							x: obj.x,
 							y: obj.y,
 							size: obj.size,
@@ -1790,7 +1799,7 @@ class Room {
 							construc: 'Bullets',
 							id: obj.id.oId,
 							states: [!!obj.pet * 1, 1, 0, 0, 0, 0, 0],
-							type: parseInt(obj.type),
+							type: bulletWireType(obj.type),
 							x: obj.x,
 							y: obj.y,
 							size: obj.size,

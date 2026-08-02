@@ -318,7 +318,7 @@ has no row to read at all:**
 |---|---|
 | `weight`, `push`, `back` | Hunter/Predator ← Sniper's own barrel row; Streamliner ← Gunner's (its other tree parent); Stalker ← Assassin's, with `back` recomputed from diep's own real recoil (3 gu) rather than inherited; Auto 3/Auto 5's turret ring ← the existing `AutoTurretDefinition` row every other auto-turret cannon in the file already shares (Auto Hover's `c[0]`); Spread Shot ← Triple Shot's; Gunner Trapper's two gunner barrels ← Gunner's own row (its trap barrel uses Trapper's); Tri-Trapper ← Trapper's trap row; Skimmer ← Destroyer's (its tree parent); Factory/Mothership's drone barrels ← Overseer's drone row |
 | Streamliner's `reload` | diepcustom does not give this class its own reload multiplier - inherited Gunner's cadence (15) rather than left unset |
-| Auto 3/Auto 5's ring `distance` (14 units) | no diepcustom source captured for the turret-ring mount radius (`Addons.ts`'s `createAutoTurrets()` is an abstract helper with no concrete offset) - an engine-quality guess, not measured |
+| ~~Auto 3/Auto 5's ring `distance` (14 units)~~ | **found and fixed, plan.md R9**: `Addons.ts`'s `createAutoTurrets()` mounts each turret at `owner.physicsData.size x ROT_OFFSET(0.8)` - a RATIO, not a du figure. `distance: 28` (28/35 = 0.8) reproduces it exactly; the old 14 was the engine-quality guess this row used to describe. |
 | Tri-Trapper's fire order (`offTime: i/3`) | evenly-thirded, no diep source - same spirit as Auto Hover's own paired-barrel stagger |
 | Spread Shot's outer-barrel `speed`/`pene`/`rand` | diepcustom's own entry gives `damage`/`width`/`reload`/`recoil` per barrel but not `bullet.speed`/`scatterRate` - inherited from Triple Shot (its tree parent) rather than left unset |
 
@@ -364,11 +364,15 @@ has no row to read at all:**
   entirely rather than spawning a real child entity with its own position. Diep's own guard is a
   genuinely separate object (can, in principle, be caught on something the tank body itself
   isn't touching); ours cannot. Revisit if that distinction ever matters in play.
-- **Guard shapes have no client rendering yet.** Smasher/Landmine/Spike's `guards` are real and
-  enforced server-side (`guardSize`), but `public/SHARE/TanksConfig.js`'s client entries for all
-  four Smasher-line tanks draw as a plain circle - no spinning hexagon/triangle ring, unlike
-  diep's own visibly larger silhouette. The intended idiom (`PetsConfig.js`'s cosmetic
-  `ctx.rotate(Date.now()/...)`) was never wired up.
+- ~~**Guard shapes have no client rendering yet.**~~ **Built, plan.md R4.** Smasher/Landmine/
+  Auto Smasher/Spike and the 3 Dominators (`dombase`) now mirror `guards` into their client
+  entries and `Drawings.guards` (public/client/drawings.js) draws them as a spinning outline
+  n-gon, drawn before the body (render.js's pre-body pass) so the body sits on top - the
+  `PetsConfig.js`-style `Date.now()`-based cosmetic spin this note flagged as unwired is what it
+  uses, since `guardSize` collision (the simplification just above) has nothing to sync against.
+  Also added: the `launcher` preAddon nub under Skimmer's barrel. Not done: Rocketeer's own
+  client entry is a pre-existing stand-in with its own geometry, not diep's real id55 this addon
+  belongs to, so it was left alone.
 - **Skimmer (type 4) and Minion (type 1.5, Factory) are built (plan B3), with real gaps left on
   purpose.** Both projectiles' sub-fire `weight`/`push` borrow their PARENT cannon's own row -
   diep's real per-sub-bullet `absorbtionFactor` table (Skimmer 1, Minion 1) still has no home in
@@ -388,10 +392,15 @@ has no row to read at all:**
   Summoner's own `BOSS_DRIFT` magnitude** (`lib/gameAI.js`'s `bossThrust()`), not a fresh
   measurement - diep's raw `movementSpeed` is an accel term for AbstractBoss's real tank-body
   physics, which this engine's boss integrator diverged from entirely when Summoner was built (no
-  `Physics.stepBody` at all); there is no clean unit conversion from one to the other. **No true
-  polygon boss body for Guardian/Defender's triangle or Fallen Overlord/Fallen Booster's own tank
-  shape** - inherits Summoner/the Dominators' pre-existing `body: {shape: 1}` (rounded rectangle)
-  simplification (PENDING #51's own note), not a new gap. **`Misc/Boss/FallenAC`/`FallenMegaTrapper`/
+  `Physics.stepBody` at all); there is no clean unit conversion from one to the other.
+  ~~No true polygon boss body for Guardian/Defender's triangle~~ **built, plan.md R6**: a
+  generic n-gon body (`Drawings.body[3]`, `body.sides`) now gives Guardian/Defender their real
+  triangle and Summoner its real square, plus Mothership's own 16-gon - the apothem-to-
+  circumradius identity the pre-existing pentagon body already used (`1/cos(pi/n)`),
+  generalised. **Fallen Overlord/Fallen Booster's own tank-shaped body is still the
+  `body: {shape: 1}` (rounded rectangle) simplification** (PENDING #51's own note) - out of
+  R6's scope, a real tank silhouette (octagon + turret) has no slot in this table yet.
+  **`Misc/Boss/FallenAC`/`FallenMegaTrapper`/
   `FallenSpike`** (the `Misc/Boss/` addon variants plan.md X1 also names) were not built - no
   citation gathered, out of this pass's scope. **`test/rooms.js`'s boss-mode suite was adapted**,
   not just left passing by luck - one assertion used to assume `room.bosses[0]` was always a
@@ -583,12 +592,20 @@ Only a stub-DOM harness has run the client. Everything below is code-tested only
   table) and are selectable.
 - Auto 3/Auto 5's turret ring actually fires at a live target and each turret pivots independently
   while the ring itself stays fixed on the hull (plan.md T5's `distance`/mount-angle split) -
-  never checked outside the unit-tested math.
+  never checked outside the unit-tested math. **plan.md R9 built on top of this**: the mount
+  ratio (0.8 x size), the 90 targetFilter arc, click-to-aim, the base-circle/barrel z-order
+  split, and the mini-definition's own damage (0.4, not the shared def's 0.3) - also never
+  watched in a browser. The ring's own slow independent spin is a server-tracked `this.ringDir`
+  for aim/bullet-origin purposes, but the BASE CIRCLE's drawn position is a client-only
+  Date.now() cosmetic approximation of it (no wire field) - the two will drift apart by a fixed
+  per-tank phase offset rather than staying pixel-aligned; nothing gameplay-relevant reads the
+  drawn position, only the barrel's own `canDir` (real, networked) does.
 - Tri-Trapper/Gunner Trapper's `trapLauncher` nub is visible at the tip of their trap barrel(s).
 - Stalker's barrel actually draws as a flared trapezoid, not a plain rectangle.
-- Smasher-line tanks visibly look like ordinary tanks with no guard ring (known gap, see 🟠 above)
-  - confirm that reads as "missing art," not as broken collision, since the enlarged hitbox is
-  real even though nothing draws it yet.
+- ~~Smasher-line tanks visibly look like ordinary tanks with no guard ring~~ **built, plan.md
+  R4** - confirm the spinning guard silhouette actually reads as bigger than the plain circle
+  used to, and that it doesn't clip at the offscreen-cache edge at high zoom (render.js's
+  setCoord was widened for it, but never watched live).
 
 **World**
 - A green Shiny polygon and a rainbow Mythic one are visibly distinct — and turn up often enough to
