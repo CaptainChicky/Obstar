@@ -2,7 +2,6 @@ additional issues are present:
 - intro options screen tries to slide down, fails, then snaps into position? this wasnt here previously
 - when you take control of a dominator or mothership, your FOV/identity physically transfers to the dominator, and your old tank will die. currently your fov/id still stays the old tank and you simply control both dominator and your old tank. your old tank still dies, so you quickly die/get brought to the death screen too. instead whats supposed to happen is youre supposed to be transferred over to the dominator as your FOV or mothership as your OFV and control it, your old tank is dead but you dont die because you are now the dominator/mothership and your fov is that boss tank. (you shouldnt be brought ot the death screen when your old tank dies)
 - battleship drones should not have knockback and interact with anything on its own team
-- player should not even have the possibilty of spawning in a maze wall. player spawn area should be decided after maze walls are drawn
 - there seems to be some minor visual overlap possible with the maze walls. make even this minor visual overlap impossble
 - auto3/5's turrets cannot overlap with the main circular body, and they can only move along the grey circle theyre on. currently it regressed from being unable to overlap to overlappable
 - dominator's attacking barrels are under the body, but the cosmetic trapezoid barrel should also be drawn under the circular body. the grey barrels no matter useful or cosmetic are above the black hexagon and below the circular body. curre
@@ -12,6 +11,7 @@ additional issues are present:
 - arena closer bullets should be the size of its barrel, not small af like rn
 - same with fallen booster, its bullets should be the size of its barrels
 - summoner's body is royally fucked and drawn 45 degrees from where it should be. same issue as guardian youre conflating different sizes. 
+- OVERSEER GEOMETRY (was the sniper->overseer crash): the crash is fixed (drawImage on a 0-size canvas is now guarded), but overseer's sprite still bakes to a 0x0 canvas, so its upgrade-preview tile renders BLANK. Same size-conflation family as summoner/guardian below - fix as part of the boss-geometry pass (floor the sprite canvas at the body size, then correct overseer's config bounds).
 - defender is completely fucked, as it is a bit too large, the trapper barrels have a "stub" that is wayyy too long, and the 3 autoturrets need to be drawn ON TOP of the body, and scaled properly so that the size of the bullets they fire are the same size as the turret.
 - necromancer's barrels should stick out more, and necromancer drones are compeltely broken they dont spawn. the drones should come from squares that the necromancer kills, and the necromancer's drones should be the beige color when not in a gamemode with teams for all necromancers, and in tdm it would be the color of their team.
 - the guardian's projectiles should simply be visually indistinguishable from the small crasher, it shouldbe triangle and look exactly like the small crasher 
@@ -30,13 +30,8 @@ additional issues are present:
 - skimmer's inner trapezoid barrel is way too thin. i've added a skimmer and bullet image (png) into root, which shows the skimmer on the left and bullet on the right. if the skimmer diameter is 328px, the outer barrel is 233px wide, and the inner trapezoid (which is covered by the outer barrel, and wide side outwards, with a very shallow angle for a trapezoid aka the small and large sides of the trapezoid are quite similar) has witdh 191px. its bullet has 236px diameter, with the two secondary shooters having width 95px and poke out of the main bullet by 22px. they spawn secondary bullets from the secondary shooters, but these bullets are the width of the secondary barrel, and are DRAWN BELOW THE MAIN BULLET.
 - factory is even more broken. curretnyl it doesnt even have a tank body. its a square, with a trapezoidal spawner. its drones have diameter 32px if the factory has side length 54px. its drones' barrels poke out around 9px, and 14.5 px width. when you left click on something, the drones dont go to that place like normal triangle drones, but instead go towards, then stops at a distance and starts circling it and attacking with their own turrets. when you right click, outside of a certain distance they repel, but inside a radius of the mouse pointer, they instead cluster together with turrets facing away from the mouse. check diep source imeplemntations for these distances. also read the wiki page on the factory for details.
 - there should be a gamemode switcher on the respawn screen somewhere tbh
-
-- upgrading to level 45, then choosing sniper -> overseer gives this error and crashes the game:
-Uncaught InvalidStateError: Failed to execute 'drawImage' on 'CanvasRenderingContext2D': The image argument is a canvas element with a width or height of 0.
-    at Object.setClass (ui.js:715:12)
-    at Object.tanks (ui.js:1366:15)
-    at Object.draw (ui.js:1474:10)
-    at Draw (game.js:613:15)
-    at Loop (game.js:686:4)
-
 - necromacner in god mode is unable to convert squares into drones. they shoudl be able to.
+
+=== somewhat fixed? ===
+- sniper->overseer crash (drawImage 0-size canvas) - guarded in ui.js. NOTE the blank-tile residual is now tracked under OVERSEER GEOMETRY above.
+- player spawning inside a maze wall - fixed in rooms/Maze.js (spawnPoint override rejects wall rects) and pinned by a test in test/rooms.js. (The SEPARATE "minor visual wall overlap" item above is wall-vs-wall in the generator and is still open.)
