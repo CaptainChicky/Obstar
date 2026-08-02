@@ -1,21 +1,14 @@
 additional issues are present:
 - intro options screen tries to slide down, fails, then snaps into position? this wasnt here previously
-- smasher should only appear as an upgrade option once you get to level 30 (so you stay basic until level 30 without upgrading at level 15)
-- sprayer should only appear as an upgrade option once you get to level 45 (so you stay machine gun until level 45 without upgrading at level 30)
-- bullet deaccleeration once dead should only be applied to bullets physically destroyed by shapes and hitting tanks (so bullets hitting bosses, enemy tanks, and shapes, maze walls). bullets destroyed by other bullets or dissapearing on their own once their lifetime is reached should not deaccelerate.
 - when you take control of a dominator or mothership, your FOV/identity physically transfers to the dominator, and your old tank will die. currently your fov/id still stays the old tank and you simply control both dominator and your old tank. your old tank still dies, so you quickly die/get brought to the death screen too. instead whats supposed to happen is youre supposed to be transferred over to the dominator as your FOV or mothership as your OFV and control it, your old tank is dead but you dont die because you are now the dominator/mothership and your fov is that boss tank. (you shouldnt be brought ot the death screen when your old tank dies)
 - battleship drones should not have knockback and interact with anything on its own team
-- arena closer should be bright yellow and on the same team as neutral dominators. they should not be beige and attack neutral dominators, only attack dominators taken by some team. in a normal game they should be attacking all colored teams/players/nonneutral things. they will not attack and will be ignored by base drones.
-- mark bosses on the minimap, mark teams on the minimap too (on the tester gamemode) so i know what is where when observing
 - player should not even have the possibilty of spawning in a maze wall. player spawn area should be decided after maze walls are drawn
 - there seems to be some minor visual overlap possible with the maze walls. make even this minor visual overlap impossble
 - auto3/5's turrets cannot overlap with the main circular body, and they can only move along the grey circle theyre on. currently it regressed from being unable to overlap to overlappable
-- tritrapper should send all 3 traps at the same time
 - dominator's attacking barrels are under the body, but the cosmetic trapezoid barrel should also be drawn under the circular body. the grey barrels no matter useful or cosmetic are above the black hexagon and below the circular body. curre
 - traps and drones should go right through their own teammate's tanks
 - trapper dominator's traps should not be immortal? neither should destroyer dominator either like with enough damage they should dissapear like normal traps (assuming they are, if they arent and just have massive health then nvm)
-- trap's recoil should be incredibly incredibly small. check against source, but even mega trapper barely moves like 1/10th of a tile.
-- drone spawners should have equally the small amount of recoil like 1/10th of a tile. furthermore, overseer and overlord should try to spawn drones symmetrically at a time until impossible, like overlord should spawn 4 at a time until the very last batch, overseer is 2 at a time, etc.
+- overseer and overlord should try to spawn drones symmetrically at a time until impossible, like overlord should spawn 4 at a time until the very last batch, overseer is 2 at a time, etc.
 - arena closer bullets should be the size of its barrel, not small af like rn
 - same with fallen booster, its bullets should be the size of its barrels
 - summoner's body is royally fucked and drawn 45 degrees from where it should be. same issue as guardian youre conflating different sizes. 
@@ -36,4 +29,14 @@ additional issues are present:
 - knockback currently seems quite large? is this an issue? like everything feels so bouncy in a sense
 - skimmer's inner trapezoid barrel is way too thin. i've added a skimmer and bullet image (png) into root, which shows the skimmer on the left and bullet on the right. if the skimmer diameter is 328px, the outer barrel is 233px wide, and the inner trapezoid (which is covered by the outer barrel, and wide side outwards, with a very shallow angle for a trapezoid aka the small and large sides of the trapezoid are quite similar) has witdh 191px. its bullet has 236px diameter, with the two secondary shooters having width 95px and poke out of the main bullet by 22px. they spawn secondary bullets from the secondary shooters, but these bullets are the width of the secondary barrel, and are DRAWN BELOW THE MAIN BULLET.
 - factory is even more broken. curretnyl it doesnt even have a tank body. its a square, with a trapezoidal spawner. its drones have diameter 32px if the factory has side length 54px. its drones' barrels poke out around 9px, and 14.5 px width. when you left click on something, the drones dont go to that place like normal triangle drones, but instead go towards, then stops at a distance and starts circling it and attacking with their own turrets. when you right click, outside of a certain distance they repel, but inside a radius of the mouse pointer, they instead cluster together with turrets facing away from the mouse. check diep source imeplemntations for these distances. also read the wiki page on the factory for details.
-- respawning is clunky, when i click enter it should just directly allow me to respawn, but currently i have to wait for a bit before i can. also there should be a gamemode switcher on the respawn screen somewhere tbh
+- there should be a gamemode switcher on the respawn screen somewhere tbh
+
+- upgrading to level 45, then choosing sniper -> overseer gives this error and crashes the game:
+Uncaught InvalidStateError: Failed to execute 'drawImage' on 'CanvasRenderingContext2D': The image argument is a canvas element with a width or height of 0.
+    at Object.setClass (ui.js:715:12)
+    at Object.tanks (ui.js:1366:15)
+    at Object.draw (ui.js:1474:10)
+    at Draw (game.js:613:15)
+    at Loop (game.js:686:4)
+
+- necromacner in god mode is unable to convert squares into drones. they shoudl be able to.
