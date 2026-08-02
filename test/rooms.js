@@ -389,17 +389,21 @@ function sandboxTests() {
 	// dev.god - the actual sandbox-cheat behaviour lives on the Player instance itself
 	// (entities/Player.js), so it's tested directly here rather than through a socket.
 
-	// 'k' (PENDING "Sandbox gaps"): hold to climb one level at a time, diep's own hold-to-repeat
-	// convention - not the instant jump-to-cap this used to be. Starts from level 1, not 0:
-	// XPLVL[0] is 0, so a fresh level-0 spawn already satisfies the level-up check for free on
-	// its very first tick regardless of 'k' - level 1->2 is the first REAL (nonzero) threshold.
+	// 'k' (plan.md C4): hold to climb one level at a time, diep's own hold-to-repeat convention
+	// (+1 level per input packet with the levelup flag - effectively one per simulation tick
+	// while held, Client.ts:313-320) - not the instant jump-to-cap this used to be, and not the
+	// old 5-reference-tick (200ms) throttle either, which read as a crawl against diep's own
+	// ~25/s. Starts from level 1, not 0: XPLVL[0] is 0, so a fresh level-0 spawn already
+	// satisfies the level-up check for free on its very first tick regardless of 'k' - level
+	// 1->2 is the first REAL (nonzero) threshold.
 	{
+		const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 		me.level = 1; me.xp = 0; me.maxHp = 50; me.hp = 50; me.levelUpHold = 0;
 		me.inputs.k = 1;
 		let ticks = 0;
 		while (me.level === 1 && ticks < 50) { me.update(); ticks++; }
-		check('holding \'k\' does not jump straight to the cap - it takes several ticks for the first level',
-			me.level === 2 && ticks > 1, 'level=' + me.level + ' after ' + ticks + ' ticks');
+		check('holding \'k\' takes exactly 1 reference tick per level, not the old 5 (200ms)',
+			me.level === 2 && ticks === tick.ticks(1), 'level=' + me.level + ' after ' + ticks + ' ticks (want ' + tick.ticks(1) + ')');
 		const levelAfterFirst = me.level;
 		me.update();
 		check('...and never grants more than one level in a single tick',

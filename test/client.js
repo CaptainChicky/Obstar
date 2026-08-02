@@ -477,6 +477,95 @@ console.log('\na new entity is complete on the packet that introduces it:');
 		a.record.badTranslate);
 }
 
+console.log('\nthe upgrade panel draws diep\'s real per-stat caps (plan.md C2/C3):');
+{
+	// ui.js:1124 used to pass `CLASS[User.class].statMax || 6` - every class without its own
+	// statMax array (i.e. every non-smasher-line class) fell through to a hardcoded 6-segment
+	// panel instead of CONST.MAX_PER_STAT (7). Basic has no statMax override, so it is exactly
+	// the class this bug hit.
+	//
+	// Separately (C3), TanksConfig's client table never carried `statMax` at all for Smasher/
+	// Landmine/Spike/Auto Smasher, so their panels always fell back to a uniform 7 regardless of
+	// diep's real 0/10 split; and where it WAS read, `STATES.up[wireIdx]` indexed a panel-row-
+	// ordered array with a wire-ordered index (statCap()'s own fix), silently pulling the wrong
+	// row's cap for any class whose caps actually differ - invisible on a uniform-cap class,
+	// which is every class but these four.
+	function classPacket(t, cls, still) {
+		return PROTO.encode('GameUpdate', {
+			head: { timestamp: t, width: 8000, height: 8000, screen: 1920, xp: 500, level: 5, still: still || 0, cLvl: 0 },
+			main: {
+				states: [0, 0, 0, 0, 0, 0], class: cls, color: 0, x: 0, y: 0, vx: 0, vy: 0, dir: 0,
+				size: 25, alpha: 1, hp: 1, name: 'tester', nameC: 0,
+				recoil: new Array(15).fill(0), canDir: [0]
+			},
+			instances: []
+		});
+	}
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+	a.start(classPacket(1, 'Basic', 3));
+	a.deliver(classPacket(2, 'Basic', 3));
+	for (let f = 0; f < FPP * 2; f++) { a.frame(FRAME); }
+	const CLIENT = a.sandbox.window.CLIENT;
+	let up = CLIENT.General.Ui.UP.up;
+	check('the panel has one row per stat', up.length === 8, up.length);
+	check('every row on Basic caps at CONST.MAX_PER_STAT (7), not 6',
+		up.every(row => row.max === CLIENT.CONST.MAX_PER_STAT),
+		up.map(row => row.max).join(','));
+
+	// Switch class mid-session (drawAll() re-inits STATES.up for the new class) - this is also
+	// what proves Ui.UP.up is a LIVE reference into the panel's own state, not a one-time
+	// snapshot captured back when the IIFE first returned it for 'Basic'.
+	a.deliver(classPacket(3, 'Smasher', 3));
+	for (let f = 0; f < FPP * 2; f++) { a.frame(FRAME); }
+	up = CLIENT.General.Ui.UP.up;
+	const byName = {};
+	up.forEach(row => { byName[row.name] = row.max; });
+	check('Smasher: Movement/Body Damage/Max Health/Health Regen cap at 10',
+		byName['Movement Speed'] === 10 && byName['Body Damage'] === 10 &&
+		byName['Max Health'] === 10 && byName['Health Regen'] === 10,
+		JSON.stringify(byName));
+	check('Smasher: the four bullet stats cap at 0 (no barrels to point them at)',
+		byName['Reload'] === 0 && byName['Bullet Speed'] === 0 &&
+		byName['Bullet Damage'] === 0 && byName['Bullet Penetration'] === 0,
+		JSON.stringify(byName));
+}
+
+console.log('\nsmasher-line bodies never rotate - only their guards do (plan.md C7):');
+{
+	// Smasher/Landmine/Spike have no cannons/turrets at all (Drawings.guards spins on its own
+	// Date.now() clock, never reading param.dir; Drawings.body[0], the plain circle, never calls
+	// ctx.rotate). Auto Smasher's one embedded turret rotates through its own live `canDir`
+	// (Drawings' auto-turret branch), not `param.dir` either - diep's auto-turrets aim
+	// independently of hull facing. So for all four, the canvas-op sequence a render produces
+	// must be identical regardless of what `dir` is passed - a regression (dir baked into the
+	// body, or the whole cached sprite rotated as a unit) would change it.
+	// deterministic: true freezes Date.now() to the sandbox's own frame clock - guards() reads it
+	// for their independent spin phase, and without this two renders a real clock-tick apart
+	// would legitimately differ on THAT, not on dir, and falsely fail this check.
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' }, { recordOps: true, deterministic: true });
+	a.start(packet(1, { x: 0, y: 0 }));
+	a.frame(FRAME);
+	const CLIENT = a.sandbox.window.CLIENT;
+	function opsFor(cls, dir) {
+		a.record.ops.length = 0;
+		const ctx = a.sandbox.document.createElement('CANVAS').getContext('2d');
+		CLIENT.General['drawTank'](ctx, 0, {
+			class: cls, tankC: ['#fff', '#000'], canC: ['#fff', '#000'],
+			size: 35, dir, recoils: [], canDir: []
+		});
+		return a.record.ops.slice();
+	}
+	for (const cls of ['Smasher', 'Landmine', 'Spike', 'Auto Smasher']) {
+		const base = opsFor(cls, 0);
+		for (const dir of [1.2345, -2.5]) {
+			const ops = opsFor(cls, dir);
+			check(cls + ': render at dir=' + dir + ' matches dir=0 exactly (param.dir has no effect)',
+				JSON.stringify(ops) === JSON.stringify(base),
+				'first mismatch at op ' + ops.findIndex((o, i) => o !== base[i]));
+		}
+	}
+}
+
 console.log('\nan incoming bullet is dead-reckoned, a drone is not (PENDING #24b):');
 {
 	/*

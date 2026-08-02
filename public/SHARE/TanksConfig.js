@@ -1607,9 +1607,17 @@
 			// The 16 tanks plan.md T2 adds. Smasher/Landmine/Auto Smasher/Spike's `guards`
 			// (plan.md R4) mirror the server rows verbatim - Drawings.guards draws them as a
 			// spinning outline n-gon, before the body so the body sits on top.
+			// statMax (plan.md C3) is an 8-length array in the SERVER's wire index order
+			// (entities/Player.js's `this.up`: MSpeed/Reload/BSpeed/BPene/BDamage/BodyDam/HpUp/
+			// HpRegan), mirrored here verbatim - ui.js's drawAll()/statCap() translate it into
+			// panel row order via CONST.UP_ORDER, the same table the server's own switch(data)
+			// index space is defined against. Was missing client-side entirely, so the upgrade
+			// panel always fell back to a uniform 7-segment bar regardless of this class's real
+			// 0/10 caps.
 			"Smasher": {
 				cannons: [],
 				guards: [{ sizeRatio: 1.15, sides: 6, rate: 0.1, phase: 0 }],
+				statMax: [10, 0, 0, 0, 0, 10, 10, 10],
 				body: { shape: 0 }
 			},
 			"Landmine": {
@@ -1618,12 +1626,14 @@
 					{ sizeRatio: 1.15, sides: 6, rate: 0.1, phase: 0 },
 					{ sizeRatio: 1.15, sides: 6, rate: 0.05, phase: 0 }
 				],
+				statMax: [10, 0, 0, 0, 0, 10, 10, 10],
 				body: { shape: 0 }
 			},
 			"Auto Smasher": {
 				cannons: [],
 				guards: [{ sizeRatio: 1.15, sides: 6, rate: 0.1, phase: 0 }],
 				turrets: [{ type: 0, height: 38.5, width: 20.58, offx: 0, offdir: 0, open: 0, rad: 18 }],
+				statMax: [10, 10, 10, 10, 10, 10, 10, 10],
 				body: { shape: 0 }
 			},
 			"Spike": {
@@ -1634,6 +1644,7 @@
 					{ sizeRatio: 1.3, sides: 3, rate: 0.17, phase: Math.PI / 6 },
 					{ sizeRatio: 1.3, sides: 3, rate: 0.17, phase: Math.PI / 2 }
 				],
+				statMax: [10, 0, 0, 0, 0, 10, 10, 10],
 				body: { shape: 0 }
 			},
 			"Hunter": {

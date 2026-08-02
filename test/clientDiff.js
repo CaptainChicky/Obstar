@@ -89,11 +89,17 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// Rebaselined for plan.md C1 (execution-order step 6): the death-fade duration moved from 8 to
-// diep's own 6 reference ticks (config.DES), and a bullet already fading (alpha < 1) stops
-// dead-reckoning and falls back to plain interpolation (public/client/entities.js's
-// Bullet.reckonMs()) - both change how many frames a dying bullet is drawn for/how it's sampled.
-const GOLDEN = { count: 282458, hash: '3dc724d1' };
+// Rebaselined for plan.md C2/C3/C6 (execution-order step 7): the upgrade panel's per-stat cap
+// plumbing was fixed (ui.js's `statCap()`/`drawAll()` now translate TanksConfig's wire-ordered
+// `statMax` into panel row order via CONST.UP_ORDER instead of indexing it directly), Smasher/
+// Landmine/Spike/Auto Smasher gained the client-side `statMax` they never had, `Ui.UP.up` is now
+// a stable reference across class changes instead of a one-time snapshot, and the class-evolution
+// picker keeps existing option cards in place on a level-up instead of hiding and refilling the
+// whole tray (only genuinely new rows get a per-row slide-in now) - the last one adds real op
+// count (each row's own dshow easing/positioning), the others only change which segments draw
+// filled/empty for any bot that rolls a smasher-line class. C7 needed no code change (verified,
+// not fixed - see the new client.js regression test) so it contributes nothing here.
+const GOLDEN = { count: 282474, hash: '7601b52b' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

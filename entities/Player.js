@@ -97,12 +97,13 @@ function angleDelta(a, b) { return Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const HYPER_REGEN_DELAY = tick.ticks(750);
 const HYPER_REGEN_RATE = 1 / 250;   // diep's own maxHp/250 per REFERENCE tick (Live.ts:134) = 10%/s
 
-// Sandbox-only practice key ('k', PENDING "Sandbox gaps") - a threshold on a per-tick hold
-// counter (same tick.ticks() category HYPER_REGEN_DELAY above uses), not a physical quantity.
-// diep_wiki gives no rate for its own hold-to-repeat 'K', so this is ours: 5 reference ticks
-// (200ms) per level, level 0 to the 45 cap in ~9s of holding - fast enough to read as "hold and
-// watch it climb," not an instant jump (the old behaviour here) or a crawl.
-const SANDBOX_LEVELUP_TICKS = tick.ticks(5);
+// Sandbox-only practice key ('k', plan.md C4) - a threshold on a per-tick hold counter (same
+// tick.ticks() category HYPER_REGEN_DELAY above uses), not a physical quantity. diep grants +1
+// level per input packet with the levelup flag set (Client.ts:313-320) - effectively one per
+// simulation tick while held, ~25/s at diep's own 40ms loop - so this is 1 reference tick, not
+// the old 5 (200ms): level 0 to the 45 cap in well under 2s of holding, matching diep's own feel
+// instead of a tuned-by-eye "watch it climb" crawl.
+const SANDBOX_LEVELUP_TICKS = tick.ticks(1);
 
 /*
 	The upgrade economy, diep's own (PENDING #30 / plan.md step 1): 45 levels, 7 points per stat,

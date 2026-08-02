@@ -265,13 +265,24 @@
 					for (let i = 0; i < QUEUE.length; i++) { q += QUEUE[i]; }
 					return Math.max(0, CONST.MAX_UP_POINTS - spent(Ui) - q);
 				}
-				// Per-tank stat caps (plan.md P3): STATES.up[i].max is set per-row in drawAll()
+				// Per-tank stat caps (plan.md P3/C3): STATES.up[i].max is set per-row in drawAll()
 				// below, from TanksConfig.class[...].statMax when the tank has one (Smasher-line's
 				// 0/10-capped stats) - falls back to the same CONST.MAX_PER_STAT every other tank
 				// already used. STATES.up is only populated after the first drawAll()/init() call,
 				// hence the guard.
+				//
+				// `wireIdx` here is the SERVER's stat index (entities/Player.js's `this.up` order:
+				// MSpeed/Reload/BSpeed/BPene/BDamage/BodyDam/HpUp/HpRegan) - every caller (enqueue/
+				// drain) works in that space, since that is what travels the wire. `STATES.up` is
+				// built in PANEL row order instead (TanksConfig.defaultUps: HealthRegen/Reload/
+				// MaxHealth/BulletSpeed/MovementSpeed/BulletDamage/BodyDamage/BulletPenetration),
+				// the same reordering `CONST.UP_ORDER` exists to bridge for keypresses - indexing
+				// STATES.up directly by wireIdx silently pulled the wrong row's cap for any class
+				// whose per-stat caps actually differ (every class but the uniform ones, where
+				// every row shares one value and the bug had nothing to expose).
 				function statCap(wireIdx) {
-					return (STATES.up[wireIdx] && typeof STATES.up[wireIdx].max === 'number') ? STATES.up[wireIdx].max : CONST.MAX_PER_STAT;
+					const row = STATES.up[CONST.UP_ORDER.indexOf(wireIdx)];
+					return (row && typeof row.max === 'number') ? row.max : CONST.MAX_PER_STAT;
 				}
 				function enqueue(Ui, wireIdx, n) {
 					const perStat = statCap(wireIdx) - (Ui.upNb[wireIdx] || 0) - QUEUE[wireIdx];
@@ -310,10 +321,22 @@
 					if (tankClass === CLASS) {
 						return;
 					}
-					const maxArr = Array.isArray(max) ? max : new Array(states.length).fill(max);
+					// `max`, when an array, is TanksConfig's statMax - written in the SERVER's wire
+					// index order (this.up's own order), not panel row order (see statCap()'s own
+					// comment). CONST.UP_ORDER[panelRow] is that row's wire index, so this reads
+					// each row's cap from the position it actually lives at instead of zipping the
+					// two different orders together positionally (plan.md C3).
+					const maxArr = Array.isArray(max) ? states.map((_, i) => max[CONST.UP_ORDER[i]]) : new Array(states.length).fill(max);
 					max = Math.max(...maxArr);
 					CLASS = tankClass
-					STATES = { up: [], max: max };
+					// Reuse the SAME array/object every call instead of replacing STATES wholesale:
+					// the object this IIFE returns below captured `up: STATES.up`'s reference once,
+					// at construction, and `this.upgrade()`'s own click hit-testing (Ui.UP.up) reads
+					// that same captured reference - a fresh `{ up: [], ... }` here would silently
+					// orphan it on the very next class change, so a click kept scoring against
+					// whichever class was active the first time the panel ever drew.
+					if (!STATES) { STATES = { up: [] }; } else { STATES.up.length = 0; }
+					STATES.max = max;
 					const w = max * (W + marge);
 					can.height = ((plusRad * 2 + lw * 2 + 4) * states.length) + 20 + 18 + 6 * 4;
 					can.height *= R;
@@ -525,7 +548,7 @@
 						'Movement Speed',
 						'Bullet Damage',
 						'Body Damage',
-						'Bullet Penetration'], 6);
+						'Bullet Penetration'], CONST.MAX_PER_STAT);
 				///
 				return {
 					can: can,
@@ -556,7 +579,12 @@
 					class: 0,
 					classLvl: 0,
 					choices: [],
-					actualClass: 0
+					actualClass: 0,
+					// Per-choice slide-in progress (plan.md C6), keyed by class name - independent
+					// of the panel-level show/dshow above (which still drives the manual hide/
+					// reveal toggle). A name already at 1 here is already in place and does not
+					// re-animate when a level-up adds siblings alongside it.
+					rowDshow: {}
 				};
 				const R = CONST.RESOLUTION * CONST.OFFCAN;
 				const size = 100;
@@ -1121,7 +1149,7 @@
 				}
 				if (!this.still && !Global.inputs.u && !Global.inputs.m && !this.UP.show && !parseInt(this.END.offy + .1)) { return; }
 				///
-				this.UP.init(User.class, CLASS[User.class].ups ? CLASS[User.class].ups : TanksConfig.defaultUps, CLASS[User.class].statMax || 6);
+				this.UP.init(User.class, CLASS[User.class].ups ? CLASS[User.class].ups : TanksConfig.defaultUps, CLASS[User.class].statMax || CONST.MAX_PER_STAT);
 				///
 				const SHOW = Math.min(General['ease-in-out'](this.UP.show, 3), 1);
 				const ALPHA = ctx.globalAlpha;
@@ -1223,6 +1251,13 @@
 			};
 			this.tanks = function () {
 				if ((this.classLvl !== this.TNK.classLvl || User.class !== this.TNK.class)) {
+					// plan.md C6: diep keeps existing option cards in place when a level-up adds
+					// siblings alongside them, sliding in only the new ones - it does not empty
+					// and refill the whole tray. `tochoices` only ever grows within one class (the
+					// classLvl loop concats one more CLASS_TREE level in), so a level-up's new set
+					// is a superset of what is already shown; a class change is a genuinely
+					// different tree branch and keeps the old fly-out/fly-back reveal.
+					const sameClass = User.class === this.TNK.class;
 					this.TNK.classLvl = this.classLvl;
 					this.TNK.class = User.class;
 					this.TNK.tochoices = [];
@@ -1231,8 +1266,22 @@
 							this.TNK.tochoices = this.TNK.tochoices.concat(CLASS_TREE[i][User.class]);
 						}
 					}
-					this.TNK.show = -.5;
-					this.TNK.hide = 0;
+					const isSuperset = sameClass && this.TNK.choices.every(n => this.TNK.tochoices.indexOf(n) >= 0);
+					if (isSuperset) {
+						this.TNK.choices = this.TNK.tochoices;
+						this.TNK.setClass(this.TNK.choices);
+						this.TNK.show = 1;
+						this.TNK.hide = 0;
+						// Only rows that were not already on display start their slide-in fresh;
+						// an existing key's progress (1, at rest) is left untouched.
+						for (const n of this.TNK.choices) {
+							if (!(n in this.TNK.rowDshow)) { this.TNK.rowDshow[n] = 0; }
+						}
+					} else {
+						this.TNK.show = -.5;
+						this.TNK.hide = 0;
+						this.TNK.rowDshow = {};
+					}
 				}
 				///
 				const reverse = 1 / Global.UIRATIO * CONST.OFFCAN * CONST.RESOLUTION * CONST.RESOLUTION;
@@ -1264,6 +1313,10 @@
 					this.TNK.dshow = 0;
 					this.TNK.choices = this.TNK.tochoices;
 					this.TNK.setClass(this.TNK.choices);
+					// A full reveal (class change, or a non-superset level-up) - every row starts
+					// its slide-in fresh, same as the panel itself.
+					this.TNK.rowDshow = {};
+					for (const n of this.TNK.choices) { this.TNK.rowDshow[n] = 0; }
 					if (this.TNK.choices.length) {
 						this.TNK.show = 1;
 					} else {
@@ -1284,12 +1337,18 @@
 					const n = this.TNK.choices[i];
 					const c = this.TNK.getImage(n);
 					gw = c.width;
+					// plan.md C6: each row eases in on its OWN progress instead of the shared
+					// panel dshow, so a card already at rest (rowDshow 1) does not move again when
+					// a sibling is added alongside it - only the new row's own value starts at 0.
+					if (this.TNK.rowDshow[n] === undefined) { this.TNK.rowDshow[n] = 1; }
+					this.TNK.rowDshow[n] += (1 - this.TNK.rowDshow[n]) * 0.05;
+					const rowShow = this.TNK.dshow * this.TNK.rowDshow[n];
 					const isIn = (General['isMouse'](
 						(Global.winW) - (-this.TNK.mRight + c.width - 5) / reverse,
 						(Global.winH) - (-this.TNK.mDown + (c.height * (parseInt(i) + 1) - 5)) / reverse,
 						(c.width - 20) / reverse,
 						(c.height - 20) / reverse,
-					) && this.TNK.show > 0 && this.TNK.dshow > .8);
+					) && this.TNK.show > 0 && rowShow > .8);
 					if (isIn) {
 						Global.mouse_out = CONST.MOUSE_OUT;
 						if (Global.inputs.mouseL && !Global.inputs.old.mouseL) {
@@ -1298,7 +1357,7 @@
 						}
 					}
 					this.TNK.mouseOn(n, isIn);
-					ctx.drawImage(c, 20 + (this.TNK.mRight - c.width - 20) * this.TNK.dshow, this.TNK.mDown - (c.height + 2) * (parseInt(i) + 1));
+					ctx.drawImage(c, 20 + (this.TNK.mRight - c.width - 20) * rowShow, this.TNK.mDown - (c.height + 2) * (parseInt(i) + 1));
 				};
 				ctx.globalAlpha = 0.7;
 				ctx.drawImage(this.TNK.logo,
