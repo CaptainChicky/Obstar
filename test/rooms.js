@@ -799,6 +799,22 @@ function mazeTests() {
 			walls.length);
 		check('a wall is permanent geometry - never tombstoned',
 			walls.every((w) => w.destroy === 0));
+
+		// isValidSpawnLocation (rooms/Maze.js's spawnPoint override). The base spawnPoint only
+		// clears the nests, so before this override ~37% of maze spawns landed embedded in a wall
+		// (measured: 298/800). Sample many spawns and assert not one lands inside a wall, padded by
+		// the tank's own body radius (the same padded-AABB the override applies), so a player can
+		// never spawn stuck in maze geometry.
+		{
+			const tank = { size: 30 };
+			const pad = tank.size;
+			const inWall = (p) => walls.some((w) =>
+				Math.abs(p.x - w.x) <= w.w / 2 + pad && Math.abs(p.y - w.y) <= w.h / 2 + pad);
+			let hits = 0;
+			for (let i = 0; i < 400; i++) { if (inWall(room.spawnPoint(tank))) hits++; }
+			check('no player ever spawns inside a maze wall (isValidSpawnLocation)', hits === 0,
+				hits + ' / 400 landed in a wall');
+		}
 	}
 
 	// Visible on the minimap (diep_wiki: "The maze walls are also visible on the minimap") -

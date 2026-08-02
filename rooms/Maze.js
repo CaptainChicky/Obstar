@@ -72,6 +72,13 @@ const CLOSE_AFTER = Math.round(5 * 60 * 60 * 1000 / clock.STEP_MS);
 // match this size down just as certainly as diep's "up to 16" would, only slower.
 const CLOSER_COUNT = 4;
 
+// Spawn-validity (diep's own isValidSpawnLocation, flagged as unbuilt in buildWalls()'s
+// comment): reject a candidate spawn that lands inside a placed Wall. SPAWN_WALL_PAD is the
+// fallback body radius, used only when the spawning entity has no .size yet (an Arena Closer
+// is placed before its size is set); a real tank passes its own radius so its whole body clears.
+const SPAWN_WALL_TRIES = 32;
+const SPAWN_WALL_PAD = 30;
+
 class Maze extends Room {
 	constructor(id, controller) {
 		super(id, {
@@ -149,6 +156,33 @@ class Maze extends Room {
 			});
 		}
 		this.wallDots = dots;
+	}
+	/*
+		Spawn-validity check (diep's own isValidSpawnLocation, which buildWalls()'s comment flags as
+		unbuilt). The base spawnPoint only clears the nests; here a candidate is additionally rejected
+		if it lands inside - or within one body radius of - any placed Wall, so a player (or an Arena
+		Closer) can never spawn embedded in maze geometry. Walls are axis-aligned rectangles
+		(entities/Wall.js: centre x/y, size w/h), so the test is a padded AABB. Most of the arena is
+		open floor, so a clear point is normally found on the first try; the loop only bites in a dense
+		pocket and falls back to a nest-clear point rather than looping forever - the same spirit as
+		Room.js's own SPAWN_TRIES cap.
+	*/
+	spawnPoint(tank) {
+		const walls = this.INSTANCE.walls.size ? [...this.INSTANCE.walls.live()] : null;
+		if (!walls) { return super.spawnPoint(tank); }
+		const pad = (tank && tank.size) || SPAWN_WALL_PAD;
+		for (let i = 0; i < SPAWN_WALL_TRIES; i++) {
+			const p = super.spawnPoint(tank);
+			let clear = true;
+			for (const w of walls) {
+				if (Math.abs(p.x - w.x) <= w.w / 2 + pad && Math.abs(p.y - w.y) <= w.h / 2 + pad) {
+					clear = false;
+					break;
+				}
+			}
+			if (clear) { return p; }
+		}
+		return super.spawnPoint(tank);
 	}
 	/*
 		The 5-hour deadline. Called from step() below, before super.step(), the same ordering
