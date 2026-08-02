@@ -20,15 +20,6 @@ dev needs a migration path. Old conventions are defaults to improve on, not cons
 ## Notes
 crashers spawn too fast? and on top of people? chrck this
 also bullets dont seem to do enough damage? a destroyer bullet cant even kill a pentagon
-~~also sizes arent right. triangles seem too big, pentagons too small, and alpha pentagons are wayy
-too small???~~ **Root cause found and fixed (plan.md C3).** Every diep shape's drawn circumradius is
-its own hit radius × `Math.SQRT2` (`{Square,Triangle,Pentagon,Crasher}.ts` all set
-`physicsData.values.size = drawnDu × Math.SQRT1_2`) - `public/client/drawings.js`'s `sqr` already
-satisfied that ratio by construction, `tri`/`pnt`/`alphaPnt`/`alphaTri` did not (ratios of
-1.78/1.24/1.24/1.92 instead of √2 ≈ 1.41 - triangles ~26% oversized, pentagons/alpha ~12.5%
-undersized, exactly this complaint). Fixed at the four wrong divisors; cross-checked against
-`shape_sizes.md`'s Crasher figures (small/large both land exactly on 19.6/30.8 units with the
-corrected triangle formula, since a Crasher draws through the same `tri` function).
 
 ## 🟣 Needs a human decision
 
