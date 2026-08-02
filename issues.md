@@ -1,0 +1,34 @@
+additional issues are present:
+- intro options screen tries to slide down, fails, then snaps into position? this wasnt here previously
+- arena closer should be bright yellow and on the same team as neutral dominators. they should not be beige and attack neutral dominators, only attack dominators taken by some team. in a normal game they should be attacking all colored teams/players/nonneutral things. they will not attack and will be ignored by base drones.
+- mark bosses on the minimap, mark teams on the minimap too (on the tester gamemode) so i know what is where when observing
+- player should not even have the possibilty of spawning in a maze wall. player spawn area should be decided after maze walls are drawn
+- there seems to be some minor visual overlap possible with the maze walls. make even this minor visual overlap impossble
+- auto3/5's turrets cannot overlap with the main circular body, and they can only move along the grey circle theyre on. currently it regressed from being unable to overlap to overlappable
+- tritrapper should send all 3 traps at the same time
+- dominator's attacking barrels are under the body, but the cosmetic trapezoid barrel should also be drawn under the circular body. the grey barrels no matter useful or cosmetic are above the black hexagon and below the circular body. curre
+- traps and drones should go right through their own teammate's tanks
+- trapper dominator's traps should not be immortal? neither should destroyer dominator either like with enough damage they should dissapear like normal traps (assuming they are, if they arent and just have massive health then nvm)
+- trap's recoil is incredibly incredibly small. check against source, but even mega trapper barely moves like 1/10th of a tile.
+- drone spawners have equally the small amount of recoil like 1/10th of a tile. furthermore, overseer and overlord should try to spawn drones symmetrically at a time until impossible, like overlord should spawn 4 at a time until the very last batch, overseer is 2 at a time, etc.
+- arena closer bullets should be the size of its barrel, not small af like rn
+- same with fallen booster, its bullets should be the size of its barrels
+- summoner's body is royally fucked and drawn 45 degrees from where it should be. same issue as guardian youre conflating different sizes. 
+- defender is completely fucked, as it is a bit too large, the trapper barrels have a "stub" that is wayyy too long, and the 3 autoturrets need to be drawn ON TOP of the body, and scaled properly so that the size of the bullets they fire are the same size as the turret.
+- necromancer's barrels should stick out more, and necromancer drones are compeltely broken they dont spawn. the drones should come from squares that the necromancer kills, and the necromancer's drones should be the beige color when not in a gamemode with teams for all necromancers, and in tdm it would be the color of their team.
+- the guardian's projectiles should simply be visually indistinguishable from the small crasher, it shouldbe triangle and look exactly like the small crasher 
+- summoner's projectiles should be indistinguishable from a necromancer's beige projectile
+- i'll list out some proportions ive measured, so just cross check and make sure stuff is correct:
+- if a level 45 pentashot tank's diameter is 70px, then the guardian's equilaterial triangle body has a side length 105px. 
+- if a level 45 autogunner tank's diameter is 85px, then the summoner's square side length is 112px. the summoner's barrels are 11px distance from the main body so it looks like the small stub, and the summoner's drones are summoned from those barrels visually so lie should be coming out of them, instead of a distance away from them
+- if a level 45 booster tank's diameter is 37px, the fallen booster's body has diameter of 42px (and its bullets again are the size of its barrel)
+- if a level 45 booster has diameter of 70px, then the fallen overlord has diameter 92px, and its drones have side length 24px. 
+- the defender (i also added a webp image of it at root), if a level 45 hybrid tank has diameter 33px, tehn the defender's equilaterial triangle body has side length 52px. the traps/autoturret config is in the webp image. it is currently way too large. its traps have "side length" 14px (the trap side length is the shortest distance between the triangular vertices, going outside of the trap itself since the trap is concave)
+- you should read the diep wiki's pages on these bosses and the features/things noted there should basically be ported over
+- base drones when presented with an enemy they cant kill quickly will chase/circle around them very fast the mvoe too fast and overshoot or something bruh this is dubiosu behavior? should this be fixed or base drones slowed down? idk
+- mothership should be able to overlap with its own drones (and in general traps/drones of the team shoudlnt touch/have knockback on other tanks of the team)
+- traps however for a short amoutn of time can be influenced by traps/pushed around by traps shot out by the same tank it originated. after that time, it is still and can overlap other traps fine.
+- knockback currently seems quite large? is this an issue? like everything feels so bouncy in a sense
+- skimmer's inner trapezoid barrel is way too thin. i've added a skimmer and bullet image (png) into root, which shows the skimmer on the left and bullet on the right. if the skimmer diameter is 328px, the outer barrel is 233px wide, and the inner trapezoid (which is covered by the outer barrel, and wide side outwards, with a very shallow angle for a trapezoid aka the small and large sides of the trapezoid are quite similar) has witdh 191px. its bullet has 236px diameter, with the two secondary shooters having width 95px and poke out of the main bullet by 22px. they spawn secondary bullets from the secondary shooters, but these bullets are the width of the secondary barrel, and are DRAWN BELOW THE MAIN BULLET.
+- factory is even more broken. curretnyl it doesnt even have a tank body. its a square, with a trapezoidal spawner. its drones have diameter 32px if the factory has side length 54px. its drones' barrels poke out around 9px, and 14.5 px width. when you left click on something, the drones dont go to that place like normal triangle drones, but instead go towards, then stops at a distance and starts circling it and attacking with their own turrets. when you right click, outside of a certain distance they repel, but inside a radius of the mouse pointer, they instead cluster together with turrets facing away from the mouse. check diep source imeplemntations for these distances. also read the wiki page on the factory for details.
+- respawning is clunky, when i click enter it should just directly allow me to respawn, but currently i have to wait for a bit before i can. also there should be a gamemode switcher on the respawn screen somewhere tbh
