@@ -26,6 +26,7 @@ const BULLET_CRUISE_ORDER = require('../lib/constants.js').BULLET_CRUISE_ORDER;
 // its own mid-flight instead of only at the original shoot() call site (plan.md B3).
 const BULLET_MAINTAIN = require('../lib/constants.js').BULLET_MAINTAIN;
 const KIND = require('../public/SHARE/kinds.js');
+const World = require('../public/SHARE/World.js');
 const Detector = require('./Detector.js');
 const { LETHAL_EPS, projectileCommon } = require('../lib/damage.js');
 
@@ -50,6 +51,28 @@ const SKIMMER_SPIN = tick.perTick(0.1);
 // load (lib/tick.js's "chance" category).
 const REAIM_CHANCE = tick.chance(0.0012121);
 const CHARGE_CHANCE = tick.chance(0.0006061);
+
+/*
+	Factory (Minion, type 1.5) manual steering zones - issues.md: "when you left click on
+	something, the drones dont go to that place like normal triangle drones, but instead go
+	towards, then stop at a distance and start circling it... when you right click, outside of a
+	certain distance they repel, but inside a radius of the mouse pointer, they instead cluster
+	together." Before this a Minion shared droneSteer1's generic "fly straight at/away from the
+	cursor" with every other drone, which is exactly the "ram the target" behaviour diep_wiki
+	explicitly says the Factory does NOT have ("unlike with the other branches of Overseer, the
+	Factory's Drones won't just ram targets when clicking upon them").
+	Left-click (Attract, diep_wiki): beyond the 16-square "blue orbit" radius, close in; inside it,
+	orbit; closer still, back off toward the ring. Right-click (Repel): beyond 18 squares, straight
+	repel; 5-18 squares, spiral off it; under 5, collapse into a clustered "star formation" pulled
+	toward the pointer. diepcustom's own Minion.ts (FOCUS_RADIUS = 800 du^2) puts the attract/orbit
+	seam at 800 du = 16 gu (World.gu(16), matching the wiki exactly) and its own inner seam at
+	800/sqrt(7) du = 16/sqrt(7) gu (~6.05 gu) - used here for the left-click inner seam since the
+	wiki gives no exact figure for it, and it is close to the right-click "5" the wiki DOES give.
+*/
+const FACTORY_ORBIT_OUT = World.gu(16);
+const FACTORY_ORBIT_IN = World.gu(16) / Math.sqrt(7);
+const FACTORY_REPEL_OUT = World.gu(18);
+const FACTORY_REPEL_IN = World.gu(5);
 
 /*
 	SPEED_RESCALE (the old x1.6 TICK_MS-invariance fix for the `speed` column's tick.quadratic()
@@ -517,12 +540,36 @@ function droneSteer1(bullet, play) {
 	}
 	///
 	if (play.inputs.mouseR) {
-		const dir = Math.PI + Math.atan2((play.y + play.inputs.mouse_y) - bullet.y, play.x + play.inputs.mouse_x - bullet.x)
-		bullet.dir = dir;
+		const mx = play.x + play.inputs.mouse_x, my = play.y + play.inputs.mouse_y;
+		const away = Math.atan2(bullet.y - my, bullet.x - mx);
+		if (bullet.type === 1.5) {
+			const dis = Math.sqrt(Math.pow(bullet.x - mx, 2) + Math.pow(bullet.y - my, 2));
+			if (dis > FACTORY_REPEL_OUT) {
+				bullet.dir = away;
+			} else if (dis > FACTORY_REPEL_IN) {
+				bullet.dir = away - Math.PI / 2;   // clockwise spiral off the pointer
+			} else {
+				bullet.dir = away + Math.PI;   // star formation - drawn in toward the pointer
+			}
+			return true;
+		}
+		bullet.dir = away;
 		return true;
 	} else if (play.inputs.mouseL || play.inputs.e) {
-		const dir = Math.atan2((play.y + play.inputs.mouse_y) - bullet.y, play.x + play.inputs.mouse_x - bullet.x)
-		bullet.dir = dir;
+		const mx = play.x + play.inputs.mouse_x, my = play.y + play.inputs.mouse_y;
+		const toward = Math.atan2(my - bullet.y, mx - bullet.x);
+		if (bullet.type === 1.5) {
+			const dis = Math.sqrt(Math.pow(bullet.x - mx, 2) + Math.pow(bullet.y - my, 2));
+			if (dis > FACTORY_ORBIT_OUT) {
+				bullet.dir = toward;
+			} else if (dis > FACTORY_ORBIT_IN) {
+				bullet.dir = toward + Math.PI / 2;   // counter-clockwise orbit around the pointer
+			} else {
+				bullet.dir = toward + Math.PI;   // too close - back off toward the orbit ring
+			}
+			return true;
+		}
+		bullet.dir = toward;
 		return true;
 	} else {
 		if (bullet.DETEC.select) {

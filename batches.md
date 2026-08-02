@@ -43,6 +43,32 @@ client in `public/client/`, shared server+client config in `public/SHARE/`. Issu
   candidates inside a wall rect (the `isValidSpawnLocation` the code flagged as unbuilt). Before
   this, ~37% of maze spawns landed embedded in a wall; now 0. Pinned by a test in `test/rooms.js`.
   **Still open:** the *wall-vs-wall* visual overlap (a different thing — see Batch E below).
+- **Batch C — collision ownership + knockback.** Most of the same-team pass-through machinery
+  (`teamPassThrough()`, the trap `armTicks` settle timer) was already in place from an earlier
+  session; this pass found and closed the actual remaining gaps: Mothership's odd-numbered drones
+  (type 1.1) were never added to `SAME_OWNER_TYPES`, and BattleShip's real swarm barrels (types
+  1.2/1.3) carried no team-collision flag at all - both still jostled/damaged their own team, the
+  exact bugs issues.md reported. Reclassified `NO_OWN_TEAM_TYPES`/`SAME_OWNER_TYPES` (also fixing a
+  latent mislabel: type 3 is the Necromancer's own drone, not "swarm", and belongs in the OTHER
+  set). Tank-body knockback tuned down (`BODY_KB_GU` 1.6 to 1.0 gu, README's Departures list).
+  Trapper Dominator's traps were confirmed already destructible (no code anywhere special-cases
+  them). Golden unmoved (server-logic only). See PENDING.md's "Settled by the fourth issues.md
+  pass" for the full list and `test/rooms.js` for the new pins.
+- **Batch D — drone/entity AI.** Necromancer: a god-mode necromancer couldn't claim squares (the
+  square's own side destroyed itself regardless of god mode, but the player's early-return skipped
+  the drone-spawn code) - fixed via a shared `Player.claimSquare()`. Drone colour was flat beige
+  even in TDM - fixed to take the team colour inside `rules.teamPlay`. The square-kill spawn
+  mechanic itself was already correct (verified directly against the real collision pair loop, not
+  reproduced as "completely broken"). Overseer/Overlord's 2-at-a-time/4-at-a-time symmetric
+  batching was ALSO already correct (verified empirically, no code change) - only pinned with a
+  test. Factory's Minions shared generic drone steering with every other drone (straight ram at the
+  cursor); given a proper three-zone attract/orbit and repel/spiral/cluster field instead, matching
+  diep_wiki's measured squares and cross-checked against `Minion.ts`'s `FOCUS_RADIUS`. **Left
+  alone, deliberately:** base-drone chase overshoot - `BASE_DRONE_CHASE_SPEED`/`_TURN` are
+  diep-derived, not tuning knobs, and the user's own report was explicitly unsure; retuning either
+  without a browser session risks trading a real diep number for a guess (PENDING #6 already asks
+  for that session). Golden unmoved. See PENDING.md for the full list and `test/rooms.js` for the
+  new pins (`necromancerTests`, `droneBatchTests`, `factoryTests`).
 
 ---
 
@@ -53,6 +79,7 @@ root `*.webp`/`*.png` refs, and `diep_wiki/*.txt`. Split into two passes.
 ### B1 — the measured shapes (proportions = the acceptance test)
 Wiki: `Guardian.txt`, `Summoner.txt`, `Defender.txt`, `Skimmer.txt`, `Fallen Booster.txt`,
 `Fallen Overlord.txt`, `Overseer.txt`.
+Also reference /diepindepth and /diepcustom (source code) when applicable.
 - **Overseer (do this one first — it's the crash residual):** its sprite bounds compute to ~0, so
   the bake canvas is 0x0 and the preview tile is blank. Floor the sprite-canvas allocation at the
   body size (never 0), then correct overseer's config geometry. Same size-conflation root as the
@@ -77,45 +104,9 @@ Wiki: `Guardian.txt`, `Summoner.txt`, `Defender.txt`, `Skimmer.txt`, `Fallen Boo
   `Trapper/Gunner_dominator_tank_2.webp`.
 - **Auto 3 / Auto 5:** turrets must not overlap the body and only travel their grey ring (regressed
   to overlappable). `Auto_3.webp`.
-- **Guardian projectile == small crasher** (triangle, identical — reuse the crasher sprite).
-- **Summoner projectile == Necromancer beige drone** (identical sprite).
+- **Guardian projectile == small crasher** (triangle, identical — reuse the crasher sprite, different damage/behavior as described in /diepcustom).
+- **Summoner projectile == Necromancer beige drone** (identical sprite, but differnet damage/behavior as described in /diepcustom).
 - **Arena Closer** and **Fallen Booster** bullets: size = the firing barrel's width.
-- **Necromancer barrels:** stick out further.
-
----
-
-## Batch C — Collision ownership + knockback feel  *(one cohesive change)*
-**Files:** `public/SHARE/Physics.js` (`back`=recoil, `weight`=knockback impulses), the
-pair-resolution + team test in `rooms/Room.js` (grep `knock`/`push`/`team`/`overlap`); trap
-lifecycle in `entities/Bullet.js`, `lib/damage.js`. Same "same-team / owner exemption" + one tuning
-constant:
-- Traps & drones pass through their own team's tanks (no touch, no knockback).
-- Battleship drones: no knockback, no same-team interaction (same path).
-- Mothership overlaps its own drones (same exemption).
-- Traps pushable by their **origin** tank for a short window, then static + freely overlapping (add
-  a per-trap settle timer).
-- Knockback feels too bouncy: reduce the single `weight` constant; re-test it still separates
-  enemies. (Recoil/`back` was deliberately left — see PENDING; don't touch trap/drone recoil.)
-- Trapper/Destroyer Dominator traps: confirm they take damage and die like normal traps.
-- **Accept:** same-team drones/traps interpenetrate; mothership sits in its swarm; a nudged enemy
-  no longer launches; dominator traps are destructible. **Golden should not move** (server logic) —
-  if it does, a same-team position changed in the scenario; confirm it's intended.
-
----
-
-## Batch D — Drone / entity AI  *(one file: `lib/gameAI.js`)*
-**Files:** `lib/gameAI.js`, `entities/Player.js`; wiki `Necromancer.txt`, `Factory.txt` +
-`Factory_Strategy.txt`, `Base Drones.txt`, `Overseer.txt`, `Overlord.txt`, `Drone Speed.txt`.
-- **Necromancer drones from killed squares** (broken): create a drone when the necro kills a
-  square; **beige** in no-team modes (all necros), **team-coloured** in TDM. Also fix **god mode**:
-  a necro in god mode must still convert squares.
-- **Overseer / Overlord symmetric batching:** spawn symmetrically per tick — Overlord 4-at-a-time
-  to the last partial batch, Overseer 2, etc.
-- **Base-drone overshoot:** they circle too fast and overshoot a target they can't quickly kill.
-  `Base Drones.txt` for intended behaviour — fix steering or cap turn/speed.
-- **Factory drone AI:** left-click -> approach, hold at a distance, orbit + attack with own turrets;
-  right-click -> repel outside a radius, cluster with turrets facing away inside the cursor radius.
-  Pull exact distances from diep source / `Factory.txt`.
 
 ---
 
@@ -149,8 +140,5 @@ constant:
 ---
 
 ## Suggested order for what's left
-1. **C** (collision + knockback) — highest gameplay payoff, cohesive, server-logic so the golden
-   shouldn't move; verifiable via `rooms.js`.
-2. **D** (drone AI) — one file, verifiable.
-3. **B1** then **B2** (geometry) — token-heavy, WILL move the golden (rebaseline per pass).
-4. **E** (wall overlap), **F** (FOV), **G** (UI) — self-contained; leave for last.
+1. **B1** then **B2** (geometry) — token-heavy, WILL move the golden (rebaseline per pass).
+2. **E** (wall overlap), **F** (FOV), **G** (UI) — self-contained; leave for last.

@@ -906,6 +906,30 @@ function dominatorTests() {
 			d.class === 'Gunner Dominator', d.class);
 	}
 
+	// issues.md: "trapper dominator's traps should not be immortal... like with enough damage
+	// they should disappear like normal traps". There is no dominator-origin carve-out anywhere in
+	// entities/Bullet.js (nothing there ever reads `.dominator`) - a Trapper Dominator's traps are
+	// ordinary type-2 Bullets off an ordinary finite-pene cannon row, so this is a real behaviour to
+	// pin, not a config change.
+	{
+		const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+		const trapCannon = CLASS['Trapper Dominator'].cannons[0];
+		check('a Trapper Dominator\'s traps have finite pene, not an immortal sentinel',
+			Number.isFinite(trapCannon.pene) && trapCannon.pene > 0, trapCannon.pene);
+		const dom = doms.find((d) => d.class === 'Trapper Dominator');
+		const trap = new Bullet(dom.id, dom.x, dom.y, 0, 0, 0, room);
+		trap.type = 2; trap.armTicks = 0; trap.team = dom.team; trap.pene = trapCannon.pene;
+		// collision() spends one TICK of contact per call (same as the real pair loop calling it once
+		// a tick) - an enemy bullet resting against the trap for up to 50 ticks, comfortably enough
+		// contact for any finite pene to reach zero.
+		const enemyBullet = { kind: KIND.BULLET, origin: { oId: -1 }, type: 0 };
+		for (let i = 0; i < 50 && !trap.destroy; i++) {
+			trap.collision(enemyBullet, { dmg: trapCannon.pene });
+		}
+		check('...and it dies exactly like an ordinary trap once that pene is spent',
+			trap.destroy > 0 && trap.pene === 0, 'destroy=' + trap.destroy + ' pene=' + trap.pene);
+	}
+
 	// "Cannot move" (diep_wiki/Dominator.txt) - motion() is a real no-op, and a tank ram now zeroes
 	// knockback/overlap-push at the source (entities/Player.js's KIND.PLAYER arm, diep's own
 	// absorbtionFactor = 0) instead of update() snapping position back after the fact - plan.md
@@ -932,6 +956,22 @@ function dominatorTests() {
 		new Player({ GM: room.gm, sId: room.id, oId: id }, 0, 0, 'Basic', 0, room.XPLVL, room));
 	const teamB = room.INSTANCE.players.add((id) =>
 		new Player({ GM: room.gm, sId: room.id, oId: id }, 0, 0, 'Basic', 1, room.XPLVL, room));
+
+	// issues.md: "knockback currently seems quite large... everything feels so bouncy". Ordinary
+	// tank-body-vs-tank-body knockback (entities/Player.js's BODY_KB_GU) was tuned down from diep's
+	// own 1.6 gu/loop to 1.0 - a deliberate departure (README.md), pinned here so a later edit to
+	// it is a conscious choice, not a silent drift. teamA/teamB are on different teams (full
+	// strength, not the soft team-mate push).
+	{
+		const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+		teamA.shield = 0; teamA.absorb = 1; teamA.dominator = 0;
+		const expected = tick.impulse(1.0 * 2.8);
+		const vecBefore = teamA.vec.length();
+		teamA.collision({ kind: KIND.PLAYER, id: { oId: teamB.id.oId }, x: teamA.x + 10, y: teamA.y, damage: 0 }, {});
+		check('ordinary enemy tank-body knockback is BODY_KB_GU (1.0 gu/loop), not diep\'s raw 1.6',
+			Math.abs(teamA.vec.length() - vecBefore - expected) < 1e-9,
+			(teamA.vec.length() - vecBefore) + ' vs ' + expected);
+	}
 
 	// The capture/knockdown state machine (lib/gameAI.js's dominatorCapture(), bound as part of
 	// update()) - poking hp/destroy/murder directly the way collision() would have left them,
@@ -2004,7 +2044,14 @@ function baseDroneAiTests() {
 			room.INSTANCE.bullets.add((id) => { b.id = { GM: room.gm, sId: room.id, oId: id }; return b; });
 			return b;
 		}
-		for (const type of [1, 1.5]) {
+		// 1.1 (Mothership's AI-only half, TanksConfig.js's odd-numbered Mothership barrels) and 3
+		// (the Necromancer's own drone, NecromancerSquare.ts) belong in this same onlySameOwnerCollision
+		// family - both used to be missing from rooms/Room.js's SAME_OWNER_TYPES (1.1 simply absent; 3
+		// was sitting in NO_OWN_TEAM_TYPES under a stale "swarm" label that actually meant BattleShip's
+		// 1.2/1.3, never 3), which is exactly issues.md's "mothership should be able to overlap with
+		// its own drones" report - a captured Mothership's even barrels (type 1) passed through fine
+		// while its odd barrels (type 1.1) still jostled it.
+		for (const type of [1, 1.1, 1.5, 3]) {
 			{
 				const room = isolatedRoom();
 				const owner = plantPlayer(room, 0, 900, 900);
@@ -2031,6 +2078,44 @@ function baseDroneAiTests() {
 				check('two same-team, different-owner type-' + type + ' drones do not damage each other',
 					droneA.pene === aBefore && droneB.pene === bBefore,
 					droneA.pene + '/' + aBefore + ', ' + droneB.pene + '/' + bBefore);
+			}
+		}
+		// BattleShip's real swarm types (1.2 uncontrollable, 1.3 controllable - Fortress's own
+		// standin barrels reuse 1.2) carry noOwnTeamCollision (Swarm.ts:32), not onlySameOwnerCollision:
+		// unlike a type-1 drone, two DIFFERENT owners' swarm drones must ALSO pass through each other,
+		// not just through every teammate's tank - issues.md's "battleship drones should not have
+		// knockback and interact with anything on its own team" made no owner distinction, and the
+		// diep source backs that (no per-owner carve-out on this flag).
+		for (const type of [1.2, 1.3]) {
+			{
+				const room = isolatedRoom();
+				const owner = plantPlayer(room, 0, 900, 900);
+				const drone = plantDrone(room, owner, 0, 0, type);
+				const mate = plantPlayer(room, 0, 0, 0);
+				const mateBefore = mate.hp, droneBefore = drone.pene, vecBefore = drone.vec.length();
+				room.step();
+				check('a BattleShip-type ' + type + ' drone does not damage a teammate\'s tank, nor it it',
+					mate.hp >= mateBefore && drone.pene === droneBefore,
+					mate.hp + '/' + mateBefore + ', ' + drone.pene + '/' + droneBefore);
+				check('...nor does either side get knocked back',
+					drone.vec.length() === vecBefore && mate.vec.length() === 0,
+					drone.vec.length() + ' vs ' + vecBefore);
+			}
+			{
+				// Different owner, same team - unlike type 1/1.5/3, these must ALSO pass through each
+				// other (noOwnTeamCollision ignores owner entirely).
+				const room = isolatedRoom();
+				const ownerA = plantPlayer(room, 1, 900, 900);
+				const ownerB = plantPlayer(room, 1, -900, -900);
+				const droneA = plantDrone(room, ownerA, 0, 0, type);
+				const droneB = plantDrone(room, ownerB, 0, 0, type);
+				const aBefore = droneA.pene, bBefore = droneB.pene, aVecBefore = droneA.vec.length();
+				room.step();
+				check('two same-team, different-owner type-' + type + ' swarm drones do not damage each other',
+					droneA.pene === aBefore && droneB.pene === bBefore,
+					droneA.pene + '/' + aBefore + ', ' + droneB.pene + '/' + bBefore);
+				check('...nor jostle each other (noOwnTeamCollision, not onlySameOwnerCollision)',
+					droneA.vec.length() === aVecBefore, droneA.vec.length() + ' vs ' + aVecBefore);
 			}
 		}
 		{
@@ -5206,6 +5291,164 @@ function wallTests() {
 	check('a wall never tombstones itself', wall.destroy === 0, wall.destroy);
 }
 
+/// Necromancer //////////////////////////////////////////////////////////////
+function necromancerTests() {
+	console.log('\nnecromancer (issues.md):');
+	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+	const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
+	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+
+	function plantNecro(room, team, x, y) {
+		const p = room.INSTANCE.players.add((id) => new Player(
+			{ GM: room.gm, sId: room.id, oId: id }, x, y, 'necro', team, room.XPLVL, room));
+		p.class = 'Necromancer';
+		p.droneCount = 0;
+		p.necro = CLASS['Necromancer'].necro;
+		p.shootTimer = new Array(CLASS['Necromancer'].cannons.length).fill(0);
+		p.shield = 0; p.alpha = 1;
+		return p;
+	}
+	function plantSquare(room, x, y) {
+		const sq = new Objects('sqr', -1, { GM: room.gm, sId: room.id, oId: -1 }, room.map, room);
+		sq.x = x; sq.y = y;
+		room.INSTANCE.objs.add(() => sq);
+		return sq;
+	}
+
+	// A live square, touched by an ordinary (non-god) Necromancer: spawns a type-3 drone and
+	// consumes one square, through the real pair loop (rooms/Room.js's step()), not a hand-driven
+	// collision() call - this is the path issues.md called "completely broken", so it has to be
+	// proven at the same level a real game tick would exercise it.
+	{
+		const room = makeRoom('ffa');
+		player(room, 0).destroy = 1;
+		const p = plantNecro(room, 0, 0, 0);
+		plantSquare(room, 5, 0);
+		const dronesBefore = [...room.INSTANCE.bullets.live()].filter((b) => b.type === 3).length;
+		room.step();
+		const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.type === 3);
+		check('touching a live square spawns exactly one type-3 (necro) drone',
+			drones.length === dronesBefore + 1, drones.length + ' vs ' + (dronesBefore + 1));
+		check('...and the drone counter actually moved', p.droneCount === 1, p.droneCount);
+	}
+
+	// issues.md: "necromancer in god mode is unable to convert squares into drones. they should
+	// be able to." The square's own collision() (entities/Objects.js) claims itself against ANY
+	// necromancer contact regardless of the attacker's god flag, so without claimSquare() being
+	// called from the god-mode branch the square would vanish with nothing to show for it.
+	{
+		const room = makeRoom('ffa');
+		player(room, 0).destroy = 1;
+		const p = plantNecro(room, 0, 0, 0);
+		p.dev.god = 1;
+		const sq = plantSquare(room, 5, 0);
+		room.step();
+		const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.type === 3);
+		check('a god-mode necromancer still claims a square it touches',
+			drones.length === 1 && p.droneCount === 1, drones.length + ' drones, count=' + p.droneCount);
+		check('...and the square is gone either way (its own side never read god mode)',
+			sq.destroy > 0, sq.destroy);
+	}
+
+	// issues.md: beige ("necro" colour 9) outside a team mode, the player's OWN team colour inside
+	// one - not the flat 9 every mode used to get.
+	{
+		const ffaRoom = makeRoom('ffa');
+		player(ffaRoom, 0).destroy = 1;
+		const ffaDrone = { type: 3, team: 7, color: undefined };
+		check('a necro drone is the beige/necro colour (9) outside a team mode',
+			ffaRoom.bulletColor(ffaDrone) === 9, ffaRoom.bulletColor(ffaDrone));
+
+		const tdmRoom = makeRoom('2team');
+		player(tdmRoom, 0).destroy = 1;
+		const tdmDrone = { type: 3, team: 1, color: undefined };
+		check('...but takes the owner\'s own team colour inside one (TDM)',
+			tdmRoom.bulletColor(tdmDrone) === 1, tdmRoom.bulletColor(tdmDrone));
+		check('an ordinary (non-necro) drone is unaffected either way',
+			ffaRoom.bulletColor({ type: 1, team: 3, color: undefined }) === 3);
+	}
+}
+
+/// Overseer/Overlord drone batching /////////////////////////////////////////
+// issues.md: "overseer and overlord should try to spawn drones symmetrically at a time until
+// impossible, like overlord should spawn 4 at a time until the very last batch, overseer is 2 at
+// a time, etc." Every barrel of either class shares one reload/offTime, so they become ready on
+// the exact same real tick and shoot()'s per-barrel drone-cap check (evaluated barrel-by-barrel
+// within that one tick, `this.droneCount` incrementing as each fires) already both fires them
+// together AND correctly caps the last, partial batch - nothing here needed a code change, but
+// nothing pinned it either, so a future edit to shoot()'s cap/offTime handling has something to
+// break against.
+function droneBatchTests() {
+	console.log('\ndrone batching (issues.md - Overseer 2 at a time, Overlord 4):');
+	const room = makeRoom('ffa');
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	for (const [clsName, want] of [['Overseer', [2, 2, 2, 1]], ['Overlord', [4, 4]]]) {
+		const p = player(room, 0);
+		p.class = clsName;
+		p.droneCount = 0;
+		p.necro = CLASS[clsName].necro;
+		p.shootTimer = new Array(CLASS[clsName].cannons.length).fill(0);
+		p.shield = 0;
+		p.inputs.e = 0; p.inputs.mouseL = 0;   // every barrel here is can.auto - no input needed
+		const batches = [];
+		for (let i = 0; i < 800 && p.droneCount < CLASS[clsName].maxDrone; i++) {
+			const before = [...room.INSTANCE.bullets.live()].length;
+			p.shoot();
+			const after = [...room.INSTANCE.bullets.live()].length;
+			if (after > before) { batches.push(after - before); }
+		}
+		check(clsName + ' fires ' + want.join(',') + '-drone batches, not one at a time',
+			batches.join(',') === want.join(','), batches.join(','));
+		check('...and lands exactly at its maxDrone cap with none left over',
+			p.droneCount === CLASS[clsName].maxDrone, p.droneCount);
+		for (const b of [...room.INSTANCE.bullets.live()]) { b.destroy = 1; }
+	}
+}
+
+/// Factory drone steering ////////////////////////////////////////////////////
+function factoryTests() {
+	console.log('\nfactory drones (issues.md - orbit/cluster, not ram):');
+	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
+	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
+	const room = makeRoom('ffa');
+	const p = player(room, 0);
+	p.class = 'Factory';
+	p.x = 0; p.y = 0;
+	p.inputs.mouse_x = 0; p.inputs.mouse_y = 0;
+
+	function droneAt(x, y) {
+		const b = new Bullet(p.id, x, y, 0, 0, 0, room);
+		b.type = 1.5; b.team = p.team; b.class = 'Factory'; b.maxspeed = 1;
+		b.update();
+		return b;
+	}
+	const deg = (b) => Math.round(b.dir * 180 / Math.PI + 360) % 360;
+
+	// diep_wiki Attract: beyond the 16-square orbit, close in; inside it, orbit (not ram); too
+	// close, back toward the ring - a Minion (type 1.5) gets this three-zone field, the same
+	// left-click that an ordinary drone (type 1) still just rams the cursor with.
+	p.inputs.mouseL = 1; p.inputs.mouseR = 0;
+	check('left-click beyond the 16-square orbit moves the drone straight at the cursor',
+		deg(droneAt(World.gu(30), 0)) === 180);
+	check('...inside the orbit band it moves perpendicular (orbits), not straight at the cursor',
+		deg(droneAt(World.gu(10), 0)) === 270);
+	check('...and closer than that it backs off outward, away from the cursor',
+		deg(droneAt(World.gu(2), 0)) === 0);
+	check('an ordinary (non-Minion) drone type still just rams the cursor at any distance',
+		(() => { const b = new Bullet(p.id, World.gu(10), 0, 0, 0, 0, room); b.type = 1; b.team = p.team; b.class = 'Factory'; b.maxspeed = 1; b.update(); return deg(b); })() === 180);
+
+	// diep_wiki Repel: past 18 squares, straight repel; 5-18, spiral off; under 5, star formation
+	// pulled together toward the pointer.
+	p.inputs.mouseL = 0; p.inputs.mouseR = 1;
+	check('right-click beyond 18 squares repels the drone straight away from the cursor',
+		deg(droneAt(World.gu(30), 0)) === 0);
+	check('...between 5 and 18 squares it spirals off (perpendicular), not a straight repel',
+		deg(droneAt(World.gu(10), 0)) === 270);
+	check('...and under 5 squares it clusters, pulled back toward the cursor',
+		deg(droneAt(World.gu(2), 0)) === 180);
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -5219,6 +5462,9 @@ rooms.push(dominatorTests()); console.log('');
 rooms.push(mothershipTests()); console.log('');
 possessionTests();
 rosterSweepTests();
+necromancerTests();
+droneBatchTests();
+factoryTests();
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);

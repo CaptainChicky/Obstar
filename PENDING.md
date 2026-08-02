@@ -182,6 +182,57 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   rather than queued — so it read as "Enter does nothing", not as a cooldown. `dead` and `destroy`
   are written at the same moments everywhere, so the gate is now just `!tank.dead`.
 
+## Settled by the fourth issues.md pass (Batch C/D session, kept only for the nuance)
+
+- **Mothership's own odd-numbered drones (type 1.1) were never exempt from same-team collision.**
+  `rooms/Room.js`'s `SAME_OWNER_TYPES` had 1/1.5/2 but not 1.1 - the exact "mothership should be
+  able to overlap with its own drones" bug, half-fixed (the even/type-1 barrels already passed
+  through). Added 1.1 to the set.
+- **BattleShip's real swarm barrels (types 1.2/1.3, `TanksConfig.js`'s `BattleShip`/`Fortress`
+  entries) carried NEITHER team-collision flag at all** - `NO_OWN_TEAM_TYPES` had a `3` under a
+  stale "swarm" comment, but type 3 is actually the Necromancer's own drone (which itself needs
+  the OTHER flag, `onlySameOwnerCollision`, per `NecromancerSquare.ts` - it was in the wrong set
+  too). Net effect before this pass: a BattleShip's own drones could damage/knock back their own
+  owner and teammates in every mode without `rules.teamPlay` (i.e. FFA), and a Necromancer's drone
+  passed through teammates it should still jostle. Reclassified: `NO_OWN_TEAM_TYPES = [0, 1.2, 1.3,
+  4]`, `SAME_OWNER_TYPES = [1, 1.1, 1.5, 2, 3]`. Pinned in `test/rooms.js`.
+- **Ordinary tank-body-vs-tank-body knockback was diep's full 1.6 gu/loop** (issues.md: "everything
+  feels so bouncy"). Tuned to `entities/Player.js`'s new `BODY_KB_GU = 1.0`, a deliberate departure
+  (README.md's "Departures from diep") - the positional overlap resolution is untouched, so
+  enemies still can't stack.
+- **Trapper Dominator's traps were never actually immortal** - confirmed no code anywhere reads
+  `.dominator` inside a trap's own damage path; the perceived immortality was never reproduced.
+  Pinned by a `test/rooms.js` check so nobody re-opens it without evidence.
+- **A god-mode Necromancer could not claim squares.** `entities/Player.js`'s `if (this.dev.god)
+  {...; return;}` returned before the switch that spawns the necro-drone ever ran, while the
+  SQUARE's own side of the interaction (`entities/Objects.js`) doesn't check god mode at all and
+  destroyed itself regardless - so the square would just vanish with no drone to show for it.
+  Factored the spawn logic into `Player.claimSquare()`, called from both the ordinary
+  `KIND.OBJECTS` arm and the god-mode branch.
+- **A necromancer's drone was always the flat beige/"necro" colour, even in TDM.** `rooms/Room.js`'s
+  `bulletColor()`/`ownBulletColor()` special-cased `type === 3` to color 9 unconditionally; now only
+  outside `rules.teamPlay`, matching diep_wiki's "though it otherwise duplicates the [team colour]
+  in all non-FFA modes".
+  (The square-kill spawn mechanic itself, and the drone-chain/bullet-chain claim paths in
+  `entities/Bullet.js`, were already correct when checked directly against the real collision pair
+  loop - not reproduced as "completely broken".)
+- **Overseer/Overlord's symmetric drone batching (2-at-a-time / 4-at-a-time, capping the last
+  partial batch correctly) was already correct** - every barrel of either class shares one
+  reload/offTime, so they become ready on the same real tick, and `Player.shoot()`'s per-barrel
+  drone-cap check (evaluated barrel-by-barrel within that tick) already both fires them together and
+  stops exactly at the cap. Verified empirically (Overseer: batches of 2,2,2,1; Overlord: 4,4) and
+  pinned by `test/rooms.js`'s `droneBatchTests()` - no code change.
+- **A Factory's Minions (type 1.5) shared `droneSteer1` with every other drone type**, so left/
+  right-click just flew them straight at/away from the cursor - literally the "will just ram
+  targets" behaviour diep_wiki says the Factory does NOT have. Added a Minion-only three-zone field
+  in `entities/Bullet.js`'s `droneSteer1` (left-click: attract beyond World.gu(16), orbit between
+  that and World.gu(16)/sqrt(7), back off inside it; right-click: repel beyond World.gu(18), spiral
+  between that and World.gu(5), cluster toward the cursor inside it) - diep_wiki's own measured
+  squares, cross-checked against `Minion.ts`'s `FOCUS_RADIUS = 800**2` (800 du = 16 gu exactly).
+  Movement and aim still share one `dir` field (the existing architecture for every drone type), so
+  the wiki's "aim outward while clustering" nuance in the star formation isn't separately modelled -
+  the drones cluster together but don't specifically face outward while doing it.
+
 ## Still open from issues.md (second batch)
 
 Not started, in rough descending order of how visible each is. Each is a real, specific job, not a
@@ -196,28 +247,28 @@ research question - the source for every one of them is cited here so nobody has
   (`AutoTurret.ts`: size 55, width 42*0.7, recoil 0.3, bullet sizeRatio 1). The user supplied
   measured proportions for all five bosses in issues.md - cross-check against those, they are the
   acceptance test. `Defender_boss_3.webp` at the repo root is the reference render.
-- **Factory** (`Minion.ts` + TankDefinitions id52): square body (`sides: 4`), trapezoid spawner,
-  `MinionBarrelDefinition` size 85 / width 50.4, drone `size *= 1.2`, `ai.viewRange = 900`,
-  `FOCUS_RADIUS = 800**2` for the circle-and-attack behaviour, and the right-click cluster.
+- **Factory geometry**: square body (`sides: 4`), trapezoid spawner, `MinionBarrelDefinition` size
+  85 / width 50.4, drone `size *= 1.2`. (The AI half - `ai.viewRange = 900`, `FOCUS_RADIUS = 800**2`
+  circle-and-attack, the right-click cluster - is done, see "Settled by the fourth issues.md pass"
+  below. This is drawing-only now, Batch B territory.)
 - **Skimmer** (`Skimmer.ts`): `SkimmerBarrelDefinition` size 70 / width 42, two opposed sub-barrels,
   drawn BELOW the main bullet. `skimmerandbullet.png` at the repo root is the reference, with
   measured proportions in issues.md.
-- **Necromancer drones**: must come from killed squares (`NecromancerSquare.ts`) and take the beige
-  `necro` colour outside team modes, the team colour inside. (The barrel LENGTH half of this is
-  done — 49 → 61.25, a deliberate departure from diep's own 70×0.70, see the entry's own comment
-  in `TanksConfig.js`.)
 - **Guardian drones** should be visually indistinguishable from a small Crasher - same triangle,
   same `bull`/Color.EnemyCrasher pink, `sizeRatio 21 / (71.4/2)` off a 71.4-wide barrel.
-- **Overseer/Overlord symmetric drone batching** - spawn opposed barrels in one batch (2 for
-  Overseer, 4 for Overlord) until the last partial batch.
 - **Auto 3 / Auto 5 turrets** must not overlap the body and are constrained to their grey ring.
 - **Dominator**: the cosmetic trapezoid barrel wants the same z-order the attacking barrels got
-  (under the circular body, over the black hexagon); traps want to be destructible rather than
-  effectively immortal.
+  (under the circular body, over the black hexagon). (Trap destructibility - the other half of this
+  entry - is done, see "Settled by the fourth issues.md pass" below.)
 - **Maze**: choose the player spawn area AFTER the walls are generated so a spawn inside a wall is
   impossible, and remove the remaining minor wall-on-wall visual overlap.
-- **Base drones overshoot** a target they cannot kill quickly, circling too fast - the user is
-  unsure whether the fix is the chase speed or the steering, and so am I without watching it.
+- **Base drones overshoot** a target they cannot kill quickly, circling too fast - left alone this
+  pass (Batch C/D session): `BASE_DRONE_CHASE_SPEED`/`_CHASE_TURN` are diep-derived (756 u/s flat,
+  a turn radius pinned to one tank diameter - `lib/config.js`'s own citations), not ad-hoc tuning
+  knobs, and the user's own issues.md line is explicitly unsure ("should this be fixed... idk").
+  Retuning either without a browser session to confirm what's actually wrong (speed vs. steering vs.
+  intended-and-just-looks-odd) risks trading a real diep number for a guess. Still needs the human
+  browser session PENDING #6 already asks for.
 - **A gamemode switcher on the death screen.** Not started. It is not a drawing job: `ui.js`'s
   `END` is canvas-only with no hit-testing of its own, and the only path into a different mode is
   `POST /play` (`web/app.js`), which sets the `preference` cookie and re-renders `play.ejs` — so

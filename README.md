@@ -19,6 +19,10 @@ non-fanon `diep_wiki/` pages). The following are ours on purpose:
   PENDING.md). **Custom shapes** — `Bsqr`, `Btri`, and rarity tiers beyond Shiny.
 - **Custom systems** — bots, pets, coins/shop, accounts & achievements, the dev console, the
   five-level base-drone orbit AI, tank-vs-tank positional overlap resolution.
+- **Tank-body-vs-tank-body knockback is 1.0 gu/loop, not diep's own 1.6** (`entities/Player.js`'s
+  `BODY_KB_GU`) — playtesting read the full-strength figure as too bouncy on contact. The
+  positional overlap resolution (also ours) still guarantees separation, so this only softens the
+  velocity launch, not the "enemies can't stack" guarantee.
 - **Muted shape palette** (+ alpha square/triangle variants) instead of diep's saturated
   primaries; Crasher pink chosen to sit apart from Triangle rose.
 - **Base drone energy levels** — quantised five-ring orbit system instead of diep's single ring.

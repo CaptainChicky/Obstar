@@ -63,6 +63,15 @@ const SPIN_RATE = 0.04;
 // separation. Not zero - two tanks resting exactly on top of each other reads as a bug.
 const TEAM_SOFT_PUSH = 0.2;
 
+// Tank-body-vs-tank-body knockback, in gu per loop of contact (fed through the same `gu x 2.8`
+// impulse identity `weight`/`back` use, see the KIND.PLAYER arm below). Diep's own "All Tank
+// Bodies" row is 1.6; ours is knocked down to 1.0. Ours, flagged (issues.md: "knockback currently
+// seems quite large... everything feels so bouncy") - the velocity impulse is what makes a graze
+// launch a tank, and the positional overlap resolution right below it (a no-diep-reference engine
+// call already) is what actually guarantees two enemies don't rest inside each other, so cutting
+// this doesn't reopen "tanks stack" - only "tanks fly on contact".
+const BODY_KB_GU = 1.0;
+
 // diep's own flat per-hit invisibility reveal (TankDefinitions.ts's `visibilityRateDamage`,
 // plan.md C8) - a single global constant, not a per-class rate like `stealth.decay/moving/
 // shooting`: TankBody.ts's receiveDamage() adds this once per tick real damage landed (guarded
@@ -767,6 +776,33 @@ class Player {
 		this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
 		this.applyClassSwitchStats(oldClass);
 	}
+	/*
+		A Necromancer's claim mechanic (diep_wiki: "infecting nearby Squares upon contact - with
+		its body, its drones, or previously spawned bullets"). Shared by the ordinary KIND.OBJECTS
+		contact arm below and the Sandbox god-mode branch above - both are "this player's body
+		touched a square", they just disagree on whether the touch also deals damage/knockback.
+		Returns true (and spawns the drone) iff `shape` was actually claimed.
+	*/
+	claimSquare(shape) {
+		if (!this.necro || shape.type !== 'sqr' ||
+			this.droneCount >= CLASS[this.class].maxDrone + this.upNb[1]) {
+			return false;
+		}
+		this.droneCount++;
+		const Bull = new Bullet(this.id, shape.x, shape.y, Math.random() * Math.PI * 2,
+			this.up.BSpeed * this.necro.speed, 0, this.room);
+		Bull.type = this.necro.type;
+		Bull.class = this.class;
+		Bull.necro = this.necro.necro;
+		Bull.pene = this.up.BPene * this.necro.pene;
+		Bull.life = -1;
+		Bull.damage = this.up.BDamage * this.necro.damage;
+		Bull.size = shape.size;
+		Bull.weight = this.necro.weight;
+		Bull.push = this.necro.push;
+		this.room.createBullet(Bull, this);
+		return true;
+	}
 	collision(other, option = {}) {
 		if (this.dev.ghost) { return; }
 		// An Arena Closer (PENDING #28, rooms/Tag.js's createCloser()) - diep_wiki: "Invincibility"
@@ -787,6 +823,13 @@ class Player {
 			// tank-body shove below, which is what it has always been relative to it. Not a diep
 			// number - diep has no god mode - so it rides the tank-body row rather than a table.
 			this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.impulse(8.96), tick.impulse(8.96))));
+			// issues.md: "necromancer in god mode is unable to convert squares into drones - they
+			// should be able to." The square's OWN collision() (entities/Objects.js's KIND.PLAYER
+			// arm) doesn't check this.dev.god at all - it destroys itself into a claim the instant a
+			// necromancer touches it, god mode or not - so without this call the square would simply
+			// vanish with no drone to show for it: the shape-side "half" of the claim already fired,
+			// only the drone-spawning half was ever gated on reaching the switch below.
+			if (other.kind === KIND.OBJECTS) { this.claimSquare(other); }
 			return;
 		}
 		if (option.base) {
@@ -805,10 +848,10 @@ class Player {
 				// x/y/vec to the spawn point every tick; this replaces that, plan.md Step 11). Damage
 				// below is unaffected - a Dominator takes damage exactly like any other Player.
 				if (!this.dominator) {
-					// 4.48 = diep's "All Tank Bodies" knockback, 1.6 gu per loop of contact, through
-					// the same `gu x 2.8` impulse identity TanksConfig.js's `weight` and `back` columns
-					// use: a one-shot impulse on tank velocity displaces v0 x F/(1-F) = 10 x v0 units at
-					// the tank F = 10/11, and 1.6 x 2.8 x 10 / 28 = 1.6 gu.
+					// BODY_KB_GU x 2.8 = the impulse identity TanksConfig.js's `weight` and `back`
+					// columns use: a one-shot impulse on tank velocity displaces v0 x F/(1-F) = 10 x v0
+					// units at the tank F = 10/11, so BODY_KB_GU gu of eventual displacement takes an
+					// impulse of BODY_KB_GU x 2.8 x 10 / 28 = BODY_KB_GU.
 					// tick.impulse(), not tick.perTick() - this.vec routes through Physics.stepBody. The
 					// hp drain below stays perTick(): it is genuine per-tick-of-contact damage, not a
 					// one-shot impulse. `* this.absorb` (plan.md Part D) scales it down for a boss/
@@ -824,7 +867,7 @@ class Player {
 					// gentle shove to stop bodies resting exactly on top of each other, and drops the
 					// positional resolution entirely - overlap between friends is allowed.
 					const soft = option.noDam ? TEAM_SOFT_PUSH : 1;
-					const tankKb = tick.impulse(4.48) * this.absorb * soft;
+					const tankKb = tick.impulse(BODY_KB_GU * 2.8) * this.absorb * soft;
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tankKb, tankKb)));
 					// Positional overlap resolution, on top of the velocity impulse rather than instead
 					// of it. The impulse alone cannot separate two tanks inside a normal contact window -
@@ -893,21 +936,7 @@ class Player {
 				// take full shape knockback despite its own diep absorbtionFactor being 0.
 				const shapeKb = tick.impulse(len) * this.absorb;
 				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(shapeKb, shapeKb)));
-				if (this.necro && other.type === 'sqr' && this.droneCount < CLASS[this.class].maxDrone + this.upNb[1]) {
-					this.droneCount++;
-					const Bull = new Bullet(this.id, other.x, other.y, Math.random() * Math.PI * 2, this.up.BSpeed * this.necro.speed, 0, this.room);
-					Bull.type = this.necro.type;
-					Bull.class = this.class;
-					Bull.necro = this.necro.necro;
-					Bull.pene = this.up.BPene * this.necro.pene;
-					Bull.life = -1;
-					Bull.damage = this.up.BDamage * this.necro.damage;
-					Bull.size = other.size;
-					Bull.weight = this.necro.weight;
-					Bull.push = this.necro.push;
-					this.room.createBullet(Bull, this);
-					return;
-				}
+				if (this.claimSquare(other)) { return; }
 				if (this.shield) { return; }
 				// common(tank,shape) = 4 (lib/damage.js, plan.md chunk 1 D2) - `other.damage` (the
 				// shape's) is diep's raw damagePerTick now, with no vs-tank x4 baked in any more, so

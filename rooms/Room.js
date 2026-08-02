@@ -298,8 +298,20 @@ function damageGuarded(e, eKind) {
 	    owner with the tank that fired it - the exact opposite of the rule - and the drone would
 	    bounce off its owner while passing through every other team mate.
 */
-const NO_OWN_TEAM_TYPES = new Set([0, 3, 4]);          // bullet, swarm, skimmer
-const SAME_OWNER_TYPES = new Set([1, 1.5, 2]);         // drone, minion, trap (trap: while arming)
+// bullet, BattleShip/Fortress swarm drone (uncontrollable + controllable), skimmer - all
+// `noOwnTeamCollision` in diepcustom (Bullet.ts:75 default; Swarm.ts:32 re-asserts it on top of
+// Drone.ts, which otherwise clears it - see the SAME_OWNER_TYPES note on type 3 below for the bug
+// that shipped from conflating the two).
+const NO_OWN_TEAM_TYPES = new Set([0, 1.2, 1.3, 4]);
+// drone, Mothership AI-only drone, minion, Necromancer square-drone, trap (trap: while arming) -
+// all `onlySameOwnerCollision` (Drone.ts:57, NecromancerSquare.ts:46, Minion.ts:87, Trap.ts:44).
+// Type 3 (the Necromancer's own drone) used to sit in NO_OWN_TEAM_TYPES under a stale "swarm"
+// label - BattleShip's actual swarm barrels are types 1.2/1.3, never 3, so that entry was
+// protecting the wrong drone from its own team while leaving BattleShip's real swarm (and
+// Mothership's type-1.1 half) uncovered - the exact bug issues.md reported ("battleship drones
+// should not have knockback and interact with anything on its own team", "mothership should be
+// able to overlap with its own drones").
+const SAME_OWNER_TYPES = new Set([1, 1.1, 1.5, 2, 3]);
 function teamRoot(e, kind) {
 	return kind === KIND.BULLET ? e.origin.oId : (kind === KIND.PLAYER ? e.id.oId : null);
 }
@@ -2129,10 +2141,17 @@ class Room {
 		// `bullet.color` (1-based, assignBulletTeam()) is the dev tint AND a boss's own colour -
 		// the team modes' overrides already read it; the ffa/boss default did not, so a Guardian
 		// in a boss room fired team-9 gold drones instead of its own pink.
-		return (bullet.type === 3) ? 9 : bullet.color ? bullet.color - 1 : bullet.team;
+		//
+		// A necromancer's own drone (type 3) is diep_wiki's "peach"/beige tone ONLY outside a team
+		// mode - "though it otherwise duplicates the one of the player's team (in all non-FFA
+		// modes)". This used to read `9` (the necro colour) unconditionally, so a TDM necromancer's
+		// drones never picked up their team's colour at all (issues.md).
+		if (bullet.type === 3 && !this.rules.teamPlay) { return 9; }
+		return bullet.color ? bullet.color - 1 : bullet.team;
 	}
 	ownBulletColor(bullet, main) {
-		return (bullet.type === 3) ? 9 : main.dev.color ? main.dev.color - 1 : 0;
+		if (bullet.type === 3 && !this.rules.teamPlay) { return 9; }
+		return main.dev.color ? main.dev.color - 1 : 0;
 	}
 	leaderColor(player, viewerId) {
 		return (player.id.oId === viewerId) ? 0 : player.team;
