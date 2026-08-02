@@ -29,7 +29,13 @@ function syncGamemodeListHeight() {
 	if (!box || !list || !right) { return; }
 	list.style.maxHeight = 'none';
 	const overflow = box.offsetHeight - right.offsetHeight;
-	list.style.maxHeight = (overflow > 0) ? (list.offsetHeight - overflow) + 'px' : 'none';
+	if (overflow > 0) {
+		// Pull the list up an extra 4px to hide the sliver of the next item.
+		const computed = list.offsetHeight - overflow - 4;
+		list.style.maxHeight = (computed > 0) ? computed + 'px' : '0px';
+	} else {
+		list.style.maxHeight = 'none';
+	}
 }
 
 function play() {
