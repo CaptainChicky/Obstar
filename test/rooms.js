@@ -358,7 +358,11 @@ function bossTests() {
 	// bossSize (Summoner used to fall through to a flat, ~24%-undersized 64).
 	{
 		const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
-		const sizes = { Guardian: 75.6, Defender: 84, Summoner: 84, 'Fallen Overlord': 58.46, 'Fallen Booster': 58.46 };
+		// Guardian's 37.8 is not 135 du x 0.56 like the rest of this table: GUARDIAN_SIZE is
+		// diep's drawn CIRCUMRADIUS, and Drawings.body[3] draws a triangle at `size / cos(pi/3)`
+		// = 2 x size, so the figure that lands on diep's own 135 du is half of it. See the class
+		// entry's own comment.
+		const sizes = { Guardian: 37.8, Defender: 84, Summoner: 84, 'Fallen Overlord': 58.46, 'Fallen Booster': 58.46 };
 		for (const name of Object.keys(sizes)) {
 			check(name + ' has its own diep-derived bossSize',
 				Math.abs(CLASS[name].bossSize - sizes[name]) < 0.01,
@@ -369,20 +373,17 @@ function bossTests() {
 	}
 
 	/*
-		lib/gameAI.js's Summoner detection divided by n.level with no floor, so raw/0 is
-		Infinity and a level-0 target never clears the `dis < n.screen/30` check - meaning a
-		just-respawned player (rooms/Room.js's respawn() hands back a fresh Player, always
-		level 0) was invisible to every boss until they levelled back up. Stand a level-0 human
-		right on top of a boss and step the room twice: once to let motion() build the boss's
-		Detector (a step it does not have yet), once more so the collision pass it now runs can
-		actually populate DETEC.selectAll for that Detector to read.
+		A boss's threat scan must not be gated on the target's LEVEL. The original bug was
+		lib/gameAI.js's Summoner-era metric dividing by `n.level` with no floor, so raw/0 was
+		Infinity and a level-0 target (which every freshly respawned player is - respawn() hands
+		back a brand new Player) never cleared its `dis < n.screen/30` check.
 
-		The position is re-asserted between the two steps, and that is not the test propping
-		itself up. Tank bodies are solid now (entities/Player.js's positional overlap resolution,
-		PENDING nuance 44), so "on top of a boss" is a state the engine actively destroys - one
-		step separates the pair by the sum of their radii. Re-placing models what it models in a
-		real match: a player HOLDING position against the boss, which is the only way the
-		scenario this test describes can exist at all.
+		That whole metric is gone: bossDetect() is diep's own AI.findTarget() now, a plain
+		"nearest live enemy inside ai.viewRange (2000 du x 0.56 = 1120)". So this stands the
+		level-0 player a few hundred units away rather than ON the boss - the old placement only
+		existed to force the hull-relative term to zero, and standing inside a boss now simply
+		kills the tank in two ticks of body damage, which a dead target is correctly not detected
+		through. Two steps, because motion() builds its own scan on the first one.
 	*/
 	{
 		// room.bosses[0] used to always be a Summoner (the only boss CONFIG.BOSS had) - plan.md
@@ -395,11 +396,10 @@ function bossTests() {
 			me.level = 0;
 			me.shield = 0;
 			me.alpha = 1;
-			me.x = boss.x;
-			me.y = boss.y;
+			const hold = () => { me.x = boss.x + 400; me.y = boss.y; };
+			hold();
 			room.step();
-			me.x = boss.x;
-			me.y = boss.y;
+			hold();
 			room.step();
 			check('a boss detects a level-0 (freshly respawned) player standing next to it',
 				boss.detected.includes(me), 'detected ' + boss.detected.length + ' players');
@@ -3671,11 +3671,15 @@ function baseDroneAiTests() {
 	// ---- WP4.5.17: polygon bosses are ignored until they start it --------------------------------
 	// basedrones.txt: base drones defend against the Fallen bosses on sight but "usually don't
 	// target Polygon-based Bosses, such as the Guardian, the Summoner, and the Defender, unless
-	// those provoke them first via body damage or drone damage". Our only boss is the Summoner.
+	// those provoke them first via body damage or drone damage".
+	//
+	// The boss is named, not rolled for. Both halves of that rule are real now - createBoss() sets
+	// `fallen` off the class table and entities/Bullet.js's acquire gate reads it - so a random
+	// boss is a coin flip on which half of the rule this block is even testing. Index 0 in
+	// CONFIG.BOSS is the Summoner, one of the wiki's own three named polygon bosses.
 	{
 		const room = makeRoom('4team');
-		if (!room.bosses.length) { room.createBoss(); }
-		const boss = room.bosses[0];
+		const boss = room.createBoss(0) || room.bosses[0];
 		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
 		const post = centre.posts[0];
 		// Parked inside BASE_DRONE_DETECT (plan.md Step 10 shrank it to gu(18) = 504, well under
@@ -4097,8 +4101,10 @@ function gridAnchorTests() {
 		config.BASE_DRONE_LEVEL_GAP === World.gu(1), config.BASE_DRONE_LEVEL_GAP);
 	check('BASE_DRONE_ORBIT_R is gu(8)', config.BASE_DRONE_ORBIT_R === World.gu(8),
 		config.BASE_DRONE_ORBIT_R);
-	check('BASE_DRONE_DETECT/LEASH are gu(18)/gu(90)',
-		config.BASE_DRONE_DETECT === World.gu(18) && config.BASE_DRONE_LEASH === World.gu(90),
+	// gu(60), not diep's own gu(18): see lib/config.js's own comment for why the diep figure
+	// does not survive contact with a base whose drones orbit a fixed ring and scan one at a time.
+	check('BASE_DRONE_DETECT/LEASH are gu(60)/gu(90)',
+		config.BASE_DRONE_DETECT === World.gu(60) && config.BASE_DRONE_LEASH === World.gu(90),
 		config.BASE_DRONE_DETECT + '/' + config.BASE_DRONE_LEASH);
 }
 

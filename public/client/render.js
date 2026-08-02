@@ -72,7 +72,10 @@
 				// spinning guard shape clips at the tiny default canvas edge.
 				if (config.guards) {
 					for (const g of config.guards) {
-						canSize = Math.max(canSize, g.sizeRatio * CONST.SIZE + CONST.LINEWIDTH);
+						// Matches Drawings.guards' own radius: `sizeRatio x (size + LINEWIDTH/2)`,
+						// plus its stroke's own outward half.
+						canSize = Math.max(canSize,
+							g.sizeRatio * (CONST.SIZE + CONST.LINEWIDTH / 2) + CONST.LINEWIDTH);
 					}
 				}
 				if (config.launcher) {
@@ -88,9 +91,17 @@
 				if (config.dompronounced) {
 					canSize = Math.max(canSize, 1.22 * CONST.SIZE + CONST.LINEWIDTH);
 				}
+				// mX/mY is the sprite's own visual centre-of-mass OFFSET from the hull centre -
+				// how far the barrels drag the silhouette off-centre - and the two panels that
+				// read it (ui.js's class picker and death screen) subtract it to keep the tank
+				// centred in its slot. A class with no cannons and no turrets (Smasher, Landmine,
+				// Spike) is a bare body, already centred, so that offset is ZERO. It used to be
+				// set to `canSize`, half the offscreen canvas - which the class picker then
+				// subtracted from the tile centre and spun on its own rotation, so a Smasher
+				// visibly ORBITED the slot instead of sitting in it.
 				if (!(config.cannons && config.cannons.length) && !(config.turrets && config.turrets.length)) {
-					middleX = canSize;
-					middleY = canSize;
+					middleX = 0;
+					middleY = 0;
 				};
 				canSize = canSize * 2 + marge * 2;
 				///
@@ -278,6 +289,18 @@
 							ctx.fillStyle = Palette.red[0];
 							ctx.fillRect(left + Game.width * Global.RATIO, top,
 								-bs * Global.RATIO, Game.height * Global.RATIO);
+							break;
+						}
+						// The diagnostic room (rooms/Tester.js): 2team's own green strip down the
+						// left AND 4team's own green corner square in the bottom-right, both at
+						// once. The wire only carries one `baseSize` (the strip's), so the corner
+						// square's own side is spelled out here at the same gu(67) 4team gives it.
+						case 'tester': {
+							ctx.fillStyle = Palette.green[0];
+							ctx.fillRect(left, top, bs * Global.RATIO, Game.height * Global.RATIO);
+							const cs = World.gu(67) * Global.RATIO;
+							ctx.fillRect(left + Game.width * Global.RATIO - cs,
+								top + Game.height * Global.RATIO - cs, cs, cs);
 							break;
 						}
 						case '4team': {

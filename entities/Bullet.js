@@ -14,6 +14,10 @@ const CLASS = require('../public/SHARE/TanksConfig.js').class;
 // hand-tuned number and is deliberately NOT the tank's 10/11. It stays put until MEASUREMENTS.md's
 // M1 says what diep actually does; every number in this file is denominated against it.
 const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
+// diepcustom Object.ts:277's own deletion-animation brake: a dying entity halves its speed every
+// reference tick, on top of the friction it already had. tick.drag(), like every other `v *= k`
+// per reference tick in this tree - see update()'s destroy branch.
+const DEATH_DRAG = tick.drag(0.5);
 // Friction-ORDER compensation for the cruise thrust in update()'s motion tail - see that site and
 // lib/constants.js. Dimensionless, so no tick conversion of its own.
 const BULLET_CRUISE_ORDER = require('../lib/constants.js').BULLET_CRUISE_ORDER;
@@ -603,7 +607,18 @@ class Bullet {
 		// impulse against a bare `position += vec` is already TICK_MS-invariant (it integrates only
 		// once over ticks), so it keeps tick.perTick() with nothing to divide back out - SPEED_RESCALE
 		// and `exitSpeed` are both retired.
-		this.vec = new Vec(tick.perTick(muzzleKick), 0).rotate(direction);
+		// Held, not applied - the motion tail pays it on the tick after this one, matching diep's
+		// own `spawnTick + 1` launch (see there). `launchDir` is the ORIGINAL firing direction,
+		// kept separately because a drone's `dir` is a live steering output and will already have
+		// moved by the time the kick lands.
+		this.vec = new Vec(0, 0);
+		// `|| 0`, not a bare conversion: a base drone (rooms/Room.js's spawnBaseDrone()) and a pet
+		// are both built through this constructor with no muzzle kick at all, and NaN here used to
+		// be written straight into `vec` - harmless only because neither of those two ever reads
+		// it (both overwrite `vec` outright every tick), which is not a property worth relying on.
+		this.launchKick = muzzleKick ? tick.perTick(muzzleKick) : 0;
+		this.launchDir = direction;
+		this.launched = 0;
 	}
 	collision(other, option = {}) {
 		if (option.type) {
@@ -785,6 +800,14 @@ class Bullet {
 	}
 	update() {
 		if (this.destroy > 1) {
+			// diepcustom Object.ts:277 - `if (this.deletionAnimation) this.velocity.magnitude /= 2`
+			// every tick of the fade, BEFORE the position step. Without it a bullet kept cruising
+			// at full speed for the whole 6-tick animation and died a bullet-length-and-a-half
+			// past whatever it hit; halving it geometrically, the total coast is ~one tick of
+			// travel, i.e. it dies where it hit. DEATH_DRAG is that 0.5 per REFERENCE tick, so
+			// the distance covered is the same at any TICK_MS.
+			this.vec.x *= DEATH_DRAG;
+			this.vec.y *= DEATH_DRAG;
 			this.x += this.vec.x;
 			this.y += this.vec.y;
 			this.destroy -= 1;
@@ -968,19 +991,32 @@ class Bullet {
 				// reads this, not just the scout, to decide whether to start a chase. `threatAt` is the room
 				// timestamp of this sighting - this is the ONLY writer of either
 					// field, so rooms/Room.js's tickDroneCentres() is what expires them again.
-				if (this.DETEC.enabled && this.DETEC.select) {
+				if (this.DETEC.enabled) {
 					const t = this.DETEC.select;
-					// Polygon bosses are ignored until they start it (basedrones.txt: base drones "usually don't
-					// target Polygon-based Bosses ...
-					// unless those provoke them first via body damage or drone damage"). Gated HERE,
-					// at the one place a target enters the shared ledger, so the whole centre agrees
-					// rather than each drone re-deciding. `fallen` is the hook for the Fallen bosses,
-					// which the wiki says ARE engaged on sight - nothing sets it today because we
-					// only ship the Summoner.
-					if (!t.boss || t.fallen || this.levels.provoked === t.id.oId) {
+					// Polygon bosses are ignored until they start it (basedrones.txt: base drones
+					// "usually don't target Polygon-based Bosses ... unless those provoke them first
+					// via body damage or drone damage"). Gated HERE, at the one place a target
+					// enters the shared ledger, so the whole centre agrees rather than each drone
+					// re-deciding. `fallen` is the two Fallen bosses, which the wiki says ARE
+					// engaged on sight - set on the instance by rooms/Room.js's createBoss() off
+					// the class table, so this reads real now instead of never firing.
+					if (t && !t.destroy && !t.dead && t.alpha &&
+						(!t.boss || t.fallen || this.levels.provoked === t.id.oId)) {
 						this.levels.threat = t;
 						this.levels.threatAt = this.room.timestamp;
 					}
+					// Fresh scan every tick, not a running minimum. Detector.collision() only ever
+					// REPLACES `select` on a strictly closer find and never re-widens its own
+					// `dis`/`construc` - so a scout that saw someone once stayed latched onto them
+					// for the rest of its life, kept re-publishing that stale entity into
+					// `levels.threat` (which refreshed `threatAt`, so rooms/Room.js's expiry could
+					// never fire either), and the chase gate below then refused it forever because
+					// a dead target keeps `destroy` set. Net effect: the base engaged exactly one
+					// enemy, ever, and then stopped attacking anything. Reset here - the collision
+					// pass refills it before the next update(), the same order every other DETEC
+					// consumer already relies on. A CHASING drone is excluded: it deliberately
+					// keeps its own reference alive across ticks with the detector disabled.
+					if (!this.chasing) { this.DETEC.reset(); }
 				}
 				// A live, in-leash target pulls the drone into CHASE from any state but a cross
 				// (abandoning a planned curve mid-flight is the one thing that can
@@ -1406,6 +1442,34 @@ class Bullet {
 			column so the column stays readable as diep's own `1.12 x bullet.speed`, and rather than
 			by reordering the two lines below, which would cost real TICK_MS invariance.
 		*/
+		/*
+			The MUZZLE KICK lands on the tick AFTER the one that created this bullet, not in the
+			constructor - diep's own `if (tick === this.spawnTick + 1) this.addVelocity(...,
+			baseSpeed)` (Bullet.ts:113). On its spawn tick a diep bullet only gets its ordinary
+			cruise thrust, so it ends that tick still sitting on the muzzle it came out of.
+
+			Ours put the whole kick straight into `vec` at construction, and rooms/Room.js's UPDATE
+			pass walks `players` before `bullets` - so a bullet fired this tick was also STEPPED
+			this tick, landing ~11 units (about a bullet radius) downrange before the first packet
+			carrying it ever left. That is the visible gap between the barrel tip and the shot, and
+			no client-side offset can close it, because the server really did put it there.
+
+			Only the KICK waits. The cruise thrust, the friction and the position step all still
+			run on the spawn tick, which is what keeps this TICK_MS-invariant: a one-shot impulse's
+			total displacement (v0 x F/(1-F)) does not depend on which tick it is applied, so
+			deferring it costs the bullet's range only the sliver that would have fallen past the
+			end of its life. Skipping the whole step instead would drop one real tick of cruise
+			travel, and one real tick is a different fraction of the range at every TICK_MS -
+			measured, it took test/rooms.js's own range-invariance spread from ~1% to 2.2%.
+		*/
+		if (this.launchKick) {
+			if (this.launched) {
+				this.vec.add(new Vec(this.launchKick, 0).rotate(this.launchDir));
+				this.launchKick = 0;
+			} else {
+				this.launched = 1;
+			}
+		}
 		if (this.type !== 2) {
 			this.vec.add(new Vec(tick.quadratic(this.speed * BULLET_CRUISE_ORDER), 0).rotate(this.dir))
 		}

@@ -24,9 +24,14 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
    map before either mode can turn it on.
 5. **Tank-vs-shape overlap** — no positional resolution (tank-vs-tank has it); a tank can stand
    inside a shape held off only by knockback.
-6. **Base drones** — chase speed is diep's own flat 756 u/s and detect 504 u; never playtested
-   (move `BASE_DRONE_LEASH`/`DETECT` if a lap reads unfair, not the speed). Lethality (12
-   drones ≈ 0.2 s on a maxed tank) also never judged in a browser.
+6. **Base drones** — chase speed is diep's own flat 756 u/s; lethality (12 drones ≈ 0.2 s on a
+   maxed tank) still never judged in a browser. `BASE_DRONE_DETECT` is **back at `gu(60)`**, not
+   diep's own `gu(18)`: the diep figure applies to a drone that flies free near its owner, while
+   ours orbits a fixed ring with one scout per centre, and playtesting showed it leaves a band
+   around every base where an enemy is inside the drones' reach and nothing reacts. Ours,
+   flagged. (The "they don't attack at all" half of that report was a real bug — a scout's
+   detector was never reset, so a centre latched onto its first-ever sighting forever; fixed in
+   `entities/Bullet.js`'s type-1.4 acquire block.)
 7. **Sandbox gaps** — party-link invites; arena/shape scaling with player count; bosses after
    50–60 min.
 8. **Comment-style cleanup pass** — strip cross-file references/change history, keep functional
@@ -64,8 +69,15 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   `CLOSER_COUNT 4`, Domination's Dominator layout (diamond; diep gives no coordinates) — all
   unreferenced knobs.
 - **Bots** (`lib/gameAI.js`) have no path to most post-T2 tanks — not authored yet.
-- **Boss travel speed** reuses Summoner's `BOSS_DRIFT` (our boss integrator has no
-  `Physics.stepBody`); diep's `movementSpeed` accel term has no clean conversion into it.
+- **A boss's `size` conflates three different diep quantities** — its collision radius, its
+  drawn circumradius, and the reference the barrels scale against. Guardian is the only one
+  re-derived (it drew at twice diep's size and swallowed its own barrel whole): its `bossSize`
+  is now the figure that makes `Drawings.body[3]`'s `size / cos(pi/n)` land on diep's own
+  GUARDIAN_SIZE, with barrel/drone figures re-based on it. **Summoner, Defender and Mothership
+  carry the same ambiguity untouched** — each is internally consistent today and none was
+  reported, but their `bossSize` is not diep's `physicsData.size` either. Fixing them properly
+  means moving `body[3]` onto the universal `x sqrt(2)` circumradius identity (the one every
+  `Drawings.obj` shape already uses) and re-deriving all three at once.
 - **Boss `canControlDrones` possession** (Guardian's rear spawner, Summoner's 4 spawners) — diep
   lets a player pilot these two bosses and steer their drones by hand (`AbstractBoss.ts:186-192`),
   the same `H`-key claim flow plan.md E4 built for Dominator/Mothership. `rooms/Room.js`'s
@@ -95,6 +107,20 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   number (Summoner-engine specific).
 - **Shape density** (+40% vs old tree) is also a per-tick cost: ffa canvas ops +56%. Knob:
   `SHAPE_DENSITY_GU2` in `rooms/Room.js`.
+- **A GuardObject is filled `#555555` and stroked `#404040`**, not filled flat `#404040`. Those
+  are diepcustom's own `Color.Border` (0x555555) and this tree's universal `x0.75` stroke rule,
+  and they are what `Spike_transparent_facing_up.webp` measures at — the visible spike tips read
+  as #404040 because the stroke covers most of a narrow tip, with the lighter fill only showing
+  in the wide overlaps. If a flat #404040 is ever actually wanted, it is one entry in
+  `public/client/config.js`'s `Palette.guard`.
+
+## Test determinism
+
+- **`test/rooms.js`'s "idle drift (no live DETEC target) is unaffected by the chase rewrite"
+  fails roughly 1 run in 14** — pre-existing, confirmed against a clean tree. The Crasher it
+  builds takes a random spawn point, so whether its idle path trips `Objects.update()`'s
+  edge-avoidance turn (and the `HOME_PULL` oscillation around it) is a coin toss. Pin the
+  shape's `x/y/rx/ry` before the loop to make it deterministic.
 
 ## Untested — nobody has watched these happen
 

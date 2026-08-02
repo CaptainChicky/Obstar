@@ -139,7 +139,13 @@ class Maze extends Room {
 				x: (cx + this.map.width / 2) / this.map.width,
 				y: (cy + this.map.height / 2) / this.map.height,
 				team: 4,   // 'gray' (SocketSchema's color table) - no live team dot ever uses it
-				size: Math.min(255, Math.round(Math.max(w, h) / 2))
+				size: Math.min(255, Math.round(Math.max(w, h) / 2)),
+				// The wall's REAL proportions as map fractions, so the minimap draws the maze as
+				// the rectangles it actually is rather than one dot per merged chunk
+				// (SocketSchema's TYPE.UiUpdate.map). Floored at one wire quantum (1/255) so a
+				// thin wall still has a visible thickness after the uint8 round trip.
+				w: Math.max(1 / 255, w / this.map.width),
+				h: Math.max(1 / 255, h / this.map.height)
 			});
 		}
 		this.wallDots = dots;

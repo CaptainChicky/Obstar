@@ -17,5 +17,7 @@ module.exports = {
 	'maze': require('./Maze.js'),
 	'domination': require('./Domination.js'),
 	'mothership': require('./Mothership.js'),
-	'survival': require('./Survival.js')
+	'survival': require('./Survival.js'),
+	// A diagnostic room, not a game mode - see rooms/Tester.js's own header.
+	'tester': require('./Tester.js')
 };

@@ -89,28 +89,32 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// Rebaselined for plan.md execution-order steps 8-10 (C10-C13, C8/C9, E2/E3/E4): the only op-
-// count-affecting change in this batch is C12's Crasher population fix - `room.obj.bull.max1`
-// is now derived from the shared SHAPE_DENSITY_GU2 formula (crasherTotal()) instead of a fixed
-// literal 39, so ffa/2team/4team/boss all spawn a different number of Crashers under this
-// suite's own seeded RNG, shifting every draw call downstream of that in the same run (fewer
-// ops overall: the derived cap is lower than 39 at these arena sizes). Every other change in
-// this batch (Dominator dompronounced/aim fixes, Mothership drone control/possession, C13's
-// wall culling/colour/minimap, C8's invisibility rates, C9's Predator zoom) either touches no
-// rendering path at all or never engages for the classes/entities this suite's own bot rolls
-// happen to hit.
-// Rebaselined again for plan.md execution-order steps 11-12 (Part D boss fidelity + C14/C15):
-// Fallen Overlord/Fallen Booster now draw a real circular body (shape 0) instead of the
-// rounded-rect stand-in (a different Drawings.body[] path, different op count/shapes entirely);
-// every boss now draws in its own real diep colour (Guardian/Defender/Summoner/both Fallen
-// bosses each get a distinct fillStyle/strokeStyle instead of one shared team-9 gold) whenever
-// this suite's own seeded RNG happens to spawn one in 'boss'/'2team'/'4team'; and Summoner's own
-// client cannon geometry (height 44->31.5, width 20->16.66, converging onto the real
-// SummonerSpawnerDefinition alongside the server side) redraws its barrels at different
-// dimensions. C14/C15 (shape regen, spawn-shield duration) are both server-only timing/state
-// changes with no new canvas call shape of their own, so they contribute no op-count delta on
-// their own - the whole count/hash move here is boss rendering.
-const GOLDEN = { count: 311491, hash: 'fe15ff99' };
+// Rebaselined for the issues.md batch. Every entry below changes what actually reaches the
+// canvas, deliberately:
+//   * Instances' key order now draws Walls between the shapes and the tanks/bullets, so a
+//     projectile's death animation lands ON TOP of the wall that stopped it - that reorders the
+//     entire per-frame op stream in any mode with walls, and reorders nothing else.
+//   * every round bullet's outline STRADDLES its radius now (arc at size +- LINEWIDTH/2) the way
+//     a tank body's always has, instead of being drawn inward - different arc radii on every
+//     bullet in every mode, which is the whole "bullets are undersized" fix.
+//   * a GuardObject (Smasher/Landmine/Spike hexes and triangles, the three Dominators' base hex)
+//     is filled Color.Border #555555 and STROKED #404040 instead of filled in the owner's dark
+//     team colour - a new stroke call per guard, and a bigger radius (measured off the tank's
+//     outline rather than its bare body radius).
+//   * a trap launcher sits entirely past its barrel's tip now rather than centred on it, so every
+//     trapper barrel's four launcher vertices move.
+//   * the three Dominators' barrels draw UNDER the body instead of over it (a pass reorder).
+//   * Guardian's body/barrel/drone geometry is re-derived (bossSize 75.6 -> 37.8, barrel 25.93 ->
+//     51.85, drone radius 5.44 -> 11.76), and a boss's projectiles now carry the boss's own
+//     colour instead of team 9's gold - both visible whenever this suite's seeded RNG spawns one.
+//   * setCoord()'s mX/mY is 0 for a class with no cannons/turrets, which moves where the class
+//     picker blits Smasher/Landmine/Spike.
+//   * a bullet's muzzle kick lands one tick later (diep's spawnTick+1) and a dying projectile
+//     halves its speed each tick, so every projectile position downstream differs slightly.
+//   * a boss travels at diep's own movementSpeed now (lib/gameAI.js's BOSS_ACCEL, replacing a
+//     tuned constant fed through a position step carrying a stray /10), so any boss this suite's
+//     seeded RNG spawns is somewhere else on every frame after its first.
+const GOLDEN = { count: 343016, hash: '061f59d4' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

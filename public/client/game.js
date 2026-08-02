@@ -40,11 +40,20 @@
 		const ctx = General['ctx'];
 		CLIENT.initRender();
 		///
+		/*
+			Key order IS draw order - Draw() walks this with for...in, and so does every other
+			pass over it. Walls sit between the shapes and the tanks/bullets on purpose: a Maze
+			wall destroys a projectile on contact (entities/Bullet.js's KIND.WALL arm), and the
+			death animation that follows - a shrinking, fading sprite that grows 1.1x a tick -
+			has to be visible ON TOP of the wall it just hit, or a shot appears to vanish a beat
+			before it reaches the thing that stopped it. Walls were last, so they painted over
+			every impact.
+		*/
 		const Instances = {
 			'Objects': [],
+			'Walls': [],
 			'Players': [],
-			'Bullets': [],
-			'Walls': []
+			'Bullets': []
 		};
 		const User = new function () {
 			this.color = 'green';

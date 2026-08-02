@@ -127,7 +127,11 @@ module.exports = [
 		// this work (PENDING nuance 38) - `npm run lint` used to sweep it in and drown in ~4984
 		// unrelated errors, which is why the source had to be linted with an explicit path list
 		// instead. Both excluded so the bare npm script is the gate again.
-		ignores: ['node_modules/**', 'public/font.js', 'reference/**']
+		// diepcustom/ and diepindepth/ are the two READ-ONLY reference repos (HANDOFF §3) - they
+		// are never built or run here, only cited, and diepcustom ships a bundled browser client
+		// that alone accounts for ~1060 errors of somebody else's code.
+		ignores: ['node_modules/**', 'public/font.js', 'reference/**',
+			'diepcustom/**', 'diepindepth/**']
 	},
 	js.configs.recommended,
 	{

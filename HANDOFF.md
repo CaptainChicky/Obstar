@@ -92,7 +92,8 @@ cookie.
 | `rooms/FourTeam.js` | 179 | 4-team: four corner bases, guard arcs, team colours. |
 | `rooms/BossMode.js` | 45 | Boss hunt: ffa with the boss knobs turned up. |
 | `rooms/Tag.js` | 358 | Tag: 4 teams, no bases, killer-tags-victim respawn, timed arena shrink, per-team leaderboard, ×3 xp, Arena Closer win condition. No new entity types — a Closer is a `Player` bound to `CONFIG.CLOSER`, like a boss. |
-| `rooms/Maze.js` | 211 | Maze: ffa's own tuning plus a real generated rectangular wall layout (`lib/mazeGenerator.js`), a minimap dot per wall rectangle, a 5-hour close reusing Tag's Arena Closer swarm. |
+| `rooms/Maze.js` | 211 | Maze: ffa's own tuning plus a real generated rectangular wall layout (`lib/mazeGenerator.js`), a real minimap RECTANGLE per wall, a 5-hour close reusing Tag's Arena Closer swarm. |
+| `rooms/Tester.js` | ~280 | **A diagnostic room, not a game mode.** Godmode player alternating green/red per death, both base layouts at once, one of each boss (respawned), all three Dominators, a Mothership (respawned) and an Arena Closer on a 5s-on/15s-off duty cycle. No new entity kinds - every one of those is composed out of hooks `Room` already has. |
 | `rooms/Domination.js` | ~40 | Domination: `TwoTeam`'s own base/tuning plus 4 neutral Dominators placed from `build()`. No new entity types — a Dominator is a `Player` bound to `CONFIG.DOMINATOR`. |
 | `entities/Player.js` | 983 | Tank entity: motion, shooting, upgrades, class changes, collision — including a Closer's invincibility guard and a `lastAttacker` write a Dominator's AI reads. Takes a `room` constructor argument (§3). |
 | `entities/Bullet.js` | 1384 | Projectiles, incl. drone/trap/necro behaviour and the base-drone steering field. Takes a `room` constructor argument. |
@@ -421,6 +422,15 @@ distance point filtering, writing into a caller-owned scratch array — no per-c
 into all four. `lib/SlotMap.js`'s `live()`/`entries()` cache their sorted key array, invalidated
 only when the key set changes. `query()` (the older closure-based API) is untouched and kept — the
 per-viewer rectangle buffer query later in `step()` is its one remaining caller.
+
+**Maze walls do not go through the quadtree for the per-viewer buffer** (they still do for
+collision). A quadtree indexes a rectangle by its centre point and prunes whole *nodes*, so a wall
+long enough to cross the screen lives in a leaf the viewer's rectangle may never touch — the wall
+was pruned with the subtree while part of it was still visible. `step()` appends every wall whose
+rectangle genuinely overlaps the buffer rect instead (`this.INSTANCE.walls`, materialised once per
+tick and only in a mode that has any), and `getBuffer()` exempts `KIND.WALL` from its own
+centre-in-rect test for the same reason. `live()` is a **generator**: it has no `.length` and is
+consumed by the first reader, so spread it before handing it to more than one.
 
 **Diep resolves a collision as mutual, simultaneous, partial-loop-prorated destruction** — see §3's
 damage paragraph. Where it lives: `damageOutput()`/`damageGuarded()` in `rooms/Room.js`, run once

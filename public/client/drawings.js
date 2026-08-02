@@ -17,12 +17,20 @@
 	// "trap"` barrel sets `c.trapLauncher` to draw it. The launcher's own width at its base
 	// (attaching to the barrel with no seam) equals the barrel's own width; it flares to
 	// TAPER_RATIO x that at the outward mouth. Its length is the barrel's own width x 20/42
-	// (`TrapLauncher`'s `size = barrel.width x 20/42`), centered on the barrel's tip so it
-	// replaces the last half of its own length off the end of the plain-rectangle neck and
-	// extends the other half past it. Cosmetic only, no server-side effect.
+	// (`TrapLauncher`'s `size = barrel.width x 20/42`).
+	//
+	// It sits ENTIRELY PAST the barrel's tip, not centred on it. `TrapLauncher`'s own
+	// `positionData.x = (barrel.size + this.size) / 2` is measured from the BARREL's centre, and
+	// a barrel's centre is at `size/2` from the hull (its tip is at `size` - the same figure
+	// Bullet.ts:100 spawns from), so the launcher spans `[barrel.size, barrel.size + len]`.
+	// Centring it on the tip instead ate the last half of the launcher's own length out of the
+	// plain-rectangle neck, which on a Trapper left only ~7 units of neck poking out past the
+	// body against a 14-unit flare - the "stub is not visible" report. Past the tip, the visible
+	// neck and the flare are the same length, exactly as in diep (barrel 60 du out of a 50 du
+	// body radius, launcher 10 du). Cosmetic only, no server-side effect.
 	function drawTrapLauncher(ctx, c, r, recoil, canC) {
 		const len = c.width * 20 / 42;
-		const nearX = c.height * recoil - len / 2, farX = c.height * recoil + len / 2;
+		const nearX = c.height * recoil, farX = c.height * recoil + len;
 		const nearHalf = c.width / 2, farHalf = c.width / 2 * TAPER_RATIO;
 		ctx.beginPath();
 		ctx.moveTo(nearX * r, (c.offx - nearHalf) * r);
@@ -52,13 +60,28 @@
 		// A spinning outline n-gon (Smasher/Landmine/Spike/the 3 Dominators' `guards`, plan.md
 		// R4) - diepcustom's GuardObject: drawn circumradius is `owner.size x sizeRatio` (its
 		// own `x sqrt(1/2)` scaleFactor and this file's `x sqrt(2)` polygon-circumradius
-		// identity, C3, cancel exactly), filled solid with the border/outline colour so only
-		// the points poking out past the round body stay visible once the body draws on top.
+		// identity, C3, cancel exactly), drawn under the body so only the points poking out
+		// past it stay visible.
+		//
+		// TWO fixes over the first cut of this, both read off Spike_transparent_facing_up.webp:
+		//
+		// COLOUR. diepcustom's GuardObject sets `styleData.color = Color.Border` (Enums.ts:
+		// 0x555555), and this codebase's own universal stroke rule (fill x0.75, see config.js's
+		// `wall`) puts its outline at exactly 0x404040 - which is what the reference render's
+		// spikes read as, since the stroke covers most of a narrow tip. It was drawn in
+		// `param.tankC[1]`, i.e. the DARK TEAM COLOUR, so a green tank grew dark green spikes.
+		//
+		// SIZE. `sizeRatio` is measured against the tank's OUTLINE (`size + LINEWIDTH/2`), not
+		// the bare body radius: at Smasher's own 1.15 over six sides the hexagon's flat edge
+		// then lands at 0.996x the outline, i.e. exactly on it, and Spike's 1.3 over three puts
+		// its tips at 1.3x the outline - 1.284x measured off the reference. Against the bare
+		// radius every guard came out ~7% small and the hexagon's flat edge sat inside the
+		// outline instead of touching it.
 		guards: (ctx, config, param) => {
 			if (!config.guards) { return; }
 			const t = Date.now();
 			for (const g of config.guards) {
-				const rad = g.sizeRatio * param.size;
+				const rad = g.sizeRatio * (param.size + CONST.LINEWIDTH / 2);
 				const a = g.phase + t * g.rate / REF_TICK_MS;
 				ctx.beginPath();
 				for (let i = 0; i < g.sides; i++) {
@@ -67,8 +90,12 @@
 					if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
 				}
 				ctx.closePath();
-				ctx.fillStyle = param.tankC[1];
+				ctx.fillStyle = Palette.guard[0];
+				ctx.strokeStyle = Palette.guard[1];
+				ctx.lineWidth = CONST.LINEWIDTH;
+				ctx.lineJoin = 'round';
 				ctx.fill();
+				ctx.stroke();
 			}
 		},
 		// The thing under Skimmer's barrel (plan.md R4, diepcustom Addons.ts's LauncherAddon
@@ -398,16 +425,30 @@
 				ctx.restore();
 			},
 		],
+		/*
+			A round bullet's outline STRADDLES its radius (`size +- LINEWIDTH/2`), exactly like a
+			tank body (Drawings.body[0]) and like every stroked shape in this file - it used to be
+			drawn INWARD (fill to `size`, relight to `size - LINEWIDTH`), which is the one place
+			this codebase disagreed with itself about what a drawn radius means.
+
+			That single inconsistency is the whole "bullets are undersized" report, and it is
+			measurable: a level-1 Basic draws at `2 x size + LINEWIDTH` = 60.6 px across, and its
+			bullet (`can.size 14.7 x size/35` = 11.88) drew at `2 x 11.88` = 23.8 px. diep's own
+			figures are 61 px and 28 px. Straddling puts the bullet at `2 x 11.88 + 4` = 27.8 px
+			against the same 60.6 px body - diep's ratio, to a pixel, with no stat table touched:
+			`can.size` was already diep's own `(barrel.width/2) x sizeRatio` (Bullet.ts:77) and is
+			right to four figures. It cascades to every class for the same reason.
+		*/
 		bullet: [
 			(ctx, param) => {
 				ctx.beginPath();
-				ctx.arc(0, 0, param.size, 0, Math.PI * 2, 0);
+				ctx.arc(0, 0, param.size + CONST.LINEWIDTH / 2, 0, Math.PI * 2, 0);
 				ctx.fillStyle = Palette[param.color][1];
 				ctx.fill();
 				ctx.closePath();
 				///
 				ctx.beginPath();
-				ctx.arc(0, 0, param.size - CONST.LINEWIDTH, 0, Math.PI * 2, 0);
+				ctx.arc(0, 0, param.size - CONST.LINEWIDTH / 2, 0, Math.PI * 2, 0);
 				ctx.fillStyle = Palette[param.color][0];
 				ctx.fill();
 				ctx.closePath();
@@ -483,13 +524,14 @@
 					ctx.stroke();
 					ctx.restore();
 				}
+				// Same straddling outline as Drawings.bullet[0] above - see there.
 				ctx.beginPath();
-				ctx.arc(0, 0, param.size, 0, Math.PI * 2, 0);
+				ctx.arc(0, 0, param.size + CONST.LINEWIDTH / 2, 0, Math.PI * 2, 0);
 				ctx.fillStyle = Palette[param.color][1];
 				ctx.fill();
 				ctx.closePath();
 				ctx.beginPath();
-				ctx.arc(0, 0, param.size - CONST.LINEWIDTH, 0, Math.PI * 2, 0);
+				ctx.arc(0, 0, param.size - CONST.LINEWIDTH / 2, 0, Math.PI * 2, 0);
 				ctx.fillStyle = Palette[param.color][0];
 				ctx.fill();
 				ctx.closePath();
@@ -512,13 +554,14 @@
 				ctx.fill();
 				ctx.stroke();
 				ctx.restore();
+				// Same straddling outline as Drawings.bullet[0] above - see there.
 				ctx.beginPath();
-				ctx.arc(0, 0, param.size, 0, Math.PI * 2, 0);
+				ctx.arc(0, 0, param.size + CONST.LINEWIDTH / 2, 0, Math.PI * 2, 0);
 				ctx.fillStyle = Palette[param.color][1];
 				ctx.fill();
 				ctx.closePath();
 				ctx.beginPath();
-				ctx.arc(0, 0, param.size - CONST.LINEWIDTH, 0, Math.PI * 2, 0);
+				ctx.arc(0, 0, param.size - CONST.LINEWIDTH / 2, 0, Math.PI * 2, 0);
 				ctx.fillStyle = Palette[param.color][0];
 				ctx.fill();
 				ctx.closePath();

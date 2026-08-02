@@ -275,11 +275,18 @@
 			// A minimap dot. x/y are CODECS.unit fractions of the map (0..1 -> uint8), not world
 			// coordinates - a dot needs nothing sharper than ~256 steps per axis, and it keeps a
 			// record this small regardless of how big the map itself is.
+			// `w`/`h` are the same kind of fraction, and they turn a dot into a RECTANGLE: Maze's
+			// wall dots (rooms/Room.js's this.wallDots) carry the real proportions of the wall
+			// they stand for, so the minimap shows the actual maze layout instead of one blob per
+			// merged chunk. 0/0 - every live player dot - keeps the round dot the client always
+			// drew, so this costs an ordinary dot two bytes and no behaviour.
 			'map': {
 				'x': 'uint8',
 				'y': 'uint8',
 				'team': 'uint8',
-				'size': 'uint8'
+				'size': 'uint8',
+				'w': 'uint8',
+				'h': 'uint8'
 			}
 		},
 		'UpdateUp': {
@@ -393,7 +400,9 @@
 				'x',
 				'y',
 				'team',
-				'size'
+				'size',
+				'w',
+				'h'
 			]
 		},
 	};
@@ -422,7 +431,9 @@
 			'domination',
 			// plan.md G1 - appended, matching toBUFFER.gamemode's own append below.
 			'mothership',
-			'survival'
+			'survival',
+			// The diagnostic room (rooms/Tester.js) - appended, so no existing mode's byte moves.
+			'tester'
 		],
 		'type': [
 			'init',
@@ -536,7 +547,8 @@
 			'domination': 7,
 			// plan.md G1 - appended, not inserted, so no existing mode's wire byte moves.
 			'mothership': 8,
-			'survival': 9
+			'survival': 9,
+			'tester': 10
 		},
 		'type': {
 			'init': 0,
@@ -665,7 +677,7 @@
 		'leader': { team: CODECS.color },
 		// x/y reuse CODECS.unit (already a 0..1 float packed into a uint8) since Room.getUi()
 		// hands over map-fraction floats, not world coordinates - see TYPE.UiUpdate.map.
-		'map': { team: CODECS.color, x: CODECS.unit, y: CODECS.unit }
+		'map': { team: CODECS.color, x: CODECS.unit, y: CODECS.unit, w: CODECS.unit, h: CODECS.unit }
 	};
 	CODEC.User = CODEC.Players;
 

@@ -1449,14 +1449,26 @@
 			// ordinary diep tank (including the Overlord/Booster classes these two are scaled
 			// copies of) already has, not the rounded-rect stand-in PENDING #51 flagged.
 			"Guardian": {
-				// One oversized backward-facing drone-spawner barrel (diepcustom
-				// GuardianSpawnerDefinition, angle PI) - drawn like Summoner's own spawner
-				// cannons, just alone and wider. Guardian.ts overrides sizeFactor to
-				// (size/sqrt(1/2))/GUARDIAN_SIZE (135), not the ordinary size/50 every other
-				// class uses, so its barrel is denominated against its OWN base size:
-				// height/width = definition.size/width(100/71.4) x 35/135 (plan.md R2).
+				/*
+					One oversized backward-facing drone spawner (diepcustom
+					GuardianSpawnerDefinition: angle PI, size 100, width 71.4, `isTrapezoid` with
+					`trapezoidDirection: 0` - wide end at the mouth, which is draw-type 2 here, not
+					a type-0 rectangle with an `open` flare bolted on).
+
+					GEOMETRY, re-derived (the previous numbers drew nothing at all - the whole
+					barrel finished inside the body). Both figures below hang off ONE fact: this
+					class's `bossSize` is 37.8, the value that makes Drawings.body[3] draw a
+					triangle of diep's own GUARDIAN_SIZE 135 du circumradius (its drawn
+					circumradius is `size / cos(pi/3)` = 2 x size, and 2 x 37.8 = 75.6 units =
+					135 du). A barrel is then drawn at `height x size/35`, so a diep length of
+					`du x 0.56` units needs `height = du x 0.56 x 35 / 37.8` = `du x 0.51852`:
+					100 -> 51.851852, 71.4 -> 37.022222. The old `x 35/135` factor treated 135 as
+					if it were this class's DRAWN size in the 50-du reference, which is exactly
+					half the truth for a triangle, so the barrel came out at half length - shorter
+					than the body's own inradius, i.e. completely hidden under it.
+				*/
 				cannons: [
-					{ type: 0, height: 25.925926, width: 18.511111, offx: 0, offdir: Math.PI, open: 30 }
+					{ type: 2, height: 51.851852, width: 37.022222, offx: 0, offdir: Math.PI, open: 0, trapezoidDirection: false }
 				],
 				body: { shape: 3, sides: 3 }   // Guardian.ts: sides 3 (plan.md R6)
 			},
@@ -1545,9 +1557,13 @@
 			// Dominator.ts scales like an ordinary tank (no sizeFactor override), so this converts
 			// on the ordinary 0.7 axis: 80x0.7=56, 35x0.7=24.5 - was a hand-tuned guess before R3
 			// found the real source.
-			// `aboveBody: true` on every Dominator cannon (plan.md A1/E2): diep's own z-order is
-			// dombase (bottom) -> body -> barrel(+dompronounced) on top, not barrel-under-body
-			// like an ordinary tank.
+			// Z-ORDER: dombase (the dark hex) at the bottom, then the barrels, then the body over
+			// the top of them - the ordinary tank order, NOT the `aboveBody: true` these three
+			// used to carry. Every Dominator reference render
+			// (Trapper_dominator_tank_2.webp, Gunner_dominator_tank_2.webp,
+			// Dominator_tank_4.webp) shows the barrels emerging from UNDER the circular body and
+			// clipped by it, with only the hex's points visible behind them. `dompronounced`
+			// (Destroyer/Gunner) genuinely does sit above the body and keeps doing so.
 			"Destroyer Dominator": {
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
@@ -1561,8 +1577,7 @@
 						width: 24.5,
 						offx: 0,
 						offdir: 0,
-						open: 0,
-						aboveBody: true
+						open: 0
 					}
 				],
 				body: {
@@ -1581,9 +1596,9 @@
 				// postAddon "dompronounced" (plan.md E2) - see Destroyer Dominator's own note.
 				dompronounced: true,
 				cannons: [
-					{ type: 0, height: 52.5, width: 12.25, offx: -4.2, offdir: 0, open: 0, aboveBody: true },
-					{ type: 0, height: 52.5, width: 12.25, offx: 4.2, offdir: 0, open: 0, aboveBody: true },
-					{ type: 0, height: 56, width: 12.25, offx: 0, offdir: 0, open: 0, aboveBody: true }
+					{ type: 0, height: 52.5, width: 12.25, offx: -4.2, offdir: 0, open: 0 },
+					{ type: 0, height: 52.5, width: 12.25, offx: 4.2, offdir: 0, open: 0 },
+					{ type: 0, height: 56, width: 12.25, offx: 0, offdir: 0, open: 0 }
 				],
 				body: {
 					shape: 0
@@ -1605,8 +1620,7 @@
 					offx: 0,
 					offdir: i * Math.PI / 4,
 					open: 0,
-					trapLauncher: true,
-					aboveBody: true
+					trapLauncher: true
 				})),
 				body: {
 					shape: 0
@@ -2039,7 +2053,10 @@
 				// diep barrel.angle +-pi/4, offset 0 (plan.md Part B row 2 - was +-0.4/+-6, a paraphrase)
 				c[0].offdir = -Math.PI / 4;
 				c[1].offdir = Math.PI / 4;
-				c[2].offTime = .5;
+				// All three fire together. `offTime` is diep's own `barrel.delay` (a fraction of
+				// the reload cycle the barrel waits before its shot), and TankDefinitions.json's
+				// Triple Shot states `delay: 0` on all three barrels - the centre one carried a
+				// stray .5, which staggered it half a cycle behind the wings.
 				this.cannons = c;
 			},
 			"Twin Flank": new function () {
@@ -3211,7 +3228,14 @@
 				// (2000 du) applies - x0.56 = 1120. bossSize: GUARDIAN_SIZE 135 du x0.56 (bossSize
 				// is an absolute length, unaffected by the barrel-reference bug below).
 				this.screen = 1120;
-				this.bossSize = 75.6;
+				// GUARDIAN_SIZE (135 du) is diep's own DRAWN CIRCUMRADIUS, not its body radius -
+				// Guardian.ts stores `physicsData.size = 135 x sqrt(1/2)` and the client draws the
+				// triangle at `size x sqrt(2)` from that. Drawings.body[3] instead draws an n-gon
+				// whose circumradius is `size / cos(pi/n)`, i.e. 2 x size for three sides, so the
+				// figure that reproduces diep's 135 du here is 135 x 0.56 / 2 = 37.8. At 75.6 this
+				// boss drew at twice diep's size, which is the "a bit too big" report; the same
+				// number is what every barrel/drone figure below is denominated against.
+				this.bossSize = 37.8;
 				this.boss = true;
 				// GuardianSpawnerDefinition: one oversized backward-facing (angle PI) drone
 				// spawner, droneCount 24, self-targeting drones (type 3.1 - the same mechanism
@@ -3219,15 +3243,25 @@
 				// `play.detected`, which is all type 3.1 needs, no per-boss wiring). reload
 				// 0.36x15, pene 2x12.5 (diep bullet.health), damage 7x0.56, speed 1.12x1.7. Unlike
 				// every ordinary class, Guardian.ts overrides sizeFactor to
-				// (size/sqrt(1/2))/GUARDIAN_SIZE (135) instead of size/50, so canonLength/size are
-				// denominated against its OWN base size: canonLength = 100 x 35/135, size =
-				// (width/2)xsizeRatiox(35/135) = 21x(35/135) (plan.md R2) - NOT the ordinary 0.7
-				// every other barrel in this file uses. life 1.5x75 ref ticks (finite - diep's own
-				// lifeLength here is NOT -1, unlike Summoner's permanent drones).
+				// (size/sqrt(1/2))/GUARDIAN_SIZE (135) instead of size/50, so canonLength is
+				// denominated against this class's OWN bossSize (37.8, see above): the barrel is
+				// spawned from at `canonLength x size/35`, and diep's own 100 du = 56 units needs
+				// `canonLength = 100 x 0.56 x 35/37.8` = 51.851852, matching the client `height`
+				// exactly. life 1.5x75 ref ticks (finite - diep's own lifeLength here is NOT -1,
+				// unlike Summoner's permanent drones).
+				//
+				// `size` is the DRONE's own radius and is an ABSOLUTE length: a boss's bullets
+				// take `can.size` verbatim (entities/Player.js's shoot()), so it converts on the
+				// 0.56 axis with no reference-relative factor at all - diep's own
+				// `(width 71.4 / 2) x sizeRatio 0.588` = 21 du, x 0.56 = 11.76. It was 5.444444,
+				// i.e. 21 run through the same doubly-wrong x35/135 the barrel was, which drew
+				// Guardian's drones at under half the size of the crashers they are already
+				// (deliberately - Color.EnemyCrasher is Guardian's own colour in diep) the same
+				// pink as.
 				this.cannons = [{
 					reload: 5.4, offTime: 0, auto: 1, type: 3.1, life: 112.5,
-					offdir: Math.PI, offx: 0, canonLength: 25.925926, rand: 0.174533,
-					speed: 1.904, pene: 25, damage: 3.92, size: 5.444444,
+					offdir: Math.PI, offx: 0, canonLength: 51.851852, rand: 0.174533,
+					speed: 1.904, pene: 25, damage: 3.92, size: 11.76,
 					// No diep absorb table for a boss's own drones (same gap plan.md T2's roster
 					// left open) - Overlord's own drone row, the nearest real diep drone-knockback
 					// figure on file.
@@ -3290,6 +3324,10 @@
 				this.screen = 1120;
 				this.bossSize = 58.46;
 				this.boss = true;
+				// A FALLEN boss (as opposed to a polygon-bodied one) - base drones engage these on
+				// sight rather than waiting to be provoked (diep_wiki/basedrones.txt). Copied onto the
+				// spawned instance by rooms/Room.js createBoss(); entities/Bullet.js type 1.4 reads it.
+				this.fallen = true;
 				this.maxDrone = 28;   // droneCount 7 x 4 barrels
 				// reload 0.36x15 (an override, not a multiplier on Overlord's own 90). pene
 				// 2x12.5, damage 7x0.56, speed 1.12x1.7, size 14x0.5 (sizeRatio) - all diep
@@ -3314,6 +3352,10 @@
 				this.screen = 1120;
 				this.bossSize = 58.46;
 				this.boss = true;
+				// A FALLEN boss (as opposed to a polygon-bodied one) - base drones engage these on
+				// sight rather than waiting to be provoked (diep_wiki/basedrones.txt). Copied onto the
+				// spawned instance by rooms/Room.js createBoss(); entities/Bullet.js type 1.4 reads it.
+				this.fallen = true;
 				// FallenBooster.ts does NOT override sizeFactor - canonLength/size convert on the
 				// ordinary 0.7 axis, same as Fallen Overlord above (plan.md R2/R3, was 0.56 before):
 				// 70x0.7=49 (default), 95x0.7=66.5 (c[0]), 80x0.7=56 (c[3]/c[4]);

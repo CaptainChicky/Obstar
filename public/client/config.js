@@ -97,6 +97,14 @@
 		// stroke rule, plan.md's Smasher-guard note - checked against every fill/stroke pair in
 		// diepindepth/canvas/color_constants.md's "Colors" table): 0xBB x0.75 = 0x8C.
 		wall: ["#bbbbbb", "#8c8c8c"],
+		// diepcustom's Color.Border (Enums.ts: 0x555555) and its x0.75 stroke (0x404040, the
+		// same universal stroke rule `wall` above uses) - the colour of every GuardObject: a
+		// Smasher/Landmine/Auto Smasher hexagon, a Spike's four triangles, and the three
+		// Dominators' own base hex. Not a team colour: these used to draw in the owner's own
+		// dark team shade, so a green tank grew green spikes. #404040 is what the poking tips
+		// read as (the stroke covers most of a narrow tip) and is the figure
+		// Spike_transparent_facing_up.webp measures at.
+		guard: ["#555555", "#404040"],
 		// Real per-boss diep colours (plan.md Part D, diepcustom Const/Enums.ts's own hex table -
 		// every boss used to render in flat team-9 `necro` gold regardless of class). Stroke is
 		// fill x0.75 per component, this codebase's own verified universal stroke rule (see

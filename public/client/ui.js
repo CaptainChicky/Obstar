@@ -1105,17 +1105,22 @@
 				if (this.mapInfo) {
 					for (const dot of this.mapInfo) {
 						ctx.fillStyle = Palette[dot.team] ? Palette[dot.team][0] : '#222222';
+						const cx = -this.MAP.size / 2 + (dot.x - 0.5) * this.MAP.size;
+						const cy = this.MAP.size / 2 + (dot.y - 0.5) * this.MAP.size;
+						// A record carrying real w/h (SocketSchema TYPE.UiUpdate.map) is a RECTANGLE, not
+						// a dot - Maze walls, sent as fractions of the arena, so each one lands on the
+						// minimap at exactly the proportions it has in the world. Everything else (every
+						// live player) sends 0/0 and keeps the round dot below. A whole merged wall chunk
+						// used to collapse into one circle sized off its longest side, which reads as a
+						// blob rather than as a maze.
+						if (dot.w > 0 && dot.h > 0) {
+							const w = Math.max(1, dot.w * this.MAP.size);
+							const h = Math.max(1, dot.h * this.MAP.size);
+							ctx.fillRect(cx - w / 2, cy - h / 2, w, h);
+							continue;
+						}
 						ctx.beginPath();
-						// A wall dot (plan.md C13 - rooms/Room.js's wallDots sends `team: 4`/'gray',
-						// a colour no live player dot ever carries) is sized proportionally to the
-						// map's own current scale (its world-unit half-width / Game.width, times the
-						// minimap's own pixel size) - `dot.size / 12` below is a flat heuristic tuned
-						// for tank-sized dots, and bloats a multi-cell-long wall into a giant blob.
-						const r = (dot.team === 'gray')
-							? Math.max(1, dot.size / Game.width * this.MAP.size)
-							: Math.max(2, dot.size / 12);
-						ctx.arc(-this.MAP.size / 2 + (dot.x - 0.5) * this.MAP.size,
-							this.MAP.size / 2 + (dot.y - 0.5) * this.MAP.size, r, 0, Math.PI * 2)
+						ctx.arc(cx, cy, Math.max(2, dot.size / 12), 0, Math.PI * 2)
 						ctx.closePath();
 						ctx.fill();
 					}
@@ -1164,8 +1169,15 @@
 				// The tank's real canvas position (device pixels), not the screen centre - the
 				// camera trails the tank by CONST.CAM_SMOOTH now, and `predic` is a world-unit
 				// offset that was being added here as if it were a pixel one.
-				const tankOffX = (User.gx - User.camx) * Global.RATIO;
-				const tankOffY = (User.gy - User.camy) * Global.RATIO;
+				// `- zoomOff` (plan.md C9): Draw() renders the world about `camx + zoomOffX`, so
+				// while a Predator's right-click zoom is panned out the tank's screen position is
+				// its distance from THAT point, not from the camera. Without it, the whole
+				// upgrade cluster - the ring of stat buttons and the "x5 points available"
+				// counter - stayed parked at the middle of the zoomed-to area instead of over the
+				// tank. Same quantity General.tankOff() already subtracts for aiming, in this
+				// widget's own pixel space.
+				const tankOffX = (User.gx - User.camx - User.zoomOffX) * Global.RATIO;
+				const tankOffY = (User.gy - User.camy - User.zoomOffY) * Global.RATIO;
 				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW / 2 + tankOffX, Global.canH / 2 + tankOffY);
 				ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION)
 				///

@@ -945,15 +945,24 @@ class Room {
 		hit points (rules.bossHp) - so it moved up, which is what let rooms/BossMode.js be 30
 		lines instead of a third copy.
 	*/
-	createBoss() {
+	/*
+		`which`/`pos` are both optional and default to what this always did (a random boss at a
+		random point on the quarter-radius circle) - rooms/Tester.js is the one caller that names
+		them, since a diagnostic room wants one of each boss at a known place rather than a roll.
+	*/
+	createBoss(which, pos) {
 		if (this.bosses.length >= this.rules.maxBoss) { return; }
-		const spec = CONFIG.BOSS[Math.floor(Math.random() * CONFIG.BOSS.length)];
+		const spec = CONFIG.BOSS[(which === undefined) ? Math.floor(Math.random() * CONFIG.BOSS.length) : which];
 		const randDir = Math.PI * 2 * Math.random();
+		const at = pos || {
+			x: Math.cos(randDir) * this.map.width / 4,
+			y: Math.sin(randDir) * this.map.width / 4
+		};
 		const boss = this.INSTANCE.players.add((id) => {
 			const b = new Player(
 				{ "GM": this.gm, "sId": this.id, "oId": id },
-				Math.cos(randDir) * this.map.width / 4,
-				Math.sin(randDir) * this.map.width / 4,
+				at.x,
+				at.y,
 				spec[2],
 				this.rules.bossTeam,
 				this.XPLVL,
@@ -967,6 +976,11 @@ class Room {
 			// has a real one too (Summoner.ts's SUMMONER_SIZE, plan.md Part D); the `|| 64` is dead
 			// weight now that every CONFIG.BOSS entry sets bossSize, kept only as a defensive floor.
 			b.size = CLASS[spec[2]].bossSize || 64;
+			// A Fallen boss (Fallen Overlord/Fallen Booster) is engaged by base drones ON SIGHT,
+			// unlike the polygon bosses, which they ignore until provoked (diep_wiki/basedrones.txt
+			// - entities/Bullet.js's type-1.4 acquire gate is the one reader). Flagged on the class
+			// table so this stays one boolean rather than a name test at the read site.
+			b.fallen = !!CLASS[spec[2]].fallen;
 			b.class = spec[2];
 			b.screen = CLASS[b.class].screen;
 			// diepcustom AbstractBoss.ts:125-126/139 (plan.md Part D's shared boss scaffolding):
@@ -1164,6 +1178,14 @@ class Room {
 		bullet.team = origin.team;
 		if (origin.dev.color) {
 			bullet.color = origin.dev.color;
+		} else if (origin.boss) {
+			// A boss's projectiles carry ITS colour, not team 9's flat gold - diep gives a boss's
+			// drones/traps the boss's own styleData.color (Guardian's swarm is Color.EnemyCrasher
+			// pink, Fallen Overlord's is Color.Fallen grey). `color` is the dev-tint field's own
+			// 1-based encoding, which every mode's bulletColor() already decodes, so this needs no
+			// per-mode override - Room.bossColor() is the same lookup entityColor() uses for the
+			// boss's own body.
+			bullet.color = Room.bossColor(origin) + 1;
 		}
 	}
 	/*
@@ -1486,6 +1508,28 @@ class Room {
 			}
 		}
 		this.BUFFER = [];
+		/*
+			Maze walls do NOT go through the quadtree for the per-viewer buffer (they still do for
+			collision) - they are appended below by a straight rectangle-overlap test against every
+			wall in the room.
+
+			Two separate things made a wall vanish while part of it was still on screen, and both
+			are properties of indexing a rectangle by its centre point:
+			  - `qt.query()` prunes whole NODES by their own bounds, and a wall lives in the single
+			    leaf its CENTRE falls in. A wall long enough to cross the screen has its centre in
+			    a leaf the viewer's rectangle may not touch at all, so the entire subtree - wall
+			    included - was pruned before the per-point footprint test ever ran.
+			  - the footprint test itself only ever widened the point by w/h; it could not resurrect
+			    a wall the node prune had already dropped.
+			A wall never moves and a room has at most a few dozen of them, so an O(walls) exact test
+			per viewer is both cheaper than the tree walk and unconditionally right: ANY wall
+			touching the buffer rect is sent, however far its centre is and however large it is.
+		*/
+		// Materialised, not the generator: `live()` is a generator (lib/SlotMap.js), so it has no
+		// `.length` and is consumed by the first viewer that walks it. Built once per tick, and
+		// only in a mode that actually has walls - `size` is a plain Map lookup, so ffa and every
+		// other wall-less mode pays one integer compare and allocates nothing.
+		const wallList = this.INSTANCE.walls.size ? [...this.INSTANCE.walls.live()] : null;
 		for (const [id, player] of this.INSTANCE.players.entries()) {
 			if (player.bot || player.boss || player.dominator) {
 				continue;
@@ -1507,7 +1551,8 @@ class Room {
 				h: h
 			}
 			this.BUFFER[id].main = player;
-			this.BUFFER[id].rest = qt.query(function (a, b) {
+			const qx = x - 200, qy = y - 200, qw = w + 400, qh = h + 400;
+			let rest = qt.query(function (a, b) {
 				return (
 					((a.x + a.w) >= b.x) &&
 					(a.x <= (b.x + b.w)) &&
@@ -1515,7 +1560,17 @@ class Room {
 					(a.y <= (b.y + b.h))
 				);
 			},
-				{ 'x': x - 200, 'y': y - 200, 'w': w + 400, 'h': h + 400 });
+				{ 'x': qx, 'y': qy, 'w': qw, 'h': qh });
+			if (wallList) {
+				rest = rest.filter((p) => !p.data || p.data.kind !== KIND.WALL);
+				for (const wall of wallList) {
+					if (wall.x - wall.w / 2 <= qx + qw && wall.x + wall.w / 2 >= qx &&
+						wall.y - wall.h / 2 <= qy + qh && wall.y + wall.h / 2 >= qy) {
+						rest.push({ x: wall.x, y: wall.y, size: wall.size, data: wall });
+					}
+				}
+			}
+			this.BUFFER[id].rest = rest;
 		}
 		///UPDATE///
 		for (const kind in this.INSTANCE) {
@@ -1788,12 +1843,17 @@ class Room {
 			if (obj.getPlace === 0) {
 				continue;
 			}
-			if (
+			// A wall's CENTRE says nothing about whether any of it is on screen - it is the one
+			// non-circle here and it can be arbitrarily long (see the wallList block in step()).
+			// It was already exact-rectangle-tested against this same buffer when the list was
+			// built, so it is in this list precisely because it overlaps; re-testing its centre
+			// here is what dropped a long wall the moment its middle scrolled off.
+			if (obj.kind !== KIND.WALL && (
 				((obj.x) <= RAW.x) ||
 				((obj.y) <= RAW.y) ||
 				((obj.x) >= (RAW.x + RAW.w)) ||
 				((obj.y) >= (RAW.y + RAW.h))
-			) { continue; }
+			)) { continue; }
 			///
 			// One encoded snapshot per entity per tick, shared by everyone who can see it. Your
 			// own bullets are the exception when rules.viewerBullets is set: they carry your
@@ -1943,7 +2003,10 @@ class Room {
 		return 0;
 	}
 	bulletColor(bullet) {
-		return (bullet.type === 3) ? 9 : bullet.team;
+		// `bullet.color` (1-based, assignBulletTeam()) is the dev tint AND a boss's own colour -
+		// the team modes' overrides already read it; the ffa/boss default did not, so a Guardian
+		// in a boss room fired team-9 gold drones instead of its own pink.
+		return (bullet.type === 3) ? 9 : bullet.color ? bullet.color - 1 : bullet.team;
 	}
 	ownBulletColor(bullet, main) {
 		return (bullet.type === 3) ? 9 : main.dev.color ? main.dev.color - 1 : 0;
@@ -1990,7 +2053,10 @@ class Room {
 				x: (i.x + this.map.width / 2) / this.map.width,
 				y: (i.y + this.map.height / 2) / this.map.height,
 				team: i.dev.color ? i.dev.color - 1 : this.leaderColor(i, id),
-				size: Math.min(255, Math.round(i.size))
+				size: Math.min(255, Math.round(i.size)),
+				// A player is a round dot, not a rectangle - see TYPE.UiUpdate.map.
+				w: 0,
+				h: 0
 			});
 		}
 		// A mode's own static geometry (Maze's walls, PENDING #26) - precomputed once in build(),

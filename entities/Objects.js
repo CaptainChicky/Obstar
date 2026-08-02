@@ -307,6 +307,46 @@ class Objects {
 				}
 				this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(0.48485 * this.absorb), tick.perTick(0.48485 * this.absorb))));
 				break;
+			case KIND.WALL: {
+				/*
+					A Maze wall is solid to a polygon, exactly as it is to a tank (diepindepth/
+					physics/README.txt: walls are the one non-circle in the collision model, and
+					diepcustom's Object.ts:283-309 `receiveKnockback` gives everything the same
+					isSolidWall branch). Shapes had no arm here at all, so they drifted straight
+					through the maze.
+
+					Unlike the tank's arm this resolves POSITION rather than only velocity: a shape
+					has no steering to push it back out, so a velocity-only response lets it sink in
+					and sit there. Same circle-vs-AABB closest-point test both other arms use - the
+					broad phase only bounds a wall by its half-diagonal, so a candidate has to be
+					re-checked here before anything moves.
+				*/
+				const hw = other.w / 2, hh = other.h / 2;
+				const cx = Math.max(other.x - hw, Math.min(this.x, other.x + hw));
+				const cy = Math.max(other.y - hh, Math.min(this.y, other.y + hh));
+				let dx = this.x - cx, dy = this.y - cy;
+				let d = Math.sqrt(dx * dx + dy * dy);
+				if (d > this.size) { break; }
+				if (d === 0) {
+					// Dead centre inside the rectangle (a shape that spawned in a wall): there is
+					// no closest-point normal, so leave along the nearest FACE instead.
+					const ox = hw - Math.abs(this.x - other.x), oy = hh - Math.abs(this.y - other.y);
+					if (ox < oy) { dx = Math.sign(this.x - other.x) || 1; dy = 0; }
+					else { dx = 0; dy = Math.sign(this.y - other.y) || 1; }
+					d = 1;
+				}
+				const nx = dx / d, ny = dy / d;
+				this.x = cx + nx * this.size;
+				this.y = cy + ny * this.size;
+				// Kill only the component heading INTO the wall - a shape drifting along a face
+				// keeps sliding along it instead of being stopped dead by a graze.
+				const into = this.vec.x * nx + this.vec.y * ny;
+				if (into < 0) {
+					this.vec.x -= into * nx;
+					this.vec.y -= into * ny;
+				}
+				break;
+			}
 		}
 	}
 	update() {
