@@ -9,8 +9,8 @@ additional issues are present:
 - dominator's attacking barrels are under the body, but the cosmetic trapezoid barrel should also be drawn under the circular body. the grey barrels no matter useful or cosmetic are above the black hexagon and below the circular body. curre
 - traps and drones should go right through their own teammate's tanks
 - trapper dominator's traps should not be immortal? neither should destroyer dominator either like with enough damage they should dissapear like normal traps (assuming they are, if they arent and just have massive health then nvm)
-- trap's recoil is incredibly incredibly small. check against source, but even mega trapper barely moves like 1/10th of a tile.
-- drone spawners have equally the small amount of recoil like 1/10th of a tile. furthermore, overseer and overlord should try to spawn drones symmetrically at a time until impossible, like overlord should spawn 4 at a time until the very last batch, overseer is 2 at a time, etc.
+- trap's recoil should be incredibly incredibly small. check against source, but even mega trapper barely moves like 1/10th of a tile.
+- drone spawners should have equally the small amount of recoil like 1/10th of a tile. furthermore, overseer and overlord should try to spawn drones symmetrically at a time until impossible, like overlord should spawn 4 at a time until the very last batch, overseer is 2 at a time, etc.
 - arena closer bullets should be the size of its barrel, not small af like rn
 - same with fallen booster, its bullets should be the size of its barrels
 - summoner's body is royally fucked and drawn 45 degrees from where it should be. same issue as guardian youre conflating different sizes. 
