@@ -283,7 +283,7 @@ function diepCitations() {
 
 /*
 	plan.md C0/F2 - the server bullet-stat identities (damage = 7 x bullet.damage, pene = 2 x
-	bullet.health, speed = 1.12 x bullet.speed, back = recoil x 2.8, rand = scatterRate x
+	bullet.health, speed = 1.12 x bullet.speed, back = recoil x 1.12, rand = scatterRate x
 	0.174533), anchored per barrel against diepcustom/TankDefinitions.json directly for every
 	diep-native class with a real barrel list there - the same "outside the tree" reasoning as
 	diepCitations() above, generalised from geometry to the combat-facing columns C0's generator
@@ -333,7 +333,15 @@ function diepBulletStats() {
 			['damage', sc => sc.damage, b => 7 * b.bullet.damage],
 			['pene', sc => sc.pene, b => 2 * b.bullet.health],
 			['speed', sc => sc.speed, b => 1.12 * b.bullet.speed],
-			['back', sc => sc.back, b => b.recoil * 2.8],
+			// x1.12, not the x2.8 this used to assert. 2.8 is the right factor on physics.html's
+			// GRID-SQUARE recoil figure; `b.recoil` here is TankDefinitions.json's raw field, and
+			// Barrel.ts:153 spends it as `addVelocity(angle + PI, recoil * 2)` - an impulse of
+			// 2 x recoil du/tick, which under diep's v *= 0.9 decay travels 0.4 x recoil grid
+			// squares. So the grid-square figure is recoil x 0.4 and this identity is
+			// 0.4 x 2.8 = 1.12. Asserting x2.8 against the raw field pinned every class's recoil
+			// 2.5x hot - see TanksConfig.js's own `back` column header for the full derivation and
+			// for the TankBody-pushFactor-8 -> 4.48 anchor that settles the axis independently.
+			['back', sc => sc.back, b => b.recoil * 1.12],
 			['rand', sc => sc.rand, b => RAND_K * b.bullet.scatterRate],
 		];
 		for (const [label, getServer, getDiep] of cols) {

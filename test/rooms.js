@@ -2013,6 +2013,64 @@ function baseDroneAiTests() {
 				mate.hp >= mateBefore && trap.pene === trapBefore,
 				mate.hp + '/' + mateBefore + ', ' + trap.pene + '/' + trapBefore);
 		}
+		/*
+			diep's same-team PHYSICS filter (rooms/Room.js's teamPassThrough(), diepcustom
+			Object.ts:154-171). The block above only ever asserted that a same-team pair exchanges
+			no DAMAGE; the pair still collided physically, which is what let a teammate's trap field
+			shove a tank around and a Mothership be jostled by its own swarm. What is pinned here is
+			the part that distinguishes the two flags, because the whole rule turns on it:
+
+			  * noOwnTeamCollision (ordinary bullet/swarm/skimmer) skips the pair on team alone.
+			  * onlySameOwnerCollision (drone/minion/arming trap) skips it only when the OWNERS
+			    differ - and a tank has no owner at all in diep (RelationsGroup defaults it to
+			    null; only a projectile ever sets one), so a drone and the tank that fired it never
+			    share an owner and always pass through. Two drones from the SAME barrel do share
+			    one, so those still jostle - which is what keeps a swarm spread out.
+		*/
+		{
+			const room = isolatedRoom();
+			const owner = plantPlayer(room, 0, 0, 0);
+			plantDrone(room, owner, 0, 0, 1);
+			const ownerHp = owner.hp;
+			room.step();
+			// Only the TANK's side is asserted: a drone re-steers its own vec every tick through
+			// droneSteer1 whatever it is or is not touching, so the drone's vec is not evidence
+			// either way. Against an ENEMY tank the same pairing does move this (the enemy-drone
+			// knockback the block above already exercises), so a zero here is the filter, not
+			// a dead code path.
+			check('a drone passes through THE TANK THAT FIRED IT (owner null vs owner tank)',
+				owner.vec.length() === 0 && owner.hp >= ownerHp,
+				owner.vec.length() + ', hp ' + owner.hp + '/' + ownerHp);
+		}
+		{
+			// Two drones off the same owner DO still collide - the one same-team pairing diep keeps.
+			const room = isolatedRoom();
+			const owner = plantPlayer(room, 0, 900, 900);
+			const a = plantDrone(room, owner, 0, 0, 1);
+			const b = plantDrone(room, owner, 0, 0, 1);
+			const aVec = a.vec.length(), bVec = b.vec.length();
+			room.step();
+			check('...but two drones off the SAME owner still shove each other apart',
+				a.vec.length() !== aVec || b.vec.length() !== bVec,
+				a.vec.length() + '/' + aVec + ', ' + b.vec.length() + '/' + bVec);
+		}
+		{
+			// An ARMING trap is inert to its own team but NOT to an enemy. The arming window used
+			// to make it inert to everything, which is a straight fidelity bug: diep's
+			// onlySameOwnerCollision is only ever consulted WITHIN a team (Object.ts:155), so a
+			// trap damages an enemy from its spawn tick and `collisionEnd` governs nothing but
+			// which team mates it interacts with.
+			const room = isolatedRoom();
+			const trap = new Bullet({ GM: room.gm, sId: room.id, oId: 0 }, 0, 0, 0, 0, 0, room);
+			trap.team = 0; trap.alone = 1; trap.life = 1000; trap.type = 2; trap.armTicks = 999;
+			trap.pene = 100; trap.damage = 5; trap.size = 10; trap.weight = 5; trap.push = 5; trap.map = room.map;
+			room.INSTANCE.bullets.add((id) => { trap.id = { GM: room.gm, sId: room.id, oId: id }; return trap; });
+			const foe = plantPlayer(room, 1, 0, 0);
+			const foeBefore = foe.hp;
+			room.step();
+			check('an ARMING trap still damages an enemy (arming is a team filter, not invulnerability)',
+				foe.hp < foeBefore, foe.hp + '/' + foeBefore);
+		}
 	}
 
 	// 4.5.3/4.5.4 - orbit rate is now uniform (a linear cruise speed), not radius-dependent the

@@ -192,7 +192,7 @@ class Mothership extends Room {
 			.sort((a, b) => b.xp - a.xp);
 	}
 	entityColor(player) {
-		return player.team;
+		return Room.neutralColor(player) ?? player.team;
 	}
 	mainColor(player) {
 		return player.team;

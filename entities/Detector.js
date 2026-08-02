@@ -54,6 +54,16 @@ class Detector {
 			if (kind === KIND.BULLET && this.id.oId === other.origin.oId) {
 				return;
 			}
+			// An Arena Closer is not a target for anything. It is invulnerable and never dies
+			// (entities/Player.js's collision() returns before any damage or knockback), so a base
+			// drone that acquired one would abandon its ring, chase forever and never resolve -
+			// which is exactly what a whole base did when a Closer wandered past. diep never has
+			// this problem because a Closer is on the arena's own team and a base's drones are on
+			// the base's, but our base drones scan by proximity, so the exclusion is stated here at
+			// the one place every detector-driven target passes through.
+			if (kind === KIND.PLAYER && other.closer) {
+				return;
+			}
 			const index = this.type.indexOf(kind);
 			if (index < this.construc) {
 				this.dis = option.dis

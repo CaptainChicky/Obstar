@@ -217,7 +217,7 @@ class Tester extends Room {
 				{ GM: this.gm, sId: this.id, oId: id },
 				-this.map.width / 4, this.map.height / 4,
 				spec[2],
-				this.rules.bossTeam,
+				this.rules.neutralTeam,
 				this.XPLVL,
 				this
 			);
@@ -287,7 +287,7 @@ class Tester extends Room {
 		return xp;
 	}
 	entityColor(player) {
-		return player.boss ? Room.bossColor(player) : player.team;
+		return player.boss ? Room.bossColor(player) : (Room.neutralColor(player) ?? player.team);
 	}
 	mainColor(player) {
 		return player.team;

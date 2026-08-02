@@ -113,6 +113,13 @@
 		coral: ["#fc7677", "#bd5959"],   // Color.EnemyTriangle (0xFC7677) - Defender
 		square: ["#ffe869", "#bfae4f"],   // Color.EnemySquare (0xFFE869) - Summoner
 		fallen: ["#c0c0c0", "#909090"],   // Color.Fallen (0xC0C0C0) - Fallen Overlord/Fallen Booster
+		// Color.Neutral (0xFFE869) - an Arena Closer and an UNCAPTURED Dominator, both of which
+		// diep puts on the arena's own team with this exact colour (ArenaCloser.ts:56,
+		// Dominator.ts:72). Numerically identical to Color.EnemySquare/`square` above, and kept as
+		// its own entry anyway: they are different colour CONSTANTS in diep that happen to share a
+		// hex, and collapsing them would make the next person think a Closer is meant to be a
+		// Summoner-coloured thing. Both were previously drawing in team 9's `necro` beige.
+		neutral: ["#ffe869", "#bfae4f"],
 		// sqr/tri/pnt reverted to the original muted palette (plan.md R11 - a taste call, not a
 		// bug: C3's diep-measured saturated hexes were adopted only because they were citable,
 		// not because anything was wrong with these). Kept: C3's shape SIZE fix (the x sqrt(2)

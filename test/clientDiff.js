@@ -114,7 +114,21 @@ const hash = fnv1a(blob);
 //   * a boss travels at diep's own movementSpeed now (lib/gameAI.js's BOSS_ACCEL, replacing a
 //     tuned constant fed through a position step carrying a stray /10), so any boss this suite's
 //     seeded RNG spawns is somewhere else on every frame after its first.
-const GOLDEN = { count: 343016, hash: '061f59d4' };
+//
+// Rebaselined again for the second issues.md batch. The op COUNT drops ~18% this time, which is
+// itself the headline change and not a bug: diep's same-team collision filter (rooms/Room.js's
+// teamPassThrough()) now skips whole pairs that used to resolve, so a great many same-team
+// projectiles survive contacts that previously destroyed them or shoved them off course, and
+// every downstream position/spawn in this seeded corpus moves with them. The rest:
+//   * the `back` (recoil) column is uniformly /2.5 - it had been written as diep's raw
+//     `barrel.recoil x 2.8` when the identity is `gu_value x 2.8` and gu_value = recoil x 0.4,
+//     so every tank's own post-shot drift changes (see TanksConfig.js's `back` header).
+//   * an ARMING trap is no longer inert to enemies, so trap classes land damage several ticks
+//     earlier than they did.
+//   * Tri-Trapper's three barrels fire together (diep id35 delay 0) instead of thirded.
+//   * an Arena Closer and an uncaptured Dominator draw in Color.Neutral #FFE869 instead of
+//     team 9's `necro` beige, and a Closer now sits on the arena's own team.
+const GOLDEN = { count: 281738, hash: '4384c622' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

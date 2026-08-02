@@ -481,7 +481,10 @@
 			'bull',
 			'coral',
 			'square',
-			'fallen'
+			'fallen',
+			// Color.Neutral - an Arena Closer and an uncaptured Dominator (rooms/Room.js's
+			// rules.neutralTeam). Appended, so no existing index shifts.
+			'neutral'
 		],
 		'reason': [
 			'ERR_GAMEMODE',

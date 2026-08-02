@@ -131,7 +131,7 @@ class TwoTeam extends Room {
 		};
 	}
 	entityColor(player) {
-		return player.boss ? Room.bossColor(player) : player.team;
+		return player.boss ? Room.bossColor(player) : (Room.neutralColor(player) ?? player.team);
 	}
 	mainColor(player) {
 		return player.team;

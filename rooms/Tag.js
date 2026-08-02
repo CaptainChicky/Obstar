@@ -258,7 +258,7 @@ class Tag extends Room {
 				{ GM: this.gm, sId: this.id, oId: id },
 				pos.x, pos.y,
 				spec[2],
-				this.rules.bossTeam,
+				this.rules.neutralTeam,
 				this.XPLVL,
 				this
 			);
@@ -343,7 +343,7 @@ class Tag extends Room {
 		flat gold.
 	*/
 	entityColor(player) {
-		return player.boss ? Room.bossColor(player) : player.team;
+		return player.boss ? Room.bossColor(player) : (Room.neutralColor(player) ?? player.team);
 	}
 	mainColor(player) {
 		return player.team;

@@ -1824,7 +1824,28 @@
 			total displacement under the recurrence `v *= F; x += v` (which sums to v0 x F/(1-F)),
 			so at F = 10/11 it collapses to a flat `back = gu x 2.8` and EVERY entry below is
 			readable as its diep gu value x 2.8: 0.28 is 0.1 gu, 1.12 is Basic's 0.4 gu, 16.8 is
-			Destroyer's 6 gu. Divide by 2.8 to read the table back. If the tank F ever moves again,
+			Destroyer's 6 gu. Divide by 2.8 to read the table back.
+
+			THE ENTRIES BELOW DID NOT USED TO MATCH THAT DESCRIPTION and were rescaled in one pass.
+			The identity above is right; what had been written into the literals was
+			`barrel.recoil x 2.8` off TankDefinitions.json's raw `recoil` field, instead of
+			`gu_value x 2.8` off physics.html's grid-square figure. Those are not the same number:
+			Barrel.ts:153 spends recoil as `addVelocity(angle + PI, recoil * 2)`, i.e. an impulse of
+			`2 x recoil` du/tick, which under diep's own `v *= 0.9` decay travels `20 x recoil` du =
+			`0.4 x recoil` grid squares - so the grid-square figure IS `recoil x 0.4` and the raw
+			field ran every entry 2.5x hot. All 70 non-zero literals were divided by 2.5, which puts
+			them exactly on the three worked examples this comment already gave (Basic 2.8 -> 1.12,
+			Destroyer 42 -> 16.8), and an audit of all 39 classes that map 1:1 onto a diep definition
+			now agrees barrel-for-barrel. The anchor that settles which axis is right, independently
+			of physics.html: diep's TankBody carries the PhysicsGroup default pushFactor 8, and
+			entities/Player.js has always stated that same body knockback as 4.48 world units -
+			8 x 0.56, the plain absolute-length conversion. An impulse column is a length column.
+
+			One casualty worth knowing about: Annihilator's `back` was a deliberately off-table 4 gu
+			(PENDING #15/#16), but the literal had since been overwritten by the raw-recoil pass, so
+			the rescale lands it on diep's own 6.8 gu rather than restoring our 4. Left at diep's.
+
+			If the tank F ever moves again,
 			this whole column moves with it - it does NOT track whatever MEASUREMENTS.md's M1 finds
 			about bullets, because recoil is an impulse on the TANK. (plan.md step 3.) The gu
 			values are NOT all diep's, though the conversion is: Annihilator's 4 against diep's 6.8
@@ -1891,7 +1912,7 @@
 					///
 					this.weight = 3.5;   // diep 0.666 gu
 					this.push = 0.27426;
-					this.back = 2.8;
+					this.back = 1.12;
 				}
 			},
 			"Flank Guard": new function () {
@@ -1915,7 +1936,7 @@
 					///
 					this.weight = 3.5;   // diep 0.666 gu
 					this.push = 0.27426;
-					this.back = 2.8;
+					this.back = 1.12;
 				}
 				this.cannons[1] = {
 					reload: 15,
@@ -1934,7 +1955,7 @@
 					///
 					weight: 3.5,   // diep lists Flank Guard once, so the rear barrel is 0.666 gu too
 					push: 0.45709,
-					back: 2.8
+					back: 1.12
 				};
 			},
 			"Twin": new function () {
@@ -1958,7 +1979,7 @@
 					///
 					this.weight = 2.275;   // diep 0.4333 gu
 					this.push = 0.27426;
-					this.back = 2.1;
+					this.back = 0.84;
 				};
 				this.cannons[0] = new function () {
 					this.reload = 15;
@@ -1978,7 +1999,7 @@
 					///
 					this.weight = 2.275;   // diep 0.4333 gu
 					this.push = 0.27426;
-					this.back = 2.1;
+					this.back = 0.84;
 				};
 			},
 			"Machine Gun": new function () {
@@ -2001,7 +2022,7 @@
 					///
 					this.weight = 2.45;   // diep 0.4666 gu
 					this.push = 0.27426;
-					this.back = 2.8;
+					this.back = 1.12;
 				}
 			},
 			"Sniper": new function () {
@@ -2024,7 +2045,7 @@
 					///
 					this.weight = 3.5;   // diep 0.666 gu
 					this.push = 0.54851;
-					this.back = 8.4;
+					this.back = 3.36;
 				}
 			},
 			///
@@ -2048,7 +2069,7 @@
 					///
 					weight: 2.45,   // diep 0.4666 gu
 					push: 0.45709,
-					back: 2.8
+					back: 1.12
 				}));
 				// diep barrel.angle +-pi/4, offset 0 (plan.md Part B row 2 - was +-0.4/+-6, a paraphrase)
 				c[0].offdir = -Math.PI / 4;
@@ -2079,7 +2100,7 @@
 					///
 					weight: 1.75,   // diep 0.333 gu
 					push: 0.27426,
-					back: 2.8
+					back: 1.12
 				}));
 				c[2].offdir = c[3].offdir = Math.PI;
 				c[1].offTime = c[3].offTime = .5;
@@ -2106,7 +2127,7 @@
 					///
 					weight: 2.625,   // diep 0.5 gu
 					push: 0.45709,
-					back: 2.8
+					back: 1.12
 				}));
 				c[1].offdir = Math.PI / 2; c[1].offTime = .5;
 				c[2].offdir = Math.PI;
@@ -2133,7 +2154,7 @@
 					///
 					weight: 1.05,   // diep 0.2 gu (Destroyer and Hybrid's bullet share the row) - the table inverts knockback against damage
 					push: 0.27426,
-					back: 42
+					back: 16.8
 				}));
 				///
 				this.cannons = c;
@@ -2158,7 +2179,7 @@
 					///
 					this.weight = 3.5;   // diep 0.666 gu
 					this.push = 0.54851;
-					this.back = 8.4;
+					this.back = 3.36;
 				}
 			},
 			"Overseer": new function () {
@@ -2184,7 +2205,7 @@
 					///
 					weight: 4.2,   // diep 0.8 gu, the row every drone class shares
 					push: 0.36567,
-					back: 2.8
+					back: 1.12
 				}));
 				c[1].offdir = -Math.PI / 2;
 				this.cannons = c;
@@ -2208,13 +2229,13 @@
 					///
 					weight: 0.7,   // diep Tri-Angle (Rear Bullet) 0.1333 gu; c[0] overrides to the front row
 					push: 0.45709,
-					back: 7
+					back: 2.8
 				}));
 				// The main cannon's length bump used to write `.height`, a client-only field
 				// name the server never reads (Player.js:212 reads `canonLength`), so this
 				// line was a no-op and the cannon stayed at the 58 default. test/tanks.js's
 				// muzzle-tip band caught it once canonLength was corrected.
-				c[0].back = 0.56; c[0].canonLength = 66.5; c[0].pene = 2; c[0].damage = 7; c[0].speed = 1.12; c[0].life = 75;
+				c[0].back = 0.224; c[0].canonLength = 66.5; c[0].pene = 2; c[0].damage = 7; c[0].speed = 1.12; c[0].life = 75;
 				c[0].weight = 3.5;   // diep Tri-Angle (Front Bullet) 0.666 gu
 				c[1].offdir = -Math.PI - .4; c[1].offx = -5; c[1].offTime = .5;
 				c[2].offdir = -Math.PI + .4; c[2].offx = 5; c[2].offTime = .5;
@@ -2242,7 +2263,7 @@
 					///
 					this.weight = 3.5;   // diep 0.666 gu, the row every manual trap shares
 					this.push = 0.27426;
-					this.back = 2.8;
+					this.back = 1.12;
 				}
 			},
 			///
@@ -2276,7 +2297,7 @@
 					// parent Flank Guard's 0.666, which is a forward gun. May want its own tune.
 					weight: 0.7,
 					push: 0.91418,
-					back: 2.38
+					back: 0.952
 				}));
 				c[1].offdir = -Math.PI + .4; c[1].offx = 5;
 				this.cannons = c;
@@ -2302,7 +2323,7 @@
 					///
 					weight: 1.05,   // diep 0.2 gu (Destroyer and Hybrid's bullet share the row) - the table inverts knockback against damage
 					push: 0.27426,
-					back: 42
+					back: 16.8
 				}));
 				c.push({
 					reload: 90,
@@ -2323,7 +2344,7 @@
 					///
 					weight: 4.2,   // diep Hybrid (Drone) 0.8 gu
 					push: 0.36567,
-					back: 2.8
+					back: 1.12
 				})
 				///
 				this.cannons = c;
@@ -2347,10 +2368,10 @@
 					size: 33.81,
 					///
 					// diep 0.1 gu - the floor of the Knockbackfactor table (`weight`, dealt to others).
-					// `back` (self-recoil) is a separate identity (plan.md C0): recoil(17) x 2.8 = 47.6.
+					// `back` (self-recoil) is a separate identity (plan.md C0): recoil(17) x 1.12 = 19.04.
 					weight: 0.525,
 					push: 0.27426,
-					back: 47.6
+					back: 19.04
 				}));
 				///
 				this.cannons = c;
@@ -2392,7 +2413,7 @@
 						size: 14.7,   // (barrel[1].width 42 / 2) x sizeRatio 1 x 0.70
 						weight: 0.35,
 						push: 0.45709,
-						back: 2.8   // diep barrel[1].recoil 1 x 2.8
+						back: 1.12   // diep barrel[1].recoil 1 x 1.12
 					}
 				];
 			},
@@ -2416,7 +2437,7 @@
 					///
 					this.weight = 3.5;   // diep 0.666 gu
 					this.push = 0.63992;
-					this.back = 8.4;
+					this.back = 3.36;
 				}
 			},
 			"Triplet": new function () {
@@ -2439,7 +2460,7 @@
 					///
 					weight: 2.1,   // diep 0.4 gu
 					push: 0.45709,
-					back: 1.4
+					back: 0.56
 				}));
 				c[0].offx = 18.2;   // diep barrel.offset 26 x 0.70
 				c[1].offx = -18.2;
@@ -2466,7 +2487,7 @@
 					///
 					weight: 1.75,   // diep 0.333 gu
 					push: 0.27426,
-					back: 2.8
+					back: 1.12
 				}));
 				c[2].offdir = c[3].offdir = Math.PI * 2 / 3;
 				c[4].offdir = c[5].offdir = Math.PI * 4 / 3;
@@ -2494,7 +2515,7 @@
 					///
 					weight: 1.925,   // diep 0.3666 gu
 					push: 0.45709,
-					back: 1.96
+					back: 0.784
 				}));
 				// diep barrel angles +-pi/4 (outer) / +-pi/8 (inner), offset 0 (plan.md Part B row
 				// 2 - was +-0.6/+-0.3, +-7/+-3, a paraphrase); fire delays outer 0.66 -> inner 0.33
@@ -2526,7 +2547,7 @@
 					///
 					weight: 2.275,   // diep 0.4333 gu
 					push: 0.45709,
-					back: 2.8
+					back: 1.12
 				}));
 				c[1].offdir = Math.PI * 1 / 4; c[1].offTime = .5;
 				c[2].offdir = Math.PI * 2 / 4;
@@ -2591,18 +2612,18 @@
 					///
 					weight: 0.7,   // diep Booster (Rear Bullet) 0.1333 gu; c[0] overrides to the front row
 					push: 0.45709,
-					back: 0.56   // diep barrel[1]/[2] (upper-rear pair) recoil 0.2 x 2.8 (plan.md C0)
+					back: 0.224   // diep barrel[1]/[2] (upper-rear pair) recoil 0.2 x 1.12 (plan.md C0)
 				}));
 				// Same `.height`-instead-of-`.canonLength` typo as Triangle above; these three
 				// lines were no-ops until test/tanks.js caught it.
-				c[0].back = 0.56; c[0].canonLength = 66.5; c[0].pene = 2; c[0].damage = 7; c[0].life = 75;
+				c[0].back = 0.224; c[0].canonLength = 66.5; c[0].pene = 2; c[0].damage = 7; c[0].life = 75;
 				c[0].weight = 3.5;   // diep Booster (Front Bullet) 0.666 gu
 				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
 				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
-				// diep barrel[3]/[4] (lower-rear pair) recoil 2.5 x 2.8 = 7 (plan.md C0), unlike
-				// the upper-rear pair's 0.2 x 2.8 = 0.56 above.
-				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 56; c[3].offTime = .5; c[3].back = 7;
-				c[4].offdir = -Math.PI + .35; c[4].offx = 5; c[4].canonLength = 56; c[4].offTime = .5; c[4].back = 7;
+				// diep barrel[3]/[4] (lower-rear pair) recoil 2.5 x 1.12 = 2.8 (plan.md C0), unlike
+				// the upper-rear pair's 0.2 x 1.12 = 0.224 above.
+				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 56; c[3].offTime = .5; c[3].back = 2.8;
+				c[4].offdir = -Math.PI + .35; c[4].offx = 5; c[4].canonLength = 56; c[4].offTime = .5; c[4].back = 2.8;
 				///
 				this.cannons = c;
 			},
@@ -2625,16 +2646,16 @@
 					///
 					weight: 0.7,   // diep Fighter (Rear Bullet) 0.1333 gu; c[0]-c[2] override below
 					push: 0.45709,
-					back: 7   // diep barrel[3]/[4] (rear) recoil 2.5 x 2.8 (plan.md C0)
+					back: 2.8   // diep barrel[3]/[4] (rear) recoil 2.5 x 1.12 (plan.md C0)
 				}));
 				// Same `.height`/`.canonLength` typo as Triangle/Booster above, plus a second
 				// one: the rear pair's offx was written to c[1]/c[2] (already set two lines
 				// up) instead of c[3]/c[4], so the rear cannons never got their splay and the
 				// side cannons silently lost theirs. test/tanks.js's index-paired offx check
 				// is what caught both.
-				c[0].back = 0.56; c[0].canonLength = 66.5; c[0].pene = 2; c[0].damage = 7; c[0].life = 75;
-				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 2; c[1].damage = 5.6; c[1].life = 75; c[1].back = 2.8;
-				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 2; c[2].damage = 5.6; c[2].life = 75; c[2].back = 2.8;
+				c[0].back = 0.224; c[0].canonLength = 66.5; c[0].pene = 2; c[0].damage = 7; c[0].life = 75;
+				c[1].offdir = -Math.PI / 2; c[1].offx = +1; c[1].pene = 2; c[1].damage = 5.6; c[1].life = 75; c[1].back = 1.12;
+				c[2].offdir = Math.PI / 2; c[2].offx = -1; c[2].pene = 2; c[2].damage = 5.6; c[2].life = 75; c[2].back = 1.12;
 				c[1].reload = c[2].reload = 23;   // diep barrel[1]/[2] side, round(1.5 x15=22.5) - Step 3 call 2
 				c[3].offdir = -Math.PI - .4; c[3].offx = -5; c[3].offTime = .5; c[3].canonLength = 56;
 				c[4].offdir = -Math.PI + .4; c[4].offx = 5; c[4].offTime = .5; c[4].canonLength = 56;
@@ -2677,7 +2698,7 @@
 					// Auto Gunner/Auto Trapper/Auto Smasher (Auto Bullet), 0.2 gu.
 					weight: 1.05,
 					push: 0.27426,
-					back: 0.84   // diep AutoTurretDefinition recoil 0.3 x 2.8 (plan.md C0)
+					back: 0.336   // diep AutoTurretDefinition recoil 0.3 x 1.12 (plan.md C0)
 				}];
 				c = c.concat(new Array(3).fill(null).map(() => ({
 					reload: 15,   // STAND-IN: Tri-Angle own new value (Step 3) - call 3
@@ -2698,7 +2719,7 @@
 					// 0.1333 gu rear here, 0.666 gu front on c[1] below.
 					weight: 0.7,
 					push: 0.45709,
-					back: 2.8
+					back: 1.12
 				})));
 				// `.height` was a typo for `.canonLength` (see Triangle/Booster/Fighter
 				// above), and it targeted c[0] - the auto-turret, already fully specified
@@ -2709,7 +2730,7 @@
 				// `cannons` array), which is why this one wasn't caught by the muzzle-tip
 				// band the way its siblings were - found by the same static read that fixed
 				// them.
-				c[1].back = 0.28; c[1].canonLength = 62; c[1].pene = 1.588235; c[1].damage = 5.775006; c[1].life = 75;
+				c[1].back = 0.112; c[1].canonLength = 62; c[1].pene = 1.588235; c[1].damage = 5.775006; c[1].life = 75;
 				c[1].weight = 3.5;   // diep Tri-Angle (Front Bullet) 0.666 gu
 				c[2].offdir = -Math.PI - .4; c[2].offx = -5; c[2].offTime = .5;
 				c[3].offdir = -Math.PI + .4; c[3].offx = 5; c[3].offTime = .5;
@@ -2739,7 +2760,7 @@
 					///
 					weight: 4.2,   // diep Overlord 0.8 gu, the row every drone class shares
 					push: 0.45709,
-					back: 2.8
+					back: 1.12
 				}));
 				c[1].offdir = Math.PI / 2;
 				c[2].offdir = Math.PI;
@@ -2777,7 +2798,7 @@
 					///
 					weight: 4.2,   // diep Manager 0.8 gu, the row every drone class shares
 					push: 0.45709,
-					back: 2.8
+					back: 1.12
 				}]
 				this.cannons = c;
 			},
@@ -2823,7 +2844,7 @@
 					///
 					weight: 0.525,   // diep Battleship 0.1 gu
 					push: 0.04571,
-					back: 2.8
+					back: 1.12
 				}));
 				c[1].offdir = -Math.PI / 2; c[1].offx = -14; c[1].offTime = .5;
 				// diep barrel[2]/[3] (controllable pair) offset +20 x 0.70 (plan.md Part B)
@@ -2909,7 +2930,7 @@
 					///
 					weight: 5.6,   // diep 1.0666 gu, the top of the whole table
 					push: 0.27426,
-					back: 2.8
+					back: 1.12
 				}];
 				this.cannons = c;
 			},
@@ -2934,7 +2955,7 @@
 					///
 					weight: 3.5,   // diep Overtrapper (Trap) 0.666 gu
 					push: 0.27426,
-					back: 2.8
+					back: 1.12
 				}];
 				c = c.concat(new Array(2).fill(null).map(() => ({
 					reload: 90,
@@ -2955,7 +2976,7 @@
 					///
 					weight: 4.2,   // diep Overtrapper (Drone) 0.8 gu
 					push: 0.45709,
-					back: 2.8
+					back: 1.12
 				})));
 				c[2].offdir = Math.PI * 4 / 3; c[2].offTime = .5;
 				this.cannons = c;
@@ -2989,7 +3010,7 @@
 					///
 					weight: 1.05,   // diep Auto Trapper (Auto Bullet) 0.2 gu
 					push: 0.27426,
-					back: 0.84   // diep AutoTurretDefinition recoil 0.3 x 2.8 (plan.md C0)
+					back: 0.336   // diep AutoTurretDefinition recoil 0.3 x 1.12 (plan.md C0)
 				}];
 				c.push({
 					reload: 23,
@@ -3009,7 +3030,7 @@
 					///
 					weight: 3.5,   // diep Auto Trapper (Trap) 0.666 gu
 					push: 0.27426,
-					back: 2.8
+					back: 1.12
 				});
 				this.cannons = c;
 			},
@@ -3035,7 +3056,7 @@
 					// Gun's 0.4666 gu. May want its own tune.
 					this.weight = 2.45;
 					this.push = 0.27426;
-					this.back = 2.24;
+					this.back = 0.896;
 				}
 			},
 			///dev
@@ -3064,7 +3085,7 @@
 					// 0.4666. May want its own tune.
 					weight: 1.75,
 					push: 0.45709,
-					back: 0.56   // diep recoil 0.2 x 2.8 (plan.md C0)
+					back: 0.224   // diep recoil 0.2 x 1.12 (plan.md C0)
 				})));
 				c[1].offx = -22.4; c[1].offTime = .5;   // diep barrel[0].offset -32, delay 0.5
 				c[2].canonLength = c[3].canonLength = 59.5;
@@ -3101,7 +3122,7 @@
 					///
 					weight: 1.05,   // diep Auto Gunner (Auto Bullet) 0.2 gu
 					push: 0.27426,
-					back: 0.84   // diep AutoTurretDefinition recoil 0.3 x 2.8 (plan.md C0)
+					back: 0.336   // diep AutoTurretDefinition recoil 0.3 x 1.12 (plan.md C0)
 				}];
 				c = c.concat(new Array(4).fill(null).map(() => ({
 					reload: 15,
@@ -3122,7 +3143,7 @@
 					///
 					weight: 1.75,
 					push: 0.45709,
-					back: 0.56   // diep recoil 0.2 x 2.8 (plan.md C0)
+					back: 0.224   // diep recoil 0.2 x 1.12 (plan.md C0)
 				})));
 				c[2].offx = -22.4; c[2].offTime = .5;   // diep barrel[0].offset -32, delay 0.5
 				c[3].canonLength = c[4].canonLength = 59.5;
@@ -3295,7 +3316,7 @@
 					reload: 75, offTime: 0, auto: 1, type: 2, life: 600,
 					offdir: Math.PI * 2 * i / 3 + Math.PI / 3, offx: 0, canonLength: 84, rand: 0.174533,
 					speed: 5.6, pene: 25, damage: 28, size: 19.992,
-					weight: 4.2, push: 0.45709, back: 5.6
+					weight: 4.2, push: 0.45709, back: 2.24
 				}));
 				// MountedTurretDefinition = AutoTurretDefinition (AutoTurret.ts: size 55, width
 				// 42x0.7, reload 1, recoil 0.3) with bullet speed/damage/health overridden to
@@ -3309,7 +3330,7 @@
 					reload: 15, offTime: 0, auto: 1, autoDir: 1, autoShoot: 1, life: 75,
 					offdir: Math.PI * 2 * i / 3, offx: 0, distance: 33.6, canonLength: 38.5, rand: 0.174533,
 					speed: 2.7552, pene: 11.5, damage: 8.4, size: 10.29,
-					weight: 4.2, push: 0.45709, back: 2.352
+					weight: 4.2, push: 0.45709, back: 0.9408
 				}));
 				this.cannons = traps.concat(turrets);
 			},
@@ -3340,7 +3361,7 @@
 					reload: 5.4, offTime: 0, type: 1, life: -1, auto: 1,
 					offdir: Math.PI * i / 2, offx: 0, canonLength: 49, rand: 0.174533,
 					speed: 1.904, pene: 25, damage: 3.92, size: 14.7,
-					weight: 4.2, push: 0.45709, back: 0.28
+					weight: 4.2, push: 0.45709, back: 0.112
 				}));
 			},
 			// Reuses Booster's own barrel geometry verbatim (diepcustom FallenBooster.ts iterates
@@ -3367,9 +3388,9 @@
 					// speed 1.12x1.7, pene 2x6.25 (diep's flat health override, every barrel) -
 					// damage stays per-barrel (below), not set here.
 					speed: 1.904, pene: 12.5, damage: 2.8, size: 14.7,
-					weight: 0.7, push: 0.45709, back: 2.408
+					weight: 0.7, push: 0.45709, back: 0.9632
 				}));
-				c[0].back = 0.56; c[0].canonLength = 66.5; c[0].size = 14.7; c[0].damage = 4.620005; c[0].life = 75;
+				c[0].back = 0.224; c[0].canonLength = 66.5; c[0].size = 14.7; c[0].damage = 4.620005; c[0].life = 75;
 				c[0].weight = 3.5;
 				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
 				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
@@ -3569,7 +3590,7 @@
 			// go through the same per-column identities every other class already uses (top of
 			// this file's own ///SERVER/// comment block): damage = 7 x bullet.damage, pene = 2 x
 			// bullet.health, speed = 1.12 x bullet.speed, rand = scatterRate x 0.174533, back =
-			// recoil(gu) x 2.8, reload = round(15 x diep's reload multiplier). weight/push have no
+			// recoil(gu) x 2.8 (gu = diep recoil x 0.4, see the back column header), reload = round(15 x diep's reload multiplier). weight/push have no
 			// diep Knockbackfactor-table row for any of these 16 (that table predates them) so
 			// each inherits its nearest tree-parent donor row, same convention the existing
 			// roster's own stand-ins already use (top-of-file comment, "Seven classes have no row
@@ -3605,7 +3626,7 @@
 					auto: 1, autoShoot: 1, autoDir: 1,
 					offdir: 0, offx: 0, canonLength: 38.5, rand: 0.174533,   // AutoTurretDefinition size 55 x 0.70
 					speed: 1.344, pene: 2, damage: 2.1, size: 10.29,   // (width 29.4 / 2) x sizeRatio 1 x 0.70 (plan.md C0)
-					weight: 1.05, push: 0.27426, back: 0.84
+					weight: 1.05, push: 0.27426, back: 0.336
 				}];
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 850 };
 				this.statMax = [10, 10, 10, 10, 10, 10, 10, 10];
@@ -3626,9 +3647,9 @@
 				this.screen = BASE_SCREEN / 0.85;
 				const c = [
 					{ reload: 38, offTime: 0, offdir: 0, offx: 0, canonLength: 77, life: 75, rand: 0.05236,
-						speed: 1.568, pene: 2, damage: 5.25, size: 10.29, weight: 3.5, push: 0.54851, back: 0.84 },
+						speed: 1.568, pene: 2, damage: 5.25, size: 10.29, weight: 3.5, push: 0.54851, back: 0.336 },
 					{ reload: 38, offTime: 0.2, offdir: 0, offx: 0, canonLength: 66.5, life: 75, rand: 0.05236,
-						speed: 1.568, pene: 2, damage: 5.25, size: 13.8915, weight: 3.5, push: 0.54851, back: 0.84 }
+						speed: 1.568, pene: 2, damage: 5.25, size: 13.8915, weight: 3.5, push: 0.54851, back: 0.336 }
 				];
 				this.cannons = c;
 			},
@@ -3637,7 +3658,7 @@
 				this.flags = { zoomAbility: true };   // no right-click-zoom input wired yet (PENDING.md)
 				const c = [0, 0.2, 0.4].map((offTime, i) => ({
 					reload: 45, offTime, offdir: 0, offx: 0, canonLength: [77, 66.5, 56][i], life: 75, rand: 0.05236,
-					speed: 1.568, pene: 2, damage: 5.25, size: [10.29, 13.8915, 17.493][i], weight: 3.5, push: 0.54851, back: 0.84
+					speed: 1.568, pene: 2, damage: 5.25, size: [10.29, 13.8915, 17.493][i], weight: 3.5, push: 0.54851, back: 0.336
 				}));
 				this.cannons = c;
 			},
@@ -3648,7 +3669,7 @@
 					// diepcustom does not give this class's own reload multiplier - inherits
 					// Gunner's cadence (its other tree parent) as the nearest available donor.
 					reload: 15, offTime: i * 0.2, offdir: 0, offx: 0, canonLength, life: 60, rand: 0.05236,
-					speed: 1.232, pene: 2, damage: 1.4, size: 10.29, weight: 1.75, push: 0.45709, back: 0.56
+					speed: 1.232, pene: 2, damage: 1.4, size: 10.29, weight: 1.75, push: 0.45709, back: 0.224
 				}));
 				this.cannons = c;
 			},
@@ -3658,7 +3679,7 @@
 				this.stealth = { decay: 0.03, moving: 0.08, shooting: 0.23 };   // diep's ordinary trio
 				this.cannons = [{
 					reload: 30, offTime: 0, offdir: 0, offx: 0, canonLength: 84, life: 75, rand: 0.05236,
-					speed: 1.68, pene: 2, damage: 7, size: 14.7, weight: 3.5, push: 0.54851, back: 8.4
+					speed: 1.68, pene: 2, damage: 7, size: 14.7, weight: 3.5, push: 0.54851, back: 3.36
 				}];
 			},
 			"Auto 3": new function () {   // id41 - postAddon "auto3", a 3-turret ring
@@ -3681,7 +3702,7 @@
 					// bullet.damage 0.4/health 1, not 0.3/1 (plan.md R9): damage = 7x0.4 = 2.8,
 					// pene = 2x1 = 2 (was 3.5/2.117647, the shared def's numbers, a 25% underpay).
 					speed: 1.344, pene: 2, damage: 2.8, size: 10.29,
-					weight: 1.05, push: 0.27426, back: 0.84   // AutoTurretMiniDefinition recoil 0.3 x 2.8 (plan.md C0)
+					weight: 1.05, push: 0.27426, back: 0.336   // AutoTurretMiniDefinition recoil 0.3 x 1.12 (plan.md C0)
 				}));
 			},
 			"Auto 5": new function () {   // id40 - postAddon "auto5", a 5-turret ring
@@ -3694,7 +3715,7 @@
 					ring: true,
 					offdir: i * Math.PI * 2 / 5, offx: 0, canonLength: 38.5, distance: 28, rand: 0.174533,
 					speed: 1.344, pene: 2, damage: 2.8, size: 10.29,
-					weight: 1.05, push: 0.27426, back: 0.84   // AutoTurretMiniDefinition recoil 0.3 x 2.8 (plan.md C0)
+					weight: 1.05, push: 0.27426, back: 0.336   // AutoTurretMiniDefinition recoil 0.3 x 1.12 (plan.md C0)
 				}));
 			},
 			// diep's own barrel order (TankDefinitions.json id42) is the fanned pairs, outermost
@@ -3707,11 +3728,11 @@
 				const lens = [45.5, 45.5, 49.7, 49.7, 53.9, 53.9, 58.1, 58.1, 62.3, 62.3];
 				const c = outer.map((offdir, i) => ({
 					reload: 30, offTime: delay[i], offdir, offx: 0, canonLength: lens[i], life: 75, rand: 0.174533,
-					speed: 1.12, pene: 2, damage: 4.2, size: 10.29, weight: 2.45, push: 0.45709, back: 0.28
+					speed: 1.12, pene: 2, damage: 4.2, size: 10.29, weight: 2.45, push: 0.45709, back: 0.112
 				}));
 				c.push({
 					reload: 30, offTime: 0, offdir: 0, offx: 0, canonLength: 66.5, life: 75, rand: 0.174533,
-					speed: 1.12, pene: 2, damage: 7, size: 14.7, weight: 2.45, push: 0.45709, back: 0.28
+					speed: 1.12, pene: 2, damage: 7, size: 14.7, weight: 2.45, push: 0.45709, back: 0.112
 				});
 				this.cannons = c;
 			},
@@ -3719,22 +3740,23 @@
 				this.screen = BASE_SCREEN / 0.9;
 				this.cannons = [
 					{ reload: 15, offTime: 0.66, offdir: 0, offx: 10, canonLength: 52.5, life: 75, rand: 0.174533,
-						speed: 1.12, pene: 2, damage: 3.5, size: 7.35, weight: 1.75, push: 0.45709, back: 2.8 },
+						speed: 1.12, pene: 2, damage: 3.5, size: 7.35, weight: 1.75, push: 0.45709, back: 1.12 },
 					{ reload: 15, offTime: 0.33, offdir: 0, offx: -10, canonLength: 52.5, life: 75, rand: 0.174533,
-						speed: 1.12, pene: 2, damage: 3.5, size: 7.35, weight: 1.75, push: 0.45709, back: 2.8 },
+						speed: 1.12, pene: 2, damage: 3.5, size: 7.35, weight: 1.75, push: 0.45709, back: 1.12 },
 					// Rear trap barrel - diep's own trapLauncher barrel addon (cosmetic nub, plan.md T5/8c).
 					{ reload: 45, offTime: 0, type: 2, life: 600, offdir: Math.PI, offx: 0, canonLength: 42,
-						rand: 0.174533, speed: 2.24, pene: 4, damage: 7, size: 15.288, weight: 3.5, push: 0.27426, back: 2.8 }
+						rand: 0.174533, speed: 2.24, pene: 4, damage: 7, size: 15.288, weight: 3.5, push: 0.27426, back: 1.12 }
 				];
 			},
 			"Tri-Trapper": new function () {   // id35 - 3 identical trap barrels at 120 degrees
 				this.screen = BASE_SCREEN / 0.9;
 				this.cannons = [0, 1, 2].map(i => ({
-					// Evenly-thirded fire order is an engine-quality choice (no diep source), same
-					// spirit as Auto Hover's own paired-barrel offTime stagger.
-					reload: 23, offTime: i / 3, type: 2, life: 240,
+					// All three fire together. The evenly-thirded fire order this used to carry was
+					// an engine-quality guess made when no source was to hand; TankDefinitions.json
+					// id35 gives all three barrels `delay: 0`, exactly like Triple Shot's did.
+					reload: 23, offTime: 0, type: 2, life: 240,
 					offdir: i * Math.PI * 2 / 3, offx: 0, canonLength: 42, rand: 0.174533,
-					speed: 2.24, pene: 4, damage: 7, size: 11.76, weight: 3.5, push: 0.27426, back: 2.8
+					speed: 2.24, pene: 4, damage: 7, size: 11.76, weight: 3.5, push: 0.27426, back: 1.12
 				}));
 			},
 			"Skimmer": new function () {   // id54 - 1 barrel, low bullet absorbtionFactor unmodelled (PENDING.md)
@@ -3752,7 +3774,7 @@
 					// `sub` and the outer cannon are both on the reference-relative 0.70 axis
 					// (plan.md R1 - C2 had mistakenly dropped both to 0.56, the absolute-length factor).
 					reload: 60, offTime: 0, type: 4, offdir: 0, offx: 0, canonLength: 56, life: 98, rand: 0.174533,
-					speed: 0.56, pene: 6, damage: 7, size: 24.99, weight: 1.05, push: 0.27426, back: 8.4,
+					speed: 0.56, pene: 6, damage: 7, size: 24.99, weight: 1.05, push: 0.27426, back: 3.36,
 					sub: { reloadRef: 5.25, damage: 4.2, pene: 0.6, speed: 1.232, size: 14.7, life: 18.75, rand: 0.174533, weight: 1.05, push: 0.27426 }
 				}];
 			},
@@ -3771,7 +3793,7 @@
 					// `weapon` and the outer cannon are both on the reference-relative 0.70 axis
 					// (plan.md R1 - C2 had mistakenly dropped both to 0.56, the absolute-length factor).
 					reload: 45, offTime: 0, type: 1.5, life: -1, offdir: 0, offx: 0, canonLength: 49, rand: 0.174533,
-					speed: 0.6272, pene: 8, damage: 4.9, size: 14.7, weight: 4.2, push: 0.36567, back: 2.8,
+					speed: 0.6272, pene: 8, damage: 4.9, size: 14.7, weight: 4.2, push: 0.36567, back: 1.12,
 					weapon: { reloadRef: 15, damage: 2.8, pene: 0.8, speed: 0.896, size: 17.6375, life: 75, rand: 0, weight: 4.2, push: 0.36567 }
 				}];
 				this.ups = ['Health Regen', 'Reload', 'Max Health', 'Drone Speed', 'Movement Speed', 'Drone Damage', 'Body Damage', 'Drone Health'];

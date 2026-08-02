@@ -640,15 +640,14 @@ class Bullet {
 		if (option.base) {
 			this.destroy = tick.DES;
 		}
-		// A trap's arming window (diep's Trap.ts: PhysicsFlags.onlySameOwnerCollision for the
-		// first `life >> 3` ticks) - inert to everything, simplified from diep's fuller
-		// same-owner-passthrough since this engine has no other same-owner physical blocking for
-		// it to preserve (a trap never collides with its own origin tank regardless, see the
-		// KIND.PLAYER arm's own origin check below). Walls are exempt so an arming trap still
-		// bounces normally, and 'god'/`option.base` above already returned/applied.
-		if (this.type === 2 && this.armTicks > 0 && other && other.kind !== KIND.WALL) {
-			return;
-		}
+		// A trap's arming window used to make it inert to EVERYTHING for its first `life >> 3`
+		// ticks. That was a stand-in for diep's Trap.ts flag swap, taken because this engine had no
+		// same-owner filtering for the real rule to hang off - and it was wrong in the one direction
+		// that matters: diep's onlySameOwnerCollision only ever applies WITHIN a team
+		// (Object.ts:155), so a real trap damages an enemy from its spawn tick, and `collisionEnd`
+		// governs nothing but which team mates it interacts with. rooms/Room.js's teamPassThrough()
+		// now implements that filter properly (armTicks > 0 => onlySameOwnerCollision, then
+		// noOwnTeamCollision), so the blanket gate is gone rather than kept alongside it.
 		if (other) {
 			switch (other.kind) {
 				case KIND.PLAYER:

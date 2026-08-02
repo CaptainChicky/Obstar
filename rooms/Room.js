@@ -265,6 +265,71 @@ function damageGuarded(e, eKind) {
 	return eKind === KIND.PLAYER && (e.dev.ghost || e.dev.god || e.closer || e.shield);
 }
 
+/*
+	diep's own same-team collision filter (diepcustom Entity/Object.ts:154-171), which this tree
+	previously only had half of: a same-team pair was given `noDam` (no damage exchanged) but still
+	collided PHYSICALLY, so a teammate's traps and drones shoved tanks around, a tank could not
+	stand in its own trap field, and a Mothership was permanently jostled by its own drone swarm.
+
+	diep expresses it as two physics flags, and each projectile class picks one:
+
+	  * noOwnTeamCollision (Bullet.ts:75 - ordinary bullets, and Swarm.ts:32) - passes through
+	    EVERYTHING on its own team, whoever fired it.
+	  * onlySameOwnerCollision (Drone.ts:57, Minion.ts:87, NecromancerSquare.ts:46, Trap.ts:44) -
+	    on its own team it collides only with entities that share its OWNER, and passes through
+	    the rest. Since a tank never sets an owner at all (RelationsGroup defaults it to null,
+	    and only a projectile ever assigns one - `relationsData.values.owner = tank`), a drone
+	    NEVER shares an owner with any tank, including the one that fired it. That single fact is
+	    what makes drones pass through their own tank while still jostling their sibling drones.
+	  * a trap holds onlySameOwnerCollision for its arming window and then SWAPS to
+	    noOwnTeamCollision (Trap.ts:59-62) - so a fresh trap is shoved around by its own siblings
+	    while the cluster spreads, and once settled it stops interacting with the team entirely.
+
+	TEAM IDENTITY AND OWNER IDENTITY ARE TWO DIFFERENT QUESTIONS and conflating them is the one
+	way to get this wrong, so they are two functions:
+
+	  * teamRoot() answers "same team". Deliberately not gated on rules.teamPlay: diep has no
+	    team-less mode - a free-for-all player is their own one-man team - so this is `team` where
+	    the mode has teams and the tank's own lineage where it does not, and the flags then read
+	    identically in both. That is what lets a Sandbox/ffa player sit inside their own trap field
+	    the way a 2team player can.
+	  * ownerOf() answers diep's `relationsData.owner`, which is NULL for a tank and the firing
+	    tank for a projectile. Feeding a tank its own id here instead would make a drone share an
+	    owner with the tank that fired it - the exact opposite of the rule - and the drone would
+	    bounce off its owner while passing through every other team mate.
+*/
+const NO_OWN_TEAM_TYPES = new Set([0, 3, 4]);          // bullet, swarm, skimmer
+const SAME_OWNER_TYPES = new Set([1, 1.5, 2]);         // drone, minion, trap (trap: while arming)
+function teamRoot(e, kind) {
+	return kind === KIND.BULLET ? e.origin.oId : (kind === KIND.PLAYER ? e.id.oId : null);
+}
+function ownerOf(e, kind) {
+	return kind === KIND.BULLET ? e.origin.oId : null;
+}
+// Which of the two flags this side carries, or 0 for none (a tank, a shape, a wall, a base drone -
+// base drones run the separate whole-pair skip in the collision loop, which is strictly stronger).
+function teamCollisionFlag(e, kind) {
+	if (kind !== KIND.BULLET) { return 0; }
+	if (e.type === 2) { return e.armTicks > 0 ? 2 : 1; }
+	if (NO_OWN_TEAM_TYPES.has(e.type)) { return 1; }
+	if (SAME_OWNER_TYPES.has(e.type)) { return 2; }
+	return 0;
+}
+// True when diep would not resolve this pair at all - no damage, no knockback, no separation.
+function teamPassThrough(room, a, aKind, b, bKind) {
+	// Shapes and walls are the arena's, never anybody's team mate.
+	if (aKind === KIND.OBJECTS || bKind === KIND.OBJECTS ||
+		aKind === KIND.WALL || bKind === KIND.WALL) { return false; }
+	const sameTeam = room.rules.teamPlay
+		? a.team === b.team
+		: teamRoot(a, aKind) === teamRoot(b, bKind);
+	if (!sameTeam) { return false; }
+	const fa = teamCollisionFlag(a, aKind), fb = teamCollisionFlag(b, bKind);
+	if (fa === 1 || fb === 1) { return true; }
+	if (fa === 2 || fb === 2) { return ownerOf(a, aKind) !== ownerOf(b, bKind); }
+	return false;
+}
+
 // Caller-owned scratch array for the collision pass's quadTree.queryCircle() calls - reused and
 // cleared (length = 0) before every query rather than allocated fresh, since
 // this runs once per live entity per tick. Module-scope, not per-Room: every room's step() runs on
@@ -317,6 +382,17 @@ const DEFAULT_RULES = {
 	// legacy balance figure from before this fidelity pass had a real number to check it against.
 	bossHp: 3000,
 	bossTeam: 9,      // bosses are on nobody's side; 9 is the 'necro' colour
+	/*
+		THE ARENA'S OWN TEAM - what diep calls `game.arena`, and what an Arena Closer and an
+		UNCAPTURED Dominator are both on (ArenaCloser.ts:47 and Dominator.ts:69 set the identical
+		`relationsData.values.team = arena`, and both take `Color.Neutral`). Sharing one team is
+		the whole mechanism behind "a Closer ignores a neutral Dominator but hunts a captured one":
+		capture rewrites the Dominator's team to the capturing side (lib/gameAI.js's
+		dominatorUpdate()), which is the moment it stops being a team mate and becomes a target.
+		Distinct from bossTeam above, which stays 9 - a boss is not on the arena's team in diep
+		either, and a Closer skips bosses by its own `.boss` check rather than by team.
+	*/
+	neutralTeam: 2,   // == lib/gameAI.js's DOMINATOR_NEUTRAL_TEAM
 	botCount: 10,
 	botIdStart: 10,     // bots occupy a fixed slot range so respawn can find them
 	teams: [1],    // the team ids this mode assigns. One entry = free-for-all.
@@ -336,6 +412,16 @@ const DEFAULT_RULES = {
 class Room {
 	constructor(id, rules, controller) {
 		this.rules = Object.assign({}, DEFAULT_RULES, rules);
+		// rules.neutralTeam's default (2) is DOMINATOR_NEUTRAL_TEAM, which is the right answer for
+		// every mode that HAS Dominators - but 4team and Tag both hand team 2 to real players, and
+		// an Arena Closer sharing a side with a quarter of the lobby would be worse than the beige
+		// it replaced. Neither of those modes has a Dominator for it to agree with, so falling back
+		// to the boss team (9, which no mode claims) keeps the one invariant that matters: the
+		// arena's own team is nobody's. Derived rather than restated per mode so a new mode that
+		// adds a team 2 cannot silently re-open this.
+		if (this.rules.teams.indexOf(this.rules.neutralTeam) >= 0) {
+			this.rules.neutralTeam = this.rules.bossTeam;
+		}
 		this.controller = controller;
 		const MXLVL = this.rules.maxXp;
 		// diep's own XP curve (Const/Enums.ts:301-304, plan.md P1), not a power curve normalised to
@@ -602,6 +688,25 @@ class Room {
 		}
 	}
 	/*
+		The drone standing at `post`, or undefined.
+
+		`post.slot` is a bare integer id, and INSTANCE.bullets HANDS THAT ID OUT AGAIN once the
+		dead drone's tombstone expires (lib/SlotMap.js: KEEP_PLACE ticks, then freeIndex() is free
+		to reuse it) - so between a drone dying and its post's respawn countdown elapsing, that slot
+		can already belong to somebody else's bullet entirely. Reading it blind gave two failures,
+		both of which need a bullet-dense room to show up at any rate (which is why rooms/Tester.js
+		found them and 2team/4team never did): a live stranger in the slot looked like a healthy
+		drone, so the post kept resetting its countdown and never refilled; and a DEAD stranger in
+		the slot reached tickBaseDrones()'s ledger-release with no `levels` on it and threw.
+
+		So identity is checked, not assumed - spawnBaseDrone() stamps the drone with a
+		back-reference to its own post, and only that exact object counts as this post's drone.
+	*/
+	postDrone(post) {
+		const bull = this.INSTANCE.bullets.get(post.slot);
+		return (bull && bull.post === post) ? bull : undefined;
+	}
+	/*
 		The binomial sorter: compare live occupancy against the live-count
 		target and walk a random number of surplus drones one level each toward the NEAREST deficit,
 		on the gradual arc (Bullet.sortSwitch(), cap-free). Moving one unit of surplus one step
@@ -643,7 +748,7 @@ class Room {
 			const level = i + 1;
 			const pool = [];
 			for (const post of centre.posts) {
-				const drone = this.INSTANCE.bullets.get(post.slot);
+				const drone = this.postDrone(post);
 				if (drone && !drone.destroy && drone.level === level && eligible(drone)) { pool.push(drone); }
 			}
 			if (!pool.length) { continue; }
@@ -669,10 +774,10 @@ class Room {
 		const levels = centre.levels;
 		for (let tries = 0; tries < posts.length; tries++) {
 			levels.scoutIdx = (levels.scoutIdx + 1) % posts.length;
-			const scout = this.INSTANCE.bullets.get(posts[levels.scoutIdx].slot);
+			const scout = this.postDrone(posts[levels.scoutIdx]);
 			if (!scout || scout.destroy) { continue; }
 			for (const post of posts) {
-				const drone = this.INSTANCE.bullets.get(post.slot);
+				const drone = this.postDrone(post);
 				if (drone && !drone.destroy && drone.DETEC && !drone.chasing) {
 					drone.DETEC.enabled = (drone === scout) ? 1 : 0;
 				}
@@ -718,6 +823,9 @@ class Room {
 		bull.team = post.team;
 		bull.ox = post.x;
 		bull.oy = post.y;
+		// The post this drone belongs to, by reference. postDrone() reads it to tell this drone
+		// apart from whatever unrelated bullet inherits its slot id later - see that method.
+		bull.post = post;
 		// Radius is quantised into five shared energy levels - orbRTarget is
 		// the live target radius the type-1.4 orbit field steers toward each tick, and it only
 		// ever moves in whole BASE_DRONE_LEVEL_GAP steps via entities/Bullet.js's levelSwitch(),
@@ -792,14 +900,15 @@ class Room {
 
 		A drone that dies mid-life also has to release its claim on the level ledger exactly once
  - `levelReleased` guards that, and is sound rather than lucky: SlotMap's
-		KEEP_PLACE is 20 ticks, so a destroyed drone is still reachable through post.slot for 20
+		KEEP_PLACE is 20 ticks, so a destroyed drone is still reachable through postDrone() for 20
 		ticks after destroy is set, and this runs on every one of them, so the release can never be
-		missed by the slot being recycled first.
+		missed by the slot being recycled first. It has to be postDrone() and not a bare
+		INSTANCE.bullets.get() for the reason that method's own comment gives.
 	*/
 	tickBaseDrones() {
 		if (!this.dronePosts.length) { return; }
 		for (const post of this.dronePosts) {
-			const drone = this.INSTANCE.bullets.get(post.slot);
+			const drone = this.postDrone(post);
 			if (drone && drone.destroy && !drone.levelReleased) {
 				drone.levels.count[drone.level - 1]--;
 				if (drone.crossing) { drone.levels.crossing--; }
@@ -1396,6 +1505,11 @@ class Room {
 							}
 						}
 					}
+					// diep's same-team physics-flag filter - see teamPassThrough() above. Placed
+					// AFTER the detector block deliberately: detection is a separate question from
+					// physical contact (a detector already does its own team check), and moving this
+					// earlier would change who base drones and Dominators can see.
+					if (teamPassThrough(this, obj, objKind, other, otherKind)) { continue; }
 					// `guardSize` (plan.md T6) is a Player-only field, always >= `.size`, that
 					// widens contact for a Smasher/Landmine/Spike-line tank's spinning guard;
 					// undefined (falls back to `.size`) for every non-Player entity.
@@ -1996,7 +2110,7 @@ class Room {
 		special-case a boss the same way without repeating this switch four times.
 	*/
 	entityColor(player) {
-		return player.boss ? Room.bossColor(player) : 1;
+		return player.boss ? Room.bossColor(player) : (Room.neutralColor(player) ?? 1);
 	}
 	/* Colour of your own tank on your own screen. */
 	mainColor(player) {
@@ -2128,6 +2242,20 @@ Room.ArenaState = { COUNTDOWN: -1, OPEN: 0, OVER: 1, CLOSING: 2, CLOSED: 3 };
 	just falling through to team 9's flat gold). Falls back to player.team for a boss class not
 	in the table (there is none today) rather than crashing.
 */
+/*
+	Color.Neutral (index 14, 'neutral' - 0xFFE869) for the two entities diep puts on the arena's
+	own team: an Arena Closer, always, and a Dominator ONLY while it is uncaptured. Returns null
+	for everything else so a caller can fall through to its own team colouring - which is what
+	makes a captured Dominator go on rendering in its captors' colour without a second check.
+
+	Both used to render in team 9's `necro` beige, which is also why a Closer read as "the same
+	sort of thing as a boss" rather than as arena furniture.
+*/
+Room.neutralColor = function (player) {
+	if (player.closer) { return 14; }
+	if (player.dominator && player.team === 2) { return 14; }   // 2 = rules.neutralTeam
+	return null;
+};
 Room.bossColor = function (player) {
 	switch (player.class) {
 		case 'Guardian': return 10;      // 'bull' - Color.EnemyCrasher
