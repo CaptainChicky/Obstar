@@ -985,7 +985,7 @@ class Player {
 			this.y += this.vec.y;
 			this.destroy -= 1;
 			this.alpha = (this.destroy - 1) / tick.DES;
-			this.size *= tick.drag(1.04869);   // one-time-rescaled from 1.04 (33ms ref)
+			this.size *= tick.drag(1.1);   // diep's own DeletionAnimation.scale(1.1), Object.ts (plan.md C1)
 			this.screen = config.FOV_MUL * 2194;
 			return;
 		} else {

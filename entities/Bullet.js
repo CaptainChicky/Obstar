@@ -789,7 +789,7 @@ class Bullet {
 			this.y += this.vec.y;
 			this.destroy -= 1;
 			this.alpha = (this.destroy) / tick.DES;
-			this.size *= tick.drag(1.03648);   // one-time-rescaled from 1.03 (33ms ref)
+			this.size *= tick.drag(1.1);   // diep's own DeletionAnimation.scale(1.1), Object.ts (plan.md C1)
 			return;
 		}
 		///

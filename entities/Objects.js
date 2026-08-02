@@ -308,7 +308,7 @@ class Objects {
 			this.y += this.vec.y / this.weight;
 			this.destroy -= 1;
 			this.alpha = this.destroy / tick.DES;
-			this.size += tick.perTick(1.21212 + this.size * 0.01212);   // one-time-rescaled from 1 + size*.01
+			this.size *= tick.drag(1.1);   // diep's own DeletionAnimation.scale(1.1), Object.ts (plan.md C1)
 			return;
 		}
 		// A live Crasher target (plan.md S1) - room.js's broad-phase pass already ran this tick, so

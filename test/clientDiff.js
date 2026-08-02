@@ -89,13 +89,11 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// Rebaselined for plan.md Part B/C0 (execution-order step 5): Sprayer rebuilt from a 5-barrel
-// Streamliner fake to diep's real 2-barrel layout (fewer canvas ops), Spread Shot's centre
-// barrel moved to the end of its own draw order (Part B), Battleship's rear pair converted from
-// type-0 fake-flare cannons to real type-2 trapezoids, plus Triple Shot/Penta Shot's angle
-// corrections - none of C0's own damage/pene/speed/back/rand column fixes touch drawing, only
-// these geometry-shaped changes do.
-const GOLDEN = { count: 297158, hash: 'fe719ff9' };
+// Rebaselined for plan.md C1 (execution-order step 6): the death-fade duration moved from 8 to
+// diep's own 6 reference ticks (config.DES), and a bullet already fading (alpha < 1) stops
+// dead-reckoning and falls back to plain interpolation (public/client/entities.js's
+// Bullet.reckonMs()) - both change how many frames a dying bullet is drawn for/how it's sampled.
+const GOLDEN = { count: 282458, hash: '3dc724d1' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

@@ -489,7 +489,12 @@
 			never takes the muzzle path at all.
 		*/
 		reckonMs() {
-			if (this.type >= 1 || this.pet) { return 0; }
+			// plan.md C1 - a bullet already in its death fade (server-side `destroy` countdown,
+			// alpha < 1) is no longer "deterministic between collisions" in the sense this lead
+			// relies on - it is decaying through friction toward a stop, not cruising - and
+			// extrapolating it fights the shrink-to-a-point read the fade is going for. Once the
+			// death state arrives, fall back to plain interpolation like a drone/pet.
+			if (this.type >= 1 || this.pet || this.alpha < 1) { return 0; }
 			const full = Math.min(NET.leadMs(), NET.interval * CONST.DEAD_RECKON_MAX_INTERVALS);
 			return this.mine ? full * this.reckonRamp : full;
 		}
