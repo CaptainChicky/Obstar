@@ -710,15 +710,17 @@
 							// that keeps every class whole. tankS stays the default: only a class
 							// that would otherwise clip (the trapper line, the long snipers) is
 							// scaled down at all, and only by as much as it takes.
-							const fit = Math.min(1 / tankS, (size / 2 - 1) / img.pR);
-							const dw = img.can.width * fit, dh = img.can.height * fit;
-							ctx.drawImage(
-								img.can,
-								size / 2 - dw / 2 - img.pX * fit,
-								size / 2 - dh / 2 - img.pY * fit,
-								dw,
-								dh
-							);
+							if (img && img.can && img.can.width > 0 && img.can.height > 0) {
+								const fit = Math.min(1 / tankS, (size / 2 - 1) / img.pR);
+								const dw = img.can.width * fit, dh = img.can.height * fit;
+								ctx.drawImage(
+									img.can,
+									size / 2 - dw / 2 - img.pX * fit,
+									size / 2 - dh / 2 - img.pY * fit,
+									dw,
+									dh
+								);
+							}
 							ctx.restore();
 							ctx.translate(0, size + lw + 2);
 						}
@@ -961,7 +963,7 @@
 							canDir: []
 						}
 					);
-					if (!img || !img.can) { return can; }
+					if (!img || !img.can || !img.can.width || !img.can.height) { return can; }
 					const nameF = parseInt(20 * R);
 					ctx.font = '700 ' + nameF + 'px Catamaran';
 					const m = ctx.measureText(tank).width;
