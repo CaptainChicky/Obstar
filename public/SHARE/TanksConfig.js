@@ -1580,13 +1580,15 @@
 			// Dominator.ts scales like an ordinary tank (no sizeFactor override), so this converts
 			// on the ordinary 0.7 axis: 80x0.7=56, 35x0.7=24.5 - was a hand-tuned guess before R3
 			// found the real source.
-			// Z-ORDER: dombase (the dark hex) at the bottom, then the barrels, then the body over
-			// the top of them - the ordinary tank order, NOT the `aboveBody: true` these three
-			// used to carry. Every Dominator reference render
-			// (Trapper_dominator_tank_2.webp, Gunner_dominator_tank_2.webp,
-			// Dominator_tank_4.webp) shows the barrels emerging from UNDER the circular body and
-			// clipped by it, with only the hex's points visible behind them. `dompronounced`
-			// (Destroyer/Gunner) genuinely does sit above the body and keeps doing so.
+			// Z-ORDER (B2): dombase (the dark hex) at the bottom, then the grey barrels, then the
+			// cosmetic `dompronounced` trapezoid, then the circular body over the top of all of them
+			// - the ordinary tank order, NOT the `aboveBody: true` these three used to carry. Every
+			// Dominator reference render (Trapper_dominator_tank_2.webp, Gunner_dominator_tank_2.webp,
+			// Dominator_tank_4.webp) shows the WHOLE grey assembly - barrels and trapezoid alike -
+			// emerging from under the circular body and clipped by it, with the circle drawn unbroken
+			// on top and only the hex's points visible behind. `dompronounced` moved under the body
+			// with the barrels (render.js's draw sequence, Drawings.dompronounced); the "sits above
+			// the body" it carried before contradicted these renders.
 			"Destroyer Dominator": {
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
@@ -3252,10 +3254,25 @@
 					speed: 1.904,
 					pene: 25,
 					damage: 3.92,
-					// (width/2)xsizeRatiox(35/150): SummonerSpawnerDefinition's own sizeRatio
-					// (55xsqrt(1/2)/(71.4/2)) is built so this reduces to 55xsqrt(1/2)x(35/150)
-					// (plan.md R2) - was a hand-tuned 20 before R3 found the real source.
-					size: 9.074537,
+					// A boss's bullets take `can.size` verbatim (entities/Player.js's shoot()), so
+					// this is the drone's ABSOLUTE hit radius on the 0.56 axis - the SAME identity
+					// Guardian's spawner uses, which this one had been missing. SummonerSpawnerDefinition
+					// is `(width 71.4 / 2) x sizeRatio (55 x sqrt(1/2) / (71.4/2))` = 55 x sqrt(1/2) =
+					// 38.891 du, x 0.56 = 21.78 - which is exactly a normal Square's radius
+					// (entities/Objects.js's `case "sqr"`), and therefore a Necromancer square drone's
+					// too (a necro drone takes its claimed square's size, Player.js's claimSquare()). So
+					// a Summoner drone drawn through Drawings.bullet[3] (the square sprite its shared
+					// `3.1` steering already selects) is pixel-identical to a Necromancer's beige square.
+					// Was 9.074537 = 38.891 x (35/150), the same doubly-wrong x35/reference scaling
+					// Guardian's own drone carried before R3/B1 re-based it on 0.56 - Summoner's was
+					// simply never re-derived alongside it.
+					size: 21.78,
+					// diep's SummonerSpawnerDefinition hardcodes `color: Color.NecromancerSquare` on the
+					// drone (beige) - distinct from the Summoner's EnemySquare-yellow BODY - so it reads
+					// as a Necromancer square regardless of the boss's own colour. `necro` is colour
+					// index 9 (SocketSchema); rooms/Room.js's bulletColor() applies this drawColor
+					// override (the plain `type === 3` necro-beige rule doesn't fire for a `3.1` drone).
+					drawColor: 9,
 					///
 					// "diep Overlord 0.8 gu, the row every drone class shares" (Overlord's own
 					// non-boss comment, line ~2720) - Summoner's drones take the same universal
@@ -3307,18 +3324,23 @@
 				// exactly. life 1.5x75 ref ticks (finite - diep's own lifeLength here is NOT -1,
 				// unlike Summoner's permanent drones).
 				//
-				// `size` is the DRONE's own radius and is an ABSOLUTE length: a boss's bullets
-				// take `can.size` verbatim (entities/Player.js's shoot()), so it converts on the
-				// 0.56 axis with no reference-relative factor at all - diep's own
-				// `(width 71.4 / 2) x sizeRatio 0.588` = 21 du, x 0.56 = 11.76. It was 5.444444,
-				// i.e. 21 run through the same doubly-wrong x35/135 the barrel was, which drew
-				// Guardian's drones at under half the size of the crashers they are already
-				// (deliberately - Color.EnemyCrasher is Guardian's own colour in diep) the same
-				// pink as.
+				// `size` is the DRONE's own radius and is an ABSOLUTE length: a boss's bullets take
+				// `can.size` verbatim (entities/Player.js's shoot()), so it converts on the 0.56 axis
+				// with no reference-relative factor at all. diep's own GuardianSpawnerDefinition drone
+				// is `(width 71.4 / 2) x sizeRatio 0.588` = 21 du (x 0.56 = 11.76) - slightly smaller
+				// than a small Crasher. B2 sizes it to a small Crasher OUTRIGHT (a deliberate
+				// departure, README's "Departures from diep"): the Guardian's drones ARE Crashers
+				// (Color.EnemyCrasher, the same pink), so making them the small-Crasher size makes them
+				// visually one and the same. Small Crasher `size` is 13.86 (entities/Objects.js's
+				// `case "bull"`, = diep's own 35 x SQRT1_2 x 0.56 hit radius). Drawn through
+				// Drawings.bullet[6] (= Drawings.obj.bull) at that `size`, the drone is pixel-identical
+				// to a small Crasher. `drawType: 6` selects that sprite (see rooms/Room.js's
+				// bulletWireType()); without it the shared `3.1` steering would draw a square
+				// (parseInt(3.1) = 3), Summoner's shape, not this triangle.
 				this.cannons = [{
-					reload: 5.4, offTime: 0, auto: 1, type: 3.1, life: 112.5,
+					reload: 5.4, offTime: 0, auto: 1, type: 3.1, drawType: 6, life: 112.5,
 					offdir: Math.PI, offx: 0, canonLength: 51.851852, rand: 0.174533,
-					speed: 1.904, pene: 25, damage: 3.92, size: 11.76,
+					speed: 1.904, pene: 25, damage: 3.92, size: 13.86,
 					// No diep absorb table for a boss's own drones (same gap plan.md T2's roster
 					// left open) - Overlord's own drone row, the nearest real diep drone-knockback
 					// figure on file.

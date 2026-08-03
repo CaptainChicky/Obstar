@@ -211,11 +211,15 @@
 				//   5. cannons (main barrels; array order = draw order, first = bottom)
 				//   6. postAddon `pronounced` (Ranger)                                  - above the
 				//      barrel, under the body
-				//   7. body
-				//   8. a centered auto turret (Auto Gunner/Trapper/Smasher/Auto Hover), any cannon
-				//      flagged `aboveBody` (the 3 Dominators), and postAddon `dompronounced`
-				//      (Destroyer/Gunner Dominator only, plan.md E2) - `showsAboveParent` stays
-				//      ON for all three, drawn above the body
+				//   7. postAddon `dompronounced` (Destroyer/Gunner Dominator only, plan.md E2) -
+				//      above the barrels, still UNDER the body (B2): every Dominator reference render
+				//      shows the whole grey assembly - barrels AND this trapezoid - emerging from
+				//      under the circular body and clipped by it, the circle drawn unbroken on top.
+				//   8. body
+				//   9. a centered auto turret (Auto Gunner/Trapper/Smasher/Auto Hover) and any cannon
+				//      flagged `aboveBody` - drawn above the body (`showsAboveParent`). The 3
+				//      Dominators no longer carry `aboveBody` (their attacking barrels are in the
+				//      pre-body pass at 5), so this post-body pass is empty for them now.
 				Drawings.guards(ctx, tank, param);
 				for (const i in tank.turrets) {
 					if (tank.turrets[i].ring) {
@@ -230,13 +234,15 @@
 					}
 				};
 				Drawings.pronounced(ctx, tank, param);
+				// A Destroyer/Gunner Dominator's cosmetic trapezoid, UNDER the circular body (B2) -
+				// see Drawings.dompronounced's own note. A no-op for every other class.
+				Drawings.dompronounced(ctx, tank, param);
 				Drawings.body[tank.body.shape](ctx, tank, param);
 				for (let i = 0; i < tank.cannons.length; i++) {
 					if (tank.cannons[i].aboveBody) {
 						Drawings.cannons[tank.cannons[i].type](ctx, tank, param, i);
 					}
 				};
-				Drawings.dompronounced(ctx, tank, param);
 				// for...in, not an indexed loop: `turrets` is an optional field, absent on most
 				// tanks, and for...in over undefined is a no-op where `.length` would throw. The
 				// index is only ever a subscript in the turret draw fn, so its string type is moot.
@@ -278,7 +284,7 @@
 				const type = Drawings.bullet[param.type] ? param.type : 0;
 				if (param.alpha < 1) {
 					switch (type) {
-						case 0: case 1: case 2: case 3: case 4: case 5: {
+						case 0: case 1: case 2: case 3: case 4: case 5: case 6: {
 							break;
 						}
 						default: {

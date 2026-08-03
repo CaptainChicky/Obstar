@@ -176,8 +176,15 @@ const towardInstant = (p) => p + RESPAWN_CATCHUP * (1 - p);
 // 1 (an ordinary drone triangle). Give it its own integer draw-id here, at the
 // encode site, rather than widening the codec for one fractional value.
 const MINION_WIRE_TYPE = 5;
-function bulletWireType(type) {
-	return type === 1.5 ? MINION_WIRE_TYPE : parseInt(type);
+function bulletWireType(bullet) {
+	// A per-cannon draw-shape override (entities/Player.js's shoot(), diep's own per-barrel
+	// bullet shape) wins outright: a Guardian's `type: 3.1` drone sets drawType 6 so it draws as
+	// a small Crasher (Drawings.bullet[6]) rather than the square parseInt(3.1) would give - a
+	// Summoner's own 3.1 drone has no override and stays a square (3), the sprite a Necromancer
+	// drone uses. Everything else is the ordinary type->shape map: 1.5 (Minion) can't survive
+	// parseInt (it collides with type 1), so it takes its own reserved wire id.
+	if (bullet.drawType !== undefined) { return bullet.drawType; }
+	return bullet.type === 1.5 ? MINION_WIRE_TYPE : parseInt(bullet.type);
 }
 
 // generate() is a simulation event, so it rides the simulation clock: one pass every this many fixed steps. These divide by the
@@ -2051,7 +2058,7 @@ class Room {
 							construc: 'Bullets',
 							id: obj.id.oId,
 							states: [!!obj.pet * 1, 0, 0, 0, 0, 0, 0],
-							type: bulletWireType(obj.type),
+							type: bulletWireType(obj),
 							x: obj.x,
 							y: obj.y,
 							size: obj.size,
@@ -2099,7 +2106,7 @@ class Room {
 							construc: 'Bullets',
 							id: obj.id.oId,
 							states: [!!obj.pet * 1, 1, 0, 0, 0, 0, 0],
-							type: bulletWireType(obj.type),
+							type: bulletWireType(obj),
 							x: obj.x,
 							y: obj.y,
 							size: obj.size,
@@ -2146,10 +2153,18 @@ class Room {
 		// mode - "though it otherwise duplicates the one of the player's team (in all non-FFA
 		// modes)". This used to read `9` (the necro colour) unconditionally, so a TDM necromancer's
 		// drones never picked up their team's colour at all (issues.md).
+		//
+		// A per-cannon draw-colour override (entities/Player.js's shoot()) wins outright: a Summoner
+		// spawner drone sets drawColor 9 so it reads Necromancer beige (diep's SummonerSpawnerDefinition
+		// hardcodes `color: Color.NecromancerSquare`), unlike the Summoner's own EnemySquare-yellow BODY.
+		// It is unconditional the way a boss body's own colour is (Guardian pink/Fallen grey in every
+		// mode) - a neutral boss is on nobody's team, so its drones never take a team tint.
+		if (bullet.drawColor !== undefined) { return bullet.drawColor; }
 		if (bullet.type === 3 && !this.rules.teamPlay) { return 9; }
 		return bullet.color ? bullet.color - 1 : bullet.team;
 	}
 	ownBulletColor(bullet, main) {
+		if (bullet.drawColor !== undefined) { return bullet.drawColor; }
 		if (bullet.type === 3 && !this.rules.teamPlay) { return 9; }
 		return main.dev.color ? main.dev.color - 1 : 0;
 	}

@@ -5451,6 +5451,74 @@ function factoryTests() {
 		deg(droneAt(World.gu(2), 0)) === 180);
 }
 
+/// Boss projectile identity (B2) /////////////////////////////////////////////
+// Guardian and Summoner both spawn `type: 3.1` self-targeting drones (one shared steering case in
+// entities/Bullet.js), but their drones must look nothing alike: a Guardian drone is a small
+// Crasher (pink triangle) and a Summoner drone is a Necromancer square (beige square). The golden
+// (test/clientDiff.js) does NOT exercise either boss in its seeded replay, so these are what pin
+// the two sprites/sizes/colours instead. Fired through the real shoot() path with `boss = 1` (so a
+// boss's bullets take can.size verbatim), then inspected before any update() runs.
+function bossProjectileTests() {
+	console.log('\nboss projectile identity (B2 - Guardian = small Crasher, Summoner = Necromancer square):');
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+
+	function fireDrone(cls) {
+		const room = makeRoom('ffa');
+		const p = player(room, 0);
+		p.class = cls;
+		p.boss = 1;                              // boss bullets take can.size verbatim (shoot())
+		p.size = CLASS[cls].bossSize || 64;
+		p.droneCount = 0;
+		p.shootTimer = new Array(CLASS[cls].cannons.length).fill(0);
+		p.shield = 0;
+		p.inputs.e = 0; p.inputs.mouseL = 0;     // boss spawners are can.auto, no input needed
+		let d = null;
+		for (let i = 0; i < 60 && !d; i++) {
+			p.shoot();
+			for (const b of room.INSTANCE.bullets.live()) {
+				if (b.type === 3.1) { d = b; break; }   // sole player here, so the only 3.1 drones are its own
+			}
+		}
+		return { room, d };
+	}
+
+	// Guardian: drawType 6 -> Drawings.bullet[6] (= Drawings.obj.bull), the small-Crasher sprite,
+	// at size 13.86 (entities/Objects.js's "bull"), in its own boss colour bull/Color.EnemyCrasher
+	// (10). Without the override its shared 3.1 would draw a square (parseInt(3.1) = 3).
+	const g = fireDrone('Guardian');
+	check('a Guardian fires a 3.1 spawner drone', !!g.d && g.d.type === 3.1, g.d && g.d.type);
+	check('...drawn as a Crasher (drawType 6, not the 3.1->square default)',
+		!!g.d && g.d.drawType === 6, g.d && g.d.drawType);
+	check('...at the small-Crasher size 13.86',
+		!!g.d && g.d.size === 13.86, g.d && g.d.size);
+	check('...in Crasher pink (bulletColor 10 = bull/Color.EnemyCrasher)',
+		!!g.d && g.room.bulletColor(g.d) === 10, g.d && g.room.bulletColor(g.d));
+
+	// Summoner: NO drawType (its 3.1 already maps to the square, Drawings.bullet[3], a Necromancer
+	// drone's own sprite), at size 21.78 (a normal/necro square, entities/Objects.js's "sqr"), in
+	// Necromancer beige via drawColor 9 - distinct from the Summoner body's EnemySquare yellow.
+	const s = fireDrone('Summoner');
+	check('a Summoner fires a 3.1 spawner drone', !!s.d && s.d.type === 3.1, s.d && s.d.type);
+	check('...kept a square (no drawType override, parseInt(3.1) = 3 -> Drawings.bullet[3])',
+		!!s.d && s.d.drawType === undefined, s.d && s.d.drawType);
+	check('...at the normal/necro square size 21.78',
+		!!s.d && s.d.size === 21.78, s.d && s.d.size);
+	check('...in Necromancer beige (drawColor 9 = necro), not the body\'s EnemySquare yellow',
+		!!s.d && s.d.drawColor === 9 && s.room.bulletColor(s.d) === 9,
+		s.d && (s.d.drawColor + '/' + s.room.bulletColor(s.d)));
+
+	// Arena Closer + Fallen Booster: every bullet is the width of the barrel that fired it (B2).
+	// diep gives both classes' barrels width 42 / sizeRatio 1, so bullet diameter = width; on this
+	// tree's 0.7 axis that is radius (42 / 2) x sizeRatio 1 x 0.7 = 14.7, against a drawn barrel
+	// width 42 x 0.7 = 29.4 = 2 x 14.7. The 14.7 is anchored to diep's own 42, not back-derived
+	// from the client width, so this catches a drift in either against that fixed figure.
+	for (const cls of ['Arena Closer', 'Fallen Booster']) {
+		const off = CLASS[cls].cannons.filter((c) => c.size !== 14.7);
+		check(cls + ' fires bullets sized to the barrel width (radius 14.7 = width 29.4 / 2)',
+			off.length === 0, off.map((c) => c.size).join(','));
+	}
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -5467,6 +5535,7 @@ rosterSweepTests();
 necromancerTests();
 droneBatchTests();
 factoryTests();
+bossProjectileTests();
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);

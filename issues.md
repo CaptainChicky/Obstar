@@ -37,3 +37,7 @@ additional issues are present:
 - player spawning inside a maze wall - fixed in rooms/Maze.js (spawnPoint override rejects wall rects) and pinned by a test in test/rooms.js. (The SEPARATE "minor visual wall overlap" item above is wall-vs-wall in the generator and is still open.)
 - factory drone AI, the left/right-click half only (line 31) - Minions (Factory's drones) used to share the same "fly straight at/away from the cursor" steering every other drone gets; now a three-zone attract/orbit (left-click) and repel/spiral/cluster (right-click) field, using diep_wiki's own measured squares cross-checked against Minion.ts's FOCUS_RADIUS. The geometry half of that same line (square body, trapezoid spawner, drone/barrel sizes) is untouched - Batch B territory.
 - base drone overshoot (line 26) - deliberately NOT touched. The chase speed/turn constants are diep-derived (756 u/s flat, a turn radius pinned to one tank diameter), not ad-hoc tuning, and this line is itself phrased as a question ("should this be fixed... idk"). Retuning either without a browser session risks trading a real diep number for a guess - see PENDING.md's "Needs a real browser session" #6 and this pass's own note under "Settled by the fourth issues.md pass".
+
+- defender is still royally fucked lmao
+- boss behavior needs fine tuning i guess
+- skimmer secondary bullets still not drawn below the main bullet. theyre spawning visible on top of the main

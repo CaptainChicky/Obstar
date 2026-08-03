@@ -535,6 +535,15 @@ class Player {
 					const Bull = new Bullet(this.id, x, y, dir + Math.random() * can.rand - can.rand / 2, speed, muzzleKick, this.room);
 					Bull.type = (can.type ? can.type : 0);
 					Bull.class = this.class;
+					// Optional per-cannon draw overrides, decoupling a bullet's SPRITE/COLOUR from its
+					// behaviour `type` - diep's own barrels carry a per-bullet `sides`/`color` the same
+					// way. Guardian and Summoner both spawn `type: 3.1` self-targeting drones (one shared
+					// steering case in entities/Bullet.js), but their drones look nothing alike: a
+					// Guardian drone is a small Crasher (drawType 6, a pink triangle) and a Summoner drone
+					// is a beige Necromancer square (drawColor 9). undefined for every ordinary cannon, so
+					// rooms/Room.js's bulletWireType()/bulletColor() fall back to the type/team derivation.
+					Bull.drawType = can.drawType;
+					Bull.drawColor = can.drawColor;
 					Bull.pene = this.up.BPene * can.pene;
 					// A Skimmer (type 4)/Minion (type 1.5)'s own sub-projectiles, baked at THIS
 					// spawn from the owner's current stats (plan.md B3) - the same "read once at

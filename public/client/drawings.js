@@ -161,13 +161,17 @@
 			ctx.stroke();
 			ctx.restore();
 		},
-		// The thing above Destroyer + Gunner Dominator's barrel (plan.md E2, diepcustom
+		// The cosmetic trapezoid on Destroyer + Gunner Dominator's barrel (plan.md E2, diepcustom
 		// Addons.ts's PronouncedDomAddon - postAddon `dompronounced`, `sizeRatio 22/50`,
 		// `widthRatio 35/50`, `offsetRatio 50/50` of the Dominator's OWN live body radius,
-		// `angle PI`). Same shape family as `pronounced` above (wide end nearest the hull,
-		// narrow end poking out) but drawn in the Dominator's own post-body pass (A1/E2: dombase
-		// -> body -> barrel + dompronounced on top) instead of pre-body like Ranger's - render.js
-		// calls this alongside the `aboveBody` cannon loop, not through Drawings.pronounced.
+		// `angle PI`). Same shape family as `pronounced` above (wide end nearest the hull, narrow
+		// end poking out). Z-order (B2): drawn UNDER the circular body, above the barrels - the
+		// dombase -> barrels -> trapezoid -> body order, NOT the "on top of the body" this addon
+		// carried before. Every Dominator reference render (Dominator_tank_4.webp,
+		// Gunner_dominator_tank_2.webp) shows the grey trapezoid clipped by the body's edge with
+		// the circle drawn unbroken over it - only its outer tip past the body radius is visible.
+		// render.js calls it right before Drawings.body, kept a separate hook (not folded into
+		// Drawings.pronounced) because only these two classes carry it.
 		dompronounced: (ctx, config, param) => {
 			if (!config.dompronounced) { return; }
 			const size = param.size;
@@ -585,7 +589,17 @@
 				ctx.fillStyle = Palette[param.color][0];
 				ctx.fill();
 				ctx.closePath();
-			}
+			},
+			// type 6 = a Guardian spawner drone (rooms/Room.js's bulletWireType() maps its own
+			// `3.1` here via the cannon's drawType override). diep gives GuardianSpawnerDefinition
+			// no `sides`, so its drones ARE ordinary Crashers - not the forward-pointing arrowhead
+			// Drawings.bullet[1] draws for a normal drone. This reuses Drawings.obj.bull verbatim
+			// (the Crasher/Triangle sprite) so a Guardian drone of `size` s is pixel-identical to a
+			// small Crasher of the same s: same equilateral triangle, same `size -> size x SQRT2`
+			// drawn circumradius, in the same pink (Palette entry from bulletColor()'s Color.
+			// EnemyCrasher). `param.dir` is the drone's showDir (its velocity heading), the same
+			// field a Crasher points along.
+			(ctx, param) => Drawings.obj.bull(ctx, Palette[param.color], param.size, param.dir)
 		],
 		// plan.md C3: every shape's drawn circumradius in diep is its own physics/hit radius x
 		// Math.SQRT2 - diepcustom's {Square,Triangle,Pentagon,Crasher}.ts all set

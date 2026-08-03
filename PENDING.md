@@ -55,6 +55,12 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   the bit; needs eyes on it.
 - Sandbox self-levelling, the smasher panels, the class-picker slide-in, and every plan.md
   silhouette fix — one eyeball pass against the six reference webp files at the end.
+- **B2 render, against the reference webp files:** a Guardian's drones should read as small pink
+  Crashers (identical to a wild small Crasher), a Summoner's as beige Necromancer squares, and a
+  Destroyer/Gunner Dominator's grey barrels AND cosmetic trapezoid should both sit under the
+  unbroken gold body circle, over the black hex (`Dominator_tank_4.webp`/`Gunner_dominator_tank_2.webp`).
+  All three verified in the in-Node client harness (pixel-identical crasher, correct square size,
+  trapezoid-before-body draw order) but not yet with human eyes.
 
 ## Live stand-ins (ours, flagged — don't present as diep numbers)
 
@@ -233,6 +239,48 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   the wiki's "aim outward while clustering" nuance in the star formation isn't separately modelled -
   the drones cluster together but don't specifically face outward while doing it.
 
+## Settled by the B2 pass (boss projectiles + Dominator z-order, kept only for the nuance)
+
+- **Guardian drone is now a small Crasher, drawn through a new `Drawings.bullet[6]`.** It shares
+  the `type: 3.1` self-targeting steering with the Summoner drone but must not share its square
+  sprite, so the Guardian cannon carries a `drawType: 6` override (plumbed through
+  `entities/Player.js` `shoot()` -> `rooms/Room.js` `bulletWireType()`). `bullet[6]` reuses
+  `Drawings.obj.bull` verbatim, so a Guardian drone is pixel-identical to a small Crasher shape.
+  **Departure (README):** its `size` is the small-Crasher 13.86, by user request, not diep's own
+  GuardianSpawnerDefinition 21 du (11.76) - the drones already ARE Color.EnemyCrasher pink, so
+  matching the small-Crasher size makes them visually one and the same. Pinned in `test/rooms.js`'s
+  `bossProjectileTests()`.
+- **Summoner drone is now the Necromancer beige square at the right size.** No draw-shape override
+  (its `3.1` already maps to `Drawings.bullet[3]`, the square a real Necromancer drone uses); a
+  `drawColor: 9` override (`bulletColor()`) gives it Color.NecromancerSquare beige, distinct from
+  the Summoner body's EnemySquare yellow. Its `size` was corrected 9.074537 -> 21.78: NOT a
+  departure - 21.78 is `55*sqrt(1/2)*0.56`, exactly diep's own SummonerSpawnerDefinition drone AND
+  a normal/necro square. The old value was a B1 leftover still on the doubly-wrong `*35/150`
+  scaling that Guardian's drone had already been re-based off. Pinned in `bossProjectileTests()`.
+- **Destroyer/Gunner Dominator cosmetic trapezoid now draws UNDER the circular body.** Moved in
+  `render.js`'s draw sequence to just before `Drawings.body` (order: hex -> barrels -> trapezoid ->
+  body). **Departure (README):** diepcustom's Addons.ts draws PronouncedDomAddon post-body, but
+  every Dominator reference render (`Dominator_tank_4.webp`, `Gunner_dominator_tank_2.webp`) shows
+  the whole grey assembly clipped by the body with the circle drawn unbroken on top, so this
+  follows the images over the strict scene-graph order. The attacking barrels were already
+  under-body (they no longer carry `aboveBody`). Verified by a draw-order trace through the
+  in-Node client harness; still wants the browser eyeball below.
+- **Auto 3 / Auto 5 turrets were already correct - no change.** They mount on the ring at
+  `distance 28` (0.8 * body radius) and both the barrel and base circle draw in `render.js`'s
+  PRE-body pass (`showsAboveParent` XOR'd off for a ring turret), so the body sits on top and the
+  turrets ride the grey ring without overlapping it. Matches `Auto_3.webp`.
+- **Arena Closer + Fallen Booster bullets = barrel width was already satisfied - no change.** Every
+  barrel is width 42 / sizeRatio 1 in diep (bullet diameter = width); on the 0.7 axis that is
+  bullet radius 14.7 against a drawn barrel width 29.4 = 2 * 14.7. Now pinned in
+  `bossProjectileTests()` against diep's own 42 (not back-derived from the client width).
+- **The clientDiff golden did NOT move in B2 and is still stale from B1.** B1's rendering changes
+  moved it from the recorded `281738/3e2fc0d8` to `314622/d032c652` and were never rebaselined
+  (per the user: "don't bother - B1 changes golden"). B2 was verified to add ZERO further movement
+  (identical `314622/d032c652` before and after) because the seeded ffa/2team/4team/boss replay
+  draws no Guardian, Summoner, or Dominator - which is exactly why B2's rendering is guarded by
+  `bossProjectileTests()` instead. So `npm test` still fails at clientDiff on the B1 delta; that
+  rebaseline is a B1 follow-up, out of B2 scope.
+
 ## Still open from issues.md (second batch)
 
 Not started, in rough descending order of how visible each is. Each is a real, specific job, not a
@@ -247,6 +295,10 @@ research question - the source for every one of them is cited here so nobody has
   (`AutoTurret.ts`: size 55, width 42*0.7, recoil 0.3, bullet sizeRatio 1). The user supplied
   measured proportions for all five bosses in issues.md - cross-check against those, they are the
   acceptance test. `Defender_boss_3.webp` at the repo root is the reference render.
+- **Auto-turret aim/movement should match Auto Smasher's** (user, for later). The auto-turret
+  barrels (Defender's three, and any centered/ring auto-turret) should track and swing the way
+  Auto Smasher's single turret does - a movement/animation parity call, distinct from the Defender
+  *draw* fixes above (turrets on top of the body, bullet-size = turret). Not touched in B2.
 - **Factory geometry**: square body (`sides: 4`), trapezoid spawner, `MinionBarrelDefinition` size
   85 / width 50.4, drone `size *= 1.2`. (The AI half - `ai.viewRange = 900`, `FOCUS_RADIUS = 800**2`
   circle-and-attack, the right-click cluster - is done, see "Settled by the fourth issues.md pass"
@@ -254,12 +306,6 @@ research question - the source for every one of them is cited here so nobody has
 - **Skimmer** (`Skimmer.ts`): `SkimmerBarrelDefinition` size 70 / width 42, two opposed sub-barrels,
   drawn BELOW the main bullet. `skimmerandbullet.png` at the repo root is the reference, with
   measured proportions in issues.md.
-- **Guardian drones** should be visually indistinguishable from a small Crasher - same triangle,
-  same `bull`/Color.EnemyCrasher pink, `sizeRatio 21 / (71.4/2)` off a 71.4-wide barrel.
-- **Auto 3 / Auto 5 turrets** must not overlap the body and are constrained to their grey ring.
-- **Dominator**: the cosmetic trapezoid barrel wants the same z-order the attacking barrels got
-  (under the circular body, over the black hexagon). (Trap destructibility - the other half of this
-  entry - is done, see "Settled by the fourth issues.md pass" below.)
 - **Maze**: choose the player spawn area AFTER the walls are generated so a spawn inside a wall is
   impossible, and remove the remaining minor wall-on-wall visual overlap.
 - **Base drones overshoot** a target they cannot kill quickly, circling too fast - left alone this
