@@ -6,7 +6,13 @@ body {
 }
 
 #centered-main-box {
-	animation: entering 1s ease-out;
+	/* Entrance animation is gated behind .ready (added by queue.js once the gamemode list has
+	   been clamped) rather than played automatically. The list is JS-clamped from all 11 rows
+	   down to whatever fits the right column (~4); doing that WHILE this absolutely-centred box
+	   was mid-slide reflowed its height and re-centred it, so it started tall enough to overflow
+	   the top of the screen, slid, then snapped down to the middle when the clamp landed. Hidden
+	   until .ready so no unsettled frame is ever visible. */
+	opacity: 0;
 	position: absolute;
 	display: inline-block;
 	width: auto;
@@ -14,6 +20,11 @@ body {
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
+}
+
+#centered-main-box.ready {
+	opacity: 1;
+	animation: entering 1s ease-out;
 }
 
 @keyframes entering {

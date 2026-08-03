@@ -177,3 +177,21 @@ window.onload = function () {
 	window.addEventListener('resize', syncGamemodeListHeight);
 	requestAnimationFrame(loop);
 };
+
+/*
+	Runs now, at parse time - this script is at the end of <body>, so the whole menu is already
+	in the DOM, but window.onload (fonts/images) has not fired and the box's entrance animation
+	is still gated. Clamp the gamemode list to its final ~4-row height FIRST, then add `.ready`
+	to play the slide-in over an already-settled layout. Without this the box entered while the
+	list still showed all 11 modes: it was tall enough to overflow the top of the screen, slid
+	down, then snapped to the middle the moment window.onload's clamp reflowed it (worse on a
+	short/rectangular window, where the unclamped list overflows further). window.onload's own
+	syncGamemodeListHeight() call still runs afterwards to refine for the account chip's real
+	height - but that lands long after the animation and moves nothing visibly.
+*/
+(function revealMenu() {
+	const box = document.getElementById('centered-main-box');
+	if (!box) { return; }
+	syncGamemodeListHeight();
+	box.classList.add('ready');
+})();
