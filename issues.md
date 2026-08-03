@@ -1,43 +1,28 @@
 additional issues are present:
 - intro options screen tries to slide down, fails, then snaps into position? this wasnt here previously
 - when you take control of a dominator or mothership, your FOV/identity physically transfers to the dominator, and your old tank will die. currently your fov/id still stays the old tank and you simply control both dominator and your old tank. your old tank still dies, so you quickly die/get brought to the death screen too. instead whats supposed to happen is youre supposed to be transferred over to the dominator as your FOV or mothership as your OFV and control it, your old tank is dead but you dont die because you are now the dominator/mothership and your fov is that boss tank. (you shouldnt be brought ot the death screen when your old tank dies)
-- battleship drones should not have knockback and interact with anything on its own team
 - there seems to be some minor visual overlap possible with the maze walls. make even this minor visual overlap impossble
-- auto3/5's turrets cannot overlap with the main circular body, and they can only move along the grey circle theyre on. currently it regressed from being unable to overlap to overlappable
-- dominator's attacking barrels are under the body, but the cosmetic trapezoid barrel should also be drawn under the circular body. the grey barrels no matter useful or cosmetic are above the black hexagon and below the circular body. curre
-- traps and drones should go right through their own teammate's tanks
-- trapper dominator's traps should not be immortal? neither should destroyer dominator either like with enough damage they should dissapear like normal traps (assuming they are, if they arent and just have massive health then nvm)
-- overseer and overlord should try to spawn drones symmetrically at a time until impossible, like overlord should spawn 4 at a time until the very last batch, overseer is 2 at a time, etc.
+
 - arena closer bullets should be the size of its barrel, not small af like rn
 - same with fallen booster, its bullets should be the size of its barrels
-- summoner's body is royally fucked and drawn 45 degrees from where it should be. same issue as guardian youre conflating different sizes. 
-- OVERSEER GEOMETRY (was the sniper->overseer crash): the crash is fixed (drawImage on a 0-size canvas is now guarded), but overseer's sprite still bakes to a 0x0 canvas, so its upgrade-preview tile renders BLANK. Same size-conflation family as summoner/guardian below - fix as part of the boss-geometry pass (floor the sprite canvas at the body size, then correct overseer's config bounds).
-- defender is completely fucked, as it is a bit too large, the trapper barrels have a "stub" that is wayyy too long, and the 3 autoturrets need to be drawn ON TOP of the body, and scaled properly so that the size of the bullets they fire are the same size as the turret.
-- necromancer's barrels should stick out more, and necromancer drones are compeltely broken they dont spawn. the drones should come from squares that the necromancer kills, and the necromancer's drones should be the beige color when not in a gamemode with teams for all necromancers, and in tdm it would be the color of their team.
-- the guardian's projectiles should simply be visually indistinguishable from the small crasher, it shouldbe triangle and look exactly like the small crasher 
-- summoner's projectiles should be indistinguishable from a necromancer's beige projectile
-- i'll list out some proportions ive measured, so just cross check and make sure stuff is correct:
-- if a level 45 pentashot tank's diameter is 70px, then the guardian's equilaterial triangle body has a side length 105px. 
-- if a level 45 autogunner tank's diameter is 85px, then the summoner's square side length is 112px. the summoner's barrels are 11px distance from the main body so it looks like the small stub, and the summoner's drones are summoned from those barrels visually so lie should be coming out of them, instead of a distance away from them
-- if a level 45 booster tank's diameter is 37px, the fallen booster's body has diameter of 42px (and its bullets again are the size of its barrel)
-- if a level 45 booster has diameter of 70px, then the fallen overlord has diameter 92px, and its drones have side length 24px. 
-- the defender (i also added a webp image of it at root), if a level 45 hybrid tank has diameter 33px, tehn the defender's equilaterial triangle body has side length 52px. the traps/autoturret config is in the webp image. it is currently way too large. its traps have "side length" 14px (the trap side length is the shortest distance between the triangular vertices, going outside of the trap itself since the trap is concave)
+
 - you should read the diep wiki's pages on these bosses and the features/things noted there should basically be ported over
-- base drones when presented with an enemy they cant kill quickly will chase/circle around them very fast the mvoe too fast and overshoot or something bruh this is dubiosu behavior? should this be fixed or base drones slowed down? idk
-- mothership should be able to overlap with its own drones (and in general traps/drones of the team shoudlnt touch/have knockback on other tanks of the team)
-- traps however for a short amoutn of time can be influenced by traps/pushed around by traps shot out by the same tank it originated. after that time, it is still and can overlap other traps fine.
-- knockback currently seems quite large? is this an issue? like everything feels so bouncy in a sense
-- skimmer's inner trapezoid barrel is way too thin. i've added a skimmer and bullet image (png) into root, which shows the skimmer on the left and bullet on the right. if the skimmer diameter is 328px, the outer barrel is 233px wide, and the inner trapezoid (which is covered by the outer barrel, and wide side outwards, with a very shallow angle for a trapezoid aka the small and large sides of the trapezoid are quite similar) has witdh 191px. its bullet has 236px diameter, with the two secondary shooters having width 95px and poke out of the main bullet by 22px. they spawn secondary bullets from the secondary shooters, but these bullets are the width of the secondary barrel, and are DRAWN BELOW THE MAIN BULLET.
+
 - factory is even more broken. curretnyl it doesnt even have a tank body. its a square, with a trapezoidal spawner. its drones have diameter 32px if the factory has side length 54px. its drones' barrels poke out around 9px, and 14.5 px width. when you left click on something, the drones dont go to that place like normal triangle drones, but instead go towards, then stops at a distance and starts circling it and attacking with their own turrets. when you right click, outside of a certain distance they repel, but inside a radius of the mouse pointer, they instead cluster together with turrets facing away from the mouse. check diep source imeplemntations for these distances. also read the wiki page on the factory for details.
 - there should be a gamemode switcher on the respawn screen somewhere tbh
-- necromacner in god mode is unable to convert squares into drones. they shoudl be able to.
-
-=== somewhat fixed? ===
-- sniper->overseer crash (drawImage 0-size canvas) - guarded in ui.js. NOTE the blank-tile residual is now tracked under OVERSEER GEOMETRY above.
-- player spawning inside a maze wall - fixed in rooms/Maze.js (spawnPoint override rejects wall rects) and pinned by a test in test/rooms.js. (The SEPARATE "minor visual wall overlap" item above is wall-vs-wall in the generator and is still open.)
-- factory drone AI, the left/right-click half only (line 31) - Minions (Factory's drones) used to share the same "fly straight at/away from the cursor" steering every other drone gets; now a three-zone attract/orbit (left-click) and repel/spiral/cluster (right-click) field, using diep_wiki's own measured squares cross-checked against Minion.ts's FOCUS_RADIUS. The geometry half of that same line (square body, trapezoid spawner, drone/barrel sizes) is untouched - Batch B territory.
-- base drone overshoot (line 26) - deliberately NOT touched. The chase speed/turn constants are diep-derived (756 u/s flat, a turn radius pinned to one tank diameter), not ad-hoc tuning, and this line is itself phrased as a question ("should this be fixed... idk"). Retuning either without a browser session risks trading a real diep number for a guess - see PENDING.md's "Needs a real browser session" #6 and this pass's own note under "Settled by the fourth issues.md pass".
 
 - defender is still royally fucked lmao
-- boss behavior needs fine tuning i guess
 - skimmer secondary bullets still not drawn below the main bullet. theyre spawning visible on top of the main
+- auto3 and auto5's auto turrets can still go inside the tank itself when you are in sandbox
+- guardian doesnt seem to spawn enough drones? also crosscheck summoner, fallenoverlord
+- the summoner's squares are the same color as its main body. The color of it needs to be like the beige orange of a necromancer's bullets
+- booster and ac's bullets shoudl be the width of their scaled up barrels
+- factory is so fucking broken lmao, no sprite on upgrade screen, the actions it can do are fucked etc
+- when you turn into a factory and then kill yourself with "o" in sandbox:
+        Uncaught InvalidStateError: Failed to execute 'drawImage' on 'CanvasRenderingContext2D': The image argument is a canvas element with a width or height of 0.
+            at Object.draw (game.js:350:10)
+            at Draw (game.js:600:9)
+            at Loop (game.js:686:4)
+
+
+- in the future, i need to optimize tank creation, so perhaps instead of having this convoluted system where theres tankconfig and i need to keep server and client in sync, can this be massively simplified to just one source of truth? should i make some easier way to construct a tank or is the tankconfig json style stuff the best/most efficient we can do?

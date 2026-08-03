@@ -89,8 +89,7 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// needs to be rebaselined because necromancer changed barrel lengths btw
-const GOLDEN = { count: 281738, hash: '3e2fc0d8' };
+const GOLDEN = { count: 314622, hash: 'd032c652' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);
