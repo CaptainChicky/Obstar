@@ -124,8 +124,8 @@
 				// hull, so they are point sets like a barrel. Coordinates mirror their own draw
 				// functions in drawings.js with `param.size` at CONST.SIZE.
 				if (config.launcher) {
-					pts.push([0, -0.336 * S], [0, 0.336 * S],
-						[1.852 * S, -0.1344 * S], [1.852 * S, 0.1344 * S]);
+					pts.push([0, -0.497502 * S], [0, 0.497502 * S],
+						[1.852 * S, -0.585296 * S], [1.852 * S, 0.585296 * S]);
 				}
 				if (config.pronounced) {
 					const wide = 0.42 * S * Drawings.TAPER_RATIO;

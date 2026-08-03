@@ -361,8 +361,10 @@ function bossTests() {
 		// Guardian's 37.8 is not 135 du x 0.56 like the rest of this table: GUARDIAN_SIZE is
 		// diep's drawn CIRCUMRADIUS, and Drawings.body[3] draws a triangle at `size / cos(pi/3)`
 		// = 2 x size, so the figure that lands on diep's own 135 du is half of it. See the class
-		// entry's own comment.
-		const sizes = { Guardian: 37.8, Defender: 84, Summoner: 84, 'Fallen Overlord': 58.46, 'Fallen Booster': 58.46 };
+		// entry's own comment.  Defender/Summoner used to fall through to the CIRCUMRADIUS
+		// itself (84 = *_SIZE x 0.56) instead - the same conflation Guardian had already been
+		// fixed for.
+		const sizes = { Guardian: 37.8, Defender: 42, Summoner: 59.39697, 'Fallen Overlord': 58.46, 'Fallen Booster': 58.46 };
 		for (const name of Object.keys(sizes)) {
 			check(name + ' has its own diep-derived bossSize',
 				Math.abs(CLASS[name].bossSize - sizes[name]) < 0.01,

@@ -1404,43 +1404,46 @@
 			},
 			///boss
 			// SummonerSpawnerDefinition (Summoner.ts:29-54, plan.md Part D): size 135, width
-			// 71.4, and Summoner's own sizeFactor override denominates both against its OWN base
-			// size (35/150) rather than the ordinary 35/50 - height 135x35/150=31.5 (equal to the
-			// server's own canonLength, the same "client height === server canonLength" pattern
-			// Guardian's own spawner barrel uses just below), width 71.4x35/150=16.66. Used to be
-			// a flat 44/20 stand-in that undershot the server's THEN-current canonLength (a since-
-			// fixed 50) by enough to need a test/tanks.js whitelist entry - both sides converge on
-			// the real definition now, so that whitelist entry is gone too.
+			// 71.4. The old height/width here (135x35/150=31.5, 71.4x35/150=16.66) divided by
+			// SUMMONER_SIZE (150, a raw du circumradius constant) instead of this class's own
+			// bossSize - the same size-conflation bug Guardian already had fixed once (see its
+			// own entry a few lines down): with bossSize itself ALSO wrong (84, see below), a
+			// 31.5-long barrel finished nowhere near the body's own ~84-unit apothem, i.e.
+			// entirely swallowed - issues.md's "royally fucked". Re-derived the same way as
+			// Guardian: sizeFactor is a constant 1 here too (SUMMONER_SIZE cancels against
+			// itself in Summoner.ts's own `get sizeFactor()`), so a diep length converts on the
+			// plain 0.56 absolute axis and is then read back through THIS class's own bossSize -
+			// `du x 0.56 x 35/bossSize`: 135 -> 44.547727, 71.4 -> 23.560798.
 			Summoner: {
 				cannons: [
 					{
 						type: 0,
-						height: 31.5,
-						width: 16.66,
+						height: 44.547727,
+						width: 23.560798,
 						offx: 0,
 						offdir: 0,
 						open: 28,
 					},
 					{
 						type: 0,
-						height: 31.5,
-						width: 16.66,
+						height: 44.547727,
+						width: 23.560798,
 						offx: 0,
 						offdir: Math.PI / 2,
 						open: 28
 					},
 					{
 						type: 0,
-						height: 31.5,
-						width: 16.66,
+						height: 44.547727,
+						width: 23.560798,
 						offx: 0,
 						offdir: Math.PI,
 						open: 28
 					},
 					{
 						type: 0,
-						height: 31.5,
-						width: 16.66,
+						height: 44.547727,
+						width: 23.560798,
 						offx: 0,
 						offdir: -Math.PI / 2,
 						open: 28
@@ -1448,7 +1451,12 @@
 				],
 				body: {
 					shape: 3,
-					sides: 4   // TankDefinitions.json/Summoner.ts: sides 4 (plan.md R6)
+					sides: 4,   // TankDefinitions.json/Summoner.ts: sides 4 (plan.md R6)
+					// Vertex-forward (this shape's default) puts a CORNER on each of the four
+					// cardinal barrel directions instead of a flat side - issues.md's "drawn 45
+					// degrees from where it should be". -PI/4 re-anchors so an edge sits under
+					// each spawner instead (Drawings.body[3]'s own `body.rot`, drawings.js).
+					rot: -Math.PI / 4
 				}
 			},
 			// The four real diep bosses (plan.md X1). Guardian/Defender draw their real triangle
@@ -1487,15 +1495,22 @@
 				// simplified to extra cannons on the same body, same call plan.md T6 made for
 				// Auto 3/Auto 5's rings). Defender.ts does NOT override sizeFactor (unlike
 				// Summoner/Guardian) - it uses the ordinary size/50, so its barrels convert on the
-				// same 0.7 axis as every non-boss class: trap width 71.4x0.7=49.98, turret width
-				// 29.4x0.7=20.58 (plan.md R2/R3 - both were stand-ins before the real source was found).
+				// same 0.7 axis as every non-boss class: turret width 29.4x0.7=20.58 (plan.md
+				// R2/R3). Trap width is likewise 71.4x0.7=49.98, but trap HEIGHT is tuned below,
+				// not the plain 120x0.7=84 the same axis gives the barrel's raw length - against
+				// the now-correctly-sized body (bossSize 42, see the server entry) that reads as a
+				// launcher longer than the body's own side, "the trapper barrels have a 'stub'
+				// that is wayyy too long" (issues.md); shortened to the length
+				// Defender_boss_3.webp's own launchers show poking out past the body edge.
 				// `distance: 33.6` (plan.md R8) mirrors the server's turret mount radius - without
 				// it here, bullets fired from the server's offset turret spawn 33.6 units out from
-				// where the client draws the barrel at the hull centre.
+				// where the client draws the barrel at the hull centre. The turrets get
+				// `aboveBody` (render.js's post-body pass) so they draw ON the triangle instead of
+				// half-buried under it - issues.md's "need to be drawn ON TOP of the body".
 				cannons: [0, 1, 2].map(i => ({
-					type: 0, height: 84, width: 49.98, offx: 0, offdir: Math.PI * 2 * i / 3 + Math.PI / 3, open: 0, trapLauncher: true
+					type: 0, height: 73.5, width: 49.98, offx: 0, offdir: Math.PI * 2 * i / 3 + Math.PI / 3, open: 0, trapLauncher: true
 				})).concat([0, 1, 2].map(i => ({
-					type: 0, height: 38.5, width: 20.58, offx: 0, offdir: Math.PI * 2 * i / 3, open: 0, distance: 33.6
+					type: 0, height: 38.5, width: 20.58, offx: 0, offdir: Math.PI * 2 * i / 3, open: 0, distance: 33.6, aboveBody: true
 				}))),
 				body: { shape: 3, sides: 3 }   // Defender.ts: sides 3 (plan.md R6)
 			},
@@ -3186,10 +3201,16 @@
 			///Boss
 			"Summoner": new function () {
 				this.screen = 1120;   // diep AbstractBoss's own default viewRange 2000 du x0.56 (plan.md Part D) - was a hand-picked 2400
-				// SUMMONER_SIZE 150 du x0.56 (plan.md Part D, Summoner.ts:56) - was missing
-				// entirely, so rooms/Room.js's createBoss() fell through to a flat, ~24%-undersized
-				// literal 64.
-				this.bossSize = 84;
+				// SUMMONER_SIZE (150 du) is diep's own DRAWN CIRCUMRADIUS, exactly the quantity
+				// Guardian's own bossSize comment (a few hundred lines down) derives GUARDIAN_SIZE
+				// against - Summoner.ts stores `physicsData.size = 150 x sqrt(1/2)` and diep's
+				// client draws the square at `size x sqrt(2)` from that, i.e. back to 150.
+				// Drawings.body[3] instead draws an n-gon from its APOTHEM (`param.size`), and a
+				// square's apothem is its circumradius x cos(pi/4) - so the figure that reproduces
+				// diep's 150 du here is 150 x 0.56 x cos(pi/4) = 59.39697. At a flat 84 (150 du x
+				// 0.56, i.e. the CIRCUMRADIUS mistaken for the apothem) this boss drew sqrt(2) x
+				// too big and swallowed its own barrels whole - issues.md's "royally fucked".
+				this.bossSize = 59.396970;
 				this.cannons = [];
 				this.boss = true;
 				this.maxDrone = 28;   // droneCount 7 x 4 barrels (Summoner.ts, plan.md Part D - was 35)
@@ -3212,11 +3233,18 @@
 					// diepcustom Summoner.ts DOES exist (plan.md R3 - this class is not the
 					// no-diep-source stand-in the comment below once assumed): SummonerSpawnerDefinition
 					// is size 135, and Summoner.ts overrides sizeFactor to
-					// (size/sqrt(1/2))/SUMMONER_SIZE (150) instead of the ordinary size/50, so
-					// canonLength is denominated against its OWN base size - 135 x 35/150 = 31.5,
-					// same as the client `height` this closes the long-standing gap against
-					// (plan.md R2). Not 50 (an engine floor from before the real source was found).
-					canonLength: 31.5,
+					// (size/sqrt(1/2))/SUMMONER_SIZE, which is a constant 1 (SUMMONER_SIZE cancels
+					// against itself, same as GUARDIAN_SIZE does in Guardian's own sizeFactor) - so
+					// a diep length converts on the plain 0.56 absolute axis and is read back
+					// through THIS class's own bossSize (59.396970, see above), same identity
+					// Guardian's spawner uses: `du x 0.56 x 35/bossSize` = 135 -> 44.547727. The
+					// old 135x35/150=31.5 divided by SUMMONER_SIZE (a raw du circumradius) instead
+					// of bossSize - with bossSize ALSO sqrt(2) too big, the barrel finished nowhere
+					// near the body's real apothem, i.e. entirely hidden under it (same failure
+					// mode Guardian's own comment describes before its fix). Client `height` (the
+					// Summoner entry a few hundred lines up) matches, same "client height ===
+					// server canonLength" pattern as everywhere else in this file.
+					canonLength: 44.547727,
 					// scatterRate 1 (the same default every other spawner in this file bakes into
 					// 0.174533 = 0.174533 x scatterRate) - 0.5 was the same pre-R3 stand-in as
 					// reload/speed/pene/damage/life above, not a real SummonerSpawnerDefinition figure.
@@ -3301,10 +3329,18 @@
 				// diepcustom Defender.ts: ai.viewRange = 0 - never chases or aggros, so
 				// lib/gameAI.js's CONFIG.BOSS entry gives it no bossDetect() call at all and this
 				// `screen` is only the (aggro-unused) camera-FOV fallback, diep's own default
-				// fieldFactor 1. bossSize: DEFENDER_SIZE 150 du x0.56 (bossSize is an absolute
-				// length, unaffected by the barrel-reference bug below).
+				// fieldFactor 1. DEFENDER_SIZE (150 du) is diep's own DRAWN CIRCUMRADIUS, the same
+				// quantity GUARDIAN_SIZE is for Guardian a few hundred lines up - Defender.ts
+				// stores `physicsData.size = 150 x sqrt(1/2)` and diep's client draws the triangle
+				// at `size x sqrt(2)` from that, back to 150. Drawings.body[3] instead draws an
+				// n-gon from its APOTHEM (`param.size`), and a triangle's apothem is half its
+				// circumradius (`cos(pi/3) = 0.5`, the same identity Guardian's own comment uses) -
+				// so the figure that reproduces diep's 150 du here is 150 x 0.56 x 0.5 = 42. At a
+				// flat 84 (150 du x 0.56, the CIRCUMRADIUS mistaken for the apothem, same bug as
+				// Summoner/pre-fix Guardian) this boss drew 2x too big - issues.md's "a bit too
+				// large" and, combined with the barrel bug below, "completely fucked".
 				this.screen = BASE_SCREEN;
-				this.bossSize = 84;
+				this.bossSize = 42;
 				this.boss = true;
 				// Three mounted auto-turrets need their own target search (MountedTurretDefinition
 				// is diep's own separate AutoTurret child entity, simplified here to three more
@@ -3318,11 +3354,15 @@
 				// damage 7x4, pene 2x12.5, speed 1.12x5, life 8x75, reload 5x15, back 2gux2.8.
 				// Defender.ts does NOT override sizeFactor (unlike Summoner/Guardian) - canonLength
 				// and size both convert on the ORDINARY 0.7 axis (35/50), same as every non-boss
-				// class: canonLength 120x0.7=84 (unchanged), size (width/2)xsizeRatiox0.7 =
-				// (71.4/2)x0.8x0.7 = 19.992 (plan.md R2/R3 - was on the wrong 0.56 axis before).
+				// class: size (width/2)xsizeRatiox0.7 = (71.4/2)x0.8x0.7 = 19.992 (plan.md R2/R3 -
+				// was on the wrong 0.56 axis before). canonLength is the plain 120x0.7=84 on that
+				// same axis, but against this class's now-correct (halved) bossSize that draws a
+				// launcher longer than the body's own side - shortened to 73.5 to match the
+				// client's own `height` (issues.md's "stub... wayyy too long"; "client height ===
+				// server canonLength" pattern, same as everywhere else in this file).
 				const traps = [0, 1, 2].map(i => ({
 					reload: 75, offTime: 0, auto: 1, type: 2, life: 600,
-					offdir: Math.PI * 2 * i / 3 + Math.PI / 3, offx: 0, canonLength: 84, rand: 0.174533,
+					offdir: Math.PI * 2 * i / 3 + Math.PI / 3, offx: 0, canonLength: 73.5, rand: 0.174533,
 					speed: 5.6, pene: 25, damage: 28, size: 19.992,
 					weight: 4.2, push: 0.45709, back: 2.24
 				}));
@@ -3359,16 +3399,21 @@
 				this.fallen = true;
 				this.maxDrone = 28;   // droneCount 7 x 4 barrels
 				// reload 0.36x15 (an override, not a multiplier on Overlord's own 90). pene
-				// 2x12.5, damage 7x0.56, speed 1.12x1.7, size 14x0.5 (sizeRatio) - all diep
-				// ABSOLUTE overrides, not scaled off Overlord's own bullet stats. FallenOverlord.ts
-				// does NOT override sizeFactor - it scales like an ordinary tank, so canonLength/
-				// size convert on the ordinary 0.7 axis (plan.md R2/R3, was 0.56 before):
-				// Overlord's own barrel.size 70 x 0.7 = 49; size (width 42/2) x sizeRatio 0.5 x
-				// 0.7 = 14.7.
+				// 2x12.5, damage 7x0.56, speed 1.12x1.7 - diep ABSOLUTE overrides, not scaled off
+				// Overlord's own bullet stats. FallenOverlord.ts does NOT override sizeFactor - it
+				// scales like an ordinary tank, so canonLength converts on the ordinary 0.7 axis
+				// (plan.md R2/R3, was 0.56 before): Overlord's own barrel.size 70 x 0.7 = 49.
+				// `size` (a drone, wire type 1 -> Drawings.bullet[1]'s crasher-style triangle,
+				// side length ~3.0434 x param.size) is fit to issues.md's own measured ratio
+				// instead: 24 side against a 70-diameter reference tank at the same screenshot
+				// scale is 0.342857 x that tank's diameter, which on this file's own 28x1.01^level
+				// identity (level 44 = displayed 45) is 9.772003 - the old 14.7 (21x0.7, i.e. this
+				// class's OWN barrel-width identity applied to a drone, not a real diep drone figure)
+				// drew a triangle about 50% larger than that.
 				this.cannons = [0, 1, 2, 3].map(i => ({
 					reload: 5.4, offTime: 0, type: 1, life: -1, auto: 1,
 					offdir: Math.PI * i / 2, offx: 0, canonLength: 49, rand: 0.174533,
-					speed: 1.904, pene: 25, damage: 3.92, size: 14.7,
+					speed: 1.904, pene: 25, damage: 3.92, size: 9.772003,
 					weight: 4.2, push: 0.45709, back: 0.112
 				}));
 			},
@@ -3783,7 +3828,13 @@
 					// (plan.md R1 - C2 had mistakenly dropped both to 0.56, the absolute-length factor).
 					reload: 60, offTime: 0, type: 4, offdir: 0, offx: 0, canonLength: 56, life: 98, rand: 0.174533,
 					speed: 0.56, pene: 6, damage: 7, size: 24.99, weight: 1.05, push: 0.27426, back: 3.36,
-					sub: { reloadRef: 5.25, damage: 4.2, pene: 0.6, speed: 1.232, size: 14.7, life: 18.75, rand: 0.174533, weight: 1.05, push: 0.27426 }
+					// sub.size (radius) matches the secondary nub's own drawn HALF-width
+					// (drawings.js's bullet[4]: half 0.402540 x this cannon's own size 24.99) -
+					// "secondaries fire bullets the width of the secondary barrel" (issues.md).
+					// Was 14.7 (borrowed from SkimmerBarrelDefinition's raw width/2 x 0.7, the
+					// same du-conversion used everywhere else in this file but not what the nub
+					// itself draws at), leaving the fired bullet visibly narrower than its own barrel.
+					sub: { reloadRef: 5.25, damage: 4.2, pene: 0.6, speed: 1.232, size: 10.059534, life: 18.75, rand: 0.174533, weight: 1.05, push: 0.27426 }
 				}];
 			},
 			"Factory": new function () {   // id52

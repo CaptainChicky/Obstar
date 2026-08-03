@@ -102,20 +102,25 @@
 			}
 		},
 		// The thing under Skimmer's barrel (plan.md R4, diepcustom Addons.ts's LauncherAddon
-		// preAddon - `sizeRatio 65.5xsqrt2/50`, `widthRatio 33.6/50` of the tank's OWN body
-		// radius, positioned at half its own length out along the tank's forward axis) - a
+		// preAddon, positioned at half its own length out along the tank's forward axis) - a
 		// small barrel-coloured trapezoid nub, same shape family as drawTrapLauncher above.
 		// Rocketeer is NOT wired to this (its own client entry is an established stand-in with
 		// its own two-barrel geometry, not diep's real id55 Rocketeer this addon belongs to -
-		// PENDING.md).
+		// PENDING.md). WIDTH and taper direction are a deliberate departure from
+		// LauncherAddon's own `widthRatio 33.6/50` (half = 0.336 x param.size, tapering DOWN to
+		// 40% at the tip): skimmerandbullet.png (issues.md's own reference) measures the visible
+		// nub at 191 against the barrel's own 233 at the same body - 82% of the barrel's width,
+		// not diepcustom's ~47%, and "wide side out" - the flare is at the OUTER end, not the
+		// base. Taken as ground truth over the addon source (user's own screenshot of the real
+		// game), same footing as every other batch acceptance figure.
 		launcher: (ctx, config, param) => {
 			if (!config.launcher) { return; }
-			const len = 1.852 * param.size, half = 0.336 * param.size, tipHalf = half * 0.4;
+			const len = 1.852 * param.size, tipHalf = 0.585296 * param.size, baseHalf = tipHalf * 0.85;
 			ctx.save();
 			ctx.rotate(param.dir);
 			ctx.beginPath();
-			ctx.moveTo(0, -half);
-			ctx.lineTo(0, half);
+			ctx.moveTo(0, -baseHalf);
+			ctx.lineTo(0, baseHalf);
 			ctx.lineTo(len, tipHalf);
 			ctx.lineTo(len, -tipHalf);
 			ctx.closePath();
@@ -409,11 +414,18 @@
 			// identity the pentagon above already uses (`1/cos(pi/n)`; n=5 there is exactly this
 			// file's 1.236), generalised. Mothership (16), Guardian/Defender (3) and Summoner (4)
 			// all get their real diep silhouette from this instead of the circle/rounded-rect
-			// stand-in they used to share.
+			// stand-in they used to share. Vertex 0 sits on the facing axis by default, which is
+			// what puts a Guardian/Defender triangle's flat rear EDGE (not a corner) behind its
+			// backward-firing spawner - for n=3 a vertex-forward triangle always has an edge
+			// opposite it. It does NOT hold for even n: a vertex-forward square puts CORNERS on
+			// the four cardinal axes, so Summoner's four barrels (offdir 0/pi/2/pi/-pi/2) sprout
+			// from thin air off each corner instead of from the middle of a side ("drawn 45
+			// degrees from where it should be" - issues.md). `body.rot` (optional, radians) lets
+			// a class re-anchor its own vertex 0 without touching every other n-gon body.
 			(ctx, config, param) => {
 				const n = config.body.sides, size = param.size / Math.cos(Math.PI / n);
 				ctx.save();
-				ctx.rotate(param.dir);
+				ctx.rotate(param.dir + (config.body.rot || 0));
 				ctx.beginPath();
 				for (let i = 0; i < n; i++) {
 					const a = i * Math.PI * 2 / n;
@@ -510,9 +522,14 @@
 				// travel - `param.dir` here is the server's `showDir`, not `dir` - while a pair of
 				// opposed sub-barrels auto-fire along that spin (drawn as plain type-0 bullets of
 				// their own, not part of this sprite). Nubs first, body on top, same order as an
-				// ordinary tank's barrels-then-body.
+				// ordinary tank's barrels-then-body - which is also what keeps them drawn BELOW
+				// the main bullet (issues.md). Width/reach are fit to skimmerandbullet.png's own
+				// bullet-with-nubs reference: 95 wide against a 236-diameter bullet (0.4025 x D,
+				// half 0.402540 x radius), tip poking 22 past the bullet's own edge (0.186441 x
+				// radius past size, so the tip sits at 1.186441 x size) - the old 0.32/0.7 pair
+				// left the nub thinner and its tip exactly AT the bullet's edge, poking 0.
 				ctx.rotate(param.dir);
-				const nubLen = param.size * 0.7, nubHalf = param.size * 0.32;
+				const nubLen = param.size * 0.886441, nubHalf = param.size * 0.402540;
 				for (const flip of [0, Math.PI]) {
 					ctx.save();
 					ctx.rotate(flip);
