@@ -1473,7 +1473,7 @@ function possessionTests() {
 }
 
 /*
-	net/gameSocket.js's exported statSourceOf() is the same `piloting || self` 
+	net/gameSocket.js's exported activeEntityOf() is the same `piloting || self` 
 	rule rooms/Room.js#step() uses for `main`, factored out so the UpdateUp-retargetting logic that 
 	drives it is unit-testable without a live WebSocket
 */
@@ -1483,12 +1483,12 @@ function statSourceTests() {
 	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
 	const room = makeRoom('domination');
 
-	check('no live human -> no source', gameSocket.statSourceOf(null) === null);
+	check('no live human -> no source', gameSocket.activeEntityOf(null) === null);
 
 	const pilot = room.INSTANCE.players.add((id) => new Player(
 		{ GM: room.gm, sId: room.id, oId: id }, 0, 0, 'ordinary', 0, room.XPLVL, room));
 	check('an ordinary (non-piloting) human is its own source',
-		gameSocket.statSourceOf(pilot) === pilot);
+		gameSocket.activeEntityOf(pilot) === pilot);
 
 	const dom = room.dominators[0];
 	dom.hp = 0; dom.destroy = 1; dom.murder = ['players', pilot.id];
@@ -1496,18 +1496,18 @@ function statSourceTests() {
 	pilot.level = 20; 
 	room.togglePossession(pilot);
 	check('possessing a Dominator switches the source to it',
-		gameSocket.statSourceOf(pilot) === dom, gameSocket.statSourceOf(pilot) === dom);
+		gameSocket.activeEntityOf(pilot) === dom, gameSocket.activeEntityOf(pilot) === dom);
 	
 	room.releasePossession(pilot);
 	check('releasing switches the source back to the pilot\'s own body',
-		gameSocket.statSourceOf(pilot) === pilot);
+		gameSocket.activeEntityOf(pilot) === pilot);
 
 	// simulate the gameloop's own tracking: only a real identity CHANGE re-sends UpdateUp
 	{
 		const sent = [];
 		let statSource = null;
 		function tick(human) {
-			const source = gameSocket.statSourceOf(human);
+			const source = gameSocket.activeEntityOf(human);
 			if (source !== statSource) { statSource = source; if (source) { sent.push(source.upNb); } }
 		}
 		tick(pilot); // initial spawn

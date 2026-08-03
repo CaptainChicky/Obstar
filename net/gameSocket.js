@@ -25,10 +25,17 @@ const config = require('../lib/config.js').config;
 const WebSocket = require('ws');
 const PROTO = require('../public/SHARE/SocketSchema.js');
 
-// the same camera/stat identity rule rooms/Room.js#step() uses, factored out
-// so it is unit-testable without a live socket.
-function statSourceOf(human) {
+// the same camera/stat/control identity rule rooms/Room.js#step() uses
+// (`piloting || self`), factored out so it is unit-testable and has one definition, not 3
+function activeEntityOf(human) {
 	return human ? (human.piloting || human) : null;
+}
+// packet x/y are normalized against the CURRENT camera's screen (the possessed entity while piloting),
+// but controls stay stored on the human input owner.
+function applyMouseMove(human, active, data) {
+	if (!human.spinning) { human.dir = data.dir; }
+	human.inputs.mouse_x = data.x * active.screen;
+	human.inputs.mouse_y = data.y * active.screen * 0.5625;
 }
 
 function attach(httpServer, controller) {
@@ -150,18 +157,16 @@ function attach(httpServer, controller) {
 				break;
 			};
 			case 'mousemove': {
-				const tank = controller.getPlayer(socket.id);
-				if (!controller.getPlayer(socket.id)) { break; }
-				if (tank.botMod) { break; }
+				const human = controller.getPlayer(socket.id);
+				if (!human) { break; }
+				if (human.botMod) { break; }
 				// A mousemove packet lands whenever it lands - not synced to the room's tick loop -
 				// so while the `c` auto-spin owns `dir` (entities/Player.js's spin block writes it
 				// every tick), a stray mousemove arriving mid-spin used to stomp it with the raw
 				// mouse angle for one broadcast before the next tick put it back: a visible
 				// snap-and-return glitch. `mouse_x`/`mouse_y` still update unconditionally - only
 				// `dir` needs to stay owned by the spin.
-				if (!tank.spinning) { tank.dir = data.data.dir; }
-				tank.inputs.mouse_x = data.data.x * tank.screen;
-				tank.inputs.mouse_y = data.data.y * tank.screen * 0.5625;
+				applyMouseMove(human, activeEntityOf(human), data.data);
 				break;
 			};
 			case 'upgrade': {
@@ -272,7 +277,7 @@ function attach(httpServer, controller) {
 			}
 			{
 				const human = controller.getPlayer(this.socket.id);
-				const source = statSourceOf(human);
+				const source = activeEntityOf(human);
 				if (source !== this.statSource) {
 					this.statSource = source;
 					if (source) { talk(this.socket, 'UpdateUp', source.upNb); }
@@ -350,7 +355,7 @@ function attach(httpServer, controller) {
 				// but the player is very much alive AS the boss (the socket's camera is on it), so
 				// the AFK-dead kick has to read the camera entity, not the husk - otherwise taking a
 				// Dominator gets you kicked S_BEFORE_KICK seconds later.
-				const cam = play.piloting || play;
+				const cam = activeEntityOf(play);
 				if (cam.dead) {
 					this.dead++;
 				} else {
@@ -406,4 +411,4 @@ function attach(httpServer, controller) {
 }
 
 exports.attach = attach;
-exports.statSourceOf = statSourceOf;
+exports.activeEntityOf = activeEntityOf;

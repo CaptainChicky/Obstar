@@ -900,6 +900,39 @@
 				}
 			}
 		}
+		// owned by the exact socket that created it, so a stale timer from a 
+		// replaced/closed General.WS can never send again. stop() is idempotent and cancels the
+		// pending timeout instead of merely flagging it, so nothing stays armed across a handover
+		function startHeartbeat(socket) {
+			const ctrl = {
+				socket: socket,
+				stopped: false,
+				handle: null,
+				stop: function () {
+					if (this.stopped) { return; }
+					this.stopped = true;
+					clearTimeout(this.handle);
+					this.handle = null;
+					NET.probeAt = 0;
+				},
+				run: function () {
+					if (this.stopped) { return; }
+					if (General['WS'] !== this.socket) { return; }
+					if (this.socket.readyState !== WebSocket.OPEN) { return; }
+					this.socket.send(PROTO.encode('ping', 0));
+					NET.probe();
+					this.socket.send(PROTO.encode('ping', 1));
+					this.handle = setTimeout(() => { this.run(); }, 1000);
+				}
+			};
+			ctrl.run();
+			return ctrl;
+		}
+		General['stopHeartbeat'] = function () {
+			if (General['PING']) { General['PING'].stop(); }
+			General['PING'] = null;
+		}
+
 		General['WS'].onmessage = packet => {
 			const decoded = PROTO.decode(packet.data);
 			const type = decoded.type;
@@ -911,32 +944,14 @@
 						NET.echo();
 						break;
 					}
-					if (!General['PING']) {
-						General['PING'] = new function () {
-							this.run = function () {
-								if (this.stop) {
-									console.log('ping stopped');
-									return;
-								}
-								// The heartbeat the server counts (probe 0), unchanged...
-								General['WS'].send(PROTO.encode('ping', 0))
-								// ...and an RTT probe (1) the server echoes verbatim. Separate
-								// packets because they answer different questions: the heartbeat
-								// only has to arrive, the probe has to come back. Two bytes a
-								// second between them.
-								NET.probe();
-								General['WS'].send(PROTO.encode('ping', 1))
-								setTimeout(it => it.run(), 1000, this)
-							}
-							this.stop = 0;
-							this.run();
-						}
+					if (!General['PING'] || General['PING'].stopped || General['PING'].socket !== General['WS']) {
+						General['PING'] = startHeartbeat(General['WS']);
 					}
 					break;
 				};
 				case 'kick': {
+					General['stopHeartbeat']();
 					General['KICK'] = decoded.reason;
-					General['PING'].stop = 1;
 					break;
 				};
 				case 'GameUpdate': {

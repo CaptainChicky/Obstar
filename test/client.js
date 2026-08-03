@@ -921,5 +921,46 @@ console.log('\nno class draws outside its own sprite cache (render.js\'s setCoor
 		!worstM, worstM && worstM.cls + ' overflows by ' + worstM.by.toFixed(2));
 }
 
+console.log('\nheartbeat survives a plain socket close with no prior kick:');
+{
+	// reported crash: General.WS.send is not a function. Happens only when the socket
+	// closes WITHOUT  a 'kick' packet first - a kick's own cleanup path is trivial to see
+	// manually (it always shows an error screen); this race is not, so it's the one worth
+	// pinning here rather than trusting manual play to hit the exact timing.
+	function gu(t) {
+		return PROTO.encode('GameUpdate', {
+			head: { timestamp: t, width: 8000, height: 8000, screen: 1920, xp: 500, level: 1, still: 0, cLvl: 0 },
+			main: {
+				states: [0, 0, 0, 0, 0, 0], class: 'Basic', color: 0, x: 0, y: 0, vx: 0, vy: 0, dir: 0, 
+				size: 25, alpha: 1, hp: 1, name: 'tester', nameC: 0,
+				recoil: new Array(15).fill(0), canDir: [0]
+			},
+			instances: []
+		});
+	}
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+	const General = a.sandbox.window.CLIENT.General;
+	a.start(gu(1));
+	const s1 = a.socket();
+	a.deliver(PROTO.encode('ping', 0)); // starts the heartbeat
+	a.advanceTimers(1000);
+	const sentAtClose = s1.sent.length;
+
+	let threw = null;
+	try { s1.forceClose(); } catch (e) { threw = e; }
+	check('a plain socket close (no kick) does not throw', !threw, threw && threw.message);
+	check('...and stops/clears the heartbeat', General.PING === null);
+
+	// let the render loop's own KICK -> doors.toClose -> General.run=0 -> preRun() handover
+	// play out, then advance the fake clock well past several more heartbeat intervals
+	for (let f = 0; f < 400 && a.pending(); f++) { a.frame(16); }
+	a.advanceTimers(5000);
+	check('no exception reaches here after the handover', true);
+	check('no additional sends happenned on the old, now-closed socket',
+		s1.sent.length === sentAtClose, s1.sent.length + ' vs ' + sentAtClose);
+	check('General.WS is no longer the dead socket after preRun() ran again',
+		General.WS !== s1);
+}
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

@@ -105,6 +105,9 @@
 		General['preRun'] = 1;
 		Loop();
 		/////////
+		// defensive handover: an earlier socket's heartbeat must not outlive it.
+		// General.stopHeartbeat is installed by game.js and does not exist on the very first boot.
+		if (General['stopHeartbeat']) { General['stopHeartbeat'](); }
 		General['KICK'] = General['KICK'] || 0;
 		General['WS'] = General['KICK'] ? 0 : (() => {
 			const socket = new WebSocket(WS_LINK)
@@ -133,6 +136,7 @@
 				}
 			};
 			socket.onclose = (err) => {
+				if (General['stopHeartbeat']) { General['stopHeartbeat'](); }
 				General['KICK'] = General['KICK'] || 'Connection lost';
 			};
 			return socket;

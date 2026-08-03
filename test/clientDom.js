@@ -131,6 +131,31 @@ function boot(POST, opts) {
 	window.window = window;
 
 	let socket = null;
+	// a fake timer queue so a test can advance the 1s heartbeat without a real wall-clock wait.
+	// fires in `at` order; a callback firing during a run may itself schedule another (the
+	// heartbeat re-arms itself every call), so draining loops until nothing is due any more
+	let nextTimerId = 1;
+	const timers = [];
+	function fakeSetTimeout(fn, ms) {
+		const id = nextTimerId++;
+		timers.push({ id: id, at: clock.at + (ms || 0), fn: fn });
+		return id;
+	}
+	function fakeClearTimeout(id) {
+		const t = timers.find((t) => t.id === id);
+		if (t) { t.fn = null; }
+	}
+	function runDueTimers(){
+		for (; ;) {
+			let due = null, idx = -1;
+			for (let i = 0; i < timers.length; i++) {
+				if (timers[i].fn && (due === null || timers[i].at < due.at)) { due = timers[i]; idx = i; }
+			}
+			if (!due || due.at > clock.at) { break; }
+			timers.splice(idx, 1); 
+			due.fn();
+		}
+	}
 	// For the differential (test/clientDiff.js) the client must be a pure function of its
 	// packets: the four Math.random() sites in entities.js (polygon spin/heading) and the two
 	// Date.now() fps reads would otherwise make two runs disagree. Seed both off deterministic
@@ -142,21 +167,40 @@ function boot(POST, opts) {
 		seededMath = new Proxy(Math, { get: function (t, k) { return k === 'random' ? rng : t[k]; } });
 		seededDate = new Proxy(Date, { get: function (t, k) { return k === 'now' ? function () { return clock.at; } : t[k]; } });
 	}
+	function makeSocket() {
+		const s = {
+			readyState: 1,  // open - matches real WebSocket once onopen has fired
+			sent: [],
+			send: function (data) { this.sent.push(data); },
+			close: function () {
+				if (this.readyState === 3) { return; }
+				this.readyState = 3;
+				if (this.onclose) { this.onclose({}); }
+			},
+			// test-only: simulate a plain network drop, without a preceding 'kick' packet
+			forceClose: function () {
+				this.readyState = 3;
+				if (this.onclose) { this.onclose({}); }
+			},
+			addEventListener: function () { }
+		};
+		sockets.push(s);
+		return s;
+	}
+	const FakeWebSocket = function () { socket = makeSocket(); return socket; }
+	FakeWebSocket.CONNECTING = 0; FakeWebSocket.OPEN = 1; FakeWebSocket.CLOSING = 2; FakeWebSocket.CLOSED = 3;
 	const sandbox = {
 		window: window, document: document, console: console,
 		Math: seededMath, Date: seededDate, JSON, Object, Array, String, Number, Boolean, Promise, Set, Map, Error, RegExp,
 		parseInt, parseFloat, isNaN, isFinite, encodeURIComponent, decodeURIComponent,
 		Uint8Array, Uint8ClampedArray, Float32Array, DataView, ArrayBuffer, Buffer,
-		setTimeout: setTimeout, clearTimeout: clearTimeout,
+		setTimeout: fakeSetTimeout, clearTimeout: fakeClearTimeout,
 		setInterval: function () { return 0; }, clearInterval: function () { },
 		requestAnimationFrame: window.requestAnimationFrame,
 		// The client reads performance.now() for frame and packet timing. Driving it from a
 		// counter makes the render loop deterministic instead of a race with the test.
 		performance: { now: function () { return clock.at; } },
-		WebSocket: function () {
-			socket = { send: function () { }, close: function () { }, addEventListener: function () { } };
-			return socket;
-		},
+		WebSocket: FakeWebSocket,
 		POST: POST,
 		navigator: window.navigator,
 		location: window.location
@@ -195,6 +239,10 @@ function boot(POST, opts) {
 		record: record,
 		sandbox: sandbox,
 		socket: function () { return socket; },
+		sockets: function () { return sockets; },
+		// advance the fake clock and fire any timers now due (including chained re-arms),
+		// without waiting on the real wall-clock time
+		advanceTimers: function (ms) { clock.at += ms; runDueTimers(); },
 		/* Advance the clock and run one animation frame. */
 		frame: function (ms) {
 			clock.at += (ms === undefined ? 1000 / 60 : ms);

@@ -1534,7 +1534,10 @@
 								// Socket first, THEN navigate: drop the game connection so the server
 								// frees the slot immediately rather than waiting out the heartbeat
 								// timeout on a socket the unloading page would abandon anyway.
-								try { if (General['WS']) { General['WS'].onclose = null; General['WS'].close(); } } catch (e) { /* already gone */ }
+								try {
+									if (General['stopHeartbeat']) { General['stopHeartbeat'](); }
+									if (General['WS']) { General['WS'].onclose = null; General['WS'].close(); }
+								} catch (e) { /* already gone */ }
 								// Back to the menu - the one mode/name/pet picker, which is what POSTs
 								// /play. A full re-pick, not a half-built in-canvas mode list.
 								window.location.href = '/';
