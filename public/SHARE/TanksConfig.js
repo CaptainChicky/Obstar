@@ -14,6 +14,14 @@
 	// keep their current feel; only server entries read this, `screen` has no client use.
 	const BASE_SCREEN = 1408;
 
+	// real diep-level camera scaling for the special scripted entities only 
+	// (Dominator/Mothership) - FOV = (0.55*fieldFactor)/1.01^((level-1)/2), so screen (inverse of
+	// FOV) scales as 1.01^((level-REFERENCE_LEVEL)/2) off this project's own level-45 baseline
+	const REFERENCE_LEVEL = 45;
+	function screenAtLevel(level, fieldFactor = 1) {
+		return BASE_SCREEN * Math.pow(1.01, (level - REFERENCE_LEVEL) / 2) / fieldFactor;
+	}
+
 	// plan.md C2/R1: there are TWO du-to-unit conversion factors in this file, not one, because
 	// a barrel is drawn as `c.height x (param.size / CONST.SIZE)` (drawings.js) against a 35-unit
 	// reference, while diep draws the same barrel as `definition.size x (tank.physicsData.size / 50)`
@@ -1610,6 +1618,9 @@
 			// with the barrels (render.js's draw sequence, Drawings.dompronounced); the "sits above
 			// the body" it carried before contradicted these renders.
 			"Destroyer Dominator": {
+				// a Dominator's possessed HUD has no selectable stat row/points 
+				// read by Ui#upgrade()'s own early-return, not by drawAll() with an empty array
+				hideStats: true,
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
 				// postAddon "dompronounced" (plan.md E2, diepcustom Addons.ts's PronouncedDomAddon)
@@ -1636,6 +1647,7 @@
 			// ordinary tank (no sizeFactor override), so height/width convert on the ordinary 0.7
 			// axis: 75x0.7=52.5, 80x0.7=56 (centre), width 17.5x0.7=12.25.
 			"Gunner Dominator": {
+				hideStats: true, // see Destroyer Dominator's own note
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
 				// postAddon "dompronounced" (plan.md E2) - see Destroyer Dominator's own note.
@@ -1656,6 +1668,7 @@
 			// axis: 60x0.7=42, 21x0.7=14.7 - was a hand-tuned guess before R3 found the real source.
 			// type 0 + trapLauncher (plan.md A3) - see Trapper above.
 			"Trapper Dominator": {
+				hideStats: true, // see Destroyer Dominator's own note
 				// preAddon "dombase" (plan.md R4) - mirrors the server's static hex guard.
 				guards: [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }],
 				cannons: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({
@@ -3586,9 +3599,9 @@
 				diep_wiki stand-in is retired now that a real number exists for all three.
 			*/
 			"Destroyer Dominator": new function () {
-				// diep gives every Dominator variant fieldFactor 1 (plan.md T4/X6) - replaces the
-				// old Sniper-borrowed stand-in screen (1664) now that a real number exists.
-				this.screen = BASE_SCREEN;
+				// real level-75 camera, fieldFactor 1 - replaces both the old
+				// Sniper-borrowed stand-in (1664) and the later flat BASE_SCREEN (level-45 baseline)
+				this.screen = screenAtLevel(75, 1);
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				// All 3 Dominator variants carry `preAddon: "dombase"` (plan.md R3/R4) -
 				// Addons.ts's DomBaseAddon is a single static (rate 0) hexagonal guard,
@@ -3621,7 +3634,7 @@
 				}];
 			},
 			"Gunner Dominator": new function () {
-				this.screen = BASE_SCREEN;   // diep fieldFactor 1 for every Dominator (plan.md T4/X6)
+				this.screen = screenAtLevel(75, 1); // real level-75 camera
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				// preAddon "dombase" (plan.md R3/R4) - static hexagonal guard, see Destroyer's own note.
 				this.guards = [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }];
@@ -3658,7 +3671,7 @@
 				];
 			},
 			"Trapper Dominator": new function () {
-				this.screen = BASE_SCREEN;   // diep fieldFactor 1 for every Dominator (plan.md T4/X6)
+				this.screen = screenAtLevel(75, 1); // real level-75 camera
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				// preAddon "dombase" (plan.md R3/R4) - static hexagonal guard, see Destroyer's own note.
 				this.guards = [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }];
@@ -3916,7 +3929,7 @@
 				this.ups = ['Health Regen', 'Reload', 'Max Health', 'Drone Speed', 'Movement Speed', 'Drone Damage', 'Body Damage', 'Drone Health'];
 			},
 			"Mothership": new function () {   // id27 - gamemode entity, spawned by rooms/Mothership.js (plan.md G1)
-				this.screen = BASE_SCREEN;   // diep fieldFactor not captured for this class - unconfirmed default
+				this.screen = screenAtLevel(140, 1); // real level-140 camera
 				this.maxDrone = 32;
 				// Mothership.ts sets no explicit body size - it comes from the ordinary tank-body
 				// growth formula (plan.md M3: size = 28 x 1.01^level) at `camera.setLevel(140)`,
@@ -3941,8 +3954,8 @@
 				// diep's own generic AI.findTarget() (plan.md E3) - the same shared shape
 				// Dominator's own DETEC below uses, so an unpossessed Mothership only fires once
 				// it actually has a live enemy in range instead of always (see the cannons' own
-				// note on why `auto: 1` retired) - `screen`/BASE_SCREEN doubles as its own view
-				// range for lack of a captured diep fieldFactor for this class.
+				// note on why `auto: 1` retired) - `screen`/BASE_SCREEN doubles as its own view range
+				// for lack of a captured diep fieldFactor for this class.
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				this.cannons = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
 					// No `auto` (plan.md E3) - diep's shared AI.tick() only force-shoots

@@ -1173,6 +1173,10 @@ class Room {
 			d.hp = 6148;
 			d.maxHp = 6148;
 			d.dominator = 1;
+			// Real diep level 75 (Dominator.ts's camera.setLevel(75)) - drives its real camera
+			// scale (screenAtLevel(75) above) and the HUD's reported level; never clamped to
+			// Player.LEVEL_CAP, Room#getBuffer()'s scripted-entity branch sends it flat.
+			d.level = 75;
 			// diep's own `absorbtionFactor = 0` for a Dominator (Object.ts:280, plan.md Part D's
 			// shared boss table cites the same field for a real boss at 0.05) - immovable. The
 			// KIND.PLAYER/KIND.BULLET collision arms in entities/Player.js also keep their own

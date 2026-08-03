@@ -180,6 +180,7 @@ class Tester extends Room {
 			);
 			m.hp = m.maxHp = 7000;
 			m.mothership = 1;
+			m.level = 140; // real diep level, same as rooms/Mothership.js
 			m.absorb = 0.01;
 			m.size = CLASS['Mothership'].bossSize;
 			m.class = 'Mothership';
@@ -192,7 +193,7 @@ class Tester extends Room {
 			m.up.BDamage = 1 + (3 / 7) * 7;
 			m.damage = 5 + 7;
 			m.up.HpRegan = 1;
-			m.upNb = [7, 7, 7, 7, 7, 7, 0, 1];
+			m.upNb = [7, 7, 7, 7, 7, 7, 7, 1]; // canonical HUD fill
 			const spec = CONFIG.MOTHERSHIP;
 			m.motion = spec[0].bind(m);
 			m.update = spec[1].bind(m);

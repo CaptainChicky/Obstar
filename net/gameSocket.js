@@ -25,6 +25,12 @@ const config = require('../lib/config.js').config;
 const WebSocket = require('ws');
 const PROTO = require('../public/SHARE/SocketSchema.js');
 
+// the same camera/stat identity rule rooms/Room.js#step() uses, factored out
+// so it is unit-testable without a live socket.
+function statSourceOf(human) {
+	return human ? (human.piloting || human) : null;
+}
+
 function attach(httpServer, controller) {
 
 
@@ -161,6 +167,10 @@ function attach(httpServer, controller) {
 			case 'upgrade': {
 				const tank = controller.getPlayer(socket.id);
 				if (!tank) { break; }
+				// while piloting, the human's own body is an abandoned husk
+				// a stale/modified client must not be able to spend upgrade points on it behind the
+				// possessed boss's back (head.still is already 0, this is the server-side guard)
+				if (tank.piloting) { break; }
 				tank.upgrade(data.data.up);
 				talk(socket, 'UpdateUp', tank.upNb);
 				break;
@@ -251,10 +261,22 @@ function attach(httpServer, controller) {
 		this.slowDue = 0;
 		this.uiDue = 0;
 		this.sentStamp = -1;   // room step counter of the last GameUpdate actually sent
+		// the identity a stat snapshot was last sent for (`piloting || self`)
+		// null until the socket has a live player. Compared every gameloop() tick so possession
+		// take/release/timeout/death/respawn all re-sync UpdateUp, not just the H keydown handler.
+		this.statSource = null;
 		this.gameloop = function () {
 			if (!this.run) { return; }
 			if (this.chat) {
 				this.chat--;
+			}
+			{
+				const human = controller.getPlayer(this.socket.id);
+				const source = statSourceOf(human);
+				if (source !== this.statSource) {
+					this.statSource = source;
+					if (source) { talk(this.socket, 'UpdateUp', source.upNb); }
+				}
 			}
 			const id = controller.clients[this.socket.id];
 			let ms = SEND_MS;
@@ -384,3 +406,4 @@ function attach(httpServer, controller) {
 }
 
 exports.attach = attach;
+exports.statSourceOf = statSourceOf;

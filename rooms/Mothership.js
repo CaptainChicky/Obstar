@@ -90,6 +90,10 @@ class Mothership extends Room {
 			m.hp = MOTHERSHIP_HP;
 			m.maxHp = MOTHERSHIP_HP;
 			m.mothership = 1;
+			// Real diep level 140 which drives its real camera scale (screenAtLevel(140) above)
+			// and the level-scaled movement accel. Player.prototype.motion() already reads
+			// via Physics.moveAccel(this.up.MSpeed, this.level)
+			m.level = 140;
 			// diepcustom Mothership.ts's own `absorbtionFactor = 0.01` (plan.md E3) - "nearly
 			// immovable but not fixed", the entities/Player.js knockback arms' new `absorb`
 			// multiplier (plan.md Part D) is what actually reads this back.
@@ -116,7 +120,10 @@ class Mothership extends Room {
 			m.up.BDamage = 1 + (3 / 7) * 7;
 			m.damage = 5 + 7;
 			m.up.HpRegan = 1;
-			m.upNb = [7, 7, 7, 7, 7, 7, 0, 1];
+			// upNb[6]/Max Health shows the canonical full HUD fill
+			// health itself stays the fixed boss value MOTHERSHIP_HP above, not this
+			// project's ordinary Max Health formula, so m.up.HpUp is left as its neutral constructor value
+			m.upNb = [7, 7, 7, 7, 7, 7, 7, 1];
 			const spec = CONFIG.MOTHERSHIP;
 			m.motion = spec[0].bind(m);
 			m.update = spec[1].bind(m);

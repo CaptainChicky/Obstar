@@ -1215,6 +1215,15 @@
 				//ctx.globalAlpha = 1;
 			};
 			this.upgrade = function () {
+				// a possessed Dominator has no selectable stat rows/points at all
+				// bail before UP.init()/drawing/hit-testing rather than feeding drawAll() an empty
+				// array (its own Math.max(...maxArr) assumes at least one row).
+				if (CLASS[User.class] && CLASS[User.class].hideStats) {
+					this.UP.isShowing = 0;
+					this.UP.show = 0;
+					this.UP.clearQueue();
+					return;
+				}
 				if (!this.still) {
 					this.UP.isShowing = 0;
 				} else {

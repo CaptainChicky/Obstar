@@ -990,6 +990,16 @@ function dominatorTests() {
 		doms.every((d) => Math.abs(d.x) <= room.map.width / 2 && Math.abs(d.y) <= room.map.height / 2));
 	check('a Dominator is an ordinary Player, not a new entity kind (PENDING #27)',
 		doms.every((d) => d.kind === KIND.PLAYER), doms.map((d) => d.kind).join(','));
+	// real diep level 75 (Dominator.ts's camera.setLevel(75)), driving the real level-75 camera width
+	// via screenAtLevel(75) - epsilon-compared, not exact float equality.
+	check('every Dominator carries diep\'s own level 75, not the Player default of 0', 
+		doms.every((d) => d.level === 75), doms.map((d) => d.level).join(','));
+	{
+		const expectedScreen = 1634.6442891609581;
+		check('every Dominator uses the real level-75 camera width (~16634.644), not BASE_SCREEN 1408',
+			doms.every((d) => Math.abs(d.screen - expectedScreen) < 1e-6), 
+			doms.map((d) => d.screen).join(',') + ' vs ' + expectedScreen);
+	}
 
 	// createDominator() with an explicit variant, for the Sandbox admin command.
 	{
@@ -1150,6 +1160,8 @@ function dominatorTests() {
 		check('the HUD reads the boss\'s flat level and zero upgrade points, no NaN',
 			buf1.head.level === cap.level && buf1.head.still === 0 && buf1.head.cLvl === 0,
 			'level=' + buf1.head.level + ' still=' + buf1.head.still);
+		check('...and the boss\'s own (level-75) screen, not the vacated body\'s',
+			buf1.head.screen === cap.screen, buf1.head.screen + ' vs ' + cap.screen);
 
 		// Now the vacated body dies. This must NOT release the boss and must NOT flip the camera
 		// back onto the corpse - you ARE the boss.
@@ -1205,6 +1217,28 @@ function mothershipTests() {
 		ships.every((m) => m.kind === require(path.join(ROOT, 'public', 'SHARE', 'kinds.js')).PLAYER));
 	check('a Mothership is nearly immovable (absorbtionFactor 0.01, plan.md E3)',
 		ships.every((m) => m.absorb === 0.01), ships.map((m) => m.absorb).join(','));
+	// real diep level 140 (Mothership.ts's camera.setLevel(140)), driving the real level-140 camera width
+	// via screenAtLevel(140) and the level-scaled movement accel Player.prototype.motion() already reads
+	// epsilon-compared, not exact float equality
+	check('every Mothership carries diep\'s own level 140, not the Player default of 0',
+		ships.every((m) => m.level === 140), ships.map((m) => m.level).join(','));
+	{
+		const expectedScreen = 2258.748668099168;
+		check('every Mothership uses the real level-140 camera width (~2258.749), not BASE_SCREEN 1404',
+			ships.every((m) => Math.abs(m.screen - expectedScreen) < 1e-6),
+			ships.map((m) => m.screen).join(',') + ' vs ' + expectedScreen);
+	}
+	check('every Mothership\'s HUD ledger is the canonical 7,7,7,7,7,7,7,1 (Max Health slot included)',
+		ships.every((m) => m.upNb.join(',') === '7,7,7,7,7,7,7,1'), ships.map((m) => m.upNb.join(',')).join(' | '));
+	{
+		const Physics = require(path.join(ROOT, 'public', 'SHARE', 'Physics.js'));
+		const atLevel140 = Physics.moveAccel(7, 140);
+		const atLevel0 = Physics.moveAccel(7, 0);
+		check('Physics.moveAccel(7, 140) matches diep\'s own level-140 acceleration (~0.28940692204312074)',
+			Math.abs(atLevel140 - 0.28940692204312074) < 1e-9, atLevel140);
+		check('...and is materially lower than the level-0 figure (the fresh-tank-speed bug this fixes)',
+			atLevel140 < atLevel0 / 4, atLevel140 + ' vs ' + atLevel0);
+	}
 
 	// plan.md E3 - `canControlDrones` (TankDefinitions.json id27): true on even barrels, false on
 	// odd. Type 1 (droneSteer1, entities/Bullet.js) already reads the owner's mouseR/mouseL/e to
@@ -1393,6 +1427,33 @@ function possessionTests() {
 			ship.x !== x0 || ship.y !== y0, ship.x + ',' + ship.y + ' vs ' + x0 + ',' + y0);
 		p2.inputs.w = 0;
 
+		// prove the LIVE piloted-movement path (not just the helper in isolation)
+		// actually uses the l evel-140 result: the same entity/setup forged to level 0
+		// should cover far more ground in the same 20 ticks holding one direction
+		{
+			const d140 = Math.sqrt((ship.x - x0) ** 2 + (ship.y - y0) ** 2);
+			const mroom0 = makeRoom('mothership');
+			const ship0 = mroom0.motherships[0];
+			ship0.level = 0;
+			const p0 = mroom0.INSTANCE.players.add((id) => new Player(
+				{ GM: mroom0.gm, sId: mroom0.id, oId: id }, ship0.x, ship0.y, 'p0', ship0.team, mroom0.XPLVL, mroom0));
+			p0.shield = 0; p0.alpha = 1; p0.level = 20;
+			mroom0.togglePossession(p0);
+			const x00 = ship0.x, y00 = ship0.y;
+			p0.inputs.w = 1;
+			for (let i = 0; i < 20; i++) { ship0.update(); }
+			p0.inputs.w = 0;
+			const d0 = Math.sqrt((ship0.x - x00) ** 2 + (ship0.y - y00) ** 2);
+			check('a piloted Mothership at the real level 140 travels far less than the same setup forged to level 0 (live prediction path, not just Physics.moveAccel() in isolation)',
+				d140 < d0 / 4, d140 + ' vs ' + d0);
+		}
+
+		mroom.step();
+		const buf = mroom.getBuffer(p2.id.oId);
+		check('whipe possessing a Mothership, getBuffer() reports its own level 140, zero upgrade points, and its own screen',
+			buf.head.level === 140 && buf.head.still === 0 && buf.head.screen === ship.screen,
+			'level=' + buf.head.level + ' still=' + buf.head.still + ' screen=' + buf.head.screen);
+
 		// Fast-forward past the 5-minute mark directly rather than looping the real tick count.
 		ship.possessionStartTick = mroom.timestamp - (tick.ticks(7500) + 1);
 		ship.update();
@@ -1408,6 +1469,57 @@ function possessionTests() {
 		ship.update();
 		check('a dying Mothership force-ejects its pilot too',
 			p2.piloting === null && ship.pilotedBy === null, p2.piloting + ',' + ship.pilotedBy);
+	}
+}
+
+/*
+	net/gameSocket.js's exported statSourceOf() is the same `piloting || self` 
+	rule rooms/Room.js#step() uses for `main`, factored out so the UpdateUp-retargetting logic that 
+	drives it is unit-testable without a live WebSocket
+*/
+function statSourceTests() {
+	console.log('\nstat snapshot source:');
+	const gameSocket = require(path.join(ROOT, 'net', 'gameSocket.js'));
+	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+	const room = makeRoom('domination');
+
+	check('no live human -> no source', gameSocket.statSourceOf(null) === null);
+
+	const pilot = room.INSTANCE.players.add((id) => new Player(
+		{ GM: room.gm, sId: room.id, oId: id }, 0, 0, 'ordinary', 0, room.XPLVL, room));
+	check('an ordinary (non-piloting) human is its own source',
+		gameSocket.statSourceOf(pilot) === pilot);
+
+	const dom = room.dominators[0];
+	dom.hp = 0; dom.destroy = 1; dom.murder = ['players', pilot.id];
+	dom.update();
+	pilot.level = 20; 
+	room.togglePossession(pilot);
+	check('possessing a Dominator switches the source to it',
+		gameSocket.statSourceOf(pilot) === dom, gameSocket.statSourceOf(pilot) === dom);
+	
+	room.releasePossession(pilot);
+	check('releasing switches the source back to the pilot\'s own body',
+		gameSocket.statSourceOf(pilot) === pilot);
+
+	// simulate the gameloop's own tracking: only a real identity CHANGE re-sends UpdateUp
+	{
+		const sent = [];
+		let statSource = null;
+		function tick(human) {
+			const source = gameSocket.statSourceOf(human);
+			if (source !== statSource) { statSource = source; if (source) { sent.push(source.upNb); } }
+		}
+		tick(pilot); // initial spawn
+		check('initial spawn sends the pilot\'s own snapshot', sent.length === 1 && sent[0] == pilot.upNb);
+		room.togglePossession(pilot);
+		tick(pilot); // H possession
+		check('possessing a Dominator sends its own array', sent.length === 2 && sent[1] === dom.upNb);
+		tick(pilot); // same identity, no repeat send
+		check('polling again with no identity change sends nothing new', sent.length === 2);
+		room.releasePossession(pilot);
+		tick(pilot); // H release
+		check('releasing sends the pilot body\'s original array back', sent.length === 3 && sent[2] === pilot.upNb);
 	}
 }
 
@@ -5773,6 +5885,7 @@ rooms.push(mazeTests()); console.log('');
 rooms.push(dominatorTests()); console.log('');
 rooms.push(mothershipTests()); console.log('');
 possessionTests();
+statSourceTests();
 rosterSweepTests();
 necromancerTests();
 droneBatchTests();

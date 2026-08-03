@@ -530,6 +530,42 @@ console.log('\nthe upgrade panel draws diep\'s real per-stat caps (plan.md C2/C3
 		JSON.stringify(byName));
 }
 
+console.log('\na possessed Dominator hides its stat panel entirely:');
+{
+	function classPacket(t, cls, still) {
+		return PROTO.encode('GameUpdate', {
+			head: { timestamp: t, width: 8000, height: 8000, screen: 1920, xp: 500, level: 75, still: still || 0, cLvl: 0 },
+			main: {
+				states: [0, 0, 0, 0, 0, 0], class: cls, color: 0, x: 0, y: 0, vx: 0, vy: 0, dir: 0,
+				size: 25, alphpa: 1, hp: 1, name: 'tester', nameC: 0, 
+				recoil: new Array(15).fill(0), canDir: [0]
+			},
+			instances: []
+		});
+	}
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+	const CLIENT = a.sandbox.window.CLIENT;
+	check('all three Dominator client definitions carry hideStats',
+		['Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'].every((c) => CLIENT.CLASS[c].hideStats === true),
+		JSON.stringify(['Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'].map((c) => CLIENT.CLASS[c].hideStats)));
+	check('Mothership does not carry hideStats - it draws its 8 canonical rows', 
+		!CLIENT.CLASS['Mothership'].hideStats, CLIENT.CLASS['Mothership'].hideStats);
+	
+	a.start(classPacket(1, 'Destroyer Dominator', 0));
+	a.deliver(classPacket(2, 'Destroyer Dominator', 0));
+	for (let f = 0; f < FPP * 2; f++) { a.frame(FRAME); }
+	// Force the ordinary reveal inputs a real M/U press would set - a hideStats class must still 
+	// never show/draw/hit-test any row despite them
+	CLIENT.Global.inputs.u = 1;
+	CLIENT.Global.inputs.m = 1;
+	for (let f = 0; f < FPP * 4; f++) { a.frame(FRAME); }
+	check('the Dominator early-return path never raises isShowing/show, even while U/M are held',
+		CLIENT.General.Ui.UP.isShowing === 0 && CLIENT.General.Ui.UP.show === 0, 
+		'isShowing=' + CLIENT.General.Ui.UP.isShowing + ' show=' + CLIENT.General.Ui.UP.show);
+	CLIENT.Global.inputs.u = 0;
+	CLIENT.Global.inputs.m = 0;
+}
+
 console.log('\nsmasher-line bodies never rotate - only their guards do (plan.md C7):');
 {
 	// Smasher/Landmine/Spike have no cannons/turrets at all (Drawings.guards spins on its own

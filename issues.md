@@ -1,15 +1,14 @@
 additional issues are present:
-- intro options screen tries to slide down, fails, then snaps into position? this wasnt here previously
-- when you take control of a dominator or mothership, your FOV/identity physically transfers to the dominator, and your old tank will die. currently your fov/id still stays the old tank and you simply control both dominator and your old tank. your old tank still dies, so you quickly die/get brought to the death screen too. instead whats supposed to happen is youre supposed to be transferred over to the dominator as your FOV or mothership as your OFV and control it, your old tank is dead but you dont die because you are now the dominator/mothership and your fov is that boss tank. (you shouldnt be brought ot the death screen when your old tank dies)
-- there seems to be some minor visual overlap possible with the maze walls. make even this minor visual overlap impossble
-
 - arena closer bullets should be the size of its barrel, not small af like rn
 - same with fallen booster, its bullets should be the size of its barrels
 
 - you should read the diep wiki's pages on these bosses and the features/things noted there should basically be ported over
 
+- in maze, crashers should not be able to spawn in maze walls
+
 - factory is even more broken. curretnyl it doesnt even have a tank body. its a square, with a trapezoidal spawner. its drones have diameter 32px if the factory has side length 54px. its drones' barrels poke out around 9px, and 14.5 px width. when you left click on something, the drones dont go to that place like normal triangle drones, but instead go towards, then stops at a distance and starts circling it and attacking with their own turrets. when you right click, outside of a certain distance they repel, but inside a radius of the mouse pointer, they instead cluster together with turrets facing away from the mouse. check diep source imeplemntations for these distances. also read the wiki page on the factory for details.
-- there should be a gamemode switcher on the respawn screen somewhere tbh
+
+- gamemode switcher on respawn screen is cut off on the right.
 
 - defender traps may be too large. defender's 3 autoturrets should be able to indepdnetnly target different things btw whatever one is closer.
 - skimmer secondary bullets still not drawn below the main bullet. theyre spawning visible on top of the main
@@ -32,5 +31,6 @@ additional issues are present:
 - hitboxes for arena closer, bosses, mothership, dominators arent right the hitbox should be their circular body but its less fsr.
 - mothership fov is completely broken its wayyy zoomed in, it also moves hella fast unlike an actual level 140 (the speed of it shoudl be the same as normal tank speed scaling)
 - mothership stat bar should be filled up as described in the wiki
+- dominator fov is also completely wrong like mothership
 - h to take control of tank needs to be fine tuned and balanced
 - too many upgrade points?
