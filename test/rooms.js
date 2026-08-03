@@ -817,6 +817,96 @@ function mazeTests() {
 			check('no player ever spawns inside a maze wall (isValidSpawnLocation)', hits === 0,
 				hits + ' / 400 landed in a wall');
 		}
+
+		// Batch E - the tank's KIND.WALL arm now resolves POSITION, not only velocity, so a tank
+		// that gets shoved into a wall (a fast ram, or another tank pushing it) can no longer sink
+		// a whole grid cell in and sit there. diep keeps the residual overlap minimal (~1/10 of a
+		// maze cell); the arm clamps a tank's penetration to WALL_TANK_OVERLAP of its own body
+		// radius. Drive the collision arm directly (deterministic, no integrator) from the two
+		// worst cases and assert the residual penetration stays under diep's own 1/10-cell figure.
+		{
+			const KINDS = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
+			const cell = room.map.width / room.mazeGenerator.config.size;   // one maze grid square
+			const diepAllowed = cell / 10;                                   // diep's ~1/10-cell residual
+			const tank = player(room, 0);
+			const wall = walls.find((w) => w.kind === KINDS.WALL);
+			// Closest-point penetration of a circle (tank) against the wall's AABB.
+			const penOf = (t) => {
+				const hw = wall.w / 2, hh = wall.h / 2;
+				const cx = Math.max(wall.x - hw, Math.min(t.x, wall.x + hw));
+				const cy = Math.max(wall.y - hh, Math.min(t.y, wall.y + hh));
+				const d = Math.hypot(t.x - cx, t.y - cy);
+				return t.size - d;   // > 0 means overlapping, by this much
+			};
+			const slack = tank.size * 0.1;   // WALL_TANK_OVERLAP - the arm's own clamp target
+
+			// 1) The clamp target itself is well under diep's minimal residual - so "clamped" here
+			//    means genuinely minimal, not just "less than a whole cell".
+			check('the tank\'s allowed wall overlap is far under diep\'s ~1/10-cell residual',
+				slack < diepAllowed, slack.toFixed(2) + ' vs ' + diepAllowed.toFixed(2) + ' (1/10 cell)');
+
+			// 2) Worst case: tank centre dead inside the wall (penetration = full body radius). One
+			//    contact tick must expel it to at most the slack - it can no longer sit embedded.
+			tank.x = wall.x; tank.y = wall.y;
+			tank.vec.x = 0; tank.vec.y = 0;
+			const before = penOf(tank);
+			tank.collision(wall);
+			const after = penOf(tank);
+			check('a tank buried in a wall is expelled to a minimal overlap in one contact tick',
+				before > slack && after <= slack + 1e-6,
+				'penetration ' + before.toFixed(1) + ' -> ' + after.toFixed(1) + ' (slack ' + slack.toFixed(1) + ')');
+
+			// 3) Edge case: tank overlapping one face by more than the slack is clamped back to it,
+			//    and the residual stays under diep's 1/10-cell figure.
+			tank.x = wall.x + wall.w / 2 + tank.size * 0.4;   // 60% of the body radius inside the face
+			tank.y = wall.y;
+			tank.vec.x = 0; tank.vec.y = 0;
+			tank.collision(wall);
+			check('a tank overlapping a wall face is clamped under diep\'s ~1/10-cell overlap',
+				penOf(tank) <= diepAllowed, penOf(tank).toFixed(2) + ' vs ' + diepAllowed.toFixed(2));
+
+			// A SHAPE must leave NO visual overlap at all (user report / Batch E): a shape's drawn
+			// corners reach this.size x SQRT2 (drawings.js C3), so the arm snaps the DRAWN radius
+			// clear of the wall, not just the collision circle - snapping the collision circle
+			// tangent (the old behaviour) left the corners poking in by (SQRT2 - 1) x size. Build a
+			// real square, bury it in the wall, run one contact tick, and assert its whole drawn
+			// extent is outside the wall (closest-point distance >= drawn circumradius).
+			{
+				const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
+				const shape = new Objects('sqr', [0, 0, 0], { GM: 'maze', sId: room.id, oId: 9990 }, room.map, room);
+				const drawR = shape.size * Math.SQRT2;
+				const hw = wall.w / 2, hh = wall.h / 2;
+				const surfaceDist = (s) => {
+					const cxp = Math.max(wall.x - hw, Math.min(s.x, wall.x + hw));
+					const cyp = Math.max(wall.y - hh, Math.min(s.y, wall.y + hh));
+					return Math.hypot(s.x - cxp, s.y - cyp);   // centre-to-nearest-wall-point
+				};
+				// Anchor: the drawn corner really does stick out past the collision radius - so
+				// snapping only the collision circle (the old code) WOULD have left the corner in.
+				check('a shape\'s drawn corners extend a full SQRT2 past its collision radius (C3)',
+					Math.abs(drawR - shape.size * Math.SQRT2) < 1e-9 && drawR > shape.size,
+					drawR.toFixed(2) + ' vs collision ' + shape.size.toFixed(2));
+
+				shape.x = wall.x; shape.y = wall.y;   // buried dead-centre in the wall
+				shape.vec.x = 0; shape.vec.y = 0;
+				shape.collision(wall);
+				check('a shape buried in a wall is pushed until its whole DRAWN body clears the wall',
+					surfaceDist(shape) >= drawR - 1e-6,
+					'surface dist ' + surfaceDist(shape).toFixed(2) + ' vs drawn radius ' + drawR.toFixed(2));
+
+				// Grazing case: only the drawn corner is inside (collision circle not yet touching).
+				shape.x = wall.x + hw + (shape.size + drawR) / 2;   // between collision radius and drawn radius
+				shape.y = wall.y;
+				shape.vec.x = 0; shape.vec.y = 0;
+				check('...and this graze really was a drawn-corner overlap the collision circle missed',
+					surfaceDist(shape) < drawR && surfaceDist(shape) > shape.size,
+					surfaceDist(shape).toFixed(2) + ' (between ' + shape.size.toFixed(2) + ' and ' + drawR.toFixed(2) + ')');
+				shape.collision(wall);
+				check('a shape grazing a wall by only its drawn corner is still pushed fully clear',
+					surfaceDist(shape) >= drawR - 1e-6,
+					'surface dist ' + surfaceDist(shape).toFixed(2) + ' vs drawn radius ' + drawR.toFixed(2));
+			}
+		}
 	}
 
 	// Visible on the minimap (diep_wiki: "The maze walls are also visible on the minimap") -
@@ -1034,6 +1124,62 @@ function dominatorTests() {
 			dom.team === before && dom.hp === dom.maxHp, dom.team + ' hp=' + dom.hp);
 	}
 
+	// Batch F - Dominator/Mothership takeover (FOV transfer). Taking a boss moves the socket's
+	// camera/identity onto it (rooms/Room.js's per-viewer buffer reads `piloting` as its `main`),
+	// you control only it, and - the whole point - the old body dying does NOT open your death
+	// screen, because the buffer's `main`/dead-flag are the boss now, not the corpse.
+	{
+		// A claimable Dominator on teamA's side, sitting right next to a teamA pilot.
+		const cap = room.createDominator(teamA.x + 5, teamA.y, 0);
+		cap.team = teamA.team;
+		cap.pilotedBy = null;
+		teamA.piloting = null;
+		teamA.hp = teamA.maxHp; teamA.dead = 0; teamA.destroy = 0;
+		teamA.level = 30;   // > 5, so the piloting bleed does not kill it on the very first tick
+
+		room.togglePossession(teamA);
+		check('taking the nearest same-team Dominator binds pilot <-> boss both ways',
+			teamA.piloting === cap && cap.pilotedBy === teamA);
+
+		const slot = teamA.id.oId;
+		room.step();   // populates room.BUFFER
+		check('the socket\'s camera/identity is the boss, not the pilot\'s own body',
+			room.BUFFER[slot] && room.BUFFER[slot].main === cap,
+			room.BUFFER[slot] && room.BUFFER[slot].main && room.BUFFER[slot].main.class);
+		const buf1 = room.getBuffer(slot);
+		check('the HUD reads the boss\'s flat level and zero upgrade points, no NaN',
+			buf1.head.level === cap.level && buf1.head.still === 0 && buf1.head.cLvl === 0,
+			'level=' + buf1.head.level + ' still=' + buf1.head.still);
+
+		// Now the vacated body dies. This must NOT release the boss and must NOT flip the camera
+		// back onto the corpse - you ARE the boss.
+		teamA.hp = 0;
+		room.step();
+		// "Dead" covers either death path: the piloting bleed (dead = 1) or ordinary lethal contact
+		// (dead = DEAD_DELAY). Neither must release the boss or move the camera off it - that is the
+		// whole point of the batch, and is what the next two checks assert.
+		check('the old body dies while piloting', teamA.dead >= 1,
+			'dead=' + teamA.dead + ' destroy=' + teamA.destroy + ' piloting=' + (teamA.piloting === cap));
+		check('...but the boss is NOT released - you keep control of it',
+			teamA.piloting === cap && cap.pilotedBy === teamA);
+		check('...and the camera stays on the boss, not the dead body',
+			room.BUFFER[slot] && room.BUFFER[slot].main === cap);
+		const buf2 = room.getBuffer(slot);
+		check('...so the death-screen flag (states[2]) tracks the BOSS (alive), not the corpse',
+			buf2.main.states[2] === (cap.dead ? 1 : 0) && buf2.main.states[2] === 0,
+			'states[2]=' + buf2.main.states[2] + ' (boss dead=' + cap.dead + ', body dead=' + teamA.dead + ')');
+
+		// Pressing H (releasePossession) hands the boss back; the camera returns to the body, which
+		// is where END finally comes from - releasing onto a dead body is how you actually die.
+		room.releasePossession(teamA);
+		check('releasing unbinds both sides',
+			teamA.piloting === null && cap.pilotedBy === null);
+		room.step();
+		check('...and the camera returns to the (now dead) body, so END can open',
+			room.BUFFER[slot] && room.BUFFER[slot].main === teamA &&
+			room.getBuffer(slot).main.states[2] === 1);
+	}
+
 	return room;
 }
 
@@ -1217,8 +1363,13 @@ function possessionTests() {
 		pilot.update();
 		check('a level<=5 pilot\'s vacated tank dies outright instead of slowly bleeding',
 			pilot.hp === 0 && pilot.destroy > 0, pilot.hp + ',' + pilot.destroy);
-		check('...and that death auto-releases the possession',
-			dom.pilotedBy === null, dom.pilotedBy);
+		// Batch F: the body dying no longer auto-releases the boss - the pilot IS the boss now, so
+		// the camera stays on it and the corpse dying does not open the death screen. Releasing is
+		// the pilot's own H press, a Dominator flip, or the boss's own death (all tested elsewhere).
+		check('...and that death does NOT release the possession (FOV transfer, Batch F)',
+			pilot.piloting === dom && dom.pilotedBy === pilot,
+			pilot.piloting + ',' + dom.pilotedBy);
+		room.releasePossession(pilot);   // clean up for the tests that follow
 	}
 
 	// Mothership possession: movement is allowed (unlike a Dominator), and the 5-minute timer.

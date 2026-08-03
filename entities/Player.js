@@ -43,6 +43,7 @@ const AUTOTURRET_LEAD = 15.84;
 // tick.impulse() at its own call site below, not here (see the KIND.WALL collision arm below).
 const WALL_TANK_KEEP_SPEED = require('../lib/constants.js').WALL_TANK_KEEP_SPEED;
 const WALL_PUSH_OUT = require('../lib/constants.js').WALL_PUSH_OUT;
+const WALL_TANK_OVERLAP = require('../lib/constants.js').WALL_TANK_OVERLAP;
 
 // diep's maintainVelocity() factor, already folded into TanksConfig.js's `speed` column - dividing
 // it back out recovers diep's own raw `bulletAccel`, which is what shoot()'s muzzle-kick formulas
@@ -1026,12 +1027,42 @@ class Player {
 				const cx = Math.max(other.x - hw, Math.min(this.x, other.x + hw));
 				const cy = Math.max(other.y - hh, Math.min(this.y, other.y + hh));
 				const dx = this.x - cx, dy = this.y - cy;
-				if (dx * dx + dy * dy > this.size * this.size) { break; }
+				const d = Math.sqrt(dx * dx + dy * dy);
+				if (d > this.size) { break; }
 				// No body damage, same as before (diep_wiki, PENDING #26) - no hp -= anywhere in
 				// this arm. Object.ts:303: a tank sheds to a flat fraction of its own speed on every
 				// tick of contact - dimensionless, applied directly to the live vec read.
 				this.vec.x *= WALL_TANK_KEEP_SPEED;
 				this.vec.y *= WALL_TANK_KEEP_SPEED;
+				/*
+					Positional correction (Batch E). The velocity expel below is diep-faithful, but a
+					fast ram out-runs it for several ticks, so a tank could sink up to a whole grid
+					cell in before it bit - the arm was velocity-only, unlike the shape arm in
+					entities/Objects.js which already snaps out. Clamp the penetration to
+					WALL_TANK_OVERLAP of the body radius (diep keeps the residual overlap minimal,
+					~1/10 of a cell) along the same closest-point normal the other two arms test with.
+				*/
+				const slack = this.size * WALL_TANK_OVERLAP;
+				if (d === 0) {
+					// Centre dead inside the rectangle: the closest point IS the centre, so there
+					// is no closest-point normal and no meaningful `size - d` until the centre clears
+					// a face. Leave along the nearest FACE (same face-pick entities/Objects.js's arm
+					// uses) and push the centre out PAST that face, leaving only `slack` of the body
+					// still inside - moving by `size - d` here would never escape a thick wall.
+					const fx = hw - Math.abs(this.x - other.x), fy = hh - Math.abs(this.y - other.y);
+					let nx, ny, faceDist;
+					if (fx < fy) { nx = Math.sign(this.x - other.x) || 1; ny = 0; faceDist = fx; }
+					else { nx = 0; ny = Math.sign(this.y - other.y) || 1; faceDist = fy; }
+					const move = faceDist + this.size - slack;
+					this.x += nx * move;
+					this.y += ny * move;
+				} else if (this.size - d > slack) {
+					// Centre outside the rectangle, body overlapping a corner/edge: shove out along
+					// the closest-point normal until only `slack` of the body remains inside.
+					const corr = (this.size - d) - slack;
+					this.x += (dx / d) * corr;
+					this.y += (dy / d) * corr;
+				}
 				// ...and gets shoved out along whichever axis the centre offset is more aligned
 				// with (Object.ts:307-326's relA/relB comparison - axis-aligned rather than
 				// diagonal, since a Maze wall is never rotated here). tick.impulse(), not
@@ -1106,7 +1137,17 @@ class Player {
 				anti-exploit floor: level <=5 dies outright rather than slowly bleeding, so a
 				fresh spawn can't grab a Dominator/Mothership risk-free. No `this.motion()`/
 				`this.shoot()` this tick either way - this IS "your inputs are deleted".
+
+				Takeover FOV transfer (Batch F): the pilot's camera/identity is the BOSS now
+				(rooms/Room.js's per-viewer buffer reads `player.piloting` as its `main`), so this
+				body dying must NOT open the pilot's death screen and must NOT release the boss -
+				you ARE the boss, the corpse is just scenery. So once dead we leave `piloting` set
+				and stop touching this husk; the socket keeps looking at the boss until the pilot
+				presses H (togglePossession -> releasePossession) or the boss itself dies. The husk
+				stays parked in its slot (rooms/Room.js's tick loop keeps a dead, non-disconnected
+				player rather than freeing the slot), which is what keeps the socket's buffer alive.
 			*/
+			if (this.dead) { return; }   // already a husk - camera is on the boss, leave it be
 			if (this.level <= 5) {
 				this.hp = 0;
 			} else {
@@ -1117,7 +1158,8 @@ class Player {
 				this.dead = 1;
 				this.destroy = tick.DES;
 				this.murder = -1;
-				this.room.releasePossession(this);
+				// NB: no releasePossession() here - see the block comment above. Releasing is the
+				// pilot's own H press, a boss flip, or the boss's own death.
 			}
 			return;
 		} else {

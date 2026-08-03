@@ -1668,14 +1668,26 @@ class Room {
 				continue;
 			}
 
+			/*
+				Dominator/Mothership takeover (Batch F, diepcustom Client.ts's possess():
+				`camera.cameraData.player = ai.owner`). While this human is piloting a boss, the
+				socket's whole view - camera centre, the `main` entity its HUD/hp/death-flag read,
+				and the self-dedup below (getBuffer's `RAW.main.id.oId === obj.id.oId` skip) - is the
+				BOSS, not this human's own (now dying) body. Keying the dedup off the boss is what
+				makes the old body appear in `rest` as an ordinary dying tank while the boss is drawn
+				as `User`. Input still routes to the human (net/gameSocket.js's getPlayer), which
+				drives the boss through lib/gameAI.js's mirror - only the camera/identity moves here.
+			*/
+			const cam = player.piloting || player;
+
 			// Predator zoom (plan.md C9): the per-viewer buffer is centred on the locked zoom
 			// point while one is active, not the tank's own position, or the client would pan its
 			// camera out to an area the server never sent any entities for. The FoV SIZE (screen)
 			// is unchanged - diep's zoom moves where you're looking, not how far you can see.
-			const camX = player.zooming ? player.zoomX : player.x;
-			const camY = player.zooming ? player.zoomY : player.y;
-			const x = camX - player.screen / 2 - 200, y = camY - player.screen / 2 * 0.5625 - 200;
-			const w = player.screen + 400, h = player.screen * 0.5625 + 400;
+			const camX = cam.zooming ? cam.zoomX : cam.x;
+			const camY = cam.zooming ? cam.zoomY : cam.y;
+			const x = camX - cam.screen / 2 - 200, y = camY - cam.screen / 2 * 0.5625 - 200;
+			const w = cam.screen + 400, h = cam.screen * 0.5625 + 400;
 
 			this.BUFFER[id] = {
 				x: x,
@@ -1683,7 +1695,7 @@ class Room {
 				w: w,
 				h: h
 			}
-			this.BUFFER[id].main = player;
+			this.BUFFER[id].main = cam;
 			const qx = x - 200, qy = y - 200, qw = w + 400, qh = h + 400;
 			let rest = qt.query(function (a, b) {
 				return (
@@ -1922,9 +1934,13 @@ class Room {
 			xp: RAW.main.xp,
 			// Both of these are the server's own rules, read straight off entities/Player.js rather
 			// than re-expressed here (PENDING #30): points available is granted-minus-spent, not
-			// level-minus-spent, and a class tier opens every 15 levels.
-			still: RAW.main.dead ? 0 : Player.pointsAtLevel(RAW.main.level) - RAW.main.stillLvl,
-			cLvl: RAW.main.dead ? 0 : parseInt(RAW.main.level / 15),
+			// level-minus-spent, and a class tier opens every 15 levels. A possessed Dominator/
+			// Mothership (Batch F: RAW.main is now the boss) has no upgrade path at all - diep's own
+			// possess() zeroes statsAvailable - so both read 0 rather than a boss's own level.
+			still: (RAW.main.dead || RAW.main.boss || RAW.main.dominator || RAW.main.mothership)
+				? 0 : Player.pointsAtLevel(RAW.main.level) - RAW.main.stillLvl,
+			cLvl: (RAW.main.dead || RAW.main.boss || RAW.main.dominator || RAW.main.mothership)
+				? 0 : parseInt(RAW.main.level / 15),
 			// 0 in ffa/boss/sandbox, which have no bases - the client reads that as "draw none"
 			// rather than needing to know which gamemodes have them.
 			baseSize: this.baseSize || 0,
@@ -1942,7 +1958,10 @@ class Room {
 		};
 		///
 		const lvl = RAW.main.level, xp = RAW.main.xp, arr = RAW.main.XPLVL;
-		buff.head.level = (!lvl ? 1 : ((lvl >= arr.length - 1) ? lvl : lvl + Math.max(Math.min(1, (xp - arr[lvl - 1]) / (arr[lvl] - arr[lvl - 1])), 0)));
+		// A possessed Dominator/Mothership (Batch F) has a flat level and no xp curve to interpolate
+		// along - send its level as-is rather than dividing by an xp band it never had.
+		buff.head.level = (RAW.main.boss || RAW.main.dominator || RAW.main.mothership) ? lvl
+			: (!lvl ? 1 : ((lvl >= arr.length - 1) ? lvl : lvl + Math.max(Math.min(1, (xp - arr[lvl - 1]) / (arr[lvl] - arr[lvl - 1])), 0)));
 		///
 		buff.main = {
 			// states[4]: Predator zoom (plan.md C9) - whether head.camX/camY is currently a real

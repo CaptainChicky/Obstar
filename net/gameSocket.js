@@ -128,6 +128,12 @@ function attach(httpServer, controller) {
 						break;
 					};
 					case 'enter': {
+						// Batch F: while piloting a boss the socket's own body is a dead husk, but the
+						// player is alive as the boss and is not on the death screen - a stray 'enter'
+						// must not respawn the husk out from under the possession (which would strand
+						// the boss with a dangling pilotedBy). Release is the H key, not enter.
+						const cur = controller.getPlayer(socket.id);
+						if (cur && cur.piloting) { break; }
 						const ans = controller.respawn(socket.id);
 						const tank = controller.getPlayer(socket.id);
 						if (!tank && !ans) { break; }
@@ -318,7 +324,12 @@ function attach(httpServer, controller) {
 				return;
 			}
 			if (play) {
-				if (play.dead) {
+				// Batch F: while piloting a Dominator/Mothership the human's own body is a dead husk
+				// but the player is very much alive AS the boss (the socket's camera is on it), so
+				// the AFK-dead kick has to read the camera entity, not the husk - otherwise taking a
+				// Dominator gets you kicked S_BEFORE_KICK seconds later.
+				const cam = play.piloting || play;
+				if (cam.dead) {
 					this.dead++;
 				} else {
 					this.dead = 0;

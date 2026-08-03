@@ -320,24 +320,40 @@ class Objects {
 					and sit there. Same circle-vs-AABB closest-point test both other arms use - the
 					broad phase only bounds a wall by its half-diagonal, so a candidate has to be
 					re-checked here before anything moves.
+
+					Snap by the shape's DRAWN circumradius, not its collision `.size`: a shape's drawn
+					corners reach `this.size * SQRT2` (drawings.js C3 - `Drawings.obj.*` draw every
+					shape at hit-radius x Math.SQRT2, independent of side count). Snapping the
+					collision circle tangent left those corners poking visibly into the wall by
+					(SQRT2 - 1) x size (~9 units for a square). Pushing the drawn extent clear instead
+					removes ALL visual overlap - a flat edge facing the wall then leaves a small gap,
+					which is what real diep shows too (its wall even bounces a grazing shape further
+					out again).
 				*/
 				const hw = other.w / 2, hh = other.h / 2;
 				const cx = Math.max(other.x - hw, Math.min(this.x, other.x + hw));
 				const cy = Math.max(other.y - hh, Math.min(this.y, other.y + hh));
-				let dx = this.x - cx, dy = this.y - cy;
-				let d = Math.sqrt(dx * dx + dy * dy);
-				if (d > this.size) { break; }
+				const dx = this.x - cx, dy = this.y - cy;
+				const d = Math.sqrt(dx * dx + dy * dy);
+				const drawR = this.size * Math.SQRT2;   // drawn circumradius (C3)
+				if (d > drawR) { break; }
+				let nx, ny;
 				if (d === 0) {
-					// Dead centre inside the rectangle (a shape that spawned in a wall): there is
-					// no closest-point normal, so leave along the nearest FACE instead.
-					const ox = hw - Math.abs(this.x - other.x), oy = hh - Math.abs(this.y - other.y);
-					if (ox < oy) { dx = Math.sign(this.x - other.x) || 1; dy = 0; }
-					else { dx = 0; dy = Math.sign(this.y - other.y) || 1; }
-					d = 1;
+					// Dead centre inside the rectangle (a shape that spawned in a wall): there is no
+					// closest-point normal, so leave along the nearest FACE, pushing the centre PAST
+					// that face by the full drawn radius - moving by `drawR` alone from the centre
+					// would never escape a thick wall.
+					const fx = hw - Math.abs(this.x - other.x), fy = hh - Math.abs(this.y - other.y);
+					let faceDist;
+					if (fx < fy) { nx = Math.sign(this.x - other.x) || 1; ny = 0; faceDist = fx; }
+					else { nx = 0; ny = Math.sign(this.y - other.y) || 1; faceDist = fy; }
+					this.x += nx * (faceDist + drawR);
+					this.y += ny * (faceDist + drawR);
+				} else {
+					nx = dx / d; ny = dy / d;
+					this.x = cx + nx * drawR;
+					this.y = cy + ny * drawR;
 				}
-				const nx = dx / d, ny = dy / d;
-				this.x = cx + nx * this.size;
-				this.y = cy + ny * this.size;
 				// Kill only the component heading INTO the wall - a shape drifting along a face
 				// keeps sliding along it instead of being stopped dead by a graze.
 				const into = this.vec.x * nx + this.vec.y * ny;

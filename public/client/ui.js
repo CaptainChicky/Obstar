@@ -1023,8 +1023,41 @@
 					ctx.fillText(text, -m / 2, nameS / 2);
 					return can;
 				};
+				// Batch G: the "change game mode" button drawn under the respawn prompt. A pill so
+				// it reads as clickable (the enter prompt above it is plain text, keyboard-only); its
+				// local-space rect is recomputed and hit-tested in endScreen() each frame.
+				function setChange() {
+					const can = document.createElement('CANVAS');
+					const ctx = can.getContext('2d');
+					const R = CONST.RESOLUTION * CONST.OFFCAN;
+					const text = 'Change game mode';
+					const padX = 16, padY = 8;
+					ctx.font = '700 ' + nameS + 'px Catamaran';
+					const m = ctx.measureText(text).width;
+					can.width = (m + padX * 2 + lw) * R + 4;
+					can.height = (nameS + padY * 2 + lw) * R + 4;
+					ctx.setTransform(R, 0, 0, R, can.width / 2 / R, lw / 2);
+					ctx.font = '700 ' + nameS + 'px Catamaran';
+					ctx.textBaseline = 'middle';
+					ctx.lineJoin = 'round';
+					// pill
+					ctx.beginPath();
+					roundRect(ctx, 0, 0, m + padX * 2, nameS + padY * 2, 8);
+					ctx.closePath();
+					ctx.fillStyle = stroke;
+					ctx.fill();
+					ctx.lineWidth = lw;
+					ctx.strokeStyle = fill;
+					ctx.stroke();
+					// label
+					ctx.fillStyle = fill;
+					ctx.fillText(text, padX, padY + nameS / 2);
+					return can;
+				};
 				ALL.set = set;
 				ALL.enter = setEnter();
+				ALL.change = setChange();
+				ALL.switching = 0;   // set once, so a held/re-fired click cannot double-navigate
 				///
 				return ALL;
 			})()
@@ -1382,7 +1415,13 @@
 				}
 				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW, Global.canH);
 				ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
-				this.TNK.dshow += (this.TNK.show - this.TNK.dshow) * 0.05;
+				// Batch G: frame-rate-independent, like every other per-frame ease in the client (see
+			// Loop()'s dtFrames note and General.lerpK). This panel was the one that still used a
+			// raw per-frame 0.05, so on a 144Hz display it slid in 2.4x too fast and - the reported
+			// symptom - during a frame hitch (more common on Chrome) it "barely moved at all" then
+			// snapped once frames resumed. lerpK(0.05) is exactly 0.05 at 60Hz, so this is a no-op
+			// on a steady 60Hz client and only corrects the off-rate/hitch cases.
+			this.TNK.dshow += (this.TNK.show - this.TNK.dshow) * General['lerpK'](0.05);
 				// gw holds the last choice's width for the logo placement below the loop; it was a
 				// function-scoped `var` that leaked out of the loop on purpose (undefined if empty).
 				let gw;
@@ -1394,7 +1433,7 @@
 					// panel dshow, so a card already at rest (rowDshow 1) does not move again when
 					// a sibling is added alongside it - only the new row's own value starts at 0.
 					if (this.TNK.rowDshow[n] === undefined) { this.TNK.rowDshow[n] = 1; }
-					this.TNK.rowDshow[n] += (1 - this.TNK.rowDshow[n]) * 0.05;
+					this.TNK.rowDshow[n] += (1 - this.TNK.rowDshow[n]) * General['lerpK'](0.05);
 					const rowShow = this.TNK.dshow * this.TNK.rowDshow[n];
 					const isIn = (General['isMouse'](
 						(Global.winW) - (-this.TNK.mRight + c.width - 5) / reverse,
@@ -1464,6 +1503,35 @@
 					ctx.drawImage(this.END.title, -this.END.title.width / 2, -this.END.title.height - this.END.tank.height * .8 - 200 * invert);
 					ctx.drawImage(this.END.tank, -this.END.tank.width, this.END.tank.height / 2 - 200 * invert);
 					ctx.drawImage(this.END.enter, 0, this.END.tank.height - this.END.enter.height / 4 - 200 * invert)
+					// Batch G: the clickable "change game mode" pill, centred under the enter prompt.
+					// Drawn in the same centre-origin, Seff-scaled space as the images above, so its
+					// hit-test converts the window-space mouse back into that space with the exact
+					// inverse transform (Seff = UIRATIO / (OFFCAN * RESOLUTION), origin at canvas
+					// centre; window = canvas-pixel / RESOLUTION). No new event wiring - it reads the
+					// same rising-edge click the upgrade panel does.
+					const ch = this.END.change;
+					const bx = -ch.width / 2;
+					const by = this.END.tank.height + this.END.enter.height + 10 - 200 * invert;
+					ctx.drawImage(ch, bx, by);
+					if (!this.END.switching) {
+						const Seff = Global.UIRATIO / (CONST.OFFCAN * CONST.RESOLUTION);
+						const mlx = (Global.mouse_x * CONST.RESOLUTION - Global.canW / 2) / Seff;
+						const mly = (Global.mouse_y * CONST.RESOLUTION - Global.canH / 2) / Seff;
+						const over = mlx >= bx && mlx <= bx + ch.width && mly >= by && mly <= by + ch.height;
+						if (over) {
+							Global.mouse_out = CONST.MOUSE_OUT;   // don't leak the click into the game
+							if (Global.inputs.mouseL && !Global.inputs.old.mouseL) {
+								this.END.switching = 1;
+								// Socket first, THEN navigate: drop the game connection so the server
+								// frees the slot immediately rather than waiting out the heartbeat
+								// timeout on a socket the unloading page would abandon anyway.
+								try { if (General['WS']) { General['WS'].onclose = null; General['WS'].close(); } } catch (e) { /* already gone */ }
+								// Back to the menu - the one mode/name/pet picker, which is what POSTs
+								// /play. A full re-pick, not a half-built in-canvas mode list.
+								window.location.href = '/';
+							}
+						}
+					}
 				}
 			};
 			///
