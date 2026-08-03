@@ -82,14 +82,15 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   unreferenced knobs.
 - **Bots** (`lib/gameAI.js`) have no path to most post-T2 tanks — not authored yet.
 - **A boss's `size` conflates three different diep quantities** — its collision radius, its
-  drawn circumradius, and the reference the barrels scale against. Guardian is the only one
-  re-derived (it drew at twice diep's size and swallowed its own barrel whole): its `bossSize`
-  is now the figure that makes `Drawings.body[3]`'s `size / cos(pi/n)` land on diep's own
-  GUARDIAN_SIZE, with barrel/drone figures re-based on it. **Summoner, Defender and Mothership
-  carry the same ambiguity untouched** — each is internally consistent today and none was
-  reported, but their `bossSize` is not diep's `physicsData.size` either. Fixing them properly
-  means moving `body[3]` onto the universal `x sqrt(2)` circumradius identity (the one every
-  `Drawings.obj` shape already uses) and re-deriving all three at once.
+  drawn circumradius, and the reference the barrels scale against. Guardian and **Defender** are
+  now re-derived: each `bossSize` is the figure that makes `Drawings.body[3]`'s `size / cos(pi/n)`
+  land on diep's own `<NAME>_SIZE` (Guardian 37.8 -> 135 du; Defender 42 -> 150 du), with every
+  barrel/turret figure re-based on it (Defender this session — see the "Boss geometry
+  re-derivation" item below and `defenderGeometryTests()`). **Summoner and Mothership carry the
+  same ambiguity untouched** — each is internally consistent today and neither was reported, but
+  their `bossSize` is not diep's `physicsData.size` either. Fixing them properly means the same
+  per-boss derivation (each's own `<NAME>_SIZE` + scaleFactor + barrel axis); Summoner also draws
+  45 degrees out of true (`sides: 4` drawn vertex-up instead of edge-up).
 - **Boss `canControlDrones` possession** (Guardian's rear spawner, Summoner's 4 spawners) — diep
   lets a player pilot these two bosses and steer their drones by hand (`AbstractBoss.ts:186-192`),
   the same `H`-key claim flow plan.md E4 built for Dominator/Mothership. `rooms/Room.js`'s
@@ -286,19 +287,45 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
 Not started, in rough descending order of how visible each is. Each is a real, specific job, not a
 research question - the source for every one of them is cited here so nobody has to re-find it.
 
-- **Boss geometry re-derivation, all at once.** `Summoner.ts`/`Guardian.ts`/`Defender.ts` each set
-  `physicsData.size = <NAME>_SIZE * Math.SQRT1_2` (SUMMONER 150, GUARDIAN 135, DEFENDER 150), which
-  is the same `x sqrt(2)` circumradius identity `Drawings.obj` already uses and the thing
-  `bossSize` still conflates. Summoner additionally draws 45 degrees out of true (`sides: 4` drawn
-  vertex-up instead of edge-up). Defender is oversized, its trap-launcher stubs are far too long,
-  and its three AutoTurrets must draw ON TOP of the body scaled so their bullets match the turret
-  (`AutoTurret.ts`: size 55, width 42*0.7, recoil 0.3, bullet sizeRatio 1). The user supplied
-  measured proportions for all five bosses in issues.md - cross-check against those, they are the
-  acceptance test. `Defender_boss_3.webp` at the repo root is the reference render.
-- **Auto-turret aim/movement should match Auto Smasher's** (user, for later). The auto-turret
-  barrels (Defender's three, and any centered/ring auto-turret) should track and swing the way
-  Auto Smasher's single turret does - a movement/animation parity call, distinct from the Defender
-  *draw* fixes above (turrets on top of the body, bullet-size = turret). Not touched in B2.
+- **Boss geometry re-derivation - Defender DONE, Summoner/Mothership still open.** `Summoner.ts`/
+  `Guardian.ts`/`Defender.ts` each set `physicsData.size = <NAME>_SIZE * Math.SQRT1_2` (SUMMONER
+  150, GUARDIAN 135, DEFENDER 150). **Defender** was re-derived this session (TanksConfig.js's two
+  Defender entries + `test/rooms.js` `defenderGeometryTests()`; acceptance reference
+  `Defender_boss_3.webp`). Its `scaleFactor` is 1 (Defender.ts never calls `scale()`, unlike Fallen
+  Overlord/Booster), so every barrel dim is diep's raw du and converts on the SAME axis the body
+  does. The bug: the barrels were on 0.7 (49.98 = 71.4x0.7, 38.5 = 55x0.7) and then scaled AGAIN by
+  the body's own `bossSize/CONST.SIZE` = x1.2, landing on 0.84 - 1.5x too big vs the 0.56 body: the
+  "stub wayyy too long"/"oversized" report. Fixed by converting each barrel/turret dim on
+  `du x 0.56 x 35/42` so the render's own x1.2 puts it back on 0.56: trap canonLength/height
+  73.5 -> 56 (barrel tip 120 du, launcher stub ~154 du - level with the body's vertices), trap width
+  49.98 -> 33.32; turret canonLength 38.5 -> 25.667, distance 33.6 -> 28 (diep's own 60-du mount;
+  the old 33.6 was treated as absolute and, x `ra`, spawned bullets 12 du outside the turret),
+  bullet size 10.29 -> 8.232 so the drawn bullet DIAMETER equals the drawn barrel WIDTH (AutoTurret's
+  29.4 du) - "bullets match the turret size". The three turrets moved off the old bare `aboveBody`
+  cannons onto the `turrets` mechanism (base circle + a canDir-tracking barrel, drawn over the body
+  in render.js's non-`ring` post-body pass), and the server now orders the turret cannons FIRST so
+  canDir[0..2] feed them. bossSize stays 42 (= 150 du x 0.56 x cos(pi/3); the BODY was already
+  correct - the oversized read was the barrels). **The golden did NOT move** - the seeded boss-mode
+  replay spawns a Defender server-side but never draws it in the recording client's viewport (same
+  reason B2's bosses are pinned by an assertion, not the golden), so `defenderGeometryTests()` is
+  what holds this, anchored to diep's own 150/120/71.4/55/29.4/25/60 du figures.
+  **Two deliberate Defender leftovers:** (1) the trap PROJECTILE `size` stays 19.992 (0.7, the
+  universal bullet axis), NOT scaled down to the launcher's 0.56 - the wiki notes the Defender's big
+  Mega-Trapper-sized launchers "shoot regular size traps", and it keeps the trap hitbox unchanged;
+  (2) the turret `back` (recoil impulse) stays 0.9408, which is AutoTurret's recoil 0.3 on the old
+  x2.8 boss-row scale rather than the settled `0.3 x 1.12 = 0.336` Auto Smasher carries - a
+  physics/impulse value, out of a geometry pass's scope, but a real one-liner follow-up (the wiki
+  even calls out "The Defender suffers from its own Auto Turrets' Recoil").
+  **Summoner and Mothership are untouched** and still carry the `bossSize`-conflation (Summoner also
+  draws 45 degrees out of true, `sides: 4` vertex-up); re-derive them the same way (each's own
+  `<NAME>_SIZE`, scaleFactor, barrel axis) against issues.md's measured proportions when picked up.
+- **Auto-turret aim/movement matching Auto Smasher's - DONE for the Defender** (was "for later").
+  Falls out of the Defender turret rewrite above: the three turrets are now non-`ring` `autoDir`/
+  `autoShoot` cannons feeding the client `turrets` mechanism - the SAME flags, the SAME `Player.js`
+  non-ring autoDir branch (aim at `DETEC.select`, else the shared free-running `this.autoDir`), and
+  the SAME `Drawings.turrets[0]` canDir-tracking render Auto Smasher uses, so the barrels track and
+  idle-spin identically. Any FUTURE centered/ring auto-turret still rendering frozen at its resting
+  `offdir` (a plain `aboveBody` cannon) should move onto the same mechanism.
 - **Factory geometry**: square body (`sides: 4`), trapezoid spawner, `MinionBarrelDefinition` size
   85 / width 50.4, drone `size *= 1.2`. (The AI half - `ai.viewRange = 900`, `FOCUS_RADIUS = 800**2`
   circle-and-attack, the right-click cluster - is done, see "Settled by the fourth issues.md pass"

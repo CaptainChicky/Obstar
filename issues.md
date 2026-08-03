@@ -11,7 +11,7 @@ additional issues are present:
 - factory is even more broken. curretnyl it doesnt even have a tank body. its a square, with a trapezoidal spawner. its drones have diameter 32px if the factory has side length 54px. its drones' barrels poke out around 9px, and 14.5 px width. when you left click on something, the drones dont go to that place like normal triangle drones, but instead go towards, then stops at a distance and starts circling it and attacking with their own turrets. when you right click, outside of a certain distance they repel, but inside a radius of the mouse pointer, they instead cluster together with turrets facing away from the mouse. check diep source imeplemntations for these distances. also read the wiki page on the factory for details.
 - there should be a gamemode switcher on the respawn screen somewhere tbh
 
-- defender is still royally fucked lmao
+- defender traps may be too large. defender's 3 autoturrets should be able to indepdnetnly target different things btw whatever one is closer.
 - skimmer secondary bullets still not drawn below the main bullet. theyre spawning visible on top of the main
 - auto3 and auto5's auto turrets can still go inside the tank itself when you are in sandbox
 - guardian doesnt seem to spawn enough drones? also crosscheck summoner, fallenoverlord

@@ -1489,29 +1489,49 @@
 				body: { shape: 3, sides: 3 }   // Guardian.ts: sides 3 (plan.md R6)
 			},
 			"Defender": {
-				// Three trap launchers (diepcustom TrapperDefinition, evenly spaced, forceFire)
-				// plus three short auto-turret nubs at the vertices between them
-				// (MountedTurretDefinition - diep's own separate AutoTurret child entities,
-				// simplified to extra cannons on the same body, same call plan.md T6 made for
-				// Auto 3/Auto 5's rings). Defender.ts does NOT override sizeFactor (unlike
-				// Summoner/Guardian) - it uses the ordinary size/50, so its barrels convert on the
-				// same 0.7 axis as every non-boss class: turret width 29.4x0.7=20.58 (plan.md
-				// R2/R3). Trap width is likewise 71.4x0.7=49.98, but trap HEIGHT is tuned below,
-				// not the plain 120x0.7=84 the same axis gives the barrel's raw length - against
-				// the now-correctly-sized body (bossSize 42, see the server entry) that reads as a
-				// launcher longer than the body's own side, "the trapper barrels have a 'stub'
-				// that is wayyy too long" (issues.md); shortened to the length
-				// Defender_boss_3.webp's own launchers show poking out past the body edge.
-				// `distance: 33.6` (plan.md R8) mirrors the server's turret mount radius - without
-				// it here, bullets fired from the server's offset turret spawn 33.6 units out from
-				// where the client draws the barrel at the hull centre. The turrets get
-				// `aboveBody` (render.js's post-body pass) so they draw ON the triangle instead of
-				// half-buried under it - issues.md's "need to be drawn ON TOP of the body".
+				// Re-derived cleanly off diepcustom Defender.ts (this session). Defender.ts sets
+				// `physicsData.size = DEFENDER_SIZE * sqrt(1/2)` (DEFENDER_SIZE 150 du) and never
+				// calls `scale()`, so its `scaleFactor` stays 1 (unlike Fallen Overlord/Booster,
+				// which scale to level 75) - EVERY barrel/turret dimension is therefore diep's raw
+				// du at scaleFactor 1, and every one of them converts on the SAME axis the body
+				// does. That axis is the whole fix. The body draws its 150 du circumradius at
+				// `bossSize 42` (server entry: 150 x 0.56 x cos(pi/3) = 42, so Drawings.body[3]'s
+				// `size / cos(pi/3)` = 84 units = 150 du x 0.56); a barrel is then drawn at
+				// `height x bossSize/CONST.SIZE` = `height x 42/35` = `height x 1.2`, so a diep
+				// length of `du x 0.56` units needs `height = du x 0.56 x 35/42` = `du x 0.46667`.
+				// The old numbers used `du x 0.7` for the barrels (49.98 = 71.4 x 0.7, 20.58 =
+				// 29.4 x 0.7) - correct for a NON-boss class drawn at CONST.SIZE, but on this boss
+				// the extra x1.2 body-scale then lands them on 0.84, i.e. 1.5x too big relative to
+				// the 0.56 body: "the trapper barrels have a 'stub' that is wayyy too long"
+				// (issues.md), and the whole silhouette reads oversized.
+				//
+				// Trap launcher (TrapperDefinition size 120 / width 71.4): height 120 x 0.46667 =
+				// 56 (barrel tip at 56 x 1.2 = 67.2 units = 120 du), width 71.4 x 0.46667 = 33.32.
+				// The trapLauncher arrowhead auto-derives off `width` (drawings.js: length =
+				// width x 20/42), so it now flares to a stub reaching ~154 du along the edge normal
+				// - level with the body's own vertices, exactly as Defender_boss_3.webp shows,
+				// instead of the old 227 du overshoot.
+				//
+				// Auto-turrets (MountedTurretDefinition = AutoTurretDefinition: barrel size 55 /
+				// width 42 x 0.7 = 29.4, base baseSize 25 du, mounted at Defender.ts's own
+				// `size * offset` = 60 du absolute radius). Moved off the old `aboveBody` cannon
+				// hack (a bare rectangle, no base circle, and a barrel frozen at its resting
+				// offdir because a client cannon never reads canDir) onto the `turrets` mechanism,
+				// the same one Auto 3/5/Smasher use: it draws a grey base CIRCLE (`rad`) with the
+				// grey barrel above it AND, being non-`ring`, draws in render.js's POST-body pass
+				// (over the triangle) with the barrel tracking `canDir` - the "grey circle, then
+				// grey rectangle on top ... drawn ON TOP of the body" the issue asks for, and the
+				// aim-tracking half of matching Auto Smasher. height 55 x 0.46667 = 25.667, width
+				// 29.4 x 0.46667 = 13.72, base rad 25 x 0.46667 = 11.667 (drawn 25 du disc),
+				// distance 60 du x 0.46667 = 28 (mount = distance x 1.2 = 33.6 units = 60 du).
+				// The server orders its turret cannons FIRST so canDir[0..2] feed these turrets
+				// (see the server entry).
 				cannons: [0, 1, 2].map(i => ({
-					type: 0, height: 73.5, width: 49.98, offx: 0, offdir: Math.PI * 2 * i / 3 + Math.PI / 3, open: 0, trapLauncher: true
-				})).concat([0, 1, 2].map(i => ({
-					type: 0, height: 38.5, width: 20.58, offx: 0, offdir: Math.PI * 2 * i / 3, open: 0, distance: 33.6, aboveBody: true
-				}))),
+					type: 0, height: 56, width: 33.32, offx: 0, offdir: Math.PI * 2 * i / 3 + Math.PI / 3, open: 0, trapLauncher: true
+				})),
+				turrets: [0, 1, 2].map(i => ({
+					type: 0, height: 25.667, width: 13.72, offx: 0, offdir: Math.PI * 2 * i / 3, open: 0, rad: 11.667, distance: 28
+				})),
 				body: { shape: 3, sides: 3 }   // Defender.ts: sides 3 (plan.md R6)
 			},
 			// Reuses Overlord's own 4-barrel geometry verbatim (diepcustom FallenOverlord.ts
@@ -3357,10 +3377,13 @@
 				// at `size x sqrt(2)` from that, back to 150. Drawings.body[3] instead draws an
 				// n-gon from its APOTHEM (`param.size`), and a triangle's apothem is half its
 				// circumradius (`cos(pi/3) = 0.5`, the same identity Guardian's own comment uses) -
-				// so the figure that reproduces diep's 150 du here is 150 x 0.56 x 0.5 = 42. At a
-				// flat 84 (150 du x 0.56, the CIRCUMRADIUS mistaken for the apothem, same bug as
-				// Summoner/pre-fix Guardian) this boss drew 2x too big - issues.md's "a bit too
-				// large" and, combined with the barrel bug below, "completely fucked".
+				// so the figure that reproduces diep's 150 du here is 150 x 0.56 x 0.5 = 42, where
+				// 0.56 is this whole tree's du->unit axis (a level-0 body is 28 units = 50 du x
+				// 0.56, entities/Player.js `28 * 1.01^level`). The BODY is therefore correctly
+				// sized at 42 and is NOT the "oversized" the issue reports - that was the barrels
+				// (below), drawn on 0.7 and then scaled again by the body's own x1.2, i.e. 1.5x too
+				// big; a flat 84 would be 2x too big (the CIRCUMRADIUS mistaken for the apothem,
+				// the Summoner/pre-fix-Guardian bug), which this is not.
 				this.screen = BASE_SCREEN;
 				this.bossSize = 42;
 				this.boss = true;
@@ -3373,36 +3396,49 @@
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 800 };
 				// Three trap launchers (TrapperDefinition, forceFire -> `auto: 1`), evenly spaced
 				// a half-slot off the turrets below (diepcustom: `PI2*(i/count + 1/(2*count))`).
-				// damage 7x4, pene 2x12.5, speed 1.12x5, life 8x75, reload 5x15, back 2gux2.8.
-				// Defender.ts does NOT override sizeFactor (unlike Summoner/Guardian) - canonLength
-				// and size both convert on the ORDINARY 0.7 axis (35/50), same as every non-boss
-				// class: size (width/2)xsizeRatiox0.7 = (71.4/2)x0.8x0.7 = 19.992 (plan.md R2/R3 -
-				// was on the wrong 0.56 axis before). canonLength is the plain 120x0.7=84 on that
-				// same axis, but against this class's now-correct (halved) bossSize that draws a
-				// launcher longer than the body's own side - shortened to 73.5 to match the
-				// client's own `height` (issues.md's "stub... wayyy too long"; "client height ===
-				// server canonLength" pattern, same as everywhere else in this file).
+				// damage 7x4, pene 2x12.5, speed 1.12x5, life 8x75, reload 5x15, back 2gux1.12.
+				// Defender.ts's scaleFactor is 1 (it never calls scale()), so canonLength is diep's
+				// raw 120 du on the SAME axis the body uses: the server spawns at
+				// `canonLength * ra` with `ra = size/35 = 42/35 = 1.2` (entities/Player.js), so
+				// `120 du x 0.56 / 1.2 = 56` puts the muzzle at 56 x 1.2 = 67.2 units = 120 du (its
+				// drawn barrel tip; the launcher stub then reaches ~154 du). The old 73.5 was on
+				// 0.7 and drew the stub to 227 du - "wayyy too long" (issues.md). The trap
+				// PROJECTILE `size` is left at 19.992 on purpose: the wiki notes the Defender's big
+				// (Mega-Trapper-sized) launchers "shoot regular size traps", so the trap keeps the
+				// ordinary 0.7 bullet axis every other trap in this file uses rather than being
+				// scaled down with the launcher (its hitbox is unchanged by this pass).
 				const traps = [0, 1, 2].map(i => ({
 					reload: 75, offTime: 0, auto: 1, type: 2, life: 600,
-					offdir: Math.PI * 2 * i / 3 + Math.PI / 3, offx: 0, canonLength: 73.5, rand: 0.174533,
+					offdir: Math.PI * 2 * i / 3 + Math.PI / 3, offx: 0, canonLength: 56, rand: 0.174533,
 					speed: 5.6, pene: 25, damage: 28, size: 19.992,
 					weight: 4.2, push: 0.45709, back: 2.24
 				}));
-				// MountedTurretDefinition = AutoTurretDefinition (AutoTurret.ts: size 55, width
-				// 42x0.7, reload 1, recoil 0.3) with bullet speed/damage/health overridden to
-				// 2.46/1.2/5.75. canonLength 55x0.7=38.5 (unchanged), size (29.4/2)x1x0.7=10.29
-				// (plan.md R2/R3, same ordinary 0.7 axis as the traps above). `distance` (plan.md
-				// T5) is diep's own real mount radius, not a guess: `positionData.y/x = size *
-				// sin/cos(angle) * offset` where `offset = 60/(DEFENDER_SIZE*sqrt(0.5))` and
-				// `size = DEFENDER_SIZE*sqrt(0.5)` are the same value, so `size*offset` = a flat
-				// 60 du regardless of boss size - an ABSOLUTE world-space offset, x0.56 = 33.6.
+				// MountedTurretDefinition = AutoTurretDefinition (AutoTurret.ts: barrel size 55,
+				// width 42x0.7=29.4, recoil 0.3, bullet sizeRatio 1) with bullet speed/damage/health
+				// overridden. All on the same 0.56 axis as the body (scaleFactor 1): canonLength
+				// 55 du x 0.56 / 1.2 = 25.667 (muzzle at 55 du), size = (29.4/2) x 1 x 0.56 = 8.232
+				// - the bullet radius that makes the drawn bullet DIAMETER (2 x 8.232 = 16.46
+				// units) equal the drawn barrel WIDTH (29.4 du x 0.56 = 16.46 units), i.e. "bullets
+				// match the turret size" (issues.md). The old 10.29 was 29.4/2 x 0.7, 1.25x the
+				// barrel it fires from. `distance` is diep's own real mount radius: Defender.ts's
+				// `positionData.y/x = size * sin/cos(angle) * offset` with
+				// `offset = 60/(DEFENDER_SIZE*sqrt(0.5))` = a flat 60 du from centre; the server
+				// mounts at `distance * ra`, so 60 du x 0.56 / 1.2 = 28 (mount at 28 x 1.2 = 33.6
+				// units = 60 du). The old 33.6 was treated as absolute and, x ra, spawned bullets
+				// at 72 du - 12 du outside the turret. Turrets are ordered FIRST in `cannons` so
+				// their canDir lands at [0..2], which is where the client's `turrets` array (each a
+				// base circle + a canDir-tracking barrel, drawn over the body) reads its aim; the
+				// traps follow at [3..5] (client `cannons`, which never read canDir).
+				// NOTE: `back` is left at 0.9408 (recoil 0.3 but on the old x2.8 boss-row scale, vs
+				// AutoTurretDefinition's own 0.3 x 1.12 = 0.336 that Auto Smasher carries) - a
+				// physics/impulse value, out of this geometry pass's scope; flagged in PENDING.md.
 				const turrets = [0, 1, 2].map(i => ({
 					reload: 15, offTime: 0, auto: 1, autoDir: 1, autoShoot: 1, life: 75,
-					offdir: Math.PI * 2 * i / 3, offx: 0, distance: 33.6, canonLength: 38.5, rand: 0.174533,
-					speed: 2.7552, pene: 11.5, damage: 8.4, size: 10.29,
+					offdir: Math.PI * 2 * i / 3, offx: 0, distance: 28, canonLength: 25.667, rand: 0.174533,
+					speed: 2.7552, pene: 11.5, damage: 8.4, size: 8.232,
 					weight: 4.2, push: 0.45709, back: 0.9408
 				}));
-				this.cannons = traps.concat(turrets);
+				this.cannons = turrets.concat(traps);
 			},
 			// Reuses Overlord's own barrel geometry verbatim (diepcustom FallenOverlord.ts
 			// iterates TankDefinitions[Tank.Overlord].barrels and only touches

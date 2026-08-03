@@ -5519,6 +5519,97 @@ function bossProjectileTests() {
 	}
 }
 
+/*
+	Defender geometry re-derivation (this session). Both halves of the Defender are pinned here
+	against diepcustom's OWN raw numbers, not against each other - the failure this catches is a
+	drift back onto the 0.7 barrel axis (the "stub wayyy too long" + "oversized" report) or the
+	loss of the turret base circle / above-body draw.
+
+	The anchoring facts, straight from diepcustom (external to this tree):
+	  - Defender.ts:            physicsData.size = DEFENDER_SIZE(150) * sqrt(1/2); scaleFactor
+	                            never touched -> stays 1, so every barrel dim is raw du.
+	  - Defender.ts:            turret mount `size * offset`, offset = 60/(150*sqrt(1/2)) -> 60 du.
+	  - TrapperDefinition:      trap barrel size 120 / width 71.4.
+	  - AutoTurret.ts:          barrel size 55 / width 42*0.7 = 29.4 / baseSize 25 / bullet sizeRatio 1.
+	Everything on the Defender converts on ONE axis (the body's own): a diep length D du draws to
+	`D * K` units, and a server barrel dim is `D * K * CONST.SIZE / bossSize` so that the render's
+	own `* bossSize/CONST.SIZE` puts it back on `D * K`. K = 0.56, CONST.SIZE = 35, bossSize = 42.
+*/
+function defenderGeometryTests() {
+	console.log('\nDefender geometry (re-derived off Defender.ts / AutoTurret.ts, scaleFactor 1):');
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const CLIENT = require('./clientTanks.js')().class;
+	const near = (a, b) => Math.abs(a - b) < 0.02;
+
+	// External diep figures - the acceptance anchors.
+	const K = 0.56, CS = 35;
+	const DEFENDER_SIZE = 150, MOUNT_DU = 60;
+	const TRAP_LEN_DU = 120, TRAP_W_DU = 71.4;
+	const AT_LEN_DU = 55, AT_W_DU = 42 * 0.7, AT_BASE_DU = 25;
+
+	const boss = CLASS['Defender'], cli = CLIENT['Defender'];
+	const bossSize = boss.bossSize;
+	const conv = (du) => du * K * CS / bossSize;   // du -> server canonLength / client height / rad
+	const r = bossSize / CS;                        // the render's own barrel scale (= server `ra`)
+
+	// The body is the one thing that was already right: 150 du circumradius at bossSize 42.
+	check('body is a triangle at DEFENDER_SIZE 150 du (bossSize = 150*K*cos(pi/3))',
+		near(bossSize, DEFENDER_SIZE * K * Math.cos(Math.PI / 3)) && cli.body.sides === 3,
+		bossSize + ' / sides ' + cli.body.sides);
+
+	// --- Trap launchers: the "stub" fix ---
+	const traps = boss.cannons.filter((c) => c.type === 2);
+	check('3 trap cannons (type 2, forceFire)', traps.length === 3 && traps.every((c) => c.auto === 1),
+		traps.length);
+	check('trap canonLength re-derived off TrapperDefinition 120 du (56, was 73.5 -> stub 227 du)',
+		traps.every((c) => near(c.canonLength, conv(TRAP_LEN_DU))), traps.map((c) => c.canonLength).join(','));
+	const cTrap = cli.cannons;
+	check('client trap height === server canonLength (56)',
+		cTrap.length === 3 && cTrap.every((c) => near(c.height, conv(TRAP_LEN_DU)) && c.trapLauncher),
+		cTrap.map((c) => c.height).join(','));
+	check('client trap width re-derived off TrapperDefinition 71.4 du (33.32, was 49.98 on 0.7)',
+		cTrap.every((c) => near(c.width, conv(TRAP_W_DU))), cTrap.map((c) => c.width).join(','));
+	// The launcher arrowhead (drawings.js: length = width*20/42) is what reaches past the barrel
+	// tip; drawn tip = (barrel 120 du + launcher) must land ~level with the body's 150 du vertices,
+	// matching Defender_boss_3.webp (NOT the old 227 du overshoot). Anchored to diep's 120 du + the
+	// 71.4-du launcher, converted back to du through the render's own * r.
+	const launcherDu = (cTrap[0].width * (20 / 42)) * r / K;
+	const stubTipDu = TRAP_LEN_DU + launcherDu;
+	check('trap stub reaches ~154 du along the edge normal (barrel 120 + launcher 34), per the webp',
+		stubTipDu > 148 && stubTipDu < 160, stubTipDu.toFixed(1) + ' du');
+
+	// --- Auto-turrets: circle + barrel, above the body, bullets matched ---
+	const turr = boss.cannons.filter((c) => c.autoDir);
+	check('3 auto-turret cannons (autoDir/autoShoot)', turr.length === 3, turr.length);
+	// Ordered FIRST so canDir[0..2] feed the client `turrets` (which read canDir; cannons never do).
+	check('server orders turrets [0..2] then traps [3..5] (canDir alignment)',
+		boss.cannons.slice(0, 3).every((c) => c.autoDir) && boss.cannons.slice(3).every((c) => c.type === 2),
+		boss.cannons.map((c) => (c.autoDir ? 'T' : 'p')).join(''));
+	check('turret mount distance re-derived off Defender.ts 60 du (28, was 33.6 -> spawned 72 du out)',
+		turr.every((c) => near(c.distance, conv(MOUNT_DU))), turr.map((c) => c.distance).join(','));
+	check('turret canonLength re-derived off AutoTurret 55 du (25.667, was 38.5 on 0.7)',
+		turr.every((c) => near(c.canonLength, conv(AT_LEN_DU))), turr.map((c) => c.canonLength).join(','));
+	// "bullets match the turret size": bullet DIAMETER (drawn 2*size, boss uses size verbatim) must
+	// equal the drawn barrel WIDTH (client width * r). Both must come out to AutoTurret's 29.4 du.
+	const bulletDiamDu = turr.map((c) => 2 * c.size / K);
+	check('turret bullet diameter = AutoTurret width 29.4 du (size 8.232, was 10.29 = 1.25x too big)',
+		bulletDiamDu.every((d) => near(d, AT_W_DU)), bulletDiamDu.map((d) => d.toFixed(2)).join(','));
+
+	// Client turrets: the `turrets` mechanism (base circle + canDir barrel, drawn over the body via
+	// render.js's non-ring post-body pass), NOT the old bare `aboveBody` cannons.
+	const ct = cli.turrets || [];
+	check('client has 3 `turrets` (base circle + barrel), no `aboveBody` cannons',
+		ct.length === 3 && !cli.cannons.some((c) => c.aboveBody) && !ct.some((c) => c.ring),
+		'turrets ' + ct.length + ' / aboveBody ' + cli.cannons.filter((c) => c.aboveBody).length);
+	check('client turret base rad re-derived off AutoTurret baseSize 25 du (11.667 -> drawn 25 du disc)',
+		ct.every((c) => near(c.rad, conv(AT_BASE_DU))), ct.map((c) => c.rad).join(','));
+	const barWidDu = ct.map((c) => c.width * r / K);
+	check('client turret barrel width = AutoTurret 29.4 du, matching its bullet diameter',
+		barWidDu.every((d) => near(d, AT_W_DU)), barWidDu.map((d) => d.toFixed(2)).join(','));
+	check('client turret height === server canonLength (25.667)',
+		ct.every((c, i) => near(c.height, turr[i].canonLength)), ct.map((c) => c.height).join(','));
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -5536,6 +5627,7 @@ necromancerTests();
 droneBatchTests();
 factoryTests();
 bossProjectileTests();
+defenderGeometryTests();
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);
