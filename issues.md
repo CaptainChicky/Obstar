@@ -26,3 +26,11 @@ additional issues are present:
 
 
 - in the future, i need to optimize tank creation, so perhaps instead of having this convoluted system where theres tankconfig and i need to keep server and client in sync, can this be massively simplified to just one source of truth? should i make some easier way to construct a tank or is the tankconfig json style stuff the best/most efficient we can do?
+
+- add the selection colors/animation screen for mothership, survival, tester
+- finish the gamemodes one by one
+- hitboxes for arena closer, bosses, mothership, dominators arent right the hitbox should be their circular body but its less fsr.
+- mothership fov is completely broken its wayyy zoomed in, it also moves hella fast unlike an actual level 140 (the speed of it shoudl be the same as normal tank speed scaling)
+- mothership stat bar should be filled up as described in the wiki
+- h to take control of tank needs to be fine tuned and balanced
+- too many upgrade points?

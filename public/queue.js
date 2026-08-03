@@ -98,6 +98,9 @@ window.onload = function () {
 		// The account chip's real content (guest vs signed-in) only exists after this fires, and it
 		// changes .right-zone's height - resync now that it's settled.
 		syncGamemodeListHeight();
+		// Chip is in place: drop the reveal coordinator's last gate (bottom of this file) so the
+		// entrance animation plays over a fully settled layout.
+		if (window.__menuAccountReady) { window.__menuAccountReady(); }
 		if (UserData.own && UserData.own.pets) {
 			SetPets(UserData.own.pets);
 			if (UserData.own.pets[window.Pref.pet]) {
@@ -179,19 +182,38 @@ window.onload = function () {
 };
 
 /*
-	Runs now, at parse time - this script is at the end of <body>, so the whole menu is already
-	in the DOM, but window.onload (fonts/images) has not fired and the box's entrance animation
-	is still gated. Clamp the gamemode list to its final ~4-row height FIRST, then add `.ready`
-	to play the slide-in over an already-settled layout. Without this the box entered while the
-	list still showed all 11 modes: it was tall enough to overflow the top of the screen, slid
-	down, then snapped to the middle the moment window.onload's clamp reflowed it (worse on a
-	short/rectangular window, where the unclamped list overflows further). window.onload's own
-	syncGamemodeListHeight() call still runs afterwards to refine for the account chip's real
-	height - but that lands long after the animation and moves nothing visibly.
+	Reveal the menu only once the layout is STABLE, then clamp + play the entrance animation over
+	it (Batch G). The zones are `vertical-align: top`, so the box's top edge is `50% - height/2`
+	and ANY height change after the box is shown shifts the whole panel - which is what produced
+	the snap (down, or up). Three things change the height after first paint:
+	  1. Web fonts (Catamaran/Exo) loading - they resize the tall changelog column that sets the
+	     box height.
+	  2. The gamemode list collapsing from all 11 rows to its clamped ~4.
+	  3. The account chip populating from /userData (its column has no reserved height).
+	So keep the box opacity:0 and reveal only when BOTH fonts are ready AND the account chip has
+	rendered; clamp the list at that moment, then add `.ready` to animate over a settled layout.
+	A timeout backstops a slow font load or a /userData that never returns.
 */
-(function revealMenu() {
+(function () {
 	const box = document.getElementById('centered-main-box');
 	if (!box) { return; }
-	syncGamemodeListHeight();
-	box.classList.add('ready');
+	let fontsReady = 0, accountReady = 0, done = 0;
+	function reveal() {
+		if (done) { return; }
+		done = 1;
+		syncGamemodeListHeight();
+		box.classList.add('ready');
+	}
+	function maybe() { if (fontsReady && accountReady) { reveal(); } }
+	// queue.js's /userData handler calls this once the account chip is in place (or the request
+	// failed - either way the column's height is then final).
+	window.__menuAccountReady = function () { accountReady = 1; maybe(); };
+	if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
+		document.fonts.ready.then(function () { fontsReady = 1; maybe(); });
+	} else {
+		fontsReady = 1;
+	}
+	setTimeout(reveal, 2500);   // backstop: never leave the menu invisible
 })();
+
+
