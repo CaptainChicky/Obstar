@@ -34,12 +34,12 @@ client in `public/client/`, shared server+client config in `public/SHARE/`. Issu
 
 ---
 
-## Batch E — Maze wall overlap  *(spawn half already DONE)*
-**Files:** `lib/mazeGenerator.js`, `rooms/Maze.js`.
-- **Wall-vs-wall visual overlap:** eliminate even minor overlap between merged wall rects. NOTE
-  `mazeGenerator.js`'s header says it's a *faithful port* of diep's generator, "unbounded-access
-  quirk" and all — so fixing overlap means deviating from the port; do it at the merge/placement
-  step and re-check the maze test still passes (and that maze shapes still look sane).
+## Batch E — Maze wall and shape/player overlap  *(spawn half already DONE)*
+**Files:** `lib/mazeGenerator.js`, `rooms/Maze.js`, and others
+- **A Player tank or a shape** can overlap with the maze wall a little bit (up to 1 grid square)
+  visually. in diep.io, this overlap is minimal like 1/10th of a grid square and the maze wall has 
+  a mild bounciness to it and expells everything frmo the wall imemdaitely. there should be minimal
+  overlap possible between shapes/tanks and the maze walls.
 
 ---
 
@@ -56,7 +56,9 @@ client in `public/client/`, shared server+client config in `public/SHARE/`. Issu
 
 ## Batch G — UI flow
 **Files:** `public/client/ui.js`, `public/client/game.js`, `views/`.
-- **Intro options screen:** slides down, fails, then snaps (regression) — fix the panel ease-in.
+- **Intro options screen:** slides down, fails, then snaps (regression) — fix the panel ease-in, fine on firefox, BUG on chrome.
+  this may be something that is happening locally with my comptuer or browser (i havent restarted to check). verify on your end
+  if there is anything fixable/and fix, and tell me if there is no issue and its just my end.
 - **Respawn gamemode switcher:** `ui.js`'s `END` is canvas-only with no hit-testing and the only
   route to another mode is `POST /play`, so this needs a click region on `END`, a navigation path,
   and a socket-close before the call. Build it fully or leave it — don't half-build.
