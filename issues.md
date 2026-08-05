@@ -29,8 +29,9 @@ additional issues are present:
 - add the selection colors/animation screen for mothership, survival, tester
 - finish the gamemodes one by one
 - hitboxes for arena closer, bosses, mothership, dominators arent right the hitbox should be their circular body but its less fsr.
-- mothership fov is completely broken its wayyy zoomed in, it also moves hella fast unlike an actual level 140 (the speed of it shoudl be the same as normal tank speed scaling)
-- mothership stat bar should be filled up as described in the wiki
-- dominator fov is also completely wrong like mothership
+- mothership drones should be above it, check all drones for this they shoudl be above their tanks tbh
+- mothership drones shoudl be split 50/50 on controllable and uncontrollable, and there's an issue rn where dead drones convert to uncontrollable on respawn?
 - h to take control of tank needs to be fine tuned and balanced
 - too many upgrade points?
+
+- smasher when upgrading should return all nonupgradable points (return points spent in bullet pen buppet damage etc) currnetly it doesn't,
