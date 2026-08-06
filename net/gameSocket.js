@@ -98,14 +98,18 @@ function attach(httpServer, controller) {
 					// (like w/a/s/d) rather than a one-shot jump to max: entities/Player.js's own
 					// update() climbs one level per interval while it stays down, diep's own
 					// hold-to-repeat convention rather than a snap to the cap. 'o'/'classcycle'/
-					// 'god' are one-shot/toggle actions applied directly here.
+					// 'god' are one-shot/toggle actions applied directly here. 'o' (self-kill) is
+					// also let through in 'tester', so the diagnostic room's own alternating
+					// green/red respawn (see rooms/Tester.js's respawnTeam()) can be cycled on
+					// demand instead of waiting to actually die.
 					case 'k':
 						tank.inputs.k = 1;
 						break;
 					case 'o':
 					case 'classcycle':
 					case 'god': {
-						if (tank.id.GM !== 'sandbox') { break; }
+						const gm = tank.id.GM;
+						if (gm !== 'sandbox' && !(gm === 'tester' && data.data.key === 'o')) { break; }
 						switch (data.data.key) {
 							case 'o': tank.hp = 0; break;
 							case 'classcycle': tank.cycleClass(); break;

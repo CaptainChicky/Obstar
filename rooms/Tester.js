@@ -184,7 +184,7 @@ class Tester extends Room {
 			m.absorb = 0.01;
 			m.size = CLASS['Mothership'].bossSize;
 			m.class = 'Mothership';
-			m.screen = CLASS['Mothership'].screen;
+			m.screen = Player.scriptedScreen('Mothership');
 			m.shield = 0;
 			m.up.MSpeed = 7;
 			m.up.Reload = Math.pow(0.914, 7);
@@ -224,9 +224,11 @@ class Tester extends Room {
 			);
 			c.closer = 1;
 			c.class = spec[2];
-			c.screen = CLASS[c.class].screen;
+			c.screen = Player.scriptedScreen(c.class);
 			c.size = 98;
+			c.guardSize = c.size;   // circle body
 			c.damage = 50;
+			c.up.BSpeed = 1 + 0.15 * 7;   // maxed BSpeed slope at 7 points - see rooms/Tag.js's own createCloser()
 			c.hp = c.maxHp = this.rules.bossHp;
 			c.shield = 0;
 			const chase = spec[0].bind(c);
@@ -284,6 +286,11 @@ class Tester extends Room {
 		const tank = this.INSTANCE.players.get(id);
 		if (tank && !tank.bot && !tank.boss && !tank.dominator && !tank.mothership && !tank.closer) {
 			tank.dev.god = 1;
+			// Insane bullet damage, for quickly testing things that need a Dominator (or anything
+			// else) to actually die/flip in a hit or two - see entities/Player.js's own
+			// Bull.damage = this.up.BDamage * can.damage. Uncapped, way past the normal 7-point
+			// max of 4, purely a testing convenience for this room.
+			tank.up.BDamage = 1000;
 		}
 		return xp;
 	}

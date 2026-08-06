@@ -680,6 +680,12 @@ class Bullet {
 		// Mothership's droneSplit only) - -1 for every ordinary drone, which only ever touches the
 		// single shared droneCount pool. Read by release() below.
 		this.droneGroup = -1;
+		// Whether this bullet occupies a maxDrone slot at all - set true by entities/Player.js's
+		// shoot() only for a cannon whose class has `maxDrone` (permanent OR finite-life; Guardian's
+		// own 24-cap is finite-life). release() below reads THIS, not `life`, so a finite-life
+		// capped drone still refunds its slot when its life runs out, exactly like a permanent one
+		// refunds on death.
+		this.counted = 0;
 		// Guards release() against double-firing - a drone can be destroyed and then swept in the
 		// same pass (rooms/Room.js), and droneCount/droneGroup must only ever be refunded once.
 		this.released = 0;
@@ -693,7 +699,11 @@ class Bullet {
 		be destroyed and then swept in the same pass.
 	*/
 	release(play) {
-		if (this.life !== -1 || this.released) { return; }
+		// `counted`, not `life !== -1`: a maxDrone-capped cannon can be finite-life now (Guardian's
+		// own 24-cap, TanksConfig.js) and still owes its owner a refund on natural expiry, exactly
+		// like a permanent drone owes one on death - see this.counted's own comment in the
+		// constructor for why the flag exists instead of re-deriving this from `life`.
+		if (!this.counted || this.released) { return; }
 		this.released = 1;
 		if (!play) { play = this.room.INSTANCE.players.get(this.origin.oId); }
 		if (!play) { return; }

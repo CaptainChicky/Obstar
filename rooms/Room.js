@@ -1108,13 +1108,16 @@ class Room {
 			// has a real one too (Summoner.ts's SUMMONER_SIZE, plan.md Part D); the `|| 64` is dead
 			// weight now that every CONFIG.BOSS entry sets bossSize, kept only as a defensive floor.
 			b.size = CLASS[spec[2]].bossSize || 64;
+			// A boss never runs Player.prototype.update(), so the hitRatio-scaled contact radius
+			// that update() would otherwise derive has to be stated here explicitly.
+			b.guardSize = b.size * (CLASS[spec[2]].hitRatio || 1);
 			// A Fallen boss (Fallen Overlord/Fallen Booster) is engaged by base drones ON SIGHT,
 			// unlike the polygon bosses, which they ignore until provoked (diep_wiki/basedrones.txt
 			// - entities/Bullet.js's type-1.4 acquire gate is the one reader). Flagged on the class
 			// table so this stays one boolean rather than a name test at the read site.
 			b.fallen = !!CLASS[spec[2]].fallen;
 			b.class = spec[2];
-			b.screen = CLASS[b.class].screen;
+			b.screen = Player.scriptedScreen(b.class);
 			// diepcustom AbstractBoss.ts:125-126/139 (plan.md Part D's shared boss scaffolding):
 			// scoreReward 30000 (was 100000, an unreconciled legacy balance figure), damagePerTick
 			// 10 (entities/Player.js's own `this.damage` constructor default is 5, the ordinary
@@ -1189,8 +1192,11 @@ class Room {
 			// actually stops a shape from shoving a Dominator.
 			d.absorb = 0;
 			d.size = 89.6;
+			// Circle body: drawn radius equals size, so the contact radius is size itself - the
+			// dombase hexagon is decoration, not part of the hitbox.
+			d.guardSize = d.size;
 			d.class = spec[2];
-			d.screen = CLASS[d.class].screen;
+			d.screen = Player.scriptedScreen(d.class);
 			d.shield = 0;
 			d.motion = spec[0].bind(d);
 			d.update = spec[1].bind(d);
@@ -1492,7 +1498,10 @@ class Room {
 				// primitives, filtering points by squared distance (no Math.sqrt) straight into the
 				// caller-owned COLLIDE_SCRATCH array, so this whole pass allocates nothing.
 				COLLIDE_SCRATCH.length = 0;
-				qt.queryCircle(obj.x, obj.y, (obj.DETEC && obj.DETEC.enabled ? obj.DETEC.size : obj.size) * 2, COLLIDE_SCRATCH);
+				// `guardSize`, not bare `size` - the narrow phase below decides contact on
+				// `guardSize`, so a class whose contact radius exceeds `size` (a guard, a
+				// hitRatio boss) must not have real contacts filtered out here first.
+				qt.queryCircle(obj.x, obj.y, (obj.DETEC && obj.DETEC.enabled ? obj.DETEC.size : (obj.guardSize || obj.size)) * 2, COLLIDE_SCRATCH);
 				for (let ci = 0; ci < COLLIDE_SCRATCH.length; ci++) {
 					const other = COLLIDE_SCRATCH[ci].data;
 					if (other.getPlace === 0 || obj.getPlace === 0) {
@@ -1936,6 +1945,19 @@ class Room {
 		 own way to ask this. Only Maze has any permanent geometry (rooms/Maze.js overrides this) -
 		 every other mode has nothing to be embedded in, so the base answer is always yes. */
 	clearOfWalls(x, y, pad) { return true; }
+	/* Whether a point is clear of every live shape already in the room, for a body of radius `r`.
+		 A shape places itself in entities/Objects.js's constructor before it is added to
+		 INSTANCE.objs, so a shape being placed never sees itself here. Only called from a bounded
+		 placement retry loop (entities/Objects.js), never per tick. */
+	clearOfShapes(x, y, r) {
+		for (const o of this.INSTANCE.objs.live()) {
+			if (o.destroy) { continue; }
+			const dx = o.x - x, dy = o.y - y;
+			const need = o.size + r;
+			if (dx * dx + dy * dy < need * need) { return false; }
+		}
+		return true;
+	}
 	getBuffer(id) {
 		const RAW = this.BUFFER[id];
 		if (!RAW) {

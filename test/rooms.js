@@ -374,6 +374,39 @@ function bossTests() {
 			CLASS['Summoner'].maxDrone === 28, CLASS['Summoner'].maxDrone);
 	}
 
+	// Guardian/Defender store bossSize as their triangle's APOTHEM, not the drawn circumradius,
+	// so their contact radius has to be the apothem widened by hitRatio (sqrt(2)), not the bare
+	// apothem - otherwise a bullet passes clean through the visibly-solid body. A fresh room is
+	// used here (not the shared `room` above, whose boss cap is already full) so createBoss()
+	// is guaranteed to actually spawn one.
+	{
+		const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
+		const groom = makeRoom('boss');
+		const guardian = groom.createBoss(1);   // CONFIG.BOSS[1] = Guardian
+		check('a Guardian\'s contact radius is bossSize x sqrt(2), not the bare apothem',
+			Math.abs(guardian.guardSize - 37.8 * Math.SQRT2) < 1e-9,
+			guardian.guardSize);
+
+		const bull = new Bullet({ GM: groom.gm, sId: groom.id, oId: 0 }, guardian.x + 45, guardian.y, 0, 0, 0, groom);
+		bull.team = guardian.team === 0 ? 1 : 0;
+		bull.alone = 1; bull.life = -1; bull.pene = 100; bull.damage = 5; bull.size = 5; bull.map = groom.map;
+		groom.INSTANCE.bullets.add((id) => { bull.id = { GM: groom.gm, sId: groom.id, oId: id }; return bull; });
+		const peneBefore = bull.pene;
+		groom.step();
+		// 45 units out sits inside the widened 53.46 radius but outside the bare 37.8 apothem -
+		// exactly the gap the sqrt(2) fix closes.
+		check('...so a bullet sitting in that gap makes contact through the real pair loop',
+			bull.pene < peneBefore, bull.pene + ' vs ' + peneBefore);
+	}
+
+	// A Dominator's contact radius is its bare circle size - the dombase hexagon guard is
+	// decoration, not part of the hitbox, so it must not widen guardSize.
+	{
+		const dom = room.createDominator(0, 0, 0);
+		check('a Dominator\'s guardSize is exactly its size, unwidened by the dombase hexagon',
+			dom.guardSize === 89.6, dom.guardSize);
+	}
+
 	/*
 		A boss's threat scan must not be gated on the target's LEVEL. The original bug was
 		lib/gameAI.js's Summoner-era metric dividing by `n.level` with no floor, so raw/0 was
@@ -1033,8 +1066,9 @@ function dominatorTests() {
 	check('every Dominator carries diep\'s own level 75, not the Player default of 0', 
 		doms.every((d) => d.level === 75), doms.map((d) => d.level).join(','));
 	{
-		const expectedScreen = 1634.6442891609581;
-		check('every Dominator uses the real level-75 camera width (~16634.644), not BASE_SCREEN 1408',
+		const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+		const expectedScreen = 1634.6442891609581 * config.FOV_MUL;
+		check('every Dominator uses the real level-75 camera width, scaled by FOV_MUL like a player\'s',
 			doms.every((d) => Math.abs(d.screen - expectedScreen) < 1e-6), 
 			doms.map((d) => d.screen).join(',') + ' vs ' + expectedScreen);
 	}
@@ -1261,8 +1295,9 @@ function mothershipTests() {
 	check('every Mothership carries diep\'s own level 140, not the Player default of 0',
 		ships.every((m) => m.level === 140), ships.map((m) => m.level).join(','));
 	{
-		const expectedScreen = 2258.748668099168;
-		check('every Mothership uses the real level-140 camera width (~2258.749), not BASE_SCREEN 1404',
+		const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+		const expectedScreen = 2258.748668099168 * config.FOV_MUL;
+		check('every Mothership uses the real level-140 camera width, scaled by FOV_MUL like a player\'s',
 			ships.every((m) => Math.abs(m.screen - expectedScreen) < 1e-6),
 			ships.map((m) => m.screen).join(',') + ' vs ' + expectedScreen);
 	}
@@ -4582,6 +4617,13 @@ function fovTests(rooms) {
 		me.screen + ' vs ' + grown);
 	check('...and it is wider than the low-level screen (FOV_PER_LEVEL > 1)', me.screen > base,
 		me.screen + ' > ' + base);
+	// A scripted entity (Dominator/Mothership/boss/Closer) never runs update(), so its `screen`
+	// is set once at spawn - this pins that spawn value to the SAME FOV_MUL axis as a player's,
+	// not the raw, narrower CLASS[...].screen.
+	const dom = room.createDominator(0, 0, 0);
+	const domExpected = CLASS['Destroyer Dominator'].screen * config.FOV_MUL;
+	check('spawned Dominator screen is class screen * FOV_MUL, not the raw class screen',
+		dom.screen === domExpected, dom.screen + ' vs ' + domExpected);
 }
 
 /*
@@ -5238,7 +5280,8 @@ function spawnSamplerTests() {
 		const stub = {
 			nestScale: nestScale,
 			rejectSample: (inset, circles) => { seen = { inset: inset, circles: circles }; return { x: 0, y: 0 }; },
-			clearOfWalls: () => true
+			clearOfWalls: () => true,
+			clearOfShapes: () => true
 		};
 		const probe = new Objects('sqr', -1, { GM: 'ffa', sId: 0, oId: 0 }, map, stub);
 		return { seen: seen, probe: probe };
@@ -5396,6 +5439,28 @@ function crasherChaseTests() {
 		idle.update();
 		check('an idle Crasher (no DETEC target) still hard-clamps at the drawn edge, unchanged',
 			idle.x === room.map.width / 2, idle.x + ' vs ' + room.map.width / 2);
+	}
+
+	// Crasher placement now checks room.clearOfShapes() as well as clearOfWalls(): the Crasher
+	// Zone's inner edge (630 x nestScale) is exactly the Pentagon Nest's outer edge, and a
+	// drifted-in Alpha Pentagon reaches well past it. Plant one right on that shared boundary and
+	// assert every freshly placed crasher clears it by its own body radius.
+	{
+		const pnt = room.INSTANCE.objs.add((id) =>
+			new Objects('Bpnt', [0, 0, 0], { GM: room.gm, sId: room.id, oId: id }, room.map, room));
+		pnt.x = 630 * room.nestScale;
+		pnt.y = 0;
+		const before = room.INSTANCE.objs.size;
+		for (let i = 0; i < 50; i++) { room.createObj('bull', 0); }
+		check('50 crashers placed next to the test pentagon', room.INSTANCE.objs.size - before === 50,
+			room.INSTANCE.objs.size - before);
+		const crashers = [...room.INSTANCE.objs.live()].slice(-50);
+		const overlapping = crashers.filter((o) => {
+			const dx = o.x - pnt.x, dy = o.y - pnt.y;
+			return Math.sqrt(dx * dx + dy * dy) < pnt.size + o.size;
+		});
+		check('no crasher spawns inside a pentagon sitting on the Crasher Zone boundary',
+			overlapping.length === 0, overlapping.length + ' / 50 overlapping');
 	}
 }
 
@@ -5893,17 +5958,18 @@ function factoryTests() {
 // entities/Bullet.js), but their drones must look nothing alike: a Guardian drone is a small
 // Crasher (pink triangle) and a Summoner drone is a Necromancer square (beige square). The golden
 // (test/clientDiff.js) does NOT exercise either boss in its seeded replay, so these are what pin
-// the two sprites/sizes/colours instead. Fired through the real shoot() path with `boss = 1` (so a
-// boss's bullets take can.size verbatim), then inspected before any update() runs.
+// the two sprites/sizes/colours instead. Fired through the real shoot() path with `boss = 1`,
+// then inspected before any update() runs.
 function bossProjectileTests() {
 	console.log('\nboss projectile identity (B2 - Guardian = small Crasher, Summoner = Necromancer square):');
 	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const near = (a, b, eps) => Math.abs(a - b) < eps;
 
 	function fireDrone(cls) {
 		const room = makeRoom('ffa');
 		const p = player(room, 0);
 		p.class = cls;
-		p.boss = 1;                              // boss bullets take can.size verbatim (shoot())
+		p.boss = 1;
 		p.size = CLASS[cls].bossSize || 64;
 		p.droneCount = 0;
 		p.shootTimer = new Array(CLASS[cls].cannons.length).fill(0);
@@ -5927,7 +5993,7 @@ function bossProjectileTests() {
 	check('...drawn as a Crasher (drawType 6, not the 3.1->square default)',
 		!!g.d && g.d.drawType === 6, g.d && g.d.drawType);
 	check('...at the small-Crasher size 13.86',
-		!!g.d && g.d.size === 13.86, g.d && g.d.size);
+		!!g.d && near(g.d.size, 13.86, 1e-6), g.d && g.d.size);
 	check('...in Crasher pink (bulletColor 10 = bull/Color.EnemyCrasher)',
 		!!g.d && g.room.bulletColor(g.d) === 10, g.d && g.room.bulletColor(g.d));
 
@@ -5939,7 +6005,7 @@ function bossProjectileTests() {
 	check('...kept a square (no drawType override, parseInt(3.1) = 3 -> Drawings.bullet[3])',
 		!!s.d && s.d.drawType === undefined, s.d && s.d.drawType);
 	check('...at the normal/necro square size 21.78',
-		!!s.d && s.d.size === 21.78, s.d && s.d.size);
+		!!s.d && near(s.d.size, 21.78, 1e-6), s.d && s.d.size);
 	check('...in Necromancer beige (drawColor 9 = necro), not the body\'s EnemySquare yellow',
 		!!s.d && s.d.drawColor === 9 && s.room.bulletColor(s.d) === 9,
 		s.d && (s.d.drawColor + '/' + s.room.bulletColor(s.d)));
@@ -5954,6 +6020,62 @@ function bossProjectileTests() {
 		check(cls + ' fires bullets sized to the barrel width (radius 14.7 = width 29.4 / 2)',
 			off.length === 0, off.map((c) => c.size).join(','));
 	}
+}
+
+/*
+	Auto-turret multi-targeting: shoot() used to read one tank-wide `DETEC.select`, so every
+	autoDir cannon on a multi-turret class (Defender's three mounted turrets, Auto 3/5's rings)
+	aimed at whatever that single target was, regardless of which turret was actually closest to
+	it. Each turret now measures nearest-to-ITS-OWN-mount out of DETEC's `selectAll` pool
+	(`all: 1`), so two turrets that each have a different nearby target should pick differently.
+
+	Two enemies placed EQUIDISTANT from the Defender's hull centre (300 units, one on turret 0's
+	own mount heading, one on turret 1's) is what discriminates the fix from the bug: a single
+	tank-wide `DETEC.select` is a flat tie on distance-from-centre between them, so every turret
+	(Defender's have no arc limit) would lock onto whichever one happened to be found first and
+	canDir[0]/canDir[1] would read identical. Measuring from each turret's own mount breaks the
+	tie per-socket instead: turret 0 sits closer to enemy 1, turret 1 closer to enemy 2.
+*/
+function autoTurretMultiTargetTest() {
+	console.log('\nauto-turret multi-targeting (independent per-turret aim):');
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const near = (a, b, eps) => Math.abs(a - b) < eps;
+	const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+
+	const room = makeRoom('ffa');
+	room.ask({ name: 'e1', key: '1'.repeat(25), pet: -1, gm: 'ffa' });
+	room.ask({ name: 'e2', key: '2'.repeat(25), pet: -1, gm: 'ffa' });
+	const p = player(room, 0), e1 = player(room, 1), e2 = player(room, 2);
+	p.class = 'Defender'; p.x = 0; p.y = 0; p.dir = 0; p.shield = 0;
+	e1.class = 'Basic'; e1.shield = 0; e1.dev.ghost = 0;
+	e2.class = 'Basic'; e2.shield = 0; e2.dev.ghost = 0;
+	// Turret 0's own mount heading is offdir 0; turret 1's is offdir 2*PI/3 - both enemies sit
+	// 300 units out along those headings, i.e. equally far from the HULL CENTRE.
+	e1.x = 300; e1.y = 0;
+	e2.x = 300 * Math.cos(Math.PI * 2 / 3); e2.y = 300 * Math.sin(Math.PI * 2 / 3);
+
+	// Tick 1 creates DETEC (empty) inside shoot(); tick 2's collision pass is the first to find a
+	// live, enabled DETEC and fill selectAll, which that tick's shoot() then reads. A few more
+	// ticks confirm this holds up, not just on the one tick it first latches.
+	for (let i = 0; i < 5; i++) { room.step(); }
+
+	const turr = CLASS['Defender'].cannons;
+	const ra = p.size / 35;
+	function mount(i) {
+		const a = p.dir + turr[i].offdir;
+		return { x: p.x + Math.cos(a) * turr[i].distance * ra, y: p.y + Math.sin(a) * turr[i].distance * ra };
+	}
+	const m0 = mount(0), m1 = mount(1);
+	const expect0 = Math.atan2(e1.y - m0.y, e1.x - m0.x);
+	const expect1 = Math.atan2(e2.y - m1.y, e2.x - m1.x);
+
+	check('turret 0 aims at the enemy nearest ITS OWN mount (enemy 1)',
+		near(p.canDir[0], expect0, 1e-6), p.canDir[0] + ' vs ' + expect0);
+	check('turret 1 aims at the enemy nearest ITS OWN mount (enemy 2) - a DIFFERENT target',
+		near(p.canDir[1], expect1, 1e-6), p.canDir[1] + ' vs ' + expect1);
+	check('...so the two turrets are not both locked onto one tank-wide target',
+		Math.abs(angleDiff(p.canDir[0], p.canDir[1])) > 1,
+		p.canDir[0] + ' / ' + p.canDir[1]);
 }
 
 /*
@@ -6026,10 +6148,11 @@ function defenderGeometryTests() {
 		turr.every((c) => near(c.distance, conv(MOUNT_DU))), turr.map((c) => c.distance).join(','));
 	check('turret canonLength re-derived off AutoTurret 55 du (25.667, was 38.5 on 0.7)',
 		turr.every((c) => near(c.canonLength, conv(AT_LEN_DU))), turr.map((c) => c.canonLength).join(','));
-	// "bullets match the turret size": bullet DIAMETER (drawn 2*size, boss uses size verbatim) must
-	// equal the drawn barrel WIDTH (client width * r). Both must come out to AutoTurret's 29.4 du.
-	const bulletDiamDu = turr.map((c) => 2 * c.size / K);
-	check('turret bullet diameter = AutoTurret width 29.4 du (size 8.232, was 10.29 = 1.25x too big)',
+	// "bullets match the turret size": bullet DIAMETER (drawn 2*(size*r), a boss bullet is
+	// can.size*ra like every class) must equal the drawn barrel WIDTH (client width * r). Both
+	// must come out to AutoTurret's 29.4 du.
+	const bulletDiamDu = turr.map((c) => 2 * c.size * r / K);
+	check('turret bullet diameter = AutoTurret width 29.4 du (spawned size 8.232, was 10.29 = 1.25x too big)',
 		bulletDiamDu.every((d) => near(d, AT_W_DU)), bulletDiamDu.map((d) => d.toFixed(2)).join(','));
 
 	// Client turrets: the `turrets` mechanism (base circle + canDir barrel, drawn over the body via
@@ -6065,6 +6188,7 @@ necromancerTests();
 droneBatchTests();
 factoryTests();
 bossProjectileTests();
+autoTurretMultiTargetTest();
 defenderGeometryTests();
 respawnTests(rooms);
 respawnCarryoverTests(rooms);

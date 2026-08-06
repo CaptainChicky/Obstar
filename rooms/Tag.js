@@ -264,9 +264,15 @@ class Tag extends Room {
 			);
 			c.closer = 1;
 			c.class = spec[2];
-			c.screen = CLASS[c.class].screen;
+			c.screen = Player.scriptedScreen(c.class);
 			c.size = 98;
+			c.guardSize = c.size;   // circle body
 			c.damage = 50;
+			// A scripted Closer never runs upgrade(), so its Bullet Speed stays the constructor
+			// default (1) unless baked on here - 1+0.15x7 is a maxed tank's own BSpeed slope at
+			// 7 points, needed so its bullets travel (and therefore range, life x speed) at least
+			// as far as a maxed tank's.
+			c.up.BSpeed = 1 + 0.15 * 7;
 			c.hp = c.maxHp = this.rules.bossHp;
 			c.shield = 0;
 			c.motion = spec[0].bind(c);

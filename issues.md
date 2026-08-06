@@ -1,6 +1,4 @@
 additional issues are present:
-- arena closer bullets should be the size of its barrel, not small af like rn
-- same with fallen booster, its bullets should be the size of its barrels
 
 - you should read the diep wiki's pages on these bosses and the features/things noted there should basically be ported over
 
@@ -22,13 +20,10 @@ additional issues are present:
 
 - add the selection colors/animation screen for mothership, survival, tester
 - finish the gamemodes one by one
-- hitboxes for arena closer, bosses, mothership, dominators arent right the hitbox should be their circular body but its less fsr.
+- hitboxes for arena closer, bosses, mothership, dominators arent right the hitbox should be their circular body but its less fsr. [VERIFY_THIS]
 - mothership drones should be above it, check all drones for this they shoudl be above their tanks tbh
 - h to take control of tank needs to be fine tuned and balanced
 - too many upgrade points?
 - UI tests should never be added. I'll verify that irl in the game. Only logic and key tests like for race conditions or subtle logic bugs or similar should be added. I'll need to remove unneccesary tests in the future
-- dominator FOV is still broken, despite mothership being fixed
 - comment pass is needed. comment should only serve to record what is going on logically with the code, and never too verbose, history comments need to be removed, and comments refernecing any plan or files like this need to be removed. commnents should be light.
 - game may be too complicated, consider a refactor to simplify if applicable
-- auto3 and auto5 turrets should be abe to do multi targetting. each turret should be able to lock onto the closest target and fire indepdenently. currnetly everything j ust picks one target.
-- This tanks.js failure is pre-existing (missing an external diepcustom reference repo used only by that test's citation-checker, unrelated to task 6) trhis test needs to be REMOVED wtf tests should only refernece stuff in the actual working code, not refernece files that are gitignored

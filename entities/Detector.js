@@ -90,12 +90,12 @@ class Detector {
 		this.dis = this.size;
 		this.construc = this.type.length;
 		this.select = 0;
+		// In-place truncation, not a fresh object literal - this now runs once per tick per
+		// multi-target tank (shoot()'s per-tick rescan), not just on target loss.
 		if (this.all) {
-			this.selectAll = {
-				[KIND.OBJECTS]: [],
-				[KIND.BULLET]: [],
-				[KIND.PLAYER]: []
-			};
+			this.selectAll[KIND.OBJECTS].length = 0;
+			this.selectAll[KIND.BULLET].length = 0;
+			this.selectAll[KIND.PLAYER].length = 0;
 		}
 	}
 }

@@ -67,6 +67,14 @@ const SHAPE_REGEN_TICKS = 1500;
 // tank-spawn pad since this.size isn't set yet at this point in the constructor.
 const SHAPE_WALL_TRIES = 24;
 const SHAPE_WALL_PAD = 30;
+// Worst-case footprint radius per placement branch below, for room.clearOfShapes()'s overlap
+// check - this.size isn't assigned until the type switch further down, so a flat per-branch
+// worst case stands in for it here. CARVE is the largest of sqr/tri/pnt (pnt); NEST is the
+// largest of sqr/tri/pnt/Bsqr/Btri/Bpnt (Bsqr); CRASHER is the large-crasher roll (base 13.86,
+// large 21.78 - 0.2 chance, rolled after placement).
+const SHAPE_SPAWN_RADIUS_CARVE = 29.70;
+const SHAPE_SPAWN_RADIUS_NEST = 90;
+const SHAPE_SPAWN_RADIUS_CRASHER = 21.78;
 
 class Objects {
 	constructor(type, pos, id, map, room) {
@@ -118,7 +126,8 @@ class Objects {
 						[map.width / 4, map.height / 4, 980 * s],
 						[-map.width / 4, -map.height / 4, 980 * s]
 					]);
-					if (room.clearOfWalls(p.x, p.y, SHAPE_WALL_PAD)) { break; }
+					if (room.clearOfWalls(p.x, p.y, SHAPE_WALL_PAD) &&
+						room.clearOfShapes(p.x, p.y, SHAPE_SPAWN_RADIUS_CARVE)) { break; }
 				}
 				this.x = p.x;
 				this.y = p.y;
@@ -141,7 +150,8 @@ class Objects {
 					const rad = Math.sqrt(rIn * rIn + Math.random() * (rOut * rOut - rIn * rIn));
 					this.x = Math.cos(dir) * rad;
 					this.y = Math.sin(dir) * rad;
-					if (room.clearOfWalls(this.x, this.y, SHAPE_WALL_PAD)) { break; }
+					if (room.clearOfWalls(this.x, this.y, SHAPE_WALL_PAD) &&
+						room.clearOfShapes(this.x, this.y, SHAPE_SPAWN_RADIUS_CRASHER)) { break; }
 				}
 				this.pos = 1;
 				break;
@@ -153,7 +163,8 @@ class Objects {
 						Math.max(-map.width / 2 + this.marge,
 							pos[0] + Math.sin(dir) * (Math.random() * pos[2])));
 					this.y = Math.min(map.height / 2 - this.marge, Math.max(-map.height / 2 + this.marge, pos[1] + Math.cos(dir) * (Math.random() * pos[2])));
-					if (room.clearOfWalls(this.x, this.y, SHAPE_WALL_PAD)) { break; }
+					if (room.clearOfWalls(this.x, this.y, SHAPE_WALL_PAD) &&
+						room.clearOfShapes(this.x, this.y, SHAPE_SPAWN_RADIUS_NEST)) { break; }
 				}
 				this.pos = 1;
 				break;

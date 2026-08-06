@@ -2729,7 +2729,7 @@
 				this.DETEC = {
 					type: [KIND.PLAYER, KIND.OBJECTS],
 					size: 800,
-					all: 0,
+					all: 1,   // has an autoDir cannon - each of its turrets targets independently
 					maxDis: 850,
 				};
 				let c = [{
@@ -3044,7 +3044,7 @@
 				this.DETEC = {
 					type: [KIND.PLAYER, KIND.OBJECTS],
 					size: 1500,
-					all: 0,
+					all: 1,   // has an autoDir cannon - each of its turrets targets independently
 					maxDis: 800,
 				};
 				const c = [{
@@ -3156,7 +3156,7 @@
 				this.DETEC = {
 					type: [KIND.PLAYER, KIND.OBJECTS],
 					size: 700,
-					all: 0,
+					all: 1,   // has an autoDir cannon - each of its turrets targets independently
 					maxDis: 800,
 				};
 				let c = [{
@@ -3296,10 +3296,11 @@
 					// too (a necro drone takes its claimed square's size, Player.js's claimSquare()). So
 					// a Summoner drone drawn through Drawings.bullet[3] (the square sprite its shared
 					// `3.1` steering already selects) is pixel-identical to a Necromancer's beige square.
-					// Was 9.074537 = 38.891 x (35/150), the same doubly-wrong x35/reference scaling
-					// Guardian's own drone carried before R3/B1 re-based it on 0.56 - Summoner's was
-					// simply never re-derived alongside it.
-					size: 21.78,
+					// A boss bullet is now `can.size x ra` like every other class's (entities/Player.js's
+					// shoot()), so this field is reference-relative rather than the drone's absolute hit
+					// radius: spawned radius = size x ra (ra = bossSize/35), so 21.78 x 35/59.396970 keeps
+					// the spawned drone at the same 21.78 radius derived above.
+					size: 12.833988,
 					// diep's SummonerSpawnerDefinition hardcodes `color: Color.NecromancerSquare` on the
 					// drone (beige) - distinct from the Summoner's EnemySquare-yellow BODY - so it reads
 					// as a Necromancer square regardless of the boss's own colour. `necro` is colour
@@ -3343,7 +3344,20 @@
 				// boss drew at twice diep's size, which is the "a bit too big" report; the same
 				// number is what every barrel/drone figure below is denominated against.
 				this.bossSize = 37.8;
+				// bossSize is the triangle's apothem (see above); the hit radius is the drawn
+				// circumradius / sqrt(2), which for a triangle equals apothem x sqrt(2).
+				this.hitRatio = Math.SQRT2;
 				this.boss = true;
+				// GuardianSpawnerDefinition's own droneCount cap (issues.md "guardian doesn't seem to
+				// spawn enough drones" / plan.md follow-up) - unlike Summoner/Fallen Overlord's
+				// permanent (life -1) drones, a Guardian drone is FINITE-life (below, `life: 112.5`)
+				// and this engine's droneCount accounting used to only ever run for `life === -1`
+				// cannons, so this field did nothing on its own - entities/Player.js's cap check and
+				// entities/Bullet.js's release() both had to stop assuming "finite life == never
+				// counted" (see those files' own comments) before this could take effect at all.
+				// 24 is diep's own GuardianSpawnerDefinition droneCount, not derived from anything
+				// else on this page.
+				this.maxDrone = 24;
 				// GuardianSpawnerDefinition: one oversized backward-facing (angle PI) drone
 				// spawner, droneCount 24, self-targeting drones (type 3.1 - the same mechanism
 				// Summoner's own spawners above already use; lib/gameAI.js's bossDetect() feeds
@@ -3357,23 +3371,24 @@
 				// exactly. life 1.5x75 ref ticks (finite - diep's own lifeLength here is NOT -1,
 				// unlike Summoner's permanent drones).
 				//
-				// `size` is the DRONE's own radius and is an ABSOLUTE length: a boss's bullets take
-				// `can.size` verbatim (entities/Player.js's shoot()), so it converts on the 0.56 axis
-				// with no reference-relative factor at all. diep's own GuardianSpawnerDefinition drone
-				// is `(width 71.4 / 2) x sizeRatio 0.588` = 21 du (x 0.56 = 11.76) - slightly smaller
-				// than a small Crasher. B2 sizes it to a small Crasher OUTRIGHT (a deliberate
-				// departure, README's "Departures from diep"): the Guardian's drones ARE Crashers
-				// (Color.EnemyCrasher, the same pink), so making them the small-Crasher size makes them
-				// visually one and the same. Small Crasher `size` is 13.86 (entities/Objects.js's
-				// `case "bull"`, = diep's own 35 x SQRT1_2 x 0.56 hit radius). Drawn through
-				// Drawings.bullet[6] (= Drawings.obj.bull) at that `size`, the drone is pixel-identical
-				// to a small Crasher. `drawType: 6` selects that sprite (see rooms/Room.js's
+				// `size` is the DRONE's own radius, on the same reference-relative axis every ordinary
+				// cannon uses (a boss bullet is `can.size x ra`, entities/Player.js's shoot()) - spawned
+				// radius = size x ra (ra = bossSize/35). Target spawned radius: a small Crasher OUTRIGHT
+				// (a deliberate departure - the Guardian's drones ARE Crashers, Color.EnemyCrasher, the
+				// same pink), i.e. 13.86 (entities/Objects.js's `case "bull"`, = diep's own
+				// 35 x SQRT1_2 x 0.56 hit radius), so size = 13.86 x 35/37.8 = 12.833333. Drawn through
+				// Drawings.bullet[6] (= Drawings.obj.bull) at that spawned radius, the drone is pixel-
+				// identical to a small Crasher. `drawType: 6` selects that sprite (rooms/Room.js's
 				// bulletWireType()); without it the shared `3.1` steering would draw a square
 				// (parseInt(3.1) = 3), Summoner's shape, not this triangle.
 				this.cannons = [{
 					reload: 5.4, offTime: 0, auto: 1, type: 3.1, drawType: 6, life: 112.5,
+					// Opts this FINITE-life cannon into the maxDrone(24) cap above - see
+					// entities/Player.js shoot()'s own `can.droneCap` comment for why this can't
+					// just be inferred from `life === -1` like every other capped class here.
+					droneCap: 1,
 					offdir: Math.PI, offx: 0, canonLength: 51.851852, rand: 0.174533,
-					speed: 1.904, pene: 25, damage: 3.92, size: 13.86,
+					speed: 1.904, pene: 25, damage: 3.92, size: 12.833333,
 					// No diep absorb table for a boss's own drones (same gap plan.md T2's roster
 					// left open) - Overlord's own drone row, the nearest real diep drone-knockback
 					// figure on file.
@@ -3399,6 +3414,9 @@
 				// the Summoner/pre-fix-Guardian bug), which this is not.
 				this.screen = BASE_SCREEN;
 				this.bossSize = 42;
+				// bossSize is the triangle's apothem (see above); the hit radius is the drawn
+				// circumradius / sqrt(2), which for a triangle equals apothem x sqrt(2).
+				this.hitRatio = Math.SQRT2;
 				this.boss = true;
 				// Three mounted auto-turrets need their own target search (MountedTurretDefinition
 				// is diep's own separate AutoTurret child entity, simplified here to three more
@@ -3406,7 +3424,7 @@
 				// Auto 3/Auto 5's rings) - reuses the ordinary class-level DETEC every other
 				// auto-turret tank already carries (Fortress's own copy, line ~2507, is the
 				// closest precedent for the shape).
-				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 800 };
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 1, maxDis: 800 };   // 3 autoDir turrets - independent targeting
 				// Three trap launchers (TrapperDefinition, forceFire -> `auto: 1`), evenly spaced
 				// a half-slot off the turrets below (diepcustom: `PI2*(i/count + 1/(2*count))`).
 				// damage 7x4, pene 2x12.5, speed 1.12x5, life 8x75, reload 5x15, back 2gux1.12.
@@ -3414,41 +3432,39 @@
 				// raw 120 du on the SAME axis the body uses: the server spawns at
 				// `canonLength * ra` with `ra = size/35 = 42/35 = 1.2` (entities/Player.js), so
 				// `120 du x 0.56 / 1.2 = 56` puts the muzzle at 56 x 1.2 = 67.2 units = 120 du (its
-				// drawn barrel tip; the launcher stub then reaches ~154 du). The old 73.5 was on
-				// 0.7 and drew the stub to 227 du - "wayyy too long" (issues.md). The trap
-				// PROJECTILE `size` is left at 19.992 on purpose: the wiki notes the Defender's big
-				// (Mega-Trapper-sized) launchers "shoot regular size traps", so the trap keeps the
-				// ordinary 0.7 bullet axis every other trap in this file uses rather than being
-				// scaled down with the launcher (its hitbox is unchanged by this pass).
+				// drawn barrel tip; the launcher stub then reaches ~154 du). The trap PROJECTILE
+				// `size` is reference-relative like every other cannon (spawned radius = size x ra):
+				// the wiki notes the Defender's big (Mega-Trapper-sized) launchers "shoot regular size
+				// traps", so target spawned radius is the ordinary trap size every other trap in this
+				// file uses, 19.992, unscaled by the launcher - so size = 19.992 x 35/42 = 16.66.
 				const traps = [0, 1, 2].map(i => ({
 					reload: 75, offTime: 0, auto: 1, type: 2, life: 600,
 					offdir: Math.PI * 2 * i / 3 + Math.PI / 3, offx: 0, canonLength: 56, rand: 0.174533,
-					speed: 5.6, pene: 25, damage: 28, size: 19.992,
+					speed: 5.6, pene: 25, damage: 28, size: 16.66,
 					weight: 4.2, push: 0.45709, back: 2.24
 				}));
 				// MountedTurretDefinition = AutoTurretDefinition (AutoTurret.ts: barrel size 55,
 				// width 42x0.7=29.4, recoil 0.3, bullet sizeRatio 1) with bullet speed/damage/health
 				// overridden. All on the same 0.56 axis as the body (scaleFactor 1): canonLength
-				// 55 du x 0.56 / 1.2 = 25.667 (muzzle at 55 du), size = (29.4/2) x 1 x 0.56 = 8.232
-				// - the bullet radius that makes the drawn bullet DIAMETER (2 x 8.232 = 16.46
-				// units) equal the drawn barrel WIDTH (29.4 du x 0.56 = 16.46 units), i.e. "bullets
-				// match the turret size" (issues.md). The old 10.29 was 29.4/2 x 0.7, 1.25x the
-				// barrel it fires from. `distance` is diep's own real mount radius: Defender.ts's
+				// 55 du x 0.56 / 1.2 = 25.667 (muzzle at 55 du). `size` is reference-relative like every
+				// ordinary cannon (spawned radius = size x ra) - target spawned radius (29.4/2) x 0.56
+				// = 8.232, the radius that makes the drawn bullet DIAMETER equal the drawn barrel WIDTH
+				// ("bullets match the turret size"), so size = 8.232 x 35/42 = 6.86. `distance` is
+				// diep's own real mount radius: Defender.ts's
 				// `positionData.y/x = size * sin/cos(angle) * offset` with
 				// `offset = 60/(DEFENDER_SIZE*sqrt(0.5))` = a flat 60 du from centre; the server
 				// mounts at `distance * ra`, so 60 du x 0.56 / 1.2 = 28 (mount at 28 x 1.2 = 33.6
-				// units = 60 du). The old 33.6 was treated as absolute and, x ra, spawned bullets
-				// at 72 du - 12 du outside the turret. Turrets are ordered FIRST in `cannons` so
-				// their canDir lands at [0..2], which is where the client's `turrets` array (each a
-				// base circle + a canDir-tracking barrel, drawn over the body) reads its aim; the
-				// traps follow at [3..5] (client `cannons`, which never read canDir).
+				// units = 60 du). Turrets are ordered FIRST in `cannons` so their canDir lands at
+				// [0..2], which is where the client's `turrets` array (each a base circle + a
+				// canDir-tracking barrel, drawn over the body) reads its aim; the traps follow at
+				// [3..5] (client `cannons`, which never read canDir).
 				// NOTE: `back` is left at 0.9408 (recoil 0.3 but on the old x2.8 boss-row scale, vs
 				// AutoTurretDefinition's own 0.3 x 1.12 = 0.336 that Auto Smasher carries) - a
 				// physics/impulse value, out of this geometry pass's scope; flagged in PENDING.md.
 				const turrets = [0, 1, 2].map(i => ({
 					reload: 15, offTime: 0, auto: 1, autoDir: 1, autoShoot: 1, life: 75,
 					offdir: Math.PI * 2 * i / 3, offx: 0, distance: 28, canonLength: 25.667, rand: 0.174533,
-					speed: 2.7552, pene: 11.5, damage: 8.4, size: 8.232,
+					speed: 2.7552, pene: 11.5, damage: 8.4, size: 6.86,
 					weight: 4.2, push: 0.45709, back: 0.9408
 				}));
 				this.cannons = turrets.concat(traps);
@@ -3472,19 +3488,16 @@
 				// reload 0.36x15 (an override, not a multiplier on Overlord's own 90). pene
 				// 2x12.5, damage 7x0.56, speed 1.12x1.7 - diep ABSOLUTE overrides, not scaled off
 				// Overlord's own bullet stats. FallenOverlord.ts does NOT override sizeFactor - it
-				// scales like an ordinary tank, so canonLength converts on the ordinary 0.7 axis
-				// (plan.md R2/R3, was 0.56 before): Overlord's own barrel.size 70 x 0.7 = 49.
-				// `size` (a drone, wire type 1 -> Drawings.bullet[1]'s crasher-style triangle,
-				// side length ~3.0434 x param.size) is fit to issues.md's own measured ratio
-				// instead: 24 side against a 70-diameter reference tank at the same screenshot
-				// scale is 0.342857 x that tank's diameter, which on this file's own 28x1.01^level
-				// identity (level 44 = displayed 45) is 9.772003 - the old 14.7 (21x0.7, i.e. this
-				// class's OWN barrel-width identity applied to a drone, not a real diep drone figure)
-				// drew a triangle about 50% larger than that.
+				// scales like an ordinary tank, so canonLength converts on the ordinary 0.7 axis:
+				// Overlord's own barrel.size 70 x 0.7 = 49. `size` (a drone, wire type 1 ->
+				// Drawings.bullet[1]'s crasher-style triangle) is reference-relative like every
+				// ordinary cannon (spawned radius = size x ra): target spawned radius 9.772003 (a
+				// 24-unit triangle side against a 70-diameter reference tank at the same scale,
+				// 0.342857 x that tank's diameter), so size = 9.772003 x 35/58.46 = 5.850498.
 				this.cannons = [0, 1, 2, 3].map(i => ({
 					reload: 5.4, offTime: 0, type: 1, life: -1, auto: 1,
 					offdir: Math.PI * i / 2, offx: 0, canonLength: 49, rand: 0.174533,
-					speed: 1.904, pene: 25, damage: 3.92, size: 9.772003,
+					speed: 1.904, pene: 25, damage: 3.92, size: 5.850498,
 					weight: 4.2, push: 0.45709, back: 0.112
 				}));
 			},
@@ -3502,10 +3515,11 @@
 				// spawned instance by rooms/Room.js createBoss(); entities/Bullet.js type 1.4 reads it.
 				this.fallen = true;
 				// FallenBooster.ts does NOT override sizeFactor - canonLength/size convert on the
-				// ordinary 0.7 axis, same as Fallen Overlord above (plan.md R2/R3, was 0.56 before):
-				// 70x0.7=49 (default), 95x0.7=66.5 (c[0]), 80x0.7=56 (c[3]/c[4]);
-				// size (width 42/2) x sizeRatio 1 x 0.7 = 14.7, uniform (Booster's own bullets are
-				// all sizeRatio 1).
+				// ordinary 0.7 axis, same as Fallen Overlord above: 70x0.7=49 (default),
+				// 95x0.7=66.5 (c[0]), 80x0.7=56 (c[3]/c[4]); size (width 42/2) x sizeRatio 1 x 0.7
+				// = 14.7, uniform (Booster's own bullets are all sizeRatio 1) - already reference-
+				// relative, so spawned radius = 14.7 x ra (ra = bossSize/35 = 1.670286) = 24.553,
+				// exactly half this boss's own drawn barrel width.
 				const c = new Array(5).fill(null).map(() => ({
 					reload: 15, offTime: 0, auto: 1,
 					offdir: 0, offx: 0, canonLength: 49, life: 38, rand: 0.174533,
@@ -3566,10 +3580,10 @@
 					canonLength: 52.5,   // TankDefinitions.json id16 barrel.size 75 x 0.7 (plan.md R2/R3 - not the flared-muzzle guess this used to be)
 					rand: 0.174533,   // diep scatterRate 1 (plan.md Step 8)
 					///
-					speed: 2.24,   // diep Arena Closer bullet.speed 2 x 1.12 (plan.md Step 9) - supersedes the stale "Assassin x1.66" derivation in the comment above
+					speed: 2.24,   // diep Arena Closer bullet.speed 2 x 1.12 - supersedes the stale "Assassin x1.66" derivation in the comment above
 					pene: 3750,
 					damage: 196,
-					size: 14.7,   // (barrel.width 42 / 2) x sizeRatio 1 x 0.7 (plan.md R10 - was 34, a stale stand-in R3 never touched even after finding this class's real id16 source)
+					size: 14.7,   // (barrel.width 42 / 2) x sizeRatio 1 x 0.7, reference-relative like every cannon; spawned radius = 14.7 x ra (ra = size/35 = 98/35 = 2.8) = 41.16, matching this barrel's own drawn width
 					///
 					weight: 0.525,
 					push: 0.27426,
@@ -3602,6 +3616,8 @@
 				// real level-75 camera, fieldFactor 1 - replaces both the old
 				// Sniper-borrowed stand-in (1664) and the later flat BASE_SCREEN (level-45 baseline)
 				this.screen = screenAtLevel(75, 1);
+				// Detection range, not camera width - stays on the raw screen figure above (spawn site
+				// applies FOV_MUL only to the instance's `screen`, not to this).
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				// All 3 Dominator variants carry `preAddon: "dombase"` (plan.md R3/R4) -
 				// Addons.ts's DomBaseAddon is a single static (rate 0) hexagonal guard,
@@ -3635,6 +3651,8 @@
 			},
 			"Gunner Dominator": new function () {
 				this.screen = screenAtLevel(75, 1); // real level-75 camera
+				// Detection range, not camera width - spawn site applies FOV_MUL to the instance's
+				// `screen` only, not to this.
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				// preAddon "dombase" (plan.md R3/R4) - static hexagonal guard, see Destroyer's own note.
 				this.guards = [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }];
@@ -3672,6 +3690,8 @@
 			},
 			"Trapper Dominator": new function () {
 				this.screen = screenAtLevel(75, 1); // real level-75 camera
+				// Detection range, not camera width - spawn site applies FOV_MUL to the instance's
+				// `screen` only, not to this.
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				// preAddon "dombase" (plan.md R3/R4) - static hexagonal guard, see Destroyer's own note.
 				this.guards = [{ sizeRatio: 1.24, sides: 6, rate: 0, phase: 0 }];
@@ -3752,7 +3772,7 @@
 					speed: 1.344, pene: 2, damage: 2.1, size: 10.29,   // (width 29.4 / 2) x sizeRatio 1 x 0.70 (plan.md C0)
 					weight: 1.05, push: 0.27426, back: 0.336
 				}];
-				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 850 };
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 1, maxDis: 850 };   // has an autoDir cannon
 				this.statMax = [10, 10, 10, 10, 10, 10, 10, 10];
 			},
 			"Spike": new function () {   // id51 - postAddon "spike", 4 phase-offset guards, bodyDamage +2
@@ -3808,7 +3828,7 @@
 			},
 			"Auto 3": new function () {   // id41 - postAddon "auto3", a 3-turret ring
 				this.screen = BASE_SCREEN;
-				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 850 };
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 1, maxDis: 850 };   // 3 ring turrets - independent targeting
 				this.cannons = [0, 1, 2].map(i => ({
 					reload: 15, offTime: 0, type: 0, life: 75,
 					auto: 1, autoShoot: 1, autoDir: 1,
@@ -3831,7 +3851,7 @@
 			},
 			"Auto 5": new function () {   // id40 - postAddon "auto5", a 5-turret ring
 				this.screen = BASE_SCREEN;
-				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 0, maxDis: 850 };
+				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: 800, all: 1, maxDis: 850 };   // 5 ring turrets - independent targeting
 				this.cannons = [0, 1, 2, 3, 4].map(i => ({
 					reload: 15, offTime: 0, type: 0, life: 75,
 					auto: 1, autoShoot: 1, autoDir: 1,
@@ -3959,7 +3979,8 @@
 				// Dominator's own DETEC below uses, so an unpossessed Mothership only fires once
 				// it actually has a live enemy in range instead of always (see the cannons' own
 				// note on why `auto: 1` retired) - `screen`/BASE_SCREEN doubles as its own view range
-				// for lack of a captured diep fieldFactor for this class.
+				// for lack of a captured diep fieldFactor for this class. Detection range, not camera
+				// width - spawn site applies FOV_MUL to the instance's `screen` only, not to this.
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				this.cannons = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
 					// No `auto` (plan.md E3) - diep's shared AI.tick() only force-shoots

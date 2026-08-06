@@ -100,6 +100,52 @@ const RING_ARC = Math.PI / 2;
 // Smallest signed angular difference, in [-PI, PI] - the atan2(sin,cos) idiom
 // entities/Objects.js's own edge-avoidance turn already uses for the same purpose.
 function angleDelta(a, b) { return Math.atan2(Math.sin(a - b), Math.cos(a - b)); }
+
+// Every live candidate a multi-target tank's auto-turret cannons may aim at this tick, flattened
+// out of DETEC's per-kind `selectAll` buckets in the class's own `type` priority order. Each
+// cannon then picks its own nearest entry out of this shared pool (autoTargetDir below), instead
+// of every cannon on the tank sharing one tank-wide `DETEC.select`.
+function autoTargetPool(play) {
+	const out = [];
+	const detec = play.DETEC;
+	if (!detec || !detec.all) { return out; }
+	for (const kind of detec.type) {
+		const bucket = detec.selectAll[kind];
+		if (!bucket) { continue; }
+		for (let i = 0; i < bucket.length; i++) {
+			const o = bucket[i];
+			// Same liveness exclusions the single-select path (Detector.collision()) applies on
+			// its own branch - the `all` branch does not filter these, so it is done here instead.
+			if (o.destroy || o.dead || !o.alpha || o.closer) { continue; }
+			out.push(o);
+		}
+	}
+	return out;
+}
+
+// Nearest pool entry to a cannon's own mount point (mx,my), inside `arc` of `mountAngle` and
+// inside `maxDis`. Returns a lead-corrected firing angle, or null if nothing qualifies. Measuring
+// from the mount rather than the hull centre is what lets a multi-turret tank (a ring, or the
+// Defender's three mounted turrets) split its fire across different targets - each socket sits
+// somewhere different, so "closest to me" resolves differently per socket.
+function autoTargetDir(pool, mx, my, mountAngle, arc, maxDis) {
+	let bestD2 = Infinity, bestDir = null;
+	const maxD2 = maxDis * maxDis;
+	for (let i = 0; i < pool.length; i++) {
+		const o = pool[i];
+		const dx = o.x - mx, dy = o.y - my;
+		const d2 = dx * dx + dy * dy;
+		if (d2 > maxD2 || d2 >= bestD2) { continue; }
+		const dis = Math.sqrt(d2);
+		const vx = o.vec ? o.vec.x : 0, vy = o.vec ? o.vec.y : 0;
+		const dir = Math.atan2(o.y + vy * dis / AUTOTURRET_LEAD - my, o.x + vx * dis / AUTOTURRET_LEAD - mx);
+		if (Math.abs(angleDelta(dir, mountAngle)) > arc) { continue; }
+		bestD2 = d2;
+		bestDir = dir;
+	}
+	return bestDir;
+}
+
 // Which drone budget a cannon draws from. Only a class that declares `droneSplit` (Mothership)
 // has two; every other drone class returns 0 and keeps a single pool, unchanged.
 function droneGroupOf(can) { return (can.type === 1.1) ? 1 : 0; }
@@ -395,7 +441,9 @@ class Player {
 		if (CLASS[this.class].DETEC) {
 			if (!this.DETEC) {
 				const detec = CLASS[this.class].DETEC;
-				this.DETEC = new Detector(this, this.x, this.y, detec.size, detec.type, detec.all)
+				// Detector's ctor is (from,x,y,size,type,self,all) - `detec.all` used to land in the
+				// `self` slot here, so no class detector ever actually populated `selectAll`.
+				this.DETEC = new Detector(this, this.x, this.y, detec.size, detec.type, detec.self || 0, detec.all || 0)
 				this.DETEC.team = this.team;
 			} else {
 				this.DETEC.x = this.x;
@@ -413,6 +461,9 @@ class Player {
 		if (CLASS[this.class].stealth && this.alpha < 1 && !this.dev.invisible && (this.inputs.e || this.inputs.mouseL)) {
 			this.alpha = Math.min(1, this.alpha + tick.perTick(CLASS[this.class].stealth.shooting));
 		}
+		// One scan per tick, shared by every autoDir cannon on this tank - empty for any class whose
+		// DETEC isn't `all: 1` (those keep the legacy single-select path inside the loop below).
+		const autoPool = autoTargetPool(this);
 		for (let r = 0; r < CLASS[this.class].cannons.length; r++) {
 			if (typeof this.shootTimer[r] === 'undefined') { this.shootTimer[r] = 0; }
 			const can = CLASS[this.class].cannons[r];
@@ -427,65 +478,71 @@ class Player {
 			let autoDir, shoot;
 			const ra = this.size / 35;
 			if (can.autoDir) {
-				if (can.ring) {
-					// plan.md R9 - a ring turret (Auto 3/5) aims off its OWN structural mount
-					// angle, not `this.autoDir` (which every ordinary single auto-turret shares
-					// tank-wide) - see RING_ROTATION's own comment.
-					const mountAngle = can.offdir + this.ringDir;
-					if (this.inputs.mouseL && Math.abs(angleDelta(this.dir, mountAngle)) <= RING_ARC) {
-						// Click-to-aim (diepcustom AutoTurret.tick's `influencedByOwnerInputs`
-						// branch): while the owner is actively holding fire, a ring turret that
-						// CAN reach the mouse direction points there, overriding DETEC's target.
-						autoDir = this.dir;
+				// A ring turret (Auto 3/5) aims off its OWN structural mount angle
+				// (can.offdir + this.ringDir, independent of the hull's facing); an ordinary
+				// mounted turret's socket is fixed to the hull (this.dir + can.offdir).
+				const mountAngle = can.ring ? (can.offdir + this.ringDir) : (this.dir + can.offdir);
+				// A ring turret is filtered to its own 90-degree targetFilter arc; a plain mounted
+				// auto-turret (Auto Gunner/Trapper/Hover/Smasher, Defender's three) has none.
+				const arc = can.ring ? RING_ARC : Math.PI;
+				if (can.ring && this.inputs.mouseL && Math.abs(angleDelta(this.dir, mountAngle)) <= RING_ARC) {
+					// Click-to-aim: while the owner holds fire, a ring turret that can reach the
+					// mouse direction points there, overriding DETEC's target.
+					autoDir = this.dir;
+					this.canDir[r] = autoDir;
+					shoot = 1;
+				} else if (this.DETEC.all) {
+					// Multi-target path: this turret picks its own nearest in-arc candidate out of
+					// the pool, measured from its OWN mount point rather than the hull centre - so
+					// different sockets on the same tank naturally resolve to different targets.
+					const mx = this.x + Math.cos(mountAngle) * (can.distance || 0) * ra;
+					const my = this.y + Math.sin(mountAngle) * (can.distance || 0) * ra;
+					const dir = autoTargetDir(autoPool, mx, my, mountAngle, arc, CLASS[this.class].DETEC.maxDis);
+					if (dir !== null) {
+						autoDir = dir;
 						this.canDir[r] = autoDir;
 						shoot = 1;
-					} else if (this.DETEC.select) {
-						this.DETEC.enabled = 0;
-						const other = this.DETEC.select;
-						const dis = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
-						if (!other.destroy && other.alpha && dis <= CLASS[this.class].DETEC.maxDis) {
-							const targetDir = Math.atan2(other.y + other.vec.y * dis / AUTOTURRET_LEAD - this.y, other.x + other.vec.x * dis / AUTOTURRET_LEAD - this.x);
-							if (Math.abs(angleDelta(targetDir, mountAngle)) <= RING_ARC) {
-								autoDir = targetDir;
-								this.canDir[r] = autoDir;
-								shoot = 1;
-							} else {
-								// targetFilter (Addons.ts): outside THIS turret's own 90 arc -
-								// fall back to idle radial aim for this cannon only, without
-								// resetting DETEC - another ring cannon may still be in-arc.
-								this.canDir[r] = mountAngle;
-								shoot = 0;
-							}
-						} else {
-							this.DETEC.reset();
-							this.DETEC.enabled = 1;
-							this.canDir[r] = mountAngle;
-							shoot = 0;
-						}
 					} else {
-						this.canDir[r] = mountAngle;
+						this.canDir[r] = can.ring ? mountAngle : this.autoDir;
+						shoot = 0;
 					}
 				} else if (this.DETEC.select) {
+					// Legacy single-select path, for any autoDir class not opted into `all: 1`.
 					this.DETEC.enabled = 0;
 					const other = this.DETEC.select;
 					const dis = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
 					if (!other.destroy && other.alpha && dis <= CLASS[this.class].DETEC.maxDis) {
-						autoDir = Math.atan2(other.y + other.vec.y * dis / AUTOTURRET_LEAD - this.y, other.x + other.vec.x * dis / AUTOTURRET_LEAD - this.x);
-						this.canDir[r] = autoDir;
-						shoot = 1;
+						const targetDir = Math.atan2(other.y + other.vec.y * dis / AUTOTURRET_LEAD - this.y, other.x + other.vec.x * dis / AUTOTURRET_LEAD - this.x);
+						if (Math.abs(angleDelta(targetDir, mountAngle)) <= arc) {
+							autoDir = targetDir;
+							this.canDir[r] = autoDir;
+							shoot = 1;
+						} else {
+							// Outside THIS turret's own arc - fall back to idle radial aim for this
+							// cannon only, without resetting DETEC (another cannon may still be in-arc).
+							this.canDir[r] = can.ring ? mountAngle : this.autoDir;
+							shoot = 0;
+						}
 					} else {
 						this.DETEC.reset();
 						this.DETEC.enabled = 1;
-						this.canDir[r] = this.autoDir;
+						this.canDir[r] = can.ring ? mountAngle : this.autoDir;
 						shoot = 0;
 					}
 				} else {
-					this.canDir[r] = this.autoDir;
+					this.canDir[r] = can.ring ? mountAngle : this.autoDir;
 				}
 			};
 			///
 			if ((this.inputs.e || this.inputs.mouseL || can.auto)
-				&& ((maxD && can.life === -1)
+				&& ((maxD && (can.life === -1 || can.droneCap))
+					// `can.droneCap` opts a FINITE-life cannon into the same maxDrone accounting a
+					// permanent (life -1) drone already gets - Guardian's own 24-cap spawner
+					// (TanksConfig.js) is the only current user. Deliberately NOT just "drop the
+					// life===-1 check": a class can mix a capped drone cannon with an ordinary
+					// finite-life cannon that must NOT be gated by drone count (Hybrid's own main
+					// gun, `life: 75`, alongside its `maxDrone: 2` permanent drone) - that ordinary
+					// cannon has no `droneCap` and is correctly exempt below.
 					? (split ? this.droneGroup[grp] < groupCap : this.droneCount < maxD)
 					: true)
 				&& ((can.autoShoot) ? shoot : true)) {
@@ -586,12 +643,12 @@ class Player {
 					// read) for every other type.
 					if (Bull.type === 2) { Bull.armTicks = Bull.life >> 3; }
 					Bull.damage = this.up.BDamage * can.damage;
-					// A boss and a Closer (PENDING #28) both hold a fixed, non-level-derived `size` -
-					// their update() is fully replaced (lib/gameAI.js), so this class's own
-					// `this.size = 28 * 1.01^level` growth line below never runs for either - so
-					// their bullets draw at the literal cannon size TanksConfig.js states rather
-					// than the tank-relative `ra` an ordinary levelling player's cannons scale by.
-					Bull.size = (this.boss || this.closer) ? can.size : can.size * ra;
+					// Bull.size = can.size x ra for every class, boss/Closer included - `ra` is the
+					// same sprite scale render.js draws a barrel at, so a bullet now always matches
+					// the barrel it left instead of a boss/Closer bullet skipping the scale and
+					// coming out `ra` times too small. Every boss/Closer cannon's `size` below is a
+					// reference-relative length (divide by ra), same convention as every ordinary class.
+					Bull.size = can.size * ra;
 					// An Arena Closer's own bullets pass through Maze walls the same way the closer
 					// itself does (diep_wiki, PENDING #26/#28) - entities/Bullet.js's KIND.WALL arm
 					// reads this. Undefined (falsy) for every ordinary shot.
@@ -608,10 +665,15 @@ class Player {
 					// scaled by dtTicks twice (PENDING #43) - at the live 25ms tick perTick() delivered
 					// only 0.64x of what the `back` column states.
 					this.vec.add(new Vec(tick.impulse(can.back), 0).rotate(dir - Math.PI));
-					if (maxD && can.life === -1) {
+					if (maxD && (can.life === -1 || can.droneCap)) {
 						this.droneCount++;
 						if (split) { this.droneGroup[grp]++; }
 						Bull.droneGroup = split ? grp : -1;   // so release() below knows which pool to refund
+						// This bullet occupies a maxDrone slot - release() reads this flag instead of
+						// re-deriving it from `life`, since a `droneCap` finite-life drone (Guardian)
+						// must refund its slot on natural expiry exactly like a permanent one refunds
+						// on death.
+						Bull.counted = 1;
 					}
 					///
 					this.recoil[parseInt(r)] = 1;
@@ -633,6 +695,13 @@ class Player {
 			} else if (reload >= reloadMax) {
 				this.shootTimer[r] = 0;
 			}
+		}
+		// The multi-target path re-scans every tick instead of latching onto its first sighting -
+		// the buckets consumed above were filled by this tick's collision pass and must be emptied
+		// before the next one refills them.
+		if (this.DETEC && this.DETEC.all) {
+			this.DETEC.reset();
+			this.DETEC.enabled = 1;
 		}
 	}
 	upgrade(data) {
@@ -1316,7 +1385,10 @@ class Player {
 		// decided (rooms/Room.js's broad-phase gate, this.collision()'s KIND.PLAYER
 		// overlap) so a spinning guard both deals and blocks contact out to its own edge,
 		// not just the tank body inside it. Equal to `this.size` for every other class.
-		this.guardSize = this.size;
+		// `hitRatio` (default 1) rescales `size` into a contact radius for a class whose `size`
+		// is not itself the drawn radius - the two triangle-bodied bosses store `size` as their
+		// body's apothem, so their contact radius is `size x sqrt(2)` (circumradius / sqrt(2)).
+		this.guardSize = this.size * (CLASS[this.class].hitRatio || 1);
 		if (CLASS[this.class].guards) {
 			for (const g of CLASS[this.class].guards) {
 				this.guardSize = Math.max(this.guardSize, this.size * g.sizeRatio);
@@ -1361,6 +1433,15 @@ Player.prototype.kind = KIND.PLAYER;
 // constant rather than a copy of it - re-wrapping it in tick.lead() has to fail a test, not just
 // contradict the comment above it. Same idea as entities/Bullet.js's estimateCrossTicks export.
 Player.AUTOTURRET_LEAD = AUTOTURRET_LEAD;
+
+// Camera width for a scripted entity (boss/Dominator/Mothership/Arena Closer) whose update() is
+// replaced by lib/gameAI.js and therefore never runs the `this.screen = ...` formula above. Only
+// FOV_MUL applies here, not FOV_PER_LEVEL: a scripted class's own `screen` (TanksConfig.js) is
+// already computed at that entity's real diep level, so raising it further per-level would double
+// count the level scaling.
+Player.scriptedScreen = function (className) {
+	return CLASS[className].screen * config.FOV_MUL;
+};
 
 // The upgrade economy (PENDING #30), exposed so rooms/Room.js's getUi() sends the client the same
 // "points available" figure upgrade() will actually honour, and so test/rooms.js drives the real

@@ -228,9 +228,11 @@ class Maze extends Room {
 			);
 			c.closer = 1;
 			c.class = spec[2];
-			c.screen = CLASS[c.class].screen;
-			c.size = 98;   // ArenaCloser.ts BASE_SIZE 175 du x 0.56 (plan.md Step 11) - see rooms/Tag.js's own createCloser()
+			c.screen = Player.scriptedScreen(c.class);
+			c.size = 98;   // ArenaCloser.ts BASE_SIZE 175 du x 0.56 - see rooms/Tag.js's own createCloser()
+			c.guardSize = c.size;   // circle body
 			c.damage = 50;   // 10x this.damage's own diep-derived base (5) - see rooms/Tag.js's own createCloser()
+			c.up.BSpeed = 1 + 0.15 * 7;   // maxed BSpeed slope at 7 points - see rooms/Tag.js's own createCloser()
 			c.hp = c.maxHp = this.rules.bossHp;
 			c.shield = 0;
 			c.motion = spec[0].bind(c);

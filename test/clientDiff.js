@@ -89,7 +89,9 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-const GOLDEN = { count: 314718, hash: 'bc5ee24e' };
+// Shape placement now retries against room.clearOfShapes() too (crasher/shape overlap
+// avoidance), which shifts the RNG stream and therefore every downstream draw call.
+const GOLDEN = { count: 349103, hash: '89f89de8' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

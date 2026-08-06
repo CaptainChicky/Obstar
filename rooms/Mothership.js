@@ -99,8 +99,10 @@ class Mothership extends Room {
 			// multiplier (plan.md Part D) is what actually reads this back.
 			m.absorb = 0.01;
 			m.size = CLASS['Mothership'].bossSize;
+			// 16-gon circumradius is within 2% of its apothem - treated as circular for contact.
+			m.guardSize = m.size;
 			m.class = 'Mothership';
-			m.screen = CLASS['Mothership'].screen;
+			m.screen = Player.scriptedScreen('Mothership');
 			m.shield = 0;
 			/*
 				diep's own stats while piloted (plan.md E3/E4, Mothership.ts:66): all seven non-
@@ -158,9 +160,11 @@ class Mothership extends Room {
 			);
 			c.closer = 1;
 			c.class = spec[2];
-			c.screen = CLASS[c.class].screen;
+			c.screen = Player.scriptedScreen(c.class);
 			c.size = 98;
+			c.guardSize = c.size;   // circle body
 			c.damage = 50;
+			c.up.BSpeed = 1 + 0.15 * 7;   // maxed BSpeed slope at 7 points - see rooms/Tag.js's own createCloser()
 			c.hp = c.maxHp = this.rules.bossHp;
 			c.shield = 0;
 			c.motion = spec[0].bind(c);
