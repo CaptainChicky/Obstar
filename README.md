@@ -96,4 +96,4 @@ local Postgres instance, and how to test admin commands via the in-browser dev c
 The game still needs a lot of work — new gamemode content, more test coverage on the untested
 paths, general polish. [PENDING.md](PENDING.md) is the up-to-date punch list of what's decided
 but not built and what nobody has verified yet; [HANDOFF.md](HANDOFF.md) is the map to get
-oriented in the code before touching anything.
+oriented in the code before touching anything...
