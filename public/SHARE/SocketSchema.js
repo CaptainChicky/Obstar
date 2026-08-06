@@ -216,6 +216,10 @@
 				'vx': 'float32',
 				'vy': 'float32',
 				'dir': 'int16',
+				// The auto-turret ring's own phase (entities/Player.js's `ringDir`) - a ring
+				// cannon's mount angle is `offdir + ringDir`, not `offdir + dir` like an ordinary
+				// barrel, so the client needs this separately from the hull's own facing.
+				'ringDir': 'int16',
 				'size': 'float32',
 				'alpha': 'uint8',
 				'hp': 'uint8',
@@ -353,6 +357,7 @@
 				'vx',
 				'vy',
 				'dir',
+				'ringDir',
 				'size',
 				'alpha',
 				'hp',
@@ -670,7 +675,7 @@
 		'head': {},
 		'Players': {
 			states: CODECS.bits, class: CODECS.klass, color: CODECS.color,
-			dir: CODECS.angle, hp: CODECS.unit, alpha: CODECS.unit,
+			dir: CODECS.angle, ringDir: CODECS.angle, hp: CODECS.unit, alpha: CODECS.unit,
 			xp: CODECS.xpMag, recoil: CODECS.bits, canDir: CODECS.angles
 		},
 		'Objects': { states: CODECS.bits, shape: CODECS.shape, hp: CODECS.unit, alpha: CODECS.unit, dir: CODECS.angle },

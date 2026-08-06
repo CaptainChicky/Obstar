@@ -55,10 +55,6 @@
 	// the ring's own mount position is a rendering-only approximation, plan.md R9) - same
 	// Date.now()-based idiom PetsConfig.js's own cosmetic spins already use.
 	const REF_TICK_MS = 40;
-	// diepcustom Addons.ts's createAutoTurrets: AI.PASSIVE_ROTATION, the auto-turret ring's own
-	// slow independent spin rate (radians per reference tick) - matches entities/Player.js's
-	// own RING_ROTATION server-side constant (plan.md R9).
-	const RING_ROTATION = 0.01;
 	const Drawings = {
 		// A spinning outline n-gon (Smasher/Landmine/Spike/the 3 Dominators' `guards`, plan.md
 		// R4) - diepcustom's GuardObject: drawn circumradius is `owner.size x sizeRatio` (its
@@ -288,14 +284,11 @@
 				ctx.restore();
 			},
 		],
-		// A ring turret's own mount phase (plan.md R9): diepcustom's whole ring spins slowly,
-		// independent of the hull's own facing (an invisible parent GuardObject with
-		// `absoluteRotation`). The server tracks the real thing (`this.ringDir`, entities/
-		// Player.js) for bullet spawn origin and the live `canDir` aim; there is no wire field
-		// for the base circle's own DRAWN position, so this is a client-only cosmetic
-		// approximation using the same Date.now() idiom as Drawings.guards above - close
-		// enough for a rendering-only mount point that nothing gameplay-relevant reads.
-		ringMountDir: (c) => c.offdir + Date.now() * RING_ROTATION / REF_TICK_MS,
+		// A ring turret's own mount phase: the server's real `ringDir` (entities/Player.js), off
+		// the wire, so the base circle and the barrel mounted on it land at the same phase the
+		// server aimed `canDir` from - the whole ring is drawn where the server says it is,
+		// instead of a client-guessed phase drifting away from it over time.
+		ringMountDir: (c, param) => c.offdir + (param.ringDir || 0),
 		// A ring turret's own base circle (plan.md R9), drawn separately from its barrel
 		// (Drawings.turrets[0] below) so it can sit UNDER the body in render.js's pre-body
 		// pass - diepcustom XORs `showsAboveParent` OFF for a ring turret specifically (a
@@ -303,7 +296,7 @@
 		// barrel, above the body, unchanged below).
 		ringBase: (ctx, config, param, i) => {
 			const c = config.turrets[i], r = param.size / CONST.SIZE;
-			const mountDir = Drawings.ringMountDir(c);
+			const mountDir = Drawings.ringMountDir(c, param);
 			ctx.save();
 			ctx.translate(Math.cos(mountDir) * c.distance * r, Math.sin(mountDir) * c.distance * r);
 			ctx.beginPath();
@@ -332,7 +325,7 @@
 				// Auto Hover's single centered turret (no positional change from today). A ring
 				// turret (plan.md R9) mounts off its own independent spin phase instead.
 				if (c.distance) {
-					const mountDir = c.ring ? Drawings.ringMountDir(c) : (param.dir + c.offdir);
+					const mountDir = c.ring ? Drawings.ringMountDir(c, param) : (param.dir + c.offdir);
 					ctx.translate(Math.cos(mountDir) * c.distance * r, Math.sin(mountDir) * c.distance * r);
 				}
 				ctx.rotate(param.canDir[i] ? param.canDir[i] : 0);

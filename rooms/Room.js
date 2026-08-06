@@ -420,6 +420,10 @@ const DEFAULT_RULES = {
 	// Per-mode xp multiplier, applied once in awardXp(). diep_wiki/Polygons.txt: Tag x3,
 	// Breakout x3, Domination x2, everything else x1.
 	xpMul: 1,
+	// Multiplier on the Crasher Zone population tickArena() derives (crasherTotal()). 1 everywhere
+	// but Maze, which turns it down - the same crasher count reads as far more pressure in a maze
+	// of dead ends than in open ffa-shaped arenas.
+	crasherDensity: 1,
 	viewerBullets: true,  // re-encode your own bullets per viewer so they read as yours
 	// The alpha a stealth class's decay-toward-invisible (entities/Player.js's update()) stops at.
 	// 0 everywhere except Tag (PENDING #28): diep_wiki/Tag.txt - "Players can't become fully
@@ -1277,10 +1281,11 @@ class Room {
 			this.obj[type].max0 = caps[type].max0;
 			this.obj[type].max1 = caps[type].max1;
 		}
-		// Crashers scale with the arena the same way sqr/tri/pnt do (plan.md C12) - unlike
-		// Bpnt/Bsqr/Btri just below, a Crasher IS a real diep shape with a real density to be
-		// faithful to, not a stand-in this file gets to leave at a hand-picked literal.
-		this.obj.bull.max1 = crasherTotal(this.nestScale);
+		// Crashers scale with the arena the same way sqr/tri/pnt do - unlike Bpnt/Bsqr/Btri just
+		// below, a Crasher IS a real diep shape with a real density to be faithful to, not a
+		// stand-in this file gets to leave at a hand-picked literal. crasherDensity is a per-mode
+		// multiplier on top of that density (1 = unmodified).
+		this.obj.bull.max1 = Math.round(crasherTotal(this.nestScale) * this.rules.crasherDensity);
 	}
 	createBullet(bullet, origin) {
 		this.assignBulletTeam(bullet, origin);
@@ -1444,7 +1449,11 @@ class Room {
 					// and with it the entity id the client is tracking - is not handed to a new
 					// entity on the next frame.
 					if (kind === "objs") { i.delete(); this.INSTANCE[kind].delete(i.id.oId, true); continue; }
-					if (kind === 'bullets') { this.INSTANCE[kind].delete(i.id.oId, true); continue; }
+					// A permanent drone (life -1) reaching this tombstone path without ever going
+					// through Bullet.prototype.collision() (e.g. update()'s owner-liveness guard, or
+					// case 1.1's own self-destruct) still owes its owner a refund - release() is
+					// idempotent, so this is a no-op if collision() already paid it.
+					if (kind === 'bullets') { i.release && i.release(); this.INSTANCE[kind].delete(i.id.oId, true); continue; }
 					this.INSTANCE[kind].delete(i.id.oId);
 				} else {
 					if (i.getPlace === 1) {
@@ -1470,6 +1479,9 @@ class Room {
 				// that bound is written.
 				if ((kind === 'players' || kind === 'bullets') && this.inArena(obj) &&
 					this.inEnemyBase(obj, kind === 'bullets' ? config.BASE_BULLET_MARGIN : 0)) {
+					// Same refund as the tombstone site above, paid up front - harmless if
+					// collision()'s own tail below also runs it (idempotent via `released`).
+					obj.release && obj.release();
 					obj.collision(0, { base: 1 });
 					continue;
 				}
@@ -1919,6 +1931,11 @@ class Room {
 	spawnPoint(tank) {
 		return this.rejectSample(280 * this.nestScale, this.spawnKeepOut());
 	}
+	/* Whether a point is clear of permanent geometry, at least `pad` units from it. Shapes are
+		 placed directly by entities/Objects.js rather than through spawnPoint(), so they need their
+		 own way to ask this. Only Maze has any permanent geometry (rooms/Maze.js overrides this) -
+		 every other mode has nothing to be embedded in, so the base answer is always yes. */
+	clearOfWalls(x, y, pad) { return true; }
 	getBuffer(id) {
 		const RAW = this.BUFFER[id];
 		if (!RAW) {
@@ -1995,6 +2012,7 @@ class Room {
 			// re-seeded it from the live aim: a visible snap-away-and-back on every re-press.
 			// `spinning` is set in the same tick that assigns spinDir, so it can never be stale.
 			dir: RAW.main.spinning ? RAW.main.spinDir : RAW.main.dir,
+			ringDir: RAW.main.ringDir || 0,
 			size: RAW.main.size,
 			alpha: RAW.main.alpha,
 			hp: RAW.main.hp / RAW.main.maxHp,
@@ -2040,6 +2058,7 @@ class Room {
 							vx: obj.vec.x,
 							vy: obj.vec.y,
 							dir: obj.dir,
+							ringDir: obj.ringDir || 0,
 							size: obj.size,
 							alpha: obj.alpha,
 							hp: Math.max(0, obj.hp / obj.maxHp),
@@ -2080,7 +2099,7 @@ class Room {
 						raw = {
 							construc: 'Bullets',
 							id: obj.id.oId,
-							states: [!!obj.pet * 1, 0, 0, 0, 0, 0, 0],
+							states: [!!obj.pet * 1, 0, !!obj.underlay * 1, 0, 0, 0, 0],
 							type: bulletWireType(obj),
 							x: obj.x,
 							y: obj.y,
@@ -2128,7 +2147,7 @@ class Room {
 						const raw = new Int8Array(this.controller.encodeInst('Instance', {
 							construc: 'Bullets',
 							id: obj.id.oId,
-							states: [!!obj.pet * 1, 1, 0, 0, 0, 0, 0],
+							states: [!!obj.pet * 1, 1, !!obj.underlay * 1, 0, 0, 0, 0],
 							type: bulletWireType(obj),
 							x: obj.x,
 							y: obj.y,

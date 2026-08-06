@@ -3931,6 +3931,10 @@
 			"Mothership": new function () {   // id27 - gamemode entity, spawned by rooms/Mothership.js (plan.md G1)
 				this.screen = screenAtLevel(140, 1); // real level-140 camera
 				this.maxDrone = 32;
+				// diep splits this class's drone budget across its two barrel groups rather than pooling it
+				// (TankDefinitions.json id27's alternating canControlDrones) - see entities/Player.js's
+				// droneGroup. 32 total = 16 controllable + 16 not.
+				this.droneSplit = true;
 				// Mothership.ts sets no explicit body size - it comes from the ordinary tank-body
 				// growth formula (plan.md M3: size = 28 x 1.01^level) at `camera.setLevel(140)`,
 				// diep's own literal figure (mostly there to max every stat, not for the size

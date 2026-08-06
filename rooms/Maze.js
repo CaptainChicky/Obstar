@@ -90,6 +90,9 @@ class Maze extends Room {
 			// Verbatim ffa's mix/density (PENDING #19's density formula still applies - "works
 			// similarly to FFA" is the wiki's own framing for the whole mode).
 			shapeMix: { sqr0: 431, sqr1: 35, tri0: 157, tri1: 24, pnt0: 49, pnt1: 29 },
+			// Lower than the base 1 - the maze's own walls funnel a chased player into dead ends, so
+			// the same crasher count reads as far more pressure here than in an open arena.
+			crasherDensity: 0.75,
 			betaPentRng: 0.98,
 			botCount: 10,
 			botIdStart: 10,
@@ -168,21 +171,23 @@ class Maze extends Room {
 		Room.js's own SPAWN_TRIES cap.
 	*/
 	spawnPoint(tank) {
-		const walls = this.INSTANCE.walls.size ? [...this.INSTANCE.walls.live()] : null;
-		if (!walls) { return super.spawnPoint(tank); }
+		if (!this.INSTANCE.walls.size) { return super.spawnPoint(tank); }
 		const pad = (tank && tank.size) || SPAWN_WALL_PAD;
 		for (let i = 0; i < SPAWN_WALL_TRIES; i++) {
 			const p = super.spawnPoint(tank);
-			let clear = true;
-			for (const w of walls) {
-				if (Math.abs(p.x - w.x) <= w.w / 2 + pad && Math.abs(p.y - w.y) <= w.h / 2 + pad) {
-					clear = false;
-					break;
-				}
-			}
-			if (clear) { return p; }
+			if (this.clearOfWalls(p.x, p.y, pad)) { return p; }
 		}
 		return super.spawnPoint(tank);
+	}
+	/* The padded AABB test spawnPoint() above and entities/Objects.js's shape placement both need -
+		 centralised here so there is one copy of it, not two. Walls are axis-aligned rectangles
+		 (entities/Wall.js: centre x/y, size w/h). */
+	clearOfWalls(x, y, pad) {
+		if (!this.INSTANCE.walls.size) { return true; }
+		for (const w of this.INSTANCE.walls.live()) {
+			if (Math.abs(x - w.x) <= w.w / 2 + pad && Math.abs(y - w.y) <= w.h / 2 + pad) { return false; }
+		}
+		return true;
 	}
 	/*
 		The 5-hour deadline. Called from step() below, before super.step(), the same ordering

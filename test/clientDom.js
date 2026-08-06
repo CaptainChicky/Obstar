@@ -131,6 +131,7 @@ function boot(POST, opts) {
 	window.window = window;
 
 	let socket = null;
+	const sockets = [];
 	// a fake timer queue so a test can advance the 1s heartbeat without a real wall-clock wait.
 	// fires in `at` order; a callback firing during a run may itself schedule another (the
 	// heartbeat re-arms itself every call), so draining loops until nothing is due any more

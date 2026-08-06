@@ -100,6 +100,7 @@
 			this.alpha = 1;
 			this.size = 22;
 			this.dir = 0;
+			this.ringDir = 0;
 			this.canDir = [];
 			this.canDdir = [];
 			this.followDir = 0;
@@ -341,6 +342,7 @@
 					canC: this.shield ? this.SH.cannons : ((this.hitted > 1) ? Palette.hit : Palette.gray),
 					size: this.size,
 					dir: this.followDir ? this.realDir : this.dir,
+					ringDir: this.ringDir,
 					recoils: this.recoil,
 					canDir: this.canDdir
 				});
@@ -586,12 +588,21 @@
 			///
 			const sx = -viewX * Global.RATIO + (Global.canW / 2), sy = -viewY * Global.RATIO + (Global.canH / 2);
 			for (const c in Instances) {
-				for (const i in Instances[c]) {
-					///
-					ctx.setTransform(Global.RATIO, 0, 0, Global.RATIO, sx, sy);
-					ctx.globalAlpha = 1;
-					///
-					Instances[c][i].draw(ctx);
+				// Bullets gets two passes, underlay first: a Skimmer sub-shot is created after
+				// the parent it spins out from, so plain creation-order drawing would paint it
+				// over the parent's body. Every other bucket, and every non-underlay bullet,
+				// draws in a single pass exactly as before.
+				const passes = (c === 'Bullets') ? [1, 0] : [0];
+				for (const under of passes) {
+					for (const i in Instances[c]) {
+						const e = Instances[c][i];
+						if (c === 'Bullets' && !!e.underlay !== !!under) { continue; }
+						///
+						ctx.setTransform(Global.RATIO, 0, 0, Global.RATIO, sx, sy);
+						ctx.globalAlpha = 1;
+						///
+						e.draw(ctx);
+					}
 				}
 			}
 			///
@@ -876,6 +887,7 @@
 										case 'Bullets': {
 											inst[OBJ].pet = obj.states[0]
 											inst[OBJ].mine = obj.states[1]
+											inst[OBJ].underlay = obj.states[2]
 											break;
 										}
 									}

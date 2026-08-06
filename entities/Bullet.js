@@ -642,6 +642,9 @@ class Bullet {
 		this.maxspeed = speed;
 		this.speed = speed;
 		this.destroy = 0;
+		// Set to 1 only on a Skimmer's own sub-shots (case 4 in update()) - drawn under the
+		// spinning parent instead of over it, via rooms/Room.js's states[2] wire bit.
+		this.underlay = 0;
 		// Whether this projectile's death was an IMPACT against something solid - a tank, a boss,
 		// a shape, a Maze wall, a base fence - as opposed to running out of `life` or being shot
 		// down by another projectile. Only an impact death drags (see DEATH_DRAG in update()):
@@ -673,6 +676,29 @@ class Bullet {
 		this.launchKick = muzzleKick ? tick.perTick(muzzleKick) : 0;
 		this.launchDir = direction;
 		this.launched = 0;
+		// Which of the owner's droneGroup pools this drone occupies (entities/Player.js's shoot(),
+		// Mothership's droneSplit only) - -1 for every ordinary drone, which only ever touches the
+		// single shared droneCount pool. Read by release() below.
+		this.droneGroup = -1;
+		// Guards release() against double-firing - a drone can be destroyed and then swept in the
+		// same pass (rooms/Room.js), and droneCount/droneGroup must only ever be refunded once.
+		this.released = 0;
+	}
+	/*
+		A permanent drone (life -1) occupies one slot of its owner's budget until it actually goes
+		away. `droneCount--` used to live at exactly one site - the tail of collision() - so a drone
+		that died any other way (its owner dying/evolving, the out-of-arena sweep in rooms/Room.js,
+		case 1.1's own play.droneCount === -1 self-destruct) leaked its slot forever, ratcheting the
+		counter up until the owner could barely refill. Idempotent via `released`, since a drone can
+		be destroyed and then swept in the same pass.
+	*/
+	release(play) {
+		if (this.life !== -1 || this.released) { return; }
+		this.released = 1;
+		if (!play) { play = this.room.INSTANCE.players.get(this.origin.oId); }
+		if (!play) { return; }
+		play.droneCount--;
+		if (this.droneGroup >= 0 && play.droneGroup) { play.droneGroup[this.droneGroup]--; }
 	}
 	collision(other, option = {}) {
 		if (option.type) {
@@ -846,11 +872,8 @@ class Bullet {
 					break;
 			}
 		}
-		if (this.destroy && this.life === -1) {
-			const play = this.room.INSTANCE["players"].get(this.origin.oId);
-			if (play) {
-				play.droneCount--;
-			}
+		if (this.destroy) {
+			this.release();
 		}
 	}
 	update() {
@@ -883,10 +906,12 @@ class Bullet {
 		if (!this.alone) {
 			play = this.room.INSTANCE.players.get(this.origin.oId);
 			if (typeof play === "undefined") {
+				this.release(play);
 				this.destroy = tick.DES;
 				return;
 			} else {
 				if (play.destroy > 1 || play.dead || play.state.disconnect || play.class !== this.class) {
+					this.release(play);
 					this.destroy = tick.DES;
 					return;
 				}
@@ -937,6 +962,7 @@ class Bullet {
 				}
 				this.speed = this.maxspeed;
 				if (play.droneCount === -1) {
+					this.release(play);
 					this.destroy = tick.DES;
 				}
 				///
@@ -1454,6 +1480,9 @@ class Bullet {
 							const muzzleKick = speed / BULLET_MAINTAIN + 16.8;
 							const b = new Bullet(this.origin, this.x, this.y, dir, speed, muzzleKick, this.room);
 							b.type = 0;
+							// Drawn under the spinning parent body, not over it - a sub-shot is created
+							// after its parent so plain creation-order drawing would paint it on top.
+							b.underlay = 1;
 							b.class = this.class;
 							b.pene = this.sub.pene;
 							b.life = tick.ticks(this.sub.life);

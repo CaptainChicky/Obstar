@@ -40,6 +40,10 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
    tick. Accepted approximation; the exact fix is a per-pair reference-tick guard.
 10. **`prize`/coins/respawn XP** — ours (`pow(xp/mlx,1.8)`, `respawnPow 0.9`) vs diep's
     `scoreReward` + `respawnLevel = min(level−1, floor(√level × 3.2796))`. Decide per mode.
+11. **`rules.crasherDensity`** — a multiplier on `crasherTotal()`'s derived Crasher cap
+    (`rooms/Room.js`'s `tickArena()`), 1 everywhere except Maze (0.75): its corridors funnel a
+    chased player into dead ends, so the same live count reads as far more pressure than in an
+    open arena. 0.75 is a guess, not a measured figure — nobody has played it out.
 
 ## Needs a real browser session (nothing else can settle these)
 

@@ -775,6 +775,20 @@ function mazeTests() {
 		room.rules.bossRng === 2 && room.rules.maxBoss === 0,
 		room.rules.bossRng + ' / ' + room.rules.maxBoss);
 
+	// Crasher population: Maze runs crasherDensity 0.75 against ffa's default 1. Same arena size
+	// as ffa (checked above), so both share the same nestScale and the same undiscounted
+	// crasherTotal() - the only difference in the resulting cap is the multiplier itself.
+	{
+		const ffa = makeRoom('ffa');
+		check('ffa keeps the default crasherDensity of 1', ffa.rules.crasherDensity === 1,
+			ffa.rules.crasherDensity);
+		check('maze runs a lower crasherDensity than the default', room.rules.crasherDensity === 0.75,
+			room.rules.crasherDensity);
+		check('maze\'s crasher cap is exactly 0.75x ffa\'s, off the same undiscounted total',
+			room.obj.bull.max1 === Math.round(ffa.obj.bull.max1 * 0.75),
+			room.obj.bull.max1 + ' vs ' + Math.round(ffa.obj.bull.max1 * 0.75));
+	}
+
 	// The walls themselves (plan.md Step 12) - build() runs synchronously in the constructor
 	// (see rooms/Room.js's header), so they exist the moment makeRoom() returns, with no
 	// Init()/timer to wait on.
@@ -815,6 +829,30 @@ function mazeTests() {
 			let hits = 0;
 			for (let i = 0; i < 400; i++) { if (inWall(room.spawnPoint(tank))) hits++; }
 			check('no player ever spawns inside a maze wall (isValidSpawnLocation)', hits === 0,
+				hits + ' / 400 landed in a wall');
+		}
+
+		// Shapes are placed directly by entities/Objects.js's constructor, never through
+		// spawnPoint(), so they need the same wall-avoidance retry on their own placement
+		// branches (room.clearOfWalls()). Cover the nest-carve-out branch (pos -1) and the
+		// Crasher Zone branch (pos 'bull') - both draw a fresh point every retry, so a hit here
+		// means the retry loop itself is broken, not bad luck.
+		{
+			const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
+			const pad = 30;   // entities/Objects.js's SHAPE_WALL_PAD
+			let hits = 0;
+			for (let i = 0; i < 400; i++) {
+				const sq = new Objects('sqr', -1, { GM: room.gm, sId: room.id, oId: -1 }, room.map, room);
+				if (!room.clearOfWalls(sq.x, sq.y, pad)) { hits++; }
+			}
+			check('a nest-carve-out shape never spawns embedded in a maze wall', hits === 0,
+				hits + ' / 400 landed in a wall');
+			hits = 0;
+			for (let i = 0; i < 400; i++) {
+				const bull = new Objects('bull', 'bull', { GM: room.gm, sId: room.id, oId: -1 }, room.map, room);
+				if (!room.clearOfWalls(bull.x, bull.y, pad)) { hits++; }
+			}
+			check('a crasher never spawns embedded in a maze wall', hits === 0,
 				hits + ' / 400 landed in a wall');
 		}
 
@@ -1268,6 +1306,66 @@ function mothershipTests() {
 		check('BodyDam (this.damage) at 7 points (5+1x7)', m.damage === 12, m.damage);
 		check('HpRegan at 1 point, not 7', m.up.HpRegan === 1, m.up.HpRegan);
 		check('maxHp stays the real 7000, not stat-derived', m.maxHp === 7000, m.maxHp);
+	}
+
+	// plan.md task 1 - Mothership's 16 barrels are 8 controllable (type 1) + 8 not (type 1.1),
+	// and diep budgets the two halves SEPARATELY (droneSplit) rather than pooling maxDrone in one
+	// shared counter - a single pool lets whichever barrel's reload phase comes up first spend the
+	// whole cap, so the live swarm's split drifts away from 50/50 the moment it first saturates.
+	{
+		const ms = ships[0];
+		ms.inputs.e = 1;
+		ms.shield = 0;
+		ms.droneCount = 0;
+		ms.droneGroup = [0, 0];
+		ms.shootTimer = new Array(CLASS['Mothership'].cannons.length).fill(0);
+		for (let i = 0; i < 4000 && (ms.droneGroup[0] < 16 || ms.droneGroup[1] < 16); i++) { ms.shoot(); }
+		check('Mothership saturates at 16 controllable + 16 uncontrollable, not an arbitrary split',
+			ms.droneGroup[0] === 16 && ms.droneGroup[1] === 16,
+			ms.droneGroup.join(','));
+		check('...droneCount is exactly the sum of both per-group pools',
+			ms.droneCount === 32, ms.droneCount);
+		const own = () => [...room.INSTANCE.bullets.live()].filter((b) => b.origin.oId === ms.id.oId);
+		{
+			const live = own();
+			check('...and the live swarm itself is 16 controllable (type 1) + 16 not (type 1.1)',
+				live.filter((b) => b.type === 1).length === 16 && live.filter((b) => b.type === 1.1).length === 16,
+				live.filter((b) => b.type === 1).length + '/' + live.filter((b) => b.type === 1.1).length);
+		}
+
+		// Kill 5 of each group through update()'s owner-liveness guard - one of the leak sites
+		// (entities/Bullet.js) that used to skip the droneCount/droneGroup decrement entirely,
+		// which is what let the swarm's controllable/uncontrollable ratio drift over time (the
+		// "dead drones convert to uncontrollable" report). Simulated by briefly marking the owner
+		// dead (`destroy > 1`), the exact condition that guard checks, then actually removing the
+		// entities the way rooms/Room.js's own tombstone sweep does.
+		const live = own();
+		const killed = live.filter((b) => b.type === 1).slice(0, 5).concat(live.filter((b) => b.type === 1.1).slice(0, 5));
+		ms.destroy = 2;
+		for (const b of killed) { b.update(); }
+		ms.destroy = 0;
+		for (const b of killed) { room.INSTANCE.bullets.delete(b.id.oId, true); }
+		check('killing 5 of each group through the owner-liveness guard refunds exactly those slots',
+			ms.droneGroup[0] === 11 && ms.droneGroup[1] === 11 && ms.droneCount === 22,
+			ms.droneGroup.join(',') + ' / ' + ms.droneCount);
+
+		for (let i = 0; i < 4000 && (ms.droneGroup[0] < 16 || ms.droneGroup[1] < 16); i++) { ms.shoot(); }
+		check('...and re-saturating lands back on the exact same 16/16, not a drifted split',
+			ms.droneGroup[0] === 16 && ms.droneGroup[1] === 16 && ms.droneCount === 32,
+			ms.droneGroup.join(',') + ' / ' + ms.droneCount);
+		{
+			const relive = own();
+			check('...with the live swarm itself back to 16/16 too',
+				relive.filter((b) => b.type === 1).length === 16 && relive.filter((b) => b.type === 1.1).length === 16,
+				relive.filter((b) => b.type === 1).length + '/' + relive.filter((b) => b.type === 1.1).length);
+		}
+
+		// Cleanup - the Death animation/win-condition blocks below reuse ships[0]/ships[1] and
+		// must not inherit this block's spawned swarm or altered input/timer state.
+		for (const b of own()) { room.INSTANCE.bullets.delete(b.id.oId, true); }
+		ms.inputs.e = 0;
+		ms.droneCount = 0;
+		ms.droneGroup = [0, 0];
 	}
 
 	// Death animation - mothershipUpdate() fully replaces Player.prototype.update(), so the
@@ -4762,6 +4860,81 @@ function healthUpgradeTests(rooms) {
 }
 
 /*
+	Class-switch stat refund (plan.md T2): applyClassSwitchStats() clamps upNb/up down to the
+	new class's statMax, but used to leave `stillLvl` (points SPENT) untouched, so points parked
+	in a stat the new class caps at 0 (Smasher/Landmine/Spike's Reload/BSpeed/BPene/BDamage) just
+	evaporated - no point to respend, no room left on the bar either. The fix decrements
+	`stillLvl` once per point clamped away, so `still` (pointsAtLevel(level) - stillLvl) rises by
+	exactly the count of points lost. Regression-shaped: a caller who reads `upNb` alone would
+	see the same zeros before and after this fix - only `stillLvl` (and thus `still`) tells the
+	two apart.
+*/
+function classSwitchRefundTests(rooms) {
+	console.log('\nclass-switch stat refund (plan.md T2):');
+	const room = rooms[0];
+	const me = player(room, 0);
+	const P = require(path.join(ROOT, 'entities', 'Player.js'));
+	const saved = {
+		class: me.class, classLvl: me.classLvl, up: Object.assign({}, me.up),
+		upNb: me.upNb.slice(), stillLvl: me.stillLvl, level: me.level,
+		damage: me.damage, maxHp: me.maxHp, hp: me.hp
+	};
+	const RELOAD = 1, BDAMAGE = 4;   // entities/Player.js's `up` key order
+
+	// Basic has no statMax (every class without one falls back to MAX_PER_STAT), so every point
+	// spent here is spendable BEFORE the switch - the clamp is Smasher's, not Basic's.
+	me.class = 'Basic';
+	me.level = P.LEVEL_CAP;
+	me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
+	for (let i = 0; i < 2; i++) { me.upgrade(RELOAD); }
+	for (let i = 0; i < 5; i++) { me.upgrade(BDAMAGE); }
+	check('setup spent exactly 7 points before the switch (2 Reload + 5 BDamage)',
+		me.stillLvl === 7 && me.upNb[RELOAD] === 2 && me.upNb[BDAMAGE] === 5,
+		me.stillLvl + ' ' + me.upNb[RELOAD] + '/' + me.upNb[BDAMAGE]);
+	const stillBefore = P.pointsAtLevel(me.level) - me.stillLvl;
+
+	const oldClass = me.class;
+	me.class = 'Smasher';
+	me.applyClassSwitchStats(oldClass);
+
+	const stillAfter = P.pointsAtLevel(me.level) - me.stillLvl;
+	check('Smasher caps Reload/BDamage at 0, so both clamp all the way to zero',
+		me.upNb[RELOAD] === 0 && me.upNb[BDAMAGE] === 0,
+		me.upNb[RELOAD] + '/' + me.upNb[BDAMAGE]);
+	check('...and every one of the 7 clamped points is REFUNDED, not lost - `still` rises by 7',
+		stillAfter === stillBefore + 7, stillBefore + ' -> ' + stillAfter);
+	check('...so stillLvl itself fell by exactly 7, not merely clamped to a floor of 0',
+		me.stillLvl === 0, me.stillLvl);
+
+	// Switching to a class that does not narrow either cap must refund nothing - a regression
+	// that refunded unconditionally (every clamp loop iteration, not just the ones that fire)
+	// would show up here as a false `still` gain.
+	me.class = 'Basic';
+	me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
+	for (let i = 0; i < 3; i++) { me.upgrade(RELOAD); }
+	const stillBefore2 = P.pointsAtLevel(me.level) - me.stillLvl;
+	me.class = 'Auto Smasher';   // statMax all 10s - never narrower than Basic's own MAX_PER_STAT
+	me.applyClassSwitchStats('Basic');
+	check('a switch that narrows nothing refunds nothing',
+		me.upNb[RELOAD] === 3 && (P.pointsAtLevel(me.level) - me.stillLvl) === stillBefore2,
+		me.upNb[RELOAD] + ' still=' + (P.pointsAtLevel(me.level) - me.stillLvl));
+
+	// stillLvl must never go negative even in a pathological hand-set state, since getUi()'s
+	// `still` = pointsAtLevel(level) - stillLvl would otherwise go ABOVE the lifetime budget.
+	me.class = 'Basic';
+	me.stillLvl = 0; me.upNb = [0, 0, 0, 0, 0, 0, 0, 0];
+	me.upNb[RELOAD] = 1;   // spent in upNb but not reflected in stillLvl - an inconsistent state
+	me.class = 'Smasher';
+	me.applyClassSwitchStats('Basic');
+	check('stillLvl is clamped at 0, never driven negative by a refund',
+		me.stillLvl === 0, me.stillLvl);
+
+	me.class = saved.class; me.classLvl = saved.classLvl; me.up = saved.up; me.upNb = saved.upNb;
+	me.stillLvl = saved.stillLvl; me.level = saved.level;
+	me.damage = saved.damage; me.maxHp = saved.maxHp; me.hp = saved.hp;
+}
+
+/*
 	The upgrade economy (PENDING #30 / plan.md step 1): 45 levels, 7 points per stat, 33 points over
 	a life, one class tier every 15 levels.
 
@@ -5064,7 +5237,8 @@ function spawnSamplerTests() {
 		let seen = null;
 		const stub = {
 			nestScale: nestScale,
-			rejectSample: (inset, circles) => { seen = { inset: inset, circles: circles }; return { x: 0, y: 0 }; }
+			rejectSample: (inset, circles) => { seen = { inset: inset, circles: circles }; return { x: 0, y: 0 }; },
+			clearOfWalls: () => true
 		};
 		const probe = new Objects('sqr', -1, { GM: 'ffa', sId: 0, oId: 0 }, map, stub);
 		return { seen: seen, probe: probe };
@@ -5906,6 +6080,7 @@ growthTests(rooms);
 autoSpinTests(rooms);
 upgradeEconomyTests(rooms);
 healthUpgradeTests(rooms);
+classSwitchRefundTests(rooms);
 arenaDensityTests(rooms);
 spawnSamplerTests();
 crasherChaseTests();

@@ -100,6 +100,9 @@ const RING_ARC = Math.PI / 2;
 // Smallest signed angular difference, in [-PI, PI] - the atan2(sin,cos) idiom
 // entities/Objects.js's own edge-avoidance turn already uses for the same purpose.
 function angleDelta(a, b) { return Math.atan2(Math.sin(a - b), Math.cos(a - b)); }
+// Which drone budget a cannon draws from. Only a class that declares `droneSplit` (Mothership)
+// has two; every other drone class returns 0 and keeps a single pool, unchanged.
+function droneGroupOf(can) { return (can.type === 1.1) ? 1 : 0; }
 
 /*
 	Regen, two regimes (PENDING #17/#17's HYPER_REGEN_RATE, plan.md step 4): diep_wiki/Stats.txt's
@@ -297,6 +300,12 @@ class Player {
 		this.level = 0;
 		this.stillLvl = 0;
 		this.droneCount = 0;
+		// Mothership's alternating canControlDrones (TankDefinitions.json id27): its 16 barrels
+		// are 8 controllable (type 1) + 8 not (type 1.1), and diep budgets the two halves
+		// SEPARATELY - one shared counter lets whichever barrel's reload phase happens to come up
+		// first spend the whole cap, so the live swarm's split drifts away from 50/50 the moment
+		// it first saturates. Index 0 = controllable-capable types, index 1 = the rest.
+		this.droneGroup = [0, 0];
 		// diep's own raw damagePerTick, `bodyDamagePoints + 5` at 0 points (TankBody.ts:99,253,
 		// plan.md chunk 1 D1) - the tank-body-ram axis, not the bullet-damage axis TanksConfig.js's
 		// `can.damage` carries; the two happen to share diep's raw scale now (D1/D5) but are
@@ -358,7 +367,10 @@ class Player {
 		this.x = body.x; this.y = body.y;
 		this.vec.x = body.vx; this.vec.y = body.vy;
 		this.autoDir += tick.perTick(SPIN_RATE);
-		this.ringDir += tick.perTick(RING_ROTATION);
+		// Wrapped to [0, 2*PI): the wire angle codec is an int16, and letting this grow
+		// unbounded across a long session drifts the encoded phase away from the real one once
+		// the raw radians exceed the codec's precision.
+		this.ringDir = (this.ringDir + tick.perTick(RING_ROTATION)) % (Math.PI * 2);
 		// Players alone get to leave the drawn arena, up to config.OOB_MARGIN - a measured diep
 		// behaviour, not a spring: the real wall is just further out than
 		// the visible edge, and still a hard stop.
@@ -407,6 +419,11 @@ class Player {
 			const reloadMax = tick.ticks(Math.round(can.reload * this.up.Reload));
 			const reload = this.shootTimer[r];
 			const maxD = CLASS[this.class].maxDrone;
+			// Mothership's own per-group cap (plan.md task 1) - every other drone class has no
+			// `droneSplit` and keeps the single shared `droneCount` pool, unchanged.
+			const split = CLASS[this.class].droneSplit;
+			const grp = split ? droneGroupOf(can) : 0;
+			const groupCap = split ? Math.floor(maxD / 2) : maxD;
 			let autoDir, shoot;
 			const ra = this.size / 35;
 			if (can.autoDir) {
@@ -468,7 +485,9 @@ class Player {
 			};
 			///
 			if ((this.inputs.e || this.inputs.mouseL || can.auto)
-				&& ((maxD && can.life === -1) ? this.droneCount < maxD : true)
+				&& ((maxD && can.life === -1)
+					? (split ? this.droneGroup[grp] < groupCap : this.droneCount < maxD)
+					: true)
 				&& ((can.autoShoot) ? shoot : true)) {
 				///
 				if (this.shield) {
@@ -591,6 +610,8 @@ class Player {
 					this.vec.add(new Vec(tick.impulse(can.back), 0).rotate(dir - Math.PI));
 					if (maxD && can.life === -1) {
 						this.droneCount++;
+						if (split) { this.droneGroup[grp]++; }
+						Bull.droneGroup = split ? grp : -1;   // so release() below knows which pool to refund
 					}
 					///
 					this.recoil[parseInt(r)] = 1;
@@ -724,6 +745,7 @@ class Player {
 			// cone every tick, so they never hold a stale one nor need a churned allocation.
 			if (!this.bot && this.DETEC && !CLASS[this.class].DETEC) { this.DETEC = null; }
 			this.droneCount = 0;
+			this.droneGroup = [0, 0];
 			this.necro = CLASS[this.class].necro;
 			this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
 			this.applyClassSwitchStats(oldClass);
@@ -741,9 +763,11 @@ class Player {
 		remove the OLD class's bonus before adding the NEW one's - straight addition/subtraction,
 		since it's a flat term. Per-tank stat caps (Smasher-line's 0-capped barrel stats) also
 		only ever get narrower on a switch, never wider - points already spent above the new
-		cap are lost, not refunded (diep's own framing: those stats simply become unspendable),
-		so this clamps `upNb`/`up` down to the new class's `statMax` using the exact inverse of
-		upgrade()'s own per-stat step.
+		cap are clamped down to the new class's `statMax` using the exact inverse of upgrade()'s
+		own per-stat step, and REFUNDED (plan.md T2): a class whose cap for a stat is 0 (the
+		Smasher line's four barrel stats - it has no barrels to point them at) isn't "the stat
+		became unspendable", it's "those points can never do anything again", and eating them
+		punishes the evolution rather than pricing it.
 	*/
 	applyClassSwitchStats(oldClass) {
 		this.damage += (CLASS[this.class].bodyDamage || 0) - (CLASS[oldClass].bodyDamage || 0);
@@ -763,12 +787,16 @@ class Player {
 					case "HpUp": this.maxHp -= 20; this.hp *= this.maxHp / (this.maxHp + 20); break;
 					case "BodyDam": this.damage -= 1; break;
 				}
-				// Lost, not refunded (plan.md P3) - `stillLvl` (points spent) is untouched, so
-				// there is no free point to respend elsewhere; the stat just becomes
-				// unspendable, diep's own framing for a class with a lower cap.
+				// Refunded, not lost. `stillLvl` counts points SPENT, so giving one back is a
+				// decrement here - getUi()'s `still` is pointsAtLevel(level) - stillLvl and
+				// updates on its own, no wire field or client change needed.
 				this.upNb[idx]--;
+				this.stillLvl--;
 			}
 		}
+		// Cannot structurally go negative (you can only clamp points that were spent), but
+		// guard it anyway - a clamp firing here would mean something upstream double-spent.
+		this.stillLvl = Math.max(0, this.stillLvl);
 	}
 	/*
 		Sandbox-only cheat ('\', PENDING "Sandbox gaps") - jumps straight to a class with none of
@@ -782,6 +810,7 @@ class Player {
 		this.class = CYCLABLE_CLASSES[(i + 1) % CYCLABLE_CLASSES.length];
 		if (!this.bot && this.DETEC && !CLASS[this.class].DETEC) { this.DETEC = null; }
 		this.droneCount = 0;
+		this.droneGroup = [0, 0];
 		this.necro = CLASS[this.class].necro;
 		this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
 		this.applyClassSwitchStats(oldClass);

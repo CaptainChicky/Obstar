@@ -697,6 +697,7 @@
 									canC: Palette.gray,
 									size: 28,
 									dir: 0,
+									ringDir: 0,
 									recoils: [],
 									canDir: []
 								}
@@ -912,6 +913,10 @@
 						is = dead;
 						ALL.title = setTitle(name, xp);
 						ALL.tank = setTank(tank);
+						// Rebuilt per death, not just at construction: measureText() run before
+						// Catamaran finishes loading bakes the fallback font's width into the
+						// canvas size permanently, clipping the label.
+						ALL.change = setChange();
 					} else if (Math.abs(dead - ALL.offy) > 0.01) {
 						ALL.offy += (dead - ALL.offy) * ((dead < ALL.offy) ? 0.1 : 0.03);
 					} else {
@@ -959,6 +964,7 @@
 							canC: Palette.gray,
 							size: 35,
 							dir: 0,
+							ringDir: 0,
 							recoils: [],
 							canDir: []
 						}
@@ -1034,15 +1040,19 @@
 					const padX = 16, padY = 8;
 					ctx.font = '700 ' + nameS + 'px Catamaran';
 					const m = ctx.measureText(text).width;
-					can.width = (m + padX * 2 + lw) * R + 4;
-					can.height = (nameS + padY * 2 + lw) * R + 4;
-					ctx.setTransform(R, 0, 0, R, can.width / 2 / R, lw / 2);
+					const w = m + padX * 2, h = nameS + padY * 2;
+					// +lw for the stroke straddling the path, +4 slack for sub-pixel rounding.
+					can.width = Math.ceil((w + lw) * R) + 4;
+					can.height = Math.ceil((h + lw) * R) + 4;
+					// Translate in device pixels like every other set* here - a translate divided
+					// by R shifts the pill right by half its own width and clips its tail.
+					ctx.setTransform(R, 0, 0, R, lw / 2 * R, lw / 2 * R);
 					ctx.font = '700 ' + nameS + 'px Catamaran';
 					ctx.textBaseline = 'middle';
 					ctx.lineJoin = 'round';
 					// pill
 					ctx.beginPath();
-					roundRect(ctx, 0, 0, m + padX * 2, nameS + padY * 2, 8);
+					roundRect(ctx, 0, 0, w, h, 8);
 					ctx.closePath();
 					ctx.fillStyle = stroke;
 					ctx.fill();

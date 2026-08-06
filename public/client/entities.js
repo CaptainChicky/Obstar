@@ -45,6 +45,7 @@
 			}
 			this.dir = 0;
 			this.ddir = 0;
+			this.ringDir = 0;
 			this.canDir = [];
 			this.canDdir = [];
 			this.destroy = 0;
@@ -239,6 +240,7 @@
 				canC: this.shield ? this.SH.cannons : ((this.hitted > 1) ? Palette.hit : Palette.gray),
 				size: this.size,
 				dir: this.ddir,
+				ringDir: this.ringDir,
 				recoils: this.recoil,
 				canDir: this.canDdir
 			});
@@ -423,6 +425,9 @@
 			this.ddir = dir;
 			this.destroy = 0;
 			this.alpha = 1;
+			// Set from states[2] on the packet that introduces this bullet (a Skimmer sub-shot) -
+			// draw() order below reads this to paint it in the earlier Bullets pass.
+			this.underlay = 0;
 			// Both set on the first update() of one of your own bullets - see there.
 			this.lead = null;
 			this.origin = null;

@@ -89,12 +89,7 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// Batch G: +96 ops from the new "Change game mode" button baked into the END screen
-// (public/client/ui.js's setChange() prebake, counted here like the upgrade-panel bakes). No
-// on-viewport draw changed - the eased class panel now uses General.lerpK (a no-op at 60Hz) and
-// the button only draws on the death screen, which this recording never reaches; the whole delta
-// is the one-time offscreen bake. Verified: disabling only that bake restores 314622/d032c652.
-const GOLDEN = { count: 314718, hash: '15d0d8ac' };
+const GOLDEN = { count: 314718, hash: 'bc5ee24e' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

@@ -60,6 +60,13 @@ const EDGE_TURN_DONE = 0.20;
 // picked slow enough that farming a patch still visibly thins it (README's own RESPAWN_CATCHUP
 // departure already makes that promise) while a shape left alone for a while is whole again.
 const SHAPE_REGEN_TICKS = 1500;
+// A shape is placed directly here rather than through a mode's spawnPoint(), so it needs its own
+// bounded retry against room.clearOfWalls() (only Maze's ever rejects anything) - most of an
+// arena is open floor, so the first draw normally clears; giving up after this many tries and
+// keeping the last draw is better than looping forever in a dense pocket. PAD mirrors Maze's own
+// tank-spawn pad since this.size isn't set yet at this point in the constructor.
+const SHAPE_WALL_TRIES = 24;
+const SHAPE_WALL_PAD = 30;
 
 class Objects {
 	constructor(type, pos, id, map, room) {
@@ -104,11 +111,15 @@ class Objects {
 				// ffa's scale is exactly 1. Both the ratio to spawnKeepOut()'s circles and the
 				// margin from the map edge are preserved by that, since `marge` scales with it too.
 				const s = room.nestScale;
-				const p = room.rejectSample(this.marge, [
-					[0, 0, 1400 * s],
-					[map.width / 4, map.height / 4, 980 * s],
-					[-map.width / 4, -map.height / 4, 980 * s]
-				]);
+				let p;
+				for (let i = 0; i < SHAPE_WALL_TRIES; i++) {
+					p = room.rejectSample(this.marge, [
+						[0, 0, 1400 * s],
+						[map.width / 4, map.height / 4, 980 * s],
+						[-map.width / 4, -map.height / 4, 980 * s]
+					]);
+					if (room.clearOfWalls(p.x, p.y, SHAPE_WALL_PAD)) { break; }
+				}
 				this.x = p.x;
 				this.y = p.y;
 				this.pos = 0;
@@ -125,19 +136,25 @@ class Objects {
 				// in the tree, which are all circles (PENDING).
 				const s = room.nestScale;
 				const rIn = 630 * s, rOut = 1249 * s;
-				const dir = Math.random() * Math.PI * 2;
-				const rad = Math.sqrt(rIn * rIn + Math.random() * (rOut * rOut - rIn * rIn));
-				this.x = Math.cos(dir) * rad;
-				this.y = Math.sin(dir) * rad;
+				for (let i = 0; i < SHAPE_WALL_TRIES; i++) {
+					const dir = Math.random() * Math.PI * 2;
+					const rad = Math.sqrt(rIn * rIn + Math.random() * (rOut * rOut - rIn * rIn));
+					this.x = Math.cos(dir) * rad;
+					this.y = Math.sin(dir) * rad;
+					if (room.clearOfWalls(this.x, this.y, SHAPE_WALL_PAD)) { break; }
+				}
 				this.pos = 1;
 				break;
 			}
 			default:
-				const dir = Math.random() * Math.PI * 2;
-				this.x = Math.min(map.width / 2 - this.marge,
-					Math.max(-map.width / 2 + this.marge,
-						pos[0] + Math.sin(dir) * (Math.random() * pos[2])));
-				this.y = Math.min(map.height / 2 - this.marge, Math.max(-map.height / 2 + this.marge, pos[1] + Math.cos(dir) * (Math.random() * pos[2])));
+				for (let i = 0; i < SHAPE_WALL_TRIES; i++) {
+					const dir = Math.random() * Math.PI * 2;
+					this.x = Math.min(map.width / 2 - this.marge,
+						Math.max(-map.width / 2 + this.marge,
+							pos[0] + Math.sin(dir) * (Math.random() * pos[2])));
+					this.y = Math.min(map.height / 2 - this.marge, Math.max(-map.height / 2 + this.marge, pos[1] + Math.cos(dir) * (Math.random() * pos[2])));
+					if (room.clearOfWalls(this.x, this.y, SHAPE_WALL_PAD)) { break; }
+				}
 				this.pos = 1;
 				break;
 		}

@@ -144,8 +144,9 @@ const aWall = {
 function sizes() {
 	console.log('\nself-sizing encoder:');
 	// The three constants rooms/Room.js used to carry by hand, now nobody's job.
-	check('a Players record is 37 + name*2 + canDir*2 bytes',
-		server.encode('Instance', aPlayer).length === 37 + aPlayer.name.length * 2 + aPlayer.canDir.length * 2,
+	// +2 bytes for `ringDir` (int16), added alongside `dir`.
+	check('a Players record is 39 + name*2 + canDir*2 bytes',
+		server.encode('Instance', aPlayer).length === 39 + aPlayer.name.length * 2 + aPlayer.canDir.length * 2,
 		server.encode('Instance', aPlayer).length);
 	// plan.md C5/S4 - +2 bytes for the new `dir` field (int16).
 	check('an Objects record is 21 bytes', server.encode('Instance', anObject).length === 21,
