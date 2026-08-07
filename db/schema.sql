@@ -1,6 +1,5 @@
--- Schema for the Postgres DB behind lib/db.js. Applied automatically on first init by the
--- docker-compose.yml postgres service (docker-entrypoint-initdb.d only runs against an empty
--- data directory - see docker-compose.yml's note on `docker compose down -v`).
+-- Schema for the Postgres DB behind lib/db.js. Applied automatically on first init
+-- (docker-entrypoint-initdb.d only runs against an empty data directory).
 
 CREATE TABLE acc (
   id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

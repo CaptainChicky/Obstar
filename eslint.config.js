@@ -1,34 +1,27 @@
 /*
 	ESLint, flat config. `npm run lint`.
 
-	What this is for, and what it is not for. The repo has no build step and no bundler
-	(HANDOFF 6): the source you edit is the source that runs, in Node and in the browser
-	alike. That makes a linter the only thing standing between a typo and a runtime failure
-	on a path nobody executes - and this codebase has already shipped several of exactly
-	that (`c.DB.AC` for `.ACC`, `S4team` in a switch over classes that do not exist,
-	`states[7]` on a six-element array). So the rules that are ON here are the ones that
-	catch a name that is not there - `no-undef` and `no-global-assign`, kept as errors
-	everywhere. Everything stylistic is OFF.
+	There is no build step or bundler: the source you edit is the source that runs, in Node
+	and in the browser alike. That makes a linter the only guard against a typo on a path
+	nobody executes, so the rules that are on here are the ones that catch a name that isn't
+	defined - `no-undef` and `no-global-assign`, as errors everywhere. Everything stylistic
+	is off.
 
-	It is tuned to pass clean on the current tree. If you are adding a rule that flags
-	existing code, either fix the code in the same commit or leave the rule out - a lint run
-	that always prints 200 warnings is a lint run nobody reads.
+	It is tuned to pass clean on the current tree. If a new rule flags existing code, either
+	fix the code in the same commit or leave the rule out - a lint run that always prints
+	warnings is a lint run nobody reads.
 
-	Two of the bulk-idiom rules HANDOFF 6.2 tracked as debt are now ON, because the tree was
-	swept clean of what they flag (HANDOFF 12.2): `no-var` (was 84 `var`, now let/const
-	throughout) and `eqeqeq` (was 51 loose `==`, now strict - the one intentional null/undefined
-	test was rewritten as `=== undefined`). They stay on to keep the idiom from creeping back.
-	`for...in` is left un-enforced: the remaining loops over Instances are the hot-path work in
-	HANDOFF 12.3, not a mechanical fix.
+	`no-var` and `eqeqeq` are errors: the codebase uses let/const and strict equality
+	throughout, and these stay on to keep the idiom from creeping back.
 
 	Three environments, because three kinds of file live here:
 		- Node CommonJS: server.js, lib/, net/, rooms/, entities/, web/, test/
 		- browser menu page (views/index.ejs): public/queue.js, public/shop.js - they share
 			State/Pref/UserData/ChosenPet/SetPets across <script> tags and with public/font.js
-			(which is ignored below as vendored art, and is where State/resize/loop are defined)
+			(ignored below as a vendored art asset, where State/resize/loop are defined)
 		- dual-mode game page (views/play.ejs): public/SHARE/*.js, public/motion.js and
-			public/client/*.js carry the typeof(exports) footer described in HANDOFF 2, so they
-			see *both* the browser globals and Node's - test/*.js require() them directly.
+			public/client/*.js run in both the browser and Node, so they need both global sets;
+			test/*.js require() them directly.
 */
 const js = require('@eslint/js');
 const globals = require('globals');
@@ -69,11 +62,10 @@ const MENU_GLOBALS = {
 	loop: 'readonly'    // public/font.js
 };
 
-// Relaxations, each with the reason it is relaxed. These are rules `eslint:recommended`
-// turns on that the existing tree trips deliberately; every one was looked at before being
-// switched off (see the audit in HANDOFF 8.10). The ones that mark *deferred cleanup* rather
-// than a permanent convention - dead code (no-unreachable) and the idiom debt kept off below -
-// are tracked as a backlog in HANDOFF 12; grep the tree for `CLEANUP(HANDOFF` for the sites.
+// Relaxations, each with the reason it is relaxed. Every one exists because part of the
+// codebase relies on the pattern intentionally, not because it was never reviewed. Dead code
+// (no-unreachable) and idiom debt are the two categories worth eventually cleaning up rather
+// than keeping off forever.
 const LEGACY = {
 	// `case x: case y:` fallthrough and empty else/catch blocks are used throughout the
 	// packet router and the collision switches - `} else {}` is an intentional no-op branch.
@@ -81,55 +73,48 @@ const LEGACY = {
 	'no-empty': 'off',
 
 	// `return x; break;` inside a switch case, and pre-existing dead branches after an early
-	// return, are all over the entity collision code. Dead, not wrong; the dead-code sweep is
-	// HANDOFF 6.2, not this file's job.
+	// return, are all over the entity collision code. Dead, not wrong; not a lint concern.
 	'no-unreachable': 'off',
 
-	// `while(1)` game loops and the intentionally-disabled `else if(false)` toggle in
-	// entities/Player.js.
+	// `while(1)` game loops and an intentionally-disabled dead-code toggle in entities/Player.js.
 	'no-constant-condition': 'off',
 
 	// `case 'x': let c = ...` without a block - the switch cases in lib/Controller.js and the
 	// entity update methods rely on the shared case scope on purpose.
 	'no-case-declarations': 'off',
 
-	// `var clientId` hoisted and re-declared inside a loop (lib/Controller.js) is the same
-	// function-scoped variable; harmless var idiom, tracked with the rest of the var debt.
+	// `var clientId` hoisted and re-declared inside a loop (lib/Controller.js) refers to the
+	// same function-scoped variable; harmless.
 	'no-redeclare': 'off',
 
 	// Last-write-wins assignments (`p2 = p3` at the tail of roundedPoly, loop counters) are
 	// stylistic, not bugs.
 	'no-useless-assignment': 'off',
 
-	// Unused function arguments are everywhere in the mysql callbacks (`function(err,result,
-	// fields)`) and Express handlers; menu functions (selectGM, play, add, remove) are
-	// "unused" only because they are called from inline onclick= in the EJS. Undeclared
-	// *reads* are still no-undef errors - that is the rule that matters.
+	// Unused function arguments are everywhere in db callbacks (`function(err, result,
+	// fields)`) and Express handlers; some menu functions (selectGM, play, add, remove) are
+	// only called from inline onclick= in the EJS, so they look unused to a single-file lint
+	// run. Undeclared *reads* are still no-undef errors - that is the rule that matters.
 	'no-unused-vars': 'off',
 
-	// consoleSafe() strips C0/C1 control chars by design (HANDOFF 5.11); the bot-name table
-	// in lib/botNames.js is intentionally non-ASCII and BOM-prefixed.
+	// consoleSafe() strips C0/C1 control chars by design; the bot-name table in
+	// lib/botNames.js is intentionally non-ASCII and BOM-prefixed.
 	'no-control-regex': 'off',
 	'no-irregular-whitespace': 'off',
 
 	// Bare `parseInt(x)` (no radix arg) is used throughout for numeric truncation, not just
-	// string parsing - e.g. entities/Player.js, rooms/Room.js, public/SHARE/SocketSchema.js.
+	// string parsing.
 	'radix': 'off',
 
-	// Swept clean in HANDOFF 12.2 and kept on so the idiom cannot creep back. See the header.
 	'no-var': 'error',
 	'eqeqeq': 'error'
 };
 
 module.exports = [
 	{
-		// font.js is a vendored art asset; reference/ is a gitignored vendor dump that predates
-		// this work (PENDING nuance 38) - `npm run lint` used to sweep it in and drown in ~4984
-		// unrelated errors, which is why the source had to be linted with an explicit path list
-		// instead. Both excluded so the bare npm script is the gate again.
-		// diepcustom/ and diepindepth/ are the two READ-ONLY reference repos (HANDOFF §3) - they
-		// are never built or run here, only cited, and diepcustom ships a bundled browser client
-		// that alone accounts for ~1060 errors of somebody else's code.
+		// font.js is a vendored art asset. reference/, diepcustom/ and diepindepth/ are
+		// read-only reference material never built or run here; excluding them keeps
+		// `npm run lint` fast and free of unrelated errors.
 		ignores: ['node_modules/**', 'public/font.js', 'reference/**',
 			'diepcustom/**', 'diepindepth/**']
 	},

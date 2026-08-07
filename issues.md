@@ -35,9 +35,8 @@ Delete or rewrite any comment that:
 - restates the code on the line below it.
 - runs longer than about four lines without being load-bearing.
 
-**Keep** comments that record a genuine external citation with a durable reference
-(`diepcustom/src/...`, `diep_wiki/...`, `diepindepth/...`) where that number would otherwise look
-arbitrary — but strip the surrounding narrative down to the citation and the value's meaning.
+also remove or rewrite comments that record an external citation 
+(`diepcustom/src/...`, `diep_wiki/...`, `diepindepth/...`)
 
 Suggested order (worst offenders first, by volume):
 [public/SHARE/TanksConfig.js](public/SHARE/TanksConfig.js),
@@ -51,3 +50,16 @@ Suggested order (worst offenders first, by volume):
 
 Run the full test suite after each file. A comment pass must not change behaviour; if a test
 breaks you deleted code, not a comment.
+
+/web, /net, /db, and /views?
+
+/db [DONE]
+/entities
+/lib [DONE]
+/net [DONE]
+/public
+/rooms
+/test
+/views [DONE]
+/web [DONE]
+anything else at root (eslint, server.js)

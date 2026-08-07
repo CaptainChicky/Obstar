@@ -1,11 +1,7 @@
 /*
-	The menu site: the Express app behind http://localhost - index page, static files,
-	accounts, shop purchases and leaderboard reads.
-
-	This was obstarWeb.js, a second entry point you had to remember to start alongside the
-	game. It is now a plain module: `createApp()` builds the app and opens no port, and
-	server.js decides where it gets mounted. Everything below the factory line is the
-	original code, unchanged apart from the indentation and `ws` being handed to play.ejs.
+	Express app for the menu site: index page, static files, accounts, shop purchases and
+	leaderboard reads. createApp() builds the app but opens no port; server.js decides
+	where it gets mounted.
 */
 const express = require('express');
 const cookieParser = require('cookie-parser');
@@ -21,11 +17,9 @@ const WS_LINK = process.env.WS_LINK || '';
 module.exports = function createApp() {
 	const app = express();
 	const db = require('../lib/db.js');
-	///
 	let LEADERBOARD = [];
 	const SHOP = { HIDE: 1 };
 	const SHOPPER = {};
-	///
 	if (db.enabled) {
 		if (config.DB.LB) {
 			const updateLB = () => {
@@ -55,7 +49,6 @@ module.exports = function createApp() {
 			SHOP.HIDE = 1
 		}
 	}
-	///
 	const generateKey = (() => {
 		const str = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
 		return (length) => {
@@ -63,13 +56,9 @@ module.exports = function createApp() {
 		}
 	})()
 	const basicKey = '0'.repeat(25);
-	///
-	// The obstarkey cookie is the account identity everywhere in this stack (HANDOFF §8) - once
-	// login exists, that cookie has to come only from a route we control. `session` is a signed
-	// HMAC over the key (lib/auth.js), set alongside obstarkey at signup/login/logout; if it's
-	// present but doesn't match, the obstarkey cookie was tampered with (or is stale) and must
-	// not be trusted. No session cookie (a guest who never logged in) is the existing, unchanged
-	// behaviour.
+	// obstarkey is the account identity cookie. If a session cookie is present, it must be a
+	// valid signed HMAC of the key (lib/auth.js), otherwise the obstarkey cookie is untrusted
+	// (tampered or stale). No session cookie means a guest who never logged in.
 	const resolveKey = (req) => {
 		const key = req.cookies.obstarkey;
 		if (!key) return null;
@@ -79,22 +68,19 @@ module.exports = function createApp() {
 	};
 	app.set('views', __dirname + '/../views');
 	app.use(express.static(__dirname + '/../public'));
-	// Express 5 folds body-parser into the framework: express.json / express.urlencoded are
-	// the same middleware body-parser exported, so the separate dependency is gone (HANDOFF 8.10).
+	// express.json/urlencoded replace the separate body-parser dependency (Express 5).
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: true }));
 	app.use(cookieParser());
 
 
 	app.get('/favicon.ico', async function (req, res) { res.status(404).end() });
-	// Express 5 upgraded to path-to-regexp v8, which rejects a bare '*' string path; a RegExp
-	// catch-all is the direct, syntax-independent equivalent of the old app.get('*') (HANDOFF 8.10).
+	// Express 5's path-to-regexp v8 rejects a bare '*' string path, so use a RegExp catch-all.
 	app.get(/.*/, function (request, respond) {
 		const KEY = resolveKey(request) || 1;
-		/// get the acc///
 		if (db.enabled && config.DB.ACC) {
 			db.query('SELECT * FROM acc WHERE userkey = $1', [KEY]).then((result) => {
-				if (result && result.length && result[0]) { ///   THERE IS AN ACC  ///
+				if (result && result.length && result[0]) {
 					db.query('UPDATE acc SET lastconnection = NOW() WHERE userkey = $1', [KEY]);
 					respond.cookie('obstarkey', KEY, { expires: new Date(253402300000000), sameSite: 'Lax', httpOnly: true });
 					const sendData = {
@@ -104,7 +90,7 @@ module.exports = function createApp() {
 					};
 					respond.render('index.ejs', { data: JSON.stringify(sendData) });
 					return;
-				} else {           /// there is no acc :-(///
+				} else {
 					const newkey = generateKey(25);
 					db.query('INSERT INTO acc (userkey, userdata, remoteaddress, lastconnection, coins) VALUES ($1,$2,$3,NOW(),255000)', [
 						newkey,
@@ -221,8 +207,8 @@ module.exports = function createApp() {
 					finalKey = generateKey(25);
 					userdata = { own: { pets: {} } };
 				}
-				// Claim: fold the guest's localStorage achievement set into the account, keeping
-				// the earliest unlock timestamp per id (HANDOFF Part 2.2).
+				// Merge the guest's local achievement unlocks into the account, keeping the
+				// earliest timestamp per id.
 				if (req.body.ach && typeof req.body.ach === 'object') {
 					userdata.ach = userdata.ach || {};
 					for (const aid in req.body.ach) {
@@ -281,9 +267,6 @@ module.exports = function createApp() {
 			ws: WS_LINK
 		}
 		const pref = {
-			// Was `== 'unamed'`, one 'n' short of the placeholder set two lines up, so the
-			// placeholder was remembered as if it were a chosen name and came back pre-filled in
-			// the menu next visit.
 			name: (sendData.name === 'unnamed') ? '' : sendData.name,
 			pet: sendData.pet || -1
 		}

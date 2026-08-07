@@ -1,32 +1,24 @@
 /*
-	The game's WebSocket layer.
+	WebSocket layer for the game. Contains the packet router income(), the per-socket loop
+	object that drives the outbound timers, and the talk/kick helpers. All gameplay logic is
+	reached through the controller passed to attach().
 
-	Contains the packet router `income()`, the per-socket `loop` object that drives the two
-	outbound timers, and the `talk` / `kick` helpers. Everything gameplay-related is reached
-	through the `controller` handed to attach().
+	attach(httpServer, controller) hangs a ws server off an existing http server, which is
+	what lets server.js put the game and the menu site on one port in one process (or split
+	them onto two).
 
-	This module owns no port. `attach(httpServer, controller)` hangs a ws server off an http
-	server somebody else made, which is what lets server.js put the game and the menu site on
-	one port in one process (and still split them onto two when asked).
-
-	Timing. `gameloop` sends a GameUpdate about every 30ms and `longloop` a heartbeat every
-	second. Neither is tied to the room simulation, and that is deliberate: the
-	rooms run at a fixed 50Hz on the shared clock in lib/clock.js, and a send is just a
-	snapshot of whatever the simulation had reached when the timer fired. Nothing has to divide
-	evenly, and a slow send cannot slow the simulation down.
-
-	What did change is that both loops now aim at a *deadline* instead of re-arming with a flat
-	setTimeout(30). setTimeout means "in at least 30ms", so the old chain paid for its own work
-	every time round and the send rate sagged under load - the client saw that as jitter,
-	because its interpolation is driven by the spacing packets actually arrive with. The delay
-	is computed from when the next send was due, so overrun is absorbed rather than accumulated.
+	Timing: gameloop sends a GameUpdate roughly every SEND_MS and longloop sends a heartbeat
+	every second. Neither is tied to the room simulation - rooms run on a fixed 50Hz clock
+	(lib/clock.js) and a send is just a snapshot of whatever the simulation had reached when
+	the timer fired. Both loops aim at a deadline (see nextDelay()) instead of a flat
+	setTimeout, so a slow tick is absorbed instead of compounding into growing send delay.
 */
 const config = require('../lib/config.js').config;
 const WebSocket = require('ws');
 const PROTO = require('../public/SHARE/SocketSchema.js');
 
-// the same camera/stat/control identity rule rooms/Room.js#step() uses
-// (`piloting || self`), factored out so it is unit-testable and has one definition, not 3
+// Resolves the entity a human is currently controlling: the piloted entity if piloting,
+// otherwise the human itself.
 function activeEntityOf(human) {
 	return human ? (human.piloting || human) : null;
 }
@@ -46,7 +38,6 @@ function attach(httpServer, controller) {
 			socket.main.request++;
 		}
 		const data = PROTO.decode(packet);
-		///
 		if (data.error) {
 			kick(socket, data.error);
 			return;
@@ -55,12 +46,8 @@ function attach(httpServer, controller) {
 			case 'ping':
 				if (socket.main) {
 					socket.main.heartbeats = 0;
-					// probe 1 is a client-timed RTT probe (PENDING #24a): echo it straight back,
-					// same tick, no state kept here - the client owns the clock. probe 0 is the
-					// ordinary heartbeat and is answered by longloop()'s own ping, not here.
-					// The break is what the fallthrough into 'init' below already did for a
-					// connected socket (`if (socket.main) { break; }`); it is spelled out now so
-					// the echo has somewhere to sit. An unconnected socket still falls through.
+					// probe 1 is a client RTT probe: echo it back immediately, no state kept here.
+					// probe 0 is the ordinary heartbeat, answered by longloop()'s own ping instead.
 					if (data.data.probe) { talk(socket, 'ping', 1); }
 					break;
 				}
@@ -93,15 +80,10 @@ function attach(httpServer, controller) {
 					case 'e':
 						tank.inputs[data.data.key] = !tank.inputs[data.data.key] * 1
 						break;
-					// Sandbox-only practice keys - inert everywhere else, so a modified client
-					// gains nothing by sending them outside a sandbox room. 'k' is a HELD input
-					// (like w/a/s/d) rather than a one-shot jump to max: entities/Player.js's own
-					// update() climbs one level per interval while it stays down, diep's own
-					// hold-to-repeat convention rather than a snap to the cap. 'o'/'classcycle'/
-					// 'god' are one-shot/toggle actions applied directly here. 'o' (self-kill) is
-					// also let through in 'tester', so the diagnostic room's own alternating
-					// green/red respawn (see rooms/Tester.js's respawnTeam()) can be cycled on
-					// demand instead of waiting to actually die.
+					// Sandbox-only practice keys, inert everywhere else. 'k' is a held input (like
+					// w/a/s/d) rather than a one-shot jump to max: Player.update() climbs one level
+					// per interval while it stays down. 'o'/'classcycle'/'god' are one-shot/toggle
+					// actions applied directly here. 'o' (self-kill) is also allowed in 'tester' mode.
 					case 'k':
 						tank.inputs.k = 1;
 						break;
@@ -117,8 +99,8 @@ function attach(httpServer, controller) {
 						}
 						break;
 					};
-					// H-key piloting (plan.md E4) - not sandbox-gated, unlike the cheats above:
-					// diep's own possess() works in any mode with a claimable AI nearby.
+					// Toggles piloting of a nearby claimable AI. Works in any mode, unlike the
+					// sandbox-gated cheats above.
 					case 'h':
 						tank.room.togglePossession(tank);
 						break;
@@ -145,10 +127,9 @@ function attach(httpServer, controller) {
 						break;
 					};
 					case 'enter': {
-						// Batch F: while piloting a boss the socket's own body is a dead husk, but the
-						// player is alive as the boss and is not on the death screen - a stray 'enter'
-						// must not respawn the husk out from under the possession (which would strand
-						// the boss with a dangling pilotedBy). Release is the H key, not enter.
+						// While piloting, the socket's own body is a dead husk but the player is alive
+						// as the piloted entity - a stray 'enter' must not respawn the husk out from
+						// under the possession. Release is done via the H key.
 						const cur = controller.getPlayer(socket.id);
 						if (cur && cur.piloting) { break; }
 						const ans = controller.respawn(socket.id);
@@ -164,21 +145,15 @@ function attach(httpServer, controller) {
 				const human = controller.getPlayer(socket.id);
 				if (!human) { break; }
 				if (human.botMod) { break; }
-				// A mousemove packet lands whenever it lands - not synced to the room's tick loop -
-				// so while the `c` auto-spin owns `dir` (entities/Player.js's spin block writes it
-				// every tick), a stray mousemove arriving mid-spin used to stomp it with the raw
-				// mouse angle for one broadcast before the next tick put it back: a visible
-				// snap-and-return glitch. `mouse_x`/`mouse_y` still update unconditionally - only
-				// `dir` needs to stay owned by the spin.
+				// mouse_x/mouse_y update unconditionally, but dir is left alone while auto-spin
+				// ('c') owns it, since mousemove isn't synced to the room tick.
 				applyMouseMove(human, activeEntityOf(human), data.data);
 				break;
 			};
 			case 'upgrade': {
 				const tank = controller.getPlayer(socket.id);
 				if (!tank) { break; }
-				// while piloting, the human's own body is an abandoned husk
-				// a stale/modified client must not be able to spend upgrade points on it behind the
-				// possessed boss's back (head.still is already 0, this is the server-side guard)
+				// While piloting, the human's body is an abandoned husk - block upgrades on it.
 				if (tank.piloting) { break; }
 				tank.upgrade(data.data.up);
 				talk(socket, 'UpdateUp', tank.upNb);
@@ -213,35 +188,25 @@ function attach(httpServer, controller) {
 		}
 	};
 
-	// Target spacing between GameUpdate packets. Must stay >= the simulation step, or
-	// consecutive packets carry an identical world and the client's interpolation stutters -
-	// see the note on SEND_MS in lib/config.js.
+	// Target spacing between GameUpdate packets; must stay >= the simulation step or
+	// consecutive packets carry an identical world, causing interpolation stutter.
 	const SEND_MS = Math.max(config.SEND_MS, config.TICK_MS);
-	const IDLE_MS = 200;   // ...while the client has nothing to look at yet
-	// Leaderboard/minimap/message-feed cadence - see the note on UI_MS in lib/config.js for why
-	// this is its own loop instead of riding longloop's 1000ms heartbeat tick.
+	const IDLE_MS = 200;   // spacing while the client has nothing to look at yet
+	// Leaderboard/minimap/message-feed cadence, kept separate from longloop's heartbeat tick.
 	const UI_MS = config.UI_MS;
 	/*
-		>= is necessary but not sufficient. The send loop and the simulation clock are separate
-		timers with separate jitter, so even at exactly equal periods they drift against each
-		other and every so often two sends fall inside one simulation step. That pair carries a
-		byte-identical world, and public/motion.js reads a pair of identical positions as "this
-		entity stopped" - one visible hitch per drift cycle.
-
-		So don't send it. head.timestamp is the room's step counter, so "the world has not moved"
-		is exactly "the timestamp has not changed", and the check is one integer compare.
-
-		Waiting a whole SEND_MS after a skip would be worse than the duplicate - the client would
-		get a 66ms hole. Instead retry at a quarter step and reset the deadline, which lands the
-		next send just after the step that was pending and re-anchors the loop to the step
-		boundary it drifted off.
+		The send loop and simulation clock are separate timers, so even at equal periods they
+		drift and occasionally two sends land within one simulation step, producing a duplicate
+		world snapshot (head.timestamp unchanged) that the client's interpolation reads as the
+		entity having stopped. Rather than send the duplicate, retry after a quarter step - short
+		enough to avoid a visible gap - which also re-anchors the loop to the step boundary.
 	*/
 	const RETRY_MS = Math.max(4, Math.round(config.TICK_MS / 4));
 	/*
-		Next firing time for a self-re-arming loop, as a delay in ms. `due` is carried on the
-		loop object and advanced by exactly `period` each time, so the average rate is the period
-		even when a tick runs long. If we fall more than one period behind - a real stall, not
-		a rounding error - the deadline resets to now rather than firing a catch-up burst.
+		Computes the delay until a self-re-arming loop's next firing. `due` advances by exactly
+		`period` each call, keeping the average rate correct even when a tick runs long. If more
+		than one period has been missed (a stall), the deadline resets to now instead of firing
+		a catch-up burst.
 	*/
 	function nextDelay(it, key, period) {
 		const now = Date.now();
@@ -252,12 +217,9 @@ function attach(httpServer, controller) {
 	}
 
 	function loop(socket) {
-		// Assigned here, not left to the caller's `socket.main = new loop(socket)` - the
-		// constructor calls this.gameloop() below before that outer assignment ever runs, and if
-		// clients[id] is already an ERR_* string (askConnection ran synchronously - DB is off by
-		// default), that first gameloop() call kicks its own still-under-construction socket
-		// reentrantly. kick() only zeroes run through `socket.main`, so without this line it finds
-		// socket.main still undefined, does nothing, and the loops it meant to stop stay armed.
+		// Set here rather than left to the caller's assignment: this.gameloop() below can run
+		// before `socket.main = new loop(socket)` completes, and if it kicks the socket
+		// immediately, kick() needs socket.main already set to stop the loops it just armed.
 		socket.main = this;
 		this.socket = socket;
 		this.strikes = 0;
@@ -270,9 +232,8 @@ function attach(httpServer, controller) {
 		this.slowDue = 0;
 		this.uiDue = 0;
 		this.sentStamp = -1;   // room step counter of the last GameUpdate actually sent
-		// the identity a stat snapshot was last sent for (`piloting || self`)
-		// null until the socket has a live player. Compared every gameloop() tick so possession
-		// take/release/timeout/death/respawn all re-sync UpdateUp, not just the H keydown handler.
+		// The entity an UpdateUp stat snapshot was last sent for. Compared every gameloop() tick
+		// so possession changes, timeouts, death and respawn all re-sync stats, not just keydown.
 		this.statSource = null;
 		this.gameloop = function () {
 			if (!this.run) { return; }
@@ -289,7 +250,6 @@ function attach(httpServer, controller) {
 			}
 			const id = controller.clients[this.socket.id];
 			let ms = SEND_MS;
-			///
 			switch (id) {
 				case 'Waiting': {
 					ms = IDLE_MS;
@@ -311,11 +271,9 @@ function attach(httpServer, controller) {
 				}
 				default: {
 					const buff = controller.getBuffer(socket.id);
-					// controller.getBuffer() returns the string 'Waiting' (truthy, not an object)
-					// when clients[id] doesn't resolve to a real connection - a disconnected/kicked
-					// id that a lingering timer still reaches, in the ordinary case. !buff alone
-					// let that string past into talk()'s encode() call, which then reads .head off
-					// a string and crashes reading 'timestamp' off the undefined that produces.
+					// getBuffer() can return the string 'Waiting' (truthy, not an object) for a
+					// disconnected/kicked id that a lingering timer still reaches; guard against
+					// reading .head off a non-object.
 					if (!buff || typeof buff !== 'object') {
 						ms = IDLE_MS;
 					} else if (buff.head.timestamp === this.sentStamp) {
@@ -332,7 +290,6 @@ function attach(httpServer, controller) {
 					break;
 				}
 			}
-			///
 			// A send that ran long eats into the next delay instead of pushing it back, so the
 			// spacing the client measures stays close to `ms`.
 			if (ms !== this.sendPeriod) { this.sendPeriod = ms; this.sendDue = 0; }
@@ -340,7 +297,8 @@ function attach(httpServer, controller) {
 		};
 		this.longloop = function () {
 			if (!this.run) { return; }
-			///REQUEST
+			// Request-rate limiting: too many requests in one window gets the socket kicked,
+			// otherwise the counters reset for the next window.
 			if (this.request >= 50) {
 				kick(this.socket, 'ERR_REQUESTS_DELAY')
 				return;
@@ -348,17 +306,14 @@ function attach(httpServer, controller) {
 				this.request = 0;
 				this.strikes = 0;
 			}
-			///DEAD
 			const play = controller.getPlayer(socket.id);
 			if (this.dead > config.S_BEFORE_KICK) {
 				kick(this.socket, 'ERR_SERVER_OFF');
 				return;
 			}
 			if (play) {
-				// Batch F: while piloting a Dominator/Mothership the human's own body is a dead husk
-				// but the player is very much alive AS the boss (the socket's camera is on it), so
-				// the AFK-dead kick has to read the camera entity, not the husk - otherwise taking a
-				// Dominator gets you kicked S_BEFORE_KICK seconds later.
+				// While piloting, the human's own body is a dead husk but the player is alive as
+				// the piloted entity - the AFK-dead kick must check that entity, not the husk.
 				const cam = activeEntityOf(play);
 				if (cam.dead) {
 					this.dead++;
@@ -366,18 +321,16 @@ function attach(httpServer, controller) {
 					this.dead = 0;
 				}
 			};
-			///HEARTBEATS
 			if (this.heartbeats >= 10) {
 				kick(this.socket, 'ERR_HEARTBEATS_LOST');
 			} else {
 				talk(this.socket, 'ping', 0);
 			}
 			this.heartbeats++;
-			/////
 			setTimeout((it) => { it.longloop() }, nextDelay(this, 'slowDue', 1000), this);
 		};
-		// Leaderboard, minimap and the message feed - split out of longloop (lib/config.js's
-		// UI_MS note) so a HUD refresh rate has nothing to do with heartbeat/AFK bookkeeping.
+		// Leaderboard, minimap and message feed, on their own cadence separate from
+		// heartbeat/AFK bookkeeping in longloop.
 		this.uiloop = function () {
 			if (!this.run) { return; }
 			const ui = controller.getUi(this.socket.id);

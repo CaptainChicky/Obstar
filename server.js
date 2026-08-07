@@ -1,25 +1,17 @@
 /*
-	Obstar - the one file you run.
+	Single entry point for both the game server and the menu website.
 
 			node server.js                 game + menu site on http://localhost   (PORT, default 80)
 			node server.js --game-only     just the game    on ws://localhost:8080 (PORT, default 8080)
 			node server.js --web-only      just the menu site                      (PORT, default 80)
 
-	History: there used to be two entry points, Alex.js (the game, :8080) and obstarWeb.js
-	(the menu, :80), and you had to start both. Starting only one gave you either a menu that
-	hung forever on Play or a game with no page to open - the single most common way this
-	repo "did not run". They never talked to each other, so there was never a reason for them
-	to be separate processes; the only thing the split bought is putting the site and the
-	simulation on different machines, which --game-only / --web-only still allow.
+	In single-port mode the browser reaches the game over the same origin that served the
+	page, so nothing has to be configured. Split mode needs the web half told where the game
+	half lives: WS_LINK=wss://game.example.com node server.js --web-only.
 
-	In the default single-port mode the browser reaches the game over the same origin that
-	served the page, so nothing has to be configured. Split mode needs the web half told
-	where the game half lives: WS_LINK=wss://game.example.com node server.js --web-only.
-
-	Boot order matters: boot() constructs the Controller singleton (see lib/boot.js) and must
-	finish before anything can accept a player. Listening is deliberately the last step, and
-	deliberately not part of boot(), so test/rooms.js can stand the whole game up in-process
-	without opening a port.
+	boot() constructs the Controller singleton and must finish before any player can connect,
+	so it runs before server.listen(). Listening is not part of boot() so test/rooms.js can
+	stand the whole game up in-process without opening a port.
 */
 require('./lib/crash.js').install('error.log');
 

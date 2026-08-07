@@ -9,9 +9,9 @@
 	<script type='text/javascript' src='./SHARE/AchievementsConfig.js'></script>
 	<script type='text/javascript' src='./SHARE/AchievementBadge.js'></script>
 	<!-- The menu background (font.js) draws its tanks through the real client render pipeline
-		 (plan.md A5) instead of a private geometry table, so it stays honest with in-game
-		 silhouettes. kinds.js before TanksConfig.js: TanksConfig's DETEC filters read KIND at
-		 load time (same requirement as views/play.ejs). -->
+		 instead of a private geometry table, so it stays consistent with in-game silhouettes.
+		 kinds.js loads before TanksConfig.js since TanksConfig's DETEC filters read KIND at
+		 load time. -->
 	<script type='text/javascript' src='./SHARE/kinds.js'></script>
 	<script type='text/javascript' src='./SHARE/TanksConfig.js'></script>
 	<script type='text/javascript' src='./motion.js'></script>
@@ -30,8 +30,8 @@
 			<div id='gamemode-box' class='white-box'>
 				<span>Game mode</span>
 				<!-- Scrolls independently of the "Game mode" label above it, capped to the right
-					 column's own rendered height (public/queue.js's syncGamemodeListHeight()) so an
-					 8-mode roster doesn't tower over the rest of the page. -->
+					 column's own rendered height so an 8-mode roster doesn't tower over the rest
+					 of the page. -->
 				<div id='gamemode-list'>
 					<div class='ffa button' data-gm='ffa' onclick="selectGM('ffa')">Free For All</div>
 					<div class='team2 button deactivated' data-gm='2team' onclick="selectGM('2team')">2 Teams</div>
@@ -43,9 +43,8 @@
 					<div class='dominationgm button deactivated' data-gm='domination' onclick="selectGM('domination')">Domination</div>
 					<div class='mothershipgm button deactivated' data-gm='mothership' onclick="selectGM('mothership')">Mothership</div>
 					<div class='survivalgm button deactivated' data-gm='survival' onclick="selectGM('survival')">Survival</div>
-					<!-- A diagnostic room, not a game mode - rooms/Tester.js. Listed so it can be
-						 entered without hand-editing a cookie; it alone falls through to the
-						 default door animation. -->
+					<!-- A diagnostic room, not a game mode. Listed so it can be entered without
+						 hand-editing a cookie; it alone falls through to the default door animation. -->
 					<div class='testergm button deactivated' data-gm='tester' onclick="selectGM('tester')">Tester</div>
 				</div>
 			</div>
@@ -168,8 +167,7 @@
 	</div>
 	<div id='prevent_click' class='hide-prevent'></div>
 	<!-- Achievements: not a white-box card - hovering the right edge of the whole page reveals
-		 a dark-to-light gradient strip with your achievement icons, auto-scrolling. See
-		 public/account.js and the #ach-edge rules in public/style.css. -->
+		 a dark-to-light gradient strip with your achievement icons, auto-scrolling. -->
 	<div id='ach-edge'>
 		<div id='ach-edge-list'></div>
 	</div>
