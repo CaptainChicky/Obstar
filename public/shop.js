@@ -113,7 +113,7 @@
 		black: ['#4a4a50', '#1a1a1a'],
 		white: ['#f2f2f2', '#e1e1e1'],
 		lila: ['#e0bbe4', '#957dad'],
-		necro: ['#e5bd56', '#b89337'],
+		necro: ['#f6c578', '#b9945a'],
 		Grid: ["#d0cdcd", "#c1bebe"],
 
 		hit: ['#d82626', '#d82626'],//red when you get hitted

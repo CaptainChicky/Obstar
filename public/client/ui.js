@@ -126,6 +126,48 @@
 							ctx.stroke();
 							break;
 						}
+						case 'domination': {
+							ctx.beginPath();
+							roundRect(ctx, 0, 0, size, size, 0);
+							ctx.closePath();
+							ctx.save();
+							ctx.clip();
+							ctx.fillStyle = '#f4f4f4';
+							ctx.fillRect(0, 0, size, size);
+							const s = size * frac;
+							ctx.fillStyle = Palette.green[0];
+							ctx.fillRect(0, 0, s, s);
+							ctx.fillStyle = Palette.red[0];
+							ctx.fillRect(size - s, size - s, s, s);
+							ctx.restore();
+							ctx.strokeStyle = '#222222';
+							ctx.lineJoin = 'round';
+							ctx.lineWidth = lw;
+							ctx.stroke();
+							break;
+						}
+						// The diagnostic room: 2team's green strip down the left and 4team's green
+						// corner square in the bottom-right, both at once. Only the strip's width
+						// rides the wire, so the corner square's own side is derived here.
+						case 'tester': {
+							ctx.beginPath();
+							roundRect(ctx, 0, 0, size, size, 0);
+							ctx.closePath();
+							ctx.save();
+							ctx.clip();
+							ctx.fillStyle = '#f4f4f4';
+							ctx.fillRect(0, 0, size, size);
+							ctx.fillStyle = Palette.green[0];
+							ctx.fillRect(0, 0, size * frac, size);
+							const cs = size * (Game.width ? World.gu(67) / Game.width : 0);
+							ctx.fillRect(size - cs, size - cs, cs, cs);
+							ctx.restore();
+							ctx.strokeStyle = '#222222';
+							ctx.lineJoin = 'round';
+							ctx.lineWidth = lw;
+							ctx.stroke();
+							break;
+						}
 						default: {
 							ctx.beginPath();
 							roundRect(ctx, 0, 0, size, size, 0);
