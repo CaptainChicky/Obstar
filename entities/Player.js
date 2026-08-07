@@ -1037,6 +1037,8 @@ class Player {
 				// collision() call in test/rooms.js that never sets it keeps behaving as a full-tick hit.
 				this.hp -= tick.perTick(other.damage * TANK_TANK_MULT * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
+				// lib/gameAI.js's bossDetect(): a boss ignores sub-15 players until one hits it.
+				if (this.boss) { this.provoked = other.id.oId; this.provokedAt = this.room.timestamp; }
 				// LETHAL_EPS, not 0 (lib/damage.js) - a prorated killing blow lands an ulp either side
 				// of exactly this.hp, and an ulp short used to leave the tank alive at ~1e-16.
 				if (this.hp <= LETHAL_EPS) {
@@ -1133,6 +1135,8 @@ class Player {
 				// `damageReduction()`'s removal, so this site is unchanged beyond that removal.
 				this.hp -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
+				// lib/gameAI.js's bossDetect(): a boss ignores sub-15 players until one hits it.
+				if (this.boss) { this.provoked = other.origin.oId; this.provokedAt = this.room.timestamp; }
 				if (this.hp <= LETHAL_EPS) { this.hp = 0; this.dead = tick.DEAD_DELAY; this.murder = ["players", other.origin]; this.destroy = tick.DES; }
 				break;
 			case KIND.WALL: {

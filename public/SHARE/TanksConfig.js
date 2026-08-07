@@ -3466,14 +3466,14 @@
 				// [0..2], which is where the client's `turrets` array (each a base circle + a
 				// canDir-tracking barrel, drawn over the body) reads its aim; the traps follow at
 				// [3..5] (client `cannons`, which never read canDir).
-				// NOTE: `back` is left at 0.9408 (recoil 0.3 but on the old x2.8 boss-row scale, vs
-				// AutoTurretDefinition's own 0.3 x 1.12 = 0.336 that Auto Smasher carries) - a
-				// physics/impulse value, out of this geometry pass's scope; flagged in PENDING.md.
+				// `back` is AutoTurretDefinition's own recoil 0.3 x 1.12 = 0.336, the same
+				// recoil->back axis every other cannon in this file uses (e.g. the trap launchers'
+				// 2.24 = recoil 2 x 1.12 a few lines up).
 				const turrets = [0, 1, 2].map(i => ({
 					reload: 15, offTime: 0, auto: 1, autoDir: 1, autoShoot: 1, life: 75,
 					offdir: Math.PI * 2 * i / 3, offx: 0, distance: 28, canonLength: 25.667, rand: 0.174533,
 					speed: 2.7552, pene: 11.5, damage: 8.4, size: 6.86,
-					weight: 4.2, push: 0.45709, back: 0.9408
+					weight: 4.2, push: 0.45709, back: 0.336
 				}));
 				this.cannons = turrets.concat(traps);
 			},
@@ -3531,17 +3531,22 @@
 				const c = new Array(5).fill(null).map(() => ({
 					reload: 15, offTime: 0, auto: 1,
 					offdir: 0, offx: 0, canonLength: 49, life: 38, rand: 0.174533,
-					// speed 1.12x1.7, pene 2x6.25 (diep's flat health override, every barrel) -
-					// damage stays per-barrel (below), not set here.
-					speed: 1.904, pene: 12.5, damage: 2.8, size: 14.7,
-					weight: 0.7, push: 0.45709, back: 0.9632
+					// speed 1.12x1.7, pene 2x6.25 (diep's flat health override, every barrel).
+					// damage is FallenBooster.ts's own `x0.8` of Booster's raw per-barrel diep
+					// damage (0.2 for every barrel but the front), then this file's usual x7 axis:
+					// 0.2 x 0.8 x 7 = 1.12 - c[0] overrides this to the front barrel's own 1 x0.8x7.
+					speed: 1.904, pene: 12.5, damage: 1.12, size: 14.7,
+					// back is Booster's own recoil x 1.12, unchanged by the `x0.8` damage override
+					// (Booster's own upper-rear pair, recoil 0.2 -> 0.224); c[0]/c[3]/c[4] below
+					// override it to the front and lower-rear pair's own recoil.
+					weight: 0.7, push: 0.45709, back: 0.224
 				}));
-				c[0].back = 0.224; c[0].canonLength = 66.5; c[0].size = 14.7; c[0].damage = 4.620005; c[0].life = 75;
+				c[0].back = 0.224; c[0].canonLength = 66.5; c[0].size = 14.7; c[0].damage = 5.6; c[0].life = 75;
 				c[0].weight = 3.5;
 				c[1].offdir = -Math.PI - .65; c[1].offx = -6;
 				c[2].offdir = -Math.PI + .65; c[2].offx = 6;
-				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 56; c[3].offTime = .5;
-				c[4].offdir = -Math.PI + .35; c[4].offx = 5; c[4].canonLength = 56; c[4].offTime = .5;
+				c[3].offdir = -Math.PI - .35; c[3].offx = -5; c[3].canonLength = 56; c[3].offTime = .5; c[3].back = 2.8;
+				c[4].offdir = -Math.PI + .35; c[4].offx = 5; c[4].canonLength = 56; c[4].offTime = .5; c[4].back = 2.8;
 				this.cannons = c;
 			},
 			/*

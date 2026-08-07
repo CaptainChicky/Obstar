@@ -1,4 +1,4 @@
-/*
+﻿/*
 	Tunables, palette and the two mutable state bags.
 
 	RATIO and UIRATIO used to be `var RATIO = 1, UIRATIO;` next to Global. General.updateRatio()
@@ -32,7 +32,7 @@
 		// the remaining slide is spread over ~700 units of travel - a few degrees, unnoticeable.
 		BULLET_LEAD_DECAY: 0.08,
 		/*
-			Dead reckoning (PENDING #24(b), plan.md step 8): how far past the newest snapshot an
+			Dead reckoning): how far past the newest snapshot an
 			ordinary bullet may be drawn, as a multiple of the measured packet interval.
 
 			The lead itself is NET.leadMs() - measured, not tuned - so this is only a ceiling
@@ -51,7 +51,7 @@
 		// healed back to full. Feel knob, not a measured diep number.
 		HP_BAR_HOLD: 180,
 		// Lifetime upgrade-point budget a tank can ever spend, and the per-stat cap: diep's own
-		// 33 and 7 (PENDING #30). 33 is one point per level up to 28, then one at 30 and every
+		// 33 and 7. 33 is one point per level up to 28, then one at 30 and every
 		// third level to the 45 cap - a grant schedule, no takebacks. Both are hand-mirrored
 		// server constants (entities/Player.js's pointsAtLevel / MAX_PER_STAT); the server is
 		// still the authority, this is only what the upgrade widget draws and pre-caps against.
@@ -71,7 +71,7 @@
 	const CLASS_TREE = TanksConfig.tree;
 	const rnbcolor = ['hsl(0,100%,50%)', 'hsl(0,100%,30%)'];
 	const Palette = window.colorPattern = window.colorPattern || {
-		//         ---light------Dark---
+		// ---light------Dark---
 		green: ["#19e56e", "#14ad54"],
 		red: ["#e6584b", "#a9443b"],
 		yellow: ["#f4e433", "#cab810"],
@@ -87,32 +87,32 @@
 		Grid: ["#d0cdcd", "#c1bebe"],
 
 		hit: ['#d82626', '#d82626'],//red when you get hitted
-		// bull kept on diep's own exact canvas-measured colour (plan.md C3/R11,
-		// diepindepth/canvas/color_constants.md's "Shapes" table) - it already reads distinct
+		// bull kept on diep's own exact canvas-measured colour (
+		// 's "Shapes" table) - it already reads distinct
 		// from tri's rose below, same job the old muted pink did.
 		bull: ["#f177dd", "#b459a5"],
-		// diepcustom's own Color.Box (Enums.ts: 0xBBBBBB, plan.md C13) - lighter grid-grey than
+		// Color.Box (Enums.ts: 0xBBBBBB) - lighter grid-grey than
 		// the near-black this used to be, still nowhere near bull's pink above so a wall doesn't
 		// read as a Crasher shape. Stroke is fill x0.75 (this codebase's own verified universal
-		// stroke rule, plan.md's Smasher-guard note - checked against every fill/stroke pair in
-		// diepindepth/canvas/color_constants.md's "Colors" table): 0xBB x0.75 = 0x8C.
+		// stroke rule
+		// 's "Colors" table): 0xBB x0.75 = 0x8C.
 		wall: ["#bbbbbb", "#8c8c8c"],
-		// diepcustom's Color.Border (Enums.ts: 0x555555) and its x0.75 stroke (0x404040, the
-		// same universal stroke rule `wall` above uses) - the colour of every GuardObject: a
+		// Color.Border (0x555555) and its x0.75 stroke (0x404040,
+		// the same universal stroke rule `wall` above uses) - the colour of every GuardObject: a
 		// Smasher/Landmine/Auto Smasher hexagon, a Spike's four triangles, and the three
 		// Dominators' own base hex. Not a team colour: these used to draw in the owner's own
 		// dark team shade, so a green tank grew green spikes. #404040 is what the poking tips
 		// read as (the stroke covers most of a narrow tip) and is the figure
 		// Spike_transparent_facing_up.webp measures at.
 		guard: ["#555555", "#404040"],
-		// Real per-boss diep colours (plan.md Part D, diepcustom Const/Enums.ts's own hex table -
+		// Real per-boss diep colours ( D, 's own hex table -
 		// every boss used to render in flat team-9 `necro` gold regardless of class). Stroke is
 		// fill x0.75 per component, this codebase's own verified universal stroke rule (see
 		// `wall` above). Guardian reuses `bull` (Color.EnemyCrasher, 0xF177DD) directly - it is
 		// already this exact hex, not a coincidence (README's "Crasher pink" departure note).
-		coral: ["#fc7677", "#bd5959"],   // Color.EnemyTriangle (0xFC7677) - Defender
-		square: ["#ffe869", "#bfae4f"],   // Color.EnemySquare (0xFFE869) - Summoner
-		fallen: ["#c0c0c0", "#909090"],   // Color.Fallen (0xC0C0C0) - Fallen Overlord/Fallen Booster
+		coral: ["#fc7677", "#bd5959"], // Color.EnemyTriangle (0xFC7677) - Defender
+		square: ["#ffe869", "#bfae4f"], // Color.EnemySquare (0xFFE869) - Summoner
+		fallen: ["#c0c0c0", "#909090"], // Color.Fallen (0xC0C0C0) - Fallen Overlord/Fallen Booster
 		// Color.Neutral (0xFFE869) - an Arena Closer and an UNCAPTURED Dominator, both of which
 		// diep puts on the arena's own team with this exact colour (ArenaCloser.ts:56,
 		// Dominator.ts:72). Numerically identical to Color.EnemySquare/`square` above, and kept as
@@ -120,7 +120,7 @@
 		// hex, and collapsing them would make the next person think a Closer is meant to be a
 		// Summoner-coloured thing. Both were previously drawing in team 9's `necro` beige.
 		neutral: ["#ffe869", "#bfae4f"],
-		// sqr/tri/pnt reverted to the original muted palette (plan.md R11 - a taste call, not a
+		// sqr/tri/pnt reverted to the original muted palette ( - a taste call, not a
 		// bug: C3's diep-measured saturated hexes were adopted only because they were citable,
 		// not because anything was wrong with these). Kept: C3's shape SIZE fix (the x sqrt(2)
 		// circumradius identity) - independent of colour, see drawings.js's own body-vertex code.
@@ -143,7 +143,7 @@
 			'#d6c681', // 5 Bullet Penetration
 			'#d68181', // 6 Bullet Damage
 			'#a1d681', // 7 Reload
-			'#81d6d4'  // 8 Movement Speed
+			'#81d6d4' // 8 Movement Speed
 		],
 		class: [
 			'#cd9797',

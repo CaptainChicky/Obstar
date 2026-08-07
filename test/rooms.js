@@ -4467,7 +4467,8 @@ function tickScaleTests() {
 /*
 	Drives entities/Player.js and entities/Bullet.js themselves (not just Physics.js) at a
 	patched config.TICK_MS, so every module-scope tick.*() constant they compute at require()
-	time - AUTOTURRET_LEAD, REAIM_CHANCE, tick.DES, the drag-precomputed FRICTION, all of it - is
+	time - AUTOTURRET_LEAD, the BASE_DRONE_* orbit rates, tick.DES, the drag-precomputed FRICTION,
+	all of it - is
 	rebuilt for the rate under test, the way massplanchunks.md asks for. No runtime setter: the
 	module cache is cleared and restored around the call, same idea as how the movement case
 	above hands Physics.stepBody a freshly computed dtTicks rather than mutating a shared one.
@@ -6042,6 +6043,139 @@ function overtrapperDroneSplitTests() {
 		p.droneGroup.join(',') + ' / ' + p.droneCount);
 }
 
+/// Tank/boss drone aggro range and idle orbit /////////////////////////////////
+/*
+	Every drone tank and every boss, controllable drones or not, shares one aggro range, and an idle
+	drone orbits its owner on quantised energy levels the way a base drone does rather than being
+	dragged around a fixed circular boundary.
+
+	The aggro range is a fraction of the OWNER's FOV radius with an absolute floor, and is measured
+	from the OWNER - a drone on the far side of its own orbit must not extend the swarm's reach.
+	The orbit is entities/Bullet.js's droneIdleOrbit(), which flies the base-drone state machine in
+	the owner's frame; what is pinned here is the state machine's invariants, not any particular
+	trajectory.
+*/
+function tankDroneOrbitTests() {
+	console.log('\ntank/boss drone aggro + idle orbit:');
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
+	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
+	const room = makeRoom('ffa');
+	const p = player(room, 0);
+	p.class = 'Overlord';
+	p.level = 45;
+	p.x = 0; p.y = 0;
+	p.shield = 0; p.alpha = 1;
+	p.inputs.mouseL = 0; p.inputs.mouseR = 0; p.inputs.e = 0;
+	p.inputs.mouse_x = 0; p.inputs.mouse_y = 0;
+
+	const wide = World.gu(100);
+	p.screen = wide;
+	const want = Math.max(config.DRONE_AGGRO_MIN, wide / 2 * config.DRONE_AGGRO_FOV);
+
+	// One radius for every drone type. A drone's own DETEC is sized from the owner, so reading the
+	// detector back is what proves the rule is shared rather than restated per case arm.
+	function detectorR(type) {
+		const b = new Bullet(p.id, p.x + 200, p.y, 0, 1, 0, room);
+		b.type = type; b.team = p.team; b.class = p.class; b.size = 10; b.life = -1;
+		b.map = room.map;
+		b.update();
+		return b.DETEC ? b.DETEC.size : null;
+	}
+	const radii = [1, 1.1, 1.2, 1.5, 3].map(detectorR);
+	check('every drone type - controllable, uncontrollable, swarm, minion, necro - uses one aggro radius',
+		radii.every((r) => r !== null && Math.abs(r - want) < 1e-6), radii.join(','));
+	check('...which is DRONE_AGGRO_FOV of the OWNER\'s FOV radius, so a bigger screen sees further',
+		want > config.DRONE_AGGRO_MIN && Math.abs(want - wide / 2 * config.DRONE_AGGRO_FOV) < 1e-6,
+		want.toFixed(1));
+
+	// A boss's own FOV is narrow enough that the fraction falls under the floor - the floor is what
+	// stops a Summoner's drones being blind next to an Overlord's.
+	p.screen = World.gu(20);
+	check('...floored at DRONE_AGGRO_MIN, so a narrow-FOV owner (a boss) is not left short-sighted',
+		Math.abs(detectorR(1) - config.DRONE_AGGRO_MIN) < 1e-6, detectorR(1));
+	p.screen = wide;
+
+	// A boss's drones (type 3.1) read the boss's own `detected` list rather than carrying a
+	// detector, so they are pinned behaviourally: the SAME radius has to gate that list, measured
+	// from the boss, or a boss's swarm would reach further than a tank's.
+	function bossDroneEngages(targetX, droneX) {
+		const target = { x: targetX, y: 0, destroy: 0, alpha: 1, size: 10 };
+		p.detected = [target];
+		const b = new Bullet(p.id, droneX, 0, 0, 1, 0, room);
+		b.type = 3.1; b.team = p.team; b.class = p.class; b.size = 10; b.life = -1;
+		b.map = room.map;
+		b.update();
+		p.detected = [];
+		return b.orbLevel === undefined;   // idling sets orbLevel; engaging clears it
+	}
+	check('a boss\'s own drones are held to that same radius, not the boss\'s much wider body view',
+		bossDroneEngages(want * 0.9, 0) && !bossDroneEngages(want * 1.1, 0));
+	// Measured from the OWNER, not the drone: a target a far-flung drone could reach but the tank
+	// cannot see stays ignored, so a swarm's reach is the tank's reach.
+	check('...measured from the owner, so an outlying drone does not extend the swarm\'s reach',
+		!bossDroneEngages(want * 1.5, want * 1.4));
+
+	// ---- the idle orbit -------------------------------------------------------------------
+	const drone = new Bullet(p.id, p.size * config.TANK_DRONE_ORBIT_R, 0, 0, 0.896, 0, room);
+	drone.type = 1; drone.team = p.team; drone.class = p.class; drone.size = 10.5; drone.life = -1;
+	drone.map = room.map;
+	const gap = drone.size * config.TANK_DRONE_LEVEL_GAP;
+	const ringOf = (lvl) => p.size * config.TANK_DRONE_ORBIT_R +
+		(lvl - config.TANK_DRONE_LEVEL_HOME) * gap;
+
+	let maxRingErr = 0, maxTurn = 0, prevHead = null, totalAng = 0, prevAng = null;
+	const seen = {};
+	let seamErr = 0, wasCurve = 0;
+	for (let t = 0; t < 6000; t++) {
+		drone.update();
+		if (drone.orbLevel === undefined) { continue; }
+		const onCurve = drone.orbCrossing || drone.orbSwitching;
+		// The seam: the tick a planned curve hands back to the orbit field must cost the field no
+		// heading jump at all. That exactness is the whole point of planning the curve - the old
+		// steer chased a moving aim point, which is what read as a stutter at a swoosh's ends.
+		if (prevHead !== null) {
+			const dh = Math.abs(Math.atan2(Math.sin(drone.orbHead - prevHead),
+				Math.cos(drone.orbHead - prevHead)));
+			if (t > 50 && !onCurve && !wasCurve) { maxTurn = Math.max(maxTurn, dh); }
+			if (wasCurve && !onCurve) { seamErr = Math.max(seamErr, dh); }
+		}
+		wasCurve = onCurve;
+		prevHead = drone.orbHead;
+
+		const r = Math.hypot(drone.x - p.x, drone.y - p.y);
+		const ang = Math.atan2(drone.y - p.y, drone.x - p.x);
+		if (prevAng !== null) { totalAng += Math.atan2(Math.sin(ang - prevAng), Math.cos(ang - prevAng)); }
+		prevAng = ang;
+		if (t > 200 && !onCurve) { maxRingErr = Math.max(maxRingErr, Math.abs(r - ringOf(drone.orbLevel))); }
+		seen[drone.orbLevel] = 1;
+	}
+
+	check('an idle drone holds its level\'s ring rather than being dragged round a boundary',
+		maxRingErr < gap / 8, maxRingErr.toFixed(2) + ' of gap ' + gap.toFixed(1));
+	// The level table itself is deterministic; WHICH levels a single drone happens to roll in one
+	// run is not, so what is pinned is that it moves off home in both directions - the property a
+	// fixed-radius "circular boundary" would fail outright.
+	const visited = Object.keys(seen).map(Number).sort((a, b) => a - b);
+	check('...on quantised energy levels one drone-width apart, not one fixed radius',
+		Math.abs(ringOf(2) - ringOf(1) - drone.size * config.TANK_DRONE_LEVEL_GAP) < 1e-9 &&
+		visited.length >= 3 &&
+		visited[0] < config.TANK_DRONE_LEVEL_HOME &&
+		visited[visited.length - 1] > config.TANK_DRONE_LEVEL_HOME, visited.join(','));
+	// 0.05 rad/tick is 2 rad/s - the same order the base drone's own swoosh test bounds at 8 rad/s.
+	// A curve that actually had a corner in it would step by radians, not hundredths.
+	check('...handing back off a planned curve with no corner in it (the swoosh seam)',
+		seamErr < 0.1, seamErr.toFixed(4) + ' rad');
+	check('...and never turning faster on the field than the drone could physically bank',
+		maxTurn < 0.5, maxTurn.toFixed(4) + ' rad/tick');
+	// A level change sweeps the way the drone is already orbiting whether the new lane is inside
+	// or outside the old one - signing the sweep by the radius change sends an inward switch
+	// BACKWARDS round the owner, which cancels most of the swarm's rotation.
+	check('...so the swarm keeps circling one way - inward level changes do not sweep backwards',
+		Math.sign(totalAng) === Math.sign(-1) && Math.abs(totalAng) > 2 * Math.PI * 5,
+		(totalAng / (2 * Math.PI)).toFixed(2) + ' revolutions in 150s');
+}
+
 /// Factory drone steering ////////////////////////////////////////////////////
 function factoryTests() {
 	console.log('\nfactory drones (Minion.ts - aim and movement are separate angles):');
@@ -6619,6 +6753,7 @@ rosterSweepTests();
 necromancerTests();
 droneBatchTests();
 overtrapperDroneSplitTests();
+tankDroneOrbitTests();
 factoryTests();
 factoryFireTests();
 factoryPlayerSpawnTests();

@@ -158,3 +158,12 @@ Hand back `Obstar_changed.zip` (unzips over repo root) via present_files. **NEVE
 - Decisive scope: do what's asked; note adjacent issues in `PENDING.md`, don't fix them.
 - Code comments terse — a line or two of rationale, never paragraphs. Err shorter than neighbors.
 - Chat replies short: no plan restatement, no recaps, one tight final summary.
+
+---------------
+phrase for plan ig idk
+implement task 3 of the plan. Task 1-2 are done. Prioritize correctness. Read files in batches and be efficient with context. Tests that I can instead verify visually in the UI/playing the game quickly (like a simple check in sandbox with the tank, or on the tester mode etc) should never be added. I'll verify that irl in the game. Only logic and key tests like for race conditions or subtle logic bugs or similar should be added (basically anything that cant be easiyl tested by going into sandbox, or going into the tester mode). comment should only serve to record what is going on logically with the code, and never too verbose, never recording any "history" or referencing any markdown file plans.
+
+
+implement task 1 of the plan. Prioritize correctness. Read files in batches and be efficient with context. Tests that I can instead verify visually in the UI/playing the game quickly (like a simple check in sandbox with the tank, or on the tester mode etc) should never be added. I'll verify that irl in the game. Only logic and key tests like for race conditions or subtle logic bugs or similar should be added (basically anything that cant be easiyl tested by going into sandbox, or going into the tester mode). comment should only serve to record what is going on logically with the code, and never too verbose, never recording any "history" or referencing any markdown file plans.
+
+implement task 2 of the plan. Task 1 is done. Prioritize correctness. Read files in batches and be efficient with context. Tests that I can instead verify visually in the UI/playing the game quickly (like a simple check in sandbox with the tank, or on the tester mode etc) should never be added. I'll verify that irl in the game. Only logic and key tests like for race conditions or subtle logic bugs or similar should be added (basically anything that cant be easiyl tested by going into sandbox, or going into the tester mode). comment should only serve to record what is going on logically with the code, and never too verbose, never recording any "history" or referencing any markdown file plans.
