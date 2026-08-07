@@ -1,0 +1,95 @@
+= Shotgun =
+
+{{Stub}}
+{{Infobox
+|image     = <gallery>
+shotgun icon new.png|from Machine Gun Only (v3)
+shotgun icon.png|New design (v2)
+shotgun icon old.png|Old design (v1
+</gallery>
+|tier      = 3
+|previous  = [[File:machine gun nav icon.png|50px|link=Machine Gun]]
+|next  = [[File:Pellet Shot icon.png|50px|link=Pellet Shot]][[File:DualBarrelcurrent.png|50px|link=Dual-Barrel Shot]]
+|barrel    = [[Cannons]]
+|id        = 62
+}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from [[Machine Gun]] at level 30.
+
+== Design ==
+The Shotgun features a Machine Gun barrel, overlapped by a shorter and wider Machine Gun-like barrel.
+
+== Technical ==
+The Shotgun fires 12 bullets at the same time.
+
+* Bullet Speed: TBA
+* Bullet Penetration: 1.2 (+0.9 for each point in Bullet Penetration)
+* Bullet Damage: 3.5 (+1.5 for each point in Bullet Damage)
+* Reload time: 60t (-5t for the 1st and 3rd point, -4t for the 2nd, 4th and 6th point, -3t for the 5th and 7th point in Reload)
+
+== Strategy ==
+* <b>Strong Against:</b> Destroyer tanks like Hybrid and Annihilator, rammers.
+* <b>Weak Against:</b> Anything that can attack from a distance, skilled focus spammers, Trappers.
+
+=== As the Shotgun ===
+
+* Strong against unsuspecting tanks with medium to low defense upgrades. 
+* Similar to tanks from the [[Destroyer]] family, with maximized stats on Movement Speed and Bullet Speed, the Shotgun can perform surprises that could significantly damage an enemy with medium-to-low defense upgrades.
+* The Shotgun pellets spread out the further it travels from the barrel, so Shotguns getting up-close to the enemy can be a strong tactic especially if the enemy has low defense upgrades.
+* With a good enough aim, the Shotgun should be able to keep rammers from reaching themselves utilizing the knockback from the sheer number of bullets being fired. 
+** Note that if the rammer is extremely close to the tank, shooting it might knock the rammer right into the tank. 
+
+=== Against the Shotgun ===
+
+* Even if the Shotgun have maximized stats on Bullet Penetration and Bullet Damage, the pellets from the Shotgun may emit an underwhelming amount of damage on tanks with high defense upgrades.
+* Tanks with high fire power and fire rate, preferably focused, can overpower the pellets from the Shotgun.
+* Swarms of drones such as those coming from a [[Battleship]] or smart offensive behavior from the [[Overseer|Overseer family]] can overwhelm a solo Shotgun. 
+* Trappers are effective at defending against Shotgun. A Shotgun won't be able to break through a good trap layout, and Trappers with extra offensive capability like Gunner Trapper or Overtrapper can try to take down the Shotgun. 
+
+== Gallery ==
+<gallery>
+File:Shotgun in action 1.webp|Old shotgun
+File:Shotgun in action 2.png|Shotgun (v2)
+File:Shotgun current.png|Shotgun (current)
+</gallery>
+
+== Records ==
+
+=== PC ===
+
+* FFA: 742.6k by Ariphael
+* 2 Teams: [https://imgur.com/a/rnnrBSm 517.5k by WoepdieCat]
+* 4 Teams: -
+* Maze: -
+
+=== Mobile ===
+
+* FFA: -
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+
+* One of its upgrades, the [[Dual-Barrel Shot|Dual Barrel Shot]], is now named "Dual Barrel".
+* As of the time of this edit, Shotgun is the only Tier 3 tank to not have an achievement with it. 
+* This tank used to also be upgraded from Sniper. 
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     =
+|es     = 
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 
+|pt-br  =
+|ro     =
+|ru     = 
+|sv     =
+|tr     =
+|vi     = 
+|zh     = 
+}}
+[[Category:Diep.io]]

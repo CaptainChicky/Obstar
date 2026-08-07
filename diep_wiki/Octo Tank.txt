@@ -1,0 +1,123 @@
+= Octo Tank =
+
+{{Infobox
+|image     = <gallery>
+octo tank icon 3.png|New Colors
+octo tank icon 2.png|Old Colors
+octo tank icon 1.png|Nameless
+</gallery>
+|tier      = 4<ref name="octotank1">Originally classified as a Tier 5 Tank.</ref>
+|next      = None
+|barrel    = [[Cannons]] (8)
+|previous  = [[File:Quad tank icon new.png|50px|link=Quad Tank]][[File:TwinFlankNAV0.png|50px|link=Twin Flank]]<ref>Removed upgrade option. Removed upgrade options and removed tanks are shown by a gray icon background.</ref>
+|id        = 5
+}}
+Octo Tank is a Tier 4 tank in Diep.io. It upgrades from [[Quad Tank]] and formerly Twin Flank at level 45.
+
+== Design ==
+The Octo Tank features a circular body surrounded by eight evenly spaced [[Cannons]] (spaced exactly 45 degrees apart) that look exactly like [[Tank|Basic Tank]] Cannons, hence the name.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = ▼
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Barrel count
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲▲
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}The player gains another four barrels at a 45° angle from the existing four, resulting in eight spread-out barrels that create a ring of bullets difficult for enemies to escape when firing, thanks to the quantity and spread of the bullets. However, to compensate, Bullet Damage is decreased.
+*Stats: 
+**Bullet Damage: 4.55 (+1.95 for each point in Bullet Damage) 
+
+== Strategy ==
+*<b>Strong Against:</b> Multiple weaker enemies, slow melee tanks, [[Drones|Drone]] tanks except Factory
+*<b>Weak Against:</b> High + focused DPS, [[Destroyer]] branch tanks, fast melee tanks like the Booster if played correctly, Factory.
+
+=== As the Octo Tank ===
+*Recommended builds for the Octo Tank include glass cannons or hurricane builds. A glass cannon build concentrates on [[Bullets]] and not on health [[Stats]], and is vulnerable to fast-moving rammers such as the [[Booster]]. Using C+E (Auto Spin and Auto Fire) is highly recommended to create nigh impenetrable zones of bullets. This works well when farming [[Polygons]], too.
+**Due to its number of cannons, spinning can make it difficult to dodge an Octo Tank’s bullet stream, which can be effective against snipers and drone classes or when trying to find invisible tanks such as the [[Landmine]].
+**An Octo Tank with a Hurricane build will give up Bullet Speed in favor of Health. Users of these builds can generally defend well against anything, but are vulnerable to [[Machine Gun]]s, [[Gunner]]s, and any other tanks with high Reload and Bullet Penetration at a distance.
+*Unprepared players without high damage can be easily destroyed by an Octo Tank without taking much damage in return, due to the Octo Tank’s massive firepower.
+*An Octo Tank must beware of high-penetration tanks such as Destroyers, [[Hybrid]]s, or [[Annihilator]]s, as they can easily pierce through the shield of bullets surrounding it and inflict heavy damage.
+*Beware that the Octo Tank only fires one bullet in each direction, so it usually won’t be easy to combat high RoF tanks, such as the [[Machine Gun]], [[Sprayer]] or [[Triplet]], unless you stack your cannons: By spinning at certain speeds, your cannons will overlap, spawning bullets in a more focused manner, which makes it easier to fight this type of tanks.
+*As the Octo Tank in any team mode, if you max Bullet stats and head to the [[Pentagon Nest]], you can act as a shield for the whole area. An Octo Tank needs its team or else it will be vulnerable to high RoF tanks and teams.
+**With several Octo Tanks grouped and firing simultaneously, a nigh-inescapable swarm of bullets can be created as a powerful barrier to enemies in [[2 Teams]] or [[4 Teams]]. Also, any one octo tank with decent bullet penetration can easily destroy Necromancer squares.
+*This tank is suitable to play in [[Free For All|FFA]] as with eight cannons, it can counter multiple enemies at once. The cascade of bullets also tends to “steal” kills, which makes it great for search-and-destroy play styles.
+*The Octo Tank is also a good choice in [[Survival]], as the bullet storm can take down most enemies before they can upgrade to a suitable high-DPS counter.
+
+=== Against the Octo Tank ===
+*The class can be difficult to approach due to the Cannons surrounding it, which make it harder to hit. However, the tank also lacks focused fire — because of this, the easiest way of defeating an Octo Tank is to use focused firing tanks with maxed out bullet stats, like the [[Streamliner]].
+*To counter an Octo Tank, one can also use tanks from the Destroyer or Sniper branches. The Octo Tank’s bullets can’t block the Destroyer or Sniper’s stronger ones, which can make it easier for you to hit and kill the tank.
+*Alternatively, skilled Tri-Angle branches can dodge the storm of Bullets, and either ram or bullet-ram the Octo Tank between the Cannons. Beware when there are other tanks around, as ramming the Octo Tank will leave you low on health.
+*An [[Overlord]] or [[Overseer]] can use their Drones to flank the Octo Tank through the gap between its Cannons, although this is somewhat risky.
+*Using tanks like Triple Twin or Basic Tank is acceptable against an Octo Tank though because the classes’ Bullet Penetration and Damage being lower than that of a Twin’s, it isn’t recommended.
+*[[Penta Shot]]s work quite well against Octo Tanks. The high DPS and slightly-concentrated fire of the Penta Shot can easily out-penetrate the Octo Tank’s while decreasing the chances of flanking if/when the Octo Tank does Auto Spin and Auto Fire.
+*The [[Factory]] can create bullet walls capable of piercing through the Octo Tank’s defense while using the drones as cover at the same time, making it a powerful counter.
+
+== History ==
+*From April 15th, 2016, to April 17th, 2016, the Max Level was 60, and the path to get the Octo Tank was as follows: [[Tank]] → [[Twin]] → [[Triple Shot]] → [[Quad Tank]] → Octo Tank.
+**Therefore, at that time it was a [[Tiers|Tier]] 5 tank.
+*Before August 15th, it branched off the Twin Flank at Level 45; it was then removed as an upgrade and replaced with [[Battleship]]. It now only branches off Quad Tank.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/G51eDK1 2.62m by Fallen]
+* 2 Teams: 3.03m by angle
+* 4 Teams: [https://youtu.be/uTV8fofPmLk 3.19m by lambo]
+* Maze: [https://www.youtube.com/watch?v=HHyyxc76g1I 1.38m by JB Colombia]
+
+=== Mobile ===
+
+* FFA: 2.01m by HZ6
+* 2 Teams: -
+* 4 Teams: 546.4k by darkforce
+* Maze: -
+
+== Trivia ==
+*The Octo Tank was originally the only Tier 5 Tank, but now it's only Tier 4. There are no more Tier 5 tanks as of that.
+*The Octo Tank has the second most [[Cannons]] out of all tanks — the one with the most is the [[Spread Shot]].
+*It's one of the first tanks to be added. Alongside with the Basic Tank. Twin. Quad Tank. Triple shot and Triplet (before release).
+
+==Gallery==
+<gallery>
+Octotank1.png|Octo Tank In-game
+Octotankingame.png|An Octo Tank firing at some [[Pentagon|Pentagons]] (Old color scheme)
+Octotank2.png|An Octo Tank in the [[Pentagon Nest]] firing at a [[Machine Gun]] (Old color scheme)
+Screenshot 2020-06-10 at 11.23.41 AM.png|A close up of an Octo Tank.
+File:GreenOctotankDuo.PNG|Two Octo Tanks in [[4 Teams|4TDM]]'s Green Team, standing by each other whilst inside the base.
+</gallery>
+
+== Footnotes ==
+<references/>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Octo Tank
+|es     = Octotank
+|fr     = Octo Tank
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Octo Tank
+|pt-br  =
+|ro     =
+|ru     = Octo Tank
+|sv     =
+|tr     = Octo Tank
+|vi     = Octo Tank
+|zh     = Octo Tank
+}}
+[[Category:Diep.io]]

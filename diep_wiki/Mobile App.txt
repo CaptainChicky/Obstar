@@ -1,0 +1,4 @@
+= Mobile App =
+
+#REDIRECT [[Mobile Changelog]]
+[[Category:Redirect]]

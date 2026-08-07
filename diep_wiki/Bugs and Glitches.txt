@@ -1,0 +1,4 @@
+= Bugs and Glitches =
+
+#REDIRECT [[:Category:Bugs]]
+[[Category:Redirect]]

@@ -1,0 +1,4 @@
+= Minion =
+
+#REDIRECT [[Drones]]
+[[Category:Redirect]]

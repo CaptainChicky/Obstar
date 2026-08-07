@@ -1,0 +1,177 @@
+= Arena Closer =
+
+{{Infobox/double
+|title      = Non-Playable Arena Closer
+|title2     = Playable Arena Closer (Custom Games)
+|image      = <gallery>
+arena closer tank 3 awake.png|Awake
+arena closer tank 3 asleep.png|Asleep
+arena closer tank 2.png|Old Colors
+arena closer tank 1.png|Old Design
+</gallery>
+|image2     = <gallery>
+arena closer icon 3.png|New Colors
+arena closer icon 2.png|Old Colors
+arena closer icon 1.png|Old Design
+</gallery>
+|id         = 16
+|previous   =
+|previous2  = Using [[Controls|cheats]] or Custom Games Commands
+|barrel     = [[Cannons|Cannon]] (1)
+|alt=|caption=|tier=|categories=|key=|next=|alt2=|caption2=|tier2=|id2=|key2=|next2=|barrel2=}}
+{{For|the event that occurs when this tank spawns|Arena Closing}}
+The <b>{{PAGENAME}}s</b> are special tanks that appear when a match of [[Domination]], [[Tag]], [[Mothership (Game Mode)|Mothership]], [[Breakout]], or [[Capture the Flag]] is finished or when a server closes in [[Free For All]], [[Maze]], [[2 Teams]] or [[4 Teams]]. Its smaller version was playable in [[Sandbox]], when using the <code>\</code> key several times. However, it is impossible to do this method as of October 2020, as Arena Closers and other special tanks (except for Mothership which was re-added) have been fully removed from Sandbox mode.
+
+The purpose of Arena Closers is, as their name implies, to close the server; players killed by Arena Closers are then kicked from the server, then the server restarts when all players are killed off the arena. However, if the player manages to survive them (e.g. by activating God Mode on Sandbox), the player would still be kicked out from the server after a couple of minutes. Unlike getting killed by regular tanks, [[Dominator]]s, [[Mothership (Tank)|Motherships]], or [[Bosses]], you will restart back at level 1 when you are killed by an Arena Closer only once. However, their levels are kept in Free For All, 2 Teams and 4 Teams. Arena Closers don’t have a health bar, so they cannot be killed. Their bullets do approximately 2.333 times as much damage as a Destroyer.
+
+==Design==
+[[File:Arena Closer.svg|thumb|75px|Blue Arena Closer {{w|Scalable Vector Graphics|SVG}}]]
+The standard Arena Closer features a large yellow circular base, with a cannon that is similar to the back of a [[Flank Guard]]. It is about as large as a [[Dominator]], and the bullets it fires are about as large as an [[Annihilator]] bullet. In Sandbox, it takes on a blue color and is several times smaller than the average Arena Closer. The yellow variations’ color is same as the [[Square|Square’s]], [[Summoner|Summoner’s]], and neutral [[Dominator|Dominator’s]] color.
+
+==Technical==
+[[File:ArenaClosedMessage.png|thumb|The [[Notifications|Notification]] that comes up when the Arena closes.]]
+===Spawning===
+Several Arena Closers (with a maximum of 16) will spawn when a [[Domination]] or a [[Tag]] match is finished. In [[2 Teams]], [[4 Teams]], or in [[FFA]], the Arena Closers appear when only a few people are in the server or when the game is being updated. In [[Maze]] when the server has been up for 5 hours. They will immediately go after players.
+
+Previously, Arena Closers may spawn inside the map in an inactive state (in which case they are gray in color). After 10 seconds they will turn yellow and immediately target a player.
+
+===Behavior===
+The Arena Closer’s priority:
+*The surviving [[Mothership]]
+*All players still alive (in the order of initial proximity upon spawning and then upon each killed player)
+*Any non-neutral [[Dominator]]s.
+*[[Bosses]] that are in team Fallen ({{CA|Fallen Bosses|Fallen Bosses}}).
+When they attack, they will shoot at the target while ramming into them. When all targets are dead or neutralized, their AI has no reason to continue to fire, so they’ll be spinning and slowly drifting in a random direction, just like regular [[Polygons]].
+
+===Stats===
+The Yellow Arena Closer has:
+*Larger bullet size similar to an [[Annihilator]]’s.
+*196 bullet damage, seven times that of a maxed basic Tank (effectively one shotting any tank).
+* The Bullet Speed of a maxed [[Assassin]].
+*The Reload of a maxed reload Basic [[Tank]].
+*Invincibility.
+*Extremely high body damage, even higher than a maxed Spike.
+*Complete resistance to knockback.
+*(Current Arena Closer) 3,750 HP for bullet health.
+**(Old Arena Closer) Half the bullet health of a trap deployed by a [[Mega Trapper]], and 1.75 times the bullet damage of a Basic Tank. It was possible for it to one-shot tanks with very little or no points in max health or body damage, but for other tanks it would usually take multiple shots to kill them.
+
+In Sandbox mode, the playable Arena Closer has the health of a normal tank, but their [[bullets]] are still far more powerful than that of any other tank, approximately equal to a real Arena Closer.
+
+===Miscellaneous===
+The Arena Closers aren’t targeted by the [[Base Drones]] until the Arena Closers accidentally shoot or bump into them. The [[base]] itself has no effects on Arena Closers. Their body and bullets can’t harm shapes, the neutral [[bullets]] will just go through them, and the Arena Closers themselves will just push them out of the way. The Arena Closers and their bullets can go through the Maze game mode’s walls. Additionally, Arena Closers can go through each other. 
+
+==Strategy==
+[[File:ArenaClosermini.PNG|thumb|166x166px|A Playable Arena Closer (Distinct by its non-Yellow color and small size compared to Real Arena Closers)]]
+=== <b>Playable Arena Closer (Removed)</b>===
+Please note, before reading the bottom lines, the playable arena closers have been fully removed from Sandbox, making all these strategies impossible to do. 
+
+*<b>Weak Against:</b> Dominators, high FoV classes and Overlords, as well as fast rammers like the [[Booster]], [[Drones|Drone swarms]], if caught off-guard.
+*<b>Strong Against:</b> Most normal classes.
+====As the Arena Closer====
+There is no real strategy to use when playing as the most powerful tank in the game. However, you must be vigilant when other Arena Closers are present in the server, as they are one of the few tanks who can easily defeat you. Outmaneuvering them is usually the best option, but in a perfect 1 versus 1 situation, the winner is usually the Arena Closer who succeeds in landing the first hit.
+
+====Against the Arena Closer====
+Arena Closers in the Sandbox Mode can only be easily taken on by other Arena Closers. Other tanks with massive health pools, such as Dominators which may stand a chance as long as they are careful to stay far away. All other tanks cannot stand the power of the Arena Closer.
+
+If it is distracted, with a [[Ranger]] / [[Stalker]] or [[Streamliner]], you could have a few chances to kill them at the range since you have better FoV. You also have a slight chance of Killing an AC with the [[Overlord]] when spreading your drones at the AC.
+
+A fast rammer like the Booster might not work. However, skilled Boosters can dodge the bullets and ram the Arena Closer.
+
+=== <b>Current Arena Closer</b>===
+*<b>Strong Against:</b> Any tanks without god mode
+*<b>Weak Against:</b> None
+Yellow Arena Closers are essentially invincible, so fighting them is not an option. Escaping is virtually impossible, as they are faster than the Fighter, Tri-Angle and Booster class, even with fully upgraded Reload and Movement Speed. However, if all of the Arena Closers are stacked atop each other, then the bullet onslaught can be dodged. This is a very rare situation, as it is hard enough to stay alive that long.
+
+===<b>Old Arena Closer</b>===
+*<b>Strong Against:</b> Slow tanks, Low Penetration tanks
+*<b>Weak Against:</b> Fast tanks such as the [[Booster]] or [[Tri-Angle]], Bullet Spammers such as the [[Triplet]], Tanks with high penetration/damage such as the [[Hybrid]]
+Old Yellow Arena Closers are essentially invincible like current Arena Closers, so fighting them would still be hard but you could slow them down by using the [[Triplet]] or Tank Bullet Spammers. You were also capable of running away from it by using level 8 [[Tank]] (with maxed out movement speed), Tri-Angle, Booster, and Fighter (with maxed out movement speed and reload) because in an old version, Arena Closers were as small as a level 45 tank. This would make an Old Arena Closer as fast as our tanks. They also did not do as much damage so it was possible to out-penetrate them with large bullet spammer hoards or with [[Destroyer]] branch tanks.
+
+==History== 
+*The Arena Closer was the first AI-controlled tank in the game.
+*Despite their strength and speed, their name tag used to indicate that they’re only level 1.
+*Their score was indicated as 0.
+*They were buffed to have increased bullet speed in the same [[Changelog|update]] that added the [[Domination]] [[Game Modes|Gamemode]].
+*On July 13, 2016, they were buffed again to be a lot bigger, so they can deal body damage, and shoot bigger [[bullets]] that are a fraction larger than the size of an [[Annihilator|Annihilator’s]] bullet, making it harder to dodge them.
+*It was originally much easier to escape the Arena Closers, as both their Movement and Bullet Speed were much slower than they are today.
+**Some Tri-Angles, Fighters, and Boosters were able to survive their onslaught with maxed out Movement Speed, Reload and Bullet Penetration.
+*A few days after this, they were buffed again to have more bullet penetration and 100% resistance to knockback.
+*They used to spawn in the center of the map at first. This was changed so they spawn outside of the map. With the most recent update, they now spawn inside the map at multiple locations.
+*On July 31, 2016, the Arena Closers’ spawn was delayed after the message, “Arena Closed: No players can join”. This was removed when their spawn location was moved into the map on January 9th, 2024.
+*([[Domination]] mode only) When all player-controlled tanks leave/die, they will attack any uncontested [[Dominator]]s.
+*As of September 3rd, 2016, with the addition of Sandbox Mode, Arena Closers became playable tanks, but only in Sandbox.
+*Also on September 3rd, 2016, they were buffed to have four times the amount of bullet damage, going from 49 to 196, and also decreased the time it took to reload.
+*Since September 6th, 2016, they now have scores, and when they kill the [[Bosses]] the notification doesn’t state anything about “an unnamed tank” anymore.
+*Since September 25th, 2016, the Arena Closers were able to pass through [[Maze]] walls.
+**In the first few days of Maze, they couldn't, so it was possible to survive their onslaught until the server forcefully closed.
+*Their inactive state resembles Fallen Tanks.
+*They were fully removed from the Sandbox gamemode on October 14, 2020.
+
+
+==Trivia==
+[[File:arena closer icon old sandbox.png|thumb|120px|Playable Arena Closer in [[Sandbox]].]]
+*If you are killed by an Arena Closer, you don’t go to a new server, you just enter the renewed version of the same server. This was probably meant to prevent the game from getting massive ping freezing from redundant servers.
+*When something is shot by an Arena Closer, it seems to get “thrown” to one side before it is killed because of the Arena Closer’s extreme bullet knockback.
+*Arena Closers may spawn at multiple locations inside the map.
+**They used to spawn at an inactive state (in which they appear gray). After 10 seconds, they turn yellow and start targeting players.
+**Before, they may spawn outside of the regular map boundaries. However, upon spawning, they will move inside the map boundaries (since their AI will target a player inside the map and will proceed to move towards them).
+**In older versions, they spawned in the center of the map.
+*Arena Closers sometimes merge with other Arena Closers because of their 100% knockback resistance.
+**As such, they are the only tanks that can move on top of each other.
+*There was previously a bug where Arena Closers AI broke, making them slowly drift like [[Polygons]] even if there are players left.
+*In Sandbox before the playable tank got removed, the Arena Closer is just after the [[Necromancer]] when you use the \ command. This is due to the Arena Closer being the last added tank before the [[Necromancer]] got added.
+*[[Base Drones]] can pursue and attack Arena Closers. However, they will die upon impacting their bullet or body.
+*It has become a game in itself to try and survive the barrage of the Arena Closers for as long as possible.
+**Previously, you could survive the Arena Closers in Sandbox mode by opening a Sandbox arena, playing it as someone else, leave as the host, wait ten minutes, and enter God Mode as the other player.
+*You used to be able to survive it with a team of [[Mega Trapper]]s and [[Hybrid]]s until their bullets were buffed to have much more knockback resistance.
+*Arena Closers have the shortest and widest cannons apart from all the tanks. They used to have a longer barrel when they were smaller, however.
+*These tanks shoot the largest bullets of all tanks in Diep.io. They used to shoot bullets that were slightly larger than a max level [[Tank]].
+*Old Arena Closers resembled a [[Tank]].
+*Old Arena Closers used to be as fast as a normal tank.
+*It is possible to survive a single shot from an arena closer because they don't have infinite damage. You can tell by how in Sandbox, you can survive a hit from the Playable Arena Closer if you’re a [[Dominator]].
+*Along with bosses, neutral [[Dominator]]s, and [[Base Drones]], the Arena Closers are the only Al-Controlled things in Diep.io that can detect invisible tanks.
+*Arena Closers get the score of killed players, but it only displays in-game modes that show scores, like FFA or 4 Teams.
+*Arena Closers can kill Dominators in the [[Diep.io Mobile/Legacy|legacy mobile]] version of the game, instead of making them contested.
+
+==Gallery==
+<gallery orientation="none" widths="132" captionalign="center" captiontextcolor="#ffffff">
+Old arena closer.jpg|Old Arena Closers attacking a Tri-Angle.
+Arena Closer In Gamemode.png|Many old Arena Closers closing an arena.
+Arenacloser.png|A playable Arena Closer
+Diepio lvl 45 octo tank after death.png|When killed by new Arena Closers
+AC.png|Arena Closers with the new color scheme
+Arena Closer-0.jpg|Arena Closers attacking a red Dominator
+Zrzut ekranu 2016-08-28 22.36.48.png|Arena Closers rotating
+Arena closer photo3.png|A [[Tri-Angle]] being chased by Arena Closers
+File:CloserswhentheyreasleepLol!.png|An Arena Closer in its asleep state.
+Arena closer icon new 1.png|New Colors, Old Design
+Arena closer icon new 1 sandbox.png|New Colors, Old Sandbox Design (theoretical)
+Arena closer icon old 1 sandbox.png|Old Colors, Old Sandbox Design (theoretical)
+</gallery>
+
+==Bugs==
+{{Bugs}}
+{{BugList|
+=== Patched or Removed Bugs ===
+[[File:Epic Diep.io Glitch|thumb|200x200px|1:35 for the bug]]
+*{{PC}} {{Mobile}} Sometimes, when the Arena Closes, the AI of the [[Arena Closer]]s would glitch out, making them slowly drift like [[Polygons]] even if there are still players on the server.
+}}
+{{TankNav|special}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Arena Closer
+|fr     = Arena Closer
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Arena Closer
+|pt-br  = Arena Closer
+|ru     = Arena Closer
+|sv     =
+|tr     = Arena Closer
+|vi     = Arena Closer
+|zh     = 伺服器清除者
+}}
+[[Category:Diep.io]]

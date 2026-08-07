@@ -1,0 +1,127 @@
+= Auto 3 =
+
+{{Infobox
+|image     = <gallery>
+auto 3 icon 4.png|New Colors
+auto 3 icon 3.png|Old Colors
+auto 3 icon 2.png|Old Name
+auto 3 icon 1.png|Nameless
+</gallery>
+|tier      = 3
+|previous  = [[File:Flank guard icon new.png|50px|link=Flank Guard]]
+|next      = [[File:Auto 5 icon new blue.png|50px|link=Auto 5]]
+[[File:Auto gunner icon new blue.png|50px|link=Auto Gunner]]
+|barrel    = [[Auto Turrets]] (3)
+|id        = 41
+}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Flank Guard]] at level 30 and upgrades to the [[Auto 5]] and [[Auto Gunner]] at level 45. It was released unnamed on August 2, 2016, and was later named on August 5, 2016.
+
+== Design ==
+The Auto 3 features a circular body with three [[Auto Turrets]] spaced at 120-degree angles around the tank. These turrets slowly move with the tank whether it’s moving or not, similar to the [[Auto Smasher]], Auto Gunner, [[Auto Trapper]], and Auto 5’s turrets.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▲
+|BulletPenetration = —
+|BulletDamage      = ▼▼
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Bullet Size
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▼
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+The Auto 3 has 3 Auto Turrets that are automatic and fire at anything in its view range. The [[Bullets]] will prioritize tanks over [[Polygons]] or [[Crashers]]. They are twice as weak as the Flank Guards'. Turning on [[Auto Fire]] will allow you to control the turret closest to your cursor. Each turret has a 120° field of view, meaning only a maximum of 2 turrets can fire at a single enemy, and moving your cursor around the tank with Auto Fire on changes which turret you control. Turrets can also be controlled by clicking and holding. Holding Shift or Right Click will make the 1-2 closest turrets point away from the cursor. The turret’s range is slightly greater than the player’s field of vision. For both this tank and the Auto 5, Auto Spin is automatically on.
+
+The stats are as follow: 
+
+* Bullet Speed: 1.2x Tank
+* Bullet Damage: 3.5 (+1.5 for each point in Bullet Damage)
+
+== Strategies ==
+*<b>Strong Against:</b> Multiple low-level tanks, low RoF tanks.
+*<b>Weak Against:</b> High RoF tanks, fast melee classes, [[Drone]] classes.
+
+=== As the Auto 3 ===
+*When using the Auto 3, it is advised to take caution, because the tank is relatively weak (however the high penetration can be exploited). In [[2 Teams]] and [[4 Teams]], it is highly recommended to stay close to teammates, since this tank is best used as a support role. It is also a very good tank for farming because the cannons are automatic and will shoot at any polygon within their FOV.
+*The Auto 3 is very weak against bullet spammers and multiple tanks at once, since it shoots a limited amount of bullets. Because of this, it is recommended to avoid tanks listed in the "Weak Against" section.
+*If the player is skilled enough, they can use this tank to farm at the [[Pentagon Nest]] as long as they can keep the Crashers away.
+*The player can use the Auto Turrets to their advantage since they have a larger FOV than the player, meaning they can detect enemies before the player can.
+
+=== Against the Auto 3 ===
+*When fighting the Auto 3, players should shoot into gaps between the [[Auto Turrets]]. Since it always has Auto Spin on, it cannot keep its Cannons shooting towards the player's Bullets efficiently.
+*High DPS tanks, like the [[Twin]] or [[Machine Gun]] branch, should not have any problem killing an Auto 3. If you have good penetration and damage, you may easily out-penetrate it's weak firepower and hit them in the gaps between the turrets.
+*Fast ramming tanks are very strong against the Auto 3 and can easily charge through the Auto 3's firepower and collide into the Auto 3, killing it. The Auto 3's bullets, even with maximum penetration and damage cannot stop a ramming tank that easily so you may reach the Auto 3 with only little damage before ramming.
+*As a tank in the [[Overseer]] branch, don't hesitate if you come to fighting an Auto 3 and try to claw the Auto 3 in the gaps between it's [[Auto Turrets]] where the weak spots are and kill it without any problem.
+
+== [[Achievements]] ==
+{{SideBox|* '''Can’t bother using both hands to play?''' - Upgrade to Auto 3
+|{{Achievement
+|Color = #6897FC
+|Name = Can't bother using both hands to play?
+|Description = Upgrade to Auto 3}}}}
+
+== History ==
+*The Auto 3 came from the [[Auto 4]], a tank that existed for a short time and was then split into the Auto 3 and the [[Auto 5]].
+*Previously, the Auto 3's AI could not attack [[Polygons]] or Drones.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/yYQ1gcL 1.06m by Knockout]
+* 2 Teams: 2.05m by Trix
+* 4 Teams: [https://www.youtube.com/watch?v=3H39BMAMZok 2.31m by JustVibin]
+* Maze: [https://web.archive.org/web/20230422092502/https://www.youtube.com/watch?v=5HZIWWI9-JY 427k by Astral]
+
+=== Mobile ===
+
+* FFA: 562.5k by Athu
+* 2 Teams: 515k by Moonlight
+* 4 Teams: 1.17m by buh
+* Maze: - 14,430 by Qwasda
+
+== Trivia ==
+*[[Auto 3]], along with the [[Hybrid]], [[Overtrapper]], [[Auto Gunner]], [[Auto Trapper]], [[Auto Smasher]], and [[Auto 5]] are the only tanks that use AI-controlled weapons.
+*This is one of the six tanks that automatically have auto-spin activated, the others being the [[Landmine]], Auto 5, [[Smasher]], [[Spike]], and [[Auto Smasher]].
+*If you enable the Auto Spin function, it won’t affect the base Auto Spin speed. However, the tank will spin on the minimap faster than it does for real in the game.
+*Auto 3 on the upgrade button is not centered.
+*Its [[Auto Turrets]] do little recoil when firing, with the direction of where they are facing affects the direction of the recoil. This is also the same with [[Auto 5]].
+*Auto 3 is the first tank to be split from another tank: [[Auto 4]], which was split into {{PA}} and [[Auto 5]].
+
+== Gallery ==
+<gallery type="slideshow" position="left">
+Diep9.png|An Auto 3 in TDM with a [[Twin Flank]].
+Auto_3-0.png|A red Auto 3 shooting. Notice that the guns are at different angles.
+Auto3InGame.png|An Auto 3 in [[Free For All|FFA]].
+auto 3 icon new 1.png|New colors, nameless
+</gallery>
+[[File:Invert3.jpg|left|thumb|119x119px|Inverted new colors, nameless]]
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Auto 3
+|es     = Auto 3
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Auto 3
+|pt-br  =
+|ro     =
+|ru     = Auto 3
+|sv     =
+|tr     =
+|vi     = Auto 3
+|zh     = Auto 3
+}}
+[[Category:Diep.io]]
+[[Category:Auto Tanks]]

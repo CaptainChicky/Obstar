@@ -1,0 +1,3 @@
+= Triangles =
+
+#REDIRECT [[Triangle]]

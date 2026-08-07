@@ -1,0 +1,346 @@
+= Tiers =
+
+{{Merge|Upgrades|Tiers are a construction based off of the upgrade system and isn't universal outside of tanks. Info from this page will most likely overwrite info on the Upgrades page.}}
+
+[[File:Final_Tier1.png|thumb|300px|The official class tree as of February 12th, 2025. The class tree can be opened in game by pressing Y on the keyboard in Diep.io.]]
+
+{{PA}} are separate [[tanks|Tank Classes]], organized with the characteristics of their weapon(s).
+
+Tiers are represented in the Class Tree, shown on the picture to the right, as a series of concentric rings containing every tank in the game. It can be displayed in-game by [[Controls|holding the Y key]]. In the direct center of the Class Tree is the player's tank, which is Tier 1. The first ring contains Tier 2 (Level 15) tanks, the second ring contains Tier 3 (Level 30) tanks, and the outermost ring contains Tier 4 (Level 45) tanks. Areas shaded black on the tree indicate an unavailable [[Upgrades|Upgrade]] in that tier; for example, the player must press ignore once after the [[Basic Tank]] to get to the [[Smasher]].
+
+There is a recurring pattern of colors in the upgrade selection menu and the Class Tree. The first tank in an upgrade branch will always have a <span style="color: #8efffb; font-weight: bold;">light blue</span> background. The second tank will be <span style="color: #b3ff8e; font-weight: bold;">green</span>. The third tank will be <span style="color: #ff8e8e; font-weight: bold;">red</span>. The fourth tank will be <span style="color: #ffeb8e; font-weight: bold;">yellow</span>. The fifth will be <span style="color: #8eb2ff; font-weight: bold;">dark blue</span>. This is only used for [[Smasher]], [[Battleship]], [[Auto Trapper]], and [[Glider]]. The sixth option will be <span style="color: #b58eff; font-weight: bold;">purple</span>. The [[Factory]], [[Auto Tank (tank)|Auto Tank]] and [[Firework]] are currently the only tanks with this color. The color order can also be found in the tank’s [[Stats|Stat]] buttons, which are color-reversed compared to the pattern in the class tree. The game mode selection buttons and colored [[Achievements]] list also use this pattern. Regardless of speculation, these colors do not seem to represent anything other than a simple order pattern to more easily distinguish tanks apart when quickly selecting an upgrade for now.
+
+== Tier 1: Level 1 ==
+{| style="margin: auto; text-align: center;"
+|[[File:tank icon 3.png|left|100px|link=Tank]]
+|<b>[[Tank]]</b><br />The tank that the player starts with in Diep.io. The player has one [[Cannons|Cannon]] that can destroy [[Square]]s in two hits, [[Triangle]]s in five, and [[Pentagon]]s in 22 with no additional Stats. The health, Bullet, and movement Statistics are average and can be upgraded as they gain more points upon destroying [[Polygons]] and killing other players.
+|}
+
+== Tier 2: Level 15 ==
+Upon reaching <b>Level 15</b>, the player may choose to upgrade to one of these <b>Tier 2</b> specializations, four in total, or ignore them to get to the [[Smasher]] at level 30 or the [[Auto Tank (tank)|Auto Tank]] at level 45.
+
+=== Tank Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:twin icon 3.png|100px|link=Twin]]
+|<b>[[Twin]]</b><br />Choosing the Twin class grants an extra frontal Cannon while bullet power is slightly reduced. The high rate of fire increases the recoil.
+|-
+|[[File:sniper icon 4.png|100px|link=Sniper]]
+|<b>[[Sniper]]</b><br />Choosing the Sniper Class grants a broader field of view allowing the player to see further. Bullet Speed is also increased, increasing the bullet's distance. However, Reload speed decreases noticeably. Damage is not increased.
+|-
+|[[File:machine gun icon 4.png|100px|link=Machine Gun]]
+|<b>[[Machine Gun]]</b><br />The Machine Gun sprays its Bullets from a trapezoid on the front. It fires double the rate of a basic tank, the same rate of the Twin. It is less accurate but it covers a wider area. Bullet damage is slightly higher than the twin but less than the basic.
+|-
+|[[File:flank guard icon 3.png|100px|link=Flank Guard]]
+|<b>[[Flank Guard]]</b><br />Choosing the Flank Guard class adds a Cannon on the rear. This allows the player to shoot in both directions to defend their back. Because both Cannons have identical Recoil, the Flank Guard effectively has no recoil.
+|}
+
+== Tier 3: Level 30 ==
+Upon reaching <b>Level 30</b>, the player may choose to upgrade to one of these <b>Tier 3</b> specializations (twelve in total, of which two have 2 different paths to upgrade from):
+
+=== Twin Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:triple shot icon 4.png|100px|link=Triple Shot]]
+| colspan="2" |<b>[[Triple Shot]]</b><br />Choosing the Triple Shot class adds another Cannon and spreads the guns across the front. Triple Shot can cover a wide area with Bullets, but direct firepower is significantly decreased. Recoil will propel the player backward.
+|-
+|[[File:quad tank icon 4.png|100px|link=Quad Tank]]
+| colspan="2" |<b>[[Quad Tank]]</b><br />The Quad Tank has four guns spread over its sides like a plus sign allowing the player to fire Bullets in 4 directions. Direct firepower is significantly less than before. Recoil is nullified. Also upgrades from the Flank Guard.
+|-
+|[[File:twin flank icon 3.png|100px|link=Twin Flank]]
+| colspan="2" |<b>[[Twin Flank]]</b><br />The Twin Flank mirrors the Twin’s guns to the rear, adding an extra defense to the back. Recoil also nullified. Also upgrades from the Flank Guard.
+|}
+
+=== Sniper Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:assassin icon 2.png|100px|link=Assassin]]
+| colspan="3" |
+<b>[[Assassin]]</b><br />Choosing the Assassin class further improves upon the Sniper’s vision. The Field of view increases at the cost of slower Reload speed.
+|-
+|[[File:overseer icon 3.png|100px|link=Overseer]]
+| colspan="3" |<b>[[Overseer]]</b><br />The Overseer has Spawners that generate [[Drones]] instead of shooting Bullets. Holding the left mouse button, holding "Space", or pressing “E” causes the Drones to follow the player's cursor, while the right mouse button or "Shift" sends all Drones away from the cursor's current location, allowing for manual control. Otherwise, the Drones surround the player and fly out to attack nearby Polygons. Overseers have a maximum of eight Drones.
+|-
+|[[File:hunter icon 2.png|100px|link=Hunter]]
+| colspan="3" |<b>[[Hunter]]</b><br />The Hunter houses a smaller gun inside of its main Cannon and fires in a two-round burst.  The field of view increases slightly.
+|-
+|[[File:trapper icon 2.png|100px|link=Trapper]]
+| colspan="3" |<b>[[Trapper]]</b><br />The Trapper replaces the Sniper’s Cannon with a [[Launcher]] that fires [[Traps]] that have tremendous penetration. A Launcher’s range is much shorter than a Cannon’s range as the traps completely stop moving after a second. This creates a protective wall that can stop enemy bullets or block an area. it is advised to stay as a sniper or the basic until level 45 due to the difficulty of farming as the Trapper.
+|}
+
+=== Machine Gun Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:destroyer icon 4.png|100px|link=Destroyer]]
+|<b>[[Destroyer]]</b><br />The Destroyer features a massive, slow-firing Cannon that delivers a single giant Bullet with each shot. Firing the Cannon creates a high amount of recoil. With enough points in Bullet stats, it can penetrate a wall of bullets and still have enough power to one-shot a tank.  The Destroyer branch has the strongest level 45 ammunition in the game. The bullet is close to 6 times stronger than most medium-sized bullets and is difficult to stop.
+|-
+|[[File:gunner icon 3.png|100px|link=Gunner]]
+|<b>[[Gunner]]</b><br />The Gunner rapidly fires small Bullets in a straight path from four frontal miniguns. Reload speed doubles at the cost of decreased damage. Recoil is reduced significantly. The small bullets can bypass enemy defenses and chip away at their health.
+|-
+|[[File:Shotgun icon old.png|100x100px]]
+|'''[[Shotgun]]'''<br />The Shotgun fires 12 bullets at a high speed that slowly spread out as they travel. Each individual bullet is fairly weak on its own, but the clump of them can deal significant damage. Recoil is increased.
+|}
+
+=== Flank Guard Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:tri-angle icon 4.png|100px|link=Tri-Angle]]
+| colspan="3" |<b>[[Tri-Angle]]</b><br />The Tri-Angle features two rear Cannons positioned to provide additional thrust when fired. The Tri-Angle can propel itself with recoil while shooting from the front. The rear bullets are about four to five times weaker than the front cannon bullets, making them one of the weakest bullets in the game and giving them a very poor bullet size to damage ratio.
+|-
+|[[File:quad tank icon 4.png|100px|link=Quad Tank]]
+| colspan="3" |<b>[[Quad Tank]]</b><br />The Quad Tank has four guns spread over its sides, allowing the player to fire Bullets in all directions. Direct firepower is significantly less than before. Recoil is disabled. Also upgrades from the Twin.
+|-
+|[[File:twin flank icon 3.png|100px|link=Twin Flank]]
+| colspan="3" |<b>[[Twin Flank]]</b><br />The Twin Flank adds an extra Cannon in the front and the rear to the Flank Guard. Recoil is disabled. Also upgrades from the Twin.
+|-
+|[[File:Auto_3_icon_4.png|100px|link=Auto 3]]
+| colspan="3" |<b>[[Auto 3]]</b><br />The Auto 3 features three [[Auto Turrets]] mounted on the side. The tank constantly rotates slowly while its turrets automatically track and fire at the closest entities. The turrets can be manually controlled to an extent; holding down the left mouse button will target the cursor with one or two turrets based on their position. Holding down the right mouse button will make the turrets face away from the cursor.
+|}
+
+=== Tank Upgrades ===
+<i><b>Note:</b> This requires [[Tanks|players]] to stay as a Basic Tank until at least Level 30.</i>
+{| style="margin: auto; text-align: center;"
+|-
+|[[File:smasher icon 3.png|100px|link=Smasher]]
+|<b>[[Smasher]]</b><br />The Smasher is a dedicated ramming tank. Choosing the Smasher removes cannons and all Bullet upgrade options and allows the tank to hold ten upgrades in each body upgrade slot instead of seven. The field of view also increases to sniper level. Any points put into bullets are refunded for use in the now available slots upon upgrading. The only available slots in order from the top down are Max Health, Health Regen, Body Damage, and Movement Speed. 
+|}
+
+== Tier 4: Level 45 ==
+Upon reaching <b>Level 45</b>, the player may select one of these <b>Tier 4</b> specializations. This is the final tier that most tanks can reach and is also the final level that any player can reach unless they press H in [[Domination]] game mode to become the [[Dominator]], which is fixed at Level 75 or press H in [[Mothership (Game Mode)|Mothership]] game mode to become the [[Mothership (Tank)|Mothership]], which is fixed at Level 140. There are thirty-three in total, of which five have 2 different upgrade paths and two have 3 paths, making a total of forty-two tanks appear in the outermost ring of the Class Tree.
+
+=== Triple Shot Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:triplet icon 3.png|100px|link=Triplet]]
+| colspan="2" |<b>[[Triplet]]</b><br />
+The Triplet has an extra Cannon compared to the Twin, which significantly increases its firing rate, and it is one of the fastest shooters in the game. It is recommended for a level 30 Twin to avoid upgrading to Triple Shot until getting to level 45, as a Triple Shot's Bullets are very spread out and have little direct firepower. The triplets' bullets are actually slightly weaker than a twins' bullets to balance out the tanks' high firepower.
+|-
+|[[File:penta shot icon 3.png|100px|link=Penta Shot]]
+| colspan="2" |<b>[[Penta Shot]]</b><br />The Penta Shot can fire 5 Bullets at a rapid speed. It will shoot the whole area in front of the tank with a barrage of Bullets, similarly to the Octo Tank, although the guns are much closer together and only shoots in front of the tank. It has very high recoil.
+|-
+|[[File:spread shot icon 2.png|100px|link=Spread Shot]]
+| colspan="2" |<b>[[Spread Shot]]</b><br />A class with <i>eleven Cannons!</i> The Spread Shot shoots these simultaneously and, as its name implies, generates a massive “spread” of Bullets which have surprisingly high Penetration. The center Cannon fires a normal-sized Bullet (similar to the basic tanks' bullet), while the other ten Cannons fire gunner bullets. It has almost no recoil.
+|}
+
+=== Quad Tank Upgrades ===
+{| style="margin: auto; text-align: center;"
+|-
+|[[File:octo tank icon 3.png|100px|link=Octo Tank]]
+|<b>[[Octo Tank]]</b><br />The Octo Tank allows the player to shoot in 8 directions, with each Cannon being equidistantly spaced from the others. This results in a storm of Bullets that spread throughout the area. The cannons shoot in an alternating pattern of four opposite cannons in a cross shape at once then the other four. The player can press C to turn on auto spin for even bullet distribution all around.
+|-
+|[[File:Auto_5_icon_5_green.png|100px|link=Auto 5]]
+|<b>[[Auto 5]]</b><br />The Auto 5 upgrades from the Quad Tank getting one more gun and replacing all Cannons with Auto Turrets. The player can control 2-3 Turrets and have more firepower. The Turrets can’t rotate as much, though. Also upgrades from the Auto 3.
+|}
+
+=== Twin Flank Upgrades ===
+{| style="margin: auto; text-align: center;"
+|-
+|[[File:triple twin icon 3.png|100px|link=Triple Twin]]
+|<b>[[Triple Twin]]</b><br />The Triple Twin allows the player to have three sets of Twin Cannons, each set spaced at an equal distance away from the others. This will spread the Bullets in a fashion similar to the Octo Tank. Although it is not as spread out, the direct firepower is significantly greater.
+|-
+|[[File:battleship icon 2 green.png|100px|link=Battleship]]
+|<b>[[Battleship]]</b><br />The Battleship replaces all of the player's Cannons with Mini Spawners that pump out Drones at an extremely fast rate. Half the drones are manually controlled, and half are auto-controlled. However, Drones automatically disappear 4 seconds after spawning. These drones are also known as Partisans. Also upgrades from the Overseer.
+|}
+
+=== Assassin Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:ranger icon 3.png|100px|link=Ranger]]
+|<b>[[Ranger]]</b><br />The Ranger is exactly like the Assassin, except that its Field of View is larger than those of the Assassin and the Stalker. It has the highest vision range of any tank and requires great skill to land shots from afar.
+|-
+|[[File:stalker icon 3.png|100px|link=Stalker]]
+|<b>[[Stalker]]</b><br />The Stalker has a special ability: Stealth. The Stalker can turn invisible when it is immobile and has not fired any Bullets for about 2 seconds. While invisible, the player can still be damaged. When damaged, the tank is unveiled slightly, causing the tank to be visible. Should the Stalker move away, the invisibility cloak will completely drop. It is advised that as soon as an enemy notices you after getting hit by a bullet or polygon to move away or fire back immediately because even the tiniest contact will make you visible for a moment.
+|}
+
+=== Overseer Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:overlord icon 2.png|100px|link=Overlord]]
+| colspan="4" |<b>[[Overlord]]</b><br />Same as the Overseer, but now has four Spawners in which the Drones will spawn. The maximum of eight remains the same, but the Reload is essentially doubled. The core reload stat, however, does not change.
+|-
+|[[File:necromancer icon 2.png|100px|link=Necromancer]]
+| colspan="4" |<b>[[Necromancer]]</b><br />The player now loses all ability to fire any sort of projectile. Instead, the player must “infect” a nearby Square using the tank’s body. That Square can infect other Squares, and so on until they can have a maximum army of up to 36 Squares (at Max [[Stats#Reload|Drone Count]]).<br />Reload turns into Drone Count, which increases max Drone Count by 2 per upgrade. These deadly Squares do less damage than the Overseer/Overlord’s Drones, but their vast number and sheer force can overwhelm opponents.
+|-
+|[[File:manager icon 2.png|100px|link=Manager]]
+| colspan="4" |<b>[[Manager]]</b><br />The player now loses one Spawner, leaving only one remaining. This is mitigated somewhat since the sole Spawner produces Drones almost twice as fast, and eight Drones is still the cap. The Manager is also able to turn [[Invisibility|invisible]], similar to the Stalker and the Landmine.
+|-
+|[[File:overtrapper icon 3 yellow.png|100px|link=Overtrapper]]
+| colspan="4" |<b>[[Overtrapper]]</b><br />The Overtrapper now has two controllable drones and two uncontrollable drones, and a trap placer in front. Despite having less drones than the Overseer. Also upgrades from Trapper
+|-
+|[[File:battleship icon 2 dblue.png|100px|link=Battleship]]
+| colspan="4" |<b>[[Battleship]]</b><br />The Battleship replaces all of the player's Cannons with Mini Spawners that pump out s Drones at an extremely fast rate. Half the drones are manually controlled, and half are auto-controlled. However, Drones automatically disappear 4 seconds after spawning. These drones are also known as Partisans. Also upgrades from the Twin Flank.
+|-
+|[[File:factory icon 4.png|100px|link=Factory]]
+| colspan="4" |[[Factory|<b>Factory</b>]]<br />Instead of spawning Drones, this tank will spawn a maximum of 6 [[Drones#Factory Drones|Minions]], all of which follow the cursor when either the fire button or E is pressed ([[Auto Fire]]). Its appearance is nearly identical to that of a Necromancer, the only difference being the amount of Spawners. There is also a slight chance that newly spawned players will spawn out of one (teammate only), making it the only way to spawn outside of a base in team modes.
+|}
+
+=== Hunter Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:predator icon 3.png|100px|link=Predator]]
+|<b>[[Predator]]</b><br />The Predator adds a third Cannon to the top of the tank and also gives it a unique ability where if the player holds right-click, they can focus their vision farther in the direction they are facing. The zoom screen doesn’t move with the player, though, so it is advised to zoom wisely! This tank is a combination of the old two-Cannon Predator and the [[X Hunter]]. Its Bullets have high damage stats. The distance of zoom is customizable. If the player clicks while the mouse pointer is way away, they will zoom a lot. If the pointer is close, they will not zoom as much.
+|-
+|[[File:streamliner icon 2 green.png|100px|link=Streamliner]]
+|<b>[[Streamliner]]</b><br />The Streamliner replaces all Cannons with five short overlapping Cannons. They all fire one after another extremely quickly making for a pseudo-laser of Gunner Bullets. Also upgrades from Gunner.
+|}
+
+=== Trapper Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:tri-trapper icon 2.png|100px|link=Tri-Trapper]]
+| colspan="4" |<b>[[Tri-Trapper]]</b><br />The Tri-Trapper has tripled Trap production, faster Reload, but shorter Trap lifespan. It is nearly a purely defensive tank and is best utilized to provide cover for teammates.
+|-
+|[[File:gunner trapper icon 5.png|100px|link=Gunner Trapper]]
+| colspan="4" |<b>[[Gunner Trapper]]</b><br />A unique combination of the Trapper and the Gunner. The two Cannons now point towards the player's mouse and the Launcher at the back now faces the opposite. It launches medium-sized Traps with the properties of regular ones. The Gunner Cannons have half the Reload but very high Penetration in return. Also upgrades from the Gunner.
+|-
+|[[File:overtrapper icon 3 red.png|100px|link=Overtrapper]]
+| colspan="4" |<b>[[Overtrapper]]</b><br />It’s a Trapper with two AI Drones and two Manual Drones. This deadly combination can make this tank difficult to approach for non-snipers. Also upgrades from the Overseer.
+|-
+|[[File:mega trapper icon 4.png|100px|link=Mega Trapper]]
+| colspan="4" |<b>[[Mega Trapper]]</b><br />It makes the Launcher twice as large and makes it shoot Mega Traps, the second most powerful level 45 ammunition in the game. The Mega Trapper has lower Reload than the base Trapper, however, and shorter Trap lifespan.
+|-
+|[[File:auto trapper icon 2.png|100px|link=Auto Trapper]]
+| colspan="4" |<b>[[Auto Trapper]]</b><br />A Trapper with an uncontrolled Auto Turret on top. The Turret is powerful, has free rotation, and is deadly effective when combined with the defensive nature of the Trapper.
+|}
+
+=== Destroyer Upgrades ===
+{| style="margin: auto; text-align: center;"
+|-
+|[[File:hybrid icon 3.png|100px|link=Hybrid]]
+|<b>[[Hybrid]] </b><br />The Hybrid is a mix of the [[Overseer]] and the [[Destroyer]]. It has a Spawner at the back of the tank, with a maximum of two uncontrollable Drones. Then, of course, there’s the Destroyer Cannon.
+|-
+|[[File:annihilator icon 2.png|100px|link=Annihilator]]
+|<b>[[Annihilator]]</b><br />Its [[Bullets|Bullet]] is larger than its predecessor's. It also has increased recoil and the same Reload. Its Bullet Damage is higher than the Destroyer’s.
+|-
+|[[File:skimmer icon 3.png|100px|link=Skimmer]]
+|<b>[[Skimmer]] </b><br />A similar design to the Hunter but with wider Cannons, this tank has a [[Cannons|Deployer]] and shoots a Destroyer Bullet with two small cannons that are positioned 180 degrees apart. However, the main Bullet’s damage is significantly decreased. These bullets are known as [[missiles]]. As of now, only the Skimmer, the Rocketeer and the Glider use missiles.
+|-
+|[[File:rocketeer icon 1.png|100px|link=Rocketeer]]
+|<b>[[Rocketeer]] </b><br />The Rocketeer fires bullets that have a [[Machine Gun]] [[Barrel]] on it's back, propelling the bullet forward with a slight inaccuracy due to the machine gun cannon’s nature. The Rocketeer missile is the most penetrating projectile in the game.
+|-
+|[[File:glider icon 1.png|100px|link=Glider]]
+|<b>[[Glider]] </b><br />The Glider fires bullets that have two smaller [[Barrels]] on its back that are 35 degrees apart. This bullet used to be used by the [[Skimmer]].
+|-
+|[[File:Firework icon.png|100x100px]]
+|<b>[[Firework]] </b><br />The Firework fires bullets that have a smaller [[Barrels]] on its back. The bullet detonates in 16 small bullets at its end of lifespan or upon using right-click.
+|}
+
+=== Gunner Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:auto gunner icon 4 blue.png|100px|link=Auto Gunner]]
+| colspan="2" |<b>[[Auto Gunner]]</b><br />A Gunner with an uncontrolled Auto Turret on top. The Turret has free rotation, has an extended FOV, and is surprisingly powerful. Following where this Turret fires can help the player to notice tanks that would normally not be visible to them. Also upgrades from the Auto 3.
+|-
+|[[File:gunner trapper icon 5.png|100px|link=Gunner Trapper]]
+| colspan="2" |<b>[[Gunner Trapper]]</b><br />A unique combination of the Trapper and the Gunner. The two Cannons now point towards the player's mouse and the Launcher at the back now faces the opposite. It launches medium-sized Traps with the properties of regular ones. The Gunner Cannons have half the Reload but insane Penetration for what they are. Also upgrades from the Trapper.
+|-
+|[[File:streamliner icon 2 red.png|100px|link=Streamliner]]
+| colspan="2" |<b>[[Streamliner]]</b><br />The Streamliner replaces all Cannons with five short overlapping Cannons. They all fire one after another extremely quickly making for a pseudo-laser of Gunner Bullets. Because it also stems from the hunter in the sniper upgrade branch, it has vision range equal to that of the hunter.
+|}
+
+=== Shotgun Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:Pellet Shot icon.png|100x100px]]
+|[[Pellet Shot|'''Pellet Shot''']]<br />A Shotgun that fires a cluster of 30 bullets at a high speed. FOV is increased, allowing better ambush capabilities.
+|-
+|[[File:Dual-Barrel Shot icon.png|100x100px]]
+|'''[[Dual-Barrel]]'''<br />A combination of Twin and Shotgun. Each barrel fires a cluster of 12 bullets, similar to its predecessor. The second barrel is fired via right-click, allowing for more flexibility and strategies.
+|}
+
+=== Machine Gun Upgrades ===
+<i>Note: This requires players to stay as a Machine Gun until <b>Level 45</b>.</i>
+{| style="margin: auto; text-align: center;"
+|-
+|[[File:sprayer icon 4.png|100px|left|link=Sprayer]]
+|<b>[[Sprayer]]</b><br />The Sprayer gains a secondary Cannon in the center of the large Cannon, which shoots Gunner Bullets at about half the Reload of the larger Cannon, albeit much more accurate. The Sprayer also has increased recoil and increased rate of fire when compared to the Machine Gun. It fires in a sequence of 3 Bullets where it shoots 1 normal-sized Bullet and then shoots another normal and 1 smaller Bullet simultaneously. The larger Bullet is as strong as a Machine Gun bullet, and the small one is seven times weaker. However, the big Cannon is wider and therefore less accurate, though the small cannon is not wide (and so, very accurate, just at the cost of doing significantly less Damage).
+|}
+
+=== Tri-Angle Upgrades  ===
+{| style="margin: auto; text-align: center;"
+|[[File:booster icon 3.png|left|100px|link=Booster]]
+|<b>[[Booster]]</b><br />This Tri-Angle upgrade adds 2 extra guns on the back allowing faster movement from recoil.
+|-
+|[[File:fighter icon 3.png|left|100px|link=Fighter]]
+|<b>[[Fighter]]</b><br />This variant of the Tri-Angle has two extra guns on the sides for better defense and offense. The side cannons have damage in between that of the front cannon and the back cannon.
+|}
+
+=== Auto 3 Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:Auto_5_icon_5_blue.png|100px|link=Auto 5]]
+|<b>[[Auto 5]]</b><br />Upon upgrading from the Auto 3, the Auto 5 receives two additional Auto Turrets. The player can now control 2-3 guns at a time and utilize more firepower. The Turrets cannot rotate a full 360 degrees. Also upgrades from the Quad Tank.
+|-
+|[[File:auto gunner icon 4 green.png|100px|link=Auto Gunner]]
+|<b>[[Auto Gunner]]</b><br />A Gunner with an uncontrolled Auto Turret on top. The Turret has free rotation, has an extended FOV, and is surprisingly powerful. Following where this Turret fires can help the player to notice tanks that would normally not be visible to them. Also upgrades from the Gunner.
+|}
+
+=== Smasher Upgrades ===
+{| style="margin: auto; text-align: center;"
+|[[File:landmine icon 3.png|100px|link=Landmine]]
+| colspan="2" |<b>[[Landmine]]</b><br />A Smasher which can become [[Invisibility|invisible]] while not moving or taking damage for a full thirteen seconds. Due to the extended time required to become fully invisible, and the quickness with which it can be dispelled, it is strongly advised to use this tank with caution. The tank is made of two spinning hexagons, with one spinning half as fast.
+|-
+|[[File:auto smasher icon 2.png|100px|link=Auto Smasher]]
+| colspan="2" |<b>[[Auto Smasher]]</b><br />The controllable Auto Turret on top is the same as the Auto Gunner’s and the Auto Trapper’s, and this tank potentially deadly if enough points are spent on Bullet upgrades or [[Stats#Body Damage|body]] upgrades, but at the expense of either defense or an effective turret respectively. This tank is the only tank to have 10 upgrades for every stat.
+|-
+|[[File:spike icon 2.png|100px|link=Spike]]
+| colspan="2" |<b>[[Spike]]</b><br />The [[Spike]] only increases [[Stats#Body Damage|Body Damage]]. It is the toughest tank in the game and will always defeat enemy rammers other than another spike. Its hull looks like 12 triangles evenly spaced out. 
+|}
+
+=== Tank Upgrades ===
+<i><b>Note:</b> This requires [[Tanks|players]] to stay as a Basic Tank until Level 45.</i>
+{| style="margin: auto; text-align: center;"
+|[[File:auto tank icon 1.png|left|100px|link=Auto Tank]]
+|<b>[[Auto Tank]]</b><br />The Auto Tank is an upgraded version of the Basic Tank which adds an auxiliary [[Auto Turrets|Auto Turret]] mounted on top of the Tank's body as secondary defense.
+|}
+
+== Removed Upgrades ==
+These Classes existed at one point in the game, but have since been replaced or removed altogether.
+{| style="margin: auto; text-align: center;"
+|[[File:mega smasher icon 1.png|100px|link=Mega Smasher]]
+| colspan="4" |[[Mega Smasher|<span style="color: #AFAFAF; font-weight: bold; font-style: italic;">Mega Smasher</span>]]<br /><span style="font-size: 9pt; font-weight: bold;">(From Smasher)</span><br />Back when the Smasher had knockback resistance instead of 10 upgrades as their special ability, this tank increased the knockback resistance. On August 7th, the knockback resistance bonus was replaced with the 10 Stat capacity bonus and thus this tank was removed.
+|-
+|[[File:predator 30 icon 1.png|100px|link=X Hunter]]
+| colspan="4" |[[Predator (ID 30)|<span style="color: #AFAFAF; font-weight: bold; font-style: italic;">Predator (ID 30)</span>]]<br /><span style="font-size: 9pt; font-weight: bold;">(From Hunter)</span><br />This version of Predator was the one that existed before it was merged with the [[Predator|X Hunter]]. It has the modern Predator's camera moving ability while having Hunter's two gun setup. In the game's source code, this Predator exists in the 30th ID slot. It existed from 11th July 2016 to 9th August 2016.
+|}
+
+==Special==
+These classes do not branch off anything, as they are either exclusive to certain [[Game Modes]], spawns only at certain times, or can be used only by the developer(s) of [[Diep.io]].
+{| style="margin: auto; text-align: center;"
+|[[File:arena closer icon 3.png|100px|link=Arena Closer]]
+| colspan="3" |<b>[[Arena Closer]]</b><br />The Arena Closer is a tank that can only be used by a player in Sandbox Mode. The Closer only spawns in when a game is outdated or has been won by a team. The Arena Closers are much bulkier and faster than normal tanks and can one-shot any player.
+|-
+|[[File:mothership icon 3.png|100px|link=Mothership (Tank)]]
+| colspan="3" |<b>[[Mothership (Tank)|Mothership]]</b><br />The Mothership is a tank that exists in the Mothership and Sandbox game mode. In Mothership game mode, players must defend their team's mothership and capture the opposing team's Mothership. The Mothership game mode is back instead of Tag mode.
+|-
+|[[File:destroyer dominator nav icon.png|100px|link=Dominator]]
+| colspan="3" |<b>[[Dominator]]</b><br />The Dominator is the only Tier 6 tank in the game, so it is special. However, it is only existent in the Domination game mode and cannot be obtained by upgrading; instead one will have to press H to control it.
+|-
+|[[File:id53 icon 2.png|100px|link=Ball]]
+| colspan="3" |<b>[[Ball|''"Ball"'']]</b><br />This nameless tank takes up the 53rd slot in the game's code. It is referred to as ID 53 or, more commonly, Ball. This tank is used as the default tank in the games code and is used in upgrade transitions and possessing [[Dominator]]s. At one point, this tank was used in the process of controlling [[Auto Turrets|Mounted Turrets]], but this feature no longer exists.
+|}
+<br />
+
+== Trivia == 
+*All Tier 4 tanks are 126-175 pixels wide.
+*The basic tank has a surprisingly strong bullet compared to other bullet shooting tank classes, only weaker than Trapper branch traps, Overseer branch drones, and Destroyer branch bullets.
+*If there were to be a seventh tank from a branch, the background color would be <span style="color: #fb8eff; font-weight: bold;">pink</span>, as shown by the Game Mode selection, the colored [[Achievements]] list and the reversed Stats colors. For an eighth, it would be <span style="color: #fdcead; font-weight: bold;">tan</span>. It is unknown what a ninth tank would be, but since the colors used by the achievements list cycle through the eight colors, it would most likely be <span style="color: #8efffb; font-weight: bold;">light blue</span>.
+*There was a running theory that the background color of the Upgrade icon corresponds to the base Stat debuff it gets, as it typically matches the color of the respective Stat bar. 
+**There are several issues with this:
+***If the background color were to depend on the tank’s Stat debuff, there wouldn’t be color variants, as seen in the [[Overtrapper]], [[Auto Gunner]], [[Streamliner]], and [[Battleship]], for example.
+***The Stat de-buffs aren’t necessarily true: For instance, the Battleship may have a dark blue background, but with its notoriously fast Drones, it certainly doesn’t get a de-buff to the Bullet/Drone Speed.
+****In general, the theory can be debunked with simple Sandbox testing.
+*Most of the fully removed tanks had a light blue upgrade background. The only removed tank with a different background color was the Auto 4.
+*These Stats are not changed upon upgrading to every tank (which means no buff or debuff): Health Regeneration, Movement Speed, Max Health.
+*The [[Auto 3]] and [[Gunner]] are the only Tier 3 tanks to have no Tier 4 upgrades exclusive to them. Strangely, both share an upgrade between them, the [[Auto Gunner]].
+*The [[Overseer]] and [[Destroyer]] have the most Tier 4 upgrades of all Tier 3 tanks, with 6 options. It is followed by the [[Trapper]] with 5 upgrades. All other Tier 3 tanks have only 2 or 3 Tier 4 upgrades.
+*The [[Battleship]] is the only Tier 4 tank capable of being upgraded to from 3 of the 4 Tier 1 tanks.
+*The [[Smasher]], [[Sprayer]], and [[Auto Tank (tank)|Auto Tank]] are currently the only three tanks that jump Tiers when being upgraded to; the Smasher and Sprayer can only be upgraded to by a tank 2 tiers lower than the upgrade's tier, and require the player to reach 30 levels past the previous upgrade's threshold, instead of 15. The Auto Tank upgrades straight from the basic tank and is the only tank to jump two Tiers.
+*There are fifty-four normal tanks in total: one Tier 1 tank, four Tier 2 tanks, thirteen Tier 3 tanks, and thirty-six Tier 4 tanks.<br />
+{{TankNav|tiers}}
+{{Interlang
+|status = checked
+|de     = Tiers
+|es     = Tanques
+|fr     =
+|hu     =
+|it     =
+|ja     = アップグレードツリー
+|ko     =
+|pl     = Tiers
+|pt-br  =
+|ro     =
+|ru     = Танки
+|sv     =
+|tr     = Aşamalar
+|vi     = Tiers
+|zh     = 坦克升級表
+}}
+[[Category:Diep.io]]

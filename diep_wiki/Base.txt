@@ -1,0 +1,81 @@
+= Base =
+
+[[File:Diepio2Teams.png|thumb|220x220px|Positioning in 2 Teams]]
+The {{PA|s}}, or <b>Spawns</b>, are the safe zones in [[Team Deathmatch]] (now [[2 Teams]] and [[4 Teams]] respectively) and [[Domination]] which are the places where the player spawns into the game. These zones are indicated by a translucent tint in the color of the player’s team.
+
+The Bases are protected by [[Base Drones]], fast little triangles (with 2,000 health points) that do a small amount of damage at a very fast rate.
+
+== Technical ==
+[[File:Diepio4Teams.png|thumb|220x220px|Quadrant base layout for 4 Teams modes.]]
+In all modes where Bases are present, the Zones are fatal to any enemy tanks and their bullets. All but the toughest of sniper [[Bullets]] will quickly fade into nothing at the edge of the shaded area. All enemy [[Drones]] will quickly be destroyed at the edge of the shaded area as well, although highly upgraded [[Traps]] will shimmer in the Base for a second or two before disappearing. The Base Drones do not target [[Arena Closer]]s, [[Crashers]], or {{CA|Polygon Bosses}}. The Base itself has no effect on the aforementioned [[Polygons|entities]], but the can deal damage on {{CA|Fallen Bosses}}, and the Base’s Drones will also target [[Bosses|Fallen Bosses]] for any reason. They will only attack Polygon Bosses if provoked.
+
+=== [[2 Teams]] ===
+In 2 Teams, there are two Bases for the blue and red team. The red and blue Bases are large Bases spanning the sides from the top to the bottom. The blue base is always on the left and red on the right.
+
+=== [[4 Teams]] ===
+In 4 Teams, there are four Bases. All four Bases will be on a corner. The blue team’s base is on the top left, the green team’s on the bottom left, the purple team’s on the top right and red team’s on the bottom right; as seen on the picture on the right.
+
+=== [[Domination]] ===
+[[File:Domination-0.png|thumb|220x220px|One of the positionings in Domination]]
+In Domination, the Bases randomly enclose two corners. The Bases in Domination see little action, as the [[Dominator]]s are the most important factor in the game mode. The Bases are identical to a 4 Teams game with only the red and blue teams. They still function just like in [[Team Deathmatch]], however, only you would not be able to shoot from one side to the other with a [[Booster]], as you would die or be stopped and expelled before reaching the center.
+
+The area immediately surrounding the [[Dominator|Dominators]] are colored like the Bases of the team that controls them but is not fatal to enemy tanks and projectiles like the actual Bases are.
+
+== Strategies ==
+[[File:New Guardians.png|thumb|220x220px|Evenly spaced pairs of Base Drones in 2 Teams.]]
+=== Defense ===
+When on the losing team, you should not leave the Base at all when there is heavy fire coming to the edge of the Base itself. Instead, you should travel down the base until you find a quiet area to level up.
+
+When low on health, it is best to retreat to a friendly Base. This is so players will never have a chance to instantly defeat you. Stay in the Base, because high FoV classes or fast classes may outwit the Base Drones and attack you.
+
+Go out of your Base to farm because few [[Polygons]] spawn in Bases, but stay near it in case of enemy intruders invade. If there are many Polygons in the Base, stay there and farm. But be careful, teammates may steal them while the player is unable to stop them.
+
+=== Offense ===
+At higher levels, it is an effective strategy to use your Base to not only protect your flank but as a means of retreat. Patrolling the area a short way away from the Base will allow you to attack careless enemies and retreat should you be overwhelmed. Flanking enemies and forcing them towards your Base is also an incredibly effective strategy, as they will be trapped between you and the Base. Be careful though, because if the Base Drones kills the enemy before you do, you will not receive any points.
+
+[[Necromancer]]s and, to a lesser degree, other tanks of the [[Overseer]] class, can influence the field without ever leaving the Base. By sending your [[Drones]] into the Base using the Right-Click or Shift key, you can harvest Polygons from the safety of your Base. Necromancers are especially effective at this because their Drones will replenish their number as they collide with [[Square]]s. With a high Drone Count, you can send your Drones out along the entire base and reap a sizable harvest from complete safety, only ending when you recall your Drones or when they die against the enemy Base. Indeed, you will be surprised at how many enemies you kill without even seeing them, as with so many Drones it is quite easy to accidentally kill weaker, damaged, or low health enemies. [[Overlord]]s are also effective at utilizing this strategy due to their fast reload time.
+
+Predators can utilize the Base to retaliate against enemies attempting to create spawn traps. Because of the Predator’s incredible range and changing Point of View, you can remain safely in the Base while you snipe any enemies foolish enough to try to block up your Base. Others of the [[Sniper]] class can utilize this strategy, but due to shorter ranges, they are less effective. [[Stalker]]s, however, can move to the edge of the area and become [[Invisibility|invisible]], allowing you to get closer while remaining relatively safe since you can easily retreat.
+
+== Trivia ==
+*In older versions of [[Team Deathmatch]], Bases occupied the corners opposite to each other, with Blue in the northwest corner and Red in the southeast.
+**[[Domination]] also featured a similar layout, but rather than making the bases into strips like in [[Team Deathmatch]], the Red and Blue Bases now randomly occupy either the North or South corners. Although, as always, Red will still occupy the East and Blue will still occupy the West.
+*Players defeated by the Base Drones from the opposite team’s Base will have their death screen stating: “You were killed by: <b>An unnamed tank</b>”, due to them not having any official name in-game.
+**This also applies to announcements when a Boss is defeated by a Spawn Base.
+*Physically entering enemy Bases will instantly kill lower-level tanks. However, Body Damage Builds such as the Booster experience an odd phenomenon before dying; they will begin shimmering and accelerating to extreme speeds as they are expelled from the Base. A [[Fighter]] with maximum Health, Body Damage, Movement Speed and Reload, if hitting the Base at full speed, will move halfway through it and be quickly expelled out the other side, grievously damaged.
+*There is a narrow grey area around any base where enemy tanks, bullets, and drones can move through without taking damage at all. However, it will activate all Base Drones in the range of the enemy tank and one wrong turn and you will perish immediately inside the colored area.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+===Patched or Removed Bugs===
+[[File:A Weird Map.gif|thumb|A Picture of what the “Ghost Bases” glitch looked like.]]
+*{{PC}} On October 7th, 2016, around 22:00<sup>[GMT - 5:00]</sup>, a few reports appeared regarding the sightings of ghost [[Base]]s in the [[Domination]] mode. Sometimes extra Bases could be seen as marked on the [[Map|mini-map]], but were not actually present.
+=== Bug Gallery ===
+<gallery>
+Domination twin bases glitch
+The bug happens again..
+</gallery>
+
+Bug: There would be a contested Dominator in the Blue base while the Arena Closers were closing the map. During this time, one of the contested Dominators would be missing from the map. The bug is very rare.
+}}
+{{Gameplay|feature}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Base
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     = База
+|sv     =
+|tr     =
+|vi     = Căn Cứ
+|zh     = 生成區
+}}
+[[Category:Diep.io]]

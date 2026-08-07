@@ -1,0 +1,172 @@
+= Domination =
+
+{{Mode
+|image         = Shooting trapper dominator.png
+|conditional?  = yes
+|closure       = All Dominators are controlled by one team.
+|button        = Domination MODE Icon UI.png
+|teams         = 2
+|bosses?       = yes
+|specials      = [[Dominator]]
+}}
+'''Domination''' is a [[Game Modes|Game Mode]] in [[Diep.io]] that is like [[2 Teams]], but with a win condition. Players start as level 1 tanks on either team's base. At opposite ends of the map and with only just one goal in mind. "Capture all four [[Dominator|Dominators]] before the other team does".
+
+== Gameplay ==
+The game mode is a faction type mini-game in which tanks of either team must attempt to seize all 4 [[Dominator|Dominators]], (huge level 75 tanks) to win the match. 
+
+All Dominators start with the NPC's team colors (yellow) and will be unable to damage polygons (and bosses) for as long as they are part of the NPC's team. They will come back to it every time that they are 'Contested'. When 'Captured' the Dominator's projectiles will despawn and its health will be replenished. Its colors change to the ones of the team that had dealt the final blow.
+
+Dominators will be able to change teams an infinite amount of times until the game ends. If Dominators are contested <i>after</i> the “X team has won notice” however, the game's result <i>won't</i> change.
+
+== Strategy ==
+Due to the XP multiplier present in this mode (x2 from entities in the NPC's team) — matches are relatively short-lived for tanks that can reach level 45 (and define the game) extremely quickly. 
+
+Thus it may best to look for a room that has just opened – as to assure you have time to reach level 45 and a chance to aid your team properly.
+
+As an [[Assassin]], [[Stalker]], [[Ranger]], [[Hunter]], or [[Predator]], one should focus on sniping the enemy tanks (for most of them sport [[Builds#Glass Cannons|Glass Builds]]), aiding tanks of their own team, and keeping the Dominator's capture as a second priority. Whilst their range can let them attack the Dominator without it fighting back, their DPS is relatively low and will be better used elsewhere.
+
+Players sporting [[Builds#Rammers|Rammer]] builds (along with tanks from the [[Smasher|Smasher branch]]) should also keep away from Dominators unless trying to deal a 'Capture-blow'. Whilst their momentum is relatively high, Dominators are immensely more durable, and colliding with them is thus suicide.
+
+High DPS tanks such as [[Sprayer|Sprayers]], [[Triplet|Triplets]], [[Auto Gunner|Auto Gunners]], [[Streamliner|Streamliners]] and [[Destroyer|Destroyers]] will be infinitely useful when contesting and defending Dominators, along with killing other users. They will, however, be vulnerable in Bullet-Hell. The sheer number of bullets coming at them from all sides will quickly defeat them, so you should always have a few support tanks to aid you and kill off enemies.
+
+High Burst-Damage tanks such as the [[Destroyer|Destroyer's]] and [[Overseer|Overseer's trees]] should prove extremely good for both - killing other users and dealing 'Capture-blows' - using their momentum to ensure the Dominator's control by getting the last hit.
+
+[[Trapper]] classes are amazing in this mode. They can both fortify Dominators on their team or support teammates by creating coverage in Bullet-Hell and/or ensure the Pentagon Nest's control. The [[Tri-Trapper]] is useful for fortifying Dominators, especially when there are multiple ones as it essentially means there is another Trapper Dominator protecting the current one.
+
+=== General tips ===
+*Farm alone, fight in packs: Three tanks that move in one direction can prove quite effective against enemies.
+*Try supporting tanks that could be valuable teammates, protect them when targeted by enemy tanks or weaken Alpha Pentagons for them. Every additional barrel you can get to support your side helps.
+*Unless you're a ramming class and a Dominator is very low on health, never attempt to move within an enemy Dominator's range. A sudden change of target could have you one-shot in no time.
+*Many tanks can become much more effective if you invest a few points into Max Health.
+*The first thing you should always do is farming. 1 or 2 Pentagons and directly to [[Pentagon nest|the Nest]] to attempt seizing control of it. 1 or 2 [[Alpha Pentagon|Alpha Pentagons]] always spawn at the start of the match. Players that get initial control of the nest will have a head start at the game. 
+*<u>Do not</u> farm if you've reached level 45. Help contest a Dom, defend it, and kill other users. You are wasting resources valuable to lower level teammates.
+*If you are in the [[Pentagon Nest]] and there aren't many [[Polygons]] around, they're most likely distributed around the edges of the map. (There's a set amount of polygons per room. Upon despawning, Polygons just respawn somewhere else).<!--
+Here are the three categories that represent the different types of roles tanks play: 
+
+=== Offense ===
+*[[Annihilator]] (Bullet) - Considered by many as the best anti-Dominator tank due to its colossal damage. However, it is difficult to control due to its recoil. A missed shot could bring bad news; at best, it'd be a mere nuisance; you'd just take a bit of damage and wait a while to reload again, but at worst it could mean instant doom (e.g. getting 720 no-scoped by a Destroyer Dominator or rekt by an enemy Ranger)
+*[[Hybrid]] (Bullet) - Same as Annihilator but with drones that may help defend against annoying Crashers or people who attack the Hybrid from behind at the cost of a smaller bullet.
+*[[Triplet]] - A simple, good, easy-to-use attacker that does considerable damage to Dominators.
+*[[Sprayer]] - The wall of bullets can easily overpower enemy defenses and rapidly kill Dominators.
+*[[Penta Shot]] - Very powerful offensive tank. The wall of fire can easily do very high damage to Dominators and anyone who tries to defend it.
+*[[Spread Shot]] - Same as the Penta, but more bullets at the cost of generally weaker bullets.
+*[[Streamliner]] - The wall of bullets can mow down Dominators and its defenders especially with groups of Streamliners. It can also double as a defensive tank.
+*[[Booster]] (Bullet) - They can perform annoying hit-and-run attacks on Dominators. Their speed makes it perfect for distracting Gunner and Destroyer Dominators. They might have a hard time attacking Trap Dominators, however.
+*[[Fighter]] - Same as Booster, but with the bonus of being less vulnerable to flank attacks and the fact that circling a Dominator can potentially still do damage to it at the cost of slightly less movement speed.
+*[[Auto Gunner]] - Their bullets can do some damage over time to Dominators while the Auto Gun either adds more damage or counters enemy counterattack. However, there are more effective ways to attack a Dominator.
+*[[Factory]] - A rather unconventional way of attacking Dominators. Factory's high DPS can strip a Dominator of its health pretty quickly. However, you must be wary of enemy counterattack from behind as your drones are slow. Attack Dominators with Factories only if you're in a group. Otherwise, steer clear of enemy Dominators.
+=== Defense ===
+*[[Mega Trapper]] - Arguably one of the best options for defending a Dominator. The giant traps can painlessly shrug off most attacks and turn the area around a Dominator into an impregnable fortress.
+*[[Auto Trapper]] - Although the traps aren't as powerful as the Mega Trapper, the Auto gun on the Auto Trapper can chip at the health of attackers until they retreat or are killed.
+*[[Gunner Trapper]] - Similar to Auto Trapper but with stronger bullets at the cost of not having the luxury of the guns doing the work for you.
+*[[Tri-Trapper]] - An efficient tank for spamming huge amounts of traps over a large area. Very good if the Dominator doesn't have its traps. The only disadvantage is that the Tri-Trapper's traps are relatively weak compared to the other Trapper classes. However, their lack of strength is more than compensated for by their huge numbers.
+*[[Octo Tank]] - Octo Tanks don't do well when attacking, but they give excellent defensive omnidirectional cover fire.
+*[[Streamliner]] - A group of these can mow down any tank that dares get close to the Dominator. They can also make big walls of bullets that are hard to get through.[[File:Streamliner_Defense.png|thumb|400px|A group of Streamliners valiantly defending a Dominator.]]
+*[[Ranger]] - When inside the trap circle of a Trapper Dominator, the Ranger can hide behind the traps and gun down attackers from afar.
+*[[Predator]] - Same as Ranger, but potentially more damage and range on a certain area. However, Ranger is still easier to use and has superior 360º range.
+*[[Overtrapper]] - The traps help, but the drones wouldn't be much use. Although the drones may be able to fend off weaker tanks, they will never be enough for the unspeakable chaos to come that is an army of bloodthirsty Level 45 tanks. Arguably the worst of the Trapper classes for Domination (or ANYTHING whatsoever)
+*[[Triple Twin]] - They give impressive cover fire and with the possibility of focusing fire on 3 enemies at once.
+*Factory - When inside a sufficiently-barricaded Trapper Dominator, a Factory can focus more on drone control without having to worry much about being sniped.
+*Auto Gunner - The auto gun will target attackers automatically. The main guns also help as they have higher bullet speed than normal.
+*[[Auto 5]] - A rather unorthodox method of defense. When inside a well-fortified Trapper Dominator, an Auto 5 can automatically target anyone who gets close and ghost through their firing pattern. However, they are otherwise very weak in Domination and can easily be hunted down and killed by Snipers.
+*[[Auto Smasher]] - An extremely situational and unorthodox way to defend Doms. An Auto Smasher can do a bullet build, such as 0/0/0/7/8/9/9/0 and gun down opponents with the Auto Turret when inside a Trapper Dominator. It can also double as a "guided missile" assassination class as a Melee build (such as a 1/7/8/0/4/3/0/10 Auto Smasher).
+
+=== Support ===
+These tanks aren't very good at killing Dominators but can assassinate key opponents or give cover fire from their rockets (in the case of Skimmer and Rocketeer). They can also shield offensive teams from attacks by opposing teams or enemy Dominators.
+*[[Spike]] - Terrible for killing Dominators but a godsend when assassinating enemy players.
+*[[Landmine]] - Same as Spike, but with a stealth advantage at the cost of a bit less punch.
+*Melee [[Booster]] - Very speedy rammer, excellent for killing enemy players but useless for direct offensives against Dominators. However, they can distract the Dominator so that other tanks can focus on attacking and not having to worry about getting noscoped.
+*Melee [[Annihilator]] - Same as Booster, but more unpredictable, tactical, but also harder to control.
+*[[Skimmer]] - The bullets fired from its rockets can make for impressive unconventional cover fire. However, Skimmers will have a difficult time penetrating a well-defended Dominator (such as a Trapper Dominator with Mega Trappers and Rangers next to it)
+*[[Rocketeer]] - Same as above, but more bullet speed.
+*[[Overlord]] - Their drones can ambush people who attack Dominators and pick them off one by one. They can also possibly attack Dominators, but doing so with Drones is inefficient and risky if the Dominator is very well-defended; it should only be done when the Dom is at low health and you're sure you won't get sniped while doing so. If the Dominator is not surrounded by an army of enemies, do as you please, but keep in mind that Overlords are not strikers, they're midfielders. People who believe the Overlord to be a wild card in Domination have no idea how to use them.
+*[[Necromancer]] - Attempting to attack a well-protected dominator with your drones may leave you vulnerable to counterattack. Necros are best used instead of assassinations or covering teammates with drones for protection.
+*[[Stalker]] - Stealth is irrelevant when attacking or defending Dominators. However, Stalkers can camp near enemy bases and assassinate unsuspecting tanks. In other words, Stalkers are good at disruption and preventing the enemy from recovering losses but they aren't so good at attacking Dominators.
+*[[Manager]] - The only role a Manager would play in Domination is killing unsuspecting enemies with drones. It doesn't serve a purpose in this game mode and if by some reason you insist on using drones, go for Overseer or Necromancer.
+*Auto Smasher - Can act as a "guided missile" assassination class with a melee-ish build (such as a 1/7/8/0/4/3/0/10 Auto Smasher).
+*[[Battleship]] - Indisputably the worst of the worst of all tanks for Domination. Why? Firstly, these tanks do nothing against Dominators. Secondly, defending Doms with the Battleship is equally useless - as the extremely weak drones will never be able to last more than a nanosecond in the face of the inevitable onslaught to come that is a massive storm of bullets from an army of Level 45 tanks. It also has a VERY poor ability to defend itself - Almost any tank can run up to a Battleship and snipe it down, and fast melee units can hunt them down and kill them with ease. Or they can simply fend off all of its drones in the case of Penta Shot and Spread Shot.
+
+=== Farming ===
+*In Domination, less important than the build you're aiming for is how you get there.
+
+==== Farming the Pentagons ====
+*If you choose to head to the pentagon nest, shoot shapes that are convenient to get on the way there
+*You want to occupy the Pentagon Nest with 1 or 2 teammates- any more is often counterproductive.
+*When there aren't many pentagons in the Pentagon Nest, pentagons will be more common other places on the map.
+*Don't farm pentagons if you're at level 45. It's okay to weaken Alpha Pentagons to help your teammates level up, however.
+
+=== Attacking the Dominator ===
+Avoid attacking the Dominator with a drone class.
+
+The neutral dominator only attacks one person at a time. That's true even for the Trapper one. Would you rather have 3 level 45 tanks attacking a dominator, or 2 level 45 tanks and a level 1 tank? If the level 1 tank knows what it is doing, I'd prefer that setup. It can simply sit there doing nothing, leaving openings for the other tanks to attack at will. The same principle largely works for all dominators... the weakest tank should focus on attacking (that happens by the others moving out of the way temporarily). Similarly, a good overlord can both attack the dominator and defend itself, while a machine gun tank can't.
+ 
+In nearly all cases it is better to attack the opponents than the neutral dominator. Only the last shot matters, so the goal should be to be the team with the most tanks when the dominator is about to be defeated. This is largely true for an enemy-controlled dominator as well. Seems obvious, but shows some patience, and when you are low in health, retreat to safety.
+
+==== Providing Cover Fire/Area of Effect tanks ====
+*In Domination mode, these tanks are inherently support tanks. Alone, they cannot capture dominators, but when used in combination with high Damage Per Second tanks, they can decide the result of a match
+*If you're a level 45 tank, avoid shooting the shapes in areas so that your team can level up quickly.
+*It's easier to farm as a Twin than as a Triple Shot, so you can postpone upgrading to a Triple Shot until level 45 if you want to become a Penta-Shot, Spread Shot, or Octo-Tank.
+*Area of Effect tanks should avoid attacking the dominator directly, instead, they should provide covering fire for other tanks to attack the dominator. A Spread Shot and a level 22 Twin can be a powerful combination.
+*Spread Shot and Penta-Shot: These tanks can often benefit from maximum bullet penetration, as the penetration can stop other bullets from harming you and your allies.-->
+
+== Arena Closing ==
+In this game mode, the Arena Closes only if one of these requirements are met:
+*Diep.io is being updated.
+*One team takes control over all 4 Dominators.
+*Nothing happens to the Dominators for a certain amount of time.
+*The 24 hour rotation time for the gamemode is up.<!-- (Believed to be around 10 minutes)--><!-- Update, reconsider values of the anon's edits (Special:Diff/355663/368375) -->
+
+== Map ==
+[[File:Domination-0.png|thumb|The Minimap of Domination, minus the locator.]]
+As of July 20th, [[Base]]s for the blue team are placed at a left corner while the red's bases are placed at the right one. These corners are randomly chosen before the room is opened. When an entity of a different team touches the base's borders it'll take damage and collision knockback will keep them from entering. There are 12 [[Base Drones]] in each Base protecting the base's borders. On the minimap, Bases are shown as large blue and red squares.
+
+The [[Pentagon Nest]] is located in the middle of the map, as usual. Since polygons ([[Crashers]]) spawn within the room before the players do, tanks rushing for the nest will be usually swarmed by large quantities of them.
+
+At each corner of the Pentagon Nest, there is a Dominator. On the minimap, they are represented by 4 small squares. If the Dominator changes teams, its representation on the minimap will also change to match.
+
+== History ==
+*Domination was added June 2nd, 2016.
+*Upon the mode's release, Neutral Dominators used to be gray.
+**In the July 3rd, 2016 update, Neutral Dominators were changed to yellow.
+*This is the first game mode to have a win condition.
+*Destroying NPCs (Polygons and Bosses) gives you double the normal amount of XP awarded. Presumably to make the matches more dynamic.
+*This is the only game mode without a leaderboard.
+*As of August 25th, 2016, players are now able to take control of Dominators on their team by pressing H.
+**However, there must not already be a player controlling the Dominator.
+**If a player takes control of a Dominator, they leave their tank behind, which will slowly lose health until it dies.
+**Two other variations of Dominator class were also added during this update, a [[Gunner]] variant and a [[Trapper]] variant.
+**Between August 26th and 27th 2016, Dominators were placed in the middle of the Pentagon's Nest in [[Tag]]. They were later removed as they confused players about how to win the match.
+
+*As of January 2nd of 2023, Domination was turned into a rotating gamemode along with [[Tag]] and [[Mothership (Game Mode)|Mothership]]. The gamemode's secondary icon changed as a result.
+
+== Trivia ==
+*If a team does not control at least 1 Dominator after 5 minutes, the arena is closed with no winner. Similarly, if a Dominator changes teams after the arena has closed without a winner, it will not stop the arena from closing.
+*The Dominator's AI was updated the August 22th, 2016. Dominators were given the ability to predict the player's movements and attack accordingly, making it much harder to dodge their attacks.
+*This tends to be the easiest Game Mode in terms of survival, players on both teams tend to be more focused on winning rather than annoying others.
+*[https://www.reddit.com/r/Diepio/comments/vudu80/myth_busted_fallen_dominators_do_not_exist/ If a contested Dominator is killed by a Fallen Booster, Its healthbar will instantly fill itself while also remaining contested.]
+
+== Gallery ==
+<gallery>
+File:Domination MODE Icon2.png|Domination, before merging with Tag and Mothership
+File:Destroyers normal.png|A Neutral Dominator getting attacked by the Blue team.
+File:Reddomination.png|3 tanks and 2 squares attacking a Dominator.
+File:Trapperdominators.png|Trappers with a Trapper Dominator.
+</gallery>{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Dominación
+|fr     = Domination
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Domination
+|pt-br  =
+|ru     = Domination
+|sv     = Domination
+|tr     =
+|vi     = Domination
+|zh     = Domination
+}}
+[[Category:Diep.io]]

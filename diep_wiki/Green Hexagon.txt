@@ -1,0 +1,32 @@
+= Green Hexagon =
+
+{{Stub}}{{WIP}}{{Polygon|image=<gallery>
+Hexagon_Green.png
+</gallery>|rarity=TBD|hp=15,000|xp=150,000}}
+
+
+The {{PA}} is the second rarest confirmed [[Polygons|Polygon]] in [[Diep.io]], and the second strongest in regard to health; the strongest being the Green [[Alpha Pentagon]]. The Green Hexagon grants a total of 150,000 EXP when destroyed. There have been very few confirmed sightings of it, but it allegedly has ten times the health of a regular [[Hexagon]]. These have a one in a million chance of spawning instead of a normal Hexagon.
+
+== List of confirmed videos ==
+TBD
+
+== Trivia ==
+
+* It is the second most valuable Polygon in the game, awarding 150,000 worth to your score when destroyed. A player killing it at Level 1 will directly rise to Level 45, no matter what mode they're in.
+* When you are killed by this shape, it will say “You were killed by: Hexagon” instead of “You were killed by: Green Hexagon”.
+* It has five times of the health of an [[Alpha Pentagon]], making it the second most durable polygon in the game.
+* Like other green Polygons, the Green Hexagon's color code is 0x8AFF69.
+* Due to how uncommon regular Hexagon is, its green variant is even rarer than Green Pentagon
+
+== [[Achievements]] ==
+{{SideBox|*<b>Shiny!</b> — Kill a green polygon (Listed as “???” due to the secret nature of Green Shapes)|{{Achievement
+|Color        = #68FEF9
+|Name         = Shiny!
+|Description  = ???}}}}
+
+== Trivia ==
+
+* Despite the name Green Hexagon being picked up by the community, the actual game just considers it a type of Hexagon and names it as such.
+
+== Gallery ==
+TBD{{PolyNav}}{{Interlang|status=checked|de=|es=|fr=|hu=|it=|ja=|ko=|pl=Zielony Pięciokąt|pt-br=|ro=Pentagonul Verde|ru=Green Pentagon|sv=|tr=|vi=Đa giác Xanh|zh=綠色五角形}}

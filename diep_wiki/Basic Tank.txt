@@ -1,0 +1,5 @@
+= Basic Tank =
+
+#REDIRECT [[Tank]]
+[[Category:Redirect]]
+[[Category:Diep.io]]

@@ -1,0 +1,4 @@
+= Minimap =
+
+#REDIRECT [[Map]]
+__STATICREDIRECT__

@@ -1,0 +1,228 @@
+= Beta.diep.io =
+
+{{DISPLAYTITLE:beta.diep.io}}
+{{DISPLAYTITLE:beta.diep.io}}{{Stub}}
+{{Mode|image=Beta Diepio.png|specials=Spectator, [[Protector (tank)|Protector]], [[Arena Closer]], [[Dominator]]}}
+
+'''beta.diep.io''' is a test server for [[diep.io]]. It introduces a few new tanks and mechanics.
+
+After being delayed for years, it finally has been added to diep.io a while before Halloween, this version replaces the original diep.io.
+
+== General Differences ==
+
+=== Modes ===
+
+* The minigames have a shorter rotation time than in the main game most of the time (time depend on what the developer set it to).
+
+=== Tanks ===
+
+* There are new tanks that aren't available in the main game, which might eventually be added. As of the time of this edit, there is no new tank being planned as they were all added to the main game.
+* Some tanks would have different stats from their main game counterparts as a result of balance testing. 
+* Players can suggest their ideas on balancing with the developer, and they might be implemented for testing.
+
+=== Miscellaneous ===
+
+* Most of the time, Sandbox Cheats would be enabled in all lobbies, allowing convenient in testing. 
+
+* Rarely, Dev Cheats would be enabled in a lobby, and it contains not only the basic Sandbox cheats, but also extra cheats such as:
+** '''Dev: Super Saiyan Mode''': Gives the player 160 skill points and sets the skill point cap to 20.
+** '''Dev: See Whole Map''': Will increase FoV to the point the entire map is visible and sets the camera to the center.
+** '''Max Level''': Now can set the player all the way to level 200.
+[[File:VIP in the shop.png|thumb|Shop]]
+[[File:Beta diepio maze cheats.png|alt=|thumb|Sandbox Cheats with Dev Cheats enabled.]]
+
+== Game Modes ==
+* [[FFA]]
+* [[2 Teams]]
+* [[4 Teams]]
+* [[Maze]]
+* Maze 2 Teams (Removed)
+** It has the same spawn points sizes and positions as 2 Teams.
+* Maze 4 Teams (Removed)
+** It has the same spawn points sizes and positions as 4 Teams.
+* Minigames:
+** [[Tag]]
+** [[Breakout]]
+** [[Domination]]
+** [[Capture the Flag]] (formerly Vault)
+* [[Sandbox]]
+** Does not have dev commands and the Switch Tank is not visible in the Sandbox Cheats menu.
+
+== Tanks ==
+In Beta Diep.io, new tanks that are planned to be added can be found. As of the time of this edit, all tanks in Beta can be found in the main game, albeit with different stats and mechanics for balance testing.
+
+# [[Tank]]
+# [[Twin]]
+# [[Triplet]]
+# [[Triple Shot]]
+# [[Quad Tank]]
+# [[Octo Tank]]
+# [[Sniper]]
+# [[Machine Gun]]
+# [[Flank Guard]]
+# [[Tri-Angle]]
+# [[Destroyer]]
+# [[Overseer]]
+# [[Overlord]]
+# [[Twin Flank]]
+# [[Penta Shot]]
+# [[Assassin]]
+# [[Arena Closer]]
+# [[Necromancer]]
+# [[Triple Twin]]
+# [[Hunter]]
+# [[Gunner]]
+# [[Stalker]]
+# [[Ranger]]
+# [[Booster]]
+# [[Fighter]]
+# [[Hybrid]]
+# [[Manager]]
+# [[Mothership (Tank)|Mothership]] (Special)
+# [[Predator]]
+# [[Sprayer]]
+# ''[[Predator (ID 30)|<span class="grey">Predator (original)</span>]]''<ref name="pred12">This version of Predator was in use before it was merged with the modern-day Predator, at the time known as the X-Hunter. This ID is no longer in use.</ref>
+# [[Trapper]]
+# [[Gunner Trapper]]
+# [[Overtrapper]]
+# [[Mega Trapper]]
+# [[Tri-Trapper]]
+# [[Smasher]]
+# ''[[Mega Smasher|<span class="grey">Mega Smasher</span>]]''<ref name="unused2">ID is no longer in use.</ref>
+# [[Landmine]]
+# [[Auto Gunner]]
+# [[Auto 5]]
+# [[Auto 3]]
+# [[Spread Shot]]
+# [[Streamliner]]
+# [[Auto Trapper]]
+# [[Dominator|Destroyer Dominator]] (Special)
+# [[Dominator|Gunner Dominator]] (Special)
+# [[Dominator|Trapper Dominator]] (Special)
+# [[Battleship]]
+# [[Annihilator]]
+# [[Auto Smasher]]
+# [[Spike]]
+# [[Factory]]
+# [[Ball|ID 53]]
+# [[Skimmer]]
+# [[Rocketeer]]
+# ''<span class="grey">[[Glider]]</span>''<ref name=":0">During the beta testing state, Glider was missing from the tank list, so they add it back later on. However, the tank was added after Shotgun, resulting in it being the first tank you change into upon switching tank via cheat in Sandbox until the addition of Firework pushed it down to second</ref>
+# Spectator<ref>The tank in this ID has a similar appearance to Spike, but can only be accessed using dev cheat and has vastly different mechanic from regular Spike</ref>
+# <s>''<span class="grey">Auto Trapper</span>''</s><ref name="unknown">This ID is likely referenced to a tank similar to Auto Trapper but with player spawning ability similar to Factory ([https://www.reddit.com/r/Diepio/comments/1hhegid/tiny_auto_trapper_gives_birth_to_child/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button https://www.reddit.com/r/Diepio/comments/1hhegid/tiny_auto_trapper_gives_birth_to_child/]), but the tank was later removed and replaced with Auto Tank, which was bumped down with the introduction of Shotgun branch.</ref> [[Auto Tank]]
+# [[Auto Tank (tank)|<s>Auto Tank</s>]] [[Protector (tank)|Protector]]<ref>This spot previously belongs to Auto Tank.</ref>
+# [[Dual-Barrel Shot|Dual-Barrel]]
+# [[Pellet Shot]]
+# [[Shotgun]]
+# [[Glider]]<ref name=":0" />
+# [[Firework]] (formerly called Firecracker)
+
+=== [[Dual-Barrel Shot|Dual Barrel Shot]] ===
+The Dual Barrel Shot is a tier 4 tank that upgrades from the Shotgun at level 45. The Dual Barrel Shot features a mechanic where the left mouse button fires the left [[Cannons|barrel]] (cannon) and the right mouse button fires the right barrel. Each barrel fires 12 bullets.
+{{Infobox
+|image     = <gallery>
+DualBarrelcurrent.png|Current design
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Shotgun icon old.png|50px|link=Shotgun]]
+|barrel    = [[Cannon|Barrels]] (2)
+|id        = 56
+|title=Dual Barrel Shot}}
+
+=== [[Pellet Shot]] ===
+The pellet shot is a tier 4 tank that upgrades from the Shotgun at level 45. The Pellet shot features a circular tank body as a base with a small modified version of the [[Battleship]]'s spawners along with a similarly sized inverted version on one end. The Pellet Shot fires 30 small bullets at the same time.
+
+{{Infobox
+|image     = <gallery>
+pellet shot icon 1.png|Current design
+pellet shot icon 2.png|Beta design
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Shotgun icon old.png|50px|link=Shotgun]]
+|barrel    = [[Cannon|Barrel]] (1)
+|id        = 57
+|title=Pellet Shot}}
+
+=== [[Shotgun]] ===
+The Shotgun is a tier 3 tank. The Shotgun fires 12 bullets at the same time.{{Infobox
+|image     = <gallery>
+shotgun icon old.png|Current design
+shotgun icon.png|Beta design
+</gallery>
+|tier      = 3
+|previous  = [[File:machine gun nav icon.png|50px|link=Machine Gun]]
+|next  = [[File:Pellet Shot icon.png|50px|link=Pellet Shot]][[File:DualBarrelcurrent.png|50px|link=Dual-Barrel Shot]]
+|barrel    = [[Cannon|Barrel]] (1)
+|id        = 58
+|title=Shotgun}}
+
+=== [[Protector (tank)|Protector]] ===
+The Protector looks like an [[Overseer]] but with 3 small but very spammy [[Cannons|barrels]]. The barrels are extremely similar to the Gunner Dominator's. Its spawners spawn uncontrollable swarm drones, slightly larger than normal swarm drones, which orbit the player unlike normal swarm drones, and last longer than normal swarm drones. It can have up to 20 uncontrollable swarm drones if there are 0 points on reload.
+
+{{Infobox
+|image     = <gallery>
+Protector icon 1.png|Current
+</gallery>
+|tier      = N/A
+|previous = Cheats
+|barrel    = [[Cannon|Barrels]] (3), [[Spawner|Spawners]] (2)
+|id        = 55
+|title=Protector}}
+
+=== Spectator ===
+This looks exactly like the Spike but invisible. It only has 1 skill: Movement Speed. It has 1 health and 0 body damage.
+== Hexagon ==
+A new [[Polygons|polygon]] is added - [[Hexagon]]. It gives 1500 XP, and has 1500 HP. It takes 1715 hits from a Basic Tank with no points on Bullet Penetration or Bullet Damage to kill it. 
+
+It has 16 Body Damage. 
+
+Before September 19, 2025, it was [[Square]] sized, took 3 hits from a Basic Tank with no points on Bullet Penetration or Bullet Damage to kill it, and it had 10 HP, 8.4 Body Damage, and gave 25 XP. It was later buffed to 800 HP, 800 XP and 16 Body Damage. It would be buffed again. 
+== Trivia ==
+
+* Before September 23, 2025, on tablet, the joystick settings and class tree button will appear, but the joysticks will not load, and the upgrades and skill points will not be the mobile version.
+* Not all regions are available. Sometimes Atlanta or an unknown is the only one. Sometime up to 3 are available
+* Shotgun is the only Tier 3 Tank without any achievement associated with it.
+* The player can see all [[achievements]], with earned ones in color, by moving their mouse to the right side of the screen.
+* The Arena Closers could instantly wake up and start killing players immediately.
+* Domination used to have different amounts of teams.
+* When a server starts, the starting polygons spawn every frame instead of immediately spawning.
+* A new and improved UI was originally planned, but this was postponed, before eventually canceled.
+** Some features that came with it stayed, however, such as keybinds and the shadow option. The former can be found in the game's Menu, while the latter can be used via [[Console]].
+* Capture the Flag has a shorter preparation timer than in the main game (3 minutes instead of 5).
+
+== Gallery ==
+<gallery>
+File:Log In Shop Beta Diepio.png|Log In and Shop
+File:Arena Closer Beta Diepio.png|Arena Closer
+File:Fake spike.png|A "Spike" getting "attacked" by Crashers.
+File:Dual Barrel Shot In-game.png|Dual-Barrel Shot in-game.
+File:Dual Barrel Shot Bullets.png
+File:Pellet Shots.png
+File:Disconnect buttons beta diepio.png|"Disconnected." buttons
+File:Beta Diepio Background.png|The background in beta.diep.io before October 1, 2025.
+File:Pentagon and Hexagon Raw.png|These are Pentagon and Hexagon raw health values after being hit by a Basic Tank bullet. Pentagon has 95.3 health left, and Hexagon has 796.5 health left. They will regenerate their health after a while.
+File:Dual Barrel Shot Message.png|The message when the player upgrades to Dual-Barrel Shot.
+File:Devs spamming invites to beta diepio.png|The devs inviting players to beta.diep.io on July 1, 2025.
+File:Hexagon polygon 1.png|A hexagon.
+File:Destroyer Dominator Beta.png|Destroyer Dominator
+File:Gunner Dominator Beta.png|Gunner Dominator
+File:Trapper Dominator Beta.png|Octo Trapper Dominator
+File:Pentagons and hexagon.png|Pentagons and hexagons.
+File:SmallAmountOfPolygons.mp4|A very, very, very small amount of polygons. Since this will probably not load in properly, go to [[:File:SmallAmountOfPolygons.mp4|its page]] to view it.
+File:BreakoutTiles.png|Breakout tiles' health are visible in the minimap. Also, the team names here are not capslock anymore.
+File:Penta Shot In Pentagon Nest With Pentagons And Hexagons In Breakout.png|A Penta Shot in the Pentagon Nest with Pentagons and Hexagons in Breakout.
+File:Maze 4TDM.png|Maze 4 Teams
+File:Maze 2TDM.png|Maze 2 Teams
+File:Firewall.png
+File:Basic Tank Base Drones Beta Diepio Maze 4TDM.png|A Basic Tank looking at a bunch of drones (spawnpoint protectors).
+File:Domination 3TDM.png
+File:Domination 4TDM.png
+</gallery>{{DEFAULTSORT:beta.diep.io}}
+[[Category:Polygons]]
+[[Category:Game Modes]]
+[[Category:Diep.io]]
+{{Gameplay}}
+__INDEX__
+<references />

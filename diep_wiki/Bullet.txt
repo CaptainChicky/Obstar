@@ -1,0 +1,4 @@
+= Bullet =
+
+#REDIRECT [[Bullets]]
+[[Category:Redirect]]

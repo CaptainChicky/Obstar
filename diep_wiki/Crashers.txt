@@ -1,0 +1,78 @@
+= Crashers =
+
+{{Polygon/Crashers}}<!--
+
+Edit [[Template:Polygon/Crashers]] to edit the Infobox
+
+{{Polygon
+|title     = Small Crasher
+|image     = <gallery>
+Diep.io.PolygonProfile SmallCrasher OLD Nav.png|Old Colors
+Diep.io.PolygonProfile SmallCrasher NEW Nav.png|New Colors
+</gallery>
+|rarity    = Very common ([[Pentagon Nest]])<!--<br/>Constant (from [[Guardian]])It is confirmed that small Crashers and the Guardian's drones don't have the same stats--
+|attacks   = Yes
+|hp        = 10
+|xp        = 15 (in [[Pentagon Nest]])<br/>0 (from [[Bosses]])
+|variants  =
+}}
+{{Polygon
+|title     = Large Crasher
+|image     = <gallery>
+Diep.io.PolygonProfile LargeCrasher OLD Nav.png|Old Colors
+Diep.io.PolygonProfile LargeCrasher NEW Nav.png|New Colors
+</gallery>
+|attacks   = Yes
+|rarity    = Common ([[Pentagon Nest]])
+|hp        = 30
+|xp        = 25
+|variants  =
+}}-->
+{{PA}} are hostile [[Polygons]] that chase the player once they are in their detection range. They spawn close to the [[Pentagon Nest]] in the center of the map to protect the area and also are emitted from the [[Guardian]]. Crashers spawn in three different varieties of sizes and strengths (Only one size spawns from the Guardian). They behave similarly to the [[Overseer|Overseer’s]] [[Drones]] and [[Base Drones]] but instead they serve only to guard the Pentagon Nest and the Guardian when it is around. They are there to prevent experience farming from being too easy: if they were not there, farming would be exceptionally easy (especially for leaderboard players).
+
+== Strategy ==
+[[File:The pink triangle swarm.png|thumb|A group of small Crashers chasing a tank.]]
+Crashers are notorious for knocking players around, disturbing their aim and resetting their health regeneration, making them extremely annoying, possibly even shoving them into other players or other polygons. For this reason, spending 1 to 2 points in Body Damage is recommended as it reduces the knockback and damage dealt by Crashers. They are effective for farming XP if you have sufficient points invested into Health Regen or Penetration and Bullet Damage to mow through them. Crashers do not attack [[Stalker]]s, [[Manager]]s, and [[Landmine]]s while they are [[Invisibility|invisible]], but will attack if they lose invisibility, which will make the player <b>more</b> visible for other nearby Crashers. Any Crashers that were already chasing a player will be locked-on until the player or Crasher dies. They may be small and weak, but players should be wary of large swarms of Crashers, especially as a Tier 1 or 2 tank, as their small damage output can overwhelm slow-firing tanks if they do not have many points invested in Max Health. It's often a good idea to wait until Tier 3 before approaching the Nest. It can be even tougher in modes like Maze and FFA. Note that even glass cannon Tier 4 tanks can be taken down if they stay in the center, alone. Even rammers with low regeneration can be slowly drained of health by these pink triangles.
+
+Interestingly, experienced players use the Crashers as a guide to the Pentagon Nest’s location, as where they show up is the location of the Pentagon Nest. The Pentagon Nest is always in the center of the map, however.
+
+A way to escape them easily is by being invisible, however, you must be invisible before they target you to avoid them. Also, with the Manager, if one is attacked by your drones, even though it has not spotted you, it will head for you, whether you are invisible or not (At least in Sandbox Mode).
+
+== Variations ==
+[[File:DiepCrasher.png|thumb|43px]]
+[[File:DiepBigCrasher.png|thumb|66px|A clear image of both sizes.]]
+*<b>Small Crasher:</b> Small Crashers have the health of the [[Square]], spawn more frequently than Large Crashers, and grant 15 XP to the player that destroys it. It is slightly faster than the Large Crasher but is about half the size of one.
+*<b>Large Crasher:</b> Large Crashers have the health of a [[Triangle]], and can easily push [[Pentagon]]s around as they come towards the player. A Large Crasher grants 25 XP to the player that destroys it, which is the same as the XP given by a Triangle. It is slightly slower than the Small Crasher but causes more damage, and it is slightly larger than a Drone, save for Battleship’s Drones.
+*<b>Mini Crasher:</b> Mini Crashers accompany, protect, and are created by the [[Guardian]] [[Bosses|Boss]]. They are the smallest Crashers and grant no XP when destroyed, much like Drones. Also, like Drones, they only spawn from the Boss and will disappear should the main body be destroyed. These Crashers are noticeably stronger than their non-drone counterparts, and they can deal significant damage to non-rammers or anti-ram builds. They can survive multiple collisions with a tank. They do not have a health bar.
+
+== Trivia ==
+[[File:Crashers can!.png|thumb|171x171px|Crashers can also enter the [[base]]. Base Drones do not attack the Crashers.]]
+*The Mini Crashers are the smallest shapes in the game.
+*Crashers will follow the player until they die or you die. They will follow even into your [[Base]] in 2 Teams, 4 Teams or Domination, and will not be killed as enemy Drones would. The only way to escape them is to destroy them. You can also flank other tanks, by moving behind them so that they are between the Crashers and your tank. This way you can avoid damage in a pinch. This can make the Crashers hit another tank, however, and if that tank is on your team and low health, you might kill a valuable teammate.
+*Originally, the [[Necromancer|Necromancer’s]] Drones were chased by the Crashers as well as the tank itself.
+*Crashers can go through the [[Maze]] walls in the Maze game mode after the September 23rd, 2016 update.
+*Crashers don’t target [[Arena Closer]]s and {{CA|Polygon Bosses|Polygon-based Bosses}}.
+*Crashers do not damage polygons; however, they do strike them, and they can act as a barrier which the Crashers must go around. However, this isn’t very effective.
+
+* They have the same color and shape as the [[Guardian]].
+
+* They are the only [[polygons]] that can be intentionally moved.
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Crashers
+|fr     = Triangles roses
+|hu     =
+|it     =
+|ja     = ファンネル
+|ko     =
+|pl     = Crasher
+|pt-br  =
+|ro     = Prăbușitor
+|ru     = Crasher
+|sv     =
+|tr     = Pembe Üçgen
+|vi     = Crashers
+|zh     = Crashers
+}}

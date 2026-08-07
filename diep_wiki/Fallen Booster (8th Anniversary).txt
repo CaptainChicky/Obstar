@@ -1,0 +1,53 @@
+= Fallen Booster (8th Anniversary) =
+
+{{Stub}}
+
+{{Boss
+|image      = fallen_booster_8th_anniversary.png
+|weapons    = [[Cannons]] (7)
+|attacks    = [[Bullets]]
+|xp         = 30,000
+|hp         = 3,000
+|bd         =
+}}
+{{For|the standard version of this [[Bosses|Boss]]|Fallen Booster}}
+
+This variant of [[Fallen Booster]] was added on 16th April 2024, [[Diep.io]]'s 8th anniversary.
+
+== Design ==
+This Fallen Booster is the [[Fallen Booster#Design|exact same with the regular Fallen Booster]], with the exception of two extra side cannons, making it a cross between the [[Booster]] and [[Fighter]] classes, but much larger.  The angles between the Cannons clockwise from the front cannon are 90°, 45º, 15º, 60º, 15°, 45º and 90°.
+
+== Technical ==
+
+=== Behavior ===
+When it goes on the offensive, it attacks by ramming into its target, much like a player-controlled the [[Booster]] that is using a Body Damage focused [[Builds|Build]]. The Fallen Booster doesn't target players that are under level 15 unless provoked. If the player survives for a couple of minutes, the Fallen Booster may ignore the target and attack another tank nearby instead. When there are no valid players that can be targeted, the Fallen Booster will target the nearest [[Polygons|Polygon]].
+
+=== Stats ===
+It has a big health pool of 3,000, which is the same as all of the bosses. Its recoil and [[Movement Speed]] is equal to that of a [[Booster]] with max [[Reload]] but no Movement Speed. The side cannons have lower Reload comparing to the front cannon (like Fighter). Its Field of View is large, likely comparable to the field of view of an [[Assassin]]'s. Like other bosses, when it hasn’t been attacked in over 30 seconds, it will slowly regenerate all of its health. 
+
+=== Miscellaneous ===
+Like its [[Fallen Booster|regular counterpart]], this Fallen Booster is targeted by [[Base Drones]] once it comes close to the base. Upon destruction, it awards 30,000 experiences to the player who kills it.
+
+== Strategy ==
+*<b>Strong Against:</b> [[Overseer]] branch, most other tanks, unskilled/unaware players, and tanks with slow [[Movement Speed]]. 
+*<b>Weak Against:</b> [[Tri-Angle]] classes, [[Sprayer|Sprayers]], [[Destroyer]] branches, [[Trapper]] classes if played correctly, multiple [[Alpha Pentagon|Alpha Pentagons]], [[Dominator|Dominators]], and [[Bullet]] [[Builds]] with max [[Movement Speed]].
+
+=== Against the Fallen Booster ===
+As this variant of Fallen Booster only has 2 additional side cannons, it doesn't make much of a difference. Therefore, [[Fallen Booster#Against the Fallen Booster|all strategies against the regular Fallen Booster]] apply. 
+*
+
+== Trivia ==
+
+* Like other 8th Anniversary Variant of bosses, its name shown above the tank constantly shifted between every second in a cycle of blue, red, purple, green, and then back to blue (based off the [[4 Teams|Teams Colors]]).
+* This boss, and the [[Summoner (8th Anniversary)|8th Anniversary Variant of Summoner]] are the only Birthday bosses that use only one type of ammunition (drones for Summoner, bullets for Fallen Booser).
+
+== Gallery ==
+<gallery>
+File:8thAFB low quality.png|Fallen Booster, 8th anniversary edition
+File:8th Anniversary Fallen Booster.png|Taking damage
+File:Diep.io - 10M and Special Boss in the 8th Anniversary Event-2|Go to 6:55 to see the boss in action!
+</gallery>
+*
+
+{{BossNav|fallen}}
+[[Category:Diep.io]]

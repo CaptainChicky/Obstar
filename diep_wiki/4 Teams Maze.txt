@@ -1,0 +1,42 @@
+= 4 Teams Maze =
+
+{{Stub}}
+{{WIP}}{{Cleanup|Can someone add a gallery?|nocat=}}{{For|the regular version without walls|4 Teams}}{{For|the regular Game mode without teams|Maze}}{{For|the game mode with 2 teams|2 Teams Maze}}{{Mode|title=4 Teams Maze|image=|closure=Unknown|button=|teams=4 Teams|bosses?=No}}
+'''4 Teams Maze''' (Called 4TDM Maze in the [[Changelog]]) is the Latest [[Game Modes|Game Mode]] that is a mix between [[Maze]] and [[4 Teams]]. Players work in four opposing teams rather than fighting against each other individually. There are large gray walls that are scattered around the arena, giving the arena the appearance of a maze. These walls are impenetrable by [[Tanks]] or their [[Bullets]]/[[Traps]]/[[Drones]]. The maze walls are also visible on the minimap.
+
+== Gameplay ==
+=== Base ===
+{{Main|Base}}
+The player will spawn in either a <span style="color: #23DAFF;">blue</span>, <span style="color: #FF3D3D;">red</span>, <span style="color: #3FEE57;">green</span>, or <span style="color: #D86EF4;">purple</span> corner. This determines their team, and they duke it out anywhere they want (the middle or [[Pentagon Nest]] is the most popular area). Players of one team cannot shoot into an opposing team’s [[Base]], as enemy Bullets are instantly destroyed upon contact with it. Players also cannot enter any enemy team’s Base, as they will begin taking rapid and high damage bursts (if the [[Base Drones]] don’t get them first).
+
+==== Map ====
+*The <span style="color: #23DAFF;">blue</span> corner located on the top left marks the spawning area for the Blue team.
+* The <span style="color: #FF3D3D;">red</span> corner located on the bottom right marks the spawning area for the Red team.
+* The <span style="color: #D86EF4;">purple</span> corner located on the top right marks the spawning area for the Purple team.
+* The <span style="color: #3FEE57;">green</span> <span style="color: #814E1C;">(formerly brown)</span> corner located on the bottom left marks the spawning area for the Green (formerly Brown) team.
+
+=== Players ===
+The players are divided into four teams, which are Red, Blue, Purple and Green (formerly Brown). Tanks of the same team can’t kill each other and can only kill tanks on enemy teams. If a tank on a player's team fires at their tank, the bullets will go through them. If a player on their team rams another player, that player will bump into the other unharmed.
+
+=== Base Drones ===
+[[File:4TeamProtectors.png|thumb|130x130px|A group of Base Drones]]
+The spawn areas are defended by Base Drones, small triangles (which are even smaller than [[Triangles]] and [[Drones]]) with a very large health pool which can chase down any player from the other team but will turn back at a certain point.
+
+12 Base Drones will be together in the middle of the base (similar to the old TDM).
+
+The Base Drones will not leave their team’s zone unless an opponent is within their proximity. They continue to seek until an opponent is out of their range. Although there are methods of evasion, the simplest of which the player can do is to run away until they are out of range from the Base Drones. Due to the maze walls despawning [[Base Drones]] the moment they touch them, going behind a wall is an effective method of evading.
+
+=== Walls ===
+As the name insists, there are walls scattered around the map that is normally impenetrable by [[Tanks]] and their [https://diepio.fandom.com/wiki/Category:Ammunition Ammunition], [[Polygons]], [[Crashers]], and even [[Base Drones]] 
+
+== History ==
+
+* This game mode is added alongside [[2 Teams Maze]] on September 9th, 2025 during beta testing on Diep.io.
+* This game mode is added alongside [[2 Teams Maze]] on October 23rd, 2025 on the normal version of Diep.io.
+
+
+
+
+
+{{GameNav}}
+[[Category:Diep.io]]

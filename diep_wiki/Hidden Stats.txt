@@ -1,0 +1,4 @@
+= Hidden Stats =
+
+#REDIRECT [[Stats#Hidden Stats and Their Effects]]
+__STATICREDIRECT__

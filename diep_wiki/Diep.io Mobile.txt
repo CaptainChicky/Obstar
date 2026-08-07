@@ -1,0 +1,119 @@
+= Diep.io Mobile =
+
+[[File:App icon Diep.png|thumb|The Icon for the Mobile App.]]
+The {{PA}} app is a version of [[Diep.io]] for mobile devices, available for both Apple and Android mobile devices via the [https://itunes.apple.com/app/diep.io/id1114751883?mt=8 App Store] & [https://play.google.com/store/apps/details?id=com.miniclip.diep.io Google Play Store] respectively.
+
+== Game Modes ==
+[[File:Homescreen M.png|thumb|The main screen for Diep.io Mobile.]]
+*[[Free For All|FFA]] (Free For All)
+*[[2 Teams]]
+*[[4 Teams]]
+*[[Domination]]
+*[[Breakout]]
+*[[Tag]]
+*[[Maze]]
+*[[Mothership (Game Mode)|<s>Mothership</s>]]
+*[[Sandbox]]
+
+== Gameplay ==
+Rather than point and click (and WASD or arrow key controls), the controls consist of 2 joysticks, one on the left side of the screen, and one on the right, alongside various function buttons at the top-left of the screen. This makes classes like [[Necromancer]] very difficult to play because they rely heavily on the Drones to shield them from incoming fire. The only way to accomplish something of this sort is by spinning yourself around to decelerate the Drones. You can easily see how much more complicated simple controls can be like this.
+
+== Experience Gain / Upgrades Sidebar ==
+Although the player may feel like it gives the player more experience in mobile than in PC, there’s no difference in the rate that you gain experience. For instance, 50 points in mobile will put you just below a level 5 tank, the same as the web version.
+
+The only time the player can see the upgrades in mobile is when you have Skill Points to spend. In the browser version, scrolling into the bottom left makes the player view upgrades that the player has made, but this is not available in Mobile Diep.io. 
+
+== Game User Interface Navigation ==
+'''''Minimap''''' - This is different for every game mode, although the maps in the Mobile version are the same as the PC version.  A minimap is located at the top-right of the screen. The player's location will appear as a black isosceles triangle, with the sharp point facing in the same direction the player is facing.
+
+'''''Leader Arrow''''' - The leader arrow points to where the top player is.  When the player is near the leader, the arrow will disappear.  A leader's arrow is not displayed if the player is the leader.
+
+'''''Experience Bar''''' - The experience bar displays the player's tank’s level along with how close you are to leveling up.  Upgrades are available when the player's [[Levels|Level]] is up. In FFA/Maze/TDM/Sandbox, a score bar is placed just on top of the experience bar, showing the player's current score.
+
+'''''Control buttons''''' - At the top-left of the screen is various control buttons. Each of them serves a different purpose like exiting the game, viewing the Scoreboard, etc... Some buttons only appear if the player is playing a certain gamemode. They disappear if the stat upgrade board on top of the screen is visible, with the exception of the Exit button.
+
+== Control buttons ==
+
+=== General control ===
+{| class="wikitable left mw-collapsible<!-- mw-collapsed-->" width="100%"
+! width="5%" |Button
+! width="30%" |Function
+|-
+| align="center" |<gallery>
+File:DiepMobileExit.png
+</gallery>
+| Allows you to exit the game. Can be hidden using the game's settings.
+|-
+| align="center" |<gallery>
+File:DiepMobileJoystick.png
+</gallery>
+|Allow you to change the joystick settings in-game.
+|-
+| align="center" |<gallery>
+File:DiepMobileLb.png
+</gallery>
+|Allow you to view the Scoreboard, as well as how many players are there in the server.
+|-
+| align="center" |<gallery>
+File:DiepMobileClass tree btn.png
+</gallery>
+|Allows you to view the class tree (similar to the Y key in the web version).
+|}
+
+=== Domination only ===
+{| class="wikitable left mw-collapsible<!-- mw-collapsed-->" width="100%"
+! width="5%" |Button
+! width="30%" |Function
+|-
+| align="center" |<gallery>
+File:DiepMobileDom.png
+</gallery>
+| Allow you to take control of Dominators in Domination mode.
+|}
+
+=== Sandbox only ===
+{| class="wikitable left mw-collapsible<!-- mw-collapsed-->" width="100%"
+! width="5%" |Button
+! width="30%" |Function
+|-
+| align="center" |<gallery>
+File:DiepMobileSand.png
+</gallery>
+| Allows you to use Sandbox cheats in Sandbox mode.
+|}[[File:Screenshot 20230601-232009 diepio.jpg|thumb|What the player sees. The upgrades on top of the screen aren’t accessible for you to look at whenever you wish, so predict your builds wisely!]]
+
+== Trivia ==
+*The current mobile version is a port to the web (PC) version. 
+**As a result, nearly every update of the web version will also be applied to the mobile version.
+**Despite this, mobile users have their own servers that are separate from the web version.
+*Unlike the web version, there's no control for Auto Spin and stat queue.
+*Because the game uses joysticks, Overseer classes cannot repel, and cannot hold their [[Drones]] in a specific spot. They can only direct them to move towards a certain place.
+*Only you and the top 5 players on the [[leaderboard]] were shown.
+*The [[Console]] is inaccessible.
+*Unlike the Legacy version, when the player upgrades to Smasher, the Shoot joystick won't disappear.
+
+== See also ==
+*[[Mobile Changelog]]
+*[[Diep.io Mobile (Legacy)]]
+
+{{Gameplay|general}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Aplicación Para Móvil
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Diep.io Mobile
+|zh     = Diep.io手機版
+}}
+[[Category:Mobile]]
+[[Category:Diep.io]]

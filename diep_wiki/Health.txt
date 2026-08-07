@@ -1,0 +1,3 @@
+= Health =
+
+#REDIRECT [[Stats#Max_Health]]

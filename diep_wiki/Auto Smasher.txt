@@ -1,0 +1,128 @@
+= Auto Smasher =
+
+{{Infobox
+|image     = <gallery>
+auto smasher icon 2.png|New Colors
+auto smasher icon 1.png|Old Colors
+</gallery>
+|title     = Auto Smasher
+|tier     = 4
+|next     = None
+|previous = [[File:Smasher icon new.png|50px|link=Smasher]]
+|barrel   = [[Auto Turret]] (1)
+|id       = 50}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Smasher]] at level 45.
+
+== Design ==
+The Auto Smasher features a circular body placed in a black hexagon with a single Auto Turret mounted on the top of the tank's body. It is a Smasher with an Auto Turret mounted on the top.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▲
+|BulletPenetration = ▼▼
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = ▲
+|HiddenStat1       =
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    =
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+Upon upgrading:
+*The Smasher gains an Auto Turret.
+**Unlike the [[Auto Trapper]] and the [[Auto Gunner]], this Auto Turret can be controlled with the mouse.
+**The Auto Turret has extremely light recoil. 
+**When not shooting, the Auto Turret will slowly rotate.
+**Stats (Auto Turret): 
+*** Bullet Speed: 1.2x Tank
+*** Bullet Penetration: 2 (+1.5 for each point in Bullet Penetration)
+*** Bullet Damage: 3.15 (+1.35 for each point in Bullet Damage)
+*** Reload time: Same with Tank until the exception being: -0t for the 8th and 10th point, -1t for the 9th point in Reload
+** Stats (Main tank):
+*** Movement Speed: 1.1x Tank
+
+*Bullet [[Stats]] return to the upgrade menu.
+**All stats retain the special maximum level of 10, including [[Bullets|Bullet]] Stats.
+
+== Strategy ==
+*<b>Strong Against:</b> Slow tanks, tanks with a low fire rate, invisible tanks.
+*<b>Weak Against:</b> Tanks with high health, fast tanks, tanks with focused fire.
+
+=== As the Auto Smasher ===
+*With the inclusion of an Auto Turret, this tank gains an entirely new addition of strategy. By pouring any remaining points into the returning Bullet stats, you will become a formidable melee <b>and</b> ranged attacker. 
+*However, even though it may seem like “a jack-of-all-trades,” it is a master of none. Therefore, you may choose to focus either on upgrading your Auto Turret (thus leaving your body slow and weak) or focus on the Smasher body itself (thus leaving your Auto Turret relatively weak).
+*It is recommended to focus mainly on the Smasher aspect of the tank, leaving the Auto Turret as a means of defense if you're in a tight situation and need to escape. It can also be used as a radar to alert the player of enemies out of their Field of View.
+*Other than this, any strategies for the Smasher apply to the Auto Smasher as well. Avoid [[Traps]], Bullet spammers, and [[Drones|Drone]] tanks. 
+*Attack cornered and unaware tanks - though with the Auto Turret giving away your location, sneaking up and catching them off-guard will be more difficult; for sneaky tactics, it's better to use the [[Landmine]]. Follow where your Auto Turret aims. If it turns up a tank, kill the tank if it is somewhat easy.
+*Your Auto Turret can expose invisible tanks such as Landmines or ram Stalkers so that they have nowhere to hide.
+*Once you've identified a target, try to time your attack so that the Auto Turret is pointing away from the target, giving you a bit more momentum through recoil, allowing you to close in quicker.
+
+=== Against the Auto Smasher ===
+*Like other tanks in the Smasher branch, players want to become aware of the Auto Smasher before it becomes aware of the player, as most of the time they are fast and extremely hard-hitting. 
+*If you're a slow tank, like a [[Ranger]], avoiding the Auto Smasher will be even more difficult with its Auto Turret bearing down on you from afar.
+*If you are using Drones, keep them close to you and keep away until you see an opportunity to attack. Straight-up ramming the Auto Smasher will also be more difficult unless you manage to avoid its Bullets, but even so, this is inadvisable because the Auto Smasher may have poured points into a rammer [[Builds|build]] of its own. But if the Auto Smasher focused points into a Bullet build instead, rammers become a better option; if its gun is focused on other enemies, the rammer gets a perfect opportunity. But you <b>must</b> determine what kind of build the Auto Smasher is using before going in for the kill. A [[Spike]] with full Body Damage and Max Health can easily take down both types.
+*A player using the [[Destroyer]], [[Hybrid]] or [[Annihilator]] can cripple an Auto Smasher in two hits, and possibly only in one hit if the Auto Smasher is using a glass cannon build.
+*Bullet spammers, like [[Penta Shot]] and [[Triplet]], also work well against the Auto Smasher, as it has little chance to retaliate, unless it has poured all of its stat points into a fast and piercing build; if that's the case, tanks with low Bullet Penetration, like [[Octo Tank]], must steer clear.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/a/dX0Kmtt 1.43m by IHazDiepression]
+* 2 Teams: [https://imgur.com/syK2c7N 1.9m by Sonic]
+* 4 Teams: [https://web.archive.org/web/20190819221054/https://cdn.discordapp.com/attachments/222132681394225155/252736201193291776/Screenshot_2016-10-08_at_5.png 2.35m by GlitchuPichu]
+* Maze: [https://imgur.com/A8U3pcD 686k by Taco]
+
+=== Mobile ===
+
+* FFA: 1.05m by Athu
+* 2 Teams: 739.6k by buh
+* 4 Teams: 511.4k by VløKe
+* Maze: -
+
+== Trivia ==
+[[File:Auto smasher ingame icon upscale.png|thumb|A high-quality in-game Auto Smasher icon acquired by manipulating the "diep-native" canvas element. Examining the picture up close around the Auto Turret, one may notice that the shell is rotated counterclockwise with respect to the Auto Turret.]]
+*The Auto Smasher was not revealed in the [[Changelog]].
+**The developer stated “I forgot I had added it, and I was pushing some hotfixes… And it sneaked in” on [https://www.reddit.com/r/Diepio/comments/52ljt5/theres_a_new_secret_class/d7lg2l4/ this] Reddit post shortly after its release.
+*This tank has the largest max capacity of each stat: 10 points maximum for all Stats.
+*On the mobile version, any tank branching off from the Smasher including itself once upgraded to, the bullet button would disappear. However, if one is to touch the button as if it is there, the minimap showing the direction of the player would still move despite the button being invisible.
+*Due to it being very difficult to use (few are familiar with the strategical and tactical capabilities of this tank), many consider it as the most useless upgrade in the game.
+**Despite that, Auto Smasher can actually have very high damage stats has you can upgrade to Bullet Damage and Penetration to level 10
+*Auto Smasher's appearance in its upgrade icon and the class tree is not symmetrical, as shown in the image in the right.
+**Other tanks affected by this are [[Smasher]], [[Landmine]], and [[Spike]].
+
+== Gallery ==
+<gallery>
+File:Ausmash2.png|Auto Smasher in-game.
+File:Auto Smasher in Sandbox.jpg|Auto Smasher in Sandbox
+File:Screenshot (562).png|Auto Smasher in 4 Teams
+File:StatsAutoSmasher.png|How the unupgraded Auto Smasher upgrade bar looks like. Each bar has 10 upgrade slots instead of seven.
+File:All smasher upgrades are terrible.png|A visualization showing how every Smasher shell is not properly aligned with what "forward" should be. Auto Smasher's auto turret is facing the rear to show exactly where the direction of "back" is. Landmine and Spike have guides to show exactly where the lines of symmetry are to showcase how they are not aligned whatsoever.
+</gallery>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Auto Smasher
+|es     = Auto Smasher
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Auto Smasher
+|pt-br  =
+|ru     = Auto Smasher
+|sv     =
+|tr     =
+|vi     = Auto Smasher
+|zh     = Auto Smasher
+}}
+[[Category:Diep.io]]
+[[Category:Auto Tanks]]

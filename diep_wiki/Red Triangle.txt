@@ -1,0 +1,4 @@
+= Red Triangle =
+
+#REDIRECT [[Triangle]]
+[[Category:Redirect]]

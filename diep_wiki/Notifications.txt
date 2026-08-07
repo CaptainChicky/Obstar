@@ -1,0 +1,392 @@
+= Notifications =
+
+{{PA}} are messages that show up in the middle-top of the screen when something special happens in the game. There are three types of notifications: those which are shown to the whole server as an announcement, those which are visible for a certain team and those which are only shown to a single player.
+
+== Server Notifications ==
+=== Current Server Notifications ===
+{| class="wikitable left" width="100%"
+!width="30%"|Condition
+!width="70%"|Notification
+|-
+|When a [[Bosses|Boss]] spawns or dies.
+|
+*"The (boss) has spawned!"
+*"The (boss) has been defeated by (player name)!"
+*"The (boss) has been defeated!"
+|-
+|When a [[Bosses|Boss]] spawns
+|
+* "Press H to take control of the (boss)"
+|-
+|When a team wins the match in [[Domination]], [[Tag|Tag Mode]], [[Capture the Flag]] or [[Breakout]].<ref>The notifications for these used to be in all upper-case.</ref>
+|
+*"Blue has won the game!"
+*"Red has won the game!"
+*"Purple has won the game!"
+*"Green has won the game!"
+|-
+|When the [[Dominator]] is being contested or a team takes control over it. There are 12 possible in-game notifications.<ref name=":0">The team's name used to be in upper-case. </ref>
+|
+*"The NW Dominator is being contested"
+*"The NE Dominator is being contested"
+*"The SW Dominator is being contested"
+*"The SE Dominator is being contested"
+*"The (location) Dominator is now controlled by (team color)"
+|-
+|When the [[Arena Closing|arena is being closed]].
+|
+*"Arena closed: No players can join"
+|-
+|When you try to join a team that has reached its player limit (through a party link).
+|
+* "The team you tried to join is full"
+|-
+|When the Mothership of any team was destroyed in the [[Mothership (Game Mode)|Mothership]] [[Game Modes|Game Mode]].<ref name=":0" />
+|
+* "Blue has destroyed Red's Mothership"
+* "Red has destroyed Blue's Mothership"
+|-
+|When there's an amount of time remaining until barrier removal in [[Capture the Flag]].
+|
+* "(Time) until barrier removal"
+|-
+|When the barrier is removed in [[Capture the Flag]].
+|
+* "Barrier has been removed"
+|-
+|When a player from a team obtains a flag from the other team in [[Capture the Flag]].
+|
+* "Blue has obtained one of Red's flags!"
+* "Red has obtained one of Blue's flags!"
+|-
+|When a team captures a flag from the other team in [[Capture the Flag]].
+|
+* "Blue has captured a flag!"
+* "Red has captured a flag!"
+|-
+|When a team loses all of its tiles in the [[Breakout|Breakout Game Mode]].<ref name=":0" />
+|
+* "Blue has captured all of Red's tiles!"
+* "Red has captured all of Blue's tiles!"
+|-
+|([[Breakout]]) When the tile you're standing on is being neutralized.
+|
+* "WARNING! EVACUATE TILE IMMEDIATELY"
+|}
+
+=== Removed Server Notifications ===
+{|width="100%" class="wikitable left mw-collapsible mw-collapsed"
+!width="30%"|Condition
+!width="70%"|Notification
+|-
+|When the Brown Team wins in [[Tag]] or [[Domination]].<ref name="brownwins">The Brown team was replaced by Green, & no longer exists in-game.</ref>
+|
+*<i><span class="grey">"BROWN HAS WON THE GAME!"</span></i>
+|-
+|When the [[Dominator]] is being contested or a team takes control over it, there are 12 possible notifications.<br/><br/>Once there were 4 teams in the Domination mode, so the number of possible notifications was up to 20.
+
+
+(Tag only) There used to be a Dominator at the center of the map, making the number of possible notifications 17 (This was after the removal of 4 teams in Domination).
+|
+*<i><span class="grey">"The (location) Dominator is now controlled by (team)"</span></i>
+*<i><span class="grey">Tag only:</span></i>
+**<i><span class="grey">"The Dominator is being contested"</span></i>
+**<i><span class="grey">"The Dominator is now controlled by (team)"</span></i>
+|-
+|When a Dominator is being controlled by some Mysterious Group (only available in the oldest version of Domination)
+|
+*<i><span class="grey">"The (location) Dominator is now controlled by some Mysterious Group"</span></i>
+|-
+|When the arena is about to close (typically after 5 minutes).
+|
+* <i><span class="grey">"Arena will close in 5 mintues"</span></i>
+|}
+
+== [[Domination|Team]]-Specific Notifications<ref name="onlydom">These kinds of notifications only take place in [[Domination]].</ref> ==
+{|width="100%" class="wikitable left mw-collapsible<!-- mw-collapsed-->"
+!width="30%"|Condition
+!width="70%"|Notification
+|-
+|When a Dominator is conquered by the player’s team.<ref name="DomiFoot1">The message is the same for both teams, and only differs in the background color of the notification (which corresponds to the team color of the player), thus there are two possible notifications.</ref>
+|
+*"Press H to take control of the dominator"
+|}
+
+== Player-Specific Notifications<ref name="onlyplayer">These kinds of notifications only effect a single person.</ref> ==
+=== Kill Notifications ===
+{|width="100%" class="wikitable left mw-collapsible<!-- mw-collapsed-->"
+!width="30%"|Condition
+!width="70%"|Notification
+|-
+|Upon killing another player.<ref name="kill-exempt">Doesn’t appear in [[Free For All|FFA]] / [[Maze]] if the victim is twenty or more [[Levels]] below the player’s own.</ref>
+|
+* "You killed (victim’s name)"
+|-
+|When the player kills a [[Bosses|Boss]].
+|
+*"You killed (boss)"
+|}
+
+=== Mode Notifications ===
+{|width="100%" class="wikitable left mw-collapsible<!-- mw-collapsed-->"
+!width="30%"|Condition
+!width="70%"|Notification
+|-
+|When [[Auto Fire]] is turned on.
+|
+*"Auto Fire: ON"
+|-
+|When Auto Fire is turned off.
+|
+*"Auto Fire: OFF"
+|-
+|When [[Auto Spin]] is turned on.
+|
+*"Auto Spin: ON"
+|-
+|When Auto Spin is turned off.
+|
+*"Auto Spin: OFF"
+|-
+|When [[Sandbox#Cheats|God Mode]] is turned on.
+|
+*"God mode: ON"
+|-
+|When God Mode is turned off.
+|
+*"God mode: OFF"
+|-
+|When Allow Spectator is turned off.
+|
+*"Allow Spectators: OFF"
+|-
+|When Allow Spectator is turned on.
+|
+*"Allow Spectators: ON"
+|}
+
+=== Command execution notifications (Custom Lobby) ===
+{| class="wikitable left mw-collapsible<!-- mw-collapsed-->" width="100%"
+! width="30%" |Condition
+! width="70%" |Notification
+|-
+|Upon successfully executing a command
+|
+* "Command executed successfully"
+|-
+|When a player tries to execute an admin command without admin permission
+|
+*"You do not have permissions to use this command"
+|-
+|When a player tries to execute <code>map_fixed_size</code> with a too small/large width input
+|
+*"Width must be between 1000 and 50000"
+|-
+|When a player tries to execute <code>map_fixed_size</code> with a too small/large height input
+|
+*"Height must be between 1000 and 50000"
+|-
+|When a player tries to execute  <code>set_max_level</code> with a too low/high level cap
+|
+*"Level cap must be between 1 and 120"
+|-
+|When a player tries to execute  <code>set_shape_max_count</code> with a value higher than 3999
+|
+*"Shape count must be less than 2000"
+|-
+|When a player tries to execute <code>set_team</code> or <code>join_team</code> with a too low/high team id value 
+|
+*"Team must be between 0 and 3"
+|-
+|When a player tries to execute  <code>set_team_count</code> with a too low/high team count
+|
+*"Team count must be between 0 and 4"
+|-
+|When a player tries to execute <code>join_team</code> with a team id that doesn't exist
+|
+*"Nonexistent team ID"
+|-
+|When a player tries to execute <code>set_invulnerability</code> without being alive
+|
+*"Tank not found"
+|-
+|When a player tries to upgrade to a tank that has been banned
+|
+*"This tank is banned"
+|}
+
+=== Removed Auto [[Levels|Level]] Notifications<ref>These notifications existed before the March 9th, 2017 update, where auto maximizing of stats was replaced with the introduction of stat upgrade queuing.</ref> ===
+{|width="100%" class="wikitable left mw-collapsible mw-collapsed"
+!width="30%"|Condition
+!width="70%"|Notification
+|-
+|When auto maximizing of a stat is enabled.
+|
+*<i><span class="grey">"Maximizing (stat)"</span></i>
+|-
+|When auto maximizing of Stats have been disabled.
+|
+*<i><span class="grey">"No longer maximizing a stat"</span></i>
+|}
+
+=== Current Tank Notifications<ref name="tanknotifications">These kinds of notifications only occur after becoming a certain kind of tank.</ref> ===
+{| width="100%" class="wikitable left mw-collapsible<!-- mw-collapsed-->"
+!width="30%"|Condition
+!width="70%"|Notification
+|-
+|Upon upgrading to an [[Overseer]].
+|
+*"Use your left mouse button to control the drones"
+|-
+|Upon upgrading to a [[Predator]].
+|
+*"Use your right mouse button to look further in the direction you’re facing"
+|-
+|Upon upgrading to a [[Skimmer]].
+|
+* "Use your right mouse button to reverse bullet rotation"
+|-
+|Upon upgrading to a [[Dual-Barrel]].
+|
+* "Right click to shoot your other barrel"
+|-
+|Upon upgrading to a [[Firework]].
+|
+* "Right click to explode you bullets"
+|-
+|Upon taking control of a [[Dominator]].
+|
+*"Press H to surrender control of the tank"
+|-
+|Upon pressing <code>H</code> when there are no available Dominators/boss
+|
+*"Someone has already taken that tank"
+|-
+|Upon pressing <code>H</code> if the player has pressed <code>H</code> ~1-10 seconds ago after failing to take control of a Dominator/boss
+|
+* "Too many attempts, try again in (time) seconds"
+|-
+|When your time to control the Mothership is about to run out.
+|
+* "You only have 10 seconds left in control of the Mothership"
+|-
+|When you obtain a flag in [[Capture the Flag]].
+|
+* "Bring the flag back to your center base"
+|-
+|When your time to hold the flag is about to run out. 
+|
+* "You have 15 seconds left with the flag"
+|}
+
+=== Miscellaneous Notifications<ref name="misc">These notifications only occur if an out-of-game condition has been met.</ref> ===
+{|width="100%" class="wikitable left mw-collapsible<!-- mw-collapsed-->"
+!width="30%"|Condition
+!width="70%"|Notification
+|-
+|When using Adblockers
+|
+*"You're using an adblocker, please consider disabling it to support the game"
+|-
+|Upon connecting a Gamepad controller
+|
+*"Gamepad enabled"
+*"Using Gamepad, press I to disable"
+|-
+|If the game crashes for any reason
+|
+*"The game crashed, refreshing page to recover from error"
+|-
+|When player respawns using the "Respawn with + x Level" button (there's a 2-minute cooldown).
+|
+* "+x Levels granted on respawn"
+|-
+|When player attempts to use the "Respawn with + x Level" button less than 2 minutes after its previous usage
+|
+* "Spawn rewards can only be claimed once every 2 minutes"
+|}
+
+=== Removed Miscellaneous Notifications ===
+{| class="mw-collapsible mw-collapsed wikitable left" width="100%"
+! width="30%" |Condition
+! width="70%" |Notification
+|-
+|Upon connecting a Gamepad controller
+|
+*<i><span class="grey">"Using Gamepad, press U to disable"</span></i><ref name=":1">The U key was later used for another function, so it was changed to "I".</ref>
+|}
+
+== Event notification ==
+These notifications only show up in special event in the game and are removed once the event is over.
+
+=== Anniversary notification ===
+{| class="mw-collapsible mw-collapsed wikitable left" width="100%"
+! width="30%" |Condition
+! width="70%" |Notification
+|-
+|When the [[Birthday Shape]] spawns
+|
+* "Happy (ordinal number) Birthday Diep.io!"
+
+* "Something interesting has appeared at the center of the map..."
+
+
+|}
+
+=== Halloween notification ===
+{| class="mw-collapsible mw-collapsed wikitable left" width="100%"
+! width="30%" |Condition
+! width="70%" |Notification
+|-
+|When the Shiny Shape chance increases
+|
+* "Trick, treat, it's time to dominate"
+
+
+|}
+
+== Trivia ==
+*There are currently more than 70 possible notifications in the game.
+**There were formerly 84 notifications in total, but 32 of them were removed due to the removed content/features, as well as some new ones being added due to new content/features.
+*The notification "The game crashed, refreshing page to recover from error" was found buried inside the game's source code before it was seen in-game.<ref name="JSCite1">{{PL|http://diep.io/c.js|Evidence}}</ref>
+*If you kill a tank, then they are immediately killed, then they respawn immediately, the "you’ve killed" notification is present on your next round for a few seconds.
+* Different notifications have different colored backgrounds.
+** The "Arena Closed" and "Full team" messages are colored deep red.
+** Mode notifications are colored deep blue (except for Sandbox's God mode).
+** Any team-related messages are colored in the team's color. (The neutral color, which is shown when Dominators are being contested, is yellow.)
+** All other messages are grey.
+** For the 8th anniversary event, a new pink notification was added. The bosses spawn notifications were also changed to pink.
+
+== Gallery (oldest to newest) ==
+<gallery>
+ArenaClosedMessage.png|The notification that comes up when the arena is being closed
+SEDomBlue.png|The notification that comes up when Blue controls a Dominator
+SWDomRed.png|The Notification that comes up when Red controls a Dominator
+135.png|The Notification that comes up when you turn on Auto Fire
+151.png|The Notification that comes up when you turn off Auto Fire
+Kill notification.png|The Notification that comes up when you kill someone
+File:Full team notif.png|The notification that comes up when you tried to join a team that has reached its player limit (You'll be sent to another team that hasn't full as well).
+</gallery>
+
+== Footnotes ==
+<references/>
+{{Gameplay|feature}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Notificaciones
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Notyfikacje
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Thông Báo
+|zh     = 公告
+}}
+[[Category:Diep.io]]

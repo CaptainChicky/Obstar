@@ -1,0 +1,109 @@
+= Cannons =
+
+The {{PA}} (also called Barrels) are a type of weapon found on many [[Tanks]]. They shoot [[Bullets]], which pass through Cannons. When firing, Cannons move back and forth, in a sort of piston motion. To fire, [[Controls|press space, left click]], or turn on [[Auto Fire]] by pressing E. They can appear in different shapes and sizes and shoot Bullets in a variety of ways.
+
+== Types of Cannons ==
+[[File:BasicBarrel.png|thumb|49x49px]]
+
+=== <b>Normal Cannons</b> ===
+These are the most common out of all the Cannons. They appear on most tanks. They take on a small, rectangular shape and fire normal-sized Bullets. They are found on, for example, [[Tank|Basic Tanks]], [[Flank Guard]]s, [[Tri-Angle]]s, and [[Quad Tank]]s.
+[[File:SniperBarrel.png|thumb|50x50px]]
+
+=== <b>Sniper Cannons</b> ===
+These Cannons are found on [[Sniper|Sniper-class tanks]]. They are very long, rectangular Cannons and look like Normal Cannons, with a decreased Reload and increased Bullet Speed/Bullet Damage stats. The [[Ranger|Ranger’s]] Cannon has a trapezoidal base.
+[[File:DestroyerBarrel.png|thumb|50x50px]]
+
+=== <b>Destroyer Cannons</b> ===
+These Cannons shoot the largest and the slowest bullets in the game. Only the [[Arena Closer]], [[Annihilator]], [[Destroyer]], [[Dominator|Destroyer Dominator]], and [[Hybrid]] have these. They take on a wide, rectangular appearance. The Destroyer [[Dominator|Dominator’s]] Cannon has a trapezoidal base.
+[[File:Skimmer_Cannon.png|thumb|50x50px]]
+
+=== <b>Deployer Cannons</b> ===
+These Cannons launch [[Missiles]], which are high-damaging projectiles (albeit dealing less damage than a [[Destroyer]] [[Bullets|Bullet]]) with [[Cannons]] on them which shoot small [[Bullets]] to propel the [[Missiles|Missile]] forward or damage other tanks. They are only found on [[Rocketeer]]s, [[Skimmer]]s, and [[Glider|Gliders]]. They have very little recoil compared to Destroyer Cannons. There are three known types of Missiles. The [[Rocketeer]] fires [[Missiles]] with a small Machine Gun barrel on the back. The [[Skimmer]] fires Missiles that spin and have two cannons on either side of the Missile, like a [[Flank Guard]]. The [[Glider]] fires Missiles with two cannons behind them.  
+[[File:MGBarrel.png|thumb|50x50px]]
+
+=== <b>Machine Gun Cannons</b> ===
+These Cannons are found on the [[Machine Gun]] and [[Sprayer]]. They rapidly shoot Bullets with a large spread. They take on a wide, trapezoidal shape, very similar to that of a [[Drones|Drone]] [[Spawners|Spawner]], but slightly longer. A small Machine Gun Cannon is also found on [[Missiles]] fired by [[Rocketeer]]s. 
+[[File:GunnerBarrel.png|thumb|50x50px]]
+
+=== <b>Gunner Cannons</b> ===
+[[Gunner]] Cannons shoot the smallest Bullets. They are found on most [[Gunner]] branch-offs, the [[Dominator|Gunner Dominator]], the [[Sprayer]], the [[Spread Shot]], the [[Auto Gunner]], and [[Gunner Trapper]]. They take on a very small, rectangular shape, similar to normal Cannons.
+[[File:PredatorBarrel.png|thumb|50x50px]]
+
+=== <b>Overlapping Cannons</b> ===
+These are multiple Cannons that overlap each other. Only the [[Predator]], [[Hunter]], [[Sprayer]], and [[Streamliner]] have these. The [[Sprayer]] has a variant which is a Gunner Cannon overlapped by a [[Machine Gun]] Cannon.
+[[File:StalkerBarrel.png|thumb|50x50px]]
+
+=== <b>Stalker Cannons</b> ===
+These Cannons are only seen on the [[Stalker]]. Apart from their appearance, they work just like regular sniper Cannons. They take on a long, inverted trapezoidal shape and taper on to the tip of the Cannon; much the same design as [[Battleship]] [[Spawners]], albeit being much larger. There is no statistical advantage of having a [[Stalker]] Cannon.
+
+<b>Note:</b> Typically trapezoid bases on Cannons indicate increased range/FoV, such as with the [[Ranger]], [[Predator]], or [[Dominator]]s.
+
+== Users of Cannons ==
+*[[Basic Tank]], 1 Cannon
+*[[Twin]], 2 Cannons
+*[[Machine Gun]], 1 Machine Gun Cannon
+*[[Flank Guard]], 2 Cannons
+*[[Sniper]], 1 Sniper Cannon
+*[[Triple Shot]], 3 Cannons
+*[[Twin Flank]], 4 Cannons
+*[[Quad Tank]], 4 Cannons
+*[[Destroyer]], 1 Destroyer Cannon
+*[[Gunner]], 4 Gunner Cannons
+*[[Tri-Angle]], 3 Cannons
+*[[Assassin]], 1 Elongated Sniper Cannon
+*[[Hunter]], 1 Overlapping Cannon (2 Sniper Cannons)
+*[[Triplet]], 3 Cannons
+*[[Penta Shot]], 5 Cannons
+*[[Spread Shot]], 11 Cannons
+*[[Triple Twin]], 6 Cannons
+*[[Octo Tank]], 8 Cannons
+*[[Hybrid]], 1 Destroyer Cannon
+*[[Annihilator]], 1 Large Destroyer Cannon
+*[[Auto Gunner]], 4 Gunner Cannons
+*[[Streamliner]], 5 Gunner Cannons
+*[[Booster]], 5 Cannons
+*[[Fighter]], 5 Cannons
+*[[Ranger]], 1 Base Elongated Sniper Cannon
+*[[Stalker]], 1 Stalker Cannon
+*[[Predator]], 1 Overlapping Cannon (3 Sniper Cannons)
+*[[Arena Closer]], 1 Arena Closer Cannon
+
+== Trivia ==
+*The tank with the most Cannons is the [[Spread Shot]] with 11 Cannons.
+*The only type of Ammunition with Cannons that are the same color as your tank are Missiles.
+*The only tanks in the game without cannons at all are the [[Smasher]], [[Landmine]], and the [[Spike]]. There used to be [[Mega Smasher|2 more]] [[Ball|Tanks]] without Cannons, but these were removed.
+*The only tank whose cannon(s) are redundant is the [[Necromancer]].
+
+== Deployers ==
+{{Conjecture|Deployer}}Deployers are a type of weapon that launches [[Bullets#Missiles|Missiles]], which are high-damaging projectiles (albeit dealing less damage than a [[Destroyer]] bullet) with [[Cannons]] on them which shoot small Bullets. They have very little recoil -- about as much as a [[Launchers|Launcher.]] A Deployer has varying designs, the [[Skimmer]]s looks like a shorter [[Destroyer]] [[Cannon]] overlapping a shorter [[Machine Gun]] Cannon. They look like wider [[Hunter]] Cannons since the shorter [[Machine Gun]]-like Cannon looks like a Wide Tank [[Cannons|Cannon]].
+
+=== Users ===
+*[[Skimmer]]: Has only one Deployer as its single weapon. Looks like a shorter [[Destroyer]] [[Cannon]] overlapping a shorter [[Machine Gun]] Cannon. Fires [[Bullets#Missiles|Missiles]] with two barrels 180° apart from each other that rotate.
+*[[Rocketeer]]: Has only one Deployer as its single weapon. It looks like a trapezium with a second, smaller trapezium mounted onto it. Fires [[Bullets#Missiles|Missiles]] with a [[Machine Gun]] barrel on the back.
+*[[Glider]]: Has only one Deployer as its single weapon. It looks like a trapezium with a second, smaller trapezium mounted onto it. Fires [[Bullets#Missiles|Missiles]] with two cannons mounted on the back 35° apart from each other.
+
+=== Trivia ===
+*Deployers were first added on March 2nd, 2017, along with the Skimmer.
+*Deployers are the first overlapping weapons which don't shoot projectiles with combined traits of the overlapping weapons.
+**The Machine Gun part of a Deployer never shoots -- only the Destroyer part does.
+
+{{Gameplay|weapon}}
+{{Interlang
+|status = checked
+|de     = Cannons
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     = Cannons
+|vi     = Nòng súng
+|zh     = 砲管
+}}
+[[Category:Diep.io]]

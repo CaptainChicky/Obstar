@@ -1,0 +1,68 @@
+= Defender (8th Anniversary) =
+
+{{Stub}}
+
+{{Boss
+|image      = <gallery>
+defender 8th anniversary.png|Boss
+defender 8th anniversary minion.png|Minion
+</gallery>
+|weapons    = [[Launchers]] (3)<br/>[[Auto Turrets|Mounted Turrets]] (3)<br/>[[Spawners]] (3)
+|attacks    = [[Traps]]<br/>[[Bullets]]<br/>[[Drones]]
+|xp         = 30,000
+|hp         = 3,000
+|bd         =
+}}
+{{For|the standard version of this [[Bosses|Boss]]|Defender}}
+
+This variant of [[Defender]] was added on 16th April 2024, [[Diep.io]]'s 8th anniversary.
+
+== Design ==
+This variant Defender features a large Red [[Triangle]] as its body with three evenly-spaced trap [[Launchers]], one on each side. Three [[Auto Turrets]] are placed on top of it on each corner. It also has three evenly-spaced Spawners, one on each side, each of them overlapping a trap Launcher. The Spawners spawn drones, each of them is a yellow triangle with three evenly-spaced and smaller trap [[Launchers]], one on each side.
+
+== Technical ==
+
+=== Stats ===
+Like every other boss, the Defender has 3,000 HP, with a slow heal rate. Its launchers have a high reload, and its Auto Turrets have an average fire rate. Its traps are normal-sized with high penetration and damage. Auto Turrets and bullets act identically to the [[Auto 5]] but have a lower speed. The Defender also moves very slowly. The traps spawned by the drones are slightly smaller than the regular traps. This Defender has up to 6 drones.
+
+=== Miscellaneous ===
+
+* Upon destruction, it and its drones will disappear, it awards 30,000 experience, giving it to the player who deals the final shot.
+* When the Defender happens to drift near a wall, it will immediately change its path to move parallel to the wall.
+* It is not targeted by the Base Protectors unless it provokes them and the Base itself has an effect on it.
+* The Defender has auto-spin passively enabled.
+* Its minions circle around the main tank like how drones AI behave on an Overseer when idle. 
+* Similarly to [[Arena Closer|Arena Closers]], it is not slowed down at all when bumping into [[Polygons]].
+* The Defender suffers from its own Auto Turrets’ [[Stats|Recoil]].
+* When idle, the Defender slowly circles the arena until it sees a player.
+
+== Strategy ==
+
+* '''Strong Against:''' Low DPS tanks, Melee classes, [[Drone]] classes, such as the Overlord and Overseer. (Unless distracted), Spread classes, most [[Trapper|Trappers]].
+* '''Weak Against:''' High DPS, [[Assassin]] branch, [[Predator|Predators]], [[Streamliner|Streamliners]] and other focused RoF classes, [[Destroyer]] branch, [[Overlord|Overlords]] and [[Factory|Factories]] if caught off guard.
+
+=== Against the Defender ===
+
+* All [[Defender#Against the Defender|strategies against the regular Defender]] apply, with a slightly higher difficulty due to the extra layer of protection provided by its drones and their traps.
+
+*
+
+== Trivia ==
+
+* Like other 8th Anniversary Variant of bosses, its name shown above the tank constantly shifted between every second in a cycle of blue, red, purple, green, and then back to blue (based off the [[4 Teams|Teams Colors]]).
+* If you are playing as it, you can control the Mounted Turrets.
+* It is the first entity to use 3 types of ammunition, using Traps, Bullets and Minions. 
+
+== Gallery ==
+<gallery>
+File:Defender(8th Anniversary Edition).png|Defender, 8th anniversary edition
+File:8th Anniversary Defender.png|A small tank next to the 8th anniversary Defender
+File:Diep.io - 8th Anniversary Edition Defender-2|The 8th anniversary Defender in action
+File:Defender 8th.png|A player controlling a Defender (8th Anniversary)
+</gallery>
+*
+
+{{BossNav|polygon}}
+[[Category:Diep.io]]
+[[Category:Bosses]]
+[[Category:Tanks]]

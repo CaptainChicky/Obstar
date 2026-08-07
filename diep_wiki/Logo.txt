@@ -1,0 +1,74 @@
+= Logo =
+
+{{stub}}
+{{WIP}}
+
+==2016–2022==
+===2016–2022 (desktop, primary)===
+[[File:DiepBordered.png|center|300px]]
+The desktop version of Diep.io (operated at the time by the main developer, Matheus Valadares) did not have an official logo at this point. Valadares' website used the word "diep.io" in the Ubuntu font.
+
+===2016–2022 (mobile, primary)===
+[[File:DiepBorderedOld.jpg|center|300px]]
+
+The mobile version of Diep.io (operated at the time by [[Miniclip]]) went live on July 20, 2016. The title screen logo simply used the word "diep.io" in the Khula Bold font.
+
+===2016–2017 (mobile, icon)===
+[[File:DiepLogoMobileOld.png|center|150px]]
+This was the original icon used for the mobile app. It depicts a [https://diepio.fandom.com/wiki/Sniper Sniper] ambushing a [https://diepio.fandom.com/wiki/Twin Twin] in a field of [https://diepio.fandom.com/wiki/Polygons polygons].
+
+===2017–2022 (mobile, icon)===
+[[File:DiepLogoMobileOldiOS.png|center|150px]]
+The icon was slightly altered in an update. This was used until the August 12, 2022 update.
+
+==2022–2024==
+===July 14–20, 2022 (primary), 2022–2024 (secondary)===
+[[File:DiepLogoAlt.png|center|300px]]
+The game received a proper logo almost a year after it was acquired by [[Addicting Games]]. The existing "diep.io" wordmark was made uppercase and given added depth and additional stylistic improvements. A more realistic version of the game's tanks was also added to the left of the logo. This logo continued to be used on the game's registration page until early 2024.
+
+===2022–present (primary)===
+[[File:DiepLogo.png|center|300px]]
+The logo was updated shortly afterwards to remove the tank on the left. This became the primary logo used on the mobile app following the August 12, 2022 update.
+
+===2022 (mobile, icon)===
+[[File:DiepMobileOldStyle.png|center|150px]]
+This icon began to be used for the mobile app following an update that brought it on-par with the desktop version.
+
+===2022-present (mobile, icon)===
+[[File:DiepLogoMobile.png|center|150px]]
+The icon was updated to replace the realistic tank with an ingame depiction of a tank.
+
+===2022–2024 (alternate)===
+[[File:DiepWordmarkOldInverted.svg|center|300px]]
+[[File:DiepWordmarkOld.svg|center|300px]]
+After the addition of the account system, an alternate logo, which consisted of the text "diep.io" in the Cartridge font, was used alongside [[Diep.io#July 14–20, 2022 (primary), 2022–2024 (secondary)|the previously used logo]] on the registration page.
+
+===2024 (alternate)===
+[[File:DiepWordmarkInverted.svg|center|300px]]
+[[File:DiepWordmark.svg|center|300px]]
+The alternate logo used on the registration page was silently updated in early 2024. The only change was that the D was now capitalized.
+
+===2024 (alternate)===
+'''''Missing Logo'''''
+
+When Rivet changed their website's main font from Cartridge to Perfectly Nineties, Diep.io's secondary logo changed with it.
+
+=== 2024 (desktop, icon) ===
+[[File:Blankgame.svg|center|150px]]
+The silent update to the registration page also brought a new placeholder icon, replacing [[Diep.io#July 14–20, 2022 (primary), 2022–2024 (secondary)|the original logo]].
+
+== 2024–present ==
+=== 2025 - Halloween ===
+[[File:dieplogohalloween1new.png|center|300px]]
+Logo made by AI. TBA (please insert here!).
+
+=== 2025 - Halloween v1.1 ===
+[[File:dieplogohalloween1.png|center|300px]]
+Logo made by kishakatt. TBA (please insert here!).
+
+=== 2025 - Christmas===
+[[File:dieplogochristmas1.png|center|300px]]
+Logo used by AI. TBA (please insert here!).
+=== 2026 - Happy Birthdiep===
+[[File:dieplogobirthday1.png|center|300px]]
+Logo made by NoobGdPro. Added Tank in I and shooting star gradient to Top 1.

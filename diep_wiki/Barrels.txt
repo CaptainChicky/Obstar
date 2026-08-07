@@ -1,0 +1,4 @@
+= Barrels =
+
+#REDIRECT [[Cannons]]
+[[Category:Redirect]]

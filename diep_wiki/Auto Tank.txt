@@ -1,0 +1,86 @@
+= Auto Tank =
+
+{{Stub}}
+{{For|the tank formerly known as the "Auto Tank"|Auto 5}}
+{{Infobox
+|image     = auto tank icon 1.png
+|tier      = 4
+|previous  = [[File:tank nav icon.png|50px|link=Tank]]
+|barrel    = [[Cannons]] (1) 
+[[Auto Turrets]] (1)
+|id        = <s>58</s>
+59
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Tank]] at level 45.
+
+== Design ==
+
+Auto Tank has a Circular body with a cannon in front of the tank. with an addition of an auto turret on top like the [[Auto Gunner]], [[Auto Trapper]] and [[Auto Smasher]].
+== Technical ==
+
+It works like Basic, except that it has a top-mounted Auto turret on it.
+
+Stats (Auto Turret):
+
+* Bullet Speed: 1.2x Tank
+* Bullet Penetration: 2 (+1.5 for each point in Bullet Penetration)
+* Bullet Damage: 2.1 (+0.9 for each point in Bullet Damage)
+
+== Strategy ==
+* <b>Strong Against:</b>  Triplets (if the Auto Tank is skilled enough), Destroyers like [[Hybrid]] or [[Annihilator]].
+* <b>Weak Against:</b> Sniper tanks like [[Ranger]] or [[Predator]].
+
+=== As the Auto Tank ===
+
+Play it like the Tank with an auto turret of course or play as you normally would with a [[Sprayer]], but with a bit less reload.
+=== Against the Auto Tank ===
+Use Sniper tanks like Ranger or Predator as the Auto Tank's Auto turret can't detect you from far away.
+
+== Gallery ==
+<gallery>
+File:Auto tanks first sighting.png|Auto Tank being attacked by a Machine Gun in Tag mode
+File:Auto Tank in Sandbox.png|Auto Tank in Sandbox
+</gallery>
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://i.imgur.com/J5FNDRU.png 1.15m by '''𝐀𝐚𝐫𝐨𝐧''']
+* 2 Teams: 1.43m by LimX
+* 4 Teams: [https://youtu.be/XY87slPgvIs?t=685 1.35m by Hades]
+* Maze: -
+
+=== MOBILE ===
+
+* FFA: 1.09m by Athu
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+
+* It is the only Tier 4 tank that upgrades directly from the Tank.
+* It is the second tank to have purple background. the other being the Factory.
+* This is the 50th tank in the game, not counting deleted/merged tanks.
+* It is the 4th tank to use an uncontrollable auto turret as its secondary weapon, the other 3 is the [[Auto Gunner]], [[Auto Trapper]] and [[Auto Smasher]].
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     =
+|es     = 
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 
+|pt-br  =
+|ro     =
+|ru     = 
+|sv     =
+|tr     =
+|vi     = 
+|zh     = 
+}}
+[[Category:Diep.io]]

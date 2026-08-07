@@ -1,0 +1,156 @@
+= Auto Gunner =
+
+{{Infobox
+|image     = <gallery>
+auto gunner icon 4.png|New Colors
+auto gunner icon 3.png|Old Colors
+auto gunner icon 2.png|Old Turret
+auto gunner icon 1.png|Before Auto 3
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Gunner icon new.png|50px|link=Gunner]]<br/>[[File:Auto 3 icon new.png|50px|link=Auto 3]]
+|barrel    = [[Cannons]] (4) 
+[[Auto Turrets]] (1)
+|id        = 39}}The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Gunner]] and [[Auto 3]] at level 45.
+
+== Design ==
+The Auto Gunner features a circular base with four small [[Barrels]] in the front; the outermost two are significantly shorter, and they are placed slightly under the main ones, which makes them look twice as thin as the middle Barrels. It also has an [[Auto Turret]] that automatically fires [[Bullets]] at anything that comes into its Field of View.
+
+==Technical==
+{{BaseStats
+|PrevClass          = Gunner’s Bullets
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = ▼
+|BulletDamage       = —
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        =
+|HiddenStat2        =
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     =
+|HiddenStat2Val     =
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+{{BaseStats
+|PrevClass          = Auto 3’s Auto Turret
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = ▼
+|BulletPenetration  = —
+|BulletDamage       = ▼
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        =
+|HiddenStat2        =
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     =
+|HiddenStat2Val     =
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+Upon upgrading:
+*The Auto Gunner gains an additional Auto Turret.
+*The main bullet's Penetration is slightly reduced.
+*The Auto Turret has lower damage, but higher penetration compared to the regular Gunner bullets, but has slightly weaker damage and penetration compared with the Auto 3's auto-turrets.
+*Stats:
+**Main:
+*** Bullet Penetration: 0.9 (+0.675 for each point in Bullet Penetration)
+*** Bullet Damage: 3.5 (+1.5 for each point in Bullet Damage)
+**Auto Turret: 
+***Bullet Speed: 1.2x Tank
+***Bullet Penetration: 2 (+1.5 for each point in Bullet Penetration)
+***Bullet Damage: 2.1 (+0.9 for each point in Bullet Damage)
+
+== Strategy ==
+*<b>Strong Against:</b> Melee tanks, {{CA|Auto Tanks}}, [[Spread Shot]]s, [[Penta Shot]]s, [[Sniper]] classes up close, most [[Trapper]] classes, [[Destroyer]] branch when prepared.
+*<b>Weak Against:</b> [[Sniper]] classes at a range, [[Drones|Drone]] classes (swarms).
+
+=== As the Auto Gunner ===
+*This tank is best played similarly to the Gunner because it’s simply a Gunner with a Turret placed on top of it.
+**With the addition of the Auto Turret, Auto Gunners can now focus on one target while the Auto Turret helps by either adding more firepower, shooting someplace else to defend the Auto Gunner from enemies flanking the player or farming for it.
+**It’s important to face where the Auto Turret goes. It may not prioritize targets well, but it is an extra Cannon, which can make a significant difference in Penetration, Damage, and total Bullets fired.
+*When at close range, the Auto Gunner is a formidable opponent as it can both overwhelm opponents with the large swarm of bullets and cut through enemy bullets with their small size and relatively high damage and penetration but can also be vulnerable to larger enemy fire. Thus, one should seek to keep enemies close and outmaneuver them to dodge stronger enemy bullets while defeating enemies with their own.
+*Most focused fire tanks are not a big problem for Auto Gunners if fought correctly. If strafing sideways while firing at the opposite side of the opponent, the opponent usually cannot avoid the swarm of bullets while locked in combat leading to them being worn down easily.
+*This tank is very effective against rammers. Despite the small bullets, they may easily even take down even the most durable of rammers if Bullet stats are high. A dangerous but effective tactic is to try to stay as close to the rammer as possible while firing at it. The opponent will be tricked into thinking that they are very close to victory and push on until it is too late to escape.
+*The Auto Gunner is very susceptible to [[Ranger]]s and other long-ranged tanks at a distance. With their larger FoV, they can snipe the player without warning. Not even the Auto Turret can scope them. The best solution is to either dodge and escape or try to defeat the Ranger by shooting in its general direction.
+**In case of a long-distance battle (when the enemy is out of the player's FoV) a good method is to shake the barrels by moving the cursor slightly yet very quickly. This will cause the bullets to have increased spread leading to more area damage. The enemy can be caught in a horde of bullets, possibly killing them or dealing high damage. An even better method is to fire in the direction of the Auto Turret. Because it has a higher FoV, it can lock on to players far away and act as a guide.
+*The Auto Gunner is a good choice for [[Survival]], as the high RoF and the Auto Turret can kill most players from leveling up to strong counter tanks like the Overlord or Sprayer.
+*Against a Penta Shot or a Spread Shot, the player should try to get close to its body as the player's concentrated stream of bullets can easily penetrate and hit the opponent. Of course, the player should not attempt this while low on health.
+*Drone classes are not a deadly problem if the Auto Gunner user is skilled. Against an Overlord, the best way is to strafe the drones whilst firing at them. There will be a small crack in time when the Overlord is only left with 2 or 3 drones. The player should then take advantage and tank out the enemy.
+**The Auto Gunner may struggle against the Factory class. In case of an ambush, one should retreat immediately whilst shooting at the Drones. The Factory's drones move at 7 [[Movement Speed]] so they likely won't be able to keep up (given enough points were invested in speed). 
+**If skilled enough with it, players should use the Spraying movements they use against other tanks. If a lot of bullets happen to hit the Factory at once they'll likely retreat and/or may panic. If a bigger mistake is made the Auto Gunner should take advantage of it to try and finish the tank.
+
+* Against the Destroyer branch, caution is necessary. It is nearly impossible to stop a Destroyer bullet with the Auto Gunner so the player has to dodge them constantly. If a Destroyer class is spotted the player should move carefully until the opponent is visible. It is advised to battle these tanks horizontally and not trying to kill them vertically. This is because the Destroyer can easily kill the Auto Gunner before it has time to dodge. Ranged battles are easier, as the Auto Gunner's bullets can chip away the opponent's health and still be a safe distance away from the large and deadly bullets.
+
+=== Against the Auto Gunner ===
+*An [[Overlord]], [[Overseer]] or [[Manager]] (in some cases) can work very well against the Auto Gunner. Due to the Auto Gunner's low Bullet Penetration, one of these tanks could simply crash through the bullets with their drones and hit the opponent. Caution is advised in case the Auto Gunner should survive the initial attack, as they can continue to rapidly fire back. Also, a fatal mistake that should be avoided is playing defense by blocking the bullets with the drones. The Auto Gunner's relentless line of fire will trap the drones between the wall of bullets and the tank itself. The drones will start to decrease in number as the spawn rate won't be able to catch up with the death rate. In the end, the tank will be left defenseless and can be easily destroyed.
+*Players can use a Ranger or any tank in the Sniper class since Snipers have a larger FoV than the Auto Gunner and the Auto Turret, which allows the player to damage the Auto Gunner from afar.
+*The Destroyer branch is effective against an Auto Gunner, as the huge bullet is strong enough to gate-break the Auto Gunner’s. However, the Auto Gunner bullets travel very fast and potentially reach the Destroyer branch, so it is best to flank it. Before striking, it is advised to wait until the Auto Turret aims at somebody else then use its recoil to boost in to quickly kill the Auto Gunner.
+*The Sprayer has a high chance of defeating an Auto Gunner. Due to the Sprayer’s bullets having higher Penetration and a larger spread, the Sprayer may block the tiny bullets while a few stray bullets may skim the sides of the Auto Gunner, dealing high damage. The Triplet is also a good choice, although it may not work out that well if the Auto Gunner has max Bullet Speed as some stray Bullets can reach the Triplet and deal damage.
+
+== History ==
+[[File:AutoGunner_Icon3.png|thumb|100x100px|Green upgrade theme (upgrading from Auto 3)]]
+*When Auto Gunner was released, the [[Auto Turret|Mounted Turret]] would naturally face the front instead of the back. This was likely changed when [[Auto Trapper]] was added.
+*Until a significant update (which also slightly buffed the Auto Gunner), the Auto Gunner’s turret did not target [[Dominator]]s, [[Polygons]], or [[Crashers]]. Before the update, its Bullets were the same as the normal Gunner and the Auto Turret only attacked enemies within half of the Auto Gunner’s FoV (Field of Vision).
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/PzKx60e 3.15m by Peregrine]
+* 2 Teams: 2.32m by Rhyden Bolt
+* 4 Teams: [https://www.youtube.com/watch?v=mIM0gJwBp6w 2.23m by Overr]
+* Maze: [https://imgur.com/ImlnCpN 2.18m by exo]
+
+=== Mobile ===
+
+* FFA: 1.38m by HGBRasil
+* 2 Teams: 1m by KF-21
+* 4 Teams: 524.3k by VløKe
+* Maze: -
+
+== Trivia ==
+*The [[Auto Trapper]] and [[Auto Smasher]] are the only Classes with an Auto Turret that works like the Auto Gunner’s.
+*The Auto Gunner was the first Class to use an Auto Turret.
+*On the first few hours of the November 19th update, players could control the Auto Turret of the Auto Gunner and other Tanks that used Auto Turrets. This feature was swiftly removed shortly after release, however.
+== Gallery ==
+<gallery>
+File:Autodominator.png|The [[Auto Turrets|Auto Turret]] is not shooting at the [[Dominator]].
+File:Auto Gunner in Sandbox.jpg|Auto Gunner in Sandbox
+File:Auto gunner icon 4 blue.png|New Colors, blue
+File:Auto gunner icon 3 blue.png|Old Colors, blue
+File:Auto gunner icon 4 green.png|New Colors, green
+File:Auto gunner icon 3 green.png|Old Colors, green
+File:Auto gunner icon 2 green.png|Old Turret, green
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Auto Gunner
+|es     = Auto Gunner
+|fr     = Auto Gunner
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Auto Gunner
+|pt-br  =
+|ro     =
+|ru     = Auto Gunner
+|sv     =
+|tr     =
+|vi     = Auto Gunner
+|zh     = Auto Gunner
+}}
+[[Category:Auto Tanks]]
+[[Category:Diep.io]]
+[[Category:Gunner Tanks]]

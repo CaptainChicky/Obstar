@@ -1,0 +1,141 @@
+= Machine Gun =
+
+{{Infobox
+|image     = <gallery>
+machine gun icon 4.png|New Colors
+machine gun icon 3.png|Old Colors
+machine gun icon 2.png|With Machine Gun II
+machine gun icon 1.png|Nameless
+</gallery>
+|tier     = 2
+|next     = '''Level 30'''<br>[[File:Destroyer icon new.png|50px|link=Destroyer]][[File:Gunner icon new.png|50px|link=Gunner]][[File:Shotgun icon old.png|50px|link=Shotgun]]<br>'''Level 45'''<br>[[File:Sprayer icon new.png|50px|link=Sprayer]]
+|previous = [[File:Tank icon new.png|50px|link=Tank]]
+|barrel   = [[Cannons]] (1)
+|id       = 7
+}}
+The '''Machine Gun''' is a Tier 2 tank in Diep.io. It upgrades from the [[Tank]] at level 15, upgrades to the [[Destroyer]], [[Gunner]] and [[Shotgun]] at level 30, and upgrades to the [[Sprayer]] at level 45.
+
+== Design ==
+The Machine Gun features a circular base with a large trapezoidal [[Cannons|Cannon]] on the front.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = ▼
+|Reload            = ▲
+|MovementSpeed     = —
+|HiddenStat1       = Bullet Accuracy
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▼▼
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+The Machine Gun approximately doubles the rate of fire but decreases Bullet Damage by 30%. In addition, the end of the Cannon becomes wider, making its shots less accurate.
+
+The [[stats]] are as follow (only those that are different from Tank are listed): 
+
+* Bullet Damage: 4.9 (+2.1 for each point in Bullet Damage)
+* Reload time: 8t (-1t for the first point, then -1t for every next 2 points in Reload)
+
+== Strategy ==
+*<b>Strong Against:</b> Low RoF, [[Flank Guard]]s, low-level tanks, Tier 3 and 4 tanks depending on stats and class, unskilled drone users, rammers.
+*<b>Weak Against:</b> High Penetration, High FoV, [[Destroyer]] branch, the [[Overlord]], [[Manager]], [[Overseer]], [[Triple Shot]] branch (except [[Spread Shot]]), [[Factory]], and sometimes [[Streamliner]]s.
+
+=== As the Machine Gun ===
+*The Machine Gun is an ideal tank for 1v1 combat and farming at low levels, due to its fast reload and bullet spread.
+*The Machine Gun is great at destroying [[Square]]s and [[Triangle]]s, so one should go for them; and if the player sees a large cluster of [[Polygons]], they ought to go around and point their cannon at them - the spread of [[Bullets]] is put to good use, and the sheer amount of Bullets will quickly wipe them out.
+*If the player wants to keep the high rate of fire, they should not upgrade to Destroyer. Instead, they should keep getting XP until Level 45 and upgrade to the Sprayer. The Sprayer has a high RoF, high Bullet Penetration, high Bullet Damage and lower spread of bullets.
+*The [[Sniper|Sniper’s]] bullets can easily pierce through the Machine Gun’s bullet stream, while other high penetration tanks such as the Destroyer can out-penetrate easily. To avoid getting hit by these classes, upgrade Movement Speed. The Machine Gun is an aggressive tank and as with most aggressive tanks, moving fast is crucial for attacking, dodging and pursuing smaller and faster foes.
+*It is one of the few high RoF tanks with great recoil. The player should use their recoil to boost towards their enemies, although they should be cautious when doing this, as they are vulnerable to attacks on their flank.
+*Another good strategy for the Machine Gun is to get a rammer build with high health and body damage, as the Machine Gun and its upgrades can get extra speed using its recoil.
+**The Machine Gun also upgrades to the Destroyer, which has higher recoil making it even more suitable for ramming.
+**When trying to ram, try to dodge the bullets while slowly moving toward the opponent.
+[[File:MachineGunInGame.png|thumb|250px|A Machine Gun in-game, shooting.]]
+*In team modes, the player can cover their teammates in a shower of bullets when they are low on health, so they can regenerate their health without being disturbed; However, this strategy can be ineffective if the player’s enemies are too far away from them, and they must be especially careful when using this strategy against tanks that have focused fire.
+*The Machine Gun is commonly used in [[Domination]]; the high RoF can wipe out enemies for offense and defense and deal heavy damage to [[Dominator]]s despite the bullet spread and decreased bullet damage.
+*When upgrading through the Machine Gun in a bullet hell or competitive [[Free For All|FFA]]/[[Maze]] game, you can try maxxing out Reload and Bullet Penetration early to make yourself seem stronger and ward off a portion of attackers (although this is quite risky if you don't also invest a few points in Damage or Speed).
+
+=== Against the Machine Gun ===
+*Machine Guns can be very dangerous at low levels with their high DPS and wide bullet spread, so when engaging one it is crucial to either catch it by surprise or outmaneuver the bullet cloud.
+*An Overlord or Overseer can flank a Machine Gun with their drones. The Manager may have an advantage since they can turn invisible, allowing them to easily ambush the Machine Gun.
+*The Destroyer tree has higher recoil than the Machine Gun and using a bullet build, the player can recoil around the areas covered with bullets, then get in close to plow the Machine Gun’s bullets and kill it in one or two hits. Note: A Machine Gun using a rammer build can survive more than one bullet, even if the damage is maxed out.
+*Tanks like the [[Predator]], [[Ranger]] or [[Stalker]] can take down a Machine Gun out of nowhere since they have a high FoV and can easily outrange the opponent.
+*The [[Penta Shot]], the [[Triplet]] or the [[Factory]] work well since they can spam a very high amount of bullets and thus overwhelm the enemy tank.
+*In rare cases, a Streamliner can kill a Machine Gun, as their more concentrated stream can slip through the Machine Gun’s.
+*The spread of the Machine Gun’s bullets allows for an unpredictable and sudden need to maneuver to dodge its bullets. Be aware as the Machine Gun may often decide to spray the surrounding area; therefore stealth, reflexes, and accuracy are key in defeating this tank.
+
+== [[Achievements]] ==
+{{SideBox|*<b>Eat those bullets</b> — Upgrade to Machine Gun for the first time.
+|{{Achievement
+|Color        = #F868FC
+|Name         = Eat those bullets
+|Description  = Upgrade to Machine Gun}}
+}}
+
+== History ==
+*Between the day [[Destroyer]] was added and 24th May 2016 (the day [[Gunner]] was added), Machine Gun could upgrade into itself and [[Destroyer]] at Level 30. The reason why is because at the time, there was no "pure" upgrade for Machine Gun to upgrade into. This also means that, once upgrading into this second Machine Gun, you can upgrade into it and [[Destroyer]] again at Level 45, since it's the same tank and has the same upgrades.
+**These upgraded Machine Gun variants are typically referred to by how many times you upgrade into yourself; If you upgrade into Machine Gun twice from [[Tank]], that variant would be referred to as Machine Gun II. If you did it three times, it'd be referred to as Machine Gun III.
+*The Machine Gun was nerfed after the Sprayer was released.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=8xHPEjpwJAM 2.12m by JB Colombia]
+* 2 Teams: 2m by Lambo
+* 4 Teams: [https://www.youtube.com/watch?v=sugTI-1IaYs 2.5m by dragos]
+* Maze: [https://www.youtube.com/watch?v=G-Os7kKYIIE 1.4m by JB Colombia]
+
+=== Mobile ===
+
+* FFA: 1.08m by HZ6
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+==Trivia==
+*The shape of the Cannon resembles the [[Spawners]] of the [[Overseer]] Classes, making some new players confuse the Manager and the Machine Gun. However, the Manager is often larger in size and has a wider but shorter barrel.
+*The initial community nicknamed this tank "Cone Gun" due to the Machine Gun having a cone-like cannon.
+*Sometimes, when you upgrade from Tank to Machine Gun (With [[Auto Fire]] on), 2 bullets will fire at the same time, with the exact opposite spread.
+*A Machine Gun, alongside a Sniper, with maxed out reload and movement speed at level 15 is the fastest tank in the game outside of Sandbox.
+*Machine Gun and [[Sniper]] are the only two tanks that, at some point, could upgrade into themselves.
+
+== Footnotes==
+<references />
+
+==Gallery==
+<gallery>
+Awaveofmachinegunbulletscoming.PNG|A wave of bullets being shot out of a Machine Gun, headed towards a few [[Polygons]]
+machine gun icon 1 red.png|The first Machine Gun icon, in red
+machine gun icon 1 blue.png|The first Machine Gun icon, in blue
+machine gun icon 2 red.png|The second Machine Gun icon, in red
+machine gun icon 2 blue.png|The second Machine Gun icon, in blue
+</gallery>
+
+{{TankNav|tier2}}
+{{Interlang
+|status = checked
+|de     = Machine Gun
+|es     = Machine Gun
+|fr     = Machine Gun
+|hu     =
+|it     =
+|ja     =
+|ko     = 머신건
+|pl     = Machine Gun
+|pt-br  = Machine Gun
+|ro     =
+|ru     = Machine Gun
+|sv     = Machine Gun
+|tr     = Machine Gun
+|vi     = Machine Gun
+|zh     = Machine Gun
+}}
+[[Category:Diep.io]]

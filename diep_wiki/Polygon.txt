@@ -1,0 +1,4 @@
+= Polygon =
+
+#REDIRECT [[Polygons]]
+[[Category:Redirect]]

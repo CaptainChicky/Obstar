@@ -1,0 +1,178 @@
+= Diep.io Mobile/Legacy =
+
+{{Removed}}
+[[File:App.png|thumb|The Icon for the app.]]
+The legacy '''Diep.io Mobile''' app was a version of [[Diep.io]] by Miniclip for iOS and Android. Compared to the desktop and modern mobile clients, it uses its own servers and lacked a significant amount of newer content. 
+
+The servers for this version shut down shortly after the release of the updated [[Diep.io Mobile|mobile client]].
+
+==Game Modes==
+[[File:Diep.io Front_Screen.png|The main screen for Diep.io Mobile.|right|308x308px]]
+*[[Free For All|FFA]] (Free For All)
+*[[2 Teams]] (Labeled as [[Team Deathmatch|Team DM]])
+*[[Domination]]
+*[[Tag|Tag Mode]]
+
+==Gameplay==
+Rather than point and click (and WASD or arrow key controls), the controls consist of 2 joysticks, one on the left side of the screen, and one on the right. By default, the left joystick is the move function, and the right joystick is to point and shoot. Alternatively, the game can be played by pointing in the direction you want to move/shoot using the touch screen. This makes classes like [[Necromancer]] very difficult to play because they rely heavily on the Drones to shield them from incoming fire. The only way to accomplish something of this sort is by spinning yourself around to decelerate the Drones. You can easily see how much more complicated simple controls can be like this.
+
+==Game Modes==
+Diep.io on mobile does '''not''' include some of the game modes included on the web version. The game modes unavailable on mobile are the long-gone [[Mothership (Game Mode)]], [[Maze]], [[Sandbox]] and [[4 Teams]].
+
+==Experience Gain / Upgrades Sidebar==
+Although the player may feel like it gives the player more experience in mobile than in PC, there’s no difference in the rate that you gain experience. For instance, 50 points in mobile will put you just below a level 5 tank; the same as the web version.
+
+The only time the player can see the upgrades in mobile is when you have Skill Points to spend. In the browser version, scrolling into the bottom left makes the player view upgrades that the player has made, but this is not available in Mobile Diep.io except when the player views the scoreboard. The player's score will be at the bottom of the scoreboard.
+
+==Game User Interface Navigation==
+'''''Pause Button''''' - A button in the top left corner of the screen serves as an exit function.  By tapping on it, a confirmation message will ask if the player wants to leave or not.
+
+'''''Minimap''''' - This is different for every game mode, although the maps in the Mobile version are the same as the PC version.  A minimap is located on the screen below the Pause Button.  The player's location will appear as a black isosceles triangle, with the sharp point facing in the same direction the player is facing.
+
+'''''Scoreboard''''' - In the top right corner of the screen, there is a function that hides or shows the leaders (leading team for Tag Mode).  Unlike the PC version, the mobile version’s scoreboard only shows the top 5 players, whereas the PC version displays the top 10. If the player has fewer points than the person in 5th place, its points will be shown only to itself on the bottom of the leaderboard.
+
+'''''Leader Arrow''''' - The leader arrow points to where the top player is.  When the player sees the leader, the arrow will disappear.  A leader's arrow is not displayed if the player is the leader.
+
+'''''Experience Bar''''' - The experience bar displays the player's tank’s level along with how close you are to leveling up.  Upgrades are available when the player's [[Levels|Level]] is up.
+
+==Classes==
+[[File:Diep.io Examine.png|What the player sees. The upgrades on the top of the screen aren’t accessible for you to look at whenever you wish, so predict your builds wisely!|right|360x360px]]'''''Note:''' Some Classes that exist on the Computer version of Diep.io do not exist on the Mobile version of Diep.io They include [[Factory]], [[Battleship]], [[Predator]] (still known by its old name, X Hunter) and possibly others.''
+
+The Auto Trapper is the last tank to be added in Diep.io Mobile/Legacy.
+
+Sort:
+<tabber>
+|-|Branches=
+
+=== Tier 1 ===
+
+*[[Tank|Basic Tank]]
+
+=== Tier 2 ===
+
+*[[Twin]]
+*[[Sniper]]
+*[[Machine Gun]]
+*[[Flank Guard]]
+
+=== Tier 3 ===
+
+*[[Triple Shot]]
+*[[Quad Tank]]
+*[[Twin Flank]]
+*[[Assassin]]
+*[[Overseer]]
+*[[Hunter]]
+*[[Trapper]]
+*[[Destroyer]]
+*[[Gunner]]
+*[[Tri-Angle]]
+*[[Auto 3]]
+*[[Smasher]]
+
+=== Tier 4 ===
+
+*'''''[[Twin]] Branch''''':
+*[[Triplet]]
+*[[Penta Shot]]
+*[[Spread Shot]]
+*[[Octo Tank]]
+*[[Triple Twin]]
+
+*'''''[[Sniper]] Branch''''':
+*[[Ranger]]
+*[[Stalker]]
+*[[Overlord]]
+*[[Necromancer]]
+*[[Manager]]
+*[[Overtrapper]]
+*[[Predator (original)|X Hunter]]
+*[[Streamliner]]
+*[[Tri-Trapper]]
+*[[Mega Trapper]]
+*[[Auto Trapper]]
+
+*'''''[[Machine Gun]] Branch''''':
+*[[Hybrid]]
+*[[Auto Gunner]]
+*[[Gunner Trapper]]
+*[[Sprayer]]
+
+*'''''[[Flank Guard]] Branch''''':
+*[[Booster]]
+*[[Fighter]]
+*[[Auto 5]]
+
+|-|ID=
+*[[Tank|Basic Tank]]
+*[[Twin]]
+*[[Triplet]]
+*[[Triple Shot]]
+*[[Quad Tank]]
+*[[Octo Tank]]
+*[[Sniper]]
+*[[Machine Gun]]
+*[[Flank Guard]]
+*[[Tri-Angle]]
+*[[Destroyer]]
+*[[Overseer]]
+*[[Overlord]]
+*[[Twin Flank]]
+*[[Penta Shot]]
+*[[Assassin]]
+*[[Necromancer]]
+*[[Triple Twin]]
+*[[Hunter]]
+*[[Gunner]]
+*[[Stalker]]
+*[[Ranger]]
+*[[Booster]]
+*[[Fighter]]
+*[[Hybrid]]
+*[[Manager]]
+*[[Predator (original)|X Hunter]]
+*[[Sprayer]]
+*[[Trapper]]
+*[[Gunner Trapper]]
+*[[Overtrapper]]
+*[[Mega Trapper]]
+*[[Tri-Trapper]]
+*[[Smasher]]
+*[[Landmine]]
+*[[Auto Gunner]]
+*[[Auto 5]]
+*[[Auto 3]]
+*[[Spread Shot]]
+*[[Streamliner]]
+*[[Auto Trapper]]
+
+</tabber>
+
+==Trivia==
+*This version’s [[Predator]] was called the X Hunter. It had a separate button for zooming.
+*Only you and the top 5 players on the [[leaderboard]] were shown. If the player was one of those 5 leaders, a sixth person would be shown.
+*Because the game used joysticks, Overseer classes could not repel, and could not hold their [[Drones]] in a specific spot. They could only direct them to move towards a certain place.
+*You could not take control of [[Dominator]]s.
+*Upon upgrading to [[Smasher]], the aiming button went invisible (you could still control it by moving your finger around where it was supposed to be, and the arrow on your minimap would still rotate around).
+
+See also
+*[[Mobile Changelog]]
+{{Gameplay|general}}{{Interlang
+|status = checked
+|de     =
+|es     = Aplicación Para Móvil
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Diep.io Mobile
+|zh     = Diep.io手機版
+}}
+[[Category:Diep.io]]

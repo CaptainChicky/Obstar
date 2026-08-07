@@ -1,0 +1,142 @@
+= Sniper =
+
+{{Infobox
+|image    = <gallery>
+sniper icon 4.png|New Colors
+sniper icon 3.png|Old Colors
+sniper icon 2.png|With Sniper II
+sniper icon 1.png|Nameless
+</gallery>
+|tier     = 2
+|next     = [[File:Assassin icon new.png|50px|link=Assassin]][[File:Overseer icon new.png|50px|link=Overseer]][[File:Hunter icon new.png|50px|link=Hunter]][[File:Trapper icon new.png|50px|link=Trapper]]
+|previous = [[File:Tank icon new.png|50px|link=Tank]]
+|barrel   = [[Cannons]] (1)
+|id       = 6
+}}
+The {{PA}} is a Tier 2 tank in Diep.io. It upgrades from the [[Tank]] at level 15 and upgrades to the [[Assassin]], [[Overseer]], [[Hunter]], and [[Trapper]] at level 30.
+
+== Design ==
+The Sniper features a circular base with a rectangular [[Cannons|Cannon]] on the front. Compared to its predecessor, the [[Tank|Basic Tank]], the cannon length is slightly longer.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▲
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = ▼
+|MovementSpeed     = —
+|HiddenStat1 = Field of View
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+The Sniper has an increased field of vision and Bullet Speed; however, it has a reduced rate of fire:
+
+* Bullet Speed: 1.4x Tank
+* Reload time: 23t (-2t for each of the 1st, 2nd, 4th and 7th point, -1t for the 3rd, 5th and 6th point in Reload)
+
+
+
+== Strategy ==
+* '''Strong Against:''' Unfocused-firing tanks, slower or distracted tanks at a distance.
+* '''Weak Against:''' Strong bullet spammers, skilled Overseer branch users, fast rammers.
+
+=== As the Sniper ===
+* The player should use their larger Field of View to their advantage and also keep players in the corners of there screen as that is the furthest view. Their low rate of fire is bad for close quarters, so the player should avoid the target by staying as far away as possible.
+** Firing at the edge of or just beyond one’s FoV is often useful — the high bullet speed and range will allow one to easily catch enemies off-guard or outmaneuver them while keeping at a fairly safe distance.
+* Ideally, a Sniper should approach its enemy (who does not know that the Sniper is there and therefore, does not acknowledge its presence) stealthily.
+** This tactic can be done only with the [[Assassin]] and [[Hunter]] sub-branches, but each tank has different skills; for example, the Stalker can become invisible, and the Ranger can take out targets from much further away.
+** A good tactic with the Sniper is to shoot at where the player’s target '''will''' be. The player must always predict their enemies’ movements.
+* Farming from [[Square]]s or [[Triangle]]s will be inefficient due to the Sniper’s slow fire rate, so focus on farming for [[Pentagon]]s or low-level tanks to max out Reload as soon as possible. Alternatively, increase Bullet Penetration and Bullet Speed to hit many [[Polygons]] in a single shot from a longer range.
+** A swarm of [[Crashers]] is able to drain the health of the Sniper because of the Sniper's low rate of fire, so it is highly recommended that the player should stay out of the [[Pentagon Nest]] when their level is low, or just stay at the edge and shoot inwards due to their increased FoV. Stealing kills and [[Alpha Pentagon]]s from the edge is a great way to level up.
+** It would also be ideal to wait until the Sniper is at Level 30 or 45 to start upgrading since the [[Tank]] has a somewhat quick fire rate and can defend itself in close-quarters combat.
+* The best thing to do when a Sniper encounters another player nearby is to run away unless one has a clear advantage. If they see the player and fire at them, they should move away from them and if they follow the player, fire at them and watch every direction, as another player, such as one with a rammer build, can quickly move in to kill the player if they don’t see it in time.
+* High RoF (Rate of Fire) tanks can kill a Sniper with little to no effort, so it’s best not to engage them until the player has upgraded to a Tier 3 tank.
+** Beware that Snipers can be good at avoiding fights altogether however, due to their increased field of view.
+** A sniper with max reload, damage, and penetration can overwhelm any tank if they are distracted. A sniper can kill most glass cannons in 2-3 hits.
+
+=== Against the Sniper ===
+* Drone classes can easily surround and overwhelm a Sniper due to its slow Reload. However, if a sniper catches a drone tank off guard or while its drones are away, the sniper will almost always kill the drone tank.
+* Bullet Spammers like the [[Triplet]], [[Penta Shot]] or [[Sprayer]] can also overwhelm a Sniper through sheer DPS at close range.
+* Rammers like tanks in the [[Tri-Angle]] and [[Smasher]] branches can charge at a Sniper while dodging the fast bullets, quickly killing it.
+* The increased FOV of this tank may make surprise attack slightly harder, as with sneaking up on the tank. Its bullets may also be the surprise to any approaching player instead, so one should always be ready to last-minute dodge a random bullet. When in close range of the Sniper, its reload becomes a disadvantage, so approach carefully then kill as fast as possible.
+
+== [[Achievements]] ==
+{{SideBox|* '''Snipin’''' — Upgrade to Sniper
+* '''Try some other classes too''' — Upgrade to Sniper 100 times|
+{{Achievement
+|Color        = #6897FC
+|Name         = Snipin’
+|Description  = Upgrade to Sniper}}
+{{Achievement
+|Color        = #F868FC
+|Name         = Try some other classes too
+|Description  = Upgrade to Sniper 100 times}}
+}}
+
+== History ==
+*Between the day [[Overseer]] was added and the day [[Assassin]] was added, Sniper could upgrade into itself and [[Overseer]] at Level 30. The reason why is because at the time, there was no "pure" upgrade for Sniper to upgrade into. This also means that, once upgrading into this second Sniper, you can upgrade into it and Overseer again at Level 45, since it's the same tank and has the same upgrades.
+* With the initial release of achievements on February 21st, 2017, upgrading to the Sniper for the first time awards the player the achievement “Snipin’”.
+
+== Record ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/a/VCJ8r 1.99m by Akraisa]
+* 2 Teams: [https://imgur.com/MSijOkj 2.14m by exo]
+* 4 Teams: 2.33m by Hunterzolomon
+* Maze: [https://www.youtube.com/watch?v=VwhAcXehycA 804k by Legit Developer]
+
+=== Mobile ===
+
+* FFA: 1.05m by Pianzage
+* 2 Teams: 584.8k by Fire
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*[[Machine Gun]] and Sniper are the only two tanks that, at some point, could upgrade into themselves.
+* The Sniper and its upgrades’ [[Bullets]] do not slow down when traveling through obstacles (enemy Bullets, Polygons), which may be helpful for farming. From another side, a very high Bullet Speed might be the reason the Bullet will fail to output the max amount of damage to small and strong Polygons like the Pentagon.
+* A Sniper, alongside a Machine Gun, with maxed out reload and movement speed at level 15 is the fastest tank in the game outside of Sandbox.
+* The Sniper branch of the [[Tiers|Class]] tree is the largest of the Tier 2 branches.
+** A Sniper can become one of 14 distinct Tier 4 Classes, as well as an additional 4 Tier 3 Classes.
+*** It also has three other Tier 4 Classes that can be accessed without using Sniper. These are the [[Battleship]], [[Gunner Trapper]], and [[Streamliner]].
+
+== Gallery ==
+<gallery>
+sniper icon 1 blue.png|First Sniper icon, in blue
+sniper icon 1 green.png|First Sniper icon, in green
+sniper icon 2 blue.png|Second Sniper icon, in blue
+sniper icon 2 green.png|Second Sniper icon, in green
+Diep.io sniper.png|Sniper in game.
+Sniper Screenshot2.png|Sniper close-up.
+File:Capture snipy sniper.PNG|none|thumb|450x450px|A Sniper near some polygons.
+</gallery>
+{{TankNav|tier2}}
+{{Interlang
+|status = checked
+|de     = Sniper
+|es     = Sniper
+|fr     = Sniper
+|hu     =
+|it     =
+|ja     =
+|ko     = 스나이퍼
+|pl     = Sniper
+|pt-br  = Sniper
+|ro     = Sniper
+|ru     = Sniper
+|sv     = Sniper
+|tr     = Sniper
+|vi     = Sniper
+|zh     = Sniper
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

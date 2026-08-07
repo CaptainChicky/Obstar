@@ -1,0 +1,4 @@
+= Auto-Gunner =
+
+#REDIRECT [[Auto Gunner]]
+[[Category:Redirect]]

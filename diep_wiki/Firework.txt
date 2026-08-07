@@ -1,0 +1,98 @@
+= Firework =
+
+
+[[Category:Tanks]]
+{{Stub}}
+{{WIP}}
+{{Infobox
+|image     = <gallery>
+firework icon.png|Current design
+firework icon old.png|Old design
+firework icon older.png|Formerly name
+</gallery>
+|tier      = 4
+|previous  = [[File:Destroyer icon new.png|50px|link=Destroyer]]
+|next  = None
+|barrel    = [[Cannons#Deployers|Deployer]] (1)
+|id        = 64
+}}
+
+The {{PA}} (formerly ''Firecracker'') is a Tier 4 tank in Diep.io. it upgrades from the [[Destroyer]] at level 45.
+== Design ==
+The Firework features a short Trapezoid barrel with a trapezoid base overlapping it (like Ranger or Dominator). The Trapezoid barrel also overlaps a thinner, longer Trapezoid
+
+== Technical ==
+When shooting, it shoots a hexagon which on right click explodes into 24 fragments arranged into 4 rings of 6. The fragments on each ring are arranged in the shape of a Hexagon, with alternating orientations. The firework itself also features a small cannon at the back that shoots small bullets to propel it forward with a base rate twice as fast as Tank's reload speed. The lifespan of the small bullets is short. 
+
+* Stats:
+** Main: 
+*** Bullet Speed: 0.25x Tank
+*** Bullet Penetration: 8 (+6 for each point in Bullet Penetration) 
+*** Bullet Damage: 4.9 (+2.1 for each point in Bullet Damage) 
+*** Reload: Same with [[Destroyer]]
+** Small bullets (fragments):
+*** Bullet Speed: TBA
+*** Bullet Penetration: 1.2 (+0.9 for each point in Bullet Penetration)
+*** Bullet Damage: 4.2 (+1.8 for each point in Bullet Damage)
+** Small bullet (propeller):
+*** Bullet Speed: TBA
+*** Bullet Penetration: 0.6 (+0.45 for each point in Bullet Penetration) 
+*** Bullet Damage: 4.2 (+1.8 for each point in Bullet Damage) 
+*** Reload time: 8t (-1t for the 1st, 3rd and 7th point in Reload).
+
+== Strategy ==
+TBA
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/a/1iopendiep-io-firework-ffa-wr-by-1iopen-bdVkUyF 821k by 1iopen]
+* 2 Teams: [https://www.youtube.com/watch?v=aDbW-aVXqc0 3.12m by cloudboyistrash]
+* 4 Teams: 1.92m by LK2410
+* Maze: -
+
+=== MOBILE ===
+
+* FFA: -
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+
+* During the beta testing phase, the tank was known as "Firecracker."
+** The tank was originally planned to be upgraded from [[Shotgun]].
+** The first iteration has the appearance similar to the [[Glider]] tank but shoots a 4-point-star shape bullet that explodes into a wave of small bullets. 
+*** The tank would go through many more iterations before becoming the Firework of today. 
+* This was the last tank to be added to Diep.io in 2025. 
+
+== Gallery ==
+<gallery>
+File:FireworkvTriAngle.png|A Blue Firework protecting a Blue Flag from a Tri-Angle
+File:FireworkGamePlay.png|Gameplay of the Firework
+File:Firecracker1st.png|The first iteration of Firework in Beta, called "Firecracker." Notice the design being similar to that of Glider
+File:RangerSpectateFireworks.png|A Ranger spectating a fight in Beta. Notice the Firework's bullet exploding and the Firework's cannon design looking like a wide Predator
+File:FireworkDiepio.jpg|Firework in Sandbox
+</gallery>{{TankNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = 
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 
+|pt-br  =
+|ro     =
+|ru     = 
+|sv     =
+|tr     =
+|vi     = 
+|zh     = 
+}}
+[[Category:Tier 4 Tanks]]
+[[Category:Player Tanks]]
+[[Category:Diep.io]]

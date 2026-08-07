@@ -1,0 +1,118 @@
+= Tanks =
+
+[[File:Tank_parts_3.png|thumb|225px|Tank’s standard parts]]
+{{For|specific types of tanks in Diep.io|Tiers}}
+{{PA}} are entities in [[Diep.io]] that can shoot free-moving [[Bullets]], [[Drones]], [[Traps]], [[Missiles]], or [[Drones|Minions]]. They can be controlled either by a player or AI.
+
+== Design ==
+All tanks consist of a body and one or more weapons attached to the tank. The size and placement of the [[Cannons|Cannon(s)]] depends on the level and [[Tiers|Class]] of the tank respectively.
+
+=== Components ===
+[[File:Tank_Final_Screenshot_1.png|thumb|150x150px|A Tank shooting a Bullet.]]
+Classes are commonly composed out of three, very distinct parts: The tank itself or ‘the body’; its Weapon/s (Cannons, Spawners, Launchers, etc); and the Projectiles or ‘the ammunition’ that is spawned from it.
+
+====Body====
+The body of a tank, it has the same base durability regardless of class or shape. It is only modifiable through the Tank’s Body Damage, Max Health, and Regeneration stats. The only exception to this being the [[Spike]] tank, which sports additional base Body Damage.
+Almost all playable tanks have a circular body. The only exceptions to this being the [[Necromancer]], and the [[Factory]], which are square-shaped. The game revolves around destroying this part of the tank. If it despawns, the tank dies.
+
+====Weapon====
+Weapons appear in different shapes, sizes, and numbers. they are not tangible parts of the tank, and their primary function is to let the player aim and control where its Ammunition spawns.
+The most common types of weapons are Cannons, followed by Spawners, Launchers, and Deployers.
+The Ammunition that each of these types spawns being Bullets, Drones, Traps, and Missiles respectively. 
+
+====Ammunition====
+Bullets, Drones, Traps and Missiles are tangible entities spawned from the Weapon's location, whose primary job is to destroy the enemy bodies by colliding with them. Depending on the Class and Weapon type, the ammunition may present different traits such as Speed, Durability, Size, and Lifespan. Additionally, special ammunition types such as drones are the only entities whose Trajectory is not fixed, and can thus be updated to make it more difficult to block/dodge.
+
+=== Color ===
+[[File:Tank_Final_Screenshot_2.png|thumb|150px|All four team colors]]
+*The color of a tank’s body is based on its team’s color (<span style="color: #00B2FF;">blue</span>, <span style="color: #F14E54;">red</span>, <span style="color: #BF7FF5;">purple</span> or <span style="color: #4CE999;">green</span>).
+**Your tank is colored <span style="color: #00B2FF;">blue</span> in [[Free For All|FFA]] and [[Maze]], while everyone else’s is <span style="color: #F14E54;">red</span>.
+**Neutral tanks, like [[Arena Closer]]s or unclaimed [[Dominator|Dominators]] are always <span style="color: #FFE869;">yellow</span>.
+**Some Bosses have special colors, such as <span style="color: #F177DD;">pink</span> or <span style="color: #FFE869;">yellow</span>.
+**Fallen Bosses are <span style="color: #C0C0C0;">light grey</span>.
+**The outlines of tanks and Cannons are slightly darker than the body. 
+'''''Note: They used to have black outlines until it was changed in the later updates.'''''
+*Cannons are always colored <span style="color: #808080;">dark grey</span>.
+*Bullets are usually the same color as the tank who fired them.
+**In FFA and Maze, a Necromancer’s Drones are colored <span style="color: #FCC376;">peach/orange</span>.
+
+== Technical ==
+=== Movement ===
+{{Main|Controls}}
+All controllable tanks can move their bodies with the arrow or WASD keys. They can move their Cannon(s), which always points at the cursor, with the mouse. Pressing C will make the tank spin automatically.
+
+==== Shooting Traps or Bullets ====
+To shoot ammunition, a player can press SPACE, or left click with their mouse. Pressing E will enable the tank to fire automatically. However, Smasher and its upgrades (except Auto Smasher) cannot shoot Bullets.
+
+==== Controlling Drones ====
+For any tank that utilizes controllable Drones, left-clicking (or SPACEBAR) will bring the Drones towards the mouse cursor. This is always on if [[Auto Fire]] is enabled. Right-clicking (or SHIFT) will repel them away from the cursor. Otherwise, the Drones will return to the tank and orbit it, unless there is a [[Polygons|Polygon]], a Boss or another enemy tank nearby. In the case of you using Factory, your Minions shoot to your cursor when left-clicking or Auto Fire is on and looks away, or if close, gets dragged (only if the cursor is close to the Minions|Minion) if right-clicking.
+
+==== Other Controls ====
+Some tanks have additional controls as well. For example, right-clicking while playing as the [[Predator]] will extend its focus in the direction of the mouse.
+
+=== Spawning ===
+Spawning is the act of being born into the arena. It is done by pressing enter on the computer version, or by pressing the green arrow button below the player's name, in the mobile version. A player will always spawn as a basic Tank. The player will spawn in their base in 2 Teams, 4 Teams, or Domination. In FFA, Survival, Tag, Maze, or Sandbox, the player will spawn at a random point on the map.
+
+When the player spawns, they rotate for a second. Their body also flashes slightly for approximately 15 seconds. During this time the player cannot be harmed. In this time, if they collide with Crashers, Polygons, Bullets, Tanks, or any other entities, the entity will be destroyed, at no health cost to the player. Undisturbed, this period of invincibility lasts for approx. 15 seconds, however, if the player moves or fires, then the period is stopped. However, a player can select upgrades, or fill in the stat bar during this time. This feature was created to prevent tanks from being spawn killed.
+
+The level a tank spawns at is determined by the level it was killed at previously. If this is the first time the server has been joined, then the tank will spawn at level 1. A level 45 tank will spawn at level 22, with a range of values in between. If a player leaves the site, then returns, they will spawn at level 1. The level a player will spawn at is shown below their name.
+
+== [[Achievements]] ==
+{{SideBox|*<b>A moment to cherish forever</b> — Destroy your first tank
+*<b>Git Gud</b> — Destroy 10 tanks
+*<b>Gitting Gud</b> — Destroying 100 tanks
+*<b>Got Gud —</b> Destroy 1000 tanks
+*<b>Starting Out</b> — Destroy Something
+*<b>Getting Good</b> — Destroy 500 things
+*<b>Destroy EVERYTHING</b> — Destroy 10000 things
+|{{Achievement
+|Name         = A moment to cherish forever|Description  = Destroy your first Tank}}
+{{Achievement
+|Color        = #9AFB68
+|Name         = Git Gud
+|Description  = Destroy 10 tanks}}
+{{Achievement
+|Color        = #FB6969
+|Name         = Gitting Gud
+|Description  = Destroy 100 tanks}}
+{{Achievement
+|Color        = #F4DC6A
+|Name         = Got Gud
+|Description  = Destroy 1000 tanks}}
+{{Achievement
+|Color        = #7FA0ED
+|Name         = Starting out
+|Description  = Destroy something}}
+{{Achievement
+|Color        = #986BED
+|Name         = Getting Good
+|Description  = Destroy 500 things}}
+{{Achievement
+|Color        = #F968FD
+|Name         = Destroy EVERYTHING
+|Description  = Destroy 10000 things}}
+}}
+
+== Trivia ==
+*A [[Levels|Level]] 45 Tank with no Health Stats upgraded (Except for the Spike) has approximately 1/20th of the health of an [[Alpha Pentagon]].
+**A level 1 Tank, on the other hand, has approximately 1/60th the health of an Alpha Pentagon.
+
+{{Gameplay|mechanics}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Tanques
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     = 탱크(기본 탱크)
+|pl     = Czołgi
+|pt-br  =
+|ru     = Танки
+|sv     =
+|tr     = Tanklar
+|vi     = Tanks
+|zh     = 坦克
+}}
+[[Category:Diep.io]]

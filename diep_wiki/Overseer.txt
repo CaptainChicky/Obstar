@@ -1,0 +1,155 @@
+= Overseer =
+
+{{Infobox
+|image     = <gallery>
+overseer icon 3.png|New Colors
+overseer icon 2.png|Old Colors
+overseer icon 1.png|Nameless
+</gallery>
+|tier      = 3 
+|next      = [[File:Overlord icon new.png|50px|link=Overlord]][[File:Necromancer icon new.png|50px|link=Necromancer]][[File:Manager icon new.png|50px|link=Manager]][[File:Overtrapper icon new yellow.png|50px|link=Overtrapper]][[File:Battleship icon new dblue.png|50px|link=Battleship]][[File:Factory icon new.png|50px|link=Factory]]
+|previous  = [[File:Sniper icon new.png|50px|link=Sniper]]
+|barrel    = [[Spawners]] (2) [[Drones]] (8)
+|id        = 11
+}}
+{{Upgraded form|Overlord}}
+The '''{{PA}}''' is a Tier 3 tank in Diep.io. It upgrades from the [[Sniper]] at level 30 and upgrades to the [[Overlord]], [[Necromancer]], [[Manager]], [[Overtrapper]], [[Battleship]], and [[Factory]] at level 45. Upon upgrading, the Sniper barrel is replaced with [[Spawners|Drone Spawners]] at opposites ends of the tank. They will automatically spawn [[Drones]] and will continue to do so until the capacity of 8 drones is met.
+
+==Design==
+The Overseer has a circular base with two [[Spawners]] on opposite sides of the tank, perpendicular to the cursor’s trajectory.
+
+==Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▼
+|BulletPenetration = ▲
+|BulletDamage      = ▼
+|Reload            = ▼▼
+|MovementSpeed     = —
+|HiddenStat1       = Field of View
+|HiddenStat2       = 
+|HiddenStat3       = 
+|HiddenStat4       = 
+|HiddenStat1Val    = —
+|HiddenStat2Val    = 
+|HiddenStat3Val    = 
+|HiddenStat4Val    = 
+}}Overseers can control up to 8 [[Drones]] to attack and defend themselves from other entities. When not controlled by the player, the Drones will target the nearest polygon or player within a certain distance of the tank.
+
+The Overseer’s Drones are moderately strong and very fast — rivaling the speed of actual bullets, they can outpace the fastest classes in the game depending on how they are being controlled.
+
+Despite this, Overseers have slow drone regeneration, with “reload” about six times slower than that of a Basic Tank.
+
+However, they still pack quite a punch; each Drone is 140% as strong as a Basic Tank projectile of the same build, making for up to ~1.87 [[Destroyer|Destroyer Class projectiles’]] worth in momentum in total.
+
+Stats: 
+
+* Drone Speed: 0.8x [[Tank]]
+* Drone Health: 4 (+3 for each point in Drone Health) 
+* Drone Damage: 4.9 (+2.1 for each point in Drone Damage) 
+* Reload time: 90t (-7t for each of the first 3 points, -6t for the 4th point, -5t for each of the last 3 points in Reload)
+
+==Controls==
+{{Main|Drones}}
+The Overseer’s Spawners will spawn up to 8 Drones in sets of 2 that the player can use to attack enemies within a safe distance of their tank.
+===Attract===
+When [[Auto Fire]] is on or Left-Click/Space is pressed, Drones will move towards the player’s cursor.
+
+=== Repel===
+When Right-Click or Shift is pressed, the Drones' controls will be overridden, causing the drones to move away from the cursor’s position. (If whilst pressing Left-Click they moved north, when holding Right-Click they will move south.)
+
+===AI===
+Auto Fire overrides the AI. If Auto Fire is OFF and Left-Click or Right-Click is not pressed, any Drones within a certain distance of the tank will target the closest enemy, such as [[polygons]] or other players. Despite seeming like a bad idea for the AI to control your drones, it gives you virtually free skill points and you can use it on your drones or on yourself.
+
+It should be noted that the drones don’t target enemy drones nor other projectile types. If no target is found, the Drones will slowly circle the player until they command them to move or one of the entities in before paragraph comes within range of the Overseer. If Auto Spin and Auto Fire are on, the drones will orbit the front of the tank.
+
+==Strategy ==
+*<b>Strong Against:</b> Slow tanks, low DPS tanks, Sniper branch (when up close), [[Tri-Angle]] class (if your Drones focus on one).
+*<b>Weak Against:</b> [[Destroyer]] branch, high DPS tanks, Sniper branch (when far away), Overlord, [[Booster]]s, [[Fighter]]s (given the appropriate build), and high-reloaded Necromancers
+
+===As the Overseer=== 
+*Drone classes do not have any weapons or forms of defense outside of their drones. Since Overseers need to depart from their drones to attack, it may be wise to spend a few points on Max Health/Body Damage as they level up.
+*When attacking, players should watch out for rammers and other users trying to flank them.
+*When attacking, players should go for distracted or lower-level tanks, since classes with a higher rate of fire can destroy their drones while they run away.
+**However, if the enemy can only address one front at any given time it may be possible to surround them with drones and then attack them from all sides.
+*Due to the class’s low reload, players should try to make sure their drones take as little damage as possible when attacking. That way, if a tank were to surprise the player, they can still defend themselves.
+
+*Players in a tight spot should keep their drones to themselves and repel them if an enemy comes too close. This way, the player has all their bases covered and can't be surprised from the sides or back.
+**However, if a player is in an area with large amounts of bullet fire, they should instead just stay on the defensive and not repel their drones. This way they can look for a player to single out without becoming vulnerable to stray bullets or other tanks.
+*A good method for getting to Overseer is only upgrading when the player gets to level 30. This way, they can maintain high-DPS and grind shapes much more effectively than if they had a sniper.
+* Players within [[2 Teams]] and [[4 Teams]] modes can earn XP to level up by staying at the very corner of the map and repelling their Drones via right-click/Shift. Their drones will attack nearby polygons, allowing them to grind without becoming vulnerable to other tanks.
+** It should be noted that this method is very slow, so going out and destroy other players is more efficient. 
+** After 50,000 points, players can no longer gain XP from this, so go out and destroy other players for more score.
+*If attacked by [[Crashers]], it may be wise for players to turn off their Auto-Fire. The AI controlled drones will easily destroy the Crashers because they can attack more than one crasher at a time.
+
+===Against the Overseer===
+*Players looking to counter the Overseer can use Classes like the Tri-Angle. Since they have great maneuverability, they can quickly race past the Overseer's drones and ram into them. It's best to do this with distracted Overseers since non-distracted ones can quickly go into defensive formation and possibly kill you if you get too close.
+*Tanks with massive Bullet Penetration such as the Destroyer can kill four maxed out Drones (Drones with max Drone Speed, Health, and Damage) of the Overseer’s Drones with one shot, and then move in to get the kill. However, Destroyers have very low speed and can be an easy kill for high DPS tanks when distracted, so players should be cautious when doing this.
+*Skilled [[Smasher]]s also have the upper hand on the Overseer, but they have to do it when their drones are deployed. Otherwise, the Overseer can easily overwhelm them.
+*Some skilled players who use fast classes can use their speed to lure the Overseer's drones away, giving them lots of time to go in for the kill. However, doing this with tanks on a glass cannon build isn't advised, because they can easily die if they mess up the timing.
+
+==[[Achievements]]==
+{{SideBox|*<b>Drones are love</b> — Upgrade to Overseer
+* <b>Drones are life</b> — Upgrade to Overseer 100 times
+|{{Achievement
+|Color        = #9AFA69
+|Name         = Drones are love
+|Description  = Upgrade to Overseer}}{{Achievement
+|Color        = #F1B78F
+|Name         = Drones are life
+|Description  = Upgrade to Overseer 100 times}}
+}}
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=tGpOnXd_jlU 3.07m by JB Colombia]
+* 2 Teams: 5.05m by Adamos
+* 4 Teams: 4.09m by Mohsen
+* Maze: [https://www.youtube.com/watch?v=mPtDI63EUH8 2.11m by JB Colombia]
+
+=== Mobile ===
+
+* FFA: 1.68m by HZ6
+* 2 Teams: 907.8k by buh
+* 4 Teams: 1.05m by buh
+* Maze: -
+
+==Trivia==
+*The Overseer is the first tank ever to use different ammunition controls since their tanks follow their cursor instead of just shooting out at people.
+*The Overseer is one of the two tanks that have the highest number of [[Upgrades]], alongside the [[Tank]], being 6.
+*The Overseer’s upgrade button is green. If its upgrade button was the color corresponding to the order that it was added in, like other tanks, then its upgrade button would be blue, as this tank was added before the [[Assassin]].
+*Overseer's name origin could be from how a real-life Overseer "oversees" their workers.
+*On the old version, Overseer has 6 drones only.
+*The Overseer existed on all devices.
+
+==Gallery==
+<gallery>
+File:OgrelordNew.png|An Overseer with its Drones.
+File:Screenshot 2019-09-01 at 11.50.06 AM.png|thumb|220x220px|A low health Overseer being assisted by a [[Factory]] and a [[Sniper]].
+</gallery>
+
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Overseer
+|es     = Overseer
+|fr     = Overseer
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Overseer
+|pt-br  = Overseer
+|ro     =
+|ru     = Overseer
+|sv     =
+|tr     =
+|vi     = Overseer
+|zh     = Overseer
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

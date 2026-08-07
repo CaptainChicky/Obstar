@@ -1,0 +1,53 @@
+= Diepio Changelog =
+
+#REDIRECT [[Changelog]]
+'''Changelog'''
+
+'''June 2nd 2016'''
+
+
+-New game mode: [[Domination]]
+
+<nowiki>*</nowiki> Two team compete for control of the Dominators, powerful guns that will destroy any enemy nearby
+
+<nowiki>*</nowiki> Increased XP gain to offset shorter game length
+
+<nowiki>*</nowiki> This is the first game mode with a win condition, so it's not completely polished yet
+
+
+
+-Two new classes that branch off Tri-Angle: Fighter and Booster
+
+'''June 5th 2016'''
+
+-Kill notifications
+
+
+
+'''June 7th 2016'''
+
+
+-We've tweaked how penetration works:
+
+<nowiki>*</nowiki> Bullet penetration is (and has always been) bullet health
+
+<nowiki>*</nowiki> Before: Bullets would always deal their entire damage, even if they had little health left
+
+<nowiki>*</nowiki> After: Bullets now deal a proportional amount of damage if they're about to die while dealing that damage
+
+<nowiki>*</nowiki> This has some deep changes in how bullet penetration plays out in a few scenarios, ~~so let us know what you think~~
+
+<nowiki>*</nowiki> It should make bullets behave more fairly when two players have different penetration values
+
+<nowiki>*</nowiki> This change actually affects anything to do with damage on touch, be it tank or drones(doritos).
+
+It also means that body damage also decreases damage taken
+
+* Thus we have also adjusted some other values in the game to offset this change
+
+
+-New Hybrid class which branches off Destroyer
+
+-New Manager class which branches from Overseer
+
+-Nerfed stalker fade-out time (Manager has the same)

@@ -1,0 +1,47 @@
+= Auto Fire =
+
+{{PA}} is a feature that was added on the June 1st, 2016 update. It can be used by any tank. The feature is activated by pressing E on the keyboard and is deactivated the same way.
+
+== Function ==
+Auto Fire allows the player to continuously fire bullets without the need to click their mouse or press space. There is a [[Notifications|notification]] near the top of the screen that notifies the player that Auto Fire has been turned on/off when the E key is pressed.
+
+Classes that use [[Drones]], such as the [[Overseer]], [[Overlord]], [[Manager]] or [[Necromancer]] will have Auto Fire cause their drones to continually follow the mouse pointer. Shift (or right-click) will still make them fly away from the cursor, even with Auto-Fire on. This does not happen with the [[Battleship]], however, as firing is required to summon Drones.
+
+Note that although there will always be a message when enabling Auto Fire, there will not always be an effect. For example, the [[Smasher]] branch, which does not fire [[Bullet]]s (except for the [[Auto-Smasher]]), is not affected by Auto Fire. [[Auto Turrets]], which always fire automatically, are also not affected.
+
+== Strategy ==
+Auto Fire can be useful when playing as a fast shooting tank, where it doesn't matter when a bullet is shot (this works great for [[Octo Tank]]s with [[Auto Spin]] activated). It is also very useful for using recoil to either escape, chase, or simply travel faster. However, when playing as a slow shooter such as the [[Destroyer]] and it is needed to time the bullets perfectly, Auto-Fire can work against the player instead of helping. It can also reveal where an invisible tank is, which is especially bad if the player is a [[Stalker]] or if the player is trying to run away from someone else. If the player is in TDM and they have to go away from the game for a while, turn on Auto Fire (E) and [[Auto Spin]] (C) in the [[Base]], and they are able to will rack up points and levels very slowly but surely, so when they come back later (as long as no one has pushed them out of the safe zone or has killed them), they could be level 45 with doing little work. This method does, however, remove any source of experience for other tanks which could come back to negatively affect the team later.
+
+== Trivia ==
+*Auto Fire was a common feature in hacked clients before the developer officially added it.
+*Repeatedly turning Auto Fire on and off rapidly can lead to different firing patterns for certain tanks like the [[Twin]] or [[Streamliner]].
+*Invisible tanks, namely the [[Landmine]] and [[Manager]], used to be unable to turn invisible when auto fire was turned on. However, this has been patched. However, the Stalker will be unable to turn invisible if Auto Fire is on because the stalker fires bullets when Auto Fire is on.
+*Auto Turrets will still automatically fire if Auto Fire is off.
+*The [[Dominator#Trapper Dominator 2|Trapper Dominator]], [[Auto 3]], [[Auto 5]], and Auto Smasher are the only tanks that have Auto Fire on passively, and turning it on and off does not affect them.
+
+== Gallery ==
+<gallery>
+135.png|The Message displayed when Auto Fire is turned on
+151.png|The Message displayed when Auto Fire is turned off
+</gallery>
+
+{{Gameplay|mechanics}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Auto-Fire
+|fr     = Auto Fire
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Tự Động Bắn
+|zh     = 自動射擊
+}}
+[[Category:Diep.io]]

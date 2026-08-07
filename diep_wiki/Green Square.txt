@@ -1,0 +1,66 @@
+= Green Square =
+
+
+{{Polygon
+|image     = <gallery widths="185">
+green square polygon 2.png|New Colors
+green square polygon 1.png|Old Colors
+</gallery>
+|rarity    = Extremely Rare
+|hp        = 100
+|xp        = 1,000
+|variants  =
+}}
+The {{PA}} is the fifth strongest [[Polygons|Polygon]] in [[Diep.io]]. It gives 1,000 [[Levels|XP]] upon destruction and is noticeably stronger than a regular [[Square]]. The only Polygons known to be stronger are the [[Pentagon]], [[Green Triangle]], the [[Green Pentagon]], and the [[Alpha Pentagon]]. It has equal health but less body damage compared to a [[Pentagon]]. These have a one in a million chance of spawning instead of a normal square.
+
+== Trivia ==
+[[File:DiepGreenSquare.png|thumb|63px|A clear image of a green square.]]
+*A Level 1 [[Tank]] will need fifteen hits to kill a Green Square. This results in a reward of 66.67 EXP per hit.
+**If you manage to destroy a Green Square at Level 1, you will skip the next 15 Levels, instantly landing you at Level 16.
+*A [[Necromancer]] can make this Polygon one of its [[Drones]] by crashing into it or touching it with its current drones causing it to break and becoming one of the Drones with the same strength of a regular Necromancer Drone. However, the green square drone will give you 1000 EXP when it is killed, unlike other drones which only give you 10 EXP.
+*When you are killed by this shape, it will say “You were killed by: Square” instead of “You were killed by: Green Square”, as they are practically the same thing, only the Green Square is much rarer.
+*The [[Pentagon]] has the same HP as the Green Square, which is 100 HP.
+**Although they have the same health, the Green Square is easier to destroy, as their base body damage stat is different, with the Green Square having 8 body damage with (same as Square) and Pentagon having 12 body damage.
+*It can be found in most likely [[2 Teams]], [[Domination]], [[4 Teams]], and any other game mode. It is much rarer in [[Sandbox]] mode because the map is smaller and it won't have much room to spawn in.
+
+== [[Achievements]] ==
+{{SideBox|*<b>Shiny!</b> — Kill a green polygon (Listed as “???” due to the secret nature of Green Shapes)
+|{{Achievement
+|Color        = #68FEF9
+|Name         = Shiny!
+|Description  = ???}}
+}}
+
+== Trivia ==
+*Despite the name Green Square being picked up by the community, the actual game just considers it a type of Square and names it as such.
+
+== Gallery ==
+[[File:Diep.io - Google Chrome 29 1 2026 12 18 50.png|thumb|185x185px|alt=a green square and eleven pentagons|a green square and eleven pentagons]]
+<gallery>
+Shiny sun chip.png|A Green Square sighting.
+Shiny.png|Destroying the green square will give you the “Shiny!” achievement.
+NewColorsGreenSquare.png|A green square as rendered in the new color scheme.
+Unknown (1).png
+Screenshot (492).png
+Sighting in 4 team gamemode.png
+Green Square Found.png|Another Green Square in the books!
+</gallery>
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     = Green Square
+|ko     =
+|pl     = Zielony Kwadrat
+|pt-br  = Green Square
+|ro     = Pătratul Verde
+|ru     = Green Square
+|sv     =
+|tr     =
+|vi     = Vuông Xanh
+|zh     = 綠色方形
+}}

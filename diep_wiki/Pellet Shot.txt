@@ -1,0 +1,94 @@
+= Pellet Shot =
+
+{{WIP}}
+{{Infobox
+|image     = <gallery>
+pellet shot icon 1.png|Current design
+pellet shot icon 2.png|Old design
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Shotgun icon old.png|50px|link=Shotgun]]
+|barrel    = [[Cannon]] (1)
+|id        = 61
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Shotgun (tank)|Shotgun]] at level 45.
+
+== Design ==
+The Pellet shot features a circular tank body as a base with three modified versions of the [[Machine Gun]]'s cannon, each one being slightly shorter and longer and the last, stacked in the front of the tank.
+
+== Technical ==
+The Pellet Shot fires 30 bullets at the same time.
+
+Upgrading from the [[Shotgun]] to the Pellet Shot increases FoV to that of a [[Sniper]]. Reload is unchanged. Bullet's lifetime is reduced 
+
+* Bullet Speed: TBA
+* Bullet Penetration: 0.4 (+0.3 for each point in Bullet Penetration)
+* Bullet Damage: 4.55 (+1.95 for each point in Bullet Damage)
+
+== Strategy ==
+*<b>Strong Against:</b> Tanks that are caught unaware, bad [[Annihilator]] players, slow or low-level rammers, and a surprised [[Overseer]] branch tank. 
+*<b>Weak Against:</b> Tanks with high amounts of focused fire, skilled rammers (especially in the [[Tri-Angle]] branch), and tanks coming from multiple sides, high HP builds, tanks with a high FOV.
+
+=== As the Pellet Shot ===
+
+* The Pellet Shot is an ambush tank, meaning that the optimal playstyle is to surprise opponents and overwhelm them before they can react. To make this easier, be careful when shooting [[Polygons|shapes]], as your pellets may enter the view of an enemy and alert them of your presence. In [[Maze]], you can avoid this by purposefully shooting shapes with a wall behind them so that the wall soaks up your bullets.
+* The Pellet Shot has very poor defense, as it reloads slowly and the pellets have low base penetration. Because of this, to maximise your survival, avoid being backed into corners, make sure you have an escape route planned, and consider upgrading your [[Stats|health and speed]]. Also, try to avoid fighting tanks with high penetration bullets, such as the [[Overseer]] and [[Destroyer]] branches, or tanks with high concentrated fire, like the [[Streamliner]] and [[Triplet]].
+* On [[Maze]], the Pellet Shot should try to peak corners when in a fight, as your slow reload is mitigated by hiding and you do not need to spend much time in sight lines to fire off your burst
+** Additionally, if you are being chased, go into long narrow hallways and spam fire behind you, as the enemy will either have to run against your shots and likely die, or will lose you (Be careful the corridor does not lead to a dead end, however).
+* In team modes, if you can, try to make a team of [[Shotgun]] branch tanks, because multiple bursts can mitigate your reload disadvantage, will be much harder to dodge, and is more likely to kill off the opponent before they react.
+* Due to your increased FOV, you will often spot enemies before they can spot you. use this to wait for them to either get distracted by another tank or move into a position with favourable walls, as this will maximise your chances of winning a fight if the initial shot doesn't kill them.
+* If you are on computer, players can see more horizontally than the vertically, so if you can, try approaching from the top or bottom. This will let you get closer before shooting, drastically increasing the amount of pellets that will hit them.
+
+=== Against The Pellet Shot ===
+
+* Any tank with a decent fire rate and penetration (anything faster than a mid-level [[Twin]] should do) will be able to out-penetrate a Pellet Shot burst as long as you are not moving into it, so go on the offensive if their surprise does not cripple you.
+* When attacking a Pellet Shot try to back it into a wall or corner, as it can not adequately defend itself against most threats.
+* As a tank with high FOV, attack the Pellet Shot from as far back as possible, as most of their pellets will not hit you from that distance.
+* If you know a Pellet Shot is near, be on edge, as to not be caught by surprise.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=xTxhL934r7c 1.17m by ⚡️ Raiden Ei ⚡️]
+* 2 Teams: 602.9k by green sunfish
+* 4 Teams: -
+* Maze: - 33.9K by Woopey ''(Placeholder Record)''
+
+=== MOBILE ===
+
+* FFA: -
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+
+
+== Gallery ==
+<gallery>
+File:Pellet shot in action 2.png|Old design
+File:Pellet shot in action 1.png|Current design
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Annihilator
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Annihilator
+|pt-br  =
+|ro     =
+|ru     = Annihilator
+|sv     = Annihilator
+|tr     =
+|vi     = Annihilator
+|zh     = Annihilator
+}}
+[[Category:Diep.io]]

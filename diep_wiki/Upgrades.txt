@@ -1,0 +1,168 @@
+= Upgrades =
+
+{{For|stat upgrades such as Bullet Speed or Max Health|Stats}}[[File:Diepio_Class_Wheel_2026.png|thumb|251x251px|The Class Tree that shows up when you press the Y key]]
+This page delves mostly into the base upgrades and what they branch off into. For more details on every upgrade, visit their pages, or for a briefer description, visit [[Tiers]].
+== Basic Upgrades ==
+The basic [[Tank]] starts as a circle with just one [[Cannons|Cannon]]. When you reach level 15, you can upgrade your tank to become a [[Twin]], [[Sniper]], [[Machine Gun]] or [[Flank Guard]]. The [[Twin]] upgrade adds a second cannon right next to the first, but decreases Bullet Penetration and reduces damage. The [[Sniper]] upgrade increases Bullet Damage and Bullet Speed, as well as increases the FoV (Field of View) slightly, but greatly reduces your Reload Speed. The [[Machine Gun]] upgrade increases Reload Speed and Bullet Spread, but slightly decreases your Bullet Damage. The [[Flank Guard]] upgrade adds a smaIIer cannon to your back, which allows you to shoot in two directions. Only selectable at Level 30, the [[Smasher]] upgrade removes all cannons and instead adds a hexagon base of the tank. This will remove all Bullet stats, but each other stat will cap at 10 Skill Points instead of 7.
+
+When you reach Level 30, you can choose a second upgrade depending on the basic upgrade that you chose. You can upgrade again at Level 45.
+
+=== Twin ===
+{{Main|Twin}}
+The Twin can upgrade into [[Triple Shot]], [[Quad Tank]], or the [[Twin Flank]]. If you choose [[Triple Shot]], your tank’s dual cannons will move out onto the side pointing diagonally, making room for a third cannon in the middle. Triple Shot can then upgrade into [[Penta Shot]], which adds an additional two not so spread cannons between the sides and the middle of your tank; [[Spread Shot]], which adds an additional eight extremely spread cannons to the tank; or [[Triplet]], which is basically a Twin with a third cannon in the middle. It shoots much faster than the Basic Tank but has less Bullet Damage and Penetration. If you choose Quad Tank, the two cannons move to the top and bottom and add another 2 cannons to the side spread out evenly. This will increase Reload and Bullet Speed. Quad Tank can then upgrade into [[Octo Tank]], which has eight cannons (one facing in each normally used direction), or into [[Auto 5]], which has 5 [[Auto Turrets]] instead of regular cannons. If you choose [[Twin Flank]], your tank will receive an additional two cannons on the back. [[Twin Flank]] can then upgrade into [[Triple Twin]]. Triple Twin will make your tank have three pairs of cannons with equal distance from one pair to the other. You can also upgrade to [[Battleship]], which switches all your cannons for drone launchers. These launchers fire drones that attack for you, all drones die after a certain amount of time and half of the drones can be controlled.
+
+=== Sniper ===
+{{Main|Sniper}}
+The [[Sniper]] increases your range, the field of vision and bullet damage, but decreases your rate of fire. The [[Sniper]] can be upgraded into [[Overseer]], [[Assassin]], [[Hunter]] or [[Trapper]]. If you choose Assassin, your tank’s cannon will get longer, increase your FoV even more and decrease your Reload even more. The Assassin can then upgrade to [[Ranger]], which increases your tank’s FoV and bullet penetration even more and decreases Reload even more; or [[Stalker]], an Assassin which can go invisible. If you choose [[Overseer]], you will have two [[Spawners]] on the side of your tank and controllable [[Drones]] instead of bullets. Overseer can then upgrade to [[Overlord]], which has two more Spawners and adds controllable Drones; [[Manager]], an invisible Overseer with one Spawner; [[Necromancer]], a square-body Overseer which controls a huge army of [[Square]] Drones instead of a small troop of Triangle Drones; [[Overtrapper]], which shifts the two Spawners to the back and adds a [[Launchers|Launcher]] to the front; or [http://diepio.wikia.com/wiki/Factory Factory], which has 1 minion launcher and shoots small minions that attack the nearest thing that provides XP and can also be controlled. Overseer can also upgrade to [[Battleship]] which has 4 drone launchers that fire small and weak drones. The [[Battleship]] can have an infinite amount of these drones. The drones only last a certain time and will die. If you choose [[Hunter]], a second cannon will overlap the first one and shoot an extra bullet every shot. Hunter can then upgrade to [[Predator]], which adds one more cannon (and thus one more extra bullet) and an ability to concentrate your FoV in a certain direction, or [[Streamliner]], which has a cannon in 5 segments and shoots lots of bullets at an incredible rate. It formerly could upgrade to [[X Hunter]] or the old [[Predator]]. If you choose [[Trapper]], the cannon will be replaced by a Launcher which launches [[Traps]] instead of bullets. Trapper can then upgrade to [[Mega Trapper]], which has less reload but biggest traps; [[Tri-Trapper]], which has three Launchers instead of one, yet short lifespan; [[Gunner Trapper]], which shifts the Launcher to the back and adds two Gunner cannons to the front; or [[Auto Trapper]], which adds an [[Auto Turret]] on top.
+
+=== Machine Gun ===
+{{Main|Machine Gun}}
+The Machine Gun increases your Reload speed and decreases Bullet Damage, plus it covers a wider area. It can be upgraded into the [[Destroyer]], [[Gunner]] or [[Sprayer]] (formerly [[Destroyer]] and [[Machine Gun II]]). If you choose [[Destroyer]], your cannon is replaced to shoot huge strong bullets but has drastically decreased Reload and Bullet Speed. A popular way of using this type of tank is to use the recoil to launch yourself into other tanks when you have fully upgraded your Body Damage and health ([[Builds|Rammer Build]]). Destroyer can then upgrade to the [[Hybrid]], which adds a [[Spawners|Spawner]] to the back; [[Annihilator]], which makes the cannon wider and increase its recoil; or [[Skimmer]] which shortens the Destroyer cannon and adds a trapezoid cannon behind it, shoots [[Missiles]] which themselves have 2 small cannons on either side (similarly to a Flank Guard), which also spins around clockwise. Destroyer can also upgrade to [[Rocketeer]], which replaces the Destroyer cannon with a shorter, trapezoidal cannon and also adds another trapezoidal cannon behind it, and shoots Missiles which has a trapezoidal cannon on the back (similar to a backwards-facing Machine Gun), which fires Bullets towards the Rocketeer and propels itself with Recoil. If you choose [[Gunner]], your cannon is replaced by four tiny cannons that shoot small, weak bullets but has drastically increased Reload. Gunner can further upgrade to [[Auto Gunner]], which adds an [[Auto Turret]] on top; [[Gunner Trapper]], which removes two of the Gunner cannons and adds a Launcher to the back; or [[Streamliner]], which has a cannon in 5 segments and shoots lots of bullets at an incredible rate. Only possible at Level 45, you can choose the [[Sprayer]]. If you choose Sprayer, you get an extra tiny cannon inside your cannon which ejects bullets and mini bullets at the same time but decreases Bullet Damage even more.
+
+===  Flank Guard===
+{{Main|Flank Guard}}
+The [[Flank Guard]] adds a half cannon on the back of the tank which shoots at the same time as the other one. It can be upgraded to the [[Twin Flank]], [[Quad Tank]], [[Tri-Angle]] or [[Auto 3]]. If you choose the [[Tri-Angle]] (the second-fastest tank in the game), the half-cannon on the back becomes two half-cannons, forming a triangle. The Tri-Angle can further upgrade into the [[Booster]], which adds two more guns behind the tank, doubling its acceleration; or the [[Fighter]], which adds two additional guns to the side, increases Bullet Damage. If you choose [[Quad Tank]], another 2 cannons are added to the side of the tank. This will increase Reload and Bullet Speed. Quad Tank can then upgrade into [[Octo Tank]], which has eight cannons (one for each normally used direction); or into [[Auto 5]], which has 5 [[Auto Turrets]] instead of regular cannons. If you choose [[Twin Flank]], your tank will receive an additional two cannons, one on each side. Twin Flank can then upgrade into [[Triple Twin]]. Triple Twin will make your tank have three pairs of cannons with equal distance from one pair to the other. Twin Flank can also upgrade to [[Battleship]], which replaces the cannons with drone launchers that fire small drones that attack for you. Only half of these drones are controllable. If you choose [[Auto 3]], your cannons will be replaced by 3 Auto Turrets. Auto 3 can then upgrade into [[Auto 5]], which has 5 Auto Turrets instead of 3, or [[Auto Gunner]], a [[Gunner]] with an Auto Turret on top.
+
+== Smasher ==
+{{Main|Smasher}}
+If the player chooses to stay as a basic Tank until level 30, you can upgrade to [[Smasher]]. If you choose it, the cannon and all Bullet stats are removed, and a hexagon base is added to the tank. All other stats cap at 10 Skill Points instead of 7 with this tank. This tank can upgrade to the [[Landmine]] (formerly [[Mega Smasher]] and Landmine) at Level 45. The Landmine is a Smasher with another hexagon that spins twice as slow but it can turn invisible for 10 seconds. You can also upgrade to [[Auto Smasher]], which adds an [[Auto Turret]] on top of the Smasher’s body and all Bullet stats are back a cap at 10; or to [[Spike]], which has twelve black spikes which spin very quickly and increases base Body Damage.
+
+== Removed ==
+{{Main|Mega Smasher}}
+The [[Mega Smasher]] used to upgrade from the [[Smasher]]. It had a thicker hexagon around it. It further increased knockback resistance. The knockback resistance on the regular [[Smasher]], the [[Landmine]] and the [[Mega Smasher]] was removed later. It was thus removed for being useless.
+{{Main|Predator}}
+The [[Predator]] used to be quite different when the [[X Hunter]] was still around. It looked like the X Hunter but with the largest cannon instead being a trapezium, like on a [[Ranger|Ranger’s]] cannon or a [[Dominator|Dominator’s]] Cannon. It shot only two bullets like the Hunter currently does but had the zooming ability that it still has now.
+{{Main|X Hunter}}
+The [[X Hunter]] used to upgrade from the [[Hunter]]. It looked like the [[Predator]] does nowadays. It shot three bullets just like the Predator does but lacked a zooming ability. It was merged with the [[Predator]] and then was removed.
+
+== Special ==
+=== Mothership ===
+{{Main|Mothership (Tank)}}
+The [[Mothership (Tank)|Mothership]] tank was exclusive to the defunct [[Mothership (Game Mode)|Mothership]] game mode and impossible to upgrade to. In this mode, random players would become their team’s Mothership; the same goes for the enemy team. The Mothership was level 140 and had all upgrades maxed out except Health Regen (Health Regeneration is only upgraded once). It spawned 16 controllable [[Drones]] and 16 uncontrollable ones to survive. These Drones could be destroyed albeit having high health. The two players to join a server first would control the Motherships for the Red and Blue team. They had 5 minutes in control of the Mothership before 2 new players took control of their team’s Mothership.
+
+The Mothership was kept around in Sandbox. However, it behaved like a regular tank and could only be accessed by pressing [[Controls|\]].  The Mothership has since been fully removed from Diep.io.
+
+=== Arena Closer ===
+{{Main|Arena Closer}}
+[[Arena Closing|When the arena is being closed]], the server will spawn many [[Arena Closer]]s to remove all the players from the server and start a new game. The Arena Closers seem to be fully upgraded, without any reduction in speed, strength, or other upgrade side effects. There is no possible way to receive this upgrade in-game. It is possible to destroy an Arena Closer, however, it has such a large amount of health, that attempting to destroy it is not worth it. Its damage stats are so high that they will kill you extremely fast. Also, the quicker you are killed, the quicker you get to play again, so it is recommended to let them kill you. Arena Closers were playable only in the [[Sandbox]] mode. Thay have since become nonplayable.
+
+=== Dominator ===
+{{Main|Dominator}}
+This tank, like the [[Arena Closer]], is impossible to upgrade to. It shoots large [[Destroyer]] bullets that can instantly kill most enemies. However, its reload is rather slow and can only hit one enemy at a time, leaving it vulnerable for attack. It has an immense amount of health; more than <b>2</b> times an [[Alpha Pentagon]]. The [[Dominator]] is initially controlled by an AI but can be player controlled through pressing H when a Dominator is captured. There is also a Gunner Dominator, with 3 powerful Gunner cannons or Trapper Dominator with 8 Trap Launchers. The Dominator is playable by pressing H in the [[Domination]] game mode when your team captures it. Press the button quickly, as many people will want to become a Dominator. It was playable in Sandbox but has been removed from that mode.
+== Tank IDs ==
+A Tank's ID is a special number that it is given depending on when it was made playable. This list starts at 0 due to [https://en.wikipedia.org/wiki/Zero-based_numbering zero indexing]. In [[Sandbox]], pressing the [[Controls|\]] key will cycle through these in order from greatest to least, skipping tanks that are exclusively used in development, such as [[Arena Closer]], the [[Dominator|Dominators]], and [[Ball|ID 53]]. IDs with entries displayed as gray go completely unused.
+
+<ol start="0">
+<li>[[Tank]]</li>
+<li>[[Twin]]</li>
+<li>[[Triplet]]</li>
+<li>[[Triple Shot]]</li>
+<li>[[Quad Tank]]</li>
+<li>[[Octo Tank]]</li>
+<li>[[Sniper]]</li>
+<li>[[Machine Gun]]</li>
+<li><s>Flank Guard</s> [[Tri-Angle]]</li>
+<li><s>Tri-Angle</s> [[Flank Guard]]</li>
+<li>[[Destroyer]]</li>
+<li>[[Overseer]]</li>
+<li>[[Overlord]]</li>
+<li>[[Twin Flank]]</li>
+<li>[[Penta Shot]]</li>
+<li>[[Assassin]]</li>
+<li>[[Arena Closer]] (Special)</li>
+<li>[[Necromancer]]</li>
+<li>[[Triple Twin]]</li>
+<li>[[Hunter]]</li>
+<li>[[Gunner]]</li>
+<li>[[Stalker]]</li>
+<li>[[Ranger]]</li>
+<li>[[Booster]]</li>
+<li>[[Fighter]]</li>
+<li>[[Hybrid]]</li>
+<li>[[Manager]]</li>
+<li>[[Mothership (Tank)|Mothership]] (Special)</li>
+<li>[[Predator]]</li>
+<li>[[Sprayer]]</li>
+<li><i>[[Predator (ID 30)|<span class="grey">Predator (original)</span>]]</i><ref name="removed">This ID is no longer in use as the tank associated with it has been removed.</ref></li>
+<li>[[Trapper]]</li>
+<li>[[Gunner Trapper]]</li>
+<li>[[Overtrapper]]</li>
+<li>[[Mega Trapper]]</li>
+<li>[[Tri-Trapper]]</li>
+<li>[[Smasher]]</li>
+<li><i>[[Mega Smasher|<span class="grey">Mega Smasher</span>]]</i><ref name="removed"/></li>
+<li>[[Landmine]]</li>
+<li>[[Auto Gunner]]</li>
+<li>[[Auto 5]]</li>
+<li>[[Auto 3]]</li>
+<li>[[Spread Shot]]</li>
+<li>[[Streamliner]]</li>
+<li>[[Auto Trapper]]</li>
+<li>[[Dominator|Destroyer Dominator]] (Special)</li>
+<li>[[Dominator|Gunner Dominator]] (Special)</li>
+<li>[[Dominator|Trapper Dominator]] (Special)</li>
+<li>[[Battleship]]</li>
+<li>[[Annihilator]]</li>
+<li>[[Auto Smasher]]</li>
+<li>[[Spike]]</li>
+<li>[[Factory]]</li>
+<li>[[Ball|ID 53]]</li>
+<li>[[Skimmer]]</li>
+<li>[[Rocketeer]]</li>
+<li><i><span class="grey">[[Glider]]</span></i><ref>This ID is no longer in use. During the beta testing state, Glider was missing from the tank list, so it was added back later on. However, it was added to the list after Shotgun.</ref></li>
+<li>Spectator<ref>The tank in this ID has a similar appearance to Spike, but can only be accessed using dev cheat and has vastly different mechanic from regular Spike</ref></li>
+<li><s><i><span class="grey">Auto Trapper</span></i></s><ref name="unknown">This ID likely previously belonged to a tank similar to Auto Trapper but with player spawning ability similar to Factory ([https://www.reddit.com/r/Diepio/comments/1hhegid/tiny_auto_trapper_gives_birth_to_child/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button https://www.reddit.com/r/Diepio/comments/1hhegid/tiny_auto_trapper_gives_birth_to_child/]), but the tank was later removed and replaced with Auto Tank, which was bumped down with the introduction of Shotgun branch.</ref> [[Auto Tank]]</li>
+<li>[[Auto Tank (tank)|<s>Auto Tank</s>]] [[Protector (tank)|Protector]] (Special)<ref>This ID previously belonged to the Auto Tank.</ref></li>
+<li>[[Dual-Barrel Shot|Dual-Barrel]]</li>
+<li>[[Pellet Shot]]</li>
+<li>[[Shotgun]]</li>
+<li>[[Glider]]<ref>During the beta testing state, Glider was missing from the tank list, so it was added back later on. However, it was added to the list after Shotgun.</ref></li>
+<li>[[Firework]]</li>
+</ol>
+
+=== Extra ===
+During the 10th anniversary of the game, several extra tanks were added. Most of the are available at Level 60. Their IDs are as follow:
+[[File:Diepio Class Wheel 10.png|thumb|250x250px|The Class Tree during the game's 10th anniversary]]
+
+<ol start="65">
+<li>Tenk</li>
+<li>Auto 6</li>
+<li>Auto 7</li>
+<li>Automator</li>
+<li>Battalion</li>
+<li><ref>This ID is empty for some reason.</ref></li>
+<li>Apex Predator</li>
+<li>Overovertrapper</li>
+<li>Defender's Son</li>
+<li>Resurrector</li>
+<li>Boss</li>
+<li>Cyclone</li>
+<li>Ambusher</li>
+<li>Deca Tank</li>
+<li>Blender</li>
+<li>Hitman</li>
+<li>Mega Gunner Trapper</li>
+<li>Triple Flank</li>
+<li>Striker</li>
+<li>[[Mega Smasher]]<br /></li>
+</ol>
+{{TankNav|tiers}}
+{{Interlang
+|status = checked
+|de     = Upgrades
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     = アップグレードツリー
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Nâng cấp
+|zh     =
+}}
+[[Category:Diep.io]]

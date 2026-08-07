@@ -1,0 +1,115 @@
+= Penta Shot =
+
+{{Cleanup|Exact stat changes upon upgrading from Triple Shot, primarily reload. Also update strategies if whenever old ones do not apply anymore. Refer to Oct 19th 2020 update.}}
+
+{{Infobox
+|image     = <gallery>
+penta shot icon 3.png|New Colors
+penta shot icon 2.png|Old Colors
+penta shot icon 1.png|Old Icon
+</gallery>
+|tier      = 4
+|next      =
+|previous  = [[File:Triple shot icon new.png|50px|link=Triple Shot]]
+|barrel    = [[Cannons]] (5)
+|id        = 14
+}}
+
+The '''Penta Shot''' is a Tier 4 tank in Diep.io. It upgrades from the [[Triple Shot]] at Level 45.
+
+== Design ==
+This tank lengthens the center cannon and adds two in-between the center cannon and the side-most cannons.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = -
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Recoil
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲▲
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+
+The Penta Shot has five cannons instead of the Triple Shot's 3 that all fire simultaneously. Unlike its predecessor, its Bullet Damage is decreased by approximately 28.571%. It boasts significant recoil when firing and is only outmatched in that department by the [[Tri-Angle]] branch, [[Destroyer]], [[Hybrid]], [[Dual-Barrel]] and [[Annihilator]].
+
+Stats
+
+* Bullet Damage: 3.5 (+1.5 for each point in Bullet Damage) 
+
+== Strategy ==
+*<b>Strong Against:</b> Multiple enemies, melee builds, [[Drones|Drone]] wielding tanks (Excluding [[Factory]]), high spread tanks such as the [[Spread Shot|Spreadshot]], and [[Smasher]] branch
+*<b>Weak Against:</b> Tanks with focused fire, [[Sniper]]s, [[Destroyer]] branch, skilled Factory users
+
+=== As the Penta Shot ===
+*A Penta Shot’s high bullet spread means it will struggle to battle against tanks that have a more focused fire, such as the [[Triplet]], the [[Gunner]], the [[Streamliner]], or even the [[Twin]] if it has good stats. Should a Penta Shot encounter any of these tanks, the best option for survival is to retreat quickly with the Penta Shot’s massive recoil. However, it is one of the few classes that can survive a one-on-one fight with the [[Overlord]]. Killing the Overlord while shooting at its Drones would be the easiest method. The wide spread of bullets will prevent Drones from traveling behind it to attack. Once the [[Drones]] are all destroyed, engaging the Overlord should be easy. Without its drones, it will be unable to cover its retreat and will be overwhelmed by the bullet storm. Also, some of the bullets will most likely hit the Overlord due to the spread of the bullets, forcing the Overlord to retreat or suffer the consequences.
+*The Penta Shot is very powerful due to its high bullet spread. The Penta Shot works at its prime in farming in the Pentagon Nest or as a supporting tank. With its Bullet storm, it’s also very useful in [[Domination]], [[Mothership (Game Mode)|Mothership]], [[Breakout]] or in [[Team Deathmatch]]; a single, skilled player using the Penta Shot can change the whole outcome of the match. Due to high bullet spread, any bullet tank attempting to flee from the Penta Shot will have a hard time, especially if the tank is caught in the middle of the five streams of bullets. The bullets will pepper the tank and kill it quickly.
+*This tank is also good for retreating against other enemy tanks. Aim your tank in the other direction and move to run away quickly. This is good against rammer build tanks such as [[Tri-Angle]] classes. However, it is not always a good idea to do this. A rammer, [[Destroyer]] bullet build or drones may be coming from the opposite direction and kill players before they can react.
+*The Penta Shot is one of the tanks that can be a good use for [[Survival]], because it can take down [[Overlord|Overlords]] and most other tanks.
+*The Penta shot can out-penetrate a [[Triplet]] and works effectively at low range.
+*Interestingly enough, the Penta Shot is surprisingly good with a rammer build. Though not as conventional as the [[Spike]], [[Landmine]], or even dedicated [[Booster]] rammers, it can easily surprise and overwhelm an unprepared opponent, especially since ramming as a Penta Shot is very unconventional and thus usually unexpected.
+
+=== Against the Penta Shot ===
+*Shooting the Penta Shot from behind would be a player’s best option to defeat it. It is recommended to use a speedy tank, such as a [[Booster]], [[Fighter]], or [[Destroyer]] class(either bullet or ram), so that when the Penta Shot turns around, the aggressor can run and once again attack it from behind.
+*Fighting them head-on is also an option, with their bullet spread they have trouble scoring hits (but it’s also difficult to hit them). If a player manages to dodge their bullets, they would win the fight; however, it’s difficult to kill them because they can run away very quickly.
+*Focused fired [[Tanks|tanks]], such as the [[Triplet]] or [[Destroyer]] branch can counter a Penta Shot’s bullet storm by directly shooting at it. Players may rather use a fast-firing tank with high Penetration to defeat it. Glass bullet builds tend to work well, due to the Penta Shot’s terrible Penetration.
+*A high damage [[Gunner]] or [[Auto Gunner]] can do continuous damage while out-penetrating the central cannon.
+*For rammers, encountering them from the back is the only option. If players approach directly from the front, the Penta Shot will win before players can reach its body, even with a 3/10/10/10 build.
+*A [[Factory]] can easily counter the Penta Shot if used properly. To do this, players should shield themselves with their minions whilst simultaneously shooting at the Penta Shot.
+
+== Gallery ==
+<gallery>
+Pentashot Screenshot1.png|A Penta Shot firing in sandbox mode
+PentaShot Icon3.png|Isolated design of the Penta Shot
+PentaShotinAction1.png|A Penta Shot shooting some [[Pentagon]]s.
+</gallery>
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=Aw_S17FaGF8 999.7k by ια]
+* 2 Teams: [https://www.youtube.com/watch?v=dUEyiEBJCoQ 2.53m by Lutor]
+* 4 Teams: [https://www.youtube.com/watch?v=-HIDdspmY0M 1.15m by Legit Developer]
+* Maze: [https://youtu.be/m8qpMOYzhlI 1.01m by Legit Developer]
+
+=== Mobile ===
+
+* FFA: 2.65m by Sterlon
+* 2 Teams: 3.74m by HZ6
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*Penta Shot's [[cannons]] used to overlap randomly. This was because in the early days of Diep.io, cannons weren't displayed in order. During the time this oversight was a thing, there were 120 Penta Shot designs.
+* As of October 19th, 2020, it now fires all its cannons at the same time, along with [[Spread Shot]].
+** Previously, its center cannon fires first, the cannons in-between fire second, and the side-most cannons fire last, then repeats in an endless cycle.
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Penta Shot
+|es     = Pentashot
+|fr     = Penta Shot
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Penta Shot
+|pt-br  =
+|ro     =
+|ru     = Penta Shot
+|sv     =
+|tr     =
+|vi     = Penta Shot
+|zh     = Penta Shot
+}}
+[[Category:Diep.io]]

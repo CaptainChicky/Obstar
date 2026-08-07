@@ -1,0 +1,122 @@
+= Fighter =
+
+{{Infobox
+|image     = <gallery>
+fighter icon 3.png|New Colors
+fighter icon 2.png|Old Colors
+fighter icon 1.png|Unnamed
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Tri-angle icon new.png|50px|link=Tri-Angle]]
+|barrel    = [[Cannons]] (5)
+|id        = 24
+}}
+The {{PA}} is a Class that was released as an unnamed class on June 3, 2016, and was given a name on June 4, 2016. The Fighter is of the two tanks that upgrade from the [[Tri-Angle]], the other being the [[Booster]], and as it is a [[Tiers|Tier]] 4 tank it does not upgrade further. This Class was buffed on June 13, 2016 (although the exact changes to the Fighter are unknown).
+
+== Design ==
+It has five [[Cannons]]; two of them are on the back of the tank (same as its predecessor, the Tri-Angle) two are on the sides, and one on the front. It features a common circular base. The angles between Fighter Cannons clockwise from the front cannon are 90°, 60°, 60°, 60°, 90°.
+
+== Technical ==
+{{BaseStats
+|PrevClass          = Tri-Angle’s Front Cannon
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = —
+|BulletDamage       = —
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        = Side Bullet Damage
+|HiddenStat2        =Rear Bullet Damage
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     = ▼
+|HiddenStat2Val     =—
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+The tank has high recoil that speeds it up when moving in the same direction it fires. Its strongest [[Bullets]] are fired by the front gun, followed by the slightly weaker side guns and the much weaker back Cannons, which fires Bullets that last for only 1.6 seconds instead of 3. Upon upgrading from the Tri-Angle it receives a barrel on the left and the right. Its side guns used to have as much reload as the front gun on the old version, but they were later nerfed, and very recently its Reload was buffed again (at the cost of Damage).
+
+Stats (Side cannons only, the rest are the same with [[Tri-Angle]]): 
+
+* Bullet Damage: 4.2 (+1.8 for each point in Bullet Damage). 
+
+== Strategy ==
+*<b>Strong Against:</b> Distracted tanks whose Cannons are not facing the Fighter, Body Damage Tanks, [[Sniper]] Branches, unskilled [[Overseer]] branch (Factory excepted), Battleship if and only if using dragon build with full movement speed.
+*<b>Weak Against:</b> Destroyer if using dragon build, Factory, most bullet spammers head on(other than [[gunner]] branch), snipers if using glass build.
+
+=== As the Fighter ===
+The Fighter is best described as a Basic Tank with forwarding recoil (they both share the same stats for their main cannon). Unlike with the Booster, the Fighter’s Side Barrels allow for decent cover when using Bullet Builds. All of the Fighter’s builds fall under one of the following categories: Glass cannons, Bullet Rammers and Rammers; each with playstyles that are distinct to them.
+*One very useful strategy involves moving with the WASD or arrow keys while pressing E or Left-Click repeatedly. If done correctly, this will keep the rear cannons from recoiling the Fighter forward while shooting, allowing the player to keep its distance or retreat while covering its back as if a [[Tank|Basic Tank]]. 
+**Depending on the Fighter’s build- tap firing may let it perform hit and run attacks more safely, letting it face tanks like Destroyers and Bullet Spammers more directly, keeping the pressure for longer and eventually even kill them. 
+**This also converts the Fighter into a bullet spammer, almost like a slow-firing [[Streamliner]].
+*If using a high Bullet Speed build: Approaching the enemy from their side or back and dashing in to deal damage while maintaining at least 1/3 to 1/2 of the screen’s distance is a viable strategy. The fast Bullet Speed should make up for the distance and do large damage given the bullets connect, hopefully finishing the enemy before they can react. Should the enemy be responsive and immediately turn its gun towards the player, it should be either be dodged, using the Fighter’s high mobility or escaped utilizing the target-player distance which was established earlier.
+*It should be noted that the forward gun is as strong as the [[Tank|Basic Tank’s]]. When using a Bullet Rammer builds (maxing out Bullet Stats such as Bullet Pen, Bullet Damage and Reload and ignoring Bullet Speed in favor of Health and Speed) could allow the player to tank at least 2-6 [[Overlord]] or 3-10 [[Necromancer]] Drones with its initial attack.
+*The powerful side-guns can be used to strafe the enemy. Combined with the Fighter’s mobility, this could be useful to attack tanks camping around the [[Dominator]]s while still maintaining a large amount of forwarding recoil to avoid their bullet streams. The side-guns can also make for a powerful deterrent against weaker tanks who distract the player from chasing their main target.
+*The forward recoil of the tank makes it so that the rear guns leave a long stream of Bullets behind the Fighter’s flank. Depending on the build, this Bullet stream can be used to somewhat weaken incoming bullets before they hit the player. Or to keep (non Destroyer Branch) rammers from actually colliding with it.
+*While the Fighter’s natural increased speed allows it to outrun most tanks, some classes such as other [[Tri-Angle]] branch users; or some of the [[Destroyer]] branch classes such as the [[Hybrid]], or the [[Annihilator]] can sort of keep up or even outrun the tank depending of their builds. This can be dangerous on the following scenarios: The formers if they are running a faster build than you. The latter if they are running Bullet Builds and you haven’t upgraded Bullet Speed.
+*The Fighter is one of the few tanks that can aggressively chase down Body Damage tanks due to its extreme movement speed and powerful front cannon. If they are running Bullet Rammer builds, players, should be wary of chasing down rammers head-on, as that leaves little time to react should the rammer suddenly change direction and smash into the player instead. Make sure that the rammer is below 50% HP before doing this.
+*If a rammer is chasing you, damage them by flip firing. In FFA/Maze this may trick the enemy into thinking you want to team with them, lowering their guard as well.
+*Glass Cannon builds are particularly attractive targets for snipers and bullet spammers. Because of this, crucial skills involve maintaining a fair target distance (1/3 to 1/2 of the monitor’s screen length) at all times and knowing when to escape. It is often suicidal to deal with high Reload tanks head-on. To have better control of the Fighter, players should travel horizontally, as it allows for a more reaction time against unexpected enemies.
+*A skilled Fighter can kill a Penta Shot if they aim at the barrel firing towards them at all times. However, a Pentashot at very close range can out-penetrate the Fighter’s front cannon. In consequence, it is advised to not get too close to the enemy tank if they still have a lot of health while doing this.
+
+=== Against the Fighter ===
+*The biggest weakness of the glass-cannon build Fighter is its low Health and Regeneration. Because of this, several Classes can sneak shots at the Fighter and force its retreat or kill it.
+*Another way to kill a Fighter is by using focused bullet spammers (such as the [[Sprayer]], [[Auto Gunner]], or [[Triplet]]) and aiming in its direction until enough bullets connect.
+**The [[Auto-Gunner]] is the hardest counter against the Fighter, as it is not only particularly good at ghosting through the Fighter’s defense but it is also essentially immune to any ambush attempts due to the Auto Turret.
+*Destroyers and Hybrids sporting Bullet Builds can take down careless Fighters head-on. Should the player ambush it or should the Fighter make careless moves? The extremely high burst damage should outright kill the fighter or take at least 50% of its HP.
+*If played right, the [[Overlord]] should be able to make use of its increased range to hit the Fighter’s blind spots (gaps between its guns) before it gets too close. Or overwhelm it with several drones (claw) while using its body as bait. Overlords doing this should beware of overextending, however, as the Fighter could turn around and kill them before they can retrieve their drones. Overlords, in general, should try for their drones to take as little damage as possible from the fighter’s bullets before connecting. Mostly because it makes their attacks more effective but also because Fighter’s bullet builds can outpace drone production in certain scenarios.
+**This technique can also work using the Necromancer but is riskier due to the slower Drone Speed and lack of natural Drone regeneration.
+*Rammer build users can sometimes work against bullet build Fighters, taking them down in one hit should the fighter make a mistake, be slow or not react in time. For in most cases this class is particularly phenomenal against rammer builds.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=hwqwJn1hmNY 3.91m by 😲SurpriseYT]
+* 2 Teams: 3.3m by angle
+* 4 Teams: 3.45m by Legit Developer
+* Maze: [https://imgur.com/UVk3F6Q 1.88m by exo]
+
+=== Mobile ===
+
+* FFA: 2.16m by buh
+* 2 Teams: 2.72m by Sterlon
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*The Fighter’s name was created by the fanbase, along with the Booster.
+**The Fighter’s body design bears some resemblance to a Fighter jet, so it was likely to be an inspiration to its name.
+*Ironically, the Fighter, despite looking like it should be slower than the Booster, is so close to equal in speed to the Booster that the difference is almost unnoticeable. This is because the base damage of the fighter's back guns is far higher than the base dmg of the booster's back guns. Which in turn, gives it more recoil per shot. (Like how an annihilator has more recoil per shot than a regular tank)
+*Most players often refer to Bullet Rammer build Fighters as Dragon Fighters.
+
+== Gallery ==
+<gallery widths="185">
+FighterDestroyingPentagon (Close-Up).png|A Fighter on the Purple Team destroying polygons.
+FighterDeathScreen.png|The death screen as a Fighter after being killed by a [[Pentagon]].
+LoneFighterShooting.png|A lone Fighter shooting.
+fighter icon new 1.png|...in new colors, unnamed
+</gallery>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Fighter
+|es     = Fighter
+|fr     = Fighter
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Fighter
+|pt-br  =
+|ro     =
+|ru     = Fighter
+|sv     =
+|tr     =
+|vi     = Fighter
+|zh     = Fighter
+}}
+[[Category:Diep.io]]

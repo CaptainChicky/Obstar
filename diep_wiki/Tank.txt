@@ -1,0 +1,127 @@
+= Tank =
+
+{{Infobox
+|image     = <gallery>
+tank icon 3.png|New Colors
+tank icon 2.png|Old Colors
+tank icon 1.png|Nameless
+</gallery>
+|tier      = 1
+|next      = '''Level 15'''<br>[[File:twin nav icon.png|50px|link=Twin]][[File:sniper nav icon.png|50px|link=Sniper]][[File:machine gun nav icon.png|50px|link=Machine Gun]][[File:flank guard nav icon.png|50px|link=Flank Guard]]<br><br>'''Level 30'''<br>
+[[File:smasher nav icon.png|50px|link=Smasher]]<br><br>'''Level 45'''<br>[[File:auto tank nav icon.png|50px|link=Auto Tank (tank)]]
+|barrel    = [[Cannons]] (1)
+|id        = 0
+|title = Tank|categories = Starter tank|key = None|releasedate = April 16 2016}}
+The {{PA}}, usually called the <b>Basic Tank</b> or simply '''Basic''', is the tank the player spawns as. It is equipped with one [[Cannons|Cannon]] which shoots one [[Bullets|Bullet]] at a time in a straight path, with slight recoil. At [[Levels|Level]] 1, with no [[upgrades]], it has 50 [[Stats|HP]].
+
+At Level 15, four upgrade choices will be given to the player: [[Twin]] (adding an extra cannon next to the existent cannon, both larger than the starter Tank's) [[Sniper]] (turning the normal cannon into a sniper cannon), [[Machine Gun]] (turning the normal cannon into a machine gun cannon) and [[Flank Guard]] (Like the Twin, but instead adding a shorter cannon to the back of the tank).  At Level 30, the choice for the [[Smasher]] upgrade will be available. Level 30 and 45 will once again prompt the player with options of other “sub-categories” of [[tanks]]. For information on these other tanks, go to the [[Tiers]] page.
+
+== Design ==
+[[File:Tank_Screenshot1.svg|thumb|131x131px|Level 45 Tanks with the new color scheme.]]The Tank features a basic circular body with one <span style="color:silver">light gray</span> Cannon placed in the front of the tank. The body can be either <span style="color:#00CCEE;">blue</span> or <span style="color:#FF2222;">red</span> (In [[4 Teams]] and [[Tag]], it can also be <span style="color:#2EEA17;">green</span> or <span style="color:#A817EA;">purple</span>), depending on the tank’s team (In [[Free For All|FFA]] and [[Maze]], each player's tank is blue and all other (hostile) tanks are red.)
+
+== Technical ==
+The [[stats]] of a Tank are as follow:
+
+* Regen: 1x Tank
+* Health:  50 (+20 for each point in Max Health, +2 for each extra level) 
+* Body Damage: 
+** Against shapes: 20 (+4 for each point in Body Damage)
+** Against tanks: 30 (+ 6 for each point in Body Damage) 
+** Against bullets: 5 (+1 for each point in Body Damage) 
+* Bullet Speed: x1 Tank
+* Bullet Penetration: 2 (+1.5 for each point in Bullet Penetration) 
+* Bullet Damage: 7 (+3 for each point in Bullet Damage) 
+* Reload time: 15t (-1t for each point in Reload)
+* Movement Speed: 1x Tank
+
+== Strategy ==
+* <b>Strong Against:</b> Low upgraded tanks (as the tank levels up, the list grows exponentially due to the high bullet stats), bullet-shooting tanks with lower frontal DPS if the player is maxed out in bullet power and Reload. 
+* <b>Weak Against:</b> Bullet Spammers, [[Overlord]]s, highly upgraded tanks, high-level tanks, Bosses, [[Sniper]] tanks if caught off guard, [[Crashers]] (swarming).
+
+=== As the Tank ===
+* Upon starting the game, it is advised for players to attempt to find and kill any [[Pentagon]]s near their spawn point because Pentagons are most effective and critical for leveling up. If there are none close by, it is best to destroy any nearby [[Square]]s or [[Triangle]]s instead. 
+*Though strategies differ between players, it is often advisable for novices to upgrade Max Health and Health Regeneration once or twice.
+* While playing 2 Teams or 4 Teams, players should stay close to the [[Base]] and take out [[Polygons]] nearby when they are at a lower level. If the enemy team’s players are taking up most of the [[Leaderboard]] and/or are spawn-camping the player’s team, consider going to a different area of the spawn camp. Again, players should upgrade Max Health or Movement Speed.
+* As a low-level tank with maxed out Max Health and Body Damage, players can surprise Bullet build players by making themselves seem harmless. This is a good way to quickly reach [[Smasher]] or [[Booster]].
+* Players should stay away from others as much as possible in non-team game modes. Try to refrain from fighting others.
+*Using the tank's small recoil will help you run away from enemies faster.
+* As the player reaches higher levels (Level 30 - 45) this tank becomes quite powerful, with its Bullet Damage and Penetration becoming very effective against most tanks. High bullet stats have enabled many players to reach high scores despite never upgrading.
+
+=== Against the Tank ===
+* Do not underestimate the Tank. Although it's a Tier 1 tank, it does not mean it can't kill you. A skilled Tank can easily kill other classes.
+* Bullet spammers can easily overwhelm the tank if they have enough Bullet Penetration because the Tank has only one cannon. If a player’s strategy is to wander around getting points mainly by killing all the Tanks they see, becoming a [[Triplet]] or a [[Sprayer]] could help them.
+*Due to how the tank has only one cannon, it is also possible to flank it.
+* A common strategy is spawn-camping. This is when players will aim to find and kill tanks that have just spawned. This strategy works very well with Sniper-class tanks due to their high FOV. If the player chooses to use this strategy in 2 Teams or 4 Teams, they should upgrade Movement Speed and be ready to run away from Protectors at a moment's notice. However, not much experience is gained from this, generally, and targeting low-level basic tanks can be seen as bullying. Spawn-camping is generally frowned upon due to its practically guaranteed effectiveness should the attacker be cautious for potential ramming attempts from the Basic.
+* An Overlord could flank a basic tank; however, it is still appropriate to attack it from the front since the Tank doesn't have enough reload to destroy them all. But be careful, because a Tank with almost and/or fully maxed out Movement Speed may easily run away from them.
+* Beware of surprise rammers; players occasionally level up but choose to stay as a tank and can quickly upgrade and surprise their opponent. The player may be able to spot one if the enemy Tank is trying to get too close to them. When this happens, the player must kill them as quickly as possible.
+* The bullets of a basic are, to say the least, basic. Dodging their bullets all depends on the bullet’s speed and the basic’s Movement. Estimating the trajectory of the tanks Bullets to the cannon direction is the main way to dodge their bullets, or just plain dodging is another way.
+
+== [[Achievements]] ==
+{{SideBox|*<b>There are other classes?</b> — Get to level 45 as a basic tank
+|{{Achievement
+|Color = #9AFA69
+|Name = There are other classes?
+|Description = Get to level 45 as a Basic Tank}}
+}}
+
+== History ==
+*From Diep's first day to 16th April 2016, all classes in the game were called "Tank" on the level bar.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://youtu.be/b9xitJeOOZI 1.36m by Mr Cheeky]
+* 2 Teams: [https://imgur.com/utBgcoF.png 1.41m by Quark]
+* 4 Teams: [https://imgur.com/r5W68NO.png 1.42m by Legit Developer]
+* Maze: [https://i.imgur.com/76hv8v8.png 701k by Baller]
+
+=== Mobile ===
+
+* FFA: 694.9k by buh
+* 2 Teams: 271k by GlitchedMYJ
+* 4 Teams: 306.2k by VløKe
+* Maze: -
+
+== Trivia ==
+[[File:Tank Screenshot4.svg|thumb|220x220px|Body ratio comparison between a [[Levels|Level]] 45 and a Level 1 Tank. Notice that size increases by about 50]]
+*Oddly enough, the Tank’s Bullets are actually the nineth most powerful in the game, tied with the Flank Guard, only under the [[Skimmer]], [[Rocketeer]], [[Glider]], [[Destroyer]], [[Annihilator]], [[Arena Closer]], [[Dominator]] (mainly destroyer dominator) and [[Hybrid|Hybrid’s]] bullets.
+**This is because most tanks will add barrels but reduce the power of each, to balance out the extra firepower. In addition, some stronger tanks, most notably the [[Overseer]] branch, uses other types of ammunition, such as [[Drones]], or [[Traps]] in case of the [[Trapper]] branch.
+* The Tank is the only Tier 1 tank in the game.
+*The Tank is one of two Classes that has an upgrade directly branching from it that is two tiers higher than itself, the [[Smasher]] (Tier 3). The other tank with this quality is the [[Machine Gun]], branching to the [[Sprayer]] (Tier 4). The tank is the only class that has an upgrade directly branching from it that is three tiers higher than itself.
+*This Tank, along with the [[Twin]], [[Triplet]], [[Triple Shot]], [[Quad Tank]] and [[Octo Tank]], were the first tanks ever added to the game (before its public release).
+*At level 45, 6 of this tank's bullets deal as much damage as the [[Destroyer]] Branch's. It can kill a level 45 tank in 2 shots if fully upgraded in Bullet Speed, Penetration and Damage.
+
+==Gallery ==
+<gallery>
+Tank Screenshot2.svg| Tank’s anatomy.[[File:Zweihexatank.png|thumb|A Tank next to two [[Hexagon|Hexagons]] and a [[Square]].]]
+Tank Screenshot3.svg
+File:DiepTank.png|A clear image of the Tank.
+File:Screenshot 2019-09-01 at 11.43.24 AM.png|A Tank near some [[Square|Squares]] in [[4 Teams]].
+File:Screenshot 2020-06-10 at 10.13.49 AM.png|A newly spawned Tank next to an [[Overlord]].
+File:Screenshot 2019-09-01 at 11.42.31 AM.png|A Tank next to some [[Base Drones]].
+</gallery>
+
+==Footnotes==
+<references />
+{{TankNav|tier1}}
+{{Interlang
+|status = checked
+|de     = Tank
+|es     = Tanque básico
+|fr     = Tank
+|hu     =
+|it     = Tank
+|ja     = Tank
+|ko     = 탱크
+|pl     = Tank
+|pt-br  = Tank
+|ro     = Tanc
+|ru     = Tank
+|sv     = Tank
+|tr     = Tank
+|vi     = Tank
+|zh     = 基本坦克
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

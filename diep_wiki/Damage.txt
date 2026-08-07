@@ -1,0 +1,4 @@
+= Damage =
+
+#REDIRECT [[Stats#Bullet_Damage]]
+[[Category:Redirect]]

@@ -1,0 +1,227 @@
+= Builds/Smasher =
+
+__NOTOC__
+{{BuildHeader|Smasher|
+{{BuildHeaderHeader|Smasher|
+{{#ifeq:{{{transcludesection|smasher}}}|smasher|
+{{Build|
+|tank                = Spike
+|build name          = Intimidation
+|health regen        = 6
+|max health          = 7
+|body damage         = 10
+|movement speed      = 10
+|description         = Made by Мастер. Act as if you're AFK. Then smash the user as he/she attempts to kill you. Higher speed is recommended as you can catch up to the tank incase it tries to flee.
+}}
+{{Build|
+|build name          = smasher build
+|health regen        = 3
+|max health          = 10
+|body damage         = 10
+|movement speed      = 10
+|description         = it is for tanks without cannons as it can easily ram players
+Max Health and body damage are needed to make the tank super buffed
+Movement speed without it your tank is super vulnerable and horrible at ramming
+}}
+
+
+{{Build|
+|build name          = Balanced Power
+|health regen        = 8
+|max health          = 8
+|body damage         = 8
+
+
+
+|movement speed      = 8
+|description         = <b>8, 8, 8, 8 (+1 Stats Point)</b>
+}}
+{{Build|
+|build name          = Ball O' Steel
+|health regen        = 10
+|max health          = 10
+|body damage         = 10
+|movement speed      = 3
+|description         = This actually works for both Landmine and Spike, not just Smasher.
+}}
+}}}}
+
+{{BuildHeaderHeader|Landmine|
+{{#ifeq:{{{transcludesection|landmine}}}|landmine|
+{{Build|
+|build name          = Speedy/Super Sonic Invisibility
+|health regen        = 3
+|max health          = 10
+|body damage         = 10
+
+
+
+
+|movement speed      = 10
+}}
+{{Build|
+|build name          = Troll
+|health regen        = 5
+|max health          = 10
+|body damage         = 10
+
+
+
+
+|movement speed      = 8
+}}
+{{Build|
+|build name          = Chaser
+|health regen        = 5
+|max health          = 8
+|body damage         = 10
+
+
+
+
+|movement speed      = 10
+}}
+{{Build|
+|build name          = See No Evil
+|health regen        = 6
+|max health          = 7
+|body damage         = 10
+|movement speed      = 10
+|description         = You can hear, you can speak, you can't see.
+}}
+{{Build|
+|build name          = Troll 2
+|health regen        = 7
+|max health          = 7
+|body damage         = 9
+|movement speed      = 10
+|description         = Be invisible in the pentagon nest while there's no one nearby, when there are players, kill them immediately.
+}}
+}}}}
+
+{{BuildHeaderHeader|Auto Smasher|
+{{#ifeq:{{{transcludesection|auto smasher}}}|auto smasher|
+{{Build|
+|tank                = Auto Smasher
+|build name          = Glass cannon
+|health regen        = 0
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 5
+|description         = Just for fun :P Try this if you dare
+}}
+{{Build|
+|build name          = Compass
+|health regen        = 5
+|max health          = 9
+|body damage         = 10
+|bullet speed        =
+|bullet penetration  =
+|bullet damage       =
+|reload              =
+|movement speed      = 9
+}}
+}}}}
+
+{{BuildHeaderHeader|Spike|
+{{#ifeq:{{{transcludesection|spike}}}|spike|
+{{Build|
+|build name          = Speed Spike
+|health regen        = 3
+|max health          = 10
+|body damage         = 10
+|movement speed      = 10
+|description         = 
+}}
+{{Build|
+|build name          = Regen Rammer
+|health regen        = 10
+|max health          = 7
+|body damage         = 6
+|movement speed      = 10
+|description         = Maximum speed and regen! As spike gives you +2 body damage, you still have a slight edge against non-smasher rammers (8 vs 7 body damage) also it regens super fast so you have more attempts to ram. works best in tag when you're on the minority team
+}}
+{{Build|
+|build name          = Nuckal’s ATV
+|health regen        = 3
+|max health          = 10
+|body damage         = 10
+|bullet speed        =
+|bullet penetration  =
+|bullet damage       =
+|reload              =
+|movement speed      = 10
+}}
+{{Build|
+|build name          = Spiky Spiker
+|health regen        = 8
+|max health          = 8
+|body damage         = 9
+|bullet speed        =
+|bullet penetration  =
+|bullet damage       =
+|reload              =
+|movement speed      = 8
+}}
+{{Build|
+|build name          = Killer Spike
+|health regen        = 6
+|max health          = 10
+|body damage         = 10
+|bullet speed        =
+|bullet penetration  =
+|bullet damage       =
+|reload              =
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Spikes R Us
+|health regen        = 5
+|max health          = 9
+|body damage         = 9
+|bullet speed        =
+|bullet penetration  =
+|bullet damage       =
+|reload              =
+|movement speed      = 10
+|description         = Good for FFA or Maze where you are given VERY little time to take a breather
+}}
+{{Build|
+|build name          = Living shield
+|health regen        = 10
+|max health          = 10
+|body damage         = 6
+|bullet speed        =
+|bullet penetration  =
+|bullet damage       =
+|reload              =
+|movement speed      = 7
+|description         = Useful in team modes. Follow your teammate and cover him from enemy bullets with your tank. In case of drone using enemies, you can approach them so that they'll attack you and not your fragile teammate. Maxed out health stats will allow you to receive that damage with no sweat in most cases.
+}}
+{{Build|
+|build name          = Balanced
+|health regen        = 5
+|max health          = 4
+|body damage         = 4
+|bullet speed        = 4
+|bullet penetration  = 5
+|bullet damage       = 4
+|reload              = 3
+|movement speed      = 4
+|description         = 
+}}
+{{Build|
+|build name          = Ball O' Steel
+|health regen        = 10
+|max health          = 10
+|body damage         = 10
+|movement speed      = 3
+|description         = This actually works for both Landmine and Spike, not just Smasher.
+}}
+}}}}
+}}
+[[Category:Diep.io]]

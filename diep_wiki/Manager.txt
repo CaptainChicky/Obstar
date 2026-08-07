@@ -1,0 +1,120 @@
+= Manager =
+
+{{Infobox
+|image     = <gallery>
+manager icon 2.png|New Colors
+manager icon 1.png|Old Colors
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Overseer icon new.png|50px|link=Overseer]]
+|barrel    = 1 [[Spawners|Spawner]]
+|id        = 26
+}}
+Manager is a Tier 4 tank in Diep.io. It upgrades from the [[Overseer]] at level 45.
+
+== Design ==
+The Manager features a circular base with one small trapezoid [[Spawners|Spawner]] on its front. It spawns [[Drones]], similar to the Overseer and [[Overlord]]. It also resembles the [[Machine Gun]] and is sometimes mistaken for it. However, the Machine Gun’s barrel is longer than the Manager’s spawner.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = ▲
+|MovementSpeed     = —
+|HiddenStat1       = Invisibility
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = +++
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}Upon upgrading, the Overseer loses one of its spawners and that spawner is now placed at the front of the tank. The spawner reloads twice as fast, the Drones have the same stats. But the loss of one spawner still keeps the tank from having the usual 2 unspawned drones of its [[Overseer|predecessor]].
+
+The Manager gains the ability to become invisible after 1 or 2 seconds of the [[Controls|WASD]] keys not being pressed. The Invisibility is dispelled if the tank starts to move or if it’s hit with bullets (or other kind of projectiles.)
+
+Stats: 
+
+* Reload time: 45t (-3t for the 1st, 3rd, 4th, 5th and 7th point, -4t for the 2nd and -2t for the 6th point in Reload).
+* The rest are the same with [[Overseer]].
+
+== Strategy ==
+*<b>Strong Against:</b> Distracted tanks with low DPS, solo tanks, tanks with low Reload, [[Smasher]] Classes, [[Destroyer]] Classes.
+*<b>Weak Against:</b> Prepared tanks with high DPS, multiple tanks, spread tanks, [[Sprayer]], and [[Triplet]], occasionally [[Streamliner]] if caught off-guard.
+
+=== As the Manager ===
+*Camping in a spot of the map could allow players to get kills without being spotted.
+*Invisibility should be used to ambush players rather than trying to hide forever, as it might be suspicious to see Drones appearing out of nowhere upon their destruction.
+*Players should be extra careful when they become the Leader, as the leader arrow will still lead users towards their location, rendering invisibility useless. Nevertheless, the Leader Arrow will disappear within a certain distance of the player so hiding should still be “possible” given they change locations often.
+*Camping around or inside the [[Dominator]]s in [[Domination|Domination mode]] will allow players to defend it while protecting their bodies, allowing them to ambush unsuspecting players near the Dominator.
+*Players should not camp in spots where there are many tanks and/or [[Polygons]], as Stray [[Bullets]] or tanks trying to farm can damage the player and thus reveal the Manager's location.
+*Managers should <u>never</u> stop controlling their Drones, as they will automatically fly in a circle around them, advertising their location to other players.
+*If possible, in a [[2 Teams]] or [[4 Teams]] Match, players could team with another class like an Overlord or an Overseer to not make it less obvious to which drones belong to what tank, causing players to become confused
+**Additionally, it could be useful to camp within an area of lots of friendly fire as the invisibility kicks in very fast. The friendly fire will provide extra protection to the player.
+*In Maze mode, players can camp around walls, dead ends, or closed off areas, targeting the enemies that come near them.
+**It is recommended to put the Manager’s Drones in a position where the player is not, and attack users from there whilst using the walls or space as cover.
+**Players shouldn’t reveal themselves if an unsuspecting user comes near and their drones aren’t close. Maze mode does allow the Manager more flexibility with the builds it can use though. And something like 0/5/7/7/7/7/0/0 could allow Managers to play as both at Rammer/Drone class by focusing on ambushes rather than extended fights.
+**Players can also use the 0/7/7/7/5/0/0/7 build (or something similar). The idea is to use drones to "lure players" toward the Manager. Players think it's a normal Manager because it has fast drones with HP (just a little lower than normal), but it’s a trap. If someone gets close to the Manager, act like a Landmine. Just remember to make sure other players aren’t rammers either, or if they are, that they have low HP. It works best in Maze, but player can try it in other game modes.
+
+=== Against the Manager ===
+[[File:Final_manager_GIF.gif|thumb|What the Manager looks like when turning invisible.]]
+*Drones that appear to not have a tank controlling them is a sure sign that a Manager is nearby. Destroy one enemy Drone and watch where the next Drone spawns to locate the Manager (since it either won’t move or will move, becoming visible). Doing this is pretty much useless, however, as the Manager would attack back soon. Use a [[Tri-Angle]] or similar classes to avoid the Manager’s Drones, then blast the Manager with the front cannon while dodging and holding off the Manager’s Drones with the rear cannons. Or use a [[Necromancer]] and just sweep an area where Drones without a visible owner are.
+*Use a [[Penta Shot]], [[Octo Tank]], or a similar tank to flood zones with suspected Managers while running at a slight angle, to fire around and overpower or simply dissuade the Manager from fighting.
+*If the player knows there is a Manager and does not have a sufficient DPS tank, then they should keep an eye out for Drones. If the player sees any Drones with no obvious source, spray and pray until the Manager retreats.
+*The [[Auto Gunner]] is effective because the Auto Gunner’s bullets can kill the Manager and its drones while the Auto Turret can expose the Manager’s location.
+*Use the [[Triplet]]. The focused fire of the Triplet’s Bullets will kill the Manager’s Drones faster than it can Reload. The player can then proceed to kill the Manager with ease.
+*If the player is using a fast Trapper class with high reload points, and comes close to the Manager, they can shoot a trap at it, and it may react by moving, which makes them visible. Then, they should shoot at the Manager's Spawner to kill any new drones. With some luck, the player may be able to kill it.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=if1J_oK56iw 2.26m by JB Colombia]
+* 2 Teams: [https://imgur.com/uh52gCa 5.94m by T.wS]
+* 4 Teams: [https://www.youtube.com/watch?v=2vmOWHdjjgE 4.43m by Mohsen]
+* Maze: [https://imgur.com/LfCbsTY 2.18m by Mipha]
+
+=== MOBILE ===
+
+* FFA: 1.77m by HZ6
+* 2 Teams: 1.5m by Esko
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*The Manager is the second tank to have the ability to become invisible. Preceded by the [[Stalker]] and followed by the [[Landmine]].
+*The Manager’s Spawner reloads twice as fast as those of an Overlord or Overseer– presumably to make up for the lost Spawner.
+*The Manager existed on all devices.
+
+== Gallery ==
+<gallery>
+Potential_Manager_pic3.png|One Spawner, Twice the speed  ↓<br>The Manager spawns drones twice as fast as a normal Overseer branch.
+Potential_Manager_pic1_version2.png|Manager's cloaking ability visualized. "You can't find me!"
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Manager
+|es     = Manager
+|fr     = Manager
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Manager
+|pt-br  =
+|ro     =
+|ru     = Manager
+|sv     =
+|tr     =
+|vi     = Manager
+|zh     = Manager
+}}
+[[Category:Invisibility]]
+[[Category:Diep.io]]

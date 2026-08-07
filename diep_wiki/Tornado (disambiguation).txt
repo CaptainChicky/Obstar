@@ -1,0 +1,12 @@
+= Tornado (disambiguation) =
+
+{{Disambig|Tornado}}
+----
+
+'''Tornado''' may refer to:
+* {{2|Tornado (Normal)|Tornado}}, a level 30 {{2|Whirlwind}} upgrade.
+* {{2|Tornado (Retrograde)}}, a level 45 {{2|Hexa Tank}} upgrade in the {{2|Retrograde}} gamemode.
+----
+''This is a disambiguation page—a navigational aid that lists other pages that might otherwise share the same title. If an article link referred you here, you might want to go back and fix it to point directly to the intended page.''
+----
+[[Category:Disambiguations]]

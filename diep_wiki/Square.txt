@@ -1,0 +1,73 @@
+= Square =
+
+{{Polygon
+|image     = <gallery>
+square polygon 2.png|New Colors
+square polygon 1.png|Old Colors
+</gallery>
+|rarity    = Very Common  
+|hp        = 10
+|xp        = 10
+|variants  = [[Green Square]]
+}}
+The {{PA}} is the most common [[Polygons|Polygon]] in [[Diep.io]]. It is also the weakest polygon in the game, having only <b>10 HP</b>, buttressed with 8 HP in Body Damage. It grants a score of 10 [[XP]] to the player who deals the final shot.
+
+It can be easily identified by its bright yellow color and its square shape. A tank with no upgrades can take it out with two shots. If the tank crashes into it, they will both take some damage.
+
+A [[Necromancer]] can turn Squares into its [[Drones]] by destroying it with body damage or one of its existing drones. The player should not confuse the ones untouched by the Necromancer with the Necromancer’s Minions, which only have a slight tint in [[Free For All|FFA]] and [[Sandbox]].
+== Strategy ==
+[[File:Yellow square_2.png|thumb|Size comparison to a Tank|101x101px]]
+Although the XP a Square gives may be low, finding a huge cluster of them can make them an XP goldmine and allow you to gain [[Levels]] easily. Tanks with multiple cannons (e.g. [[Penta Shot]]) or high reload (e.g. [[Machine Gun]]) can wipe out large sections of squares, earning plenty of XP.
+
+The body damage and HP of squares are fairly low, but it's advised not to ram into too many without decent max HP and regeneration. Squares can deal some damage to enemy tanks during combat if they accidentally ram into them, and rarely even killing them if they have very little health left.
+
+For Necromancers, finding a large patch of squares can be very helpful in replenishing their barrage of drones and fighting other strong tanks in the meantime.
+
+== Achievements ==
+{{SideBox|*<b>Gotta Start Somewhere</b> — Destroy 10 Squares
+*<b>Square Hater</b> — Destroy 500 Squares
+*<b>These Squares Gotta Go</b> — Destroy 10000 Squares
+|{{Achievement
+|Color        = #F1B78F
+|Name         = Gotta start somewhere
+|Description  = Destroy 10 Squares}}
+{{Achievement
+|Name         = Square hater
+|Description  = Destroy 500 Squares}}
+{{Achievement
+|Color        = #9AFA69
+|Name         = These squares gotta go
+|Description  = Destroy 10000 Squares}}
+}}
+
+== Trivia ==
+[[File:DiepSquare.png|thumb|63px|A clear image of a yellow square.]]
+*In the game florr.io, also made by M28, the Square is the rarest mob in the game, but in this game, it is the most common polygon.
+*If a player collides into it, the player will destroy it in one hit. At one point in Body Damage, a player can destroy it receiving slightly less Body Damage in return.
+*Putting one point into [[Stats#Bullet Penetration|Bullet Penetration]] will allow the player to hit the Square multiple times, killing it with one shot. This may be a better option to gain additional score points per Square.
+*Putting one point into [[Stats#Bullet Damage|Bullet Damage]] will also allow the player to destroy a Square in one shot along with the [[Bullets|bullet]] being destroyed.
+*It, along with the [[Triangle]] and [[Pentagon]], has a very rare [[Green Square|green variation]].
+**Though this is true, its green polygon variation is the weakest of the rarer polygons.
+**Even though the fact above is true, Green Squares are still very rare.
+*It is the only specific polygon to be used for earning at least three [[Achievements]].
+*The [[Summoner]] appears to be the boss version of squares. It rapidly spawns drones that are of the same size and shape but are a darker beige and have higher health. Unlike the Necromancer, the Summoner cannot "infect", normal squares to turn them into drones. Also, the Summoner's spawners function while the Necromancer's spawners don't.
+
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Cuadrado
+|fr     = Carrés jaunes
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Kwadrat
+|pt-br  =
+|ro     = Pătratul
+|ru     = Square
+|sv     =
+|tr     = Sarı Kare
+|vi     = Square
+|zh     = 方形
+}}

@@ -1,0 +1,151 @@
+= Skimmer =
+
+{{Infobox
+|image     = <gallery>
+skimmer icon 3.png|New Colors
+skimmer icon 2.png|Old Colors
+skimmer icon 1.png|Unnamed
+dingbat1991 skimmer tank 2.png|Dingbat 2
+dingbat1991 skimmer tank 1.png|Dingbat 1
+</gallery>
+|tier      = 4
+|previous  = [[File:Destroyer icon new.png|50px|link=Destroyer]]
+|barrel    = [[Cannons#Deployers|Deployer]] (1)
+|id        = 54}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Destroyer]] at level 45. It was conceptualized by [https://www.deviantart.com/dingbat1991 Dingbat1991] as an [[Assassin]] upgrade, [[:File:dingbat1991 class tree 2016.jpg|posted to Deviantart]], [[:File:dingbat1991 class tree 2.jpg|posted in a second tank tree a while later]], and then finally officially added on 2nd March 2017.
+
+== Design ==
+The Skimmer has a circular body, and its [[Cannon]] looks like a shorter Destroyer cannon overlapping a [[Machine Gun]] cannon.
+== Technical ==
+[[File:Skimmer missile size comparison.png|alt=An image comparing the Skimmer tank's missile sizes at Level 1 and Level 45.|thumb|Despite Skimmer's missiles changing size depending on [[Levels|Level]], the width of the missile's smaller cannons stays consistent at 42 units.]]
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▼
+|BulletPenetration = ▲
+|BulletDamage      = ▼▼
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Field of View
+|HiddenStat2       = Recoil
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲
+|HiddenStat2Val    = ▼▼▼
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+
+Upon upgrading:
+*The Skimmer’s FoV becomes that of a [[Sniper]].
+*The damage stat reduces to a third of the Destroyer's bullet.
+*Its recoil decreases significantly.
+=== Bullets ===
+*Its [[Bullets]] (sometimes called [[Missiles]]) have two small, colored, cannons that are positioned 180 degrees apart. The missiles spin clockwise, firing smaller bullets that create a vortex-shaped pattern. Missiles move slower than most Destroyer Class bullets.
+**Holding the right-click while firing will cause the missile to spin counterclockwise instead of the default clockwise rotation.
+**The Missiles launched from this tank are a third of a Destroyer bullet's strength. The extra bullets fired from the Missile are 0.8 times as strong as [[Gunner]] bullets.
+**Increasing bullet stats will affect both the missile and its bullets.
+Stats: 
+
+* Missile:
+** Bullet Speed: 0.55x Tank
+** Bullet Penetration: 8 (+6 for each point in Bullet Penetration) 
+** Bullet Damage: 7 (+3 for each point in Bullet Damage) 
+** Reload: Same with [[Destroyer]]
+* Missiles' bullets: 
+** Bullet Speed: 1.1x Tank
+** Bullet Penetration: 0.8 (+0.6 for each point in Bullet Penetration)
+** Bullet Damage: 4.2 (+1.8 for each point in Bullet Damage)
+** Reload time: 6t (-1t for the 1st, 4th and 7th point in Reload)
+
+== Strategy ==
+*<b>Strong Against:</b> Low DPS Tanks, Slow Tanks, [[Sprayer]]s (if used properly), [[Trapper]]s, Melee [[Builds|build]].
+*<b>Weak Against:</b> High DPS Tanks, Focus-Fire Tanks such as [[Triplet]]s or [[Streamliner]]s, Other Destroyer Branch Tanks, most [[Drone]] users.
+
+=== As the Skimmer ===
+*Similar strategies from the Destroyer can be applied here. Unlike its predecessor, the Skimmer has lost its great recoil, thus scratching out the opportunity for a good Body Damage Build. However, its missiles can fire bullets, making it easier to hit enemies. A Bullet Build where all bullet stats are maxed out is the best option for the player to use.
+*As this tank, the player must use their increased FoV to their advantage. They can catch unprepared Bullet Build tanks. Note that [[Drone]] tanks like the [[Overlord]] have the same FoV radius as the Skimmer.
+*Since missiles also shoot small bullets from its Cannons, low health tanks can be picked out by the vortex of bullets, even if the main one misses.
+*Upon upgrading to the Skimmer, the Bullet Damage reduces greatly, so the player must fire precisely or else bullet spammers can kill them quick.
+[[File:Skimmer_in_action.gif|thumb|right|245x245px|A demonstration of using the right-click option while firing missiles.]]
+*Remember that Skimmers can fire their missiles in different rotations. This can cause other players to get hit more often, especially those that try to follow the spin-patterns.
+*If the Skimmer has a high enough Penetration and Reload, they can effectively create a slow-moving shield of missiles that can block a few bullets at a time. It is not recommended to try this against most Destroyer-classes, as their bullets can often smash through missiles.
+*Missiles work well against melee-build tanks as the area-of-denial effect of bullets can damage them greatly. Be wary of those that are elusive, however, as they may try to ram through them.
+*This tank works relatively well in [[Sandbox]] as long as the player isn’t too unskilled.
+*Trapper classes are surprisingly susceptible to the Skimmer. Despite being able to create dense trap walls, the Skimmer’s missiles can break through them with ease, especially since the Skimmer’s bullets have high Penetration. Additionally, if angled correctly, the missiles’ shower of bullets may seep through the little holes in the traps. Each Trapper class has its weakness against the Skimmer, such as being too slow or having weak traps. Only the [[Gunner Trapper]] and [[Auto Trapper]] might have a chance against it, as they have Cannons. However, the Gunner Trapper has to turn its whole body around to aim its cannons at the Skimmer. To make matters worse, the Auto Trapper’s [[Auto Turret]] can’t detect players from long distances. If the player is a Trapper class and sees a Skimmer, they should run away unless able to block Missiles fast enough.
+
+=== Against the Skimmer ===
+* The Overlord is very effective against the Skimmer since it can’t fire bullets fast enough to block the Drones. However, if the Drones are sent in a solid line, the large bullets will wipe out the drones easily. The Overlord user has to make sure that the drones are spread out so that the Skimmer user won’t be able to destroy the drones. The Overlord should also be careful of chip damage from the small bullets because even if they don’t do much damage, the damage stacks quickly.
+* The Skimmer, just like the tanks in the Destroyer branch, has a low reload speed, which means tanks with high reload can overwhelm this tank. If the player isn’t good at dodging Destroyer bullets, they have to be careful, because these bullets are faster. Players need to be careful of small bullet damage from the propulsion bullets, as the small chip damage can stack up quickly.
+* Having an increased FoV radius, the [[Ranger]], [[Predator]], and [[Stalker]] can best the Skimmer at FoV. As one of the three classes, the player can attack the opponent but has to be aware of any incoming missiles.
+* The Machine Gun is surprisingly effective against the Skimmer. A Machine Gun player with maxed out Bullet Speed will overwhelm the opponent by spreading bullets everywhere, thus damaging the Skimmer if the opponent decides to dodge the bullets. The Skimmer’s missiles and their bullets have to be dodged quickly if this strategy is used. The [[Triplet]] could be an alternative, but may not wipe out the opponent as fast.
+
+== History ==
+* The Skimmer was added on the 2nd of March 2017. It didn’t have an official name until the 21st of March.
+* On the 23rd of December 2017, the Skimmer’s ability was completely reworked to differentiate it with the recently added [[Rocketeer]]. Now, instead of firing missiles with two cannons behind them, Skimmers fire spinning missiles with cannons on either side, akin to the Flank Guard.
+* On May 9th, 2023, the Skimmer's original ability was given to the new [[Glider]] tank.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=B1au14-Pkns 1.19m by Mohsen]
+* 2 Teams: [https://www.youtube.com/watch?v=4PZINIDdLms 1.3m by LK2410]
+* 4 Teams: 1.56m by Ryan
+* Maze: [https://imgur.com/yb00BOE 644k by Hades]
+
+=== Mobile ===
+
+* FFA: 675.6k by nikko
+* 2 Teams: -
+* 4 Teams: 1.02m by buh
+* Maze: -
+
+== Trivia ==
+[[File:Skimmer_Icon3.png|thumb|110x110px|What the Skimmer upgrade icon looked like when it was Unnamed]]
+*As with [[Streamliner]] and [[Spread Shot]], Skimmer was conceptualized by [https://www.deviantart.com/dingbat1991 Dingbat1991]. The original conception image may be found [[:File:dingbat1991 class tree 2016.jpg|here]] and an updated version may be found [[:File:dingbat1991 class tree 2.jpg|here]].
+**The reworked Skimmer’s mechanics are akin to Dingbat1991’s “Vortex” tank.
+*It is one of the few tanks that were unnamed at some point. Others include the [[Hybrid]], the [[Booster]], the [[Fighter]] and the [[Sprayer]].
+**This class stayed unnamed for the longest time (19 days).
+*It is the first tank to use a [[Cannons#Deployers|Deployer]], and the second Tank whose projectiles possess weapons of their own. The first being the [[Factory]] and the third being the [[Rocketeer]]. The fourth being the [[Glider]]
+**The [[Cannons#Deployers|Deployer]] shoots a bullet with two turrets facing back towards the shooter, that shoot very tiny bullets.
+*This class looks similar to a [[Predator]] without the smallest barrel or a [[Hunter]] with wider barrels, and a small trapezoid as the smaller barrel.
+*This class is the only tank that has increased FoV without branching off [[Sniper]] in any way, alongside the [[Rocketeer]], The [[Glider]] and the Smasher tree.
+*Sometimes, a missile fired from a Skimmer may pass through another missile fired by an enemy Skimmer, unharmed. This has been observed in Sandbox.
+*Previously, if a Skimmer fires a missile, then dies, the missile stops firing bullets.
+*It's one of the two tanks to be reworked. the other being the [[Hunter]]
+
+== Gallery ==
+<gallery>
+SkimmerVsRocketeer.png|A Skimmer fighting a Rocketeer in [[4 Teams]] gamemode nearby the [[Pentagon Nest]].
+SkimmerVsPentashot.png|A Skimmer fighting a [[Penta Shot]] in [[2 Teams]] gamemode.
+Skimmer New Bullet.png|The Skimmer’s current missile design.
+Screenshot 2017-03-03 at 5.02.36 PM.png|The Skimmer shooting its old missiles.
+Skimmer_Screenshot1.svg|Skimmer’s ammunition design. <br>Was reworked during the December 23rd update in 2017.
+Screenshot 2017-03-03 at 5.03.56 PM.png|Skimmer.
+skimmer icon new 1.png|New colors, no name
+</gallery>
+
+== Footnotes ==
+<references/>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Skimmer
+|es     = Skimmer
+|fr     = Skimmer
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Skimmer
+|pt-br  =
+|ro     =
+|ru     = Skimmer
+|sv     =
+|tr     =
+|vi     = Skimmer
+|zh     = Skimmer
+}}
+[[Category:Diep.io]]

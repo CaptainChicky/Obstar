@@ -1,0 +1,4 @@
+= Auto Turret =
+
+#REDIRECT [[Auto Turrets]]
+[[Category:Redirect]]

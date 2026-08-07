@@ -1,0 +1,1011 @@
+= Builds/Flank Guard =
+
+__NOTOC__
+{{BuildHeader|Flank Guard|
+{{BuildHeaderHeader|Flank Guard|
+{{#ifeq:{{{transcludesection|flank guard}}}|flank guard|
+{{Build|
+|build name          = Brick Wall Build
+|health regen        = 7
+|max health          = 7
+|body damage         = 0
+|bullet speed        = 5
+|bullet penetration  = 0
+|bullet damage       = 7
+|reload              = 0
+|movement speed      = 7
+|description         = Health is important for survival, especially if you don't want to get killed by rammers. This build supports the damage of a sniper, the health of a rammer, and the speed of a Fighter all in one. This is good also for bullet spammer tanks like Octo Tank, Spread Shot, and Penta Shot!
+}}
+{{Build|
+|build name          = The Troll Build
+|health regen        = 7
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 5
+|movement speed      = 7
+|description         = 
+}}
+{{Build|
+|build name          = TINA KILLA
+|health regen        = 7
+|max health          = 2
+|body damage         = 0
+|bullet speed        = 6
+|bullet penetration  = 6
+|bullet damage       = 6
+|reload              = 6
+|movement speed      = 0
+}}
+}}}}
+{{BuildHeaderHeader|Tri-Angle|
+{{#ifeq:{{{transcludesection|tri-angle}}}|tri-angle|
+{{Build|
+|build name          = Fast Child
+|health regen        = 3
+|max health          = 2
+|body damage         = 0
+|bullet speed        = MAX
+|bullet penetration  = MAX
+|bullet damage       = MAX
+|reload              = MAX
+|movement speed      = 0
+|description         = 
+}}
+
+{{Build|
+|build name          = Tri-Angles ONLY
+|health regen        = 2
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 4
+|bullet penetration  = MAX
+|bullet damage       = MAX
+|reload              = MAX
+|movement speed      = 3
+|description         = A good build for bullet tri-angle branch.
+}}
+
+{{Build|
+|build name          = Maze Cop
+|health regen        = 3
+|max health          = 7
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 2
+|bullet damage       = 2
+|reload              = 5
+|movement speed      = 7
+|description         = wanna be strict but on the laws side on diep.io? well go and use this teamer and witch hunter killing build
+*Use health regen to repair yourself
+*Use max health to be a idestructible piece of machinery
+*Use bullet speed to attack far away enemies
+*Use bullet penetration to attack multiple things at once!!
+*Use bullet damage to have really dangerous bullets!!!!!!!
+*Use reload to quickly fire a wave of bullets at enemies
+*Use movement speed to move at enimies quick and escape deadly multiboxers
+}}
+
+{{Build|
+|build name          = Dragon Rammer
+|health regen        = 0
+|max health          = 7
+|body damage         = 5
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0
+|description         = If played right able to kill some spammers and able to kill Overlord Drones. I usually use it and end up on Leaderboard but lack of speed will allow spammers and drones to hit you when on low health so my advice is to build up some builds in the front let the bullet count their attacks and ram them but shoot down health while maintaining a close distance
+}}
+{{Build|
+|build name          = Speedy Rammer
+|health regen        = 5
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Go Home Booster, You’re Drunk
+|health regen        = 0
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 3
+|bullet damage       = 2
+|reload              = 7
+|movement speed      = 7
+}}
+}}}}
+{{BuildHeaderHeader|Auto 5|
+{{#ifeq:{{{transcludesection|auto 5}}}|auto 5|
+{{Build|
+|build name          = GABERRR'S Counter ram auto 5
+|health regen        = 2
+|max health          = 7
+|body damage         = 6
+|bullet speed        = 3
+|bullet penetration  = 3
+|bullet damage       = 3
+|reload              = 3
+|movement speed      = 6
+|description         = CRA-5 means Counter ram auto 5.  so you play this build by when you see a body damage ramming booster / destroyer / low health smasher branch tank you immdiately retreat and they think your playing glass cannon auto 5 and instinctively chase after you. You continue to retreat and they will come to you. your turrets will wear them down enough in the chase so when they finally ram you you kill them. works almost every time since nobody expects a counter ram auto 5. ive taken down 50K destroyers with this. Can also take a blow from bullet build anhailator and retreat from danger if necessary. I usually playu oit in TDM but should work fine in FFA as well, Although if you play it over and over on a server, people will catch on, people have a very hard time distinguishing it from regular auto 5 and therefore, it tricks boosters and destroyers and usually kills them. Very useful and fun to play troll build that you’ll be playing over and over again. And practically nobody uses it so yeah. You’ve got the element of suprise, By GABERRR
+}}
+{{Build|
+|build name          = XP Farmer
+|health regen        = 2
+|max health          = 2
+|body damage         = 2
+|bullet speed        = 3
+|bullet penetration  = 4
+|bullet damage       = 7
+|reload              = 6
+|movement speed      = 7
+|description         = Made by Мастер. An XP Farmer to use while AFK. High speed is recommended in order to flee to safety.
+}}
+{{Build|
+|build name          = The worst build
+|health regen        = 5
+|max health          = 0
+|body damage         = 7
+|bullet speed        = 7
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 7
+|description         = A ramming auto tank. Hah. With fast! Puny bullets and fast movement speed! This tank might suck, but some players definitely can get surprised!
+}}
+{{Build|
+|build name          = Healthy Auto Sniper
+|health regen        = 4
+|max health          = 4
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 0
+|movement speed      = 4
+|description         = This build uses reload points to trade for a more survival-based build.
+}}
+{{Build|
+|build name          = Pressured Lockdown!
+|health regen        = 0
+|max health          = 6
+|body damage         = 1
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 2
+|movement speed      = 3
+}}
+{{Build|
+|build name          = Seismic
+|health regen        = 3
+|max health          = 1
+|body damage         = 0
+|bullet speed        = 5
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 5
+|movement speed      = 5
+}}
+{{Build|
+|build name          = Auto Turret
+|health regen        = 2
+|max health          = 2
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 1
+}}
+{{Build|
+|build name          = 5 Snipers
+|health regen        = 0
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 5
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Middle Holder Teams
+|health regen        = 1
+|max health          = 5
+|body damage         = 2
+|bullet speed        = 6
+|bullet penetration  = 6
+|bullet damage       = 6
+|reload              = 6
+|movement speed      = 1
+|description         = Hold the middle and keep other team from leveling.  Run from any fight.  Get kills by accident or by defense.
+}}
+{{Build|
+|build name          = The Moving Fort
+|health regen        = 0
+|max health          = 7
+|body damage         = 0
+|bullet speed        = 5
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0
+|description         = This build is good for when you're defending a fleet of tanks. If you're assaulting an enemy, do not brute force it as it leads to your downfall. Also, bring tanks which can penetrate bullets so that you won't get hit by the enemy as easily.
+}}
+}}}}
+{{BuildHeaderHeader|Booster|
+{{#ifeq:{{{transcludesection|booster}}}|booster|
+{{Build|
+|build name          = wierdmagedeon!!
+|health regen        = 7
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 6
+|movement speed      = 6
+|description         = used for a slightly different rammer build, also works for smasher by replacing reload with 2 points in the others, 1 point in anything else will also happen.
+}}
+{{Build|
+|tank                = Booster
+|build name          = Half N Half
+|health regen        = 0
+|max health          = 5-6 
+|body damage         = 5-6
+|bullet speed        = 0
+|bullet penetration  = 5-6
+|bullet damage       = 5-6
+|reload              = 5
+|movement speed      = 6
+|description         = A dangerous half ram half bullet bullet build. The HNH can be used to trick enemies into thinking your one type. Although not as fast as most booster a build, its mixture of ram and bullets can make your next victim half pepperoni half bbq chicken pizza. Yum!
+}}
+{{Build|
+|build name          = Fallen Booster
+|health regen        = 0
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 5
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 7
+|description         = A build that replicates the Fallen Booster.
+}}
+{{Build|
+|build name          = Glass Booster
+|health regen        = 0
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 5
+|description         = With fast high damage bullets, this build kills quick but dies quick. Weak against bullet spammers. 
+}}
+{{Build|
+|build name          = Outta Here!!!
+|health regen        = 0
+|max health          = 7
+|body damage         = 5
+|bullet speed        = 7
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Accelerator
+|health regen        = 2
+|max health          = 3
+|body damage         = 4
+|bullet speed        = 1
+|bullet penetration  = 4
+|bullet damage       = 5
+|reload              = 7
+|movement speed      = 7
+|description         = A fast, powerful build which allows the players to wear off enemy health. The one bullet speed is used for being able to shoot other boosters while chasing them. Also, with a bit of body damage, HP, and Regen, it is able to be a part rammer. You could also just do 3/3/4/0/4/4/7/7 and add the remaining points of your choice.
+}}
+{{Build|
+|build name          = Classic Rammer
+|health regen        = 7
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 5
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Speedy
+|health regen        = 2
+|max health          = 2
+|body damage         = 0
+|bullet speed        = 4
+|bullet penetration  = 4
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Speed Ram
+|health regen        = 5
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Boosted Ramming
+|health regen        = 7
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 5
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Invincible Hulk
+|health regen        = 2
+|max health          = 7
+|body damage         = 0
+|bullet speed        = 0
+|bullet penetration  = 6
+|bullet damage       = 6
+|reload              = 7
+|movement speed      = 5
+}}
+{{Build|
+|build name          = The Armored Bugatti Of Death
+|health regen        = 3
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 2
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Bullet Storm
+|health regen        = 3
+|max health          = 4
+|body damage         = 0
+|bullet speed        = 2
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 3
+}}
+{{Build|
+|build name          = Cheetah Simulator
+|health regen        = 0
+|max health          = 5
+|body damage         = 0
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          =Eagle
+|health regen        =0
+|max health          =3
+|body damage         =0
+|bullet speed        =2
+|bullet penetration  =7
+|bullet damage       =7
+|reload              =7
+|movement speed      =7
+|description         =Used for hunting down tanks, to kill bullet spammers you have to find blind spots, as long as it is played carefully it can destroy anything.
+}}
+{{Build|
+|build name          = Fast Rammer
+|health regen        = 7
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 5
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 0
+|description         =
+}}
+{{Build|
+|build name          = Flying Goat
+|health regen        = 6
+|max health          = 5
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 0
+|bullet damage       = 7
+|reload              = 1
+|movement speed      = 7
+|description         = Boosters always remind me of goats: fast, frisky, and sometimes annoying.
+}}
+{{Build|
+|build name          = Gun Them Down!
+|health regen        = 2
+|max health          = 2
+|body damage         = 0
+|bullet speed        = 3
+|bullet penetration  = 7
+|bullet damage       = 6
+|reload              = 6
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Ram and Slam
+|health regen        = 3
+|max health          = 7
+|body damage         = 3
+|bullet speed        = 0
+|bullet penetration  = 2
+|bullet damage       = 4
+|reload              = 7
+|movement speed      = 7
+|description         = Ram peaple with bullets and your self!
+}}
+{{Build|
+|build name          = Kill, Rest, Repeat
+|health regen        = 0
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 2
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+|description         = A fast build that chases after tanks and pecks them with it's low speed high damage bullets
+}}
+{{Build|
+|build name          = Ram N' Spam
+|health regen        = 6
+|max health          = 6
+|body damage         = 5
+|bullet speed        = 0
+|bullet penetration  = 2
+|bullet damage       = 7
+|reload              = 5
+|movement speed      = 2
+|description         = A slower build for the booster which is capable of both ramming other tanks and using a semi-bullet shield.  Avoid engaging faster tanks, heavily bullet-shielded tanks, and smashers as they will kill you. Also approach bullet spammers with caution as they probably have a greater firepower than yourself.
+}}
+{{Build|
+|build name          = The Trolling Booster
+|health regen        = 4
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 1
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 7
+|description         = When you ram into another ramming Booster the 1 penetration will let you survive by a bit
+}}
+}}}}
+{{BuildHeaderHeader|Fighter|
+{{#ifeq:{{{transcludesection|fighter}}}|fighter|
+{{Build|
+|build name          = Fighter's Bullet Umbrella
+|health regen        = 0
+|max health          = 1
+|body damage         = 2
+|bullet speed        = 2
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+|description         = Basically modified sea serpent, it rams its bullets into its enemies from a few squares' longer distance. 2 bullet speed allows for easier destroyer kills as well as a bullet shield in front of itself to block enemy projectiles. This also mitigates decreased health points. A vertical ambush using this tank will kill almost all bullet spammers and snipers.  A friend of mine got to 1m FFA using it.
+}}
+{{Build|
+|build name          = fight em bois
+|health regen        = 0
+|max health          = 7
+|body damage         = 0
+|bullet speed        = 5
+|bullet penetration  = 4
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 3
+|description         = good for clearing polygons for your team so they do not have to TANK dmg
+}}
+
+{{Build|
+|build name          = Papa Power Alt.
+|health regen        = 0
+|max health          = 2
+|body damage         = 3
+|bullet speed        = 2
+|bullet penetration  = 7
+|bullet damage       = 6
+|reload              = 7
+|movement speed      = 6
+|description         = With this build, you are able to have a considerate amount of health, and still be fast enough to chase people down. The two bullet speed will be just enough to catch running tanks, while still allowing you to have a bullet cloud.
+}}
+{{Build|
+|build name          = Falcon 9
+|health regen        = 2
+|max health          = 1
+|body damage         = 2
+|bullet speed        = 2
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 5
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Papa Power
+|health regen        = 0
+|max health          = 1
+|body damage         = 2
+|bullet speed        = 2
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+|description         With this build, you are able to have a little armor as well as chase people down. The max speed allows u to keep up with tanks, and the bullet speed is just enough to be able to hit tanks as you chase them, while still being able to create a bullet cloud.
+}}
+{{Build|
+|build name          = Tag Killer
+|health regen        = 0
+|max health          = 0
+|body damage         = 6
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 6
+|description         = Body Damage increases your damage resistance. The slow bullet speed may fool enemies into thinking you're a rammer, which you kinda are. Maxed bullets are obviously important, and movement speed allows you to chase down and kill enemies quickly - very useful for Tag Mode. Points can be swapped between Body Damage and Movement Speed.
+}}
+{{Build|
+|build name          = anti-overlord
+|health regen        = 0
+|max health          = 5
+|body damage         = 2
+|bullet speed        = 0
+|bullet penetration  = 5
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+|description         = A fighter build made specifically for destroying overlords. Effective if used by many fighters.
+}}
+{{Build|
+|build name          = Glass Cannon
+|health regen        = 0
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 5
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Sea Serpent
+|health regen        = 0
+|max health          = 2
+|body damage         = 3
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = The Killer Tank!
+|health regen        = 2
+|max health          = 2
+|body damage         = 0
+|bullet speed        = 5
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 3
+}}
+{{Build|
+|build name          = Ambrosia
+|health regen        = 1
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 3
+|bullet penetration  = 6
+|bullet damage       = 6
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Swift Slaughterer
+|health regen        = 1
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 3
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 5
+}}
+{{Build|
+|build name          = Dragon
+|health regen        = 0
+|max health          = 5
+|body damage         = 7
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0
+}}
+{{Build|
+|build name          = The falcon
+|health regen        = 0
+|max health          = 5
+|body damage         = 6
+|bullet speed        = 3
+|bullet penetration  = 4
+|bullet damage       = 4
+|reload              = 7
+|movement speed      = 5
+|description         = anti-rammers.  Very effective for trolling
+}}
+{{Build|
+|build name          = Flanker
+|health regen        = 3
+|max health          = 4
+|body damage         = 0
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 5
+|description         = Good at catching tanks like the Quad tank or those with low penetration builds off guard. If things go awry, it can take some hits and move quickly in order to ensure a safe getaway.
+}}
+{{Build|
+|build name          = Mockingjay
+|health regen        = 0
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 6
+|bullet penetration  = 7
+|bullet damage       = 6
+|reload              = 7
+|movement speed      = 7
+|description         = uhhh... Glass Cannon!
+}}
+{{Build|
+|build name          = Vandal
+|health regen        = 3
+|max health          = 3
+|body damage         = 2
+|bullet speed        = 2
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 2
+|description         = Balanced Fighter build. You don't have to do bullet speed but I think it'd help in certain situations, but if you'd like, you could move it into movement speed.
+}}
+{{Build
+|build name          = Oort Cloud
+|health regen        = 0
+|max health          = 4
+|body damage         = 4
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 6
+|reload              = 6
+|movement speed      = 6
+|description         =This build tested by me is a slight ballance of the rammer and glass cannon builds. The max bullet penetration ensures a direct hit. Without a worry of dying, health points and body damage are added to this build, but if you want more health, skip the body damage to maximise your health and maximise bullet damage or movement speed 
+}}
+
+}}}}
+{{BuildHeaderHeader|Octo Tank|
+{{#ifeq:{{{transcludesection|octo tank}}}|octo tank|
+{{Build|
+|build name          = Sunshine
+|health regen        = 5
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 7
+|bullet penetration  = 0
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 0
+|description         = you see all these storms and hurricanes. so gloomy! well not anymore! :) bullets are now like rays of sunshine! spreading happiness everywhere! max hp and body damage, don't touch the sun.
+}}
+{{Build|
+|build name          = bullets
+|health regen        = 7
+|max health          = 7
+|body damage         = 0
+|bullet speed        = 5
+|bullet penetration  = ?
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = ?
+|description         = Sturdy,High DPS and fast bullets
+}}
+{{Build|
+|build name          = KayAyeAre's 100k
+|health regen        = 1
+|max health          = 1
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 2
+|description         = Used by KayAyeAre to get to a score of 100k. Hope you enjoy this build.
+}}
+{{Build|
+|build name          = Hurricane Survival
+|health regen        = 3
+|max health          = 5
+|body damage         = 0
+|bullet speed        = 1
+|bullet penetration  = 6
+|bullet damage       = 6
+|reload              = 7
+|movement speed      = 5
+|description         = A modified version of Hurricane Justin to ensure a health padding. Uses the 3 points from Body Damage into Health Regeneration. Great for Teams mode. 
+}}
+{{Build|
+|build name          = Heavy Boulder
+|health regen        = 6
+|max health          = 7
+|body damage         = 7
+|bullet speed        = 2
+|bullet penetration  = 3
+|bullet damage       = 2
+|reload              = 1
+|movement speed      = 5
+|description         = Made by Redostonecraft, this provides a balanced build for Octo Tanks with emphasis on survivability.
+}}
+{{Build|
+|build name          = The Hurricane
+|health regen        = 0
+|max health          = 5
+|body damage         = 0
+|bullet speed        = 1
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 6
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Bullet Storm
+|health regen        = 2
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 3
+}}
+{{Build|
+|build name          = Octo Hurricane
+|health regen        = 2
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Dangerous Thunderstorm
+|health regen        = 3
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 6
+|bullet penetration  = 7
+|bullet damage       = 6
+|reload              = 6
+|movement speed      = 2
+}}
+{{Build|
+|build name          = Glass Octo
+|health regen        = 0
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 6
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 6
+}}
+{{Build|
+|build name          = Hurricane Justin
+|health regen        = 0
+|max health          = 5
+|body damage         = 3
+|bullet speed        = 1
+|bullet penetration  = 6
+|bullet damage       = 6
+|reload              = 7
+|movement speed      = 5
+|description         = A hurricane-style build that my friend Justin uses. Customizable, switch high bullet damage and penetration for max health and body damage for an anti-rammer that would surprise Boosters and Smashers, or put more points into penetration and damage for a glass fortress that will keep enemies out and provide nice crowd control in Teams or Domination.
+}}
+{{Build|
+|build name          = Blizzard
+|health regen        = 0
+|max health          = 0
+|body damage         = 5
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = Somewhat Glass Tank
+|health regen        = 0
+|max health          = 5
+|body damage         = 0
+|bullet speed        = 6
+|bullet penetration  = 5
+|bullet damage       = 6
+|reload              = 6
+|movement speed      = 5
+}}
+{{Build|
+|build name          = Hurricane
+|health regen        = 5
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 3
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 4
+|movement speed      = 7
+}}
+{{Build|
+|build name          = The Tropical Storm
+|health regen        = 1
+|max health          = 4
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0
+}}
+{{Build|
+|build name          = OctoTrool
+|health regen        = 0
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 5
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+}}
+{{Build|
+|build name          = FLARE´s octo tank
+|health regen        = 1
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 1
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 7
+|description         = if you want you can swap the health and bullet speed points around. designed for chasing down smaller tanks and creates cover in TDM modes for other players
+}}
+{{Build|
+|build name          = Octo Farmer
+|health regen        = 0
+|max health          = 2
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 4
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 6
+|description         = A (glassy) build suitable for peaceful farming of points, especially near the Pentagon Nest. Caution that confrontations are to be avoided. Suitable for use in modes with a base/safety zone, where one can flee to upon danger. Not recommended for modes where fighting against other tanks are unavoidable. 
+}}
+{{Build|
+|build name          = Rammer Hell
+|health regen        = 0
+|max health          = 6
+|body damage         = 5
+|bullet speed        = 3
+|bullet penetration  = 6
+|bullet damage       = 6
+|reload              = 6
+|movement speed      = 1
+|description         = I recommend that you have one other teammate in your range if you are on 4-team, 2-team, or any other team mode, because this build doesn't guarantee protection, like everything else. If you are in any other mode though, try working up your skill for this build by battling with lvl 20-30 tanks, because this build is, again, a little hard to manage.
+}}
+{{Build|
+|build name          = The Wall
+|health regen        = 6
+|max health          = 6
+|body damage         = 0
+|bullet speed        = 0
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0
+|description         = Not very offensive, but keeps you and your teammates safe(ish)
+}}
+{{Build|
+|build name          = Absolute Bullet Hell
+|health regen        = 2
+|max health          = 4 or 5
+|body damage         = 1 or 0
+|bullet speed        = 7
+|bullet penetration  = 2
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 3/0 with more health
+|description         = This build is a build that allows for a lot of ranged damage sacrificing body damage and sometimes movement speed. It works really good staying in one spot with automatic spin and shooting
+}}
+}}}}
+{{BuildHeaderHeader|Auto Gunner|
+{{#ifeq:{{{transcludesection|auto gunner}}}|auto gunner|
+{{Build|
+|build name          = CQC Run n' Gun
+|health regen        = 4
+|max health          = 4
+|body damage         = 0
+|bullet speed        = 4
+|bullet penetration  = 4
+|bullet damage       = 4
+|reload              = 7
+|movement speed      = 6
+|description         =This build is strategically made for flanking an enemy with ok mobility or give support fire on the move. The 4 on speed, penetration, and damage, with 7 of reload, on the 4 mini cannons and the autocannon, you would be having a good volume of fire. The 4 on health and regen is to make sure you're not a glass cannon with the tank, and the 0 body damage is because you should use the guns instead of ramming.
+}}
+{{Build|
+|build name          = Tracker
+|health regen        = 0
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 6
+|movement speed      = 6
+|description         = The build allows you to track your enemies down (the Auto Turret shows tanks that are off-screen) and kill them easily. As a [[Gunner]], it still has its weakness: low penetration. That’s why you should avoid the [[Twin]] branch (except if they are low on health). Surprisingly, you can out-trade [[Destroyer]]s and [[Hybrid]]s, both the bullet damage ones and the rammer ones. Other tank types should be no problem because of your speed and bullet rain. It’s recommend to stay with [[Machine Gun]] until level 45 but you can go [[Gunner]] at level 30. Useful in all game modes but best in [[FFA]].
+}}
+{{Build|
+|build name          = OK KO
+|health regen        = 4
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 5
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0
+}}
+{{Build|
+|build name          = Minigunner
+|health regen        = 0
+|max health          = 0
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 5
+}}
+}}}}
+}}
+[[Category:Diep.io]]

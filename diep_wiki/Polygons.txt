@@ -1,0 +1,104 @@
+= Polygons =
+
+[[File:Some_shapes.png|right|200px]]<br>
+
+{{PA}} are naturally-spawning shapes that inhabit the arena. They serve as and are regularly harvested sources of a score. They are an essential feature of the game. Polygons of the same type award a fixed amount of XP which is shared around all modes but [[Tag]], [[Breakout]], and [[Domination]] which have XP multipliers of x3, x3 and x2 respectively. Some Polygons, like [[Crashers]], only spawn in the [[Pentagon Nest]].
+
+==Technical==
+Polygons are weaponless entities with different frames and stats. Their only form of defense is their body, which is relatively vulnerable.
+
+The number of Polygons available in an arena is directly related to how many players are currently connected to it. In [[Sandbox]] mode, the arena gains 12.5 polygons for every player that is connected, number which is then rounded down to the nearest natural number. In rooms with fewer than ten players (meaning the [[Leaderboard]] isn't filled), Polygons are <i>very</i> scarce, since they can spawn anywhere inside of the arena, and the overall number will be low due to the low amount of players. <!--Most of the time when this uncommon situation occurs, the Pentagon Nest is literally barren of all Polygons (since Pentagons have a lower spawn rate in general, compared to other shapes' spawn rates, even in the Nest), and the corners of the arena have basically what little is left of all the remaining Polygons clustered together. This also explains why Pentagons are so rare in their own Nest (the area blocks non-Pentagons or non-Crashers from spawning, yet has a regular Crasher and Pentagon spawn rate)". «This doesn't make sense».-->
+
+Polygons will regenerate health if they are left unharmed for at least thirty seconds, and will serve as spawn points for when other polygons die, harmlessly repelling each other as they divide. The player will gain experience from any Polygon that they destroy so long as they deal with the final blow to it.
+
+[[File:Some_shapes_2.png|right|200px|A common sight in the Pentagon Nest]]<br>
+
+Most Polygons will simply drift around. Squares, Triangles, (even Crashers, assuming they aren't targeting a player) will always do it in a fixed circular path. However, Pentagons can move in either a fixed circular path OR a fixed elliptical path.
+
+
+Some Polygons are AI-controlled. Crashers, for instance, will chase down the player to defend the Pentagon Nest if the player is within their attack range.
+
+On rare occasions, a player may stumble across a green version of a Polygon. These variations have ten times their normal health pool and award a hundred times the amount of XP to the tank that gets the final blow on them.
+
+==[[Square]]s==
+[[File:Square polygon 2.png|54px]]<br>
+<b>Squares</b> are the first and lowest tier of polygons. They are the weakest and most common types of polygon in the game, dying to even 2 shots of the starting tank. As such, they give little experience, but they are useful for lower-level players as a way to gain experience. They award 10 XP on death.
+
+[[Necromancer]]s can capture Squares by touching them with their body or other captured squares, which can then be used as drones.
+
+==[[Triangle]]s==
+[[File:Triangle polygon 2.png|46px]]<br>
+<b>Triangles</b> are the second tier of polygons, between the Square and Pentagon in strength and rarity. They can be killed by the starting tank in 5 shots, and award 25 XP on death.
+
+==[[Pentagon]]s==
+[[File:Pentagon polygon 2.png|64px]]<br>
+<b>Pentagons</b> are the third tier of polygons. They are often regarded as the simplest and best source for the experience, and they award 130 XP on death. The starting tank can kill it in 22 shots.
+
+===[[Alpha Pentagon]]s===
+[[File:Alpha pentagon polygon 2.png|128px]]
+
+Pentagons have a larger variant called <b>Alpha Pentagons</b>, which are around 3 times the size of normal Pentagons, and are the most durable Polygons in the game. They award a whopping 3000 XP on death, making them one of the largest and most coveted sources of experience. They only spawn in the Pentagon Nest.
+
+==[[Hexagon|Hexagons]]==
+[[File:Hexagon polygon new.png|64x64px]]<br>
+'''Hexagons''' are the fourth tier of polygons. They are noticeably rarer than Pentagons and are very strong, with a health half that of the Alpha Pentagon. They award 1500 XP on death.
+
+==[[Crashers]]==
+[[File:Xl crasher polygon 2.png|46px]] [[File:Crasher polygon 2.png|32px]]<br>
+'''Crashers''' are pink triangles that guard the Pentagon Nest. They often come in swarms, chasing down any players that come too close to them. They can often follow the player outside of the nest (even into their [[Base]]), until either themselves or the player are destroyed.
+
+A Crasher's detection range is slightly lower than the [[Assassin]]'s FOV. It is possible to avoid detection by turning [[Invisibility|invisible]], but a Crasher will still know where the player is if they have already been provoked.
+
+Crashers come in two different sizes, sharing their stats with Squares and Triangles respectively. Smaller Crashers award 15 XP on death, and Larger Crashers award 25 XP.
+
+==[[:Category:Rare Polygons|Green Polygons]]==
+[[File:Green square polygon 2.png|54px]] [[File:Green triangle polygon 2.png|46px]] [[File:Green pentagon polygon 2.png|64px]]<br>
+Squares, Triangles and Pentagons (including Alphas) and Crashers have rarer green variants that have more health than normal and award more XP on death, alongside obviously being colored green. Destroying one gives the player the “Shiny!” achievement.
+
+==[[Birthday Shape]]==
+[[File:Birthday shape.gif|128px]]
+
+Birthday shape is an event octagonal polygon that only spawns in the Pentagon Nest. It cannot be killed and gives Xp when hit by a bullet. It is by far largest polygon in the game.
+==Trivia==  
+* While it may feel like you gain fewer points from Polygons as you level up, this is not the case. The number of points gained from Polygons is the same regardless of level, but the amount gained becomes less noticeable as you level up.
+*All the Green versions of polygons have the same Body Damage as their normal counterparts, it is their Health that is 10 times more than the base health of their normal counterparts.
+*Alpha Pentagons have the same Body Damage as a nonupgraded tank, it is only its HP that is higher.
+*All [[:Category:Polygon Bosses|Polygon]] [[Bosses]], excluding [[:Category:Fallen Bosses|Fallen]] ones, have a body identical to a Polygon: 
+**[[Guardian]] = Crasher
+**[[Summoner]] = Square
+**[[Defender]] = Triangle
+**There is no Boss based on the Pentagon, this is possibly due to the existence of the Alpha Pentagon.
+**There was an event boss called [[Decade]] that was likely based off of the [[:Category:Rare Polygons|Green Polygons]].
+**The bosses when idle all move identically to a Polygon with the only difference being their set course.
+*People have thought that a much rarer version of the Pentagon existed, the Orange Pentagon. No confirmed videos are showing the existence of Orange Pentagons if it does exist. 
+** If you want, you can use a command, net_replace_color 10 (hex code)
+*Alpha Pentagons and Crashers are the only polygons used to not have Green Variants.
+**They were not added until November 2024. 
+*On Halloween on 2025, Green Polygons had ridiculously high chances to spawn.
+
+{{Bugs}}
+{{BugList|
+=== Unpatched Bugs ===
+[[File:Sandboxglitch.png|thumb|150x150px|A Sandbox arena that has no polygons since the Necromancer collected them all]]
+*{{PC}} Capturing all [[Square]]s in the Sandbox arena alone as a [[Necromancer]] will prevent any more [[Polygons]] from spawning until any of the squares are destroyed. A possible reason for this is that the captured squares are still counted as Polygons, and only twelve Polygons can spawn in the Sandbox arena when there is only one player.
+}}
+{{PolyNav|other}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Polígonos
+|fr     = Polygones
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Figury
+|pt-br  =
+|ro     =
+|ru     = Ресурсы
+|sv     =
+|tr     = Çokgenler
+|vi     = Các đa giác
+|zh     = 經驗磚
+}}
+[[Category:General Information]]

@@ -1,0 +1,189 @@
+= Factory =
+
+{{Infobox
+|image     = <gallery>
+factory icon 4.png|New Colors
+factory icon 3.png|Old Colors
+factory icon 2.png|Old Name
+factory icon 1.png|Old Design
+</gallery>
+|tier      = 4
+|previous  = [[File:Overseer icon new.png|50px|link=Overseer]]
+|next      =
+|barrel    = [[Drones#Factory Drones|Factory Drone]] [[Spawners]] (1)<br/>Controllable Factory Drones (6)<br/>Factory Drone Barrels (6)
+|id        = 52
+}}
+The {{PA}}, formerly the '''Master''', is a Tier 4 tank in Diep.io. It upgrades from the [[Overseer]] at level 45. Upon upgrading, all Overseer [[Spawner|Weapons]] are replaced with a custom Spawner that can shoot a special type of [[Drones|Drone]]. The tank may also spawn new players in team modes such as [[Domination]], [[2 Teams]], and [[4 Teams]] as a result of [[Changelog#November 19th, 2016|a past update]].
+
+== Design ==
+The Factory features a square body with a [[Spawner]] mounted at the front. Moreover, all the spawned [[Drones]] present Barrels of their own. It is the second playable tank to have such a shape, the first being the [[Necromancer]].
+
+== Technical ==
+{{BaseStats
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = ▼▼
+|BulletPenetration  = ▲▲
+|BulletDamage       = —
+|Reload             = ▲▲
+|MovementSpeed      = —
+|HiddenStat1        = Drone Count
+|HiddenStat2        =
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     = ▼
+|HiddenStat2Val     =
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}The Factory can control up to six [[Drones#Factory Drones (or Minions)|Factory Drones]], also called Minions. When not controlled by the player, the Drones will go after nearby entities, which includes enemy players and [[Polygons]], continually shooting very small [[Bullets]] (similar to those of the [[Gunner]]) at them.<ref name="stats-foot-factory">In addition to the stats mentioned in the nearby Infobox, the factory also gets increased Bullet Penetration and Damage from its Drone’s bullet stream.</ref>
+
+=== Drones and Bullets ===
+The Factory’s [[Drones]] present [[Cannons|Barrels]] of their own from which they can shoot [[Bullets]]. Individual Drone Bullets do not deal much damage — relatively speaking, they are about 53% as strong as those of an [[Auto Turret]]. But the Factory makes up for it in numbers: when combined, the firepower of the 6 Drones’ Barrels is around 96% of that of a [[Tank|Basic Tank]]. Given equal [[builds]], each Factory Drone will shoot as many Bullets as a Basic Tank of the same build, albeit with reduced range and Bullet Speed.
+
+As Drones, the Factory’s weapons present increased durability when compared to other projectiles. Nevertheless, their bodies, being twice as strong as normal triangle Drones, move at around only half the speed in return. The Drones are released from the Factory’s [[Spawners|Spawner]] at a fairly regular rate, equal to that of the [[Manager|Manager’s]] Drone spawn rate. When taking the Drone’s Durability into account, the firepower of the [[Spawners|Drone Spawner]] alone is equal to that of the [[Overlord|Overlord’s]] 4 [[spawners]] combined.
+
+Stats: 
+
+* Minions:
+** Drone Speed: 0.56x Tank
+** Drone Health: 8 (+6 for each point in Drone Health)
+** Drone Damage: 4.9 (+2.1 for each point in Drone Damage)
+** Reload time: 45t (-3t for the 1st, 3rd, 4th, 5th and 7th point, -4t for the 2nd and -2t for the 6th point in Reload). 
+
+* Minions' Bullets:
+** Bullet Speed: 0.8x Tank
+** Bullet Health: 0.8 (+0.6 for each point in Drone Health) 
+** Bullet Damage: 2.8 (+1.2 for each point in Drone Damage)
+** Reload time: Same with Tank. 
+
+=== Controls ===
+[[File:Factory_Controls3.png|thumb|center|500px]]
+The Factory [[Drones]] present more complex behavior than other types of Drones. That is to say, they will move differently depending on their location with the cursor. Because of this, different drones may perform different actions all at the same time.
+
+==== Attract ====
+When using Left-Click, the Drones will move in various directions while aiming for the cursor’s position.
+*If the Drones are far away from the pointer, they will be attracted to it until the blue orbit’s range is met.
+*Once in a 16 background square radius around the pointer, the Drones will start moving around it in a counter-clockwise orbit. (It should be noted that the drones are always correcting their position while doing this, presumably because of the recoil they get from shooting bullets).
+*If the distance is lower, the Drones will be repelled until the blue orbit’s range is met.
+
+Because of these mechanics, unlike with the other branches of [[Overseer]], the Factory’s Drones won’t just ram targets when clicking upon them. They can still be tricked into doing it by hovering one’s mouse past the target’s position (instead of above it), moving the blue orbit past the target’s location, and thus tricking the drones into trying to go past it. Otherwise, the Factory's Minions will encircle its target and continually shoot at it.
+
+==== Repel ====
+When using Right-Click, the Drones will move in various directions while shooting away from the cursor.
+*Any Drones between 5-18 background squares from the cursor will move in a clockwise spiral, eventually escaping from it.
+*Past the 18 background square limit, the Drones stop orbiting and are repelled from the cursor altogether.
+*Below 5 background squares, the orbit collapses and Drones are forced together in a star formation, in which they aim outwards and push to the pointer, similar to overseer drones.
+
+=== AI ===
+When not controlled by the player, the Factory’s Drones will go after nearby [[Polygons]] and Tanks, but once the player is damaged, they will target whatever damaged their Factory (if the aggressor is within their trigger range).
+
+=== [[Stats|Stat Effects]] ===
+*<b>Bullet Speed:</b> Increases Factory Drones & Bullet Speed and Movement Speed.
+*<b>Bullet Penetration:</b> Increases the Drones & Bullet Penetration and Health.
+*<b>Bullet Damage:</b> Increases the Drones & Bullet Body Damage.
+*<b>Reload:</b> Increases Factory’s Drone spawn rate as well as the Drones’ reload.
+*<b>Health Regen, Max Health, Body Damage and Movement Speed</b> only make an effect on the Factory, just as how they buff other tanks.
+
+It is good to note that all Bullet Stat upgrades are instantly given to any spawned Drones as soon as they fire again. However, as with other Drone Classes, the Drones must re-spawn for their body stats to be updated.
+
+== Strategy ==
+*<b>Strong Against:</b> Destroyer Dominators and, if skilled, the Factory can beat almost any class in one-on-one combat, mostly due to the high amount of damage its Drones can inflict if used well.
+*<b>Weak Against:</b> Because of its limited Movement, Bullet Speed, Drone Speed and finicky controls this class is quite vulnerable to groups of enemies. Any tanks considerably faster than 7 Movement Speed can ignore the Factory altogether.
+
+=== As the Factory ===
+:<i>For a more in-depth version of this section, see [[Factory/Strategy]].</i>
+
+[[File:Factory_STRATEGY_2.7.png|thumb|250px|Players should keep their Drones to themselves at all times when not in battle.]]
+The Factory requires a lot of concentration and control. Its Drones are rather slow, but they are extremely durable. Because of this, the most effective way to use this tank may be as follows:
+*<b>When the Factory is not attacking anyone:</b> Moving with the Drones in a star formation and keeping 2 drones in front of their tank will protect players from incoming projectiles of almost all classes. 
+** Making the drones face backwards will hide their Bullets (and therefore their location) from people in front of them. This can be useful for ambushes and keeping non-[[Tri-Angle]]-branch glass tanks from boosting in their direction and chasing them.
+** Depending on the build and internet speed, delay upon the update of the cursor’s position may cause the stuttering of the drones — pressing the W/A/S/D keys perpendicular to the direction in which the tank is going (once every 1-2 seconds) may be necessary so as to not let any drones bounce out of formation whilst moving.
+**If playing 2 or 4 [[Team Deathmatch|Teams]], players can move around the [[Pentagon Nest]] and let the Drone’s AI do all the work (as long as the player’s team has full control of the Nest).<br><br>
+*<b>When the Factory is engaging in combat:</b> Players should move with their Drones while clicking ahead of them (to keep the drones outside of the blue orbit).
+**The resulting bullet stream will enhance their drone shield (by weakening projectiles before they hit the drones) and eventually form a bullet wall (similar to those of [[Builds#Bullet_Rammers|Bullet Rammers]]) capable of enhancing their momentum by around 50%. It should be noted that the bullet stream makes up for almost 51% of the class’ total DPS and thus should not be disregarded in combat.
+**Factories are very popular in [[Domination]], as the Factory Drones can solo [[Dominator]]s just by circling them. They also offer great defensive-offensive capabilities when defending said entities. The Factory is also a great choice for [[Survival]] and [[Maze]]. Due to the enclosed spaces, Factory has an advantage in these modes.
+**Due to its short-range, high DPS and complex controls (orbits), the Factory benefits from close range fights the most, as it can use its similar Drone-to-Body speed to simultaneously protect itself and attack at the same time regardless of its slow projectiles.
+**Players should try to predict if the enemy will try to move sideways and correct the drones' aim appropriately. Bullets are faster than tanks, so if one aims the drones at the place at which the enemy is going to be, there will be a much higher chance of the bullets making contact.<br><br>
+
+===Against the Factory ===
+*If the player is a tank of the [[Sniper]] branch with a wider FoV (most notably the [[Assassin]] branch and [[Predator]]), fire at the Factory while it’s distracted, in auto mode or if its Drones are far away enough. Keeping a Factory at the edge of the screen while changing position every time you fire is crucial to keep your location hidden and successfully kill the Factory.
+*Players using the Overseer branch should try to guide the Drones to this tank. (Multi-directional attacks being particularly useful against less skilled users).
+*As rammers, players should be careful <b>not</b> to speed through more than 1 or 2 Factory Drones; as collision damage will be very high and their health will be worn down. Players should also beware of the Drones’ bullet stream, as well as the Factory being able to spawn new drones in their direction. For in either case collision knockback will slow them down, taking sizeable damage on the latter.
+* As the [[Battleship]], a glass build is best for fighting a Factory. Make the Drones go around the Factory Drones’ bullets and focus on the Factory itself, damaging it until it dies or gets too close. If the latter happens, controllable Drones should be put in front of the Battleship to weaken incoming Bullets, letting the AI Drones target the Factory instead.
+*Like rammers, Bullet Rammers should attempt to lure the Factory into departing from its Drones, focus on the Factory itself, or weaken its defense. Beware that unlike with the Overlord and other Overseer branches it will be impossible to overwhelm the Factory’s reload if the tank is using its Bullet stream to enhance its defense.
+
+== History==
+* This tank was released on the 8th of November 2016.
+*The tank was originally called the Master but renamed to Factory shortly after its release.
+*On the day it was introduced, an update came out that changed the appearance of the Factory. It used to have a circular body with three spawners and looked very similar to the [[Overtrapper]].
+*The previously uncontrollable drones were given extensive controls in exchange for the firepower lost from the additional barrels. 
+**As of November 19th, there is a very small chance for players to spawn out of it. It is the only tank with such a feature. Roughly 10% every time a player connects or respawns (if the spawning rate is high enough<ref name="factoryTest">This was only tested with a single Factory present</ref>).
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/w3GsCpD 3.26m by Selfkiller]
+* 2 Teams: [https://imgur.com/a/diep-io-factory-2-teams-wr-by-ez-zex-neJCBlu 2.69m by '''EZ🧡ZeX''']
+* 4 Teams: 2.56m by Kratos
+* Maze: [https://imgur.com/cyZ2i9u 2.31m by Baller]
+
+=== Mobile ===
+
+* FFA: 1.94m by Kevin
+* 2 Teams: [https://www.youtube.com/watch?v=QWAujQYvhIc 1m by iPhoneFactory]
+* 4 Teams: [https://youtu.be/ooO0wqImeUM 1.68m by iPhoneFactory]
+* Maze: 980.1k by Kevin
+
+== Trivia==
+*This tank, alongside the [[Necromancer]] and the [[Summoner]], are the only entities with a square-shaped body.
+*It is the first class to spawn projectiles that can, in turn, spawn more projectiles besides the [[Skimmer]], [[Rocketeer]], and [[Glider]].
+*It is the first class to have a purple background on the icon; the second tank being the [[Auto Tank]].
+*As of November 19th, there is a very small chance for new players to spawn out of it. It is the only tank with such a feature.
+* The Factory has a very slight recoil as it spawns its Drones (Less than 2 background squares every 6 Drones, when stationary).
+*Although weak, individual Drone bullets are still more durable than [[Battleship]]’s partisans.
+*The Drones themselves are as strong as 1.4 traps each, rivaling with the [[Skimmer|Skimmer’s]] missiles (not the missile bullets) in terms of durability. 2 Factory Drones are usually enough to nullify 1 Destroyer class projectile.
+*A level 45 Factory Drone is still smaller than a level 1 controlled tank.
+*It takes as few as 3 maxed out Factory drones and 8 drone bullets to kill a non-Smasher branch rammer at full health.
+*The Drone’s trigger range is smaller than the one of an Auto-Turret yet larger than the one of most other Drone-controllers.
+*The Factory is the only tank that can effectively buff itself by gaining cannons with a better aim, cannons it can then use in addition to its Drones to increase its frontal fire capabilities.
+*The size of a factory drone corresponds to the level of the factory at the moment at which it spawns. In Sandbox, if a factory spawns a drone, levels up, and then spawns another drone, the second drone will be bigger than the first.
+* For a few days between November 12th and 18th, the Factory’s drones would move in circular orbits rather than elliptical ones when using right-click. Because of this, the player was able to get a more stable control of its drones when repelling or right-click as the drones would not escape the orbit on its own once a certain distance was met.
+*The Drones get very slight recoil from shooting bullets. It is so slight that one needs max Reload and 0 Bullet Speed for it to make a visible difference. They are considerably faster when AI-controlled.
+
+==Gallery==
+<gallery>
+File:Factory S.png|The Factory’s Drone Spawner DPS.
+File:Factory Code Idle.png|The Factory’s Drones when idle.
+File:Factory B.png|The Factory’s Bullet DPS.
+File:Factory Code Speed.png|Factory’s Speed visualized.<br>Note that the drones move at a similar speed to that of the Factory.
+File:Factory Code Size.png|The Factory’s drones at levels 1 and 45 when compared to levels 1 and 45 tanks.
+File:Eh2.png|Factory’s DPS explained.
+File:Factoryspawntank.gif|a factory spawning a player
+File:Factory in Sandbox.jpg|Factory in Sandbox
+File:Factory icon new 1.png|...in new colors, before redesign
+File:Factory icon new 2.png|...in new colors, after redesign, before renaming
+</gallery>
+
+==Footnotes==
+<references />
+{{TankNav|tier4}}
+{{Interlang
+|status  = checked
+|de      = Factory
+|es      = Factory
+|fr      =
+|hu      =
+|it      =
+|ja      =
+|ko      =
+|pl      = Factory
+|pt-br   =
+|ru      = Factory
+|sv      =
+|tr      =
+|vi      = Factory
+|zh      = Factory
+}}
+[[Category:Diep.io]]

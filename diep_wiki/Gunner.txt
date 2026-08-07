@@ -1,0 +1,129 @@
+= Gunner =
+
+{{Infobox
+|image     = <gallery>
+gunner icon 3.png|New Colors
+gunner icon 2.png|Tier 3 Sprayer
+gunner icon 1.png|Old Colors
+</gallery>
+|tier      = 3
+|next      = [[File:Auto gunner icon new blue.png|50px|link=Auto Gunner]][[File:Gunner trapper icon new.png|50px|link=Gunner Trapper]][[File:Streamliner icon new red.png|50px|link=Streamliner]][[File:Auto tank icon new removed.png|50px|link=Auto_5#History]]<ref>Removed Upgrade Option. Removed upgrade options and removed tanks are shown by a gray icon background.</ref>
+|previous  = [[File:Machine gun icon new.png|50px|link=Machine Gun]]
+|barrel    = [[Cannons]] (4)
+|id        = 20}}The [[Gunner]] is a Tier 3 tank in Diep.io. It upgrades from the [[Machine Gun]] at level 30 and upgrades to the [[Auto Gunner]], [[Gunner Trapper]], [[Streamliner]], and formerly [[Auto 5|Auto Tank]] at level 45. It replaces its large trapezoidal [[Cannons|Cannon]] with four small Cannons.
+
+== Design ==
+The Gunner has a circular body with four small Cannons. The two side cannons are a bit shorter and twice as thin as the main middle Cannons; however, the Cannons only appear to look thin as they are overlapped by the two front Cannons.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▲
+|BulletPenetration = ▼▼
+|BulletDamage      = ▼▼
+|Reload            = ▼
+|MovementSpeed     = —
+|HiddenStat1       = Recoil
+|HiddenStat2       = Bullet Accuracy
+|HiddenStat3       = Bullet Size
+|HiddenStat4       =
+|HiddenStat1Val    = ▼▼▼
+|HiddenStat2Val    = ▲▲
+|HiddenStat3Val    = ▼▼
+|HiddenStat4Val    =
+}}It has the second smallest [[Bullets]] in the game (only about half of the size of the Machine Gun’s Bullets) after the Gunner Trapper. The Gunner’s Bullet Damage and Bullet Penetration are decreased but Bullet Speed increases by a good amount. Base Reload is decreased. Recoil is weak. Strangely, Gunners Barrels have a slight spread.
+
+[[Stats]]: 
+
+* Bullet Speed: 1.1x Tank
+* Bullet Penetration: 1 (+0.75 for each point in Bullet Penetration)
+* Bullet Damage: 3.5 (+1.5 for each point in Bullet Damage)
+* Reload Time: 15t (-1t for each point in Reload)
+
+== Strategy ==
+*<b>Strong Against:</b> Low level tanks, tanks with very low Reload, slow tanks, beginner tanks and AFK tanks, rammers.
+*<b>Weak Against:</b> High RoF, high DPS, skilled [[Destroyer]] branch, [[Sniper]] tanks if caught off guard, all drone branches controlled by skilled players and potential other gunners with higher bullet stats.
+
+=== As the Gunner ===
+*With high Bullet Speed and Reload, players can create hard-to-escape Bullet storms that can overwhelm and destroy enemy tanks with ease (assuming they have no way of defending themselves). This is especially good against slow shooting tanks such as [[Sniper]]s, as they can’t properly counter the Gunner’s bullets. This tank can be good against fast tanks as well because it can be hard for them to dodge large amounts of fast Bullets. It is highly recommended for Gunner players to invest Skill Points into Bullet Damage and Bullet Penetration, as the base Reload and Bullet Speed [[Stats]] are immense. Another good strategy with the Gunner is to aim in a spot about 15 degrees higher than the spot you want to hit and press C. Then wait for 2-5 secs (depending on the desired spread) and press C twice (do not move the cursor during the process). Repeat. This will create a wave of Bullets, damaging anything and anyone in the spread area. This works with almost all Classes, (except for [[Drones|Drone]] and [[Traps|Trap]] Classes) but it is most effective with the Gunner.
+*Always try putting a few points to bullet speed as if your bullet speed is low, so is the range and it can't destroy as much polygons. Also, higher bullet speed make bullet storms harder to dodge. So don't always put all points into reload as high reload with low range and speed is pretty much useless offensively for all fast tier tanks.
+* Players are advised to engage Machine Guns only at close range because their bullets are very powerful and can cut through a Gunner’s bullets. However, their bullets are also slow and inaccurate, so Gunners have the advantage at long range.
+* Gunner is also good against rammer builds since the gunner bullets do a lot of knockbacks, despite their low damage, making it hard for a rammer to touch the Gunner.
+* Gunners can use the "flicking" technique, moving their mouse up and down or side to side very quickly, creating a large spread of bullets. This is effective against fast tanks, as they may run into bullets in front of them, or be effective against another bullet spammer, as it will be harder to dodge the large spread of bullets given the fact they are everywhere. However, if an enemy is a rammer or is boosting toward the Gunner, it is best to keep the constant stream of bullets until they either turn around or run away. Flicking is also effective for farming, bullets can shred many polygons in a large area.
+**The flicking technique is overkill in the Pentagon Nest. With the high amount of XP sitting there, you can farm both pentagons and Crashers. Careful of the latter though, they may kill a bullet build in short time.
+
+=== Against the Gunner ===
+*The small size of its ammunition helps the Bullets to make their way between the enemy spread of Bullets. However, the Gunner can be easily destroyed by other tanks with a constant rate of fire, as its base Bullet Damage and Bullet Penetration are the lowest in the game. The Gunner’s Reload can help counter some Bullets, but the Gunner generally can’t counter Sniper Bullets, so using Sniper Classes against the Gunner is a good strategy. 
+* The Destroyer branch is effective against Gunners since the Destroyer branch’s Bullet will simply out-penetrate all of the Gunner’s Bullets. A good Destroyer ambush can severely damage, if not destroy, a Gunner.
+* Drone classes are slightly ineffective to Gunner because of the bullet spamming. However, players can still easily kill it by using an ambush attack and correctly moving their drones.
+
+== History ==
+*Previously, it could upgrade into the [[Auto 4|Auto Tank]] and its successor [[Auto 5]].
+*Until July 31st, 2016, the Gunner was the only Tier 3 tank in Diep.io without an upgrade, but on August 1st, 2016, the Gunner received its first upgrade, the Auto Gunner.
+**Later that day, the Gunner Trapper was also made an upgrade to it.
+***A few hours after the Streamliner was released, it was also made a Gunner upgrade.
+***Jimmy Timsone, a previous creative designer, came up with the name for it.
+
+== [[Achievements]] ==
+{{SideBox|*<b>Eat those pellets</b> — Upgrade to Gunner|{{Achievement
+|Position     = right
+|Color        = #FB6969
+|Name         = Eat those pellets
+|Description  = Upgrade to Gunner}}
+}}
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=85E3EiSNHY8 1.68m by Knockout]
+* 2 Teams: 1.52m by Mohsen
+* 4 Teams: [https://imgur.com/HLRIjyy 1.31m by Aeros]
+* Maze: [https://imgur.com/lFiOLst 679k by Unknown User☯]
+
+=== Mobile ===
+
+* FFA: 634.8k by GLITCHER TM
+* 2 Teams: -
+* 4 Teams: 449.1k by VløKe
+* Maze: 310.1k by VløKe
+
+== Trivia ==
+*Although its Bullets look like the smallest in-game, when compared a Level 45 Gunner with a Level 45 Gunner Trapper, the Bullets of Gunner Trapper are even smaller, but due to the fact that the Gunner is a Tier 3 tank, and it is mostly used at lower Levels, its Bullets are considered as the smallest. A Level 30 Gunner fires the smallest Bullets in-game as long as it’s not leveled up.
+*It is the only Tier 3 class that has no unique upgrades that are still in the game to it, as its upgrades all upgrade from​ other tanks as well — Auto Gunner (Auto 3), Gunner Trapper (Trapper), And Streamliner (Hunter).
+*[[Machine Gun II]] could have been a possible placeholder for Gunner, as Machine Gun II was removed when Gunner was added.
+*The achievement for Gunner refers to the Gunner’s [[Bullets]] as “pellets.”
+*It sometimes doesn't even win a fight against its predecessor, the machine gun. (Might not apply if you are skilled)
+
+==Gallery==
+<gallery>
+GunnerAgainstTS.jpg|A Gunner fighting with a [[Triple Shot]].
+DominationGunner.jpg|A Gunner in [[Domination]].
+TagGunner.jpg|A Gunner in [[Tag]]. According to the picture we can know the server is going to be closed.
+</gallery>
+
+== Footnotes ==
+<references />
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Gunner
+|es     = Gunner
+|fr     = Gunner
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Gunner
+|pt-br  =
+|ro     =
+|ru     = Gunner
+|sv     = Gunner
+|tr     = Gunner
+|vi     = Gunner
+|zh     = Gunner
+}}
+[[Category:Diep.io]]
+[[Category:Gunner Tanks]]

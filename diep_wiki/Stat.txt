@@ -1,0 +1,5 @@
+= Stat =
+
+#REDIRECT [[Stats]]
+__STATICREDIRECT__
+[[Category:Redirect]]

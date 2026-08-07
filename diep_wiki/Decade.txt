@@ -1,0 +1,39 @@
+= Decade =
+
+{{Removed}}
+{{Stub}}{{WIP}}{{Boss|image=<gallery>
+Decade.png
+</gallery>|weapons=[[Spawners|Spawners]] (5)<br/>[[Auto Turrets|Triple Shot Mounted Turret]] (1)|attacks=[[Bullets]]<br/>[[Drones#Factory_Drones|(1-30 Level Tanks) Minions]] (10)|xp=100,000|hp=10,000|bd=}}The {{PA}} is special Boss that spawned during the 2026 Happy Birthdiep Event.
+
+== Design ==
+The Decade features a Decagon as its body, with spawners placed on 5 of its sides. Its top has a mounted Triple Shot turret.
+
+== Technical ==
+
+=== Stats ===
+TBA
+
+=== Miscellaneous ===
+TBA
+
+== Strategy ==
+
+* '''Strong Against:''' TBA
+* '''Weak Against:''' TBA
+
+=== As the Decade ===
+TBA
+
+=== Against the Decade ===
+TBA
+
+== Trivia ==
+* The color of the Decade's body, its drones and their ammunition are identical to Green polygons.
+
+== Gallery ==
+<gallery>
+File:Decadeingame.png|Screenshot.
+File:Decadegetscontrolled.png|Controlled by Player
+File:DecadeRender.png|Render (note that the Destroyer Minion is missing)
+File:Shiny Decade.png|A closer view of the Decade.
+</gallery>{{BossNav|polygon}}{{Interlang|status=checked|de=|es=|fr=|hu=|it=|ja=|ko=|pl=|pt-br=|ro=|ru=|sv=|tr=|vi=|zh=}}

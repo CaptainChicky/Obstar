@@ -1,0 +1,95 @@
+= Team Deathmatch =
+
+{{Removed}}
+{{Mode
+|image         = Old School Team DM.png
+|caption       = Old School Team DM, the proto-version predating [[2 Teams]] and [[4 Teams]] mechanics.
+|conditional?  = yes
+|closure       = Daily, or when the game is being updated.
+|button        = TeamDM MODE Icon2.png
+|teams         = 2 or 4
+|bosses?       = yes
+|specials      =
+}}
+{{PA}} (often shortened to <b>TDM</b> or <b>Team DM</b>) refers to the two game modes <b>[[2 Teams]]</b> and <b>[[4 Teams]]</b>. The 2 Teams and 4 Teams game modes once were together as a single game mode known as Team DM, having some servers with 2 Teams and some with 4 Teams, but were later split into two separate game modes. Team DM sometimes also refers to <i>[[#History|Old School Team DM]]</i>, the original version of Team DM that featured a layout similar to [[Domination]], only without [[Dominator]]s.<br /><br />In all versions of this game mode, players work in teams rather than all fighting against each other as in [[Free For All|FFA]]. These game modes have [[Levels|regular EXP gain]].
+
+== Gameplay ==
+
+[[File:4Teams_2.png|thumb|338x338px|An intense 4-team battle.]]
+
+=== Spawn ===
+
+The player either can spawn in either in the blue strip that takes up the left side of the arena, or the red strip that takes up the right side of the arena or a <span style="color:#23DAFF;">blue</span>, <span style="color:#FF3D3D;">red</span>, <span style="color:#3FEE57;">green</span>, or <span style="color:#D86EF4;">purple</span> corner (they had no choice in which mode they wanted, forcing players to reload constantly to get the one they wanted — this is why the game mode was split). This determines their team, and they duke it out in the middle. Players of one team cannot shoot into the opposing team’s [[Base]], as enemy bullets are instantly destroyed upon contact with it. Players also cannot enter the enemy team’s spawn area, as they will be instantly stopped and will begin taking rapid and high damage bursts against the invisible wall (refer to the [[#Trivia|Trivia]] section regarding why there is an invisible wall <b>in addition</b> to the visible border of the neutral map color and the spawn room).
+
+=== Players ===
+
+The players are divided into two teams or four teams depending on the server, which are red and blue, the two additional teams in some servers are purple and green. Tanks of the same team can’t directly deal damage to each other, and they can ‘push’ each other without taking any body damage.
+
+=== Base Drones ===
+
+[[File:NewGuards.png|thumb|130px|A group of 2 [[Base Drones]]]]
+The spawn areas are defended by small triangles known as [[Base Drones]]. They are even smaller than [[Drones]] and [[Triangle]]s and have an extremely large health pool. Also, they move quickly.
+
+In 2-TDM mode, there are 15 groups of 2 Base Drones spread evenly across both the red and blue team’s Bases. Each group is circling its area, covering the entire base. In 4-TDM however, all 12 Base Drones are gathered together in the center of the 4 team's Bases.
+
+The Base Drones will not leave their team’s zone unless an opponent is within proximity. They continue to seek the opponent they have focused on until they are defeated or travel a certain distance from the drone's base. Although there are other methods of evasion, the simplest is for the player to run away from the Base Drones until the latter condition is met.
+
+Originally, Base Drones would never target bosses. However, after August 22nd, 2016, they will target Fallen Bosses.
+
+== Arena Closers ==
+
+Arena Closers only appear on this map if any one of the following requirements is met:
+*Diep.io is being updated.
+*A Certain number of player kills.
+
+== Map ==
+
+[[File:4TDMupdated.PNG|thumb|93x93px|4 team map]]
+[[File:NewMap.png|thumb|89x89px|2 team map]]
+*The blue strip located on the left marks the spawning area for the Blue team. In a four-team game, it is the blue corner on the top left.
+*The red strip located on the right marks the spawning area for the Red team. In a four-team game, it is the red corner on the bottom right.
+*The purple corner located on the top right marks the spawning area for the Purple team.
+*The green corner located on the bottom left marks the spawning area for the Green team.
+
+== History ==
+
+*Before August 23rd, there were only red and blue teams. Then it was updated to randomly have either red and blue or red, blue, purple and brown. Then later the same day, the brown color was replaced with green, since it looked similar to red.
+*Before July 14th, the team areas were blue in the top left, and red in the bottom right. This feature was changed after the update adding brown/green and purple.
+*In the September 18th update, this game mode was split into 2 other game modes: 2 Teams and 4 Teams, eliminating the need to constantly reload to get the desired server.
+
+== Trivia ==
+
+*All the other features of gameplay are similar to [[Free For All|FFA]] (for example the [[Pentagon Nest]] and the [[Crashers]] protecting it).
+*Base Drones can destroy [[Polygons]], assuming that the Polygon either spawned in their path or was pushed into it. Once this happens, they will repeatedly attack it until it dies.
+*Although there is the visible color border of the spawn room and the neutral map’s color, the actual invisible wall of the spawn that blocks/damages enemy players from intruding into the base is slightly behind the visible color border.
+**Note that the invisible barrier that <b>only blocks [[bullets]]</b> is placed <b>directly</b> on top of the visible color border, and not where the player collision wall is.
+**Also note that when a player contacts and continues ramming into the player collision wall, they will rapidly be pushed downwards towards the bottom of the map (even if they were moving upwards diagonally). The speed at which they are pushed downwards FAR exceeds any normal tank speed in the game, even to the extent of being faster than an Arena Closer’s movement speed. It is unknown why downwards is the forced direction instead of just recoiling the player away from the wall.
+*There has been a rumor that if the player has low health and moves quickly in and out of their base, they will receive a high level of health regeneration. According to the rumor, the player must wait at least 6-8 seconds outside of their base, then move in and out. Finally, if the player starts moving quickly away from their base, they will gain faster regeneration. However, due to regular regeneration starting at 10 seconds, this method would only be effective if the player is against a wall and the other team is dominating. This technique also assumes the player has no Skill Points invested in regeneration.
+
+== Gallery ==
+
+<gallery>
+GMteamdeathmatch.png|Team Deathmatch being selected in the title screen
+4Team.png|A 4-team map with brown color. It only lasted a few hours before brown was replaced by green.
+</gallery>
+
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Team Deathmatch
+|fr     = Team DM
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     = Team Deathmatch
+|sv     =
+|tr     =
+|vi     = Team Deathmatch
+|zh     = Team Deathmatch
+}}
+[[Category:Diep.io]]

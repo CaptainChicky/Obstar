@@ -1,0 +1,170 @@
+= Streamliner =
+
+{{Infobox
+|image       = <gallery>
+streamliner icon 2.png|New Colors
+streamliner icon 1.png|Old Colors
+dingbat1991 streamliner tank.png|By Dingbat1991
+</gallery>
+|title       = {{PAGENAME}}
+|tier        = 4
+|next        = None
+|previous    = [[File:Hunter icon new.png|50px|link=Hunter]]
+[[File:Gunner icon new.png|50px|link=Gunner]]
+|barrel      = [[Cannons]] (5)
+|id          = 43
+|releasedate = August 12th, 2016
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Hunter]] and [[Gunner]] at level 45. It was conceptualized by [https://www.deviantart.com/dingbat1991 Dingbat1991], [[:File:dingbat1991 class tree 2016.jpg|posted to Deviantart]], and officially added on 12th August 2016.
+
+== Design ==
+The Streamliner features a circular base and five [[Barrel]]s, each barrel being overlapped by the previous one. Unlike the [[Predator]], the barrels have the same width.
+
+== Technical ==
+{{BaseStats
+|PrevClass          = Hunter
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = ▼
+|BulletPenetration  = —
+|BulletDamage       = ▼▼
+|Reload             = ▲▲
+|MovementSpeed      = —
+|HiddenStat1        = Bullet Accuracy
+|HiddenStat2        = 
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     = ▲
+|HiddenStat2Val     =
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+{{BaseStats
+|PrevClass          = Gunner
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = ▼
+|BulletPenetration  = —
+|BulletDamage       = ▼
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        = Bullet Accuracy
+|HiddenStat2        = Field of View
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     = ▲
+|HiddenStat2Val     = ▲
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+Upon upgrading from the Hunter:
+*[[Bullet]] Damage is decreased by a large amount.
+*Reload is largely increased.
+*Bullet Speed is decreased slightly.
+*Recoil per shot is decreased slightly.
+*Bullet Accuracy is very slightly increased.
+
+Upon upgrading from the Gunner:
+*Bullet Damage is decreased.
+*Bullet Speed is slightly decreased.
+*Bullet Accuracy is slightly increased.
+*FoV is increased.
+Stats: 
+
+* Bullet Speed: 1.25x Tank
+* Bullet Penetration: 2 (+1.5 for each point in Bullet Penetration)
+* Bullet Damage: 1.4 (+0.6 for each point in Bullet Damage) 
+* Reload: 15t (-1t for each point in Reload)
+
+== Strategy ==
+*<b>Strong Against:</b> Single enemies, [[Trapper]] branch, tanks with low Bullet Penetration and/or RoF (Rate of Fire), slow [[Smasher]] branch tanks, tanks that lack concentrated fire such as the [[Octo Tank]] or [[Spread Shot]], Auto Classes, [[Destroyer]] branch.
+*<b>Weak Against:</b> [[Drone]] Tanks, High DPS tanks, multiple enemies, the [[Summoner]], [[Assassin]] branches, fast melee tanks including [[Booster]]s or [[Tri-Angle]]s.
+
+=== As the Streamliner ===
+*The Streamliner is a true rapid-fire tank and is built for a fight. For Team DM or Domination, It is best used against individual enemies as they try to enter the center of the map or leave their base since it shoots so many Bullets so fast it is almost impossible for individual tanks to escape. Flanking is an especially devastating tactic that almost always succeeds with this tank, as players can trap flanked enemies.
+*It is recommended to use the Streamliner against Dominators and Motherships, as it can do large amounts of damage at a low time. It can quickly pick off players, too. Hiding inside a Dominator, then pouncing when an enemy comes by is a good strategy to surprise and kill the enemy tank.
+*If used with a correct build, the Streamliner is effective against spammers with spread fire such as the Penta Shot, Spread Shot, Triple Twin or Octo Tank. A build with maxed out Bullet stats and at least six points in Reload can out penetrate the spammer’s fire pattern almost every time, though Streamliners can still be defeated when low on health.
+*This tank’s defense <i><b>is</b></i> its offense. Therefore, it is generally wise to have very high (if not maxed) Bullet Damage, Penetration, and Reload. A Glass Cannon build makes the Streamliner a dangerous foe, giving it a high rate of fire and fast Bullets, making it capable of cutting through areas with effective results. A Streamliner with such a build should never enter a fight against multiple Area Denial bullet spammers unless playing with a team that is supporting them, as the multiple enemies will overwhelm them even with flicking (see below).
+*A trick, known as “flicking,” involves the player moving their mouse in a short direction, up and down or left and right, depending on which direction the player is moving. Flicking will spread out the tank's shots, increasing the chance to hit enemies. This can be good against other bullet spammers (with exceptions, such as the Triplet) as the bullets can strike the enemy from the side and do good damage, allowing the Streamliner to slowly kill the enemy.
+*The Streamliner is a true anti-Trapper tank; the thin Bullets can seep through the Traps. This works especially well against the [[Auto Trapper]], though the player should be wary of the [[Auto Turret]].
+*This tank has the ability to camp around in the [[Pentagon Nest]], as its high rate of fire is great for farming the Pentagons and wiping out the Crashers that spawn in the nest. However, if any enemy tank enters the nest, the player should choose to either leave or fight, depending on each player's skill and each tank's stats.
+*The Streamliner is a good choice for [[Survival]], as it can prevent most players from reaching classes that can counter the Streamliner, like the [[Overlord]] or [[Triplet]]. This is most effective when the player takes the [[Machine Gun]] upgrade path (Machine Gun, Gunner, Streamliner) to the Streamliner. This path has good Bullet Spread and a high RoF, making level 45 easy to reach. Avoid going the [[Sniper]] upgrade path (Sniper, Hunter, Streamliner). This branch is notorious for being difficult to farm with, preventing you from reaching level 45 in the fast-paced Survival environment.
+
+=== Against the Streamliner ===
+[[File:Streamliner_NAV_Icon2.png|thumb|131x131px|The Streamliner icon as seen when upgrading from Gunner.]]
+*[[Ranger]]s can prove effective against the Streamliner if the Streamliner is caught off guard. Due to its low health, a few direct hits can put it down for the count. However, unless it is distracted, the first shot has to be the one that counts. Otherwise, it can parry further shots with a wave of bullets while retreating.
+*Tri-Angle upgrades with maxed Bullet Damage, Penetration, and Reload can chase and block the Streamliner’s Bullets at the same time as they deal damage, due to the Streamliner’s low Penetration.
+*The Overseer branch is extremely effective against the Streamliner, as most of the drones can easily survive the stream of bullets. However, glass cannon Streamliners with high Movement Speed can circumvent this problem usually. Overseers should spread out their drones and flank the Streamliner for the best results, due to its issues with attacking multiple directions.
+*An effective technique is surrounding (or flanking if playing as another Streamliner) the enemy Streamliner, which is not usually difficult considering its low speed since it is so difficult to directly approach unless distracted. In Team DM, pairing up with another high DPS tank and setting up a crossfire will force the Streamliner to retreat or die, because it can only defend from one direction at a time. In FFA this effect can be duplicated by spamming Bullets in the direction of a Streamliner which is already defending against another enemy. Another strategy is to use Destroyer or Annihilator, to counter the Bullets, as they can plow right through if the correct stats are upgraded. However, if the Destroyer has a slow rate of fire it is very easy for the Streamliner to overpower it.
+*If done correctly, due to the Streamliner not having as much damage per Bullet, a Booster using a Body Damage ramming strategy can ram into it with almost no problem.
+*Since the Streamliner’s Bullets are very thin, any tanks with basic Movement Speed upgrade can out dodge the Bullets; even non-rammer classes can come near it. However, Gunners are very weak against the Streamliner, due to its better Penetration.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/a1Hj62S 1.47m by Zimdac]
+* 2 Teams: [https://youtu.be/xbBynhq3QEk 2.87m by Mr Cheeky]
+* 4 Teams: [https://www.youtube.com/watch?v=Z5g1_u6g1KQ 1.64m by rbest]
+* Maze: [https://imgur.com/zycMuQK 1.32m by exo]
+
+=== Mobile ===
+
+* FFA: 1.37m by Athu
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== History ==
+*During the first moments of the Streamliner’s release, it used to only branch off the Hunter; later on the same day, it was made to also branch off Gunner.
+
+== Trivia ==
+*As with [[Spread Shot]] and [[Skimmer]], Streamliner was conceptualized by [https://www.deviantart.com/dingbat1991 Dingbat1991]. The original conception image may be found [[:File:dingbat1991 class tree 2016.jpg|here]].
+*The Streamliner was added on August 12th, 2016, on the same day as the Spread Shot.
+[[File:StreamlinerVSannihilator7.gif|thumb|right|176x240px|A comparison of a Streamliner and Destroyer's recoil at max reload.]]
+*This has the fastest directional RoF of any of Sniper’s upgrades and possibly all tanks in the game.
+*This is the first Sniper upgrade with a relatively fast Reload.
+*This tank has a great single-point DPS, therefore making it a great tank against smaller objects or enemies.
+*Its straight rapid-fire is reminiscent of a Gatling Gun.<ref name="WP1">[[wikipedia:Gatling gun|Gatling Gun]]<sup>(Wikipedia)</sup></ref>
+*The Streamliner has the weakest Bullet Damage out of all Sniper classes.
+*Its Base Reload is the same as [[Tank]], but the five barrels give it a very high RoF.
+*Despite the high rate of fire, the Streamliner has low recoil per shot. This balances it, preventing the Streamliner from escaping fast tanks.
+*Like the [[Twin]], the Streamliner also has an alternative firing pattern. The default is when all [[Bullets]] fire in a straight line, but the secondary pattern, where they shoot out as clumps of five Bullets at a time (it takes time and repetitive usage of the [[Auto Fire]] button, however) is also available.
+**There is another method of stacking the bullets, you can do it by partially stack them first then maxing your reload at the right time. However, this is hard to do as well as you only get 1 shot at this and you have to get to level 45 with 0 reload.
+*An un-upgraded Streamliner firing backward while not moving is the slowest constant speed in the game.
+**The fan version of this tank had six barrels, but the version in-game only has five.
+
+== Gallery ==
+<gallery>
+Streamliner_Screenshot1.png|Example of the Streamliner’s extreme rate of fire.
+Streamliner_Screenshot2.png|Streamliner’s bullets, five of them deal the same amount of damage as one of [[Tank|Basic Tank's]].
+streamliner icon 2 green.png|New Colors
+streamliner icon 1 green.png|Old Colors
+streamliner icon 2 red.png|New Colors
+streamliner icon 1 red.png|Old Colors
+</gallery>
+
+== External References ==
+<references />
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Streamliner
+|es     = Streamliner
+|fr     = Streamliner
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Streamliner
+|pt-br  = Streamliner
+|ro     =
+|ru     = Streamliner
+|sv     =
+|tr     =
+|vi     = Streamliner
+|zh     = Streamliner
+}}
+[[Category:Diep.io]]

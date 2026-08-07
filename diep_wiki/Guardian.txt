@@ -1,0 +1,133 @@
+= Guardian =
+
+{{Boss
+|image      = <gallery>
+guardian boss 2.png|New Colors
+guardian boss 1.png|Old Colors
+</gallery>
+|weapons    = [[Spawners|Spawner]] (1)
+|attacks    = [[Drones]] (24)
+|xp         = 30,000
+|hp         = 3,000
+|bd         = 40
+}}{{For|the [[Bosses|Boss]]' [[Polygon]] counterpart|Crasher}}
+The <b>Guardian of the Pentagons</b>, or simply the {{PA}}, is an AI-controlled [[Bosses|Boss]]—the first to be added to [[Diep.io]]—based on the [[Polygons|Polygon]], [[Crashers]]. Excluding [[Maze]], it has a 1/5 chance to spawn after every 45 minutes has elapsed since the server's opening if a Boss is not yet present. It creates [[Drones]] as its primary form of attack and circles around the [[Pentagon Nest]]. It was secretly added on August 18th, 2016. 
+
+== Design ==
+[[File:Guardian_BOSS_1.png|thumb|150x150px|Transparent image of the Guardian in the old color scheme]]
+It features a large body resembling that of a Crasher, with a [[Spawner]] on the back-end side.
+
+== Technical ==
+=== Base Stats ===
+The Guardian has 3,000 HP, buttressed with 40 HP in [[Stats#Body_Damage|Body Damage]] and standard [[Stats#Health Regen|Health Regen]], recovering 0.1% its max HP or 3 HP per second. Its default [[Stats#Movement Speed|Movement Speed]] is sluggish, moving at 2.5 tiles per second, but can greatly accelerate provided from its spawner's recoil. It has a 58-tile radius FoV—that of a [[Levels|level]] 45 [[Ranger]]. Upon destruction, it and all its drones will vanish and grants a fixed 30,000 [[Levels|XP]]/[[Scoreboard|Score]] to the player that landed the finishing blow—more than enough to automatically raise any player's current level to shoot up to Level 45 upon killing it.
+
+=== Spawner ===
+The Guardian's singular Spawner spawns drones with the Boss' body color at an incredible rate of up to 8 per second and can hold up to 24 drones. Most notable when spawning a number of drones, the high [[Stats#Reload|Reload]] generates significant recoil, bumping the Boss' Movement Speed up to 5.5 tiles per second. Yet despite this, a level 45 tank with 0 Movement Speed can still outpace the Guardian's top speed an extra 2.5 tiles faster even with the spawner recoil in action.
+
+==== Drones ====
+Drones spawned from the Guardian are 4/5 the size to Small Crashers. These are a form of ammunition unlike the naturally-spawned Polygon of which they appear resemblant of, and thus grant no XP/score upon destruction. They have 25 HP ([[Stats#Bullet Penetration|100 with mathematical health increase]]) and deal 3.92 HP in Drone Damage. Each drone has a 39-tile radius FoV—that of a level 15 [[Sniper]]. Their "idle" state has the drone follow to circle around the Guardian. If in range is the presence of a player above level 14, has received damage from a traceable source, or the Guardian itself marks one as a target, the drone will turn aggravated and lock on to chase the target until said target is either no longer present within the Guardian's FoV, or after 30 seconds have elapsed.<ref>Although their lifespan is too short for it to naturally occur, since most bosses with drones share identical stats and behaviors, it can safely be assumed that the Guardian's drones has its own code copy-pasted and would act similarly.</ref> In both cases, the drone will return to its idle behavior. The speed at which they travel is relatively fast, going at ~16.35 tiles per second, which is ~1.18x faster than a Small Crasher. Each drone has a 10-second lifespan before vanishing, and will also vanish when the Guardian dies.
+
+== Behavior ==
+=== Passive ===
+Immediately after spawning, the Guardian will circle around the Pentagon Nest by a predetermined path either clockwise or counterclockwise. It is neutral to all players unless provoked by damage from a player within its FoV, which triggers its aggressive behavior. 
+
+=== Aggressive ===
+When the Guardian is provoked, the player that damaged it will be marked as a target for just a frame for any of its drones currently alive to chase after if not yet already locked on to one.
+
+=== Miscellaneous ===
+The Guardian is not targeted by [[Base Drones]] in a team [[Game Modes|Game Mode]] unless it provokes them, the Guardian also ignores them entirely even while being attacked. The [[Base]] itself does not inflict damage as it passes through.
+
+== Notifications ==
+Given to all players on the server, in which a gray [[Notifications|Notification]] will appear above their screen:
+
+* "''The Guardian of the Pentagons has spawned!''" — On spawn
+* "''The Guardian of the Pentagons has been defeated by (x)!''" — On death
+
+Given to a single player on the server, in which a gray notification will appear above their screen:
+
+* "''You've killed Guardian''" — To player that killed the Guardian
+
+== Strategy ==
+*<b>Strong against:</b> Ramming builds, low DPS tanks, low-level players.
+*<b>Weak against:</b> High DPS tanks, [[Penta Shot]]s, [[Spread Shot]]s, [[Octo Tank]]s, [[Triplet]]s, [[Sprayer]]s, [[Destroyer]] branches, [[Overseer]]/Sniper branches.
+
+=== As the Guardian ===
+TBA
+
+=== Against an AI-controlled Guardian ===
+*The Guardian creates its drones at an incredible rate, which then lock on to chase the nearest target player. Approaching too close can easily attract the attention of all the Guardian’s attendant drones.
+**They will stay locked on even if another player approaches the main body, so it is wise to sneak in to attack when the drones are distracted by someone else before they disappear.
+**The Boss itself will not seek to ram players but will continue on a predetermined course, making it wise to wait until it has moved into a safer area before taking it on.
+**The [[Factory]] can simply aim its minions’ bullets at the Guardian’s spawner. The minions’ combined bullet power is more than enough to overwhelm the Guardian. The Factory can then follow the Guardian around until the boss' health is down around 20%. From that point onwards, rushing the minions into the Guardian itself will result in the entity’s death.
+**The most effective way to kill the Guardian is to use the [[Penta Shot]] with build 4/4/4/0/7/7/7/0. You can simply stay in front of the Guardian and you will destroy all of its drones and keep damaging it until you kill it. Be aware that while the drones are relatively weak, large quantities of them can even take down the [[Spike]] with a 3/10/10/10 build. The Spread Shot works too.
+**In some situations, the [[Octo Tank]] could destroy multiple drones and attack the Guardian even when surrounded by them.
+**The [[Annihilator]] or [[Hybrid]] even Destroyers can fire a large bullet to take down multiple drones in one shot and deal heavy damage against the Guardian. It can then move away, and attack over and over again until the Guardian is dead. Be careful, as the Guardian has a lot of drones and the Hybrid may not be able to take them out in enough time before they reach the Hybrid or Annihilator. If Hybrid, once distancing, its drones may help attack and deal extra damage to the Guardian.
+**Classes with a wider FoV like the [[Stalker]], [[Ranger]] or [[Predator]] can stay far away and attack the Guardian without having to engage its drones. Therefore they may hit the Guardian multiple times and take it down.
+**The [[Overlord]], Overseer, or [[Manager]] are capable of distracting the Guardian’s drones while striking the Guardian with their own.
+**In team modes, it is wise to fight against the Guardian with a teammate since the Guardian only focuses on one player at a time, giving the other player a higher chance of getting a kill.
+
+=== Against a player-controlled Guardian ===
+TBA
+
+== History ==
+
+* Before August 24
+
+* The Guardian used to have 1,000 HP and dealt only 8 HP in Body Damage, making it a very easy encounter
+* Before April 6th, 2024, the Guardian would circle near the edges of the arena, doing little to contribute in guarding the Pentagon Nest and in turn undermining its own title.
+* Before February 16th, 2025, the Guardian could not be controlled.
+
+== Trivia ==
+*The Guardian is the first AI-controlled Boss to be added into the game; the next Boss to be added is the [[Summoner]].
+*On release, the Boss for some time had no official name, so fans came up with “Triangle Boss” and later “Crasher Spawner” as a sort of placeholder. Crasher Spawn is its name in the game's code.
+**An hour after the Summoner was added to the game, the developer created a {{PL|https://www.reddit.com/r/Diepio/comments/4ymzeo/taking_suggestion_for_names_for_the_new_bosses/|thread}} for the community to suggest names for the Summoner and the Guardian as well.
+**Prominent names that were suggested but didn't make the cut were "UFO", "Swarmer," "Horde" and, jokingly, variations of "Dorito Boss."
+***It was later named Guardian, and would even be given a full name: "Guardian of the Pentagons."
+*The names "Guardian" and "Guardian of the Pentagons" are mentioned in-game; displayed above the Boss, upon killing it, and killed by it, the name will be shown as "Guardian", but in the notification that says the Guardian has spawned or who destroyed it, it will be mentioned as "Guardian of the Pentagons."
+*Although comparisons are made between drones created by The Guardian and [[Battleship]], the Boss predates the tank's release by 10 days, suggesting the Battleship's spawners were created later as a differentiator for drones that came in smaller size with limited lifespans.
+*The drones are as small as the [[Mothership (Tank)|Mothership]]'s and [[Fallen Overlord]]'s.
+*The Guardian is the only Boss that carries a single weapon.
+*In terms of reload, the Guardian's spawner is the single most powerful weapon in the game.
+*The Guardian's body is slightly smaller than the [[Defender]]'s.
+*The 2024/4/6 update changed its path so it now cycles around the Pentagon Nest instead of the edge of the arena; this caused the Pentagon Nest to be much more dangerous when the Guardian exists. An effective but toxic strategy is to pinch Boss hunters and low-level players with a level 45 tank.
+*It takes the Guardian, on average, roughly 40 seconds to complete a lap around the Pentagon Nest, including the bursts of recoil in some intervals.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+===Patched Bugs===
+*{{PC}} When the Guardian is defeated, the [[Notifications|Notification]] for it simply shows, “The has been defeated by <nowiki><tank name></nowiki>!” It is unknown if any other Bosses do this.
+}}
+
+== Gallery ==
+<gallery>
+Guardian Icon1.png|Guardian in a profile
+Guardian BOSS 2.png|Isolated design of the Guardian
+Guardian boss notification.png|The Notification that comes up when the Guardian spawns
+Guardian Boss.png|Close-up of the Guardian with its name tag
+Triangle Boss 2.png|Another close-up of the Guardian
+Screenshot 2016-09-06 at 10.30.01 AM.png|Death by the high number of drones spawned as a Necromancer
+Screenshot (18).png|A Penta Shot being attacked by the Guardian
+Guardian.png|Isolated design of the Guardian in the modern color scheme
+</gallery>
+
+{{BossNav|polygon}}
+{{Interlang
+|status = checked
+|de     =
+|en     = Guardian
+|es     = Guardian
+|fr     = Guardian of the Pentagons
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Guardian
+|pt-br  =
+|ru     = Guardian
+|sv     =
+|tr     = Guardian
+|vi     = Guardian
+|zh     = Guardian of the Pentagons
+}}{{DISPLAYTITLE:Guardian of the Pentagons}}
+[[Category:Diep.io]]

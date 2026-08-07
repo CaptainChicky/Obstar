@@ -1,0 +1,57 @@
+= Base Drones =
+
+{{Conjecture|Base Drone}}
+[[File:Guardians.png|thumb|220x220px|Blue Team Base Drones circling the spawn zone]]
+{{PA}} are AI-controlled units which defend the [[Base]]s of the teams in [[2 Teams]], [[4 Teams]], and [[Domination]]. They are similar to the [[Drones]] launched by the [[Battleship]], as well as [[Mothership (Tank)|Mothership]], and the [[Guardian]], due to size. Base Drones can be killed by Arena Closers. They do not have God Mode.
+
+== Function ==
+=== Team Deathmatch and Domination ===
+In 4 Teams and Domination, there are 12 Base Drones at the center of each base. In 2 Teams, there are 30 Base Drones in total and they are spread evenly in pairs all across the base.
+
+They slowly circle in the [[Base]] area of a team. Whenever an enemy player gets in their range, they will rush out at them and dispatch them in short order. The only way to survive after they have locked onto you is moving out of their range. This makes farming enemy players near their base impossible. However, players can clump out of the Base Drones' range. 
+
+Base Drones damage [[Polygons]] when they crash into one, and they also destroy [[Bullets]] and all other types of ammunition. They deal with low damage (7HP per contact), but they deal with the damage extremely quickly, making it seem as if the Base Drones have huge damage.
+
+Note that Base Drones are faster than [[Booster]]s, even with maxed Reload and Movement Speed, making it impossible to linger around a base without getting hit by them. They also track the player's destination, meaning they can't be flanked, nor out-maneuvered.
+
+In fact, Base Drones will defend the Base from the [[Fallen Booster]] and the [[Fallen Overlord]], but they usually don’t target Polygon-based [[Bosses]], such as the [[Guardian]], the [[Summoner]], and the [[Defender]], unless those provoke them first via body damage or drone damage, as the Polygon Bosses will not actively try to kill/ provoke them, making it harder for players to survive the Bosses’ attacks. Base Drones may make killing Fallen bosses, specifically the Fallen Booster easier, as a player may go in their base and have the Base Drones deal tons of damage, then go away from the base and kill the Fallen Booster, who by now is at low health because of the Protector attack.
+
+Their range is moderate-long, meaning long range tanks like Sniper Classes can suppress the enemy team and may deal damage to ones who try to get out. However, this may become ineffective as Sniper classes don't have the reload time to fully suppress the enemy, not enough to prevent them from issuing a counter-attack. This is especially good, as the players will not be trapped in their base until the match ends.
+
+== Appearance ==
+The Base Drones resemble the [[Drones]] of all summoning tanks, excluding the [[Necromancer]] and the [[Factory]] with their Squares and Tanks for Drones. They are in the color of their team (though of darker shading) and are smaller than regular Drones, and slightly larger than the size of Battleship drones.
+
+== History ==
+* Before August 22nd, 2016, Base Drones didn't target any Bosses, but now they target the Fallen ones immediately, and Polygon-based Bosses when provoked.
+* Base drones used to not circle like normal drones. This was the case before September 15th, 2016. On rare occasions, they would circle but not for an extended time.
+
+== Trivia ==
+* Due to not having an official name, Base Drones are referred to as "An unnamed tank" on the death screen.
+* They circle a certain spot in the way Drones do.
+* [[File:Base drones with tank.png|thumb|Base drones with a tank in Diep.]]Many players believe that Base Drones are immortal; however, their health is not infinite. Indeed, they have a large amount of health, small size and high speed, which makes them highly durable. Base Drones also respawn if they get destroyed.
+** It is possible to prove that they are not immortal by continuously moving in range, shooting them, and moving back out of their range until you kill them. This works best with the [[Annihilator]] because of its high DPS and recoil.
+** Another way to prove this is to have a large group of Mega Trappers build an impenetrable fortress around themselves near the base. Base Drones will bump into the traps, taking high damage. They eventually will die.
+* Their health pool is 2,000 HP.
+** [[Arena Closer]]s can kill them, and indeed whenever an Arena Closer provokes them by shooting or bumping into them, Base Drones will swarm and die upon it.
+* Base Drones do not target [[Crashers]].
+
+{{Gameplay|features}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Protectores
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Trójkąty bazowe
+|pt-br  =
+|ro     =
+|ru     = Protector
+|sv     =
+|tr     =
+|vi     = Protectors
+|zh     = Protectors
+}}
+[[Category:Diep.io]]

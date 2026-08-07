@@ -1,0 +1,152 @@
+= Gameplay Strategies =
+
+This is the page for {{PA}}, put together by the [[Diep.io]] community. Please do not add class-specific, game mode-specific strategies, or builds on this page. This page aims to provide general information about gameplay elements of Diep.io, while at the same time acting as a useful guide for new players.
+
+== General Tips ==
+*When the player spawns in, they should consider farming off [[Polygons]] first. It is recommended that the player should only spam bullets when they know it will not attract any attention to themselves.
+*The player should try to play passive and avoid fighting a tank whom they cannot win against.
+*Early on, avoid going to the middle area, where the [[Pentagon Nest]] is, unless the game is new, as it could be flooded with stronger players.
+*In [[Free For All]], [[Survival]], [[Maze]] and [[Sandbox]], the player's tank and [[:Category:Ammunition|ammunition]] are colored blue, while their opponents' tanks and ammunition are colored red.
+**In [[2 Teams]] and [[Domination]], there is a red team and a blue team. Tanks cannot harm members of their team.
+**In [[4 Teams]] and [[Tag]], there is a red team, a blue team, a green team, and a purple team. Tanks cannot harm members of their team.
+*Remember to try to evade Bullets, as it can save the player's life if they are low on health.
+*The player should always expect that someone is watching them and always be ready in case someone starts shooting in their direction.
+*Use [[invisibility]] (if the player has it) to ambush tanks and to hide.
+*It is recommended for the player to not attack any tank, except for tanks at a much lower [[Levels|level]] than themselves, until they have reached level 22.
+
+* Avoid bumping into opponent tanks. Tanks will look the same, whether they have high [[Body Damage]] or low [[Body Damage]], so the player cannot tell which tanks can kill them via body damage. Unless the player's tank will deal high [[Body Damage]], avoid touching other tanks.
+**An easy way to check body damage tanks is to look for signs. These signs include:
+***Low Bullet stats such as [[Bullet Speed]], [[Bullet Penetration]], and high [[Movement Speed]].
+***What type of tank they are and how it corresponds to use (i.e The [[Landmine]] tends to have very high [[Body Damage]])
+***The damage they take from bullets is lower than normal.
+***They do not care about colliding with [[Polygons]].
+***They use their cannons to propel themselves. Some normal players will use this to go faster, but the main rammer tanks that will use this are tri-angle, booster, fighter, annihilator, and destroyer. Some hybrid tanks could also use this method.
+***Their bullet speed is not upgraded. With bullet damage and penetration, a player will often add in some points in bullet speed. This is very useful when you meet an annihilator or destroyer. If the player used their bullets to try to kill you, then they would most likely add in some points in bullet speed.
+***Another way to test out whether an annihilator or destroyer is a rammer is to test out how much damage their bullets do. When an annihilator or destroyer fires a bullet at you, fire some bullets at the annihilator/destroyer bullet. If your bullets make contact with the other bullet, the other bullet will either disappear immediately or continue to move. If the other bullet is weak/disappears immediately, you'll know that the annihilator/destroyer is a rammer. Otherwise, it's not. A safer way to test an annihilator/destroyer is to use a drone class. Drone classes have better protection if the tank is a rammer. To use a drone class for this, let the other tank's bullet touch your drones. If the bullet destroys about 1 or more drones, then you'll know that the tank is not a rammer. If the bullet barely does any damage to your drones, then you'll know that the tank is a rammer.
+
+=== [[Controls]] ===
+*The player moves with the WASD buttons or the arrow keys.
+*The player aims by moving the mouse.
+*The player can fire by left clicking or pressing the spacebar.
+**Classes from the [[Overseer]] branch have [[drones|Drones]] which will follow the mouse instead of firing when Auto-Fire is on.
+**The [[Auto 3|Auto-3]] and [[Auto 5|Auto-5]] will allow the player to half-control nearby barrels.
+*Right-click or Shift causes drones and [[Auto 3|Auto-3]]/[[Auto 5|Auto-5]] barrels to point away from the mouse.
+**The [[Predator]] can move its Field of View (FoV) towards the mouse by clicking the [[Controls|right mouse button(MOUSE 2).]]
+*The player can press E to activate [[Auto Fire]], making their tank automatically fire.
+*The player can press C to activate [[Auto Spin]], making their tank slowly spin around.
+*The player can invest in points without clicking by using the numeric keyboard. Hotkeys are shown below.
+**Health Regeneration - 1
+**Maximum Health - 2
+**Body Damage - 3
+**Bullet Speed - 4
+**Bullet Penetration - 5
+**Bullet Damage - 6
+**Reload - 7
+**Movement Speed - 8
+***The player can use U + (number) to queue 1 [[Stats|stat]] upgrade.
+***The player can use M + (number) to queue 7 (or 10) [[Stats|stat]] upgrades.
+****Tap U twice to remove all queued upgrades when not looking at them.
+*The player can hold L to see their ping(latency), and which country the server being played on is being held in. They can also view their [[Game Modes|game mode]].
+*The player can hold Y in-game to see the [[Tiers|tank upgrade tree]].
+
+== The HUD (Heads-Up Display) ==
+*In the home screen (before the player starts), below the words "This is the tale of" is where the player can type their tank's name.
+*Pressing Enter will always start the game, even if the player has not entered a name.
+*Clicking one of the 8 buttons at the top will change the player's [[Game Modes|game mode]]. There are currently 8: [[Free For All]], [[Survival]], [[2 Teams]], [[4 Teams]], [[Domination]], [[Tag]], [[Maze]] and [[Sandbox]].
+*Upon entering the game, the HUD appears:
+**At the top-right is the [[Scoreboard]];
+***[[Free For All]], [[Maze]], [[Survival]] and [[Sandbox]]: The leaderboard is shown, showing the names and score of the top 10 players in the server.
+****[[2 Teams]] and [[4 Teams]]: Same as above, but players' score bar is colored according to their team's color.
+***[[Tag]]: The number of players in each team is shown.
+***[[Domination]]: Nothing is shown, as the score does not matter in this game mode.
+**At the bottom-right is the [[Map]].
+***Above the [[Map]], the number of people currently playing Diep.io worldwide is shown.
+***When the player presses and holds [[Controls|L]], their latency will be shown, along with their domain and game mode.
+**At the lower middle is the [[Scoreboard|Score]] bar of the player, [[Levels|Level]] bar, and their Name. In the player's [[Levels|Level]] bar, it says 'Level [''player level''] [''class''] (ie. 'Level 32 Tri-Angle').
+**The bottom-left holds the player's [[stats]]. The player can spend any of the 33 [[Levels|Skill Points]] they gain on any of the eight stats listed. Some stats benefit certain classes more than others. See [[Builds]] for more info.
+
+== Projectiles ==
+*There are four main projectiles in the game, the [[Bullet]] (circle), the [[Drone]] (triangle), the [[Trap]] (triangle) and the Necromancer Drone (square).
+**Another kind of projectile, the [[Missiles|Missile]], was added with the March 2nd update, alongside the then-unnamed Skimmer.
+**There's also a type of projectile called Swarm Drone, used exclusively by [[Battleship]]. 
+*Each type of projectile has [[Bullet Penetration|health]], which is not displayed.
+**If a projectile collides with another projectile, the projectiles both take damage.
+*All projectiles do damage upon touching a polygon, a tank or another projectile.
+*When a projectile does damage, it consumes their health, turning that health into damage.
+**That would mean a projectile can live if it has more health than the target.
+*Projectiles also give knockback when collided into.
+=== [[Bullet]] ===
+*The Bullet is the projectile fired by most tanks, such as the [[Basic Tank]], the [[Twin]] and the [[Machine Gun]].
+*The Bullet takes the appearance of a (usually) small circle.
+*The Bullet is not manually controlled and can only be fired in the direction the player's tank's cannon is facing.
+*Bullets despawn after traveling for 3 seconds. The distance covered can be increased by putting points into [[Bullet Speed]].
+*[[Bullet Damage]] can be upgraded to do more damage to the target of the player.
+*Upgrading [[Bullet Penetration]] gives Bullets more health.
+*Bullets have 4 sizes: Mini, Small, Big and Large. Large can only be shot by the [[Annihilator]].
+
+=== [[Drone]] ===
+*The Drone is a projectile exclusive to the [[Overseer]] branch, the [[Hybrid]], and the [[Overtrapper]].
+*They take the appearance of a triangle.
+*Drones have infinite range and only despawn after taking enough damage.
+*Drones have two modes, Automatic and Manual.
+**Automatic is the default mode of the drones.
+***Drones in this mode attack nearby [[Polygons]] and tanks but do not attack projectiles.
+***The [[Hybrid]] and [[Overtrapper]] drones are always in Automatic mode.
+**Manual is activated by holding left-click or spacebar, or while using [[Auto Fire]].
+***Drones will move towards the player's cursors in this state.
+***By holding right-click or Shift, the Drones will move away from the cursor instead.
+*Most Drone-controlling classes have a limit to the number of Drones they can control at a time.
+**When Drones are destroyed, they will respawn from the Drone user's spawner.
+***Putting points into [[reload|Reload]] decreases the time between new drones spawning in, but this is unrecommended, as drones do not take very long to respawn anyways.
+
+=== [[Trap]] ===
+*The Trap is another projectile unique to the [[Trapper]] branch.
+*Unlike Bullets, instead of despawning when they reach their maximum amount of range, they instead lose all of their velocity and lay on the floor, lasting for a short while before despawning.
+*They work like Bullets, having their health reduced if shot at, reducing their damage done. They also do damage upon touching them.
+*The [[Bullet Speed]] for traps is drastically reduced to the point where it requires to be an extreme close-range to damage the targets. [[Bullet Speed]] still affects their range slightly.
+*There are three variants of Traps.
+*#The Small Trap has a small hitbox and lower health, but can easily cover an area. This type of trap is used by the [[Trapper]], the [[Tri-Trapper]], [[Overtrapper]] and [[Auto Trapper]].
+*#The second is the Regular Trap, which has a bigger hitbox and more health than the Small Trap but has a decreased lifespan. This type of trap is exclusive to the [[Gunner Trapper]].
+*#The last type of Trap is the Mega Trap, having the largest hitbox, highest damage, but the shortest lifespan. This type of trap is exclusive to the [[Mega Trapper]].
+
+=== [[Missiles|Missile]] ===
+*The Missile is a projectile that is only used by the [[Skimmer]] and [[Rocketeer]].
+*They look like [[Destroyer]] Bullets, except they have small [[Cannons]] on their flanks that shoot out small [[Bullets]].
+*When shot out of the [[Barrels|Deployer]], they have very little recoil, so using this tank is not recommended if the player is going for a rammer build.
+*When the player upgrades their Bullet [[Stats]], they apply to the [[Missiles|Missile]] as well as its Bullets.
+
+=== Necromancer Drone ===
+* The Necromancer Drone is created by a [[Necromancer]] bumping into a [[Square]] or a Necromancer Drone bumping into a [[Square]].
+* They appear as squares of the players color.
+* The boss ‘The [[Summoner]]’ has yellow [[Necromancer]] Drones.
+* Necromancer Drones are only created by the [[Necromancer]] and the [[Summoner]] and cannot be created by any other tank.
+* Necromancer Drones are not as powerful as normal drones but they are more powerful than squares.
+
+=== '''Swarm Drone''' ===
+
+* Swarm Drones are somewhat between bullets and drones. 
+** They appear as small drones and are controlled like normal drones. 
+** However, they have a limited lifespan and do not have a maximum amount. 
+** Currently, the only user of such drones is [[Battleship]].
+*** The lifespan for battleship drones is 4 seconds.
+*** The [[Protector (tank)|beta version of base protector]]<nowiki/>s also use such drones. 
+{{Interlang
+|status = checked
+|de     =
+|es     = Estrategias de juego
+|fr     = Tactiques
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Chiến lược trò chơi
+|zh     =
+}}
+
+[[Category:Diep.io]]

@@ -1,0 +1,113 @@
+= Tri-Trapper =
+
+{{Infobox
+|image     = <gallery>
+tri-trapper icon 2.png|New Colors
+tri-trapper icon 1.png|Old Colors
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Trapper icon new.png|50px|link=Trapper]]
+|barrel    = [[Launcher]] (3)
+|id        = 35
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Trapper]] at level 45. 
+
+== Design ==
+The Tri-Trapper features a circular base with three evenly spaced out [[Launcher]]s mounted on to it 120 degrees apart. The Tri-Trapper’s launchers are placed similarly to the [[Triple Twin|Triple Twin’s]] twin cannons.
+
+== Technical ==
+{{BaseStats
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = —
+|BulletDamage       = —
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        = Trap Lifespan
+|HiddenStat2        =
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     = ▼▼
+|HiddenStat2Val     =
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+Compared to the Trapper:
+*It possesses triple the amount of Launchers than its predecessor. 
+*The Trap lifespan is much shorter, as it is reduced from twenty-four to ten seconds. However, there are more Traps spawned to compensate.
+*The Trap also deal less damage. 
+Stats: 
+
+* Bullet Damage: 6.72 (+2.88 for each point in Bullet Damage)
+
+== Strategy ==
+*<b>Strong Against:</b> Rammer builds, low RoF tanks, low DPS tanks.
+*<b>Weak Against:</b> High RoF tanks, [[Destroyer]]-branch, [[Sniper]]-class tanks if caught off guard, high-health tanks.
+
+=== As the Tri-Trapper ===
+*The Tri-Trapper trades the lifespan of its Traps for three Trap Launchers. This allows the player to easily take on groups of enemies without being too overwhelmed.
+*The player can easily surround themselves in a circle of their Traps if they’re in trouble by turning on [[Auto Fire]] by pressing <code>E</code> and [[Auto Spin]] by pressing <code>C</code>. This is especially effective against the Tri-Angle class, as common builds usually consist of Body Damage, forcing the enemy Tri-Angle to pick a new target or risk it all by running into the Traps to destroy the player.
+*The Tri-Trapper works exceptionally well in Team game modes, as teammates may depend solely on its walls of traps for defense and/or health regeneration. Sometimes, teammates may even stay near the Tri-Trapper just to stay under its traps. The player should look out for teammates who are low on health or are being overwhelmed by enemies, and simply block them off with traps. Be warned that tanks with high Bullet Penetration, Damage, Reload, Speed, or all four can break through its traps, destroying it and killing the protected victim or the Tri-Trapper. Multiple Tri-Trappers are especially able to create a haven for their teammates and to make “bases” for their teammates. Many Tri-Trappers combined with High RoF tanks or Area Denial tanks can easily dominate the Pentagon Nest, and also help other smaller teammates to be safe from the enemy, allowing them to grow and have their team dominate the leaderboard.
+*The Tri-Trapper is especially effective in [[Domination]]. The player can turn Auto Fire and Auto Spin on and go close to the team’s [[Dominator]] and circle it. It is useful for camping around an ally Dominator so that other players can attack enemies that try to claim the team’s Dominator while keeping themselves safe. The Tri-Trapper could do the same thing in the Pentagon Nest so that their teammates are safe from the [[Crashers]] and can farm with little to no risk.
+*In 2 Teams, or 4 Teams, the Tri-Trapper can build a base at the center of the map, to hold back the enemy from advancing toward the player’s base, and to secure the Pentagon Nest, allowing players of the player’s team to level up there safely. This outpost can be used as a safe place for damaged tanks to retreat to, and a good number of tanks will often gather around or in it, making it a formidable obstacle to the enemy.
+
+=== Against the Tri-Trapper ===
+*Branches of the [[Tri-Angle]] Class, [[Smasher]] class and other popular Body Damage builds will be severely disadvantaged against this tank, as it is never recommended to approach this tank, whether accidentally or intentionally to ram it, because traps can easily strip a player of health even with maxed out Max Health and Body Damage. Retreat is the best option unless the Tri-Trapper is already heavily damaged. It is almost impossible to get past a Tri-Trapper’s trap wall via ramming without taking some serious damage, and if the Tri-Trapper also has a health build, a rammer would die, unless the Tri-Trapper is within an inch of death.
+*[[Sniper]]-class Tanks such as the [[Assassin]] or [[Hunter]] are especially effective against this tank, as it is easy to snipe it from a distance because of its low health and speed. The [[Predator]] is extremely effective against this tank, as it has a substantial range due to its zoom ability. Fast bullets may be able to break through the trap wall or holes in the trap wall and do serious damage to the Tri-Trapper inside, either forcing them to retreat, exposing themselves to more bullets, or to keep staying there, praying it won’t happen again. Bullet spammers can also knock through the traps and kill it. Many bullets can push the traps around and destroy some, making a large hole in the wall, allowing the Bullet Spammer to deal serious damage and even kill the Tri-Trapper.
+*Focused fire tanks are also moderately effective against this tank, especially if they are trying to cover and shield an area. A hail of high damage and penetration bullets will easily break through their barrier of traps, making them exposed and pretty easy to take out, but they are usually aided by allies within the wall of traps. The [[Gunner]] is especially effective for this strategy, as the small Bullets may be able to slip through the traps, and hurt the protected person inside or the Tri-Trapper. If the Gunner or Gunner Trapper persists they may be able to kill the Tri-Trapper or any protected victims inside.
+*Tanks of the [[Overseer]] Class are very effective against this class when it is stationary so long as the player has high Drone Health and Damage. Waiting until the Tri-Trapper stops and surrounds itself with traps, then maneuvering the drones through the minefield to attack the Tri-Trapper is quite effective considering the low health and speed of the tank. As the [[Necromancer]], the player should look for a weak point in the field of traps around the Tri-Trapper, then send all their drones at once at that point. It will easily overwhelm the traps and kill the tank within, though it will leave the Necromancer with few to no drones with which to defend itself against any counterattacks. This will also leave the Necromancer open to third-party attackers unless the necromancer has nearby [[Squares]] to capture.
+*The [[Mega Trapper]] is a great counter to the Tri-Trapper. The mega Traps can burst open the small trap walls and eventually hit the opponent. The [[Gunner Trapper]] is viable as well since the gunner Bullets can seep through the little gaps between the traps. Its medium-sized traps are also strong enough to barge the small trap walls of the opponent. Note however that engaging a Trapper with nearby allies rarely a safe tactic.
+*<i>All tanks <b>should not</b> get close to enemy Trapper classes and their [[traps]] as they can inflict a massive amount of damage.</i>
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/OzdpURg 1.1m by Emerson]
+* 2 Teams: [https://www.youtube.com/watch?v=_YjyEAtJSkM 1.12m by LK2410]
+* 4 Teams: [https://www.youtube.com/playlist?list=PL6L1Czft73nGxdGS7bbgan9FZhiP2OSh3 1.03m by werr]
+* Maze: [https://imgur.com/KCEhHvb 648k by Ichio]
+
+=== Mobile ===
+
+* FFA: 853k by gd1v
+* 2 Teams: 533.3k by gd1v
+* 4 Teams: -
+* Maze: -
+
+== History ==
+*As of the [[Changelog#July 18th, 2016|18th of July]] update, it was the only upgrade from the [[Trapper]] with a name. The [[Mega Trapper]] was named later the same day.
+**The [[Overtrapper]] and the Gunner Trapper were named a few days later.
+***The [[Auto Trapper]] was added a few days after that.
+*The [[Dominator|Trapper Dominator]] shares traits with the Tri-Trapper, with the main difference being that it has eight Launchers instead of three. The Trapper Dominator is also much bigger, has stronger traps and has far more health.
+
+== Gallery ==
+<gallery>
+Tri-trappertraps.jpg|Tri-Trapper in-game.
+NewTriTrapper.png|The Tri-Trapper’s new appearance.
+File:4Teams 2.png|Tri-Trappers can make a wall of traps to defend their team against attackers.
+</gallery>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Tri-Trapper
+|es     = Tri-Trapper
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Tri-Trapper
+|pt-br  =
+|ro     =
+|ru     = Tri-Trapper
+|sv     =
+|tr     =
+|vi     = Tri-Trapper
+|zh     = Tri-Trapper
+}}
+[[Category:Diep.io]]
+[[Category:Trapper Tanks]]

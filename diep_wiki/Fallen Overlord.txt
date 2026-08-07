@@ -1,0 +1,100 @@
+= Fallen Overlord =
+
+{{Boss
+|image      = <gallery>
+fallen overlord boss 2.png|New Colors
+fallen overlord boss 1.png|Old Colors
+</gallery>
+|weapons    = [[Spawners]] (4)
+|attacks    = [[Drones]] (12)
+|xp         = 30,000
+|hp         = 3,000
+|bd         =
+}}{{For|the playable version of this [[Bosses|Boss]]|Overlord}}
+The {{PA}} is an AI-controlled [[Bosses|Boss]] that was added on August 20. It has a chance to spawn 45 minutes after the server starts, and 0-45 minutes after the previous Boss was destroyed. It behaves similarly to the [[Guardian]] and the [[Summoner]].
+
+== Design ==
+The Fallen Overlord looks like a regular [[Overlord]], but much larger and light grey. It has four [[Spawners]] that spawn [[Drones]].
+
+The Drones act like [[Crashers]] but will return to the Fallen Overlord if the target leaves its range.
+
+== Technical ==
+=== Behavior ===
+Its [[Drones]] will target the closest tank. It won’t target players under level 15 unless shot at first. If no tanks are nearby, it will target and destroy all [[Polygons]] in range, including Pentagons and Crashers. The Drones will stop attacking the target when the target goes out of range.
+
+=== Drones ===
+The Fallen Overlord spawns 4 gray Drones per roughly 12 seconds, which is much slower than a normal Overlord’s spawn rate, but its Drones have a rather high damage. It can have a maximum of 12 drones out. Its Drones’ speed is similar to a pre-buff [[Necromancer]]'s Drones with max stats. If the Fallen Overlord dies, its Drones will die alongside it similar to every drone user.
+
+=== Stats ===
+This tank has a great health pool, 3,000 health points, but has a slow healing factor. It reloads considerably slower than an Overlord does with maximum Reload Speed and it is moderately slow.
+
+=== Miscellaneous ===
+Upon destruction, it awards 30,000 experience points to the player who killed it. It is targeted by Base Drones and [[Crashers]]. A team spawn area (base) will damage its drones and the tank itself. 
+== Strategy ==
+*<b>Strong Against:</b> Ramming builds, low-level players, and low DPS tanks.
+*<b>Weak Against:</b> High DPS/penetration tanks, [[Trapper]]s, [[Hybrid]]s, [[Annihilator]]s, [[Spread Shot]]s, Overlords (if the player is skilled enough), Necromancers (if played correctly)
+=== As the Fallen Overlord ===
+TBA
+=== Against the Fallen Overlord ===
+*Most tanks will have an insane amount of difficulty facing one. Tanks that would normally work against an Overlord don’t seem to work due to the high number of drones.
+*Similar to a Summoner, very focused DPS classes (such as the [[Streamliner]]) will not fare well in a 1v1 situation with the Fallen Overlord. Due to the Streamliner’s accurate firing, it may take only a few Drones out while the surviving Drones will tend to avoid the stream of Bullets instead of coming forward in a normal way.
+*Surprisingly, an Overlord is a weakness of an AI-controlled Fallen Overlord, as the player can guide their drones past the Fallen Overlord’s and strike them in the gaps between the [[Spawners]]. However, the player MUST be skilled enough and have a good [[Builds|Build]], as getting too close will make the boss attack.
+**This is not effective against a player-controlled Fallen Overlord, as it can just block the drones with its own drones and kill the Overlord.
+*The Annihilator or Hybrid is a great choice, like countering an Overlord, as the tank’s huge bullet can deal massive damage against it. Also, when the boss is approaching death, the player can shoot it with their large bullet and take the kill to themselves while without losing health.
+*DPS higher than the Spread Shot can make it hard for the Fallen Overlord’s drones to get past the massive number of bullets. Using a [[Sprayer]], [[Penta Shot]], and [[Triplet]] is recommended, since they have lots of bullets and have a high RoF(Rate of Fire).
+*The [[Booster]] or [[Fighter]] can counter it. Due to their fast movement, they can easily outrun the boss’ Drones guiding them away from the boss. The player should be careful, if lots of the Fallen Overlord’s Drones die, they will respawn new ones, creating a new shield.
+**By using this strategy, you can lure other players to attack the Fallen Overlord by distracting its drones away. Then, when the boss is at extremely low health (like 1%), you can ram it and take the kill.
+
+== History ==
+*Formerly:
+**Before 24th August 2016, it was not targeted by the Base Drones.
+**Before 22nd August 2016, several of them could appear simultaneously.
+**Before 22nd August 2016, when it spawned, there was no [[Notifications|Notification]] alerting the player that it spawned.
+**Before 24th December 2025, it had 28 small drones, and a very fast reload speed.
+
+== Trivia ==
+*It is the fifth AI-controlled Boss in the game.
+*If the player causes damage only to its Drones while being under level 15, the player will be attacked by the Drones which received the damage from them. Interestingly, other Drones won’t attack.
+*If one hits the hull of the Fallen Overlord, it will target the player with all its Drones, even if they are below level 15.
+*The only way to see an idle movement of its Drones is by going into Sandbox. The player has to be a [[Necromancer]] under level 15 and "steal" all Polygons. Hint: better to do this before it spawns, or it might never give the player the last Polygon, it will lock the target (each [[Square]]), and even if they turn it into their Drone before it gets destroyed, it will continue attacking it.
+*The Fallen Overlord acts a lot like a [[Battleship]], as their Drones are similar, and it has the same number of Drones as well.
+*The Fallen Overlord, along with the [https://diepio.fandom.com/wiki/Fallen_Booster Fallen Booster] is the only boss that can destroy polygons, in fact, it even targets nearby polygons when no players are around.
+*The Fallen Overlord, as well as the Fallen Booster, have a hex code of #C0C0C0.
+
+== Gallery ==
+<gallery widths="185">
+Fallen_overlord_in_action.png | Playing as Fallen Overlord
+Fallen Overlord Sighted by Ursuul.png|Fallen Overlord attacking a [[Necromancer]]
+Screenshot 2016-09-06 at 12.21.32 PM.png|Fallen Overlord spotted while going onto a new server.
+KOmBPqH.png|A Fallen Overlord in a team’s base (this was taken before an update that moved Fallen Bosses out of polygon team)
+Fallen overlord alert.png|Spawn notification
+Fallen Overlord Transparent-0.png|A Fallen Overlord.
+Jus hanging.PNG|A basic tank hanging with a Fallen Overlord
+Capture6.PNG|Idle Fallen Overlord
+Capture4.PNG|Fallen Overlord attacking a [[Booster]]
+Capture3.PNG|A basic tank avoiding death
+Capture2.PNG|Fallen Overlord without any [[Drones]]
+Capture5.PNG|Another picture of an idle Fallen Overlord
+Fallen Overlord in sandbox.jpg| Fallen Overlord spawned in sandbox next to lvl 11 [[Predator]]
+
+</gallery>
+
+{{BossNav|fallen}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Fallen Overlord
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Fallen Overlord
+|pt-br  =
+|ru     = Fallen Overlord
+|sv     =
+|tr     = Fallen Overlord
+|vi     = Fallen Overlord
+|zh     = Fallen Overlord
+}}
+[[Category:Diep.io]]

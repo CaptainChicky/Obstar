@@ -1,0 +1,133 @@
+= Destroyer =
+
+{{Infobox
+|image     = <gallery>
+destroyer icon 4.png|New Colors
+destroyer icon 3.png|Old Colors
+destroyer icon 2.png|Old Icon
+destroyer icon 1.png|Nameless
+</gallery>
+|tier      = 3<ref name="machII">Due to a programming oversight, the Destroyer's direct predecessor, the Machine Gun, used to be able to upgrade into itself. Thus it was briefly also considered a Tier 4 tank.</ref>
+|previous  = [[File:Machine gun icon new.png|50px|link=Machine Gun]][[File:Machine gun ii icon new removed.png|50px|link=Machine Gun#Machine Gun II & III]]<ref name="destroyer1">Removed Upgrade Option. As always, removed upgrade options and removed tanks are shown by a footnote and a gray icon background.</ref>
+|next      = [[File:Hybrid icon new.png|50px|link=Hybrid]][[File:Annihilator icon new.png|50px|link=Annihilator]][[File:Skimmer icon new.png|50px|link=Skimmer]][[File:Rocketeer icon new.png|50px|link=Rocketeer]][[File:Glider icon new.png|50px|link=Glider]][[File:Firework icon.png|50px|link=firework]]
+|barrel    = [[Cannons|Cannon]](1)
+|id        = 10}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Machine Gun]] at level 30 and upgrades to the [[Hybrid]], [[Annihilator]], [[Skimmer]], [[Rocketeer]], and [[Glider]] at level 45.
+
+== Design==
+The Destroyer features a circular body, with a large rectangular [[Cannons|Cannon]] which fires a huge and very powerful [[Bullet]].
+==Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▼▼▼
+|BulletPenetration = ▲▲
+|BulletDamage      = ▲▲▲
+|Reload            = ▼▼▼
+|MovementSpeed     = —
+|HiddenStat1       = Recoil
+|HiddenStat2       = Projectile Size
+|HiddenStat3       = 
+|HiddenStat4       = 
+|HiddenStat1Val    = ▲▲▲
+|HiddenStat2Val    = ▲▲
+|HiddenStat3Val    = 
+|HiddenStat4Val    = 
+}}Changes to Base [[Stats]] upon upgrading from the Machine Gun:
+*Bullet Penetration is multiplied by 2 and Damage is multiplied by 30/7 (around 4.3x)
+* Bullet Size is doubled
+*Reload is divided by 8
+*Bullet Speed is 1.5x slower
+*Recoil is multiplied by 15
+*Stats: 
+**Bullet Speed: 0.7x Tank
+**Bullet Penetration: 4 (+3 for each point in Bullet Penetration) 
+**Bullet Damage: 21 (+9 for each point in Bullet Damage) 
+**Reload time: 60t (-5t for the 1st and 3rd point, -4t for the 2nd, 4th and 6th point, -3t for the 5th and 7th point in Reload)
+
+==Strategy==
+*<b>Strong Against:</b> Melee Classes, slow-moving tanks, most unsuspecting tanks within a short-range.
+*<b>Weak Against</b>: [[Sniper]]s, Skilled [[Drone]] users, [[Crashers|Crasher swarms]] if caught off-guard.
+
+===As the Destroyer === 
+*Putting some points into Reload will let players take advantage of the recoil, allowing quick movement around the map. This can be an advantage for ramming Destroyers. Ramming is a great technique for a Destroyer, the boost ability allows the Destroyer to kill an opponent very fast, and if it fails, it can recoil away. If a Destroyer also has points in Bullet Damage and/or Bullet Penetration, when the Ramming Destroyer goes to escape, it may also shoot the bullet at its opponent, if the bullet hits, it could seriously injure or even kill the opponent.
+*Players can put your cursor in the exact center of your tank. This way, the tank will shoot in the opposite direction that they're moving, which uses recoil to make the player move faster. This can be used to chase victims but only with high Body Damage and Max Health. This may not work on [[Booster]]s or other fast tanks that can easily storm off.
+*A skilled Destroyer will know when their next ‘dash’ will occur and, the seconds before that can be used to trick the target into thinking that they are going a different direction than they intend. You can make it very hard for your enemy to predict your next move by placing your cursor in a random direction and then firing it towards the enemy’s area a split second later. Another strategy would be to put the cursor in the opposite direction, as if the Destroyer was going to boost towards the enemy, then suddenly turn around and shoot. Also, using a "flicking" technique is usually only for High RoF tanks, so when going for low RoF tanks, the player can ram straight on (as a rammer). Utilizing this as a Destroyer makes it extremely hard to predict where the bullet will be going, or the bullet may be shot randomly, making it much harder to dodge a Destroyer bullet.
+*With its distinctively large Bullets and the significant damage increase, the Destroyer can also deal heavy damage with its Bullets.
+*By maxing Bullet Damage and Bullet Penetration, the Destroyer’s Bullets can deal massive damage to tanks and stop huge amounts of returning fire.
+*The Destroyer can kill slow tanks with ease, despite its low Reload.
+*The Destroyer can easily knock out a [[Triple Twin]] and/or an [[Octo Tank]] due to its extremely focused power.
+*It is great to use against [[Alpha Pentagon]]s due to its massive Bullet Penetration and Bullet Damage. Be warned though: the Destroyer is vulnerable to [[Crasher]]s, because of its low rate of fire. However, that may not be a problem in team game modes.
+*Generally, the Destroyer tank is extremely deadly up close but helpless from far away. 
+**Because of this, move mostly vertically, and try to attack from above/below, where the victim’s FOV is the least, giving them less reaction time. Using this strategy, this tank can one-shot tanks with great success.
+
+===Against the Destroyer===
+[[File:DestroyerBullet.PNG|thumb|220x220px|A Destroyer shooting a [[Bullets|Bullet]]]]
+* Killing a Destroyer can be difficult in many cases, as most Destroyers can either build Bullet Damage or Body Damage. Destroyers are often easily picked off at range due to their slow projectile and limited FoV, so using Sniper and its upgrades are effective. It is also recommended to swarm projectiles at the Destroyer from all angles, as the lack of defense other than the recoil can annihilate the Destroyer. But due to the recoil of its Bullets, it can jump back and kite Drones as well as being able to clear a group of smaller Bullets or projectiles going in a straight line with one of its Bullets.
+*Players should use the [[Overseer]] and its branches to kill the Destroyer. Since a Destroyer’s bullet is extremely powerful, the player will need to hit them from multiple angles. One way is to repel the Drones toward them until the drones are around the enemy, then collapse the drones into Destroyer’s hull; the player will need to predict when they will recoil to get a successful kill. In many cases, the player will need to make multiple attempts before success. A [[Necromancer]] is a more powerful counter, as it can swarm its massive amount of drones around the Destroyer. 
+**Careful though, if the Destroyer bullet kills off all of your sunchips/drones then you must retreat.
+*Avoid fighting near a Destroyer in close-quarters or ramming them whenever possible. Their huge projectile can easily wound the player, doing a huge amount of damage and virtually guaranteed to wipe out most tanks. They can also use the recoil from their projectile to become a rammer themselves and bump into other tanks, creating a similar effect if they have high Body Damage.
+*[[Smasher]] classes should avoid bullet-build Destroyers at all costs. Not only can they kill Smashers in 3 shots or less, but they can chase them by using their recoil.
+*Countering the Destroyer is easy with Bullet spamming tanks due to its slow fire rate.
+*The [[Predator]] and other Sniper classes are the best counter to Destroyers due to their long-range and greater field of view. Damage focused builds are great for gaining a fire-rate advantage against the Destroyer, as well as being able to take it by surprise due to the Destroyer having a smaller field of view. Just don't let the destroyer get too close or you are dead.
+*A bullet build Destroyer can take out a rammer build Destroyer.
+
+==[[Achievements]]==
+{{SideBox|*<b>BOOM, you’re dead</b> — Upgrade to Destroyer
+|{{Achievement
+|Name = BOOM, you’re dead
+|Description = Upgrade to Destroyer}}
+}}
+
+=="Mega Destroyer"==
+Back in the early days of Diep.io, there was a bug that allowed the [[Machine Gun]] to [[Machine Gun#Machine Gun II & III|upgrade into itself]]. The higher tiered versions of Machine Gun were referred to as Machine Gun II and Machine Gun III at tiers 3 and 4 respectively. These versions of Machine Gun had not changed from their original tank in terms of design whatsoever. Since at the time, the Machine Gun could upgrade into both itself and Destroyer, the [[Tiers|tier]] 3 variant of Machine Gun could also upgrade into a variant of Destroyer. This Level 45 version was given the name "Mega Destroyer" by players, but was entirely identical to Destroyer. Machine Gun II was removed on [[Changelog#May_24th,_2016|May 24<sup>th</sup> 2016]], taking Machine Gun III and Mega Destroyer along with it.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/k8HVw8I 1.45m by Wadjet]
+* 2 Teams: 2.47m by Aleph
+* 4 Teams: [https://imgur.com/3IFhRsw 2.96m by Tri-Trapper]
+* Maze: [https://www.youtube.com/watch?v=FnbKSV0dmqQ 1.04m by JB Colombia]
+
+=== Mobile ===
+
+* FFA: 1.01m by Athu
+* 2 Teams: 642.1k by buh
+* 4 Teams: -
+* Maze: -
+
+==Trivia==
+* The Destroyer has the second most recoil per Bullet and the second-largest Bullet out of any playable tank in [[Diep.io]] (excluding [[Sandbox]] mode).
+**The Tank with the largest Bullet and the largest recoil per Bullet is the Annihilator, which is an upgraded form of the Destroyer.
+
+==Gallery==
+<gallery>
+destroyer icon new 1.png|...in new colors, referred to as Mega Destroyer
+</gallery>
+
+==Footnotes==
+<references />
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Destroyer
+|es     = Destroyer
+|fr     = Destroyer
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Destroyer
+|pt-br  =
+|ro     =
+|ru     = Destroyer
+|sv     = Destroyer
+|tr     = Destroyer
+|vi     = Destroyer
+|zh     = Destroyer
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

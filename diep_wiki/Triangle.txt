@@ -1,0 +1,46 @@
+= Triangle =
+
+{{Polygon
+|image     = <gallery>
+triangle polygon 2.png|New Colors
+triangle polygon 1.png|Old Colors
+</gallery>
+|rarity    = Common
+|hp        = 30
+|xp        = 25
+|variants  = [[Green Triangle]]
+}}
+{{For|the Diep.io Tank with a similar name|Tri-Angle}}
+The {{PA}} is the second most common [[Polygons|Polygon]] in [[Diep.io]], and the second deadliest. It only has 30 HP, buttressed with 8 HP in Body Damage, thus making it a very weak target. It also grants 25 [[Levels|XP]] to the player who lands the final shot. 
+
+== Strategy ==
+Triangles can be used strategically, since their low health and damage provide the player an easy way to get XP in the first stages of the game, giving a head-start.
+
+Their body damage and HP may be low, however crashing into a few of them without Max HP upgraded may cause serious harm. But, this can be used as a strategy, pushing the enemies with bullets or traps towards the triangles to deal external damage.
+
+== Trivia ==
+[[File:DiepTriangle.png|thumb|65px|An isolated image of a red triangle.]]
+*A [[Levels|Level]] 1 [[Tank]] will need five shots to destroy a Triangle. This results in a reward of 5 XP per hit. This is the same amount of XP per hit as a [[Square]], which awards 10 XP after two hits. In comparison, a [[Pentagon]] rewards 130 XP after 21.4 hits, for a higher XP/hit value of about 6.07. An [[Alpha Pentagon]] rewards 3,000 XP after 1,072 hits, making the XP/Hit value for the [[Alpha Pentagon]] about 2.8.
+*The [[Guardian|Guardian of the Pentagons]] has a similar design to the Triangle, but is much larger,  colored in pink and has a [[Spawners|Spawner]].
+*The rarer variety of the Triangle, the [[Green Triangle]], grants 2,500 XP to the player who lands the final shot. This variety is approximately 10 times stronger than the standard variety. It is estimated that the [[Green Triangle]] is 1 million times rarer than a normal Triangle.
+*The [[Defender]] appears to be the boss form of the Triangle. It is much larger and has [[Auto-Turrets|auto cannons]] and [[Trap]] [[Launchers]], unlike the Triangle.
+
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Triángulo
+|fr     = Triangles rouges
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Trójkąt
+|pt-br  =
+|ro     = Triunghiul
+|ru     = Triangle
+|sv     =
+|tr     = Kırmızı Üçgen
+|vi     = Triangle
+|zh     = 三角形
+}}

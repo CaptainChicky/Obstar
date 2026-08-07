@@ -1,0 +1,73 @@
+= Builds =
+
+
+
+== Builds==
+[[File:Stats.png|thumb|Choose the skills you upgrade wisely.]]
+There are a total of 40,820,633 different builds available. However, building on the [[tank]]’s strengths and weaknesses is important as jacks of all trades aren’t nearly as useful. That is to say — depending on the [[Tiers|class]], the most useful builds will usually fall under one of the following categories:
+
+==='''Glass Cannons'''===
+
+:'''Characteristics:''' Little to no health regeneration or max health but high damage output and speed, their defense is their offense.
+
+Glass cannons are builds that sacrifice health in favor of the 0/0/0/<span style="color:#6C96F0;font-weight:bold;">X</span>/<span style="color:#F0D96C;font-weight:bold;">X</span>/<span style="color:#F06C6C;font-weight:bold;">X</span>/<span style="color:#98F06C;font-weight:bold;">X</span>/<span style="color:#6CF0EC;font-weight:bold;">X</span> side of their stats. They are generally fast, very dangerous builds with high damage output but usually die in 1 or 2 good hits if unprotected by their own [[bullets|ammo]].
+
+==='''Rammers'''===
+
+:'''Characteristics:''' Very high health, body damage, and speed. These tanks use their huge health pool and speed to take enemies by surprise and kill them by smashing into them.
+
+The opposite of Glass Cannons, they focus on the <span style="color:#EEB690;font-weight:bold;">X</span>/<span style="color:#EC6CF0; font-weight:bold;">X</span>/<span style="color:#9A6CF0;font-weight:bold;">X</span>/0/0/0/<span style="color:#98F06C;font-weight: bold;">X</span>/<span style="color:#6CF0EC;font-weight:bold;">X</span> side of their table and may also use reload to propel themselves. Tanks using these builds can withstand incredible amounts of enemy fire before dying, making them incredibly survivable. Offensively they are usually held back by the knockback they receive upon collision with bullets. Additionally, health regen can’t really keep up with enemy Bullet DPS, thus they usually depend on ambushes or teaming in order to kill most tanks. Even if things go south, Rammers usually have higher speed than most offensive tanks and can easily escape.
+
+=== '''Bullet Smashers'''===
+
+:'''Characteristics:''' Like a glass cannon but ignoring bullet speed to increase movement speed and/or health.
+
+These are tanks that sacrifice <span style="color:#6C96F0;font-weight:bold;">Bullet Speed</span> and sometimes <span style="color:#6CF0EC;font-weight:bold;">Movement Speed</span> in favor of moderate amounts of Health and maxed out Bullet Stats, focusing on 0/<span style="color:#EC6CF0; font-weight:bold;">X</span>/<span style="color:#9A6CF0;font-weight:bold;">X</span>/0/<span style="color:#F0D96C;font-weight:bold;">7</span>/<span style="color:#F06C6C;font-weight:bold;">7</span>/<span style="color:#98F06C;font-weight:bold;">7</span>/<span style="color:#6CF0EC;font-weight:bold;">X</span> stats-wise. They are characterized by the “walls” or “clouds” they create when moving forward (due to their bullets getting grouped together), walls which they can then use to ambush and ‘ram’ other players.
+
+Depending on the classes’ overall Speed, they may be considered counters to Rammer build users as their combined momentum (ammo & body) is often enough to ‘outram’ them. However, it should be noted that - as Bullets only move in one direction, these ‘walls’ they create are part of their momentum and can be lost, as the target can move out of the Bullets’ trajectory, forcing them to re-aim and/or start the walls from scratch.
+
+== Build pool==
+The following are <b>Builds</b> for different [[Classes]], made by players using the [[Levels|33 skill points]] available upon reaching [[Levels|level 45]]. When using a build, make sure to choose the tank upgrades correctly.<br /><br />'''AND PLEASE NOTE:''' that the builds on this page differ in quality. And that as everyone plays the game differently, not all builds will work as well for every user. Use this page as a reference for builds suggested by the diep.io community. This page is designed to give readers a basis from which they can begin to form their own style of play and so that they may discover their own perfect build, but it makes no pretense as to which builds are the best.<br /><br />With this in mind, feel free to start browsing (you can also do ctrl + f to search for a specific tank that you want to use)!
+<inputbox>
+type=create
+preload=Template:Build/Preload
+editintro=Template:BuildEditIntro
+buttonlabel=Add your own build!
+prefix=Template:Builds/
+placeholder=ah
+</inputbox>
+<i><b>Note:</b> In the window that pops up at first, please scroll down and select “Data”. Please allow up to a week for your build to be reviewed before it is added to the page.</i>
+
+{{/Basic Tank}}
+
+{{/Twin}}
+
+{{/Sniper}}
+
+{{/Machine Gun}}
+
+{{/Flank Guard}}
+
+{{/Smasher}}
+
+{{/Misc}}
+
+{{Interlang
+|status = checked
+|de     =
+|es     = Build
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     = Сборки
+|sv     =
+|tr     =
+|vi     = Xây dựng
+|zh     = 構建
+}}__NOWYSIWYG____NOTOC____NOEDITSECTION__
+[[Category:Diep.io]]

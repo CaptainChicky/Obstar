@@ -1,0 +1,66 @@
+= Tree-Topper =
+
+{{Stub}}
+{{WIP}}
+{{Removed}}
+
+{{Boss
+|image      = <gallery>
+Tree-Topper.png
+</gallery>
+|weapons    = [[Cannons|Deployers]] (5)<br/>[[Auto Turrets|Mounted Turrets]] (5)
+|attacks    = [[Bullets]]<br/>[[Missiles]]
+|xp         = 50,000
+|hp         = 5,000
+|bd         =
+}}
+The {{PA}} is special Boss that spawned during the 2025 Christmas Event.
+
+== Design ==
+The Tree-Topper features a large yellow star, with 5 Mounted Turrets placed on top of each point. 5 evenly-space small Deployers are attached to the side of the star, at the vertexes.
+
+== Technical ==
+=== Stats ===
+TBA
+
+=== Miscellaneous ===
+NTBA
+
+== Strategy ==
+*<b>Strong Against:</b> TBA
+*<b>Weak Against:</b> TBA
+=== As the Tree-Topper===
+TBA
+
+=== Against the Tree-Topper ===
+TBA
+
+== Trivia ==
+TBA
+
+== Gallery ==
+<gallery>
+File:Treetopperingame.png|Screenshot.
+File:Tree-Topper Old Border.png|With old border
+</gallery>__FORCETOC__
+[[Category:Diep.io]]
+
+{{BossNav|polygon}}
+{{Interlang
+|status = checked
+|de     =
+|es     = 
+|fr     = 
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 
+|pt-br  =
+|ro     =
+|ru     = 
+|sv     =
+|tr     = 
+|vi     = 
+|zh     = 
+}}

@@ -1,0 +1,115 @@
+= Ranger =
+
+{{Infobox
+|image     = <gallery>
+ranger icon 3.png|New Colors
+ranger icon 2.png|Old Colors
+ranger icon 1.png|Old Design
+</gallery>
+|title     = {{PAGENAME}}
+|tier      = 4
+|previous  = [[File:Assassin icon new.png|50px|link=Assassin]]
+|next      = None
+|barrel    = [[Cannons|Cannon]] (1)
+|id        = 22}}
+Ranger is a Tier 4 tank in Diep.io. It upgrades from [[Assassin]] at level 45.
+
+== Design ==
+The barrel is the same as [[Assassin]], with a small trapezoid base overlapping the barrel.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Field of View
+|HiddenStat2       = 
+|HiddenStat3       = 
+|HiddenStat4       = 
+|HiddenStat1Val    = ▲▲▲
+|HiddenStat2Val    = 
+|HiddenStat3Val    = 
+|HiddenStat4Val    = 
+}}
+Upgrading from the Assassin to the Ranger only increases the player's Field of View. Barring the [[Mothership (Tank)|Mothership]] (and the [[Predator]], situationally), this tank has the largest Field of View of any tank in the game.
+
+Stats: All 8 upgradable stats are the same with [[Assassin]].
+
+== Strategy ==
+*<b>Strong Against:</b> Distant tanks, low DPS tanks, slow tanks, [[Destroyer]] branch tanks, far [[Drone]] branch tanks, unsuspecting tanks.
+*<b>Weak Against:</b> High speed tanks, high DPS tanks (spammers), near Drone branch tank, rammer tanks.
+
+=== As the Ranger ===
+* What separates the Ranger from all other types of tanks is its enormous field of view. This advantage guarantees that the Ranger will always see any tank before others see it (except the invisible [[Stalker]], [[Manager]] or [[Landmine]], or the [[Predator]] when zoomed out.). Hence, this advantage should be  used to its full extent to gain the upper hand against enemies. The Ranger is a tank that is better for players with good aim, as one will be required to flank tanks and use their FoV to go after helpless/unsuspecting victims. The Ranger is also slow and somewhat clumsy, however, so the player should make sure to attack tanks only when they are sure that you will kill it before it can charge them, and they are far enough away to kill them before getting mowed down by retaliatory [[Bullet]] storms. The player should make sure to always travel diagonally or horizontally rather than vertically, or they'll lose the advantage of their huge FoV. The player's goal as the Ranger is to use their high FoV to their advantage and stay away from rammers, Stalkers, and High DPS tanks.
+*To avoid bullet storms from bullet-spammer tanks, the player should not have Auto-Fire on unless they are firing at an important target or attempting to clear a [[Traps|Trap]] nest, or they should "shoot and scoot" (fire a few rounds and move to a different location so bullets miss).
+* Aim is particularly important when using the Ranger, as distant targets will have a longer travel time. Bullet Speed is a must to take full advantage of the Ranger's FoV by allowing bullets to travel faster and farther. One must also be careful to account for the bullet travel time, and shoot where an enemy will likely be in a second. If one misses, most undistracted tanks can easily retreat while parrying with their weapons.
+**Aim slightly ahead of the player as Ranger bullets are so fast they are hard to dodge to "lead" the tanks.
+* A possible general strategy for FFA is simply avoiding other players at all costs and only shooting them when the player is sure that they are outside of the enemy's FoV. This is especially useful when trying to kill players who are busy fighting <i>another</i> player. If they catch/see the player, disengage and continue using the strategy elsewhere. A few things to keep in mind if the player is using this strategy are that you should make sure to <i>never</i> use the strategy in a bullet storm and stay away from [[Assassin|Assassins]] and other high FoV tanks. Remember to have high Bullet Speed and Movement Speed so that you can catch enemies off guard and easily get out of sticky situations. 
+* A very different strategy that would be better used in [[Domination]], [[2 Teams]] and [[4 Teams]] is to play with a mindset centered around a specific build. In these game modes, Bullet Speed, Bullet Penetration, and Bullet Damage are key, but the player doesn't need to worry about Health [[stats]], Movement Speed, or Reload because their teammates can defend them and they can see enemies fast enough to get away from them relatively easily. 
+* Some tanks that the player can easily take down are drone tanks, which shouldn’t be a problem as they need to be close to the player to be able to exploit the full power of their drones (Although the player ought to be wary of Managers due to their invisibility). Destroyer classes can also be easy kills, but the player should make sure they don't get too close to them as they will become a dangerous threat. [[Trapper|Trappers]] are also usually very easy to take down. There are also tanks which the player should stay away from and/or take caution of and should prepare for a challenging battle/fight when engaged with. Tanks with an <i>extremely</i> high chance of killing the Ranger include [[Triple Twin|Triple Twins]], [[Fighter|Fighters]], [[Booster|Boosters]], [[Gunner|Gunners]], Stalkers, and Bullet Spammers such as the [[Triplet]]. The player should also exercise caution near [[Machine Gun|Machine Guns]], [[Twin Flank|Twin Flanks]], and [[Auto Trapper|Auto Trappers]] because these tanks can potentially overwhelm you with enough Bullet Speed/Reload. 
+* If attacked by a ramming Booster, the player should retreat away, using their recoil to add speed. The Booster will weave around the player's bullets, in a zig-zag path, growing nearer and nearer. It is crucial to hit the booster with as many bullets as possible, using auto-fire. If they are driven off, the player should not follow them, hoping to kill them. Their health regenerates fast, and even in a low health state, they can still kill the player. The same strategy goes for all rammers. 
+* A farming strategy that a Ranger player can try in FFA, Teams, or [[Maze]] is to simply scope down [[Pentagon|Pentagons]] and possibly any other players from the boundaries of the [[Pentagon Nest]]. Advantages include the Ranger's distance from [[Crashers]] and time to escape from any enemies. If that's the case, the player should either retreat into or away from the nest, depending on where the enemy attacks from. 
+
+=== Against the Ranger ===
+* As mentioned earlier, the Ranger has the highest FoV radius out of all the tanks in the game. There is no reason not to be paranoid when a Ranger shows up on the leaderboard. This is important to remember when playing as a slow tank, especially if the player has low reload and penetration. If the player is a Predator and they encounter a Ranger, they should use their zoom ability whilst simultaneously moving away to dodge the bullet (using shift is recommended). Then, aim at the Ranger whilst moving backward. The recoil of the player's projectiles will add recoil and increase the player's chances of escaping, and the player's projectiles might even hit and kill the Ranger, or at least drive it away.
+* Although the Ranger has a large FOV, fast-moving melee tanks can usually take this tank out, due to its low reload rate and movement speed.
+* Bullet spamming tanks like the [[Sprayer]] or the Triplet can easily destroy this tank (once the player gets close enough to the enemy Ranger to attack) since its high reload speed can overwhelm the Ranger. The player can also dodge the Ranger's bullets using its recoil.
+* Being aware of this tank's presence is an effective way of countering it; if one suspects that a Ranger is firing at them, then shoot at the direction the bullet came from.
+*Once aware of the Ranger's presence a Factory can constantly tank its bullets while moving at full speed in the tank's direction.
+
+== History ==
+*From 1st June 2016 (when Ranger was added) to 6th June 2016, its design used to be the same as [[Assassin|Assassin's]].
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://youtu.be/G1Q52PpPg50 1.48m by JB Colombia]
+* 2 Teams: [https://imgur.com/h2LmesZ 2.27m by Aspect]
+* 4 Teams: [https://imgur.com/4f9WBX2 2.23m by Unnamed Sniper]
+* Maze: [https://imgur.com/JsnpEtg 682k by Mipha]
+
+=== Mobile ===
+
+* FFA: 502.9k by Esko
+* 2 Teams: 1.01m by buh
+* 4 Teams: 1.14m by ZookinG
+* Maze: -
+
+== Trivia ==
+*The Ranger has the second-highest field of vision out of all Tanks when looking in one direction (the first is the [[Predator]] when zooming).
+*A Ranger can one-shot kill a tank under level 5 or 6 if the Ranger has high bullet damage.
+
+== Gallery ==
+<gallery>
+File:Ranger'sFOV.png|The Ranger's FOV
+File:SandboxRanger.png|The Ranger in Sandbox
+RangerDeathScreen.png|The death screen when you're killed as a Ranger.
+ranger icon new 1.png|Old design, new colors
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Ranger
+|es     = Ranger
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Ranger
+|pt-br  =
+|ru     = Ranger
+|sv     =
+|tr     =
+|vi     = Ranger
+|zh     = Ranger
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

@@ -1,0 +1,137 @@
+= Smasher =
+
+{{Infobox
+|image     = 
+<gallery>
+smasher icon 3.png|New Colors
+smasher icon 2.png|Old Colors
+smasher icon 1.png|Before Landmine Redesign
+</gallery>
+|tier      = 3
+|previous  = [[File:Tank icon new.png|50px|link=Tank]]
+|next      = [[File:Landmine icon new.png|50px|link=Landmine]][[File:Auto smasher icon new.png|50px|link=Auto Smasher]][[File:Spike icon new.png|50px|link=Spike]][[File:mega smasher icon new removed.png|50px|link=Mega Smasher]]<ref>Removed upgrade option. Removed upgrade options and removed tanks are always shown by a gray icon background.</ref>
+|barrel    =
+|id        = 36
+}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Tank]] at level 30 and upgrades to the [[Landmine]], [[Auto Smasher]], [[Spike]], and formerly [[Mega Smasher]] at level 45.
+
+== Design ==
+The Smasher features a circular body placed on a black hexagon, like a [[Dominator]] except with no [[Barrels]] or [[Launchers]], and much smaller. Unlike the majority of classes, the Smasher has no Barrels or weapons of any kind, instead, it uses itself as its weapon. The black hexagon automatically spins.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = N/A
+|BulletPenetration = N/A
+|BulletDamage      = N/A
+|Reload            = N/A
+|MovementSpeed     = —
+|HiddenStat1       = Field of View
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}Without a Barrel, the Smasher has no ranged capabilities; therefore, its only means of damage is to melee or smash into other tanks, hence its name, Smasher. Since the tank can only fight by ramming, any upgrades which directly affect [[Bullets]] will be removed as they have no effect on the current tank, and any upgrade points spent on those upgrades will be returned to the player once the tank has become a Smasher, which by then the only upgrades available are Health Regeneration, Max Health, Body Damage, and Movement Speed, each which can be applied a maximum of 10 upgrade points. To improve its melee capabilities, the Smasher has a faster Movement Speed (maximum 10 points comparing to normal 7, as well as a greater field of vision than the [[Tank]]. At Level 45, it can upgrade into the Landmine that can turn invisible, the Auto Smasher, which gains an uncontrollable [[Auto Turret]], or the Spike, which has greater base Body Damage. As the smasher, [[Spike]] and/or [[Landmine]] maxing out health, body damage and speed is highly suited as health regeneration is not as necessary/vital to harnessing the full advantage of melee capabilities.
+
+== Strategy ==
+*<b>Strong Against:</b> Slow tanks, tanks with a low rate of fire, other non-Smasher rammer classes.
+*<b>Weak Against:</b> Faster tanks, [[Destroyer]] branch tanks, tanks with high Reload and focused fire (like the [[Triplet]], for example).
+
+=== As the Smasher ===
+*Avoid tanks with drones as their ammo as their high damage can easily kill even maxed-out health Smashers. If the player is experienced, they can lure the drones away and return while the Overseer/Overlord has its drones away from itself. However, most Overseer/Overlords know better than to do so, so the player should flee if their attempt fails. Tanks with a high RoF(Rate of Fire) must be avoided too as their [[Bullet]] knockback will keep the Smasher at bay and potentially drain health. Avoid [[Trapper]]s, as they can drain the player's health.
+*Engaging [[Fighter]]s or [[Booster]]s are very dangerous, as they can easily outrun you and kill you with bullets.
+*Player risk getting killed ramming another Smasher if they both are at max health and have Max Health and Body Damage at the same level. Health Regeneration matters in this case as it will regenerate a tiny bit while Smashers are in contact.
+*Avoid smashing into entities with big health bars like the Alpha Pentagons and the Bosses unless they have just a little health left.
+*Attack cornered or unaware tanks.
+*Destroyers are faster than the Smasher if they use their gun’s recoil, so it is best to catch them off guard.
+*Farming, especially in the [[Pentagon Nest]], is perhaps the safest and quickest way to level up until the player reaches Level 45, as few tanks beyond low-Level ones are especially susceptible to this class. Beware, however, as a swarm of [[Crashers]] can do greatly reduced its health if it is too low.
+*It is useful to upgrade all Bullet [[Stats]] and farm until Level 30, run away from the crowded areas to a space, upgrade to Smasher, and all Bullets Stats will transfer to skill points, so that the player can decide again which Stats should be fit for their rammer build.
+**If you aim to do so, you can also max out Bullet Stats and farm until Level 45 as farming as the Smasher is relatively difficult.
+*Try and locate opponents with your higher FoV, and then suddenly run onto their screen from the top or bottom. This will give you the element of surprise.
+
+=== Against the Smasher ===
+*Tanks with a high DPS rate can prevent the Smasher from attacking the player since the high damage and bullet knockback will slow down the Smasher; allowing the defending player to flee.
+*Overseer branch tanks are effective against the Smasher since the drones can deal a very high amount of damage; it is best to keep the player’s drones close to themselves in case a Smasher attacks.
+*One of the best counters against the Smasher is to be aware of its presence. If one quickly reacts to the presence of this tank, then it will almost always fail to deal damage and kill the player.
+*Trappers are also extremely effective as the Smasher has no way to knock back the traps without taking damage.
+*Destroyer class tanks are also effective as their bullets can do massive damage and kill Smashers in just two or three hits.
+
+== [[Achievements]] ==
+{{SideBox|
+*<b>Where did my cannon go?</b> — Upgrade to Smasher|
+{{Achievement
+|Color        = #9C69FB
+|Name         = Where did my cannon go?
+|Description  = Upgrade to Smasher}}
+}}
+
+== History ==
+*The developer previously wanted the Smasher to be a secret tank branch, however, many have already found it and it has been revealed in the [[Changelog]] after everyone realized its existence.
+*This used to decrease knockback, but that was removed from every Smasher-branch tank in the August 7th update.
+*Once the upgrade is achieved, the skill upgrade screen is changed so that the Bullet-related upgrade bars would read “Upgrade to Windows 10”. This is probably a nod to Microsoft’s shady upgrade tactics and the alleged uselessness of the operating system. It may also be because that was the last day to upgrade to Windows 10 for free. However, it has been removed in the July 31st Update.
+*The Smasher used to upgrade to [[Mega Smasher]] but was removed in the August 7th update because its only improvement from Smasher was even more resistance to knockback, which was removed from the Smashers in that update.
+*As of 7th of August, when this class has been chosen by the player, the Bullet stats completely disappear. The remaining stats have a bigger max level (10 points instead of 7).
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/EwmGtqV 1.11m by Elephant giggle]
+* 2 Teams: [https://imgur.com/ynigGYc 3.02m by Sonic]
+* 4 Teams: [https://imgur.com/iFrCPbm 1.64m by Lider]
+* Maze: [https://imgur.com/pxsC7kA 889k by Taco]
+
+=== Mobile ===
+
+* FFA: 1.66m by HZ6
+* 2 Teams: 583.8 by Buh
+* 4 Teams: 913.5k by Pianzage
+* Maze: -
+
+== Trivia ==
+[[File:Auto smasher ingame icon upscale.png|thumb|A high-quality in-game Auto Smasher icon acquired by manipulating the "diep-native" canvas element. Examining the picture up close around the Auto Turret, one may notice that the shell is rotated counterclockwise with respect to the Auto Turret.]]
+*It is the first pure melee class, having nothing but Body Damage to defend itself.
+*It, alongside the [[Auto Trapper]], [[Battleship]], and [[Glider]] are the only tanks to have a dark blue background on their icon. It is also the only Tier 3 tank to have a dark blue background on the icon.
+*A Level 45 Smasher with fully upgraded Max Health and Body Damage has 338 HP.
+*This is one of the seven tanks that automatically has auto spin activated, the others being the [[Landmine]], [[Mega Smasher]]<sup>(removed)</sup>, [[Spike]], [[Auto Smasher]], [[Auto 3]] and [[Auto 5]].
+*If one accidentally upgrades stat points to one of the Bullet [[Stats]], upon upgrading to Smasher the stats will become stat points again.
+*The Smasher is one of only two tanks to skip a [[Tiers|Tier]] to be upgraded (Level 1 - 30). The other is the [[Sprayer]] (Level 15 - 45).
+*After the new color scheme [[Changelog|update]], the Smasher was rotated by about 30 degrees clockwise upon upgrading.
+*The old color scheme borders have the same color as the shell that the Smasher branch features.
+*On the legacy mobile version, any tank branching off from the Smasher including itself once upgraded to, the shoot button would disappear. However, if one is to touch the button as if it is there, the [[minimap]] showing the direction of the player would still move despite the button being invisible.
+*The edge of Smasher's shell does not line up with its body. At level 1 scale, where the radius of the tank body is 50 units (50 units equaling the side length of one background grid tile) the distance from the center of the body to the shell's edge is approximately 49.796 units.
+*Smasher's shell is rotated slightly counterclockwise with respect to where the front of the tank should be in its upgrade icon and the class tree. This can be easily seen in the [[Auto Smasher]] upgrade icon, shown to the right.
+**[[Landmine]] and [[Spike]] are also affected by this.
+
+== Gallery ==
+<gallery>
+all smasher upgrades are terrible.png|A visualization showing how every Smasher shell is not properly aligned with what "forward" should be. Auto Smasher's auto turret is facing the rear to show exactly where the direction of "back" is. Landmine and Spike have guides to show exactly where the lines of symmetry are to showcase how they are not aligned whatsoever.
+</gallery>
+
+==Footnotes==
+<references />
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Smasher
+|es     = Smasher
+|fr     = Smasher
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Smasher
+|pt-br  =
+|ro     =
+|ru     = Smasher
+|sv     = Smasher
+|tr     =
+|vi     = Smasher
+|zh     = Smasher
+}}
+[[Category:Diep.io]]

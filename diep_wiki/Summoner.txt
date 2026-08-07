@@ -1,0 +1,119 @@
+= Summoner =
+
+{{Boss
+|image      = <gallery>
+summoner boss 2.png|New Colors
+summoner boss 1.png|Old Colors
+</gallery>
+|weapons    = [[Spawners]] (4)
+|attacks    = [[Square]]s (28)
+|xp         = 30,000
+|hp         = 3,000
+|bd         =40
+}}{{For|the [[Bosses|Boss]]' [[Polygon]] counterpart|Square}}
+The {{PA}} is an AI-controlled [[Bosses|Boss]] in [[Diep.io]] added on 19th August 2016. It shares similarities with the [[Fallen Overlord]], but has a Yellow [[Square]] body and peach-colored Square [[Drones]] as its spawn. Excluding [[Maze]], it has a 1/5 chance to spawn after every 45 minutes has elapsed since the server's opening if a Boss is not yet present. It is similar to the [[Necromancer]] by shape only, as it has 4 functional [[Spawners]] to spawn Drones for itself, and neither does the Summoner nor its Drones take a Square as one of its own when bumping into one.
+
+== Design ==
+It features a large yellow Square as its body of which it is based on, its size being slightly smaller than a [[Dominator]]. A Spawner is placed on each side, which spawn peach-colored Square Drones. The entity as a whole appears to resemble a cross between Necromancer's body shape and the number of Spawners [[Overlord]] has, but much larger.
+
+== Technical ==
+=== Base Stats ===
+The Summoner has 3,000 HP, buttressed with 40 HP in [[Stats|Body Damage]] and standard [[Stats|Health Regen]], recovering 0.1% its max HP or 3 HP per second. It has rather low [[Stats|Movement Speed]], moving at 2.5 tiles per second, but is somewhat susceptible to its own recoil and outside sources, however negligible. It has a FoV 58 tiles in radius—that of a [[Levels|level]] 45 [[Ranger]]. Upon destruction, it grants 30,000 [[Levels|XP]]/[[Scoreboard|Score]] to the player that landed the finishing blow—more than enough to automatically raise any player's current level to shoot up to level 45 upon killing it. 
+
+=== Spawners ===
+Each of the Summoner's four Spawners can spawn Square Drones at a rate of up to 8 per second with a carrying capacity of 7, totaling to a number of 28 Square Drones present at any given time.
+
+==== Square Drones ====
+Each Square drone has 25 HP ([[Stats#Bullet Penetration|100 with mathematical health increase]]), buttressed with 3.92 HP in Drone Damage. Each Square drone individually has a 39-tile radius FoV—that of a level 15 [[Sniper]]. In their "idle" state, they follow to circle around the Summoner and are neutral to players below level 15. If the player is above level 14 or provokes it by damage, the Square drone will chase the target player until they are no longer present within the Summoner's FoV, or after 30 seconds have elapsed since aggravation. In both cases, the Square drone will retarget to the closest source of aggravation or else return back to its idle behavior. The speed at which they travel is relatively fast, going at ~16.35 tiles per second.<ref>To put it to perspective, it's ever so slightly faster than a level 7 tank with 5 points in Movement Speed without any propulsion.</ref> The Square drones upon destruction grant no XP/Score whatsoever, as they count as a form of ammunition by the game. When the Summoner dies, the Square drones alongside it will vanish.
+
+== Behavior ==
+
+=== Passive ===
+On spawn, the Summoner will take the shortest route to the border of the arena, where it will then circle around the arena by a predetermined path either clockwise or counterclockwise. The Boss itself passively spins either clockwise or counterclockwise and completes one full rotation every 25 seconds. The Summoner is neutral to ''all'' players unless provoked by damage, in which will set off its Aggressive behavior.
+
+=== Aggressive ===
+When the Summoner is provoked, the player that damaged it will be marked as a target by only a frame for any of its Square Drones currently alive to chase after if not yet already locked on to one.
+
+=== Miscellaneous ===
+The Summoner is not targeted by [[Base Drones]] in a team [[Game Modes|Game Mode]] unless it provokes them, the Summoner also ignores them entirely even while being attacked. the [[Base]] itself does not inflict damage as it passes through.
+
+== Notifications ==
+Given to all players on the server, in which a gray [[Notifications|Notification]] will appear above their screen:
+
+* "''The Summoner has spawned!''" — On spawn
+* "''The Summoner has been defeated by (x)!''" — On death
+
+Given to a single player on the server, in which a gray notification will appear above their screen:
+
+* "''You've killed Summoner''" — To the player that killed it
+
+== Strategy ==
+*<b>Strong against:</b> Low-level tanks, low DPS tanks, ramming tanks, some focus-fire tanks.
+*<b>Weak against:</b> High DPS, [[Destroyer]] classes ([[Hybrid]], [[Annihilator]]), [[Smasher]] classes ([[Landmine]], [[Spike]]), [[Overseer]] classes, [[Penta Shot]]s, [[Spread Shot]]s, [[Factory|Factories]], [[Triplet]]s, and potentially [[Octo Tank]]s.
+
+=== As the Summoner ===
+TBA
+
+=== Against an AI-controlled Summoner ===
+*The Square drones will hunt down any tank until said tank is no longer present within Summoner's FoV. An effective strategy is to shoot at it while the drones are distracted by another player, similar to how a Dominator can be won over by being focused on one while others shoot.
+*In Game Modes like [[2 Teams]] and [[4 Teams]], you can work together with others to more easily take out the Summoner.
+*Although most high DPS classes work against the Summoner, focus-fire classes on the lower end like [[Streamliner]], [[Twin]], [[Machine Gun]], etc., will not work because there are so many drones that they tend to surround the tank rather than all come in one direction.
+*Spread Shot is the most effective class against the Summoner. The smaller bullets take out most of the drones while the larger one hits the Boss. However, this can take some time and is not recommended in FFA as other tanks may interfere with the player when fighting the Boss. The Penta Shot works similarly with this tactic too.
+**Due to their nature of being spread spammer, it will take a very long time to defeat a Summoner as the continuous swarm of drone can overwhelm the player. 
+*A Landmine or Spike can kill it, but it will take time. The strategy is to lightly ram it and quickly move away, as the player will lose more health than it will. The player will regenerate health, which the Boss won’t be able to do nearly as quickly. Repeat the ramming process until it is dead. (This is not recommended as other tanks nearby can attack the player at low health. It is also risky if the player rams without quickly moving away and could potentially die). Additionally, it is worth noting that if the player is caught by its drones, the drones can keep pushing the player into colliding with the Boss, effectively condemning the player to death unless they have a teammate killing the Summoner’s drones.
+*Use [[Ranger]] or [[Predator]] to hit it without worrying about the Square drones. Sufficient distance between the Boss and the player is crucial.
+*A Destroyer branch tank may be effective against the Summoner due to its high-damage bullets being capable of penetrating through the Boss' drones.
+*Use Overlord with build 0/0/0/7/7/7/5/7 to provoke the Summoner and to attack it, and when its drones are coming for the player, they ought to run away as fast as possible.
+*The Factory is effective against the Summoner with enough proper use of skill. The player can easily use their [[Drones|Minions]] to create a bullet wall to punch through the Summoner’s cloud of drones.
+
+=== Against a player-controlled Summoner ===
+*When someone is controlling it, if you can't fight the Summoner and it's not targeting you, it's best to just ignore or avoid it.
+
+== Trivia ==
+*It is the second AI-controlled Boss added to the game; first being the [[Guardian]].
+*An hour after being added to the game, the developer created a {{PL|https://www.reddit.com/r/Diepio/comments/4ymzeo/taking_suggestion_for_names_for_the_new_bosses/|thread}} for players to suggest the name of this new Boss.
+**It would then later be named "Summoner."
+***Other prominent name suggestions which never made it were "Lich", "Necrolord", "Alpha Square" and, jokingly, "Anokuu."
+*The Summoner's max Drone capacity is equivalent to a Necromancer with 3 points invested in [[Stats|Drone Count]].
+*If the Summoner were to lose all its drones at once, it would take just 1.4 seconds to replenish all the drones it had lost.
+*The Summoner shares the same color to not just yellow Squares but also neutral Dominators, Arena Closers, and both Trap and Bullet projectiles fired from the [[Defender]].
+**The color can be reproduced using hex code #ffe869
+*The Summoner as a whole can safely fit inside the body of a Dominator.
+*Despite Summoner and Fallen Overlord being virtually identical to each other (apart from their appearances and other small differences), the Summoner is the harder Boss to fight against as its Square drones are slightly larger and take up more area, making it more difficult for one to effectively land hits on the body through its drone cloud.
+*The Summoner is likely based on the [[Necromancer]], as it uses Necromancer drones (undead Squares) and looks like a Square with [[Spawners]].
+** But in various Fanon stories, it is said that the Summoner actually protects the [[Square|Squares]] '''from''' [[Necromancer]]s, and Summoner's drones aren't undead Squares.
+
+== Gallery ==
+<gallery>
+SquareBoss2.png|A [[Tri-Angle]] getting chased not only by Summoner's drones but also Guardian's if looked closely within the cloud
+Summoner.png|A [[Smasher]] slowly defeating a Summoner
+Summoner notification.png|Summoner's spawn notification
+Screen Shot 2016-08-20 at 12.07.15 PM.png|A red team attacking the Summoner
+Summoner transparent.png|A Summoner
+Summoner drone cloud.jpg|The drone “cloud” of a Summoner
+Summoner.JPG|A Summoner in Sandbox
+SummonerScreenie1.png|A neutral Summoner next to a Tank below level 15 (New Colors)
+Summoner in sandbox.jpg| Summoner in Sandbox attacking  an invincible [[Booster]]
+SummonerScreenie2.png|Closeup of Summoner without Drones
+SummonerScreenie3.png|A Summoner (New Colors)
+</gallery>
+
+{{BossNav|polygon}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Summoner
+|fr     = Summoner
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Summoner
+|pt-br  =
+|ru     = Summoner
+|sv     =
+|tr     = Summoner
+|vi     = Summoner
+|zh     = Summoner
+}}
+[[Category:Diep.io]]

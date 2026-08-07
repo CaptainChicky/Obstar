@@ -1,0 +1,4 @@
+= Red Bullets =
+
+#REDIRECT [[Bullets]]
+[[Category:Redirect]]

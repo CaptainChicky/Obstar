@@ -1,0 +1,29 @@
+= Draft:Arras:Arms Race/Leviathan =
+
+{{Stub}}
+
+
+The '''Leviathan''' is a Tier 5 Tank in {{2|Arras.io}} exclusive to Arms Race.{{Infobox|title=Leviathan|image=ArrasLeviathan(H).png|tier=5|key=|previous={{2|Rocketeer}}<br>Hurler|barrel=1 Leviathan Rocket Launcher}}
+==Design==
+it looks like a regular Rocketeer but with a slightly wider barrel. It fires bullets that are larger than regular rockets.  
+
+==Technical==
+The Leviathan's rocket is one of the strongest projectiles fired from a tank in-game. The rocket is slow on fire, but it can accelerate with time and one-shot almost ALL tanks (including the Smasher branch if they are in low health). As the cost, its reload is pretty slow.   
+
+==Strategy==
+
+* '''Strong against:'''  Flank Guard branch tanks, Trappers, tanks with moderate or low DPS, other slow tanks
+* '''Weak against:''' Director branch tanks, Snipers, fast tanks and rammers, other tanks that are able to side attack
+
+=== As the Leviathan ===
+
+* If in FFA, you need to put a lot of points into movement speed. This enhances its rate of dodging drones, because using this tank against Director branch tanks are basically pointless.
+* Leviathan is very effective in Team modes, whether in TDM, Mothership or Assault. The rocket can easily strip enemy's defense, and they are not likely to recognize its direction if each team has large amounts of players.
+
+=== Against the Leviathan ===
+
+* Since the rocket is extremely powerful, try to dodge it instead of destroying it with bullets.
+* Leviathan doesn't have weapon to defense itself, try attacking from its sides if you can.
+* If you're a rammer, keep approaching it and force it to fire, then attack it before it shoots another rocket.
+* If you do not want to be a rammer but want to survive a rocket, put 9 points on max health and 9 points on body damage.
+{{ArrasTankNavAR}}

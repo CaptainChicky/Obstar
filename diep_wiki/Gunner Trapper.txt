@@ -1,0 +1,161 @@
+= Gunner Trapper =
+
+{{Infobox
+|title    = Gunner Trapper
+|image    = <gallery>
+gunner trapper icon 5.png|Current
+gunner trapper icon 4.png|Old Borders
+gunner trapper icon 3.png|With Auto Tank
+gunner trapper icon 2.png|Old Design
+gunner trapper icon 1.png|Nameless
+</gallery>
+|tier     = 4
+|previous = [[File:Trapper icon new.png|50px|link=Trapper]][[File:Gunner icon new.png|50px|link=Gunner]]
+|next     = None
+|barrel   = [[Cannons]] (2)<br/>[[Launcher]] (1)
+|id       = 32
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Trapper]] and [[Gunner]] at level 45.
+
+== Design ==
+The Gunner Trapper features a circular base. It has only two Gunner barrels on the front (but with much more Bullet Penetration than Gunners) in exchange for a slightly larger [[Traps|Trap]] [[Launcher]] on the back, which has a slower base reload.
+
+== Technical ==
+{{BaseStats
+|PrevClass          = Gunner’s Bullets
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = +
+|BulletDamage       = —
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        =Recoil
+|HiddenStat2        =
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     = ▲▲
+|HiddenStat2Val     =
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+{{BaseStats
+|PrevClass          = Trapper’s Trap Launcher
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = ▲
+|BulletDamage       = —
+|Reload             = ▼▼
+|MovementSpeed      = —
+|HiddenStat1        = Recoil
+|HiddenStat2        = ▲▲
+|HiddenStat3        =Projectile Size
+|HiddenStat4        =▲
+|HiddenStat1Val     =
+|HiddenStat2Val     =
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+The Gunner Trapper has two [[Barrels]] and one Launcher giving it access to both [[Bullets]] and Traps. The Barrels have a decent Reload while its Launcher has a lower Reload. The Barrels are also slightly smaller than the Gunner’s barrels. Its Bullets have a great Bullet Speed, weak Bullet Damage, and normal Bullet Penetration. Its Traps are slightly bigger and have slightly more health than Trapper’s, [[Tri-Trapper|Tri-Trapper’s]] and [[Overtrapper|Overtrapper’s]] but have the same damage as its siblings’.
+
+Stats: 
+
+* Traps:
+** Bullet Penetration: 3.6 (+2.7 for each point in Bullet Penetration)
+** Reload time: 45t (-3t for the 1st, 3rd, 4th, 5th and 7th point, -4t for the 2nd and -2t for the 6th point in Reload).
+** The rest are the same with [[Trapper]].
+* Bullets: 
+** Bullet Damage: 3.5 (+1.5 for each point in Bullet Damage)
+** The rest are the same with [[Tank]].
+
+== Strategy ==
+*<b>Strong against:</b> Body Damage based tanks, [[Gunner]]s, [[Auto Gunner]]s, [[Drones|Drone]] Classes (new users / bad build tanks), slow tanks with low Penetration, low Reload tanks, tanks who aren’t aware of its high penetration,  [[Auto Turrets|Auto Tanks]], [[Penta Shot]]s and [[Spread Shot]]s (if used correctly).
+
+*<b>Weak against:</b> Bullet spammers, the [[Destroyer]] branch, high DPS tanks like the [[Triplet]] and [[Sprayer]], tanks with good Penetration, fast tanks, skilled Overseer Classes, other [[Trapper]] Classes, [[Bosses]].
+
+=== As the Gunner Trapper ===
+* This tank is very versatile—the combination of Traps and Bullets should scare off most targets. Even though the bullets are small and look weak, they do a surprisingly high amount of damage, all while having good penetration. Point the mouse at the target (the guns are on the front).
+**If the target is one of the Gunner Trapper’s weaknesses, turn around and point the Launcher at it (unless the target is fast, in which case point the guns at it and run while using their recoil and letting the Traps fall behind the pursuer).
+**Skilled Drone users could weave their Drones through the barrage. If chased by a low reload Overlord / Overseer, point the launcher at the enemy’s drones, while escaping or attacking.
+**Tanks with Cannons can break right through your barrage so avoid those two at all costs.
+**Trying to fight another Trapper Class will stall both tanks out, so <b>don’t</b>. If Sniper bullets appear, turn your Launcher towards them. Try not to fight Bosses that have Drones with the Gunner Trapper, and it can be swarmed with the Boss’ Drones, or stalled out with Traps. Still, low-level classes are ideal enemies to chase off.
+* If used correctly, the Gunner Trapper (and other trapper classes) can be a major threat to the [[Penta Shot]] and the [[Spread Shot]]. The Gunner Trapper can build barricades with its traps from which it can then turn around and shoot against the target; its traps being strong enough to protect it from bullet damage for certain periods.
+* With enough timing the player can run the cursor through the body of the tank very fast, over and over, so that the Gunner Trapper turns one way and then the other, deploying Traps and Bullets in one direction while missing as little bullets as possible. They must be careful though. This may not be very effective against bullet spammers, against them it is best to keep shooting and running away, you should avoid them unless they are a Penta Shot or a Spread Shot, in which case the strategy above may be useful. 
+* The Gunner Trapper’s can “ghost” through the enemy’s bullets, meaning that the tank’s projectiles are small enough to go right through the enemy’s stream without taking enough collisions to disappear.
+** Note that the Gunner Trapper’s bullet “ghosting” is a two-edged sword, as even though the Gunner Trapper’s bullets have a much higher chance to hit, the enemy’s bullets also have a higher chance to reach the Gunner Trapper, thus; dodging is also a recommended strategy.
+* Though strong enough to hold against 1-2 enemy tanks, the traps of the Gunner Trapper can’t stave off a full-on assault. If such a scenario occurs, retreat (to teammates or base if playing the right mode). 
+*When upgrading to Gunner Trapper, it may be effective to use the [[Machine Gun]] branch rather than the [[Sniper]] branch because the Machine Gun has much more DPS, however the Gunner has rather low damage, so wait to 45 as Machine Gun if you take this path.
+* The Gunner Trapper is good at supplementing other trappers by patching up holes, reinforcing areas under heavy fire, and providing more offensive fire.
+* The Gunner Trapper, although situationally weak to an overseer-type class, can have an excellent matchup with the correct tactics. If you see an overseer, begin building a wall of spikes, then weave through them as they send their drones at you. If your wall is tight enough, and you dodge correctly, you should be able to get free damage on them. Don't shoot the drones unless they make it through the wall, instead focus on putting the overseer on the defensive.
+* As the Gunner Trapper, there is an answer to battling a destroyer-type class. If you've invested your points correctly, you should have enough movement speed and bullet speed to evade the cannon shots while outputting damage. Remember that if they're building glass cannon, they'll be susceptible damage. The tactic is to shake your mouse in their general direction, at a safe distance of course, while strafing around their bullets. Eventually, enough of your tiny, fast, painful pellets will connect to wound or even kill the Annihilator that challenged you.
+* In the Maze gamemode, the Gunner Trapper can easily defeat high DPS tanks such as Triplets or Sprayers by hiding around an island (A small segment of wall, preferably 1x1, that's alone). As the DPS tries to shoot you, hide behind the island and stay immobile, firing in their path. This creates a nothing-lose scenario for the DPS, as your higher penetration is able to damage them as they round the corners. Retreat, rinse, repeat. If they decide to keep pushing you, you only whittle their health away.
+* Another tactic for taking care of DPS tanks, which is riskier but doesn't involve walls so it can be used on any gamemode, is to treat them like a destroyer-type class and use the tactic detailed above. Unlike the cannon shooters, though, you'll be in serious danger of taking damage, so retreat into your accumulating trap wall as you spray and prey. Use everything at your disposal: Your range, your movement, your damage, your defense, and you should pick up the kill. This tactic involves firing off-screen, usually, so take note of where their bullets are originating and where their source is traveling, to get a better idea of where to spray.
+
+=== Against the Gunner Trapper ===
+* A tank with high DPS and reload like a [[Triplet]] or [[Sprayer]] is effective against the Gunner Trapper since the Gunner bullets penetration is lower compared to other bullets. The massive amount of bullets can overwhelm the Gunner Trapper and any incoming Gunner bullets.
+* [[Overseer]] branch classes are also effective against this tank, assuming that the drone stats are leveled up correctly. The best way to deal some damage to this tank is to send the drones through open holes in the opponent’s trap wall. It would be advised to repel in a different direction, the Gunner Trapper can shoot its powerful Traps into the Drones, killing most of the drones.
+* [[Destroyer]] branch classes are significantly effective against the Gunner Trapper due to the penetration of the huge bullets. All the player has to do is shoot his/her huge bullets at the opponent through their traps, while trying to dodge the Gunner bullets by making use of massive recoil.
+
+== History ==
+*Gunner Trapper used to feature a slightly different design, where the length of the trapezoidal part of the [[Launchers|Launcher]] was the same as Trapper's.
+*During the short time that [[Auto 5]], then known as Auto Tank, upgraded from [[Gunner]], this tank was added as the third upgrade option, giving it an alternative red upgrade icon for a short amount of time.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/x3oxGNh 2.16m by Oblivion]
+* 2 Teams: [https://www.youtube.com/watch?v=USk8G48j4gk 1.64m by Snapwing]
+* 4 Teams: [https://imgur.com/ZM8p7xT 1.63m by Pekmen]
+* Maze: [https://www.youtube.com/watch?v=NStXohiLXaY 1.2m by JB Colombia]
+
+=== Mobile ===
+
+* FFA: 1.04m by Cøld 🥶
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*It was one of the five tanks added on July 18th.
+*When the update it was added in first dropped, it was one of three tanks that didn’t have a name. The [[Mega Trapper]] was named later that day. Still later, this tank was given the name Gunner Trapper, along with its previously unnamed kin the [[Overtrapper]].
+*Its [[Traps]] are medium-sized in comparison to the base [[Trapper|Trapper’s]] small Traps and [[Mega Trapper|Mega Trapper’s]] large ones. Oddly, medium size traps do the same amount of damage as small ones.
+*It is one of the 6 [[tank]]s that have multiple forms of ammunition, having [[Bullets]] & [[Traps]]: the others being the [[Hybrid]] ([[Bullets]] & [[Drones]]); the [[Overtrapper]] ([[Traps]] & [[Drones]]); the [[Auto Trapper]] ([[Traps]] & Auto [[Bullets]]), the [[Auto Gunner]] ([[Bullets]] & Auto [[Bullets]]), the [[Auto Smasher]] (Auto [[Bullets]] & Body Damage); And the [[Factory]] (Auto Bullets, Bullets and Drones).
+*The Gunner-Trapper’s Trap-launcher has the same width as the Mega-Trapper
+*The Gunner Trapper's name reaches outside of its icon.
+
+== Gallery ==
+<gallery>
+Gunnertrapper.jpg|Gunner Trapper in-game
+GunnerTrapperFiring.png|Gunner Trapper firing its weapons
+GunnerandMegaTrapper.png|A Gunner Trapper (right), along with a [[Mega Trapper]] in [[Sandbox]].
+GunnerandTriTrapper.png|A Gunner Trapper (middle), along with [[Tri-Trapper]], in Sandbox.
+Trapper gunner thingy.jpg|A Gunner-Trapper firing alongside a basic Tank
+THEHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH.jpg|A close-up shot on the Gunner Trapper
+gunner trapper icon 3 red.png|A variant of Gunner Trapper's upgrade icon from Gunner when Auto 5, then known as Auto Tank, upgraded from Gunner
+</gallery>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Gunner Trapper
+|es     = Gunner Trapper
+|fr     = Gunner trapper
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Gunner Trapper
+|pt-br  =
+|ro     =
+|ru     = Gunner Trapper
+|sv     =
+|tr     =
+|vi     = Gunner Trapper
+|zh     = Gunner Trapper
+}}
+[[Category:Diep.io]]
+[[Category:Gunner Tanks]]
+[[Category:Trapper Tanks]]

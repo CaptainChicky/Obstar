@@ -1,0 +1,100 @@
+= Mothership (Game Mode) =
+
+{{Removed}}{{Mode
+|title         = Mothership
+|image         = Mother ship game mode.png
+|conditional?  = YES
+|closure       = The opposing team’s Mothership is killed.
+|button        = Mothership MODE Icon UI.png
+|teams         = 2
+|bosses?       = YES
+|specials      = [[Mothership (Tank)|Mothership]]
+}}{{For|the controllable tank|Mothership (Tank)}}
+<b>Mothership</b> is a game mode similar to [[Team Deathmatch]]. The biggest difference is that in each team, a player takes control of a large tank (at Level 140) called the [[Mothership (Tank)|Mothership]]. The Motherships can move freely, using their [[Drones]] to attack the enemy. Just like in [[Domination]], if one of the teams win, the [[Arena Closer]]s will be spawned and wipe out all the players to start a new server. Also, like Domination, the scores gained from polygons are increased, although, in Domination, the score was only doubled instead of tripled.
+
+A game of Mothership usually ends extremely quickly. If the Motherships find each other, they can ram each other and one of them will die in seconds, all dependent on which one had more health and support from its team.
+
+== Map ==
+[[File:2Motherships.png|thumb|What the Mothership Markers looked like.]]
+There are no Bases or Dominators in Mothership, so the Mothership map is identical to the map in [[FFA]].
+
+=== Motherships ===
+[[File:Imgpsh fullsize.png|thumb|208x208px|2 Enemy Motherships attacking each other]]
+There are two Motherships (blue and red), which spawn randomly across the map. The Motherships are not shown on the minimap, but there are triangular arrows pointing to both of them the Red arrow points towards the Red Mothership and the Blue arrow points towards the Blue Mothership. Both of these arrows only appear when the mothership is off-screen, and will fade once the Mothership is on-screen.
+
+The Motherships control [[Drones]], which are constantly coming out of their 16 Barrels. 16 drones are controlled by A.I, while the other 16 drones are controllable by the Mothership.
+
+Both Motherships have 7,000 health. Their health bar is shown on the top right corner of the screen. The contents of the health bars themselves change with the max health of the higher life Mothership. For example, if the Red Mothership has 5.6k health, but the Blue Mothership has 2.8k, the Blue Mothership’s health bar would only show a fraction of the health of the Red Mothership’s total health, even though it’s not at full 7k health.
+
+Each Mothership has the build 1/7/7/7/7/7/7/7, but due to its size and level it moves very slowly, but they do regenerate health very quickly. Their health will go up by hundreds in a few seconds.
+
+=== Spawn ===
+In this game mode, you will spawn in a random location, much like Free For All. When you spawn, you get spawn protection until you move or shoot.
+
+=== Pentagon Nest ===
+The [[Pentagon Nest]] is in the middle of the map as usual, but the [[Polygons]] spawn much faster.
+
+=== [[Map|Minimap]] ===
+The minimap is the same as in Free For All; it will only show you yourself.
+
+== Becoming the Mothership ==
+[[File:MothershipCode.png|thumb|254x254px|<i>The code is the text that says diep.io/#D2023E0FBB3025.</i>]]
+It is very unlikely that you would join the game and become Mothership, so the easiest method was to be the first to join a new Mothership game by playing a Mothership game to the end, and as the arena starts to close, suicide your tank and respawn into the new server as quickly as possible. If this fails, you can try to wait for 5 minutes as it is the time limit a player gets to control the Mothership. Once the 5 minutes is up, suicide your tank and respawn as quickly as possible before someone else on your team respawns before you. An old method involves copying the Mothership server code which is shown on the image to the right (or bottom on mobile), paste the link (code) into your URL bar and then you would hit enter. You would be on one specific server, so play as you would and when the game would end, you would hit enter and if the old game was still going (Arena Closers) then refresh and then hit enter again. You had to do this fast, or else someone would have come before you. Now you would hopefully be a Mothership, and people used to celebrate it because it was the only special tank in the diep.io universe!
+
+== Scoreboard ==
+[[File:Mothership_Scoreboard.png|thumb|The Scoreboard that is shown in the Mothership Gamemode.]]
+Like other gamemodes, the scoreboard is at the top right corner of the screen, although now it functions to show how much health each of the Motherships have, not to show scores.
+
+== Strategies ==
+*Because the Mothership has a metric ton of health, and can regenerate insanely quick, teamwork is an absolute <b>MUST</b> in this game mode.
+*Try to get your Mothership as close to the enemy Mothership - They will often use their drones to all-out attack the opposing Mothership. This can allow for less stress of the opposing mothership Drones killing you quickly.
+*If you have control of the Mothership, try going for the enemy Mothership and once the enemy Mothership is within range, concentrate all of your controllable drones on the Mothership, and once the enemy Mothership has lower health than you (as the Mothership), collide into the enemy Mothership while still hovering your mouse over the enemy Mothership to preserve your health advantage. If you (as the Mothership) still have more health than the enemy Mothership by the time you collide, you will eventually emerge victorious because Body Damage dealt by both Motherships are equal and the one with the better health will win the collision and survive.
+*Do not engage in any action unless you are Level 45. Your shots will be worth more if you have a maxed-out build.
+*A combination of [[Ranger]]s, [[Triplet]]s and other high DPS tanks can allow for easy wrecking and an overload of damage to the Mothership.
+*The [[Destroyer]], [[Annihilator]], and the [[Hybrid]] are effective at dealing damage to the Mothership, as the Mothership’s slow speed and large hitbox allow their projectiles to easily hit the Mothership and the Bullets are relatively damaging.
+*The [[Trapper]] classes can seriously hinder the enemy team by preventing the Mothership from ramming, blocking the enemy fire, impeding enemy movement, and trapping tanks and the Mothership.
+*Another good Strategy is to protect your Mothership as an [[Octo Tank]] and never leave.
+*Running Body Damage is an unrecommended strategy, as you have to ram into the Mothership to do damage, which is a suicidal move, as the Mothership also has extremely high Body Damage and also has a large number of Drones that protect it.
+**Though, you can still help your team by ramming into key targets, such as [[Destroyer]]s and [[Overseer]]s, who can do a lot of damage to the Mothership without taking any in return.
+
+== History ==
+
+* Few hours before the gamemode was added alongside the Mothership tank, the creator/former developer Zeach made a [https://www.reddit.com/r/Diepio/comments/4o6327/hint_on_next_update/ Reddit post showing Mothership's beta design as well as a hint for the update]. The tank is an Octagon with 8 spawners, one on each side. It has 32 drones and was called "Battleship".
+* This game mode was added on June 15th, 2016.
+** There used to be [https://www.youtube.com/watch?v=Fw_RbDR8Yzo bases like TDM during the first day of this mode]. They were soon removed, however.
+*Originally, you spawned near your team’s Mothership. As the page mentions, this was changed.
+*With the August 23rd, 2016 update, team game modes can now have 4 teams, this happens randomly. But in Mothership, if this 4 Teams configuration happens, there won’t be four Motherships.
+*On the very first day this game mode was added, it was extremely easy to get to Level 45 because the spawn protection lasted for 30 seconds even if you moved or shot. It was a little bit annoying for anyone who was Level 45 because they couldn’t help being rammed by a Level 8 tank with max Stats in speed with spawn protection still retained.
+*In the September 18th, 2016 update, the developers announced that the Mothership game mode would be removed and replaced with a new game mode. It was replaced 4 days later with the maze game mode.
+**Even after removal, the Mothership could still be played in Sandbox. It wouldn't be until the september 24th, 2020 update that it was finally removed.
+**The Mothership game mode still existed in the mobile version of Diep.io, but when Tag (and a lot of new tanks) were added, Mothership was removed completely.
+*In the January 2nd, 2023 update, the game mode was re-added and put on rotation with Domination and Tag.
+**It was replaced once again by [[Breakout]] on August 28th, 2024. The mode remained available on the [[Diep.io Mobile|Mobile version]] until February 10th, 2025 before the game was updated to matches with the web version.
+
+== Trivia ==
+*Motherships have a ridiculous amount of Body Damage. If the two Motherships collide, both take immense damage. In such collisions, the Mothership that has the most health before the collision would survive.
+*Very rarely, a tank could spawn inside the Mothership, trapping the tank inside the Mothership until either one died, or the person playing mothership was replaced.
+*There used to be a glitch where there was a Yellow Mothership arrow, pointing towards a random area, then turning or disappearing, but the glitch has been patched.
+*There were rare cases when the Motherships got their health reduced to 3500 or even 468 HP, making them highly vulnerable. It’s believed that this was a bug. This caused [[Destroyer]]s to be able to one-shot them in some cases.
+*The main reason why there are no bases in this mode is because the player controlling the Mothership could go to a base and stay there as long as they want or even forever, so the game would have to end without a winner.
+
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Mothership (Modo de juego)
+|fr     = Mothership
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  = Mothership<!-- Mode & Tank -->
+|ro     =
+|ru     = Mothership (Режим)
+|sv     =
+|tr     =
+|vi     = Mothership (Game Mode)
+|zh     = Mothership (遊戲模式)
+}}
+[[Category:Diep.io]]

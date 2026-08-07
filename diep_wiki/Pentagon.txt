@@ -1,0 +1,58 @@
+= Pentagon =
+
+{{Polygon
+|image     = <gallery widths="185">
+pentagon polygon 2.png|New Colors
+pentagon polygon 1.png|Old Colors
+</gallery>
+|attacks   =
+|rarity    = Uncommon<br/>Common in the [[Pentagon Nest]]
+|hp        = 100
+|xp        = 130
+|variants  = [[Alpha Pentagon]]<br/>[[Green Pentagon]]
+}}
+The {{PA}} is the fourth strongest [[Polygons|Polygon]] in [[Diep.io]] (in regard to toughness) with 100 HP, further buttressed with 12 HP in Body Damage. It grants a score of 130 [[Levels|XP]] to the player that landed the final blow. 
+
+It spawns fairly rarely compared to the [[Square]] and the [[Triangle]] and are scattered throughout the map. It is rare to see more than 4 of them at once, except when the player is within the [[Pentagon Nest]] or at an untouched area that has experienced little to no disturbance. It is a stronger Polygon than both the Square and Triangle, but weaker than green Polygons (with the only exception being the [[Green Square]]<ref>Although both have the same amount of HP, the Blue Pentagon has 12 HP in Body Damage as opposed to 8 for the Green Square, making it the tougher Polygon to destroy.</ref>) and its Alpha variant.
+
+== Strategy ==
+[[File:Diep.io Wikia 10 SVG.svg|thumb|94px|A clear image of a Blue Pentagon.]]
+Pentagons help serve as great XP sources, giving the second highest amount of all normal Polygons (excluding green variants or its Alpha version). This is especially useful through the early stages of the game, as they will level up players quite fast.
+
+Unlike the Square and Triangle, Pentagons have a considerable amount of HP, further backed by having greater Body Damage, which can often be dangerous and even fatal to players with low health stats. Investing 2-4 points into Body Damage and Max Health while alternating between the two respectively can help significantly increase the amount of damage sustained when bumping into Pentagons.
+
+The Pentagon Nest can be hazardous for low-Levels and glass builds due to the high density of Pentagons that commonly spawn in the area, often creating temporary barriers which may pose as obstacles if not careful. This can be especially notable when a large numbers of [[Crashers]] are present, as they can chase or even push players to bumping into Pentagons or even Alphas.
+
+Their high Body Damage and HP makes them useful strategic traps. If the enemy is suppressed towards the Pentagon Nest or an individual Pentagon, there is a good chance that they will lose very large amounts of HP, making them an easy kill.
+
+== Trivia ==
+*When the player's [[Tank]] is at Level 1, the Body Damage dealt by touching (not destroying by head-on ramming) it is approximately 1/5th. If one attempts to kill a Pentagon by smashing into it, the player's Tank will die.
+**If one manages to destroy a Pentagon as Level 1, they will skip the next 6 Levels, landing at Level 7.
+*The Pentagon has the greatest number of variants out of any Polygon, that of which being the standard Blue Pentagon, the Nest-exclusive [[Alpha Pentagon]], and the very rare and rewarding [[Green Pentagon]].
+
+== Gallery ==
+<gallery>
+BluePent.PNG|A Pentagon with the old color scheme.
+Newpentagon.jpg|A Pentagon with the new color scheme
+DiepPentagon.png|An isolated Pentagon
+</gallery>
+
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Pentágono
+|fr     = Pentagones bleus
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Pięciokąt
+|pt-br  = Pentagon
+|ro     = Pentagonul
+|ru     = Pentagon
+|sv     =
+|tr     =
+|vi     = Đa giác
+|zh     = 五角形
+}}

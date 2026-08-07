@@ -1,0 +1,3 @@
+= 2 TDM Maze =
+
+#redirect [[2 Teams Maze]]

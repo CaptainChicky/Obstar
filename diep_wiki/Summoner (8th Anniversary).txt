@@ -1,0 +1,62 @@
+= Summoner (8th Anniversary) =
+
+{{Stub}}
+
+{{Boss
+|image      = summoner_8th_anniversary.png
+|weapons    = [[Spawners]] (8)
+|attacks    = [[Square]]s (56)
+|xp         = 30,000
+|hp         = 3,000
+|bd         =
+}}
+{{For|the standard version of this [[Bosses|Boss]]|Summoner}}
+
+This variant of [[Summoner]] was added on 16th April 2024, [[Diep.io]]'s 8th anniversary.
+
+== Design ==
+It features a yellow Octagon-shaped body about the size of a [[Dominator]] and eight equally-spaced [[Spawners]] which spawn weaker [[Necromancer]] [[Drones]].
+
+== Technical ==
+
+=== [[Drones]] ===
+This variant Summoner’s Drone Speed is a bit higher than an average Necromancer’s. Just like the Necromancer, its drones are square-shaped instead of triangles. The [[Drones]] spawn at double the rate of a regular Summoner, which can easily overwhelm nearby players. The drones behave in a way similar to the drones of the [[Fallen Overlord]].
+
+===Stats===
+It has a health pool of 3,000 HP, although it regenerates health very slowly. This tank has eights Spawners. Also, it has a greater reload rate than a maxed Overlord. However, this boss has a very low Movement Speed. It will regenerate all of its health if unharmed for 30 seconds. 
+===Miscellaneous===
+Upon destruction, it awards 30,000 EXP. This will automatically raise a player to [[Levels|Level]] 45 upon killing it — if they have not reached that level already. It is highly advised to reach level 45 and to become a bullet spammer before fighting this boss, otherwise, the player risks dying.
+
+Just like the [[Guardian]] and other non-Fallen Bosses, it is not targeted by the [[Base Drones]] in a team [[Game Modes|Game Mode]] unless it provokes them, and the [[Base]] itself does not affect it.
+
+When it spawns, a pink notification above the player’s screen will state: “The Summoner has spawned!”
+== Strategy ==
+*<b>Strong Against:</b>  Tanks with low bullet damage or penetration, ramming tanks, both spread and focus fire DPS, the majority of tanks.
+*'''Weak against:''' High DPS, the [[Destroyer]] branch ([[Hybrid]], [[Annihilator]]), [[Overseer]] classes, and [[Predator|Predators]]. 
+
+=== Against the Summoner ===
+
+* This variant of Summoner has double the drone count of regular Summoner, rendering some of the strategies used against regular Summoner useless against this boss.
+* The Drones will hunt down any tank until that tank gets killed or the tank has moved out of range. An effective strategy is to shoot at it while the Drones are distracted by another player, similar to how a Dominator can be won over by being focused on one while others shoot.
+* In team modes, you can work together with others to kill this entity.
+* Use [[Ranger]] or [[Predator]] to hit it without worrying about the squares. Sufficient distance between the Boss and the player is crucial.
+* A Destroyer branch tank may be effective against the Summoner due to its high-damage bullets being capable of penetrating through the Boss' drones.
+* Use Overlord to provoke the Summoner and to attack it, and when its Drones are coming for the player, they ought to run away as fast as possible.
+* The Factory is effective against the Summoner if used properly and with enough skill. The player can easily use their Drones to overwhelm the Summoner’s, with a wide bullet wall.
+
+== Trivia ==
+
+* Like other 8th Anniversary Variant Bosses, the name shown above the tank constantly shifted between every second in a cycle of blue, red, purple, green, and then back to blue (based off the [[4 Teams|Teams Colors]]).
+* Its spawn notification (and other 8th Anniversary Variant Bosses) is pink instead of grey like regular bosses.
+* This is the only 8th Anniversary Variant Boss to have a different body shape from its normal counterpart.
+
+== Gallery ==
+<gallery>
+File:8th Anniversary Summoner.png|The Summoner, 8th anniversary edition
+File:Diep.io - 8th Anniversary Edition Summoner-2|In idle mode
+File:Summoner 8th.png|A player controlling a Summoner (8th Anniversary) with new colors.
+</gallery>
+*
+
+{{BossNav|polygon}}
+[[Category:Diep.io]]

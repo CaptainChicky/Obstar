@@ -1,0 +1,72 @@
+= 4 Teams =
+
+{{Mode
+|image         = TDMDefending.png
+|conditional?  = no
+|closure       = Daily, or when the game is being updated.
+|button        = 4Teams MODE Icon UI.png
+|teams         = 4
+|bosses?       = yes
+|specials      =
+}}{{For|the removed game mode|Team Deathmatch}}{{For|the gamemode with 2 teams| 2 Teams}}{{For|the version with maze walls|4 Teams Maze}}
+[[4 Teams]] or '''Four''' '''Teams''' is a [[Game Modes|game mode]] in [[Diep.io]], where players work in four opposing teams rather than fighting against each other. This game mode has [[Levels|regular XP gain]].
+== Gameplay ==
+=== Spawn ===
+The player will spawn in either a <span style="color: #23DAFF;">blue</span>, <span style="color: #FF3D3D;">red</span>, <span style="color: #3FEE57;">green</span> <span style="color: #814E1C;">(formerly brown)</span>, or <span style="color: #D86EF4;">purple</span> corner. This determines their team, and they duke it out anywhere they want (the middle or [[Pentagon Nest]] is the most popular area). Players of one team cannot shoot into an opposing team’s [[Base]], as enemy Bullets are instantly destroyed upon contact with it. Players also cannot enter any enemy team’s Base, as they will begin taking rapid and high damage bursts (if the [[Base Drones]] don’t get them first).
+=== [[Map]] ===
+[[File:Diepio4Teams.png|thumb|135x135px|The [[map]] that is shown in the 4 Teams [[Game Modes|game mode]].]]
+*The <span style="color: #23DAFF;">blue</span> corner located on the top left marks the spawning area for the Blue team.
+*The <span style="color: #FF3D3D;">red</span> corner located on the bottom right marks the spawning area for the Red team.
+*The <span style="color: #D86EF4;">purple</span> corner located on the top right marks the spawning area for the Purple team.
+*The <span style="color: #3FEE57;">green</span> <span style="color: #814E1C;">(formerly brown)</span> corner located on the bottom left marks the spawning area for the Green (formerly Brown) team.
+=== Players ===
+The players are divided into four teams, which are Red, Blue, Purple and Green (formerly Brown). Tanks of the same team can’t kill each other and can only kill tanks on enemy teams. If a tank on a player's team fires at their tank, the bullets will go through them. If a player on their team rams another player, that player will bump into the other unharmed.
+=== [[Base Drones]] ===
+[[File:4TeamProtectors.png|thumb|220x220px|Base Drones in 4 Teams mode. Note that some were missing at the time of the screen shot.]]
+The spawn areas are defended by Base Drones, small triangles (which are even smaller than [[Triangles]] and [[Drones]]) with a very large health pool which can chase down any player from the other team but will turn back at a certain point.
+
+12 Base Drones will be together in the middle of the base (similar to the old TDM).
+
+The Base Drones will not leave their team’s zone unless an opponent is within their proximity. They continue to seek until an opponent is out of their range. Although there are methods of evasion, the simplest of which the player can do is to run away until they are out of range from the Base Drones.
+
+Before August 22nd, 2016, Base Drones didn’t target any bosses, but now they always target the Fallen ones and the Polygon-based ones if provoked. This usually leads to nobody actually killing the boss, instead saying “Boss Name was killed by an unnamed tank”, due to the Base Drones lacking an in-game name.
+== [[Arena Closing|Arena Closers]] ==
+Arena Closers only appear on this map if any one of the following requirements is met:
+*Diep.io is being updated/changed.
+*The server has been open for a really long time and needs to be restarted or being too inactive.
+== Trivia ==
+*The 18th September’s update split [[Team Deathmatch]] into this game mode and [[2 Teams]].
+**Before, being sent to 2 Teams or 4 Teams was random. Today, players just select which TDM mode they prefer to play.
+*All the other features of gameplay are similar to [[Free For All|FFA]]. For example, the [[Pentagon Nest]] and the [[Crashers]] protecting it.
+*Base Drones can destroy [[Polygons]], assuming that it either spawned in their path or was pushed into it. They will not seek polygons themselves.
+*Although there is the visible color border of the spawn room and the neutral map’s color, the actual invisible wall of the spawn that blocks/damages enemy players from intruding into the base is slightly behind the visible color border.
+**Note that the invisible barrier that <i>only blocks bullets</i> is placed <i>directly</i> on top of the visible color border, and not where the player collision wall is.
+**Also note that when a player contacts and continues ramming into the player collision wall, they will rapidly be pushed downwards towards the bottom of the map (even if they were moving upwards diagonally). It is unknown why downwards is the forced direction instead of just recoiling the player away from the wall.
+**There has been a rumor that if a player is in low health and move quickly into the base and out, they will receive super fast health regen. They must wait at least 6-8 seconds outside their base, then move in and out, then if they start moving quickly away from their base, they will gain faster regeneration. But as regular regeneration starts at 10 seconds, this method is only effective when the player is against a wall and the other team is dominating. This is assuming they have no [[Stats|Skill Points]] invested in regeneration.
+*The Purple Team was added by Zeach because [https://i.redd.it/jlf69xr0zrn71.png one of his ex-girlfriends wanted him to.]
+== Gallery ==
+<gallery>
+Diepio4Teams.png|The map that is shown in the 4 Teams game mode.
+Diep4TeamBrown.png|Old map of 4 Teams, with Brown instead of Green
+</gallery>
+
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = 4 equipos
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 4 Teams
+|pt-br  =
+|ro     =
+|ru     = 4 Teams
+|sv     =
+|tr     = 4 Takım
+|vi     = 4 Đội
+|zh     = 4 Teams
+}}
+[[Category:Diep.io]]

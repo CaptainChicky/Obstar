@@ -1,0 +1,20 @@
+= Regions =
+
+{{Stub}}
+
+[[File:region.png|thumb|300x300px|The Region Selector as of June 9th, 2022.]]
+The <b>Region selector</b> is a menu in [[Diep.io]] that allows the player to choose the location of the servers that they can join. There are currently five, which are Frankfurt, Atlanta, Sydney, São Paulo and Singapore.
+
+Just like [[Game Modes]], Players can switch regions before they enter a room by clicking their respective buttons.
+
+== History ==
+* The Region Selector was added on 25th February 2022.
+* Before 4th January 2024, the five regions were San Francisco, Frankfurt, Atlanta, Sydney, and Tokyo.
+* São Paulo was added on 28th December 2025.
+
+== Trivia ==
+* It has been theorized<sup>[by who?]</sup> that the Region Selector was added in order to get rid of the several Server Selector scripts made by the players and to avoid the hassle of using a VPN.
+
+{{Gameplay|general}}
+
+[[Category:Diep.io]]

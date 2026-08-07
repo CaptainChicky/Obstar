@@ -1,0 +1,64 @@
+= Arena Closing =
+
+{{For|the tank that spawns during this event|Arena Closer}}
+The {{PA}} is an event that occurs when a game ends, whether it be [[Free For All]], [[Domination]], or any other game mode. The server closes and nobody else can join the current game. During this time, [[Arena Closer]]s will spawn inside the map, at multiple locations, and kill every player in and out of their sight. Any players who die while the arena is closing will be reconnected to a new server or rejoin to the renewed server after death.
+
+== Why Servers Close ==
+[[File:arena closer icon new.png|thumb|120px|An [[Arena Closer]], the tank that spawns during this event to clean the arena of all playable entities.]]
+*General reasons for closing a server include:
+**There is a brand-new update and the game needs to be refreshed.
+**Recycling, retiring, or re-designation of a server.
+**Not enough players are on the server, so it redirects them to one that has more players.
+**The server is too large, resulting in large lag spikes.
+*[[Free For All]]: Unique reasons it may close are:
+**When a certain number of combined player points are attained.
+*[[2 Teams]] & [[4 Teams]]: Unique reasons they may close are:
+**One team is dominating the leaderboard for too long.
+*[[Maze]]: The game ends when the server time reaches 5 hours.
+*[[Domination]]: The game ends when all four [[Dominator]]s have been captured by one team. The second way for it to happen is when the Dominators are not captured for a set amount of time (believed between 10 and 20 minutes).
+*[[Tag]]: The game ends when a team kills all the players from the other teams.
+*[[Mothership (Game mode)|Mothership]]: The game ends once one of the Teams’ [[Mothership (Tank)|Mothership]] is destroyed.
+*[[Breakout]]: The game ends when all tiles of territory is captured by one team.
+*[[Survival]] (removed): The game ends when there is only one player left in the server and all other players have been eliminated.
+**Another way for Domination, Tag, Mothership, and Breakout to close is when the 24-hour rotation time for the specific gamemode is up and the gamemode needs to change to the next game in the rotation. The time this happens is about 4pm PST (5pm during daylight savings).
+*[[Sandbox]]: Unique reasons it may close are:
+**There is no activity for a certain amount of time. (Although, you will simply get kicked out of the server if you are inactive for too long.)
+
+== Trivia ==
+*Currently, there are four game modes with win conditions that can cause the server to close: Domination, Tag, Mothership, and Breakout. Formerly, Survival as well until that game mode was removed.
+*The main reason [[Arena Closer]]s have become so notorious is for their invincibility and insane damage while cleaning out closed servers.
+*Many players tend to dislike Arena Closing, as they lose all of their EXP, making their work a waste, and they are forced to restart to reach their level again.
+*As shown in the picture below, in [[Free For All]] and [[Team Deathmatch|Team]] games, when there are less than 10 tanks left that haven’t been killed by the Arena Closers, the Scoreboard shows only the remaining tanks, regardless of their score.
+*If an update is released, every server in the game will close, regardless of whether or not the win condition is attained for the game mode.
+*If an arena is closed in Sandbox and the player has god mode on, it is impossible to be killed by the Arena Closers. Also, since they follow the player, they can essentially control the Arena Closers.
+*If a player manages to remain alive after the arena has been closed for a certain amount of time, they will get disconnected from the server.
+
+== Gallery ==
+<gallery>
+Arenaclosed.png|An [[FFA]] Arena Closing. There are only two people on the scoreboard because everyone else was killed by the [[Arena Closer]]s.
+Screenshot (60).png|The Arena Closing in [[2 Teams]].
+ArenaClosedMessage.png|The Notification that displays when the Arena starts to close.
+F6iATP3.png|Arena Closers next to the [[Mega Trapper]].
+File:Screen Shot 2021-12-03 at 7.27.00 PM.png|The Arena Closing in Maze.
+</gallery>
+
+{{Gameplay|mechanics}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Arena Closing
+|zh     = 伺服器關閉
+}}
+[[Category:Diep.io]]

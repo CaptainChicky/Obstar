@@ -1,0 +1,118 @@
+= Controls =
+
+{{PA}} are used to direct your [[Tanks|Tank]] and interact with the [[Diep.io]] world around it.
+
+''Note that these controls apply to an English US QWERTY keyboard. Controls may vary from keyboard to keyboard.''
+
+== Movement ==
+The following keys allow you to control how your tank moves. 
+[[File:WASD.png|thumb|center|300px]]
+The <code>W</code>, <code>A</code>, <code>S</code>, <code>D</code> or <code>↑</code>, <code>←</code>, <code>↓</code>, <code>→</code> keys let you move, up, left, down, and right respectively. They can be used interchangeably.
+
+== Aim ==
+The Mouse and Trackpad allow you to control the tank’s “target”.
+[[File:Mouse.png|thumb|center|250px]]
+<code>Left-Click</code> allows you to target the pointer with [[:Category:Ammunition|Ammo.]]
+
+<code>Right-Click</code> allows you to do different things depending on the tank.
+
+* For Predator, it controls the tank’s [[Predator|scope]] (by moving the camera to the direction your cursor is on)
+* For Skimmer, it can make the Skimmer's Bullet rotate in an counterclockwise direction (normally it's clockwise)
+* For drone tanks except Factory, it will "repel" the [[drones]], as they will be moving away from your cursor.
+* For Factory, it will either "repel" the drones or make the drones collapse into the position of the cursor, depending on the distant they are from the cursor.
+** Read [[Factory|the dedicated page to Factory]] to have a better explanation for this unique mechanic.
+*For Auto 3 and Auto 5, it can make the Auto Turrets shoot away from the direction of the cursor.
+*For other tanks, it doesn't do anything.
+
+Also, Space Bar and Shift keys can also be used for Left-Click and Right-Click, respectively.
+
+== Special Keys ==
+The <code>E</code> and <code>C</code> keys allow you to toggle the [[Auto Fire]] and [[Auto Spin]] functions respectively. (Has the same effect as holding down <code>Space</code> or moving the pointer in circles).
+[[File:AutoSFY.png|thumb|center|250px]]
+[[:File:SB_Keyboard.png|<code>\</code>]] allows you to switch tanks in [[Sandbox|sandbox]] mode. 
+[[:File:SB_Keyboard.png|<code>K</code>]] to level up, [[:File:SB_Keyboard.png|<code>O</code>]] to suicide.
+[[:File:SB_Keyboard.png|<code>;</code>]] toggles “God Mode”.
+
+[[:File:DOM_Keyboard.png|<code>H</code>]] allows you to take control of [[Bosses]] or friendly [[Dominator]]s, provided no one else is controlling them. <ref name="control1">It was also able to let the player play as [[Mounted Turret]]s on certain tanks.</ref>
+
+== Stats ==
+[[Stats]] can be upgraded either by clicking their respective <code>+</code> button in the upgrade table or by using the <code>numerical</code> keys in different parts of the keyboard.
+[[File:STATS.png|thumb|center|500x500px]]
+The Stats’ numeric IDs are in order <code>1 - 8</code>: Health Regen, Max Health, Body Damage, Bullet Speed, Bullet Penetration, Bullet Damage, Reload and Movement Speed respectively.
+
+The press of <code>U + number</code> allows you to queue 1 point to its respective stat.
+<code>M + number</code> will queue points until the stat is full.
+Pressing <code>U</code> without queuing any points or dying will reset the queue.
+Pressing <code>M</code> without queuing any points allows you to see the stats without resetting the queue.
+
+==Tank Controls (Controller-Based)==
+You can play Diep.io with any controller that you can plug into your computer, namely the ''PlayStation 4 DUALSHOCK 4 ''Controller
+
+''Note that "<code>LS</code>" stands for "<code>Left Joystick</code>," just as "<code>RS</code>" means "<code>Right Joystick</code>."''
+*Move: <code>LS</code>
+*Aim: <code>RS</code>
+*Fire: <code>R2/RT/ZR</code>
+*Auto Fire: <code>LS</code> (Press down)
+**Tanks will fire automatically, and drone users will have their Drones follow their cursor. It has the same effect as holding down <code>R2</code> or <code>RT</code>.
+*Auto Spin: <code>RS</code>
+**Your tank will slowly spin automatically. Useful if you wish to play with one hand.
+
+*[[Stats|Upgrade]]: Press and hold a range of buttons (<code>PS</code>: Square, Triangle, X, & Circle. <code>XBOX</code>: A, B, X, Y. <code>NINTENDO</code> : B, A, Y, X.) and press a button on your <code>Directional-Pad</code>.
+
+==Other==
+[[File:Final_Keyboard.png|thumb|500px|center]]
+*Open [[Console]]: <code>Home</code> (key)
+**Mac: <code>Fn ←</code>.
+*Full screen: <code>F2/F11</code>
+**Useful on browsers where [[#Browser based Controls|F11]] is not an option.
+**Mac: Defaults to <code>FN</code> and <code>F2</code>. <code>FN</code> may be omitted by the Mac keyboard preferences.
+*Display server information: TBA
+**Displays latency (PING), server location, and [[Game Modes|Game Mode]] above the [[Map]].
+
+* Show [[Tiers|Upgrade Tree]]: <code>Y</code>
+**Holding the key will display the upgrade tree further, surrounding your tank. The upgrade tree slowly spins around.
+*Copy lobby link: <code>L</code>
+**Copy the lobby's link into the clipboard for sharing with friends.
+
+*Disconnect Gamepad controller: <code>I</code> (only when a Gamepad controller has been connected).
+*Allow Spectators: <code>T</code>
+**Allows players to spectate you on the [[Death Screen|death screen]].<br />
+===Browser-based Controls===
+''The following controls are for Windows/Mac OS. Other OS’s may use different combinations.''
+<br />
+*Fullscreen: <code>F11</code>, ''this is the full-screen shortcut of most browsers.''
+**<u>Mac</u>: Defaults to FN and F11. FN may be omitted by the Mac keyboard preferences.
+<br />
+*Change quality:
+**Ctrl and - will ''increase'' quality, making lines sharper but decreasing performance (lower FPS). ''This is the zoom-out shortcut of browsers.''
+**Ctrl and + will ''decrease'' quality, making lines blurrier but increasing performance. ''This is the zoom-in shortcut of browsers.''
+**Ctrl and 0 will reset quality to default. ''This is the reset zoom shortcut of browsers.''
+***<u>Mac</u>: Defaults to <code>Command</code> instead of <code>Ctrl</code>. This can be changed in the Mac keyboard preferences.
+<br />
+==History ==
+* Before March 9th, only one Stat can be queued with upgrade points, which will maximize it by filling it with all available upgrade points, rather than setting the number of the upgrade points to be queued. This can be done by pressing M and the number key that corresponds to the Stat you want to queue with upgrade points. 
+**If you queue upgrade points into a Stat while having upgrade points queued in other stats, the previous queue will be canceled. Thus, you have to queue upgrade points many times every time you want to add points in different stats.
+** Also, there was no mark of queued skill points during that time, needing the player to remember what Stat is next in the queue.
+
+==Footnotes==
+<references />
+{{Gameplay|general}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Controles del juego
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     = Клавиши
+|sv     =
+|tr     =
+|vi     = Điều khiển
+|zh     = 操控
+}}
+[[Category:Diep.io]]

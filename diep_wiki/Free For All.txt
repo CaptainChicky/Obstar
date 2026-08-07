@@ -1,0 +1,61 @@
+= Free For All =
+
+{{Mode
+|image         = FreeForAll.png
+|conditional?  = NO<!-- yes or no answer, yes changes the “closure” field label from “Arena Closure:” to “Win Condition:” -->
+|closure       = Daily, or when the game is being updated.
+|button        = FFA MODE icon UI.png
+|teams         =
+|bosses?       = No
+|specials      =
+}}{{PA}}, or <b>FFA</b>, is a [[Game Modes|Game Mode]] in which players attempt to reach #1 on the leaderboard with no team or base for support; instead, they must rely on themselves. To gain a position on the leaderboard players must destroy [[Polygons]] and other players to increase their score and level. The players with the top 10 highest scores appear on the [[Scoreboard]]. It is the first and original game mode added to the game.
+
+It is considerably difficult to get to the leaderboard in FFA, but thanks to the duration of the game, you will likely respawn many times before [[Arena Closer]]s sweep in and close the arena. Although [[2 Teams]] and [[4 Teams]] are easier, it often takes far more points to get on the leaderboards in those game modes. This may be because more teams have their equal players to the FFA boards, doubling or quadrupling the effort to it takes to make the overall leaderboard.
+
+The FFA game mode, compared to [[Domination]], has more players and has no “win” condition. This means that players can keep on spawning until the arena becomes overcrowded or [[Arena Closer]]s start to appear. However, this game mode, along with the 2 Teams and 4 Teams game modes, have the [[Levels|least EXP gain]] of all game modes.
+
+On the July 20th update, the [[Tank]] and its Bullets are now blue while enemies and enemy Bullets are Red. This was added because Trapper versus Trapper fights were extremely difficult as nobody could discern whose traps belonged to who, often resulting in a player unexpectedly ramming into the other Trapper’s trap.
+
+== Strategy ==
+*At the start, it’s best to stay away from enemy tanks. Roam around and shoot polygons. The [[Pentagon]]s are ideal, as they produce large quantities of XP, but farm [[Square]]s and [[Triangle]]s initially because it will take some time to wear down a Pentagon, in which time other players can steal it.
+*At low levels, players should refrain from attacking stronger, higher-level tanks, and from entering the [[Pentagon Nest]]. Despite being the best place to farm XP, many other players also congregate there and the area is guarded by the [[Crashers]]; these hazards can easily kill weaker tanks.
+*When having a low stockpile of health, the player should stay away from any enemy tanks they see and do not ram into any Polygons, Getting hit by anything will reset the regeneration time.
+*In the beginning, one should upgrade Reload first, but it depends on their build. Faster reload makes it easier to farm and defend against or escape other players.
+
+== Arena Closing ==
+It is unknown why the Arena Closes in FFA. Possible reasons may be:
+
+* Not enough players are in the server.
+*There are too many players in a server causing lag.
+*The server has been open for a really long time and needs to be restarted.
+*A certain number of combined player points are attained.
+The only known reason for the FFA arena to close is if there is an update and the server has to be restarted. 
+
+== Trivia ==
+*This gamemode is considered the second-hardest game mode of all due to that everybody is each others' enemy. The hardest game mode is considered [[Maze]], due to it being FFA but with walls inside the arena, making it far easier to find the player cornered with low health.
+*Up until July 20th, 2016, all tanks would appear blue, but the Bullets they shot were red.
+*This gamemode’s tank design would eventually split into TDM and the current FFA, with the player’s tank being blue and shooting blue projectiles, but enemies being red shooting red projectiles.
+*In this game mode, many do not go after bosses meaning that they could be active in a server for hours.
+*A popular challenge done in FFA is to try to reach 100,000 points with any class, commonly called the 100K Challenge. It is considered extremely hard for new players but tends to become easier with time and experience. Many famous YouTubers do this challenge and thus it has spread across the community and become popular. One must switch to the class you are aiming for the moment it’s available, and the attempt must be in FFA.
+*After the 6th August 2016 update, kill notifications no longer appear when killing a player that’s lower than the killer for at least 20 levels.
+
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = FFA (free for all)
+|fr     = FFA
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = FFA
+|pt-br  =
+|ro     =
+|ru     = Free For All
+|sv     = Free For All
+|tr     =
+|vi     = FFA
+|zh     = Free For All
+}}
+[[Category:Diep.io]]

@@ -1,0 +1,126 @@
+= Annihilator =
+
+{{Infobox
+|image     = <gallery>
+annihilator icon 2.png|New Colors
+annihilator icon 1.png|Old Colors
+</gallery>
+|tier      = 4
+|next      = N/A
+|previous  = [[File:Destroyer icon new.png|50px|link=Destroyer]]
+|barrel    = [[Cannon]] (1)
+|id        = 49
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Destroyer]] at level 45.
+
+== Design ==
+The Annihilator features a circular base with a barrel wider than that of the Destroyer, as it’s actually as large as the tank itself. It fires Bullets that are almost as big as the body itself (Approximately 3 grids in diameter<ref name="anniSize">The actual size of Annihilator's bullet is identical to it's barrel, which is 96.6% (42 times 2.3 percent) of the tank's body. Since a Level 1 tank has a diameter of 100 units, and since a tank's size increases by 1% every level, Annihilator's true bullet size would be about 150 units (42 times 2.3 times (1.01 to the power of 44) approx. equals 149.664), or a 3 by 3 grid space, since grid squares are 50 by 50 units.</ref>).
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = ▲
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Recoil
+|HiddenStat2       = Bullet Size
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲
+|HiddenStat2Val    = ▲
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}The Annihilator has low Bullet Speed and Reload but has Bullet Damage equivalent to the Destroyer. The Annihilator suffers from extreme recoil that knocks it back (6.8 background squares) when firing. In general, it serves as a harder-to-avoid version of the Destroyer, since, upon Upgrading, Bullet size and Penetration are increased. Compared to the [[Hybrid]] and Destroyer, its reload is the same, and has a higher recoil and moves back faster overall. The Annihilator has also been noted to be more powerful than the Destroyer because the larger Bullets are more difficult to avoid, making it easier to kill opponents.
+
+Stats: 
+
+* Bullet Speed: 0.7x Tank
+* Bullet Penetration: 4.8 (+3.6 for each point in Bullet Penetration)
+* Bullet Damage: 21 (+9 for each point in Bullet Damage)
+* Reload time: 60t (-5t for the 1st and 3rd point, -4t for the 2nd, 4th and 6th point, -3t for the 5th and 7th point in Reload)
+
+== Strategy ==
+*<b>Strong Against:</b> Almost any tank caught by suprise, Slow tanks, [[Octo Tank]], [[Triple Twin]], [[Trapper]] branch, melee tanks, unprepared [[Overseer]] branch and unprepared [[Spike]] tanks caught unaware.
+*<b>Weak Against:</b> Tanks with focused fire, drone tanks, tanks with high Bullet Speed, high RoF tanks, [[Assassin]] branch, [[Predator]]s, [[Sniper]] tanks if caught off guard. Also fast tanks like Booster or Fighter can be a little tricky to kill.
+
+=== As the Annihilator ===
+*Most tactics with the Destroyer apply to the Annihilator. This tank is perfectly suitable for ramming [[builds]] as well, due to its extreme recoil balancing out its lower Movement Speed. It can surprise tanks using its recoil to propel itself to the enemy. The Annihilator is also somewhat effective for farming in the [[Pentagon Nest]], as it can take credit for killing [[Alpha Pentagon]]s when they are at fairly low health with its high Bullet Damage/Penetration.
+*Long-range [[Sniper]] classes, such as the [[Stalker]] or [[Ranger]], may present a problem in the fact that the high-speed, high-damage bullets they fire may strike the player's sides; it is generally best to avoid these tanks. They might not be much of a problem to fight if their build has low bullet speed.
+*If the player is engaged in a duel against a [[Twin]] or most of its upgrades, it is most likely that the Annihilator will lose the fight due to their low rate of fire. However, the large Bullets can defend bullet spammer attacks more effectively than a Destroyer’s bullet can, and they make it very difficult to directly damage the Annihilator.
+**Also, even if the Annihilator fails to ambush, the player is safely protected from enemy retaliation and can escape from the situation. This applies to going against all tanks, not just the ones mentioned above.
+*When fighting with a fast rammer, the best thing for players to do is to chase it down with the Annihilator’s massive recoil, because a rammer is slower and may not escape easily. Players should still be careful, as they may charge back and kill the player.
+*If the player wishes to kill the enemy easily, it is best to position the enemy in the vertical direction. As the enemy is in the vertical position, the enemy can be killed first before they respond, so it makes an opponent easier to hit.
+*When an Annihilator and Hybrid, Destroyer, or another Annihilator engage in a duel, it will almost always be a stalemate as their Bullets will cancel each other out if they have the same stats, which makes both ambushes and direct fights almost impossible.
+*The Annihilator excels at short-range fighting, so it is best for the player to get as close to the enemy as possible before firing on them.
+*The Annihilator has slow bullet speed, so it is best to get close to them. Because of its slow reload, it may be hard to get close to a tank by taking much damage. It is wise to shoot, to block bullets, boost at the tank, and when close enough, fire. You are so close it would be almost impossible to dodge the bullet.
+*Tanks with high health such as the Smasher can only survive 2-3 hits. The Landmine can survive 3-4 hits and the Spike can survive 4-6 hits depend of the build (Damage and health may vary). 
+*The Annihilator's bullet can only be fired very rarely, so you shouldn't waste it on weak targets. This means you shouldn't attack tanks at level 15 or lower, unless they start chasing or attacking you.
+
+=== Against the Annihilator ===
+* Players must remain extra vigilant when against the Annihilator, as its Bullets are far larger than that of its predecessor and suffer no actual downsides. As a result, they are much harder to avoid if players are caught by surprise, especially if they are using a rammer build.
+**It is possible to dodge its Bullets since they are slow, but it can also shield itself from fast firing tanks unless distracted, so it’s possible to shoot it while it is attacking someone else.
+*It is effective to wait until players are distracted, such as when engaged with other players or attacking [[Dominator]]s, before firing at them. If they are engrossed, then it will be harder for them to dodge the massive Annihilator Bullet. In certain game modes, waiting for the [[Map]] to shrink or using surrounding players to box enemies in can make targeting more effective.
+*A player using a ramming build should generally steer clear of Annihilators, as they can kill ramming tanks in just two or three shots.
+*When a player is chasing an Annihilator, it is a good idea to wait until they are out of range, and once in range, fire in their direction quickly. It is extremely difficult for players to dodge this, as they won’t realize what is happening until it’s too late.
+* Another choice is to fight this Class from a distance with long-ranged Classes, like the [[Ranger]] or [[Predator]]. However, Annihilator Bullets are bigger than Destroyer Bullets, so they may not be able to escape if the Annihilator has correctly aimed and launched the Bullet.
+*Tanks that utilize [[Drones]] can take down an Annihilator, albeit with some difficulty and only by repelling their drones and then gathering them to the Annihilator.
+*A bullet spammer like the [[Triplet]] or [[Penta Shot]] can out-reload the Annihilator, as the Annihilator has much less Reload than most tanks. Since larger Bullets hit more Bullets in their path due to their larger size, a tank with high enough DPS can destroy an Annihilator’s Bullet before it reaches the Triplet.
+*It isn’t recommended to try to ram an Annihilator. Whether an Annihilator is using a ram build or a bullet build, they are both deadly at close range.
+*[[Skimmer]]s are surprisingly effective against this Class. Countering an Annihilator with a Skimmer requires the Skimmer to aim bullets left and right of the Annihilator, damaging it with the bullets originating from the Skimmer’s [[Bullets#Missiles|Missiles]]. The Skimmer must also possess adequate Movement Speed to dodge the Annihilator’s Bullets.
+*Overlord is the Annihilator's main weakness. Not only are they extremely popular, but they are best for killing it. If the Overlord repels its drones and then brings them together, the Annihilator will be hit by drones from all sides. Annihilators cannot defend against being surround be anything, so surrounding with drones is very smart.
+**However, this may not be as effective against Annihilators with Movement Speed upgraded higher as the drone will quickly get wiped out while the recoil allows the Annihilator to escape. It also can be noted that Overlords can easily be killed by the bullet if they are not paying attention to themselves.
+*If the Annihilator is using a ram build, another Annihilator with a bullet build can attack the ram build Annihilator and possibly even kill it.
+
+== Records ==
+
+=== PC ===
+
+* FFA: 2.62m by JASON
+* 2 Teams: [https://youtu.be/-T0NvhnDsIE 2.99m by Shadowcaster]
+* 4 Teams: 2.51m by X-PRO
+* Maze: 2.02m by JB Colombia
+
+=== Mobile ===
+
+* FFA: 1.48m by KF-21
+* 2 Teams: 1.39m by Moonlight
+* 4 Teams: 1.16m by Pianzage
+* Maze: -
+
+== Trivia ==
+*This class was added on September 10th, 2016.
+*This tank shoots the largest Bullet in the game aside from [[Arena Closer]]s.
+*While the Annihilator has a low base speed, using its recoil, it can outmaneuver most of the [[Tri-Angle]] branch.
+*The Annihilator is the first tank alphabetically.
+*The Annihilator is one of the most infamous tanks in the game, being both loved and hated by countless players old and new.
+== Gallery ==
+<gallery>
+File:Browser 2016-09-13 19-04-07.png|The Annihilator in-game.
+File:Annihilator in Sandbox.png|Annihilator in Sandbox
+File:DestroyerAnnihilatorComparison.png|Comparison of bullet sizes. Annihilator on the left, Destroyer on the right.
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Annihilator
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Annihilator
+|pt-br  =
+|ro     =
+|ru     = Annihilator
+|sv     = Annihilator
+|tr     =
+|vi     = Annihilator
+|zh     = Annihilator
+}}
+[[Category:Diep.io]]

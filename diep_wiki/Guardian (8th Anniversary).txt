@@ -1,0 +1,62 @@
+= Guardian (8th Anniversary) =
+
+{{Stub}}
+
+{{Boss
+|image      = <gallery>
+guardian 8th anniversary.png|Boss
+guardian minion guardian 8th anniversary.png|Minion
+</gallery>
+|weapons    = [[Spawners|Crasher Spawner]] (1)
+[[Spawners|Minion Spawner]] (1)
+|attacks    = [[Crashers]] (24 + 40 from Minions)
+[[Minions]] (5)
+|xp         = 30,000
+|hp         = 3,000
+|bd         =
+}}
+{{For|the standard version of this [[Bosses|Boss]]|Guardian}}
+
+This variant of [[Guardian]] was added on 16th April 2024, [[Diep.io]]'s 8th anniversary.
+
+== Design ==
+It features a large pink triangle that looks like a very large [[Crasher]] as its body. It has a large, trapezoidal [[Spawners|Spawner]] mounted at the back. The large spawner overlaps a smaller trapezoidal Spawner.
+
+== Technical ==
+
+=== AI ===
+The Guardian cycles around the Pentagon Nest, killing players who stumbled upon it.
+
+=== Crashers ===
+This variant of Guardian spawns [[Crashers]] from the smaller Spawner. They work the same way with [[Guardian#Crashers|the regular Guardian's Crashers]].
+
+=== Minions ===
+The larger spawner spawns up to 5 Minions, each looks like a smaller Guardian with a slightly larger Spawner. Each Minion spawns up to 8 Large Crashers. If a player gets close the Guardian, the Minions will start circling around the player the same way Factory Minion's AI works, regardless of the player's level. Curiously enough, the Large Crashers spawned by the Minion will not attack the player, and instead will circle around their respective Minion for an indefinite amount of time. When a Minion dies, all of its Crashers also die like how a drone tank works. When the Guardian dies, all of its Minions (and their Crashers) also die. 
+
+=== Stats ===
+It has 3,000 health points and it regenerates its health slowly. It also possesses high Reload. Its Movement Speed is fairly slow but significantly increases when it shoots [[Crashers]] due to its recoil. Its FoV is slightly larger than the [[Hunter]]'s. The extra Spawner and its Minions give the boss an extra layer of protection. Upon destruction, it awards 30,000 experience and score points to the player who killed it.
+
+== Strategy ==
+*<b>Strong Against:</b> Same with [[Guardian]]. 
+*<b>Weak Against:</b> Same with [[Guardian]], except for [[Penta Shot|Penta Shots]], [[Spread Shot|Spread Shots]], [[Octo Tank|Octo Tanks]] due to the extra protections make it harder for spread spammers to land hits on the boss.
+
+=== Against the Guardian ===
+
+* Nearly all strategies [[Guardian#Strategy|against the regular Guardian apply]], with a few exceptions about Penta Shot, Spread Shot and Octo Tank due to its extra layer of protection.
+
+== Trivia ==
+
+* Unlike regular [[Guardian]], its name shown above the tank constantly shifted between every second in a cycle of blue, red, purple, green, and then back to blue (based off the [[4 Teams|Teams Colors]]). This also applies to other 8th Anniversary Variants of bosses.
+* If you cause damage only to its Small [[Crashers]] while being under level 15, then you will be attacked by the [[Crashers]] which received the damage from you. Interestingly, other [[Crashers]] won’t attack.
+** However, if you cause damage to its Large [[Crashers]] (spawned by the Minions), they won't attack you unlike the Small Crasher.
+* Due to its [[Crashers]] being classified as ammunitions ([[Bullets]], [[Drones]], or [[Traps]]) instead of [[Polygon|Polygons]], neither Crasher types award the player XP upon destruction.
+
+== Gallery ==
+<gallery>
+File:8th Annivesary Guardian.png|The Guardian, 8th anniversary editon
+File:Diep.io - 8th anniversary edition Guardian-2|A Guardian circling around the Birthday Shape
+File:Diep.io - Level 11 Tank vs 8th anniversary Guardian-2|An interaction between a Level 11 Tank and the Guardian's Minions
+</gallery>{{BossNav|polygon}}
+[[Category:Diep.io]]
+[[Category:Bosses]]
+[[Category:Tanks]]

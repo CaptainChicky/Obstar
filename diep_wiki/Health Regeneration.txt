@@ -1,0 +1,3 @@
+= Health Regeneration =
+
+#REDIRECT [[Stats#Health_Regen]]

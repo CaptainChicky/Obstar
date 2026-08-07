@@ -1,0 +1,169 @@
+= Overtrapper =
+
+{{Infobox
+|image     = <gallery>
+overtrapper icon 3.png|New Colors
+overtrapper icon 2.png|Old Colors
+overtrapper icon 1.png|Nameless
+</gallery>
+|tier      = 4
+|id        = 33
+|next      = None
+|previous  = [[File:Trapper icon new.png|50px|link=Trapper]][[File:Overseer icon new.png|50px|link=Overseer]]
+|barrel    = [[Launchers|Launcher]] (1)<br/>[[Spawners|Spawner]] (2)
+}}
+[[Overtrapper]] is a Tier 4 tank in Diep.io. It upgrades from the [[Overseer]] and [[Trapper]] at level 45.
+
+== Design ==
+The Overtrapper features a circular body and has a [[Traps|Trap]] [[Launchers|Launcher]] on its front. The two [[Drones|Drone]] [[Spawners]] are equidistant from each other and the Launcher, forming an equilateral triangle.
+
+== Technical ==
+{{BaseStats
+|PrevClass         = Trapper [[Traps]]
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       =
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    =
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+{{BaseStats
+|PrevClass         = Overseer [[Drones]]
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▲
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       =
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    =
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+* The Overtrapper can lay down Traps using its Launcher.
+** Traps act identically to how they usually would on any other standard Trapper Upgrade, except the [[Mega Trapper]] whose Traps are huge and much stronger, and [[Gunner Trapper]], whose Traps are slightly larger and a bit more durable.
+* It also has two Drone Spawners placed spread apart on its back.
+** Two of its Drones are uncontrollable. They automatically target nearby [[Polygons]] and enemy tanks.
+** The Overtrapper releases [[Drones]] faster than a [[Hybrid]], due to there being two Spawners: its spawn rate matches that of an Overseer.
+** It spawns 2 Uncontrollable Drones and 2 Controllable Drones, which in total of 4 Drones
+* Stats: 
+** Traps Launcher: Same with [[Trapper]]. 
+** Drone Spawner:  
+*** Drone Speed: 1x [[Tank]]
+*** Drone Health: 4 (+3 for each point in Drone Health)
+*** Drone Damage: Same with [[Overseer]].
+*** Reload time: Same with Overseer.
+
+== Strategy ==
+* <b>Strong Against:</b> Body Damage Tanks, melee tanks, low reload tanks.
+* <b>Weak Against:</b> [[Destroyer]] branch and high RoF tanks.
+
+=== As the Overtrapper ===
+* This tank’s combination of traps and drones make this tank effective against Classes in the [[Tri-Angle]] branch.
+* This tank can be used to lock down an area completely, as the combination of Traps and Drones is more than enough to scare away enemies.
+** Also, with the combination of Traps and Drones, it allows the player to make a “mini-base” in any team mode near the [[Pentagon Nest]], or near the [[Dominator]]s, similar to that of the [[Tri-Trapper]], with the stats 2/3/1/5/7/7/7/1, because the traps ‘enforce’ the zone and the Drones will keep it safe from any enemies. This mini base allows teammates to safely fire and regenerate their health, making it a useful tank in team game modes.
+* If used correctly, the Overtrapper (including other trapper classes) can be a major counter to the [[Penta Shot]] and the [[Spread Shot]]. 
+** Once the opponent shoots them, the player can enable Auto Fire and block the [[Bullets]] with Traps (assuming bullet stats are maxed out). 
+** Then the player would approach their opponent until either the traps and/or the drones start making contact with the opponent.
+* The player should not go on the offensive. They should create a small base in a corner, or a narrow part of the Maze, and wait. Then, outmaneuver and kill enemy players, as trappers are always strongest while stationary.
+
+=== Against the Overtrapper ===
+* The combination of Traps and Drones makes the Overtrapper a dangerous enemy. Classes in the Tri-Angle branch using a body damage build should retreat immediately. However, against classes in the branches of [[Assassin]] and/or [[Hunter]], the Overtrapper would make an easy target, since they can stay far away while shooting.
+* [[Gunner]] classes have a semi-advantage against the Overtrapper. As a Gunner, the small Bullets have the chance to sneak through the Overtrapper's Trap wall and hit the opponent. The Gunner's Bullets don’t do well to take down Drones, however.
+* As the [[Necromancer]], if the player has sufficient upgrades in Drone Damage, Drone Count, and Drone Health, then it is possible to bulldoze through this tank’s traps and kill it at low health. 
+** They should make sure, however, that they aim their drones at a weak section of its traps to be certain that they can kill it on the first try because most of their Drones will die in the attack and leave the Necromancer defenseless. 
+** It is not recommended for the Necromancer to chase the Overtrapper if it retreats. The traps shot behind it as it flees will quickly destroy the Necromancer's drones trailing it. 
+** Wait until it is stationary, alone, comfortable in a ring of Traps, and confident that they will protect it, before attacking.
+**If a Necromancer player engages on an Overtrapper full-on, and the Overtrapper retreats, the Necromancer has a chance to finish the opponent off if the player chases them. The Necromancer has to find a way to flank the Overtrapper, as simply getting in front of the opponent isn't smart. The player has to perform a pinch attack with their drones.
+* As the [[Overlord]], if one has full Drone Speed, Drone Health, and Drone Damage, then it is easy to have the drones slip between the Overtrapper's traps and kill it before it can retreat if it has low health. It is easy to brazenly approach the Overtrapper and begin the attack even if they fail because of the Overlord’s Reload speed will quickly regenerate the drones’ numbers.
+* As the [[Manager]], it is best to creep forward slowly to not rouse the Overtrapper’s attention, then kill it as quickly as possible; however, the player must retreat if they fail at first. The enemy drones won’t be such a bother since they will not target enemies far away. If the player’s Drones are sufficiently upgraded then the four enemy Drones will quickly die in the attempt to destroy the others, but almost always fail to destroy a single one in most circumstances.
+* As for the Mega Trapper, Gunner Trapper, and any tank branching off the [[Destroyer]], the player can barge through the traps easily, although they don't have any direct defense against the Drones. These classes will have to depend on their Traps and Cannons to block the drones.
+** As the [[Auto Trapper]], however, the player just has to depend on blocking the Drones. The [[Auto Turret]] will be able to sneak a few bullets through the Overtrapper's traps and kill them.
+** When there are no drones, the Auto Trapper is capable of barging the enemy's trap walls before engaging newly spawned enemy drones once again.
+* As a Destroyer class using a bullet build, the player has an insane advantage against the Overtrapper as they do against any other Trapper class. The big bullets a Destroyer can shoot penetrate the traps fast.
+** The player just has to be careful not to get too close, since the Drones can target the player. If the Drones target, the player has to react fast and shoot them quickly. This is not as much of a problem for the [[Hybrid]], but other classes must be careful still.
+* As for any other class, the technique to beating an Overtrapper is to shoot from a distance. The Drones, despite having 4 drones compared to Overseer and Overlord, deal so much damage over time. 
+** Also, the Traps might hit the player suddenly, so getting up close may as well be suicide. Bullet Speed is a necessity so that the player's ammunition can overcome many traps and destroy large quantities, allowing for the bullets to damage the tank itself.
+
+== History ==
+* Before November 2nd, 2025, it didn't have the 2 controllable drones, it's just 2 drones
+* When the {{PAGENAME}} was released, it spawned six uncontrollable drones instead of just two,<ref name="vid1">Videographic Evidence (3:20)<br />
+[[File:DIEPIO_NEW_ALL_TRAPPER_CLASS_branch_DIEPIO_DIEP.IO|left|200x200px]]
+</ref> which is why it has two drone spawners.
+** It is not currently known when this number was reduced to two.
+
+== Records ==
+
+=== PC ===
+
+* FFA: 907.2k by Mr Cheeky
+* 2 Teams: 1.35m by Trix
+* 4 Teams: [https://imgur.com/UUAQUC1 911k by owo]
+* Maze: [https://imgur.com/AgavL8J 558k by 😲SurpriseYT]
+
+=== Mobile ===
+
+* FFA: 459.4k by GLITCHER TM
+* 2 Teams: 487.5k by buh
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+* It was named along with the previously unnamed Gunner Trapper and Mega Trapper. It was originally added in the July 18th update along with the other four tanks of the Trapper class.
+** Its name is simply a combination between Overseer and Trapper.
+*** It is the only class to have a name which is a portmanteau, having a one-word name which is a hybrid of two existing classes.
+* It is one of the 6 [[Tiers|tanks]] that have multiple forms of weapons, having traps & drones, the others being the [[Hybrid]] ([[Bullets]] & Drones), Gunner Trapper (Traps & Bullets), [[Auto Trapper]] (Traps & an [[Auto Turret]]), [[Auto Gunner]] (Bullets & an Auto Turret), and the [[Auto Smasher]] (an Auto Turret and Body Damage).
+* At one point, you could sit in the corner of the map and shoot traps into the barrier, and the traps would appear behind you, effectively making a wall of traps. This worked with all Trapper classes, (note, you cannot do this now), but the Overtrapper was the most popular due to its drones.
+
+== Gallery ==
+<gallery>
+Overtrapper Screenshot1.png|Overtrapper with many traps and a single drone.
+Overtrapper-0.png|Overtrapper with its [[Drones]] (Top Right) and [[Traps]] (Top Left).
+overtrapper icon 3 red.png|New Colors
+overtrapper icon 2 red.png|Old Colors
+overtrapper icon 1 red.png|Nameless
+overtrapper icon 3 yellow.png|New Colors
+overtrapper icon 2 yellow.png|Old Colors
+overtrapper icon 1 yellow.png|Nameless
+</gallery>
+
+== Footnotes ==
+<references />
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Overtrapper
+|es     = Overtrapper
+|fr     = Overtrapper
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Overtrapper
+|pt-br  =
+|ro     =
+|ru     = Overtrapper
+|sv     =
+|tr     =
+|vi     = Overtrapper
+|zh     = Overtrapper
+}}
+[[Category:Diep.io]]
+[[Category:Tanks with Multiple Types of Attack]]
+[[Category:Trapper Tanks]]

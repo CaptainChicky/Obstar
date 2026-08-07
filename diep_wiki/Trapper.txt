@@ -1,0 +1,139 @@
+= Trapper =
+
+{{Infobox
+|image     = <gallery>
+trapper icon 2.png|New Colors
+trapper icon 1.png|Old Colors
+</gallery>
+|tier      = 3
+|next      = [[File:Tri-trapper icon new.png|50px|link=Tri-Trapper]][[File:Mega trapper icon new.png|50px|link=Mega Trapper]][[File:Gunner trapper icon new.png|50px|link=Gunner Trapper]][[File:Overtrapper icon new red.png|50px|link=Overtrapper]][[File:Auto trapper icon new.png|50px|link=Auto Trapper]]
+|previous  = [[File:Sniper icon new.png|50px|link=Sniper]]
+|barrel    = [[Launcher]] (1)
+|id        = 31
+}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Sniper]] at level 30 and upgrades to the [[Tri-Trapper]], [[Mega Trapper]], [[Overtrapper]], [[Auto Trapper]], and [[Gunner Trapper]] at level 45. 
+
+==Design==
+The Trapper features a circular base like almost every other [[Tanks|tank]]. But instead of having normal [[Barrels]], it has a [[Launcher]] that launches [[Traps]].
+
+==Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▲
+|BulletPenetration = ▲
+|BulletDamage      = ▲
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       =
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    =
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+Upon upgrading:
+*It replaces the Bullets with [[Traps]].
+* The projectile's Penetration is increased.
+* The projectile's Damage is increased.
+*Projectile's speed is increased
+*Projectile's minimum speed can now reach 0.
+*Projectile's lifespan is drastically increased. 
+
+===Traps ===
+The Traps it uses initially move at a fast speed from the [[Launcher]]. However, they decelerate very quickly to a stop after a very short distance and will remain where they are, dealing damage to any enemy tanks and [[Polygons]] who touch them. Traps can be destroyed with enemy Bullets or enemy Body Damage, though touching them is not recommended due to their high damage. The Traps’ health is dependent on how high the player’s Bullet Penetration is. It’s important to note that the [[Traps]] can be pushed around by enemy Bullets. The traps are extremely strong.
+
+Stats: 
+
+* Bullet Speed: 2x [[Tank]] (the quick deceleration means the Traps don't go very far)
+* Bullet Penetration: 3 (+2.25 for each point in Bullet Penetration)
+* Bullet Damage: 8.4 (+3.6 for each point in Bullet Damage)
+* Reload time: 23t (-2t for the 1st, 2nd, 4th and 7th point, -1t for the 3rd, 5th and 6th point in Reload) 
+
+== Strategy ==
+*<b>Strong Against:</b> [[Body Damage]] builds, low DPS Tanks, super weak tanks that just spawned.
+*<b>Weak Against:</b> Powerful ranged attackers, [[Tanks]] in the [[Sniper]] branch, high DPS Tanks, Destroyer branch, Overlords with high reload, fellow Trappers with higher reload, Streamliner, Triplets and more
+
+===As the Trapper===
+*The main thing to do is to be third-party in battles. Never directly get involved or pick fights. Get close to two tanks brawling it out, and begin setting up Traps behind. That way, when a tank tries to escape, it is killed within the walls of the Trapper’s minefields, or since it can’t escape, by the tank that was originally fighting it.
+*When fighting faster tanks, like the [[Booster]], [[Tri-Angle]], or [[Fighter]]: As they chase, the Trapper should shoot backward at them, or begin moving in circles as to create a ring of [[traps]]. Because Body Damage builds have a lack of [[Bullet Damage]], should the Trapper trap or corner one, they would be forced to run through the minefield and take massive damage as they cannot destroy the traps faster than the Trapper can replenish them.
+*The Trapper can move through its spike Traps, enemies can’t however. Constantly move in and out to bait enemies to move forward, and begin trapping them, as the name would suggest.
+* The Trapper is not called the Trapper for its stationary traps, it’s what they can do with those traps that can cause some damage. Surrounding and cornering players in trap prisons are just some of the hazards a Trapper can create.
+*The Trapper is a very useful tank in [[2 Teams]] and [[4 Teams]]. Because the [[traps]] are durable, especially the [[Mega Trapper]]’s, and they remain in place, trapper-types can fortify an area with a ring of traps that can block enemy bullets, allowing allies to stay in, [[Health Regeneration|regenerate health]], and fire [[Bullets|projectiles]] at enemies within the trap wall. The [[Tri-Trapper]] is well-suited for this strategy because it generates a ring of traps very quickly. If the ring is in a [[Pentagon Nest]], then other players can farm [[Pentagon]]s while being defended from pesky [[Crashers]].
+*It is advised for the Trapper to stay vigilant in [[Maze]] mode, as its traps can leave a trail that may lead directly to the player. However, a good strategy is to back a victim into a corner and close the traps against him/her.
+*One thing worth noting is that all trapper classes other than [[Overtrapper|Overtrappers]] and [[Gunner Trapper|Gunner Trappers]] are slow at farming polygons since their bullets have limited range, thus leading to less polygons being destroyed when you shoot.
+=== Against the Trapper=== 
+*The Trapper’s main weak point is its low [[Bullet Speed]], so the [[Sniper]] or [[Hunter]] branch is excessive for catching it off-guard and fire its fast bullet(s) at an area with the least amount of traps. However, if the trapper is skilled, they may be able to block off most if not all bullets so you should invest a few points to reload.
+*The [[Gunner]] and the [[Streamliner]] are useful for fighting a Trapper. The skinny bullets can fit through the gaps between the traps and hit the Trapper. It is best to max out [[Bullet Damage]] to deal fast damage against the Trapper.
+*High RoF with high [[Bullet Damage]] could quickly destroy the traps and damage the Trapper. This works very well for the [[Triplet]] or [[Sprayer]] due to their accurate fire which deals fast damage.
+* The [[Destroyer]], and its branch offs, especially the [[Rocketeer]], could destroy the traps with ease and can break through the shield or go through their blind spots. Then the player can one or two-shot the Trapper. Be careful, it may take multiple hits to break through the shield depending on the number of traps, this will give time for the Trapper to escape.
+*As a matter of fact, all tanks higher than level 20 could destroy a trapper providing that the tank user is experienced. If the trapper has low reload and high bullet speed (rare build), you can dodge the traps and go in for the kill. Meanwhile, if the trapper has high reload and low bullet speed, you can just out of range from the bullets and find gaps between the traps. (Unless you are a rammer)
+*If you are using a rammer build, catch them off guard and go in for a kill. Remember: if there are only one or two traps in the way, you can tank those hits and as long as the trapper also doesn't have max points in health and body damage, you will usually kill it with sufficient health to spare.
+
+== [[Achievements]]==
+{{SideBox|*<b>BUILD A WALL</b> — Upgrade to Trapper
+|{{Achievement
+|Color = #FBE169
+|Name = BUILD A WALL
+|Description = Upgrade to Trapper}}
+}}
+
+==History==
+*This is the first tank to place “[[Traps]]” which are a unique type of ammunition. Its all next [[Upgrades]] also use Traps as their weapon.
+*It was one of the two tanks that had a name upon official release of the July 18th update, the other being the [[Tri-Trapper]]. The [[Mega Trapper]] was named later that day.
+
+== Record ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/a/diep-io-trapper-ffa-wr-by-er1-f-Bi4riBR 600.6k by er1_f]
+* 2 Teams: [https://www.youtube.com/playlist?list=PLKY9zsXvIn0sub_T-PfTM7Aax8JiSNzFF 1.06m by Denied]
+* 4 Teams: [https://youtu.be/9gD2TZTKSLQ 752.4k by talal]
+* Maze: [https://imgur.com/HweDYmq 404k by Kratos]
+
+=== Mobile ===
+
+* FFA: 277.7k by nikko
+* 2 Teams: 297.1k by gd1v
+* 4 Teams: -
+* Maze: -
+
+==Trivia ==
+*The name Trapper indicates that its intended strategy isn't to go in for kills but rather trap their enemies and slowly closes the wall of traps.
+*Trappers with no points invested in health have lower health than a [[Spike]] with no points invested in health.
+* The traps will never injure their owner or teammates.
+*The Trapper and its upgrades are the only tanks in [[Diep.io]] to use [[Traps]].
+* Trappers are defensive builds and not meant to engage in any sort of fight. Since the Traps of the Trapper and its upgrades do not disappear instantly when they die, it makes the Trapper and its upgrades to be the only tanks that can cause kills over 5-7 seconds after they die (except stray bullets, which last a shorter time).
+*A Trap’s design vaguely resembles the caltrop, which is a medieval weapon that causes damage by sticking to your feet and keeping you from running.
+
+==Gallery==
+<gallery>
+File:Trapper Screenshot2.svg|The Trapper laying down [[Traps]].
+File:Trapper Screenshot1.svg|Old Trap-Body ratio.
+</gallery>
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Trapper
+|es     = Trapper
+|fr     = Trapper
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Trapper
+|pt-br  =
+|ro     =
+|ru     = Trapper
+|sv     =
+|tr     =
+|vi     = Trapper
+|zh     = Trapper
+}}
+[[Category:Diep.io]]
+[[Category:Tanks]]
+[[Category:Tier 3 Tanks]]
+[[Category:Trapper Tanks]]

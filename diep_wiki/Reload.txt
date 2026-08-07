@@ -1,0 +1,4 @@
+= Reload =
+
+#REDIRECT [[Stats#Reload]]
+[[Category:Redirect]]

@@ -1,0 +1,99 @@
+= Bosses =
+
+
+<b>Bosses</b> are large AI-controlled tanks that target players.
+
+Bosses can be found in any [[Game Modes|Game Mode]] except Maze, and some of them can enter [[Base]]s without getting harmed in Team Modes. They have 3,000 HP and give 30,000 experience points to the player who destroys them (the one who lands the finishing blow), which is enough to instantly [[Tiers|upgrade]] a player from Level 1 to Level 45. Defeating a Boss for the first time also grants the player an [[Achievements|Achievement]], while killing a total of 10 Bosses grants the player another achievement. They can also be controlled by players.
+
+== Spawn ==
+[[File:Fallen_Booster_notification.png|thumb|Example of a notification indicating a boss has spawned, in this case, the Fallen Booster.]]
+[[File:Arena closer has no name apparently.png|thumb|An example of the boss death notification when killed by an [[Arena Closer]], in this case, the Fallen Booster. Note that there Arena Closer's name is "An unnamed tank" since Arena Closers do not have a name in kill notifications during the time this image was taken.]]
+A Boss will spawn 45 minutes after the server’s start, and 0-45 minutes after the death of the last Boss. When a Boss spawns, a notification will appear at the top of every player’s screen: <i>“The (Boss Name) has spawned!”</i> Only 1 Boss can spawn and be active at a time.
+
+A notification also appears when a Boss dies. When a Boss is killed by a named player, its death notification reads: <i>“The (Boss Name) has been defeated by (player name)!”</i> When a Boss is killed by an unnamed player, a [[Polygons|Polygon]] or a [[Base Drones|Base Drone]], the message simply reads <i>“The (Boss Name) has been defeated by an unnamed tank!”</i>
+
+== Behavior ==
+A Boss' behavior is compared to a neutral [[Dominator]]s' behavior. When there are players around, the Boss will target the closest player. If another player gets closer than the targeted player or if the targeted player gets further than the next closest player, the Boss will continue to target their victim until the victim goes out of its FoV.
+
+When there were no players around, a Boss will target [[Polygons]] (before the August 24th, 2016 update), Dominators, and [[Arena Closer]]s. Bosses no longer target Polygons as seen below in history. Also, to prevent unfair deaths, Bosses won't target players under level 15 unless threatened first.
+
+Bosses will never attempt to dodge or avoid your ammunition. Bosses have a very slow movement speed, which makes them easy to hit, but they will make it hard by attacking the player with their ammunition. Also, the only Boss that is exempt from the slow movement speed is the [[Fallen Booster]].
+
+== Current Bosses ==
+There are currently 5 known Bosses in the game. Any Bosses with [[:Category:Fallen Bosses|<span style="color:#2EEA17">green names</span>]] (Fallen Bosses) are targeted by Base Drones automatically. Bosses with [[:Category:Polygon Bosses|<span style="color:cyan">cyan names</span>]] (Polygon Bosses) are not targeted unless the Base Drones are provoked via contact with their body or weapons.
+{|style="margin:auto;text-align:center"
+|-
+|scope="col" style="width:10%" | [[File:guardian boss 2.png|110px|link=Guardian]]
+|scope="col" style="width:10%" | [[File:summoner boss 2.png|150px|link=Summoner]]
+|scope="col" style="width:10%" | [[File:defender boss 3.png|156px|link=Defender]]
+|-
+|<b>[[Guardian of the Pentagons|<span style="color:cyan">Guardian of the Pentagons</span>]]</b>
+|<b>[[Summoner|<span style="color:cyan">Summoner</span>]]</b>
+|<b>[[Defender|<span style="color:cyan">Defender</span>]]</b>
+|}
+{|style="margin:auto;text-align:center"
+|-
+|scope="col" style="width:10%" | [[File:fallen booster boss 2.png|139px|link=Fallen Booster]]
+|scope="col" style="width:10%" | [[File:fallen overlord boss 2.png|166px|link=Fallen Overlord]]
+|-
+|<b>[[Fallen Booster|<span style="color:#2EEA17">Fallen Booster</span>]]</b>
+|<b>[[Fallen Overlord|<span style="color:#2EEA17">Fallen Overlord</span>]]</b>
+|}
+
+== Achievements ==
+{{SideBox|*<b>That was tough</b> — Kill a Boss
+*<b>Boss Hunter</b> — Kill 10 Bosses|
+{{Achievement|Position = right|Name = That was tough|Description = Kill a boss|Percentage = }}
+
+{{Achievement|Position = right|Color = #9AF969|Name = Boss Hunter|Description = Kill 10 bosses|Percentage = }}}}
+
+== History ==
+*Before 22nd August 2016, several Bosses could be in one arena simultaneously.
+*Before 24th August 2016, the mechanics of how Bosses work were different, which are listed below:
+**No Bosses were targeted by the Base Drones, but {{CA|Fallen Bosses}} are now actively targeted. {{CA|Polygon Bosses}} are only targeted if their bodies or {{CA|Ammunition}} come into direct contact with the Base Drones.
+**Several Bosses could be in-game simultaneously.
+**When a Boss spawns, there were no spawn [[Notifications]].
+**The Bosses could target the [[Polygons]] and players below Level 15, even if not threatened.
+*On the 21st February 2017, the Boss Hunter achievement was added.
+*Before 16th February 2025, Bosses could not be controlled by players.
+
+== Trivia ==
+*All Bosses have 3,000 health and 40 body damage, the latter value being twice as much as an [[Alpha Pentagon]].
+*The first AI Boss, the [[Guardian]], was added in a secret update that wasn’t mentioned in the [[Changelog]] on August 17th.
+**More Bosses were secretly being added on the next, and the following day. Even more Bosses were added later.
+*Most of the Bosses use [[Drones]] as their only weapon.
+*In the notifications added to the game to show when a Boss has spawned, the Guardian is labeled as, “The Guardian of the Pentagons”. This is due in part to it being a [[Crasher]] based Boss, which has long defended the [[Pentagon Nest]].
+*The Bosses are the only Al-entities which give a kill notification to everybody, saying who destroyed them.
+*Most Bosses are [[Polygon]]-shaped, the only bosses that are not polygon-shaped are the Fallen Booster and the Fallen Overlord.
+**They are not on any team, hence any player including the Arena Closers can harm them.
+*A possible reason for there not being a [[Pentagon]] based Polygon Boss is because either the [[Guardian]] is it, or that the [[Pentagon]] Boss is the [[Alpha Pentagon]].
+**Another possible reason is that the developer simply never added a Pentagon based boss, or they forgot to.
+*Polygon bosses and Neutral Dominators do not damage each other.
+*Four of the five bosses spawn on the [[Diep.io Mobile/Legacy|legacy mobile]] version of the game; the [[Defender]] boss does not spawn on the legacy mobile version due to an unknown reason.
+*When a server starts, 45-minute countdown begins and the timer reset every time it reaches 0. On each reset, the game will check if there's an active boss in the server. If there's none, 1 of the 5 bosses will be spawned. If there's already one, nothing happens.
+**This means the next boss will be spawned around 0 to 45 minutes after the previous one was destroyed.
+*After February 16th 2025 update, Bosses can be controlled, which also makes it possible to team up with them.
+
+{{BossNav|other}}
+{{Interlang
+|status = checked
+|de     =
+|en     = Bosses
+|es     = Minijefes
+|fr     = Boss
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Bossy
+|pt-br  =
+|ro     =
+|ru     = Боссы
+|sv     =
+|tr     =
+|vi     = Trùm (Boss)
+|zh     = 中立魔王
+}}
+
+[[Category:Diep.io]]
+[[Category:General Information]]

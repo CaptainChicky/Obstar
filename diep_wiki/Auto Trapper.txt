@@ -1,0 +1,114 @@
+= Auto Trapper =
+
+{{Infobox
+|image     = <gallery>
+auto trapper icon 2.png|New Colors
+auto trapper icon 1.png|Old Colors
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Trapper icon new.png|50px|link=Trapper]]
+|barrel    = [[Launcher]] (1)<br/>[[Auto Turrets]] (1)
+|id        = 44
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Trapper]] at level 45.
+
+== Design ==
+The Auto Trapper features a circular base with a small trapezoid [[Launcher]] connected to it via a small rectangle. It also features an [[Auto Turret]], which cannot be controlled.
+
+== Technical ==
+{{BaseStats
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = —
+|BulletDamage       = —
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        = Turret Bullet Speed
+|HiddenStat2        =Turret Bullet Penetration
+|HiddenStat3        =Turret Bullet Damage
+|HiddenStat1Val     = ▼
+|HiddenStat2Val     =▼
+|HiddenStat3Val     =▼▼
+}}
+*It fires [[Traps]] similar to its predecessor, the Trapper.
+*It has an Auto Turret on top of it, which fires [[Bullets]].
+**The Auto Turret is AI-controlled, like all other Auto Turrets.
+**The bullet has weaker penetration and damage comparing to the trap. It also has lower base speed than the trap, but its deceleration rate is greatly decreased. No [[Stats]] are changed.
+
+* Stats (Auto Turret):
+** Bullet Speed: 1.2x Tank
+** Bullet Penetration: 2 (+1.5 for each point in Bullet Penetration)
+** Bullet Damage: 2.1 (+0.9 for each point in Bullet Damage)
+
+== Strategy ==
+*<b>Strong Against:</b> Rammers, [[Booster]]s, Bullet spammers.
+*<b>Weak Against:</b> Members of the [[Destroyer]] and [[Sniper]] branches.
+
+=== As the Auto Trapper ===
+* The Auto Trapper behaves extremely similar to the [[Trapper]]. The player can use the Traps to build a wall to protect themselves and their teammates. The Auto Turret cannot be controlled by the player and will shoot at anything that enters the FoV. It is assumed that the turret is as powerful as the Auto Turret of the [[Auto Gunner]].
+* When attacked by bullet spammers, the player should create a defensive shield before slowly approaching. Then they should push the opponent into the [[Pentagon Nest]], a corner in [[Maze]], or into a [[Bosses|Boss]].
+* Some [[Bullet]] types can seep through the traps, like fast bullets shot by [[Ranger]]s and [[Predator]]s or small bullets shot by [[Gunner]]s. [[Annihilator]]s and [[Hybrid]]s can shoot huge bullets that break through traps easily. If bullets break through, the player has two options: to abandon the position and start a new bubble or just use the remnants of the old bubble to parry. The player shouldn't abandon their position unless they’re being assailed by a Destroyer. The turret can given enough time, kill [[Triplet]]s, so running away is just destroying that opportunity.
+* In the [[Maze]] game mode, players should find somewhere that leads to a dead-end and make a wall in front of themselves. When there a player attacks, they will try to shoot through the wall, and the Auto Turret will attack that player. There have been many instances of Auto Trappers taking an entire Pentagon Nest by sealing off entrances.
+* The Auto Trapper can become extremely effective against the [[Penta Shot]], [[Spread Shot]] and [[Octo Tank]]. These tanks are neither fast nor strong enough to break through the Auto Trapper’s traps (even with all bullet stats maxed). The player can slowly approach their opponent by creating a ‘bridge’ of traps in front of them. The opponent will then get shot by the Auto Turret and eventually die. This strategy can also be used against the [[Overlord]] and possibly the [[Manager]], as the traps can also block their drones.
+* While not recommended, if the Auto Trapper is in Maze mode, and Overlords are dominating, find a large, open area, and spread the traps out.  This way, you will keep them from repelling, and you can have plenty of places to move to, while the auto turret deals damage to the distracted opponent.
+
+=== Against the Auto Trapper ===
+* One recommended way to kill the Auto Trapper is to use high DPS or sniping. Bullet spammers like the Triplet or [[Sprayer]] do not stand a chance—at best they’ll be deadlocked forever, at worst they’ll have an embarrassing, excruciating death from attrition. Because of the nature of traps, trappers are seldom vulnerable, meaning that rammers are almost completely useless.
+* Members of the Sniper branch have a larger FoV which gives an advantage because the Turret has a smaller detection radius. This makes the Auto Trapper's only defense its Traps. Try to make a Bullet and Movement Speed based build to catch the Auto Trapper off guard. Shoot through the holes between the Traps and hopefully land some hits. Another strategy is to attack the Auto Trapper from behind since the Auto Trapper has no back defense. The Auto Turret could be distracted by a [[Polygons|Polygon]], so hitting it should be easy as long as the player can stay out of the Auto Trapper's field of view.
+* The same principle applies to destroyers. Destroyers and its upgrades can easily surprise and overwhelm the most heavily fortified defenses. They can also wipe out many traps that are caught in its path. The [[Mega Trapper]] and possibly the [[Gunner Trapper]] are also sufficient in killing off the traps but may die because of chip damage coming from the auto turret. The Gunner Trapper may have a chance, however, as the gunner bullets can seep through the Auto Trapper’s walls.
+* Using Movement Speed to swiftly relocate and shoot through the holes in the Trap wall, while avoiding the turret, should eventually kill the Auto Trapper.
+*The Battleship is also a viable counter due to its ability to get around traps with ease while keeping a distance from the turret.
+
+== Trivia ==
+*It is the only [[Trapper]] that was added later than the July 18th update.
+*The Auto Turret on the tank used to only fire at enemy [[Tanks]].
+*In the first few hours of the November 19th update, people could control the Auto Turret on top of the Auto Trapper.
+*It, alongside the [[Smasher]], [[Battleship]], and [[Glider]] are the only tanks to have a dark blue background on their icon.
+*The Auto Trapper vaguely resembles the [https://wiki.teamfortress.com/wiki/Medi_Gun Medi-gun from TF2].
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://youtu.be/O7Vx5-7hjDw 1.07m by JB Colombia]
+* 2 Teams: 2.02m by Hades
+* 4 Teams: 1.15m by fortune
+* Maze: [https://imgur.com/Bp6iP99 1.51m by exo]
+
+=== Mobile ===
+
+* FFA: 577.6k by Athu
+* 2 Teams: -
+* 4 Teams: 301.7 by Darkforce
+* Maze: -
+
+==Gallery==
+<gallery>
+File:Autotrapper.jpg|Auto Trapper in game.
+File:Auto Trapper in Sandbox.jpg|Auto Trapper in Sandbox
+</gallery>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Auto Trapper
+|es     = Auto Trapper
+|fr     = Auto Trapper
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Auto Trapper
+|pt-br  = Auto Trapper
+|ro     =
+|ru     = Auto Trapper
+|sv     =
+|tr     =
+|vi     = Auto Trapper
+|zh     = Auto Trapper
+}}
+[[Category:Auto Tanks]]
+[[Category:Diep.io]]
+[[Category:Trapper Tanks]]

@@ -1,0 +1,3 @@
+= Diep.io Mobile (Legacy) =
+
+#REDIRECT [[Diep.io Mobile/Legacy]]

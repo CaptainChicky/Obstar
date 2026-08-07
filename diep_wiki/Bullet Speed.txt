@@ -1,0 +1,3 @@
+= Bullet Speed =
+
+#REDIRECT [[Stats#Bullet_Speed]]

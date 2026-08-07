@@ -1,0 +1,5 @@
+= Mini-map =
+
+#REDIRECT [[Map]]
+__STATICREDIRECT__
+[[Category:Redirect]]

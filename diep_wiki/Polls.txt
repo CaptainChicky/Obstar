@@ -1,0 +1,4 @@
+= Polls =
+
+#REDIRECT [[User:RubberDuckie3/Polls]]
+[[Category:Redirect]]

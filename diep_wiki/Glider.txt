@@ -1,0 +1,110 @@
+= Glider =
+
+{{Infobox
+|image     = glider icon 1.png
+|tier      = 4
+|previous  = [[File:Destroyer icon new.png|50px|link=Destroyer]]
+|barrel    = [[Cannons#Deployers|Deployer]] (1)
+|id        = <span class = "grey">56</span>
+63
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Destroyer]] at level 45.
+
+== Design ==
+The Glider features a circular body as a base. It features a small, inverted trapezoid mounted on the front. This trapezoid is an inverted variant of [[Skimmer|Skimmer's]] and [[Rocketeer|Rocketeer's]] trapezoid prop<ref name="skimmer-rocketeer-connection">In Diep's widths system, Glider's, Skimmer's, and Rocketeer's trapezoid prop shares a value of 0.8. The lengths are also the same, at 65.5*SQRT(2)% of the length of the tank's body. The only difference is that Glider's trapezoid prop is rotated 180% on itself, so that the thin length is on the front instead of the wide length.</ref>. It also features a second, much larger trapezoid layered on top of it.
+<!--The Glider features a circular tank body as a base. It features an inverted trapezoid with a width of 0.8 (33.6% of the tank body) and a length of 92.631% (65 * sqrt(2)% of the tank body) with an inverted trapezoid with a width value of 1.35 (56.7% of the tank body) and a length of 80% layered on top of it.-->
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▼▼
+|BulletPenetration = ▲
+|BulletDamage      = ▼▼
+|Reload            = ▲▲
+|MovementSpeed     = —
+|HiddenStat1       = Recoil
+|HiddenStat2       =Recoil (of missile) 
+|HiddenStat3       = 
+|HiddenStat4       = 
+|HiddenStat1Val    = ▼▼▼
+|HiddenStat2Val    =▲▲ 
+|HiddenStat3Val    = 
+|HiddenStat4Val    = 
+}}[[File:Glider missile size comparison.png|alt=An image comparing the Glider tank's missile sizes at Level 1 and Level 45.|thumb|Despite Glider's missiles changing size depending on [[Levels|Level]], the width of the missile's smaller cannons stays consistent at 37.8 units.]]
+* When holding the left mouse, button, the Glider's larger [[Cannons|Cannon]] fires to shoot a specialized type of [[Bullets#Missiles|Bullet]], which have been colloquially been referred to as Missiles. These missiles are the same size as the cannon they are fired from, which is 56.7% of the tank's body size. These missiles have two cannons mounted on the back of them, 35° apart. These cannons share the color of the Missile and the parent Glider that they are shot from.
+** Each missile shoots 10 mini-bullets in 3.49 seconds. (≈2.86 bullets per second) at a maximum reload value.
+** The missile moved 33 grid spaces in 2.16 seconds. (≈15.27 grid spaces per second) at a maximum bullet speed value.
+* When one of these Missiles is fired, the two cannons mounted behind the missile start to fire as well. The recoil from these cannons helps move the bullet along.
+* Despite being a [[Destroyer]] upgrade, the front cannon has very little recoil. When moving in the direction of the cannon, the firing is barely noticeable,
+* The Glider's FOV increases to match [[Sniper|Sniper's]] FOV.
+* The damage and health of the missile decrease to a third of Destroyer's bullet. Its speed is also decreased. Most of its speed come from the recoil of the cannons on the missile.
+* Stats: 
+** Missiles: 
+*** Bullet Speed: 0.3x Tank
+*** Bullet Health: 6 (+4.5 for each point in Bullet Penetration)
+*** Bullet Damage: Same with [[Tank]]
+*** Reload time: Same with [[Destroyer]]
+** Missiles' Bullets: 
+*** Bullet Speed: 0.5x Tank
+*** Bullet Health: 1.2 (+0.9 for each point in Bullet Penetration) 
+*** Bullet Damage: 4.2 (+1.8 for each point in Bullet Damage) 
+*** Reload time: 11t (-1t for the 1st, 2nd, 4th, 5th and 7th point in Reload) 
+
+== Strategy ==
+* <b>Strong Against:</b> Low level tanks, [[Smasher]] branch tanks, low reload [[Overseer]]s (if used properly), slow tanks.
+* <b>Weak Against</b>: [[Trapper]] branch tanks, [[Destroyer]] branch tanks, decent [[Overseer]] players, tanks with high field of vision, bullet spammers, fast tanks.
+
+=== As the Glider ===
+* The Glider’s Missile is very fast, but nowhere near penetrating as the [[Rocketeer]] Missile. The back cannons serve as both a propelling mechanism and weapons to damage enemies who have dodged the Missile.
+* It lacks penetration, but has ''perfect'' aim, with 0 random spread, and is fairly damaging. The user should practice predicting their targets path to land the shots.
+
+=== Against the Glider ===
+* Its reload is terrible and lacks defensive power. Drones are effective against this Tank.
+
+== Records ==
+
+=== PC ===
+
+* FFA: 1.44m by Euphyllia
+* 2 Teams: 1.44m by Rexind
+* 4 Teams: [https://imgur.com/a/lv531cL 1.80m by Brux]
+* Maze: [https://www.youtube.com/watch?v=7SDPP7eAYK8 605.5k by Deception]
+
+=== Mobile ===
+
+* FFA: 2.08m by HZ6
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+* The Glider used to be the most recently added tank, being added on May 9th, 2023, before being ultimately dethroned by the [[Auto Tank (tank)|Auto Tank]], which was added on February 16th, 2025.
+* Glider's initial concept stems from the original [https://diepio.fandom.com/wiki/Skimmer#History Skimmer] conception which was made by [https://www.deviantart.com/dingbat1991 Dingbat1991] in [[:File:Dingbat1991 class tree 2016.jpg|this image]].
+* It, alongside the [[Auto Trapper]], [[Battleship]], and [[Smasher]] are the only tanks to have a dark blue background on their icon.
+* It is the same as a Rocketeer except the bullet fires not directly but to the side.
+
+== Footnotes ==
+<references/>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     =
+|es     = 
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 
+|pt-br  =
+|ro     =
+|ru     = 
+|sv     =
+|tr     =
+|vi     = 
+|zh     = 
+}}
+[[Category:Diep.io]]

@@ -1,0 +1,59 @@
+= Breakout =
+
+{{Stub}}
+{{Mode
+|image         = Diepiobreakout.png
+|conditional?  = yes
+|closure       = All enemy tiles captured.
+|button        = Breakout MODE Icon UI.png
+|teams         = 2
+|bosses?       = no
+|specials      =
+}}
+
+'''Breakout''' is a [[Game Modes|Game Mode]] in [[Diep.io]] that is similar to other win-based game modes like [[Domination]]. It features turf-war game play based on a grid of tiles of which players must claim for their team. Like [[Survival]], players passively gain EXP. The main objective is for a team to capture all tiles of the opposing team. It is based on an [https://www.reddit.com/r/Diepio/comments/4p5zyk/land_grab_a_game_mode_proposal/ unused prototype back in 2016].
+
+== Gameplay ==
+This gamemode is turf-war minigame in which tanks of either team must capture all tiles of the opposing team to win. A team can capture a tile either by destroying a Breakout Wall, or an enemy's tile. 
+
+Each team starts out with one captured tile at opposite corner of the map. The rest of the tiles are turned into Breakout Walls (1 for each tile), which look similar to regular Maze Walls. Unlike Maze Wall, however, players can actually deal damage to it by shooting/ramming at it. A Breakout Wall can also damage players and their ammunitions. When a tile's Breakout Wall is destroyed, the team that deals the final blow will capture that tile and the color is changed to the one of that team.
+
+A team can capture a tile from the opposing team by shooting at it with [[Bullets]]. A player from a team can only damage tiles of the opposing team if they are standing on a tile of their own team. Their Bullets will also be damaged and destroyed by enemy tiles in the process. If a player of a team is standing on a tile of the opposing team, bullets from said player will do nothing to any of the enemy tile, though their bullets in turn cannot be damaged and destroyed by them. When a captured tile is destroyed by a team, the tile is captured by the team that destroy it. A newly captured tile is invincible for a short amount of time (like a spawning tank). This continues until one team no longer have any captured tiles.
+
+The health of a tile/Breakout Wall can be determined by how hollow it is. The hollower, the less remaining health it has. After 30 seconds of not taking damage, a tile/Breakout Wall will regenerate its health. 
+
+When both teams have 4 captured tiles each, a hidden countdown timer starts. When the timer reaches 0, the game will select a random player in the arena. The tile that player is standing on will start flashing yellow, and a notification "WARNING! EVACUATE TILE IMMEDIATELY" is sent to everyone standing on said tile. After 5 seconds, a Breakout Wall is spawned on that tile, and any player still standing on that tile is instantly killed. The timer is reset, and this will continue until one team has less than 4 tiles captured. A spawned Breakout Wall will also have invincibility for a short amount of time.
+
+Interestingly, [[Drones]] and [[Traps]] are not affected by tiles. They cannot be used to destroy a captured tile, nor can they be damaged by enemy's tiles regardless of where the player who shoot them is. They can still damage/be damaged by Breakout Walls, however.
+
+== Strategy ==
+
+== Arena Closing ==
+In this game mode, the Arena Closes only if one of these requirements are met:
+
+* Diep.io is being updated.
+* One team loses all of its tiles.
+* The 24-hour rotation time for the gamemode is up.
+
+== Map ==
+The map is divided into an 11 by 11 grid. Each grid is a tile.
+
+== History ==
+* Breakout mode was added on August 28th, 2024.
+
+== Trivia ==
+
+* This mode is based on the [https://www.reddit.com/r/Diepio/comments/4p5zyk/land_grab_a_game_mode_proposal/ Land Grab mode suggestion on Reddit from 2016].
+* Unlike enemy tiles, which require a player to stand on their own team's tile to be able to damage/destroy it, a player can damage a Breakout Wall regardless of where they stand.
+* Interestingly, Breakout Walls closer to the original captured tile at the start of the game have less health than those further away.
+* This mode was unavailable on the [[Diep.io Mobile|Mobile version]] until February 10th, 2025.
+* If a player is on the edge of the map, sometimes, they are able to capture enemy tiles.
+{{GameNav}}
+
+== Tips ==
+
+*Bullet-Spamming tanks such as [[Penta Shot]], [[Spread Shot]], [[Triplet]], [[Triple Twin]], [[Sprayer]], and [[Octo Tank]] can easily take over tiles.
+*Drone tanks such as [[Overlord]] and [[Overseer]] are great for taking down enemies.
+
+== Gallery ==
+[[Category:Diep.io]]

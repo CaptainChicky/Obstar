@@ -1,0 +1,91 @@
+= Sandbox =
+
+{{Mode
+|image         = YellowNicksSandbox2.png
+|conditional?  = no
+|closure       = There is no activity for 10 minutes (possibility but not confirmed).
+|button        = Sandbox MODE Icon UI.png
+|teams         = 
+|bosses?       = YES
+}}
+{{PA}} is a game mode added on September 3, 2016. It is similar in style to [[Free For All]], except that the map starts out significantly smaller. Unlike other [[Game Modes]], Sandbox includes cheats — players can change their Level and/or [[Tiers|Class]] with the simple press of a button. This makes Sandbox useful for testing [[Builds]] and for finding/killing [[Bosses]].
+
+Additional players may join a Sandbox arena, through the use of a party link. Players who use cheats have their names displayed in yellow, and everyone else's remains white.
+
+== Technical ==
+===Size===
+The entire map starts smaller than a large [[Pentagon Nest]] (around 50x50 tiles), but [[Crashers]] and [[Alpha Pentagon]]s very rarely spawn at the center. As additional players join, the map size will increase by 20x20 tiles per player, increasing the size of the Pentagon Nest with it, along with the chance of Polygons (Alpha Pentagons and Crashers) spawning in it.
+
+===Polygons===
+Much like with the size the Number of polygons available in the arena will increase by 12.5 polygons for every additional player. This number will then be rounded down to the nearest natural number. Polygons will respawn randomly 2 frames after one of them is destroyed.
+
+== Special Controls ==
+{{Main|Cheats}}
+(These keys are for the common QWERTY keyboard and normal settings. On other keyboards, the keys may be different.)
+*<code>O</code> = Suicide (There will be a <code>You've killed (Player name)</code> message stating that the player were killed by [their name])
+*<code>\</code> = Switch classes
+**Cycles through Classes beginning with [[Changelog|the most recently added]] tanks.
+**Previously, this also included (smaller versions of) all three types of [[Dominator]]s, the[[Mothership (Tank)| Motherships]], and the [[Arena Closer]]s (all are the level of your current tank, but the smaller the level, the faster the speed). As of an [[Changelog#September_24th.2C_2020|unmentioned update]], they are no longer selectable, except for the Mothership which was re-added again.
+*<code>K</code> = Level Up (hold down to gain [[Levels]] quicker)
+**Maximum level is 45, even for special classes (Dominator, Mothership, etc)
+*<code>;</code> = Activates God mode, grants invulnerability, similar to an Arena Closer.
+**Note: may not work on some keyboards.
+***If the player is not using an English (US) QWERTY keyboard, they can find the key to activate the God mode by opening an On-screen keyboard and changing the Windows keyboard language to see the position of the key.
+**God mode can only be used when only one player is on the server. This function will be automatically deactivated if a second player joins the Sandbox and when all the other players leave it will become available again.
+
+== Trivia ==
+[[File:Fc280f668da2453e841cfaef24d18ed6.png|thumb|220x220px|The Sandbox button and message when using an Adblock until September 22nd, 2016.]]
+*Dominators, Arena Closers and Motherships used to be playable in Sandbox, but because the maximum level is 45, they will appear much smaller.
+**This was the only game mode in which Arena Closers and Motherships are playable. However, Motherships also used to be playable in the [[Mothership (Game Mode)|Mothership]] mode.
+**As of September 24th, 2020, [[Dominator]]s, [[Mothership (Tank)|Motherships]], and [[Arena Closer]]s are no longer playable in this game mode. However, Mothership was re-added again on the January 3rd, 2023 update.
+* A day after its release, Sandbox was changed to be disabled for [[wikipedia:Ad_blocking|adblock]] users, as shown by the image at the right. When [[Maze]] game mode was added, adblock users were denied access for the latter, but otherwise, all players can now play Sandbox.
+*Like in every other mode, random [[Bosses]] will spawn 10 minutes after the room is created and 15 to 23 minutes after the previous Boss's defeat. Bosses will not give XP if in God Mode and the server will close after 10 minutes of inactivity.<!--This has probably been changed to 50-60 mins-->
+*Polygons won’t respawn at a certain distance from players, so if the map size is small enough and the player stands at the center of it, [[Crashers]] won’t spawn at all.
+*As a [[Necromancer]], the number of [[Drones]] a player can get will be directly dependent on the number of polygons available and thus– the number of players in room. (Due to Necromancer drones being counted as [[Polygons|Shapes]]).
+*When playing with others, be wary of trolls, as they generally switch into Arena Closers. This is no longer the case as you can no longer play as an [[Arena Closer]].
+*As of September 4th, the arena size has decreased.
+*The Sandbox Cheats might be the [[Developer]] Cheats (probably with restrictions, such as special tanks like Dominators and Arena Closer).
+*It was once possible to get [[achievements]] in this mode, that is no longer the case.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Unpatched Bugs ===
+[[File:Sandboxglitch.png|thumb|150x150px|A Sandbox arena that has no polygons.]]
+*{{PC}} Capturing all [[Square]]s in the Sandbox arena alone as a [[Necromancer]] will reduce the amount of, if not, totally prevent any more [[Polygons]] from spawning.
+}}
+
+== Gallery ==
+<gallery widths="185">
+Sandbox gameplay2.gif|Arena size
+Sandbox Mothership Guardian.png|The Guardian spawning in sandbox
+God mode ON.png|The text at the top says “God mode: ON”
+God mode OFF.png|The text at the top says “God mode: OFF”
+Screenshot1.png|Summoner boss, Alpha pentagon, and more pentagons in Sandbox
+Screenshot3.png|Level 12 Booster and Fallen Booster
+Screenshot 2016-09-04 18.58.15.png|A Fallen Overlord trying to kill someone in God Mode.
+PentanestRound.png|All 30 polygons becoming pentagons
+Screenshot5.png|An Alpha Pentagon in sandbox mode
+Screenshot 2016-10-08 at 2.01.44 PM.png|The Defender in Sandbox.
+Dminsandboxx.jpg|A [[Dominator]] in Sandbox
+</gallery>
+
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Sandbox
+|fr     = Sandbox
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Sandbox
+|pt-br  =
+|ru     = Sandbox
+|sv     =
+|tr     =
+|vi     = Sandbox
+|zh     = Sandbox
+}}
+[[Category:Diep.io]]

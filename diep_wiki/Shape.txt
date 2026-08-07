@@ -1,0 +1,4 @@
+= Shape =
+
+#REDIRECT [[Polygons]]
+[[Category:Redirect]]

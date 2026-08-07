@@ -1,0 +1,59 @@
+= Spawners =
+
+{{PA}} are a type of weapon that spawn [[Drones]].
+== Appearance ==
+<b>Spawners</b> look like gray trapezoids and appear on certain [[Tanks]] and [[Bosses]]. Some may appear narrower or tapered such as the case for [[Mothership]] and [[Battleship]] respectively. Spawners can spawn different kinds of drones depending on the [[Tiers|Tank]] (or represent the function of a class like [[Necromancer]] which cannot create drones directly).
+
+== Wielders ==
+*[[Overseer]]: 2 Drone Spawners.
+*[[Overlord]]: 4 Drone Spawners.
+*[[Necromancer]]: 2 Drone Spawners (non-functional).
+*[[Manager]]: 1 Drone Spawner.
+*[[Overtrapper]]: 1 Passive Drone Spawner and 1 Drone Spawner.
+*[[Battleship]]: 4 Small Drone Spawners.
+*[[Factory]]: 1 Factory Drone Spawner.
+*[[Hybrid]]: 1 Secondary Drone Spawner.
+*[[Mothership (Tank)|Mothership]]: 16 Drone Spawners.
+*[[Guardian]]: 1 Crasher Spawner.
+*[[Summoner]]: 4 Summoner Spawners.
+*[[Fallen Overlord]]: 4 Drone Spawners.
+
+==Trivia==
+* The [[Battleship]] is the second (and to date only) class to use a small [[Drones|Drone]] spawner.
+
+==Gallery==
+<gallery>
+Overseer icon 3.png
+Overlord icon 2.png
+Necromancer icon 2.png
+Manager icon 2.png
+Overtrapper icon 3.png
+Battleship icon 2.png
+Factory icon 4.png
+Hybrid icon 3.png
+Mothership tank 3.png
+Guardian boss 2.png
+Summoner boss 2.png
+Fallen overlord boss 2.png
+</gallery>
+
+{{Gameplay|weapon}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Wytwornik dronów
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Ống sinh
+|zh     = 生成器
+}}
+[[Category:Diep.io]]

@@ -1,0 +1,60 @@
+= Map =
+
+The {{PA}}, also called the <b>Minimap</b>, appears in the lower right corner of the screen and displays an overview of the layout of the player’s current [[Game Modes|Game Mode]], along with their location & direction facing (indicated with a black triangular pointer). All Game Modes have a map that shows the outline of the area, the [[Team Deathmatch|Team Bases]], [[Dominator]]s (only in [[Domination]]) and your tank’s location. It does not show any other Players or Bosses though.
+
+== Game Modes ==
+All of the Game Modes have different map layouts. [[FFA]], [[Tag]] & [[Sandbox]] have a very similar map but don’t have any [[Team Deathmatch|Team Bases]] as there is no need for Teams.
+
+=== 2 Teams / 4 Teams ===
+[[4 Teams]] has four Teams consisting of blue, purple, green and red, and [[2 Teams]] Game Mode consists of two Teams, one red (right) and the other blue (left), which are placed at opposite sides of the map spreading from the top to the bottom.
+
+=== Domination ===
+[[Domination]] consists of two [[Team Deathmatch|Team Bases]] that can be randomly placed in any of the four corners of the map, though the Blue Base will always be on the left-hand side and vice versa for the Red Base. Each Base is the size of the 4 Teams Game Mode Bases (and also contain [[Base Drones]]), but also add four much smaller Bases in the middle which are used by the [[Dominator]]s which the player can defeat and then [[Controls|press H]] on their keyboard to control. The game objective and win condition are for the player’s team to defeat all four Dominators and take over all four Bases.
+
+=== Maze ===
+[[Maze]] consists of a randomly generated map terrain of walls that no tank body or bullet can enter, although [[Barrels]] and other Weapons can enter Maze Walls.
+
+=== Tag ===
+[[Tag]] mode used to have a [[Dominator]] that was in the middle of the Map, where the [[Pentagon Nest]] is. Now [[Tag]] has a map that is similar to [[FFA]], but the map shrinks over time. This was probably to make catching tanks easier if only one tank is still rebelling the winning Team.
+
+== History ==
+*The Map was added on May 31st, 2016.
+
+== Gallery ==
+<gallery type="slideshow" widths="250" position="left">
+Diepio2Teams.png|The map that is shown in the 2 Teams game mode.
+Diepio4Teams.png|The map that is shown in the 4 Teams game mode.
+Domination-0.png|The map that is shown in the Domination game mode. Note that the Red and Blue team bases can be placed at any two corners of the map.
+Diep4TeamBrown.png|The old map that was shown in the 4 Teams game mode, which included the Brown team before it was replaced by Green.
+Tag Dominator.png|The old map that was shown in the Tag game mode, which previously included a Dominator in the center of the map.
+Old 2 Teams.png|The old map that was shown in the Team Deathmatch game mode.
+FFAMAP.png|FFA Diagram which also shows the location of the Pentagon Nest and the path that the [[Boss|Bosses]] take(not shown in-game).
+</gallery>
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Unpatched Bugs ===
+*{{PC}} The scoreboard, mini-map and the player’s bar status may disappear and reappear randomly.
+*{{PC}} The grid may periodically become solid black. The constant flashing can vary in speed and the timing between each flash is irregular. The reason is unknown.
+**FIX: Switching to a different web browser can resolve this issue.
+}}
+{{Gameplay|feature}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Arena o Mapa
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Bản đồ
+|zh     = 地圖
+}}
+[[Category:Diep.io]]

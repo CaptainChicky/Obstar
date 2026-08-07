@@ -1,0 +1,96 @@
+= Mobile Changelog =
+
+[[File:Info Version.jpg|thumb|The version information that can be found in the Info section of the settings before version 2.0.0]]
+<b>[[Diep.io Mobile]]</b> has received several updates throughout its history, adding new [[Tanks]], [[Game Modes]], etc. However, most of these updates are completely separate from the web version and add features in a much less frequent manner. Some of the updates only apply to one platform or come out in one platform sooner than the other (iOS or Android).
+
+== Changelog ==
+*1.0.1 - 20 July 2016
+** Bug fixes and performance improvements
+*1.0.2 - 21 July 2016
+**Bug fixes and performance improvements
+*1.0.3 - 28 July 2016
+** Bug fixes and performance improvements
+*1.0.4 - 9 August 2016
+**Added new tank: Ranger, Booster, Fighter, Hybrid, Manager, X Hunter, Sprayer, Predator, Trapper, Gunner Trapper, Overtrapper, Mega Trapper, Tri-Trapper.
+**Bug fixes and performance improvements
+*1.1.0 - 24 August 2016
+**New Game modes: Team DM, Domination, Mothership
+**Bug fixes and performance improvements
+*1.2.0 - 25 October 2016 (Android)
+**New game mode: Tag
+**New tanks added: Smasher, Landmine, Auto Gunner, Auto 5, Auto 3, Spread Shot, Streamliner, Auto Trapper
+**Bug fixes and performance improvements
+*1.2.1 - 2 November 2016
+**New game mode: Tag
+**New tanks added: Smasher, Landmine, Auto Gunner, Auto 5, Auto 3, Spread Shot, Streamliner, Auto Trapper
+**Bug fixes and performance improvements
+*1.2.2 - 30 November 2016
+**Bug fixes and performance improvements
+*1.2.3 - 9 December 2016
+**Bug fixes and performance improvements
+*1.2.4 - 6 March 2017
+**Bug fixes and performance improvements
+*1.2.5 - 16 March 2018 (iOS)
+**Bug fixes and performance improvements
+
+* 1.2.7 - 16 March 2018 (Android)
+**Bug fixes and performance improvements
+*1.2.8 - 16 November 2018 (Android)
+** Bug fixes and performance improvements
+
+* 1.2.9 - 22 November 2018 (Android)
+** Bug fixes and performance improvements
+* 1.2.10 - 12 December 2018 (Android)
+** Bug fixes and performance improvements
+*1.2.11 - 4 September 2019
+**Bug fixes and performance improvements
+*1.2.12 - 4 November 2019
+** Bug fixes and performance improvements
+* 1.3.0 - 31 August 2020 (Android)
+**Bug fixes and performance improvements
+*1.3.1 - 25 January 2021 (iOS)
+** Bug fixes
+*2.0.0 - 20 July 2022 (iOS)
+**New mobile app experience with better controls and buttons.
+*2.0.1 - 15 August 2022
+** Fix crash on startup
+** Dedicated mobile servers
+* 3.0.0 - 23 January 2024 (iOS)
+** Revamped and refined mobile app
+** Improved user controls
+** Game-wide redesign
+* 3.0.1 - 22 October 2024
+** Removed Rivet
+** Fixed Splash
+* 3.0.2 - 22 October 2024 (iOS)
+** Bug Fixes
+
+* 3.0.3 - 4 November 2024 (iOS)
+** Fixed iOS 16 crash
+
+* 3.1.1 - 22 October 2024 (Android)
+** Removed Rivet
+** Removed AdinPlay
+* 3.1.3 - 22 October 2024 (Android)
+** Bug Fixes
+{{Gameplay|general}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Registro de cambios en móvil
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Mobile Changelog
+|zh     = 手機版更新日誌
+}}
+[[Category:Mobile]]
+[[Category:Diep.io]]

@@ -1,0 +1,4 @@
+= Auto-Smasher =
+
+#redirect [[Auto Smasher]]
+__STATICREDIRECT__

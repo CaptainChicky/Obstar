@@ -1,0 +1,118 @@
+= Predator =
+
+{{Infobox
+|image     = <gallery>
+predator icon 3.png|New Colors
+predator icon 2.png|Old Colors
+predator icon 1.png|Old Name
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Hunter icon new.png|50px|link=Hunter]]
+|barrel    = [[Cannons]] (3)
+|id        = 28
+}}
+{{For|the tank originally known as the Predator|Predator (original)}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Hunter]] at level 45. The Predator can move the camera to seek other players in the direction the cursor is facing by clicking the right mouse button, or the Shift key. As it is a Tier 4 tank, it will not upgrade further. Prior to the August 8th 2016 update, it was known as the '''X Hunter''' and did not have a special ability.
+
+== Design ==
+It features a circle as its body and 3 Cannons in front, with the wider barrels overlapping the longer ones.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = ▼
+|MovementSpeed     = —
+|HiddenStat1       =
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    =
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}It has the ability to move the camera through the use of [[Controls|right-clicking (MOUSE2)]] or by pressing Shift.
+*This ability will as well have the camera position locked to the new position, allowing the Predator to move to a different spot (e.g. the [[Base]]) while the player behind it is still able to spectate the new view. Using this, the Predator can see the leader arrow even if it is the leader.
+Upon upgrading from Hunter, Reload speed is decreased. 
+
+Stats: 
+
+* Reload time: 45t (-3t for the 1st, 3rd, 4th, 5th and 7th point, -4t for the 2nd point, -2t for the 6th point in Reload)
+
+== Strategy ==
+*<b>Strong Against:</b> Slow-firing tanks such as the [[Destroyer]], low damage per second tanks, [[Bosses]] (except the [[Fallen Booster]]), the [[Trapper]] and its upgrades, unskilled ramming tanks and drone-controlling tanks if inside its FOV.
+*<b>Weak Against:</b> [[Triplet]], [[Sprayer]], and other fast-firing cannons, skilled drone and rammer users. Beware a close-range fight. You are vulnerable if you use your field of vision to try and kill someone else, as this makes your tank unable to be seen.
+
+=== As the Predator ===
+*Play this tank similarly to other [[Sniper]] classes.
+*Remember to use your extended field of view to your advantage. One trick is to move your camera, then move your tank backward. The camera does not move, but your tank is moved. Beware, as you might no longer see your tank and be killed by sneak attacks, such as rammers.
+**As a result, the Predator should be used with a tank that can protect the flank of the Predator. A suitable fit for this role is an area-denial tank, the [[Overseer|Overseer-class]] or the [[Trapper]]-class.
+*It is advised to use this tank for fighting bosses and other large AI-controlled entities, as one may use the “scoped” FoV and attack them from far away. This can take some time because the Predator does not have a high reload, so try putting points in it to immediately finish off the entity without any problem. The Fallen Booster, however, is a dangerous threat, so it is advised to be aware when you see its spawned notification, the Predator has a slow speed and reload, thus allowing the boss to most likely kill you before you can kill them.
+*It is advisable to kill <b>every single tank</b> on sight before moving your camera because the Predator is very vulnerable when moving their view. It’s best if you move your camera then retreat into your base in team modes if the enemy team is stronger. In [[2 Teams]], if your team is dominating the leaderboard, you can farm points off of the enemy tanks coming out of their base. With the extended field of view, you can see into the enemy base while out of range of the [[Base Drones]]. It is also advised to turn auto-fire on when scoping, so at least you will have a chance to defend yourself.
+*By firing one or two bullets manually then enabling [[Auto Fire]] after a split second (some trial and error may be necessary), it is possible to stack two or three bullets on top of each other so that they fire in sync. This can be used to emulate an increased damage per shot, and more easily eliminate enemies quickly before they can escape. A method to achieve this on desktop browsers is as follows. First, put the game in full screen. For builds with max bullet speed and 5 bullet reload, quickly turn auto-fire on then off firing exactly one bullet. When that bullet reaches the about the very top of the screen, turn on auto-fire again. If timed correctly, the first two bullets will be stacked together. Now, we will repeat the process above. Turn off auto-fire just after the first two bullets fire, so that the third does not. Then, again, turn on auto-fire again when those two stacked bullets reach the top of the screen. If timed correctly, all three bullets should now be stacked. For builds with max bullet speed and max reload, turn on auto-fire again when the bullet about reaches the "Auto Fire: Off" dialog.
+
+=== Against the Predator ===
+*The Predator is vulnerable while it has its camera moved somewhere else. While you can’t tell if it is moving its camera, you could flank it by firing bullets at it.
+*Rammers are very effective, as the Predator has a low reload and is usually very slow so it is a very easy target when your stats are high on movement speed, you may easily chase it down and kill it.
+*Bullet spammers can overwhelm a Predator due to the low reload, good choices include the Triplet or [[Penta Shot]]. However, the Predator's bullet stats are very high (except for reloading) and can penetrate the spammer's bullets, so it is best to flank the Predator's sides.
+*Drone wielding tanks like the [[Overlord]] or [[Manager]] could spread out the drones and flank the Predator by sides front and back, that way, the Predator could easily get overwhelmed and killed.
+*The [[Factory]] can nullify the Predator's bullets with its own while moving at full speed in the tank's direction.
+*Using a Fighter with a bullet cloud can easily kill a Predator, although you should add some, if not max out, movement speed points.
+
+== History ==
+*When this tank was added, it was named <b>X Hunter</b> and did not have the modern zooming feature it has today.
+*On 9th August 2016, this tank had been merged with [[Predator (ID 30)|the original Predator]], receiving its name and the zooming feature from the other tank.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/TK4qkh6 2.25m by Unnamed sniper]
+* 2 Teams: [https://imgur.com/a/li4YZ5b 4.51m by Grims]
+* 4 Teams: [https://www.youtube.com/watch?v=GuH1oJAiA1U 4.3m by potatomato]
+* Maze: [https://web.archive.org/web/20230422092517/https://www.youtube.com/watch?v=v0JysapwaxM 1.04m by Astral]
+
+=== Mobile ===
+
+* FFA: 994.2k by darkforce
+* 2 Teams: 1.43m by buh
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*Predator is the only playable tank with the ability to move its camera away from itself.
+*Its bullets can do slightly more than a third of the [[Destroyer|Destroyer’s]] bullet damage, making it surprisingly dangerous.
+*In the legacy mobile version of diep.io, the Predator retains its old name "X Hunter".
+*This tank is the only one to have experienced a merge with another tank.
+
+== Gallery ==
+<gallery>
+Further.png|The message that appears once you upgrade to the Predator
+Predator zoom.png|A Predator using its special zoom ability.
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Predator
+|es     = Predator
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Predator
+|pt-br  =
+|ro     =
+|ru     = Predator
+|sv     =
+|tr     =
+|vi     = Predator
+|zh     = Predator
+}}
+[[Category:Diep.io]]

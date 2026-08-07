@@ -1,0 +1,230 @@
+= Levels =
+
+[[File:ScoreBars.PNG|thumb|250px|What the Level bar looks like.]]
+{{PA}} are a game mechanic in [[Diep.io]]. Players level up by gaining <b>score</b>, killing other players, destroying [[Polygons]] and Crashers, or through passive XP gain (in the case of the game mode, [[Survival]]). The player's total score and level are represented by two bars below their name, as shown on the right. The numbers on the top bar represent the player's total score whilst comparing the player's score as a percentage of the score of the Leader (the player at the top of the [[Scoreboard]]) - as such, when the player is the leader, this bar is full. Another difference between these two bars is that the score bar can fluctuate up and down, while the level bar can only increase. The bottom bar represents the player's current level and their current progress to the next level; once this bar is full, they gain a level. This system terminates at level 45, as no higher levels can be reached.
+
+== Mechanics ==
+[[File:The skill-tree.png|thumb|176x176px|The Stat Upgrade window.]]
+For every level gained, up to Level 28, a <b>skill point is received</b> (after which a skill point is received at Level 30, and then every 3 levels afterward up to level 45). Skill points are used to upgrade the player's <b>[[Stats]]</b>. In the skill tree, shown to the right, up to 7 total skill-points may be invested into a stat, with there being eight stats. Four stats can be maxed out (or filled), with another receiving the last five points. An exception to this is the [[Smasher]] branch, which can use up to 10 points, but only 4 stats. The [[Auto Smasher]], however, has all 8 stats with a maximum of 10 points. There is a maximum of 33 skill points, so use them wisely, or the player will end up with an ineffective build.
+
+Even two of the same [[tanks]] can vary widely based on how its skill points are distributed; these different skill point distributions are known as [[Builds]]. They vary between strict melee builds and ranged builds.
+
+For every 15 levels, up to 45, the player may go up to the next <b>[[Tiers|Tier]]</b>, which drastically improves the characteristics of the player's tank and its [[Barrel]]s, Spawners, Trap layers, or other attributes.
+[[File:LevelSizeComparison.png|thumb|Comparison between Level 45 tank (left) and Level 1 tank (right) (Old Colors)]]
+As the player levels up:
+*The size of the player's tank and its [[Bullets|ammunition]] size will increase by 1% per level above level 1.
+*The tank’s Health will increase by 2 HP per level.<ref>[[Thread:52718]]</ref>
+*The Field of View (FoV) will increase.
+*The Movement Speed will decrease.
+
+Should the player die, they will respawn at a lower level, which fully depends on their level before they died. It is usually half of the player's level, but below Level 12 they will go down only one level, when they are Level 15 they will get Level 12, and upwards to 30 it depends on score, then level.
+
+== Experience Gain ==
+Different game modes have different Experience modifiers.
+*[[Free For All|FFA]], [[2 Teams]], [[4 Teams]], [[Maze]] and [[Sandbox]] has an experience multiplier of x1.
+*[[Domination]] has an experience multiplier of x2.
+*[[Survival]], [[Tag]], [[Breakout]], and [[Mothership (Game mode)|Mothership]] has/had an experience multiplier of x3 (the [[Survival]] and [[Mothership (Game Mode)|Mothership]] game modes has been removed).
+
+== Level Table ==
+{| class="wikitable left mw-collapsible mw-collapsed"
+! Level !! Tank size !! Points Needed
+!Points to Next Level!! Respawn Level
+|-
+|1 || 2.000 grid squares || 0
+|4|| 1
+|-
+|2 || 2.020 grid squares || 4
+|9|| 1
+|-
+|3 || 2.040 grid squares || 13
+|15|| 2
+|-
+|4 || 2.061 grid squares || 28
+|22|| 3
+|-
+|5 || 2.081 grid squares || 50
+|28|| 4
+|-
+|6 || 2.102 grid squares || 78
+|35|| 5
+|-
+|7 || 2.123 grid squares || 113
+|44|| 6
+|-
+|8 || 2.144 grid squares || 157
+|54|| 7
+|-
+|9 || 2.166 grid squares || 211
+|64|| 8
+|-
+| 10 || 2.187 grid squares || 275
+|75|| 9
+|-
+|11 || 2.209 grid squares || 350
+|87|| 10
+|-
+|12 || 2.231 grid squares || 437
+|101|| 11
+|-
+|13 || 2.254 grid squares || 538
+|113|| 11
+|-
+|14 || 2.276 grid squares || 655
+|132|| 12
+|-
+|15 || 2.299 grid squares || 787
+|151|| 12
+|-
+|16 || 2.322 grid squares || 938
+|171|| 13
+|-
+|17 || 2.345 grid squares || 1109
+|192|| 13
+|-
+|18 || 2.369 grid squares || 1301
+|215|| 13
+|-
+|19 || 2.392 grid squares || 1516
+|241|| 14
+|-
+|20 || 2.416 grid squares || 1757
+|269|| 14
+|-
+|21 || 2.440 grid squares || 2026
+|299|| 15
+|-
+|22 || 2.465 grid squares || 2325
+|333|| 15
+|-
+|23 || 2.489 grid squares || 2658
+|368|| 15
+|-
+|24 || 2.514 grid squares || 3026
+|407|| 16
+|-
+|25 || 2.539 grid squares || 3433
+|450|| 16
+|-
+|26 || 2.565 grid squares || 3883
+|496|| 16
+|-
+|27 || 2.591 grid squares || 4379
+|546|| 17
+|-
+|28 || 2.616 grid squares || 4925
+|600|| 17
+|-
+|29 || 2.643 grid squares || 5525
+|659|| 17
+|-
+|30 || 2.669 grid squares || 6184
+|723|| 17
+|-
+|31 || 2.696 grid squares || 6907
+|791|| 18
+|-
+|32 || 2.723 grid squares || 7698
+|839|| 18
+|-
+|33 || 2.750 grid squares || 8537
+|889|| 18
+|-
+|34 || 2.777 grid squares || 9426
+|942|| 19
+|-
+|35 || 2.805 grid squares || 10368
+|999|| 19
+|-
+|36 || 2.833 grid squares || 11367
+|1059|| 19
+|-
+|37 || 2.862 grid squares || 12426
+|1123|| 19
+|-
+|38 || 2.890 grid squares || 13549
+|1190|| 20
+|-
+|39 || 2.919 grid squares || 14739
+|1261|| 20
+|-
+|40 || 2.948 grid squares || 16000
+|1337|| 20
+|-
+|41 || 2.978 grid squares || 17337
+|1417|| 20
+|-
+|42 || 3.008 grid squares || 18754
+|1502|| 21
+|-
+|43 || 3.038 grid squares || 20256
+|1593|| 21
+|-
+|44 || 3.068 grid squares || 21849
+|1687|| 21
+|-
+|45 || 3.099 grid squares || 23536
+|<nowiki>--</nowiki>|| 22
+|}
+
+== [[Achievements]] ==
+{{SideBox|*<b>Eh you're trying</b> — Reach 1k points
+*<b>Starting to git gud</b> — Reach 10k points
+*<b>You aren't that bad at this</b> — Reach 100k points
+*<b>Okay you're pretty good</b> — Reach 1m points
+|{{Achievement
+|Color        = #98EE6B
+|Name         = Eh you’re trying
+|Description  = Reach 1k points}}
+{{Achievement
+|Color        = #FBE269
+|Name         = Starting to git gud
+|Description  = Reach 10k points}}
+{{Achievement
+|Color        = #FBE269
+|Name         = You aren't that bad at this
+|Description  = Reach 100k points}}
+{{Achievement
+|Color        = #E9827E
+|Name         = Okay you're pretty good
+|Description  = Reach 1m points}}
+}}
+
+== Trivia ==
+[[File:Old.io.JPG|thumb|287x287px|A Picture of what the level bar looked like when you could get to level 60.]]
+*In old versions of [[Diep.io]] (April 15th-17th 2016), the level cap was 60 instead of 45.
+**This meant that Tier 5 did exist at one point.
+***The only Tier 5 tank back then was [[Octo Tank]], when [[Quad Tank]] upgraded from [[Triple Shot]].
+*Should the player kill someone over 23,536 EXP, they will only receive 23,537 EXP. This may be so that a player cannot gain 1m points from an opponent immediately, which would be unfair.
+*In FFA and Maze, if a player is 20 Levels higher than an opponent, and they then kill that opponent, there will be a no-kill notification. This is intended to prevent the spawn-killing of low-level tanks by higher-level ones.
+*It is possible to become higher than Level 45. Players can do this by taking control of a [[Dominator]] in [[Domination]], taking control of a [[Bosses|Boss]], or being the [[Mothership (Tank)|Mothership]]. This would make the player levels 75 (both Dominator and Bosses) and 140, respectively.
+*The formula for tank size is 50 * 1.01^(level - 1) units, where a grid square is 25 units.
+*While [https://diepio.wikia.com/wiki/Dominator Dominators] appear to be level 75, their size corresponds to around level 118, for unknown reasons.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Unpatched Bugs ===
+*{{PC}} The scoreboard, mini-map and the player’s bar status may disappear and reappear randomly.
+}}
+
+== References ==
+<references/>
+{{Gameplay|mechanics}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Indicadores de Nivel y Experiencia
+|fr     =
+|hu     =
+|it     =
+|ja     = 経験値
+|ko     =
+|pl     = Poziomy
+|pt-br  =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Cấp độ
+|zh     = 等級
+}}
+[[Category:Diep.io]]

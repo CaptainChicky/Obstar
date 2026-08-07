@@ -1,0 +1,4 @@
+= Body Damage =
+
+#REDIRECT [[Stats#Body_Damage]]
+[[Category:Redirect]]

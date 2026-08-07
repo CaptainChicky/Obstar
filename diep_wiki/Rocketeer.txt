@@ -1,0 +1,134 @@
+= Rocketeer =
+
+{{Infobox
+|image     = rocketeer icon 1.png
+|tier      = 4
+|previous  = [[File:Destroyer icon new.png|50px|link=Destroyer]]
+|barrel    = [[Cannons#Deployers|Deployer]] (1)
+|id        = 55
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Destroyer]] at level 45.
+
+
+
+== Design ==
+The Rocketeer features a circular tank body as a base with a modified version of the [[Cannons#Deployers|Deployer]] mounted on the front. The [[Cannons#Deployers|Deployer]] features a trapezoid with a second, smaller trapezoid mounted onto the front.
+
+== Technical ==
+[[File:Rocketeer missile size comparison.png|alt=An image comparing the Rocketeer tank's missile sizes at Level 1 and Level 45.|thumb|Despite Rocketeer's missiles changing size depending on [[Levels|Level]], the width of the missile's engine stays consistent at 37.8 units.]]
+{{BaseStats
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = ▼▼
+|BulletPenetration  = ▲▲▲
+|BulletDamage       = ▼▼
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        = Recoil
+|HiddenStat2        = Projectile Size
+|HiddenStat3        = Field of View
+|HiddenStat4        =Recoil (of missile)
+|HiddenStat1Val     = ▼▼
+|HiddenStat2Val     = ▼
+|HiddenStat3Val     = ▲
+|HiddenStat4Val     =▲▲▲
+}}The Rocketeer shoots [[Bullets#Missiles|Missiles]], this type having one small [[Machine Gun]] cannon at the back that shoots smaller bullets for propulsion, thus making the bullets for the Rocketeer fire the fastest of the [[Destroyer]] branch’s bullets. That being said, as soon as the bullet leaves the barrel, there is a slight delay before it will start firing the mini bullets. This delay is shortened the more points are put into Reload.
+*Despite being a Destroyer-based tank, it has an extremely small amount of [[Stats#Recoil|recoil]] when firing, similar to the [[Skimmer]].
+*The Rocketeer’s FoV becomes that of a [[Sniper|Sniper’s]].
+*When upgrading to the Rocketeer, the bullet damage, recoil and speed are reduced, with the Bullet Damage being 3 times weaker, the Recoil being 5 times weaker, and the penetration increases drastically (by 2.5x).
+*Compared to a Skimmer, it has less bullet speed and the same reload.
+**Despite this, its main bullet (missile)'s cannon has a huge amount of recoil, which makes Rocketeer's missile moves much faster than its base Bullet Speed.
+Stats: 
+
+* Missile:
+** Bullet Speed: 0.3x Tank
+** Bullet Penetration: 10 (+7.5 for each point in Bullet Penetration)
+** Bullet Damage: 7 (+3 for each point in Bullet Damage)
+** Reload: Same with [[Destroyer]]
+* Missiles' Bullets:
+** Bullet Speed: 1.5x Tank
+** Bullet Penetration: 0.6 (+0.45 for each point in Bullet Penetration) 
+** Bullet Damage: 4.2 (+1.8 for each point in Bullet Damage) 
+** Reload time: 3t (-1t for the 5th point in Reload)
+
+== Strategies ==
+*<b>Strong against:</b> Unfocused fire tanks such as [[Penta Shot]] and [[Octo Tank]] at a distance, slow or clustered enemies, [[Trapper]] branch
+*<b>Weak against:</b> [[Sniper]] branch, rammers, fast tanks, high Bullet Speed tank, [[Overseer]] branch.
+
+=== As the Rocketeer ===
+*The Rocketeer is extremely effective against spread-fire upgrades, because of its high penetration. However, be careful not to pick fights with focused fire, such as the [[Triplet]]. Because of its increased penetration, a good strategy when fighting focused fire tanks would be to anticipate where they are going next, and fire there, as the bullets from the Rocketeer’s missiles deal significant damage. Area denial is the greatest asset of the Rocketeer, making it very good for team Modes.
+*The Rocketeer’s Missiles are quite effective at piercing through a layer of traps and attacking a [[Trapper]] class behind them, as the Missiles have very high Penetration and Speed and their size is much smaller than all other [[Destroyer]] upgrades.
+*The Rocketeer is most effective in longer-range confrontations since its Missiles take around a second to start propelling themselves, and the relatively slow reload makes it necessary to catch enemies by surprise. Be sure to aim farther ahead of your targets than usual.
+**Maxed Reload stat and no Bullet Speed stat is heavily suggested when planning on upgrading to Rocketeer, even for long-range. Reload will increase the Missile cannon's bullet production, which will propel them more, as well as increasing the fire rate. Bullet Speed isn’t as effective, as Missile propulsion is the main source of projectile speed.
+*In team modes, the Rocketeer is ideal for firing into enemies that are grouped, as the enhanced range lets the player fire their powerful Missiles through any enemy bullets from a reasonable distance back, and the bunched-up enemies’ movements are inhibited by their proximity to one another. The player should be sure to have a good retreat path, though.
+*Try to strafe (fire while moving sideways) when attacking as much as possible, even when attacking long-range. The increased FoV is a big advantage and combined with the delayed Missiles, people will often misjudge the player’s position when attempting to shoot at the Missiles’ source. When strafing mid-range, it gives your Missiles a better angle as they propel towards opponents. The delay gives you the benefit of having multiple projectiles on the playing field that point in different directions, as you strafe around your opponents.
+*Don’t bother attacking opponents that aren’t immediately visible; the Missiles’ delay effectively slices the duration of a Missile’s propulsion lifetime to around two seconds, so projectiles generally don’t last very long after they leave the player’s FoV.
+
+=== Against the Rocketeer ===
+*The [[Overlord]] and [[Overseer]] are extremely effective against the Rocketeer as their bullets shoot in a single direction and smaller than that of the Destroyer, [[Hybrid]], and [[Annihilator]].
+*An Overlord can easily surround the Rocketeer with its drones and destroy it; however, they must make sure not to bunch up their drones in one area such that the Rocketeer can obliterate them all with one bullet. Players must also watch out for the propulsion bullets, as they chip away at players’ health surprisingly fast if they do not watch their back.
+*Battleship can actually destroy a Rocketeer, and 1 repel will usually suffice.
+*Since the Rocketeer has low damage compared to other Destroyer branch offs (taking at least four hits to kill a Level 45 rammer), rammers are surprisingly effective against it. Its bullets are initially slow, gaining speed only after the Machine Gun cannon begins firing, making dodging its bullets very easy at medium range.
+*Try outranging a Rocketeer’s Missiles with a high-FoV Sniper upgrade, as one can easily shoot much farther than a Rocketeer. Use the same tactics you would against a Destroyer, but beware as Rocketeers have a somewhat farther range.
+*The Rocketeer is quite weak defensively and is extremely prone to be overwhelmed or surrounded. Especially in team modes, try flanking a Rocketeer that is currently engaged with another tank.
+
+== Record ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/yxOGuFc 1.83m by Playful]
+* 2 Teams: 2.83m by Trix
+* 4 Teams: [https://youtu.be/2jG6bpvYIkQ 2.69m by 😲SurpriseYT]
+* Maze: [https://imgur.com/VMJD2xT 707k by Deimos]
+
+=== Mobile ===
+
+* FFA: 1.16m by HZ6
+* 2 Teams: 2.01m by gd1v
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*The Rocketeer was added on December 21st, 2017.
+**This tank and the [[Skimmer]] were the only tanks added in 2017.
+*The Rocketeer Missiles, when maxed out, can pierce through an [[Alpha Pentagon]]. It is the first tank able to do so.
+*The Rocketeer’s Missiles have the highest bullet base HP value out of all bullets. Ironically, the small bullets have the lowest of them all (shouldn’t be confused with durability or damage).
+*When one upgrades bullet penetration it won’t make the Missiles travel farther, only the bullets emitted from said Missiles.
+*The Rocketeer is the second tank to use Missiles and Deployers, after the [[Skimmer]].
+*Though all tanks may fire into enemy bases, possibly hurting enemies near the very edge of their base, the Rocketeer is the most effective at it, due to the extreme bullet penetration and speed.
+*Rocketeer has terrible aim due to the missile being propelled by a Machine gun cannon.
+*The Rocketeer’s missiles are based on the [[Machine Gun]] while the Skimmer’s missiles are based on the [[Flank Guard]]. 
+*The unupgraded Rocketeer’s missiles are as fast as the old Skimmer missile.
+*The Rocketeers’s missiles’ barrel is Blue instead of Grey.
+*Previously, if a Rocketeer is killed right after it fires a missile (Before the missile starts shooting bullets) the missile will not start shooting bullets, instead slowly drifting forward until it disappears.
+
+== Gallery ==
+[[File:Rare Image.png|thumb|220x220px|The Transparent Image of the Rocketeer firing a missile that hasn't begun to shoot bullets yet.]]
+<gallery>
+Rocketeer+Tank.png|A Rocketeer’s missile compared to a Tank’s.
+RocketeerDiepPurple.jpg|A Rocketeer in Tag.
+RocketeerMissile-0.png|Transparent image of Rocketeer's missile.
+RocketeerInSurvival.jpg|A Rocketeer in Survival.
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Rocketeer
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Rocketeer
+|pt-br  =
+|ro     =
+|ru     = Rocketeer
+|sv     =
+|tr     =
+|vi     = Rocketeer
+|zh     = Rocketeer
+}}
+[[Category:Diep.io]]

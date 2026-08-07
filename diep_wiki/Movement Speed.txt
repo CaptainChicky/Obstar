@@ -1,0 +1,3 @@
+= Movement Speed =
+
+#REDIRECT [[Stats#Movement_Speed]]

@@ -1,0 +1,515 @@
+= Stats =
+
+{{for|examples of how Stats can enhance different tank [[Tiers|classes]] for certain play styles|Builds}}
+{{PA}} are a core game mechanic in [[Diep.io]]. Along with customizing the [[Tiers|class]] of a tank, players can also modify their tank’s Stats to master their own play style.
+
+== Mechanics ==
+[[File:Stats.png|thumb|The Stat Upgrade window]]
+As the player levels up, they begin to earn <b>Skill Points</b>, which are used to upgrade stats. Skill Points can be spent either through clicking the + button next to a stat bar (shown at right) or by pressing the [[Controls|corresponding number key]]. Tanks gain 1 Skill Point for every [[Levels|Level]] until Level 28, gain no Skill Point at Level 29, gain 1 Skill Point at Level 30, and then gain 1 additional Skill Point every 3 Levels thereafter. Under normal gameplay, players reach 33 Skill Points at Level 45. In custom games, the command <code>set_max_level [num]</code> can be used to raise the maximum level up to Level 120, allowing this progression to continue beyond Level 45.
+
+For a tank at Level <math>L</math>, the total number of Skill Points can be expressed as:
+:<math>\text{Skill Points} = L - 1</math> for <math>1 \leq L \leq 28</math>
+:<math>\text{Skill Points} = 27</math> for <math>L = 29</math>
+:<math>\text{Skill Points} = 28 + \left\lfloor \frac{L - 30}{3} \right\rfloor</math> for <math>30 \leq L \leq 120</math>
+
+This gives a total of 33 Skill Points at Level 45, 38 at Level 60, 43 at Level 75, 48 at Level 90, 53 at Level 105, and 58 at Level 120. A stat can normally be upgraded 7 times before maxing it out fully, with the exception of the [[Smasher]] branch, in which each stat can be upgraded up to 10 times.
+
+<i><b>Note:</b> Percentages and statistics on this page are merely approximate. These values are not 100% accurate. However, in many of the 8 stats, converting to 4 stat points or 7 stat points from 3 and 6, respectively, gives a higher overall buff in the respective stat.</i>
+
+== Stats and their Effects ==
+
+<h3 style="color:#EEB690; font-weight: bold;">Health Regen</h3>
+Short for <i>health regeneration</i>. Any tank, who does not receive damage after a certain amount of time, begins to regenerate any lost health. When this stat is upgraded, it will decrease the amount of time needed to fully restore your tank’s health. The more points invested in health regeneration will, the faster that normal health regeneration will heal your tank. The rate of regeneration greatly increases after approximately 30 seconds. Increasing Maximum Health will not slow down the healing rate.
+
+Entities like [[Polygons|Shapes]] and [[Bullets|Projectiles]] don't regen slowly on their own like [[Tanks]]. They still have the ability to Hyper Regen, however, though most Projectiles don't have the chance to do so due to their limited lifespan.
+
+A study conducted in the [[Sandbox]] shows the results of upgrading the Health Regen stats a certain number of times. It is the amount of time taken for a Level 45 [[Tank|Basic Tank]] to fully restore its health after ramming into a [[Pentagon]], no other stats considered.
+
+Not counting Hyper Regeneration (when the rate of regeneration greatly increases after approximately 30 seconds of not taking damage), a Tank regens 0.004% of its maximum HP every tick (0.04 seconds) at 0 points in Health Regen, or 0.1% per second.
+
+Note: this chart only shows the amount of time to full health for a level 1 tank with 0 points into health. Use this chart for a reference to the proportion of change.
+{|class="article-table"
+!No. of Points!!Time to Regen. to Full Health!!Average Regen. Rate
+|-
+|<b>7 points</b>||6.41 seconds||15.60% per second
+|-
+|<b>6 points</b>||7.72 seconds||12.95% per second
+|-
+|<b>5 points</b>||9.13 seconds||10.95% per second
+|-
+|<b>4 points</b>||11.75 seconds||8.51% per second
+|-
+|<b>3 points</b>||15.15 seconds||6.60% per second
+|-
+|<b>2 points</b>||23.07 seconds||4.33% per second
+|-
+|<b>1 point</b>||30.67 seconds||3.26% per second
+|-
+|<b>0 points</b>||31.97 seconds||3.12% per second
+|}
+This chart shows the relationship between the regeneration points and the corresponding percentage of the restored durability to the total durability of a tank in the 30 seconds before the great increase of regeneration occurs.
+{|class="article-table"
+!No. of Points!!Total Percentage of Durability Regenerated
+|-
+|10 points*
+|123%
+|-
+|9 points*
+|111%
+|-
+|8 points*
+|99%
+|-
+|7 points
+|87%
+|-
+|6 points
+|75%
+|-
+|5 points
+|63%
+|-
+|4 points
+|51%
+|-
+|3 points
+|39%
+|-
+|2 points
+|27%
+|-
+|1 point
+|15%
+|-
+|0 points
+|3%
+|}
+&#42;Smasher class types only
+
+Records show that having 9 or more points in regeneration allows regeneration to full health under the 30 seconds timespan, before the great increase in regeneration comes into play. The chart can be translated into this formula:<br /><code>Durability Regen Per Second = 1/30 * Durability * (0.03 + 0.12 * Regen Stat)</code><br /><br />Therefore, every point gives approximately +12% faster regeneration.
+
+<h3 style="color:#EC6CF0; font-weight: bold;">Max Health</h3>
+Max Health determines the maximum health pool of your tank. You also passively gain more health for every level you gain, as <b><i>Base HP = 50 + [2 x (Level - 1)]</i></b>. With no health upgrades, A level 1 tank has 50 HP, while a max level tank (level 45) has 138 HP.
+{|class="article-table"
+!No. of Skill Points!!HP Increase
+|-
+|<b>10 points*</b>|| +200 HP
+|-
+|<b>9 points*</b>|| +180 HP
+|-
+|<b>8 points*</b>|| +160 HP
+|-
+|<b>7 points</b>|| +140 HP
+|-
+|<b>6 points</b>|| +120 HP
+|-
+|<b>5 points</b>|| +100 HP
+|-
+|<b>4 points</b>|| +80 HP
+|-
+|<b>3 points</b>|| +60 HP
+|-
+|<b>2 points</b>|| +40 HP
+|-
+|<b>1 point</b>|| +20 HP
+|-
+|<b>0 points</b>|| +0 HP
+|}
+&#42;Smasher class types only
+
+<h3 style="color:#9A6CF0; font-weight:bold;">Body Damage</h3>
+This stat determines how much damage a Tank will inflict upon another object on collision. Body Damage will also lessen damage from other objects. This is determined by how much damage it can give to the object, namely ammunitions’ health (penetration), so that it gets destroyed faster before reaching the maximum amount of collisions. Body Damage is increased by 50% when affecting Tanks and decreased by 75% when affecting projectiles (Bullets, Traps, Drones).
+
+The formula for Body Damage is: <code>(Points in Body Damage + 5) * multiplier</code>. Player Tanks have a multiplier of 4 against shapes. 
+{| class="article-table"
+!Number of Skill Points!!Damage Per Hit <sup>(Shape/Tank Collision)</sup>
+!Damage Per Hit <sup>(Tank/Tank Collision)</sup>
+!Damage Per Hit <sup>(Projectile/Tank Collision)</sup>
+|-
+|<b>0 points</b>
+|<b>20 HP</b>
+|<b>30 HP</b>
+|'''5 HP'''
+|-
+|<b>1 point</b>
+|<b>24 HP</b>
+|<b>36 HP</b>
+|'''6 HP'''
+|-
+|<b>2 points</b> <sup>(0 for Spike)</sup>
+|<b>28 HP</b>
+|<b>42 HP</b>
+|'''7 HP'''
+|-
+|<b>3 points</b> <sup>(1 for Spike)</sup>
+|<b>32 HP</b>
+|<b>48 HP</b>
+|'''8 HP'''
+|-
+|<b>4 points</b> <sup>(2 for Spike)</sup>
+|<b>36 HP</b>
+|<b>54 HP</b>
+|'''9 HP'''
+|-
+|<b>5 points</b> <sup>(3 for Spike)</sup>
+|<b>40 HP</b>
+|<b>60 HP</b>
+|'''10 HP'''
+|-
+|<b>6 points</b> <sup>(4 for Spike)</sup>
+|<b>44 HP</b>
+|<b>66 HP</b>
+|'''11 HP'''
+|-
+|<b>7 points</b> <sup>(5 for Spike)</sup>
+|<b>48 HP</b>
+|<b>72 HP</b>
+|'''12 HP'''
+|-
+|<b>8 points*</b> <sup>(6 for Spike)</sup>
+|<b>52 HP</b>
+|<b>78 HP</b>
+|'''13 HP'''
+|-
+|<b>9 points*</b> <sup>(7 for Spike)</sup>
+|<b>56 HP</b>
+|<b>84 HP</b>
+|'''14 HP'''
+|-
+|<b>10 points*</b> <sup>(8 for Spike)</sup>||<b>60 HP</b>
+|<b>90 HP</b>
+|'''15 HP'''
+|-
+|<sup>(9 Points for Spike)</sup>
+|<b>64 HP</b>
+|<b>96 HP</b>
+|'''16 HP'''
+|-
+|<sup>(10 Points for Spike)</sup>
+|<b>68 HP</b>
+|<b>102 HP</b>
+|'''17 HP'''
+|}
+&#42;Smasher class types only
+
+At max Body Damage, a tank can kill a [[Pentagon]] by tapping it three times. Colliding at full speed will trigger all three impacts in the same instant. The base Body Damage was increased in the September 29th update.
+
+Some tank builds use Body Damage as their primary method of attack. One [[Destroyer]] technique involves hurling their body at opponents using the recoil of their massive cannon. Fast-moving [[Tri-Angle]]s and [[Booster]]s also use Body Damage to ram unarmored opponents.
+
+A tank affected by spawn invincibility will deal with body damage as normal to enemies while taking no damage themselves.
+
+The Spike’s base Body Damage +2 higher than other tanks, and thus is +8 higher than the standard 20, or +12 higher than the standard 30 in Tank vs. Tank situations. Its Body Damage ranges from 28 HP to 68 HP, or from 42 HP to 102 HP when it collides with a tank.                                                                       
+
+Shapes also have Body Damage. An [[Alpha Pentagon]] deals the same damage as a tank with 0 points.
+
+<h3 style="color:#6C96F0; font-weight:bold;">Bullet Speed</h3>
+This stat determines the movement speed of the projectiles shot by tanks, and thus also increases how far they travel during their lifespan... Putting points into this stat increases the potential of surprising an opponent. Not only are they a sudden damage point on enemies, but they also may not even see it coming if maxed out. Increasing Bullet Speed makes bullets harder to dodge as well, and Destroyers with high Bullet Speed become extremely dangerous.
+
+Bullet speed can slightly decrease the overall damage, as when a bullet is too fast it'll pass through a tank without providing all its potential damage. Turns into Drone Speed if you upgrade to an [[Overseer]] or any other Drone tank (except for the [[Factory]]).
+
+Unavailable to Smashers, Spikes, and Landmines as they lack Bullets.
+
+<h3 style="color:#F0D96C; font-weight:bold;">Bullet Penetration</h3>
+Could be called <i>Bullet Health</i>. Each point put into Bullet Penetration increases its “health,” or how many objects a bullet can pass through before its health reaches 0. This includes Polygons, Tanks and other bullets. If it hits a large tank or shape and it has high penetration, the bullets will bounce off it. If bullets with equal Bullet Penetration and Bullet Damage hit each other, they both get destroyed. If a bullet hits another bullet with lower bullet penetration, then the penetrating bullet has its life lowered and therefore it will pass through fewer objects. If a bullet hits a tank with high body damage, the bullet will deal less damage because the tank has lowered the bullet’s health to 0 before it can reach the maximum amount of damage it can receive.
+
+This is a supplement to Bullet Damage, due to the fact the bullet has more health, which allows the bullet to do more damage. Each point in Bullet Penetration increases a bullet's HP value by 75% of its base value. The following chart shows HP value of a basic Tank's bullet.
+{| class="article-table"
+!Number of Skill Points!!Bullet's HP Value
+!HP with mathematical health increase (x4)
+|-
+|<b>0 points</b>||2 HP
+|8 HP
+|-
+|<b>1 points</b>
+|3.5 HP
+|14 HP
+|-
+|<b>2 points</b>
+|5 HP
+|20 HP
+|-
+|<b>3 points</b>
+|6.5 HP
+|26 HP
+|-
+|<b>4 points</b>
+|8 HP
+|32 HP
+|-
+|<b>5 points</b>
+|9.5 HP
+|38 HP
+|-
+|<b>6 points</b>
+|11 HP
+|44 HP
+|-
+|<b>7 points</b>
+|12.5 HP
+|50 HP
+|-
+|<b>8 points*</b>
+|14 HP
+|56 HP
+|-
+|<b>9 points*</b>
+|15.5 HP
+|62 HP
+|-
+|<b>10 points*</b>
+|17 HP
+|68 HP
+|}*Auto Smasher only
+
+Collisions with bullets will knock back the object hit and deflect the bullet in the process. If a tank with high health and Body Damage deflects a bullet (by being hit at the side) then the bullet only deals a specific amount of damage controlled by Bullet Damage, while a direct hit allows a bullet to damage the tank numerous times due to its high Bullet Penetration. Turns into Drone Health if the player upgrades to an Overseer or any other Drone tank (except for the Factory).
+
+Unavailable to Smashers, Spikes, and Landmines as they lack Bullets.
+
+<h3 style="color:#F06C6C; font-weight:bold;">Bullet Damage</h3>
+
+Bullet Damage determines how much damage a bullet will deal in a single collision. Each point in Bullet Damage increases this amount. If you upgrade your bullet damage with all 7 skill points that they can fit in, it deals four times more damage per hit than a bullet without bullet damage at maximum. When bullets from the same types of tanks (and some others) with equal penetration collide, the bullet with the higher Bullet Damage will destroy the other. Each point in Bullet Damage increases a bullet's damage value by roughly 42.857% of its base value. Bullet Damage is decreased by 75% when affecting Bullets and Traps. When 2 projectiles hit, if at least one of them is a Drone, then they will both deal their full damage (unless if the other one is a Necromancer Drone, in which case the Necro Drone will deal 75% less damage while the other deals its full damage). The following chart shows maximum damage per hit with a basic Tank.
+{|class="article-table"
+!Number of Skill Points!!Maximum Damage Per Hit <sup>(on Tanks/Shapes/Drones)</sup> 
+!Maximum Damage Per Hit <sup>(on Bullets/Traps)</sup> 
+|-
+|<b>0 points</b>||7 HP
+|1.75 HP
+|-
+|<b>1 point</b>||10 HP
+|2.5 HP
+|-
+|<b>2 points</b>||13 HP
+|3.25 HP
+|-
+|<b>3 points</b>||16 HP
+|4 HP
+|-
+|<b>4 points</b>||19 HP
+|4.75 HP
+|-
+|<b>5 points</b>||22 HP
+|5.5 HP
+|-
+|<b>6 points</b>||25 HP
+|6.25 HP
+|-
+|<b>7 points</b>||28 HP
+|7 HP
+|-
+|<b>8 points*</b>||31 HP
+|7.75 HP
+|-
+|<b>9 points*</b>||34 HP
+|8.5 HP
+|-
+|<b>10 points*</b>||37 HP
+|9.25 HP
+|}
+<nowiki>*</nowiki>Auto Smasher only, though its bullet is 70% weaker in term of damage per hit comparing to a Basic Tank.
+
+It turns into Drone Damage if you upgrade to an Overseer or any other Drone tank.
+
+Unavailable to Smashers, Spikes, and Landmines as they lack Bullets.
+
+When a bullet has lower health than the target's damage per hit, the bullet's damage per hit is multiplied by the ratio of the bullet's current HP with the target's base damage per hit. When the bullet has higher or equal health comparing to the base damage per hit of the target, the bullet will deal its full damage per hit. 
+
+<h3 style="color:#98F06C;font-weight:bold;">Reload</h3>
+Reload determines how fast a tank will fire bullets. The Basic Tank class has a base firing speed of 100 bullets per minute. Many class upgrades multiply this firing speed, while others reduce it.
+
+The "Reload Speed" upgrade from [[Tank|Basic Tank]] increases firing rate linearly<ref>Due to the formula, this only applies to the first 7 points in Reload. The 8th and 10th point (available for Auto Smasher) does not change anything while the 9th point decreases the Reload time by 1 tick.</ref>. For tanks with a different Base Reload, however, some of the points put into Reload [[Sniper|may not affect the firing rate as much as some other]] or [[Machine Gun|may not affect it at all]].
+
+With 1 being the Base Reload time for [[Tank|Basic Tank]], the formula for Reload is <code>Base Reload time * 15 * (0.914 ^ Points in Reload)</code>, unit is tick, round up.
+
+Below is a table of how Reload affects the Reload of a [[Tank]], in both second and tick (1 tick = 0.04 seconds).
+{| class="article-table"
+!Number of Skill Points!!Reload Speed Basic Tank (seconds per bullet)
+!Reload Speed Basic Tank (ticks per bullet)
+|-
+|<b>0 points</b>|| 0.6s
+|15t
+|-
+|<b>1 point</b>||  0.56s
+|14t
+|-
+|<b>2 points</b>|| 0.52s
+|13t
+|-
+|<b>3 points</b>|| 0.48s
+|12t
+|-
+|<b>4 points</b>|| 0.44s
+|11t
+|-
+|<b>5 points</b>|| 0.4s
+|10t
+|-
+|<b>6 points</b>|| 0.36s
+|9t
+|-
+|<b>7 points</b>|| 0.32s
+|8t
+|}
+A high firing rate increases a tank’s ability to hit strafing targets and increases its damage per second. Additionally, firing more Bullets increases recoil which can be used to propel certain classes of tanks.
+
+For all Drone-based classes featuring Drone spawners, Reload affects the rate at which new drones are created. The Factory class gains extra utility from this stat, as it affects both [[Drones#Factory_Drones_.28or_Minions.29|Minion]] spawning rate and Minion firing rate. 
+
+For the [[Necromancer]] class, the Reload Speed stat changes to Drone Count, increasing the amount of Square Drones the tank can control.
+
+Unavailable to Smashers, Spikes, and Landmines as they lack Bullets.
+
+<h3 style="color:#6CF0EC; font-weight:bold;">Movement Speed</h3>
+This stat determines how fast a tank moves, not including recoil. Naturally, the more points put into this stat, the faster a tank will move. Low-level players can upgrade this stat early to get out of dangerous situations or outrun more powerful opponents. Lower-level tanks are significantly smaller, so a level 8 tank with 7 movement speed moves even faster than other fast tanks like Boosters. However, Destroyers, [[Annihilator]]s, and [[Hybrid]]s might catch up with low-level tanks with high speed by using recoil.
+
+Movement speed is passively lowered as your tank levels up, i.e. a Level 1 Tank is significantly faster than a Level 45 Tank.
+
+This can increase the power of a [[Builds|Body Damage build]] covering more distance than the target will equal more collisions under a second which can mean the difference between a 1 hit or a 3 hit kill.
+
+For Smashers, Spikes, Landmines, and Auto Smashers, there are 10 skill points available for Movement Speed.
+
+== Hidden Stats and Their Effects ==
+<b>Hidden stats</b> are stats that can’t be upgraded directly from the bottom-left menu but can also affect a tank’s ability and playstyle. Most of these can only increase/decrease by selecting different [[Tiers|classes]].
+
+=== Bullet Accuracy/Bullet Spread ===
+Bullet Accuracy determines how straight a [[Barrels|Barrel]] fires out Bullets, while Bullet Spread refers to the angle that bullets are fired within. A high bullet spread has a high angle and vice versa.
+
+For example, a [[Streamliner]] or a [[Ranger]] has much more Bullet Accuracy, or much less Bullet Spread, compared to a [[Sprayer]] or a [[Machine Gun]].
+
+=== Recoil ===
+Recoil is how far a [[Tanks|Tank]] gets pushed backward when firing. While Recoil slows down a tank that is moving forward, towards its {{CA|Ammunition}}, it can be used strategically or for a faster retreat. The tank with the highest Recoil per shot is the [[Annihilator]] (6.8 background squares per shot). On the other hand, some [[Sniper]]s, [[Spread Shot]] and the [[Gunner]] have so little Recoil that it normally cannot be noticed.
+
+All upgrades of the [[Flank Guard]], with the exception of the Tri-Angle and [[Auto 3]]/[[Auto 5]] branch, have their [[Cannons]] evenly distributed over the whole 360°, making each cannon cancel the Recoil of the other cannons out, and thus making the tank have virtually no Recoil overall.
+
+Examples of Recoil usage are:
+*For Destroyers, Hybrids, and Annihilators: providing a large speed advantage to either ram, get in close for a good shot, or allow a quicker retreat.
+*For Tri-Angles and its upgrades: as a permanent speed boost, because they have more back cannons than front cannons. Their forward-facing cannon can also shoot bullets for offense and/or defense while the backward-facing cannons do the pushing. [[Sandbox]] tests have shown that the Booster has the largest overall Recoil with any given build, just slightly edging out the Annihilator.
+*For multi-shot tanks: particularly the Penta Shot, to move in with the enemy faster and deny them precious ground (or otherwise kill stragglers). Though not having the highest amount of Recoil, this type of tank can drastically benefit from it when used safely.
+
+=== Knockback Resistance ===
+Knockback resistance is the reduction of how far a Tank gets nudged from a collision, either with a Bullet/Drone/[[Traps|Trap]]/[[Base Drones|Base Drone]] or another tank’s body. This can only slightly increase as the Body Damage (by increasing the damage given to the other object) or Movement Speed (by moving faster) is increased, and otherwise cannot be changed by any type of [[Upgrades|Upgrade]], except by the switching tank cheat (\) in the [[Sandbox]] [[Game Modes|Mode]] to play [[Mothership (Tank)|Motherships]] (~100%), or by gaining control of a [[Dominator]] (which also have ~100% resistance). This used to be able to increase by upgrading to the Smasher and then [[Mega Smasher]], but it’s later nerfed, which caused the [[Changelog|removal]] of the Mega Smasher.
+
+=== Field of View (FoV) ===
+Field of View, or Field of Vision (FoV for short), is how large a player’s camera is. The field of vision will slightly increase as a tank [[levels]] up while upgrading to Sniper and/or its upgrades can also increase the FoV by a large margin. As the FoV of a tank increase, more area will be visible from the camera of that tank, which results in everything seemly to have shrunk as the computer screen size is always consistent.
+
+Compared to other [[Tiers|tanks]], the Sniper branch shows a strength in their wider FoV, allowing them to see further than other tanks can. <sup><i>(<nowiki/>{{CA|Stubs}}, please expand.)</i></sup>
+
+Motherships of the removed [[Mothership (Game Mode)|Mothership game mode]] used to have the highest FoV due to its giant size, making it even larger than the [[Ranger|Ranger’s]], but is actually the same as most tanks when played in Sandbox, both at [[Levels|Level]] 45.
+
+A list of [[Tiers|classes]] ranked from largest FoV to smallest is as follows (excluding FOV affected by levels):
+#Ranger (~153%)
+#Assassin, Stalker (this tier is slightly bigger than the Hunter tank) (~134%)
+#Hunter, Streamliner, Predator<ref>The Predator has a special ability that allows the camera to move away from the tank, allowing it to see further than its normal FOV could hold. Not all of it is visible at once, however.</ref> (117.6%)
+#Tied between different branches: (111.1%)
+#*Sniper
+#*Overseer branch (Overseer, Overlord, Necromancer, Manager, Overtrapper, Battleship, and Factory)
+#*Trapper branch (Trapper, Tri-Trapper, Gunner Trapper, Mega Trapper, Overtrapper, and Auto Trapper)
+#*Smasher branch (Smasher, Landmine, Auto Smasher, and Spike)
+#*Skimmer
+#*Rocketeer
+#*Glider
+#*Pellet Shot
+#*Firework
+#All other tanks (100%)
+== [[Achievements]] related to Stats ==
+{{SideBox|*<b>2fast4u</b> - Upgrade Movement Speed to its maximum value
+*<b>Ratatatatatatatata</b> - Upgrade Reload to its maximum value
+*<b>More dangerous than it looks</b> - Upgrade Bullet Damage to its maximum value
+*<b>Mach 4</b> - Upgrade Bullet Speed to its maximum value
+*<b>There’s no stopping it!</b> - Upgrade Bullet Penetration to its maximum value
+*<b>Don’t touch me</b> - Upgrade Body Damage to its maximum value
+*<b>Self-repairing</b> - Upgrade Health Regen to its maximum value
+*<b>Indestructible</b> - Upgrade Max Health to its maximum value
+|{{Achievement
+|Color        = #EE87F0
+|Name         = 2fast4u
+|Description  = Upgrade Movement Speed to its maximum value}}
+{{Achievement
+|Color        = #FBBE92
+|Name         = Ratatatatatatatata
+|Description  = Upgrade Reload to its maximum value}}
+{{Achievement
+|Color        = #68FEF9
+|Name         = More dangerous than it looks
+|Description  = Upgrade Bullet Damage to its maximum value}}
+{{Achievement
+|Color        = #FE6868
+|Name         = Mach 4
+|Description  = Upgrade Bullet Speed to its maximum value}}
+{{Achievement
+|Color        = #9CFD68
+|Name         = There’s no stopping it!
+|Description  = Upgrade Bullet Penetration to its maximum value}}
+{{Achievement
+|Color        = #FDE068
+|Name         = Don’t touch me
+|Description  = Upgrade Body Damage to its maximum value}}
+{{Achievement
+|Color        = #9D65F4
+|Name         = Self-repairing
+|Description  = Upgrade Health Regen to its maximum value}}
+{{Achievement
+|Color        = #6A94F5
+|Name         = Indestructible
+|Description  = Upgrade Max Health to its maximum value}}
+}}
+
+== Trivia ==
+*At the <i>very beginning</i> of [[Diep.io]] (April 15th), the [[Stats#Health Regen|Health Regen]] stat did not exist.
+*By switching to [[Dominator]]s via \ in [[Sandbox]] [[Game Modes|game mode]], it reveals that [[Dominator]]s have a unique stats table with no selections available, but still have the number of stat points available visible.
+[[File:-Research-_Dominator_stats.png|thumb|261px|A Dominator in Sandbox. Note the x33 in the bottom left, it doesn’t appear in Domination.]]
+*Usually, once a stat point is placed, it cannot be removed.
+**An exception is by upgrading to the [[Smasher]] branch. As they lack [[bullets]], all points in Bullet Speed, Penetration, Damage, and Reload will be refunded.
+**Another similar exception is by switching tank via [[Controls|\]] in Sandbox game mode. As certain tanks have certain selections unavailable, stat points previously placed in those selections will be refunded. Situations including:
+***From most tanks to [[Smasher]], [[Landmine]] or [[Spike]]: As they lack bullets, all points in Bullet Speed, Penetration, Damage and Reload will be refunded.
+***Switching from [[Auto Smasher]]: Auto Smashers have a max capacity of 10 rather than the usual 7, thus doing so will refund any points placed as the 8<sup>th</sup>, 9<sup>th</sup> and/or 10<sup>th</sup> point of any stat.
+***Switching to [[Dominator]]s: They have a unique stats table with no selections available, thus doing so will have <i>every single point</i> refunded.
+* After the June 15<sup>th</sup> update, when upgrading to [[Overseer]] and above, Bullet Penetration, Bullet Speed, and Bullet Damage will become Drone Health, Drone Speed and Drone Damage respectively. For [[Necromancer]], Reload will also change to Drone Count.
+*The health of a level 1 tank is exactly 50.0.
+*The [[Smasher]] and [[Landmine]] lack bullets, so all bullet-related stats are unavailable and all other stats cap at 10 investments instead of 7. Previously when they’re first released, they become a space reading “Upgrade to Windows 10” as a joke at Windows’ supposed uselessness, just like upgrading bullets on a tank without bullets would be useless. The cap on the other stats was still 7. (Removed on July 31st update).
+**However, if the player chooses [[Auto Smasher]] at Level 45, the Bullet stats return, and the bars are kept at 10, making it the largest capacity of each stat ever.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+
+===Patched Bugs===
+[[File:ykkiki7lii7k7.gif|thumb|180px]]
+
+*{{PC}} Leveling up would instanly heal the player to full health.
+
+=== Unpatched Bugs ===
+[[File:Screenshot (999).png|thumb|Example of the glitch with [[Mothership (Tank)|Mothership]]]]
+*{{PC}} In [[Sandbox]], by queueing up the bullet stats, then upgrade to [[Smasher]] and upgrading its stats, the stat counter can be broken when the <code>\</code> [[Controls|key]] is used to switch classes, as visualized in the image nearby.
+*{{PC}} Maximizing reload from zero to seven at level 45 can sometimes cause the [[Cannons|Cannon]] to get stuck in the firing animation indefinitely, most notably with the [[Annihilator]].
+}}
+
+== Gallery ==
+<gallery>
+3.png|What the old Stat table looked like
+Drones.png|An example of stats of a Level 45 Necromancer. Note how stats related to [[bullets]] have been changed to instead benefit [[Drones]].
+D7.png|An example of the Smasher stats, notice how much it can upgrade a stat compared to the normal ones.
+--Upgrade_to_Windows_10--.png|When Smasher was first released, the stats were way different then now’s stats. Notice the text on Bullet Penetration and Bullet Damage, this text says “Upgrade to Windows 10”.
+Screenshot 2016-10-11 at 6.19.49 PM.png|Auto Smasher’s Stat table (notice how the stats are upgradable to 10.)
+</gallery>
+
+== Footnotes ==
+<references />
+{{Gameplay|mechanics}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Atributos
+|fr     = Statistiques
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Staty
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Thuộc Tính
+|zh     = 技能點
+}}
+[[Category:Diep.io]]

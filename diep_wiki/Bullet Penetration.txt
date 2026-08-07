@@ -1,0 +1,4 @@
+= Bullet Penetration =
+
+#REDIRECT [[Stats#Bullet_Penetration]]
+[[Category:Redirect]]

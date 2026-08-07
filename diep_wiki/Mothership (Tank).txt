@@ -1,0 +1,132 @@
+= Mothership (Tank) =
+
+{{Infobox/double
+|title      = Large Mothership
+|title2     = Sandbox Mothership
+|image      = <gallery>
+mothership tank 3.png|New Colors
+mothership tank 2.png|Old Colors
+mothership tank 1.png|"Battleship"
+</gallery>
+|alt        = Image is of a hexadecagonal blue Tank adorned sixteen grey ridges, with small gaps between each. The Tank is placed on a silver outset background above the word “Mothership,” and the background itself is framed by a grey canvas.
+|caption    =
+|image2     = <gallery>
+mothership icon 3.png|New Colors
+mothership icon 2.png|Old Colors
+mothership icon 1.png|"Battleship"
+</gallery>
+|previous   = Randomly selected in [[Mothership (Game Mode)]]
+|previous2  = Using [[Controls|cheats]] ([[Sandbox]])
+|barrel     = [[Spawners|Spawner]] (16) (32 [[Drones#Partisans|Drones]])
+|id         = 27
+|tier = Supposedly 9|tier2 = Supposedly 10|categories=|key=|next=|alt2=|caption2=|id2=|key2=|next2=|barrel2=}}{{For|game mode with the same name|Mothership (Game Mode)}}
+The <b>Mothership</b> is a special [[Tanks|tank]] in [[Diep.io]]. It is accessible in [[Sandbox]].
+
+This version of the Mothership is a much smaller variation of the one that appears in the Mothership game mode (corresponds to its Level). In the Mothership game mode, the win condition is to destroy the enemy Mothership, centralizing the players’ tactics around attack or defense of a Mothership. During games in that mode, the Mothership is a playable<ref name="Playable-Mothership-video">{{PL|https://youtu.be/L50TkVVN8co}}</ref> entity that players took turns controlling every 5 minutes until one of the Motherships was destroyed. 
+
+== Design ==
+[[File:Mothership.png|thumb|220px|The Mothership that appeared in the [[Mothership (Game Mode)|Mothership]] game mode.]]
+The Mothership is one of few Tanks that does not have a circular body, along with the [[Necromancer]], [[Factory]], [[Defender]], [[Summoner]], and [[Guardian]]. Instead, it has a hexadecagonal body (16 sides) and 16 short Drone [[Spawners]] that shoot out small AI-controlled [[Drones]] and controllable [[Drones]] at a 50/50 ratio. In the Mothership [[Game Modes|game mode]], it is larger than the [[Alpha Pentagon]] and even [[Arena Closer|Arena Closers]].
+
+== Stats ==
+[[File:Motherstats.png|thumb|The Mothership’s stats, unlike normal Tanks almost all its stats are full (except Health Regen)]]
+In Sandbox mode, the Mothership retained the same [[Stats]] as other Tanks did; in essence, the player upgraded it as they would any other Tank, but it can’t copy the stats it had in the old Mothership mode, as it would take 50 upgrade points, and the player only has 33. In the Mothership game mode, the Mothership spawns as the Tank with all aspects maxed out except for [[Health Regeneration]], with only one point in it. It spawns at Level 140 and can't level up further, which made farming pointless and counterproductive. It has exactly 7,000 health points. Due to its Level and large size, it is one of the slowest Tanks in the game. The Mothership’s FoV is slightly larger than a [[Ranger]]’s.
+
+The Mothership’s AI [[Drones]] have a bit less [[Stats#Bullet Penetration|Bullet Penetration]] than the [[Overlord]]'s maxed Drones, with the same [[Bullet Damage]], [[Stats#Bullet Speed|Speed]] (similar to a [[Battleship]]'s maxed Drones), and the [[Reload]] of the [[Hybrid]] (For each Drone). The Mothership regenerates the health at twice the speed of regular maxed Regeneration Tanks, and its Reload is about as fast as a non-upgraded [[Machine Gun]].
+
+== Technical ==
+[[File:Mother Guardian.png|thumb|Only drones on the right are controlled by the player]]
+The Mothership uses both manual and A.I. controlled Drones as its weapons. The Drones are produced by the Mothership’s spawners. A Mothership can have up to 32 Drones, but only half the Drones are controllable (Similar to the Battleship’s mechanics). The Drones for the Mothership are somewhat slower than those of summoning Tanks ([[Manager]], Overlord, [[Overseer]]). The right-click function works like a summoning tank but remains somewhat pointless unless against widespread targets. When a player activates [[Auto Spin]], your Drones spin slowly in a circle around them, much like if they used Auto Spin with the Overseer or other Overseer upgrades. The current Mothership’s Drones are the smallest ones in the game. In the Mothership game mode, pushing a Mothership with the Level 45 [[Booster]], with maximum [[Stats#Movement Speed|Speed]] and [[Reload]], moves it by a fraction of an inch. Players can hide in the center of the giant Mothership, much like in the Dominator, but would constantly get pushed out. It's not a reliable shield method because high Bullet Penetration Bullets would still pass through and damage them.
+
+For the other players, arrows appear on the screen pointing towards both Motherships, showing them the direction of both Motherships. The arrows would fade away if they got close enough to one of them, exactly like Leader Arrows.
+
+[[Arena Closer]]s always go for the surviving Mothership first. The Mothership lasted for a short time after being attacked (on average 30 seconds after the arena closed, but almost immediately died after the Arena Closers arrived), especially when the Arena Closers rammed into it due to their massive body damage. If both of the Motherships died at the same time, the Arena Closers would attack the players.
+
+== Control ==
+In the Sandbox mode, the Mothership handled much the same as a [[Tank|Basic Tank]], and without a time limit (not considering [[Arena Closing]]). In the Mothership game mode, any player in the arena can control the Mothership on their team. The first two people that join the Mothership server gained control of the Motherships and everybody else that joined served as the “army” (regular players). Each person that was granted the role of the Mothership is allowed a timeframe of 5 minutes. This continued until one of the Motherships was destroyed. This prevented people from having time to stop/stall the game (e.g. hiding in a corner) before a new player was picked who probably would not have the same idea.
+
+When the player’s time was up with the Mothership, the Mothership role became open for anyone who was currently joining a Mothership game, and the player who was previously in control would then respawn as a part of the army. If a player happened to die or enter the server, and they spawned while the Mothership player’s time was up, they would gain control of the Mothership.
+
+== Strategy ==
+*<b>Strong Against:</b> Every playable Tank individually.
+*<b>Weak Against:</b> Teams of Level 45 Tanks, [[Hybrid]], [[Manager]] (if played correctly).
+
+=== As the Mothership ===
+*In the Mothership game mode, the Mothership is the strongest Tank in the game (besides the Arena Closer and some bosses), and can defeat any Tank in a 1v1 scenario even if the opponent had maxed out Movement Speed and Reload.
+
+*Running into the rival Mothership does pulses of high damage (1/6 of max HP on average) to both Motherships, so whichever Mothership that starts with more health will always win. This is a fast, efficient way of ending the game, especially if the discrepancy in health between the two Motherships is relatively large.
+
+*It is a good idea for the player-controlled Mothership to try and stay near its teammates because without them it could easily be overwhelmed. Many times, players would use crowd control Tanks like the [[Triple Twin]] to keep the Mothership’s teammates far away, and then use Tanks with high DPS like the [[Triplet]] to take it down. To counteract this, Motherships could've protected their teammates early in the game and let them attack the enemy once they had reached a higher level.
+
+=== Against the Mothership ===
+[[File:Tanks v mothership.png|thumb|213x213px|Level 45 Tanks attacking a Mothership]]
+*Before joining their Mothership, it's recommended for players to farm until they are about Level 30. The rest of their levels can be farmed while being close to their Mothership. High Bullet Penetration was also recommended as there will also be a lot of enemy Bullets firing in their direction.
+*Classes like the Triplet, [[Penta Shot]], Hybrid, [[Sprayer]], and [[Gunner]] could’ve simply attacked the rival Mothership with their Bullets whilst staying very close to their Mothership.
+*Classes like the [[Stalker]], Ranger, and [[Predator]] can stay slightly behind their Mothership, killing nearby Tanks that aren't aided by the rival Mothership.
+*Classes with high area denial like the [[Octo Tank]] and the Triple Twin can guard their Mothership against enemy Drones and Tanks that are unaided by the rival Mothership.
+*Classes that use Drones like the Overlord or Necromancer can kill the Tanks that were aiding and being aided by the rival Mothership.
+*The Booster and [[Fighter]] can distract enemy Tanks, with its fast speed, therefore stopping enemy Tanks shooting the Mothership.
+*No player by themselves can really achieve anything more than a tiny impact against the enemy Mothership, so teamwork is encouraged. Getting the Mothership to join the fight helps as well.
+*Because the Mothership’s Drones can't target every player at the same time, it's possible to take it down using many Tanks. The [[Tri-Angle]]/Booster can be useful here because they can distract the enemy’s Mothership Drones as well as enemies that were targeting their Mothership’s ones.
+
+== History ==
+[[File:original mothership design from m28.png|thumb|The prototype design of the Mothership.]]
+* A few hours before the tank was added alongside the gamemode, the creator/former developer m28 made a [https://www.reddit.com/r/Diepio/comments/4o6327/hint_on_next_update/ Reddit post showing its prototype design as well as a hint for the update]. The tank was an Octagon with 8 spawners, one on each side. It had 32 drones and was called "Battleship".
+*In early versions of the game mode, a yellow Mothership arrow would sometimes appear.
+** Following the yellow Mothership arrow would lead to the arrow disappearing or moving, leading to it being dubbed “Ghost Ship” by some fans.
+** However, it has since been patched.
+* On 3 September 2016, a smaller version of the Mothership was made playable, but only in Sandbox.
+* As of 18 September 2016, the developer announced that the Mothership game mode will be recycled soon to use those servers to add a new game mode.
+* The [[Maze]] game mode was added on 22 September 2016, taking the place of the Mothership game mode.
+* The game mode was re-added, alongside with the Mothership tank.
+
+== Trivia ==
+
+[[File:This is seen once your mothership control time is over.png|thumb|220x220px|This [[Death Screen]] is seen once the Mothership control time was over.]]
+*On 22 September 2016, the Mothership joined the Arena Closer as the only Sandbox-exclusive playable Tanks.
+**This meant that it was the only removed Tank that was still playable in Sandbox. It was however later removed from Sandbox.
+**On 3 January 2023, the Mothership was re-added to Sandbox.
+*In Sandbox, the Mothership's health bar is smaller than other Tanks’ health bars.
+*[[File:Blue Mothership, painted yellow..jpg|thumb|Blue Mothership, painted yellow.]]It is the only Level 140 (Tier 9) [[Tiers|Tank]] in the game.
+
+{{Bugs}}
+{{BugList|
+=== Patched or Removed Bugs ===
+[[File:Mothership Neutral.png|thumb|100x100px|What the “Yellow Mothership” Marker looked like]]
+*{{PC}} Occasionally in the early stages of the [[Mothership (Game mode)|Mothership]] [[Game Modes|Game Mode]], a yellow (neutral color) and <i>very</i> transparent arrow would point in a random direction. However, this arrow did not lead to a Mothership.
+*{{PC}} Sometimes, a [[Mothership (Game Mode)|Mothership]] server would have the Motherships using 3500 or even 468 as their [[Stats|Max Health]] (visible on the [[Scoreboard#Mothership|scoreboard]]), making the game easier to end as the Motherships were much more vulnerable.
+=== Bug Gallery ===
+<gallery>
+Diep.io Mothership vs Invincible Arena Closer
+Why Do Motherships Only Get 468 HP? - Diep.io Yook
+Mothership low HP
+</gallery>
+}}
+
+== Gallery ==
+<gallery>
+2Motherships.png|Marker Arrows showing Mothership’s Location
+Mothership and drones.png|Mothership in Sandbox, surrounded by its Drones
+10 seconds.png|When the player had only 10 seconds left, a warning would appear
+</gallery>
+
+== References ==
+<references/>
+{{TankNav|special}}{{Interlang
+|status = checked
+|de     =
+|es     = Mothership
+|fr     = Mothership (Tank)
+|hu     = Anyahajó (Tank)
+|it     =
+|ja     =
+|ko     =
+|pl     = Mothership (Czołg)
+|pt-br  = Mothership
+|ru     = Mothership
+|sv     =
+|tr     = Mothership
+|vi     = Mothership (Tank)
+|zh     = Mothership (坦克)
+}}
+[[Category:Diep.io]]

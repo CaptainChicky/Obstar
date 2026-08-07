@@ -1,0 +1,47 @@
+= Birthday Shape =
+
+{{Removed}}
+{{Polygon
+|image     = <gallery>
+birthday shape.gif|Animated
+birthday shape blue.png|Blue
+birthday shape red.png|Red
+birthday shape purple.png|Purple
+birthday shape green.png|Green
+</gallery>
+|rarity    = Common
+|hp        = ∞
+|xp        = Unbounded
+}}
+
+The {{PA}} was a [[Polygons|Polygon]] in [[Diep.io]] that had been added to celebrate [[Diep.io]]'s 8th anniversary. It was a gigantic octagon that spawned in the center of the map, could not be killed, and rewarded the player with XP when shot at. Its colors were based off of the [[4 Teams|Team colors]], which it constantly shifted between every second in a cycle of blue, red, purple, green, and then back to blue. It may have spawned in [[FFA]], [[2 Teams]], [[4 Teams]], and [[Maze]].
+
+In the 9th Anniversary, it was a nonagon. It appears in every anniversary event since 8th anniversary. 
+
+==Strategy==
+Due to the fact that Birthday Shape could reward the player with an endless amount of score, approaching the birthday shape with high bullet penetration and bullet damage could be an easy way to level up to Level 45. Using a high reload tank, such as [[Battleship]], [[Sprayer]], [[Spread Shot]], [[Streamliner]], and [[Triplet]] were easy ways to keep your score going up into the millions.
+
+In team modes, things could get extremely competitive. One team may have held control over "access" to the Birthday Shape. Often these teams may have had [[Octo Tank|Octo Tanks]] and a variety of [[Trapper]] classes (often [[Tri-Trapper]]) as fortification. Seizing control required effort from the opposing team, usually bearing classes meant to penetrate defenses. [[Predator]] and [[Rocketeer]] were great choices to punch through and break down defenses or defend the Birthday Shape from the other team(s).
+
+== Trivia==
+*The Birthday Shape was the first entity added to celebrate a special event.
+*Due to the unbound score that Birthday Shape could reward easy access to infinite score.
+*Oddly enough, despite being a [[Polygons|Polygon]], it would damage anything, including other polygons, crashers and bosses.
+**When a Breakout Wall gets captured by the Birthday Shape, it simply refills its health. The same goes for a captured Breakout tile.
+*It dealt a minimal amount of contact damage (8 Hp).
+
+==Gallery==
+<gallery>
+Birthday shape spawn message.png|The message that appeared when you spawned into a server that had a Birthday Shape
+Birthday shape ingame blue.png|A blue Birthday Shape in 2 teams.
+Birthday shape ingame red.png|Ditto, but in red.
+Birthday shape ingame purple.png|Ditto, but in purple.
+Birthday shape ingame green.png|Ditto, but in green.
+Birthday shape 4 teams leaderboard.png|Birthday Shape in 4 Teams. Note the 1 million score on the leaderboard
+File:Red Birthday Shape(44).png|A red birthday shape in 2 Teams Deathmatch
+File:Birthday Shape And Alpha Pentagon.jpg|Alpha Pentagon compared to Birthday Shape
+File:Getting killed by Birthday Shape.png|What getting killed by Birthday Shape looked like
+</gallery>
+
+{{PolyNav}}
+[[Category:Event Shapes]]

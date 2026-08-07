@@ -1,0 +1,117 @@
+= Flank Guard =
+
+{{Infobox
+|image     = <gallery>
+flank guard icon 3.png|New Colors
+flank guard icon 2.png|Old Colors
+flank guard icon 1.png|Nameless
+</gallery>
+|tier      = 2
+|next      = [[File:Tri-angle icon new.png|50px|link=Tri-Angle]][[File:Quad tank icon new.png|50px|link=Quad Tank]][[File:Twin flank icon new.png|50px|link=Twin Flank]][[File:Auto 3 icon new.png|50px|link=Auto 3]]
+|previous  = [[File:Tank icon new.png|50px|link=Tank]]
+|barrel    = [[Cannons]] (2)
+|id        = 9
+}}
+The {{PA}} is a Tier 2 tank in Diep.io. It upgrades from the [[Tank]] at level 15 and upgrades to the [[Tri-Angle]], [[Quad Tank]], [[Twin Flank]], and [[Auto 3]] at level 30.
+
+== Design ==
+The Flank Guard features a circular base with a [[Cannons|Cannon]] on the front and an additional shorter Cannon on the back, with no debuffs according to size. 
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       =
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    =
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}It adds a Cannon at the back allowing it to attack enemy tanks while fleeing. The Cannon at the back has the same strength as the front one, with no buffs or debuffs. Additionally, it adds a recoil that is opposite and equal to the front one, resulting in the recoils canceling each other.
+
+== Strategies ==
+* <b>Strong Against:</b> Low-level tanks, Slow tanks
+* <b>Weak Against:</b> Fast tanks, High RoF tanks.
+
+=== As the Flank Guard ===
+*As this tank is similar to the Regular Tank, but with a back cannon, it is generally inadvisable to go against other tanks that are of the same level as the player, or higher (Although the [[Sniper]] Class can be picked on). Instead, continue farming up Levels, and upgrade to a tank of the player's choosing.
+*The back cannon can be used in some situations to return fire while fleeing, or just to damage the incoming projectiles to reduce the damage the player takes. The Flank Guard’s back cannon can reduce the recoil from moving and firing at the same time, resulting in a marginal speed increase while firing on the move.
+*A strategy for this tank is to approach an area with a lot of [[Polygons]]. Dive in headfirst, then turn the cannon 90 degrees clockwise/counterclockwise. Both Cannons will fire at the Polygons, giving the player a lot of EXP within a short duration. However, if the player is planning on doing this for most of the game, then the [[Twin]] would be a better option.
+*The Flank Guard can be used at the [[Pentagon Nest]] because the back cannon can be used to keep the [[Crashers]] at bay while farming pentagons. However, they could still pose a threat if they approach the player from the side.
+*If the player has increased Bullet Damage, Reload and Bullet Penetration, the [[Bullets]] will be very strong, enabling them to fight basic tanks with ease.
+
+=== Against the Flank Guard ===
+*The Flank Guard’s low reload rate means it will struggle against tanks with a higher RoF such as the Twin. Since it only has one cannon to defend itself from frontal attacks, It can be easily overwhelmed by a wave of bullets.
+*If the Flank Guard is using a Bullet build, then try to approach it from the side. Ironically, flanking the Flank Guard is a valid strategy if it is approached from the side. Using a rammer build also works as long as the player can avoid the Flank Guard's fire.
+*If the Flank Guard is using a body-damage build, shoot at the place ahead of the tank. They will either go back/change direction, or they will run into the player's bullets and take damage. If a body-damage Flank Guard charges at the player, then move backward while shooting at the tank.
+
+== Achievements ==
+{{SideBox|*<b>Ain’t no one sneaking up on ME</b> — Upgrade to Flank Guard.
+|{{Achievement
+|Color        = #9C69FB
+|Name         = Ain’t no one sneaking up on ME
+|Description  = Upgrade to Flank Guard}}
+}}
+
+== History ==
+* Currently, both Cannons fire at the same time; however, this has not always been the case: very early on the Flank Guard’s Cannons fired one at a time with even timing in between shots. This was changed as very skilled players or people simply using spinbots could rotate the tank in a way that caused all the Bullets to go in the same direction, making the tank unintentionally powerful, essentially making it equal to the Twin.
+* With the initial release of achievements on February 21st, 2017, upgrading to the Flank Guard for the first time awards the player the achievement “Ain’t no one sneaking up on ME”.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=cmaAIJ_IiVk 1.52m by Deimos]
+* 2 Teams: [https://youtu.be/LkEou8HWWkQ 1.61m by Lambo]
+* 4 Teams: [https://imgur.com/Uaj6o4L 2.05m by Slade]
+* Maze: [https://www.youtube.com/watch?v=7PXzF7S61pc 719k by Deimos]
+
+=== Mobile ===
+
+* FFA: 1.14m by Athu
+* 2 Teams: 503.7k by buh
+* 4 Teams: 525.7k by Athu
+* Maze: -
+
+== Trivia ==
+* The Flank Guard has the least amount of distinct Tier 4 tanks that only it can upgrade to out of all of the Tier 2 tanks, this number being 2, those two being the [[Booster]] and the [[Fighter]]. All other Tier 4 tanks that it can upgrade to are upgradable from other Tier 2 tanks, one of them being upgradable from the [[Machine Gun]], and the rest being upgradable from the Twin.
+* Even though the Flank Guard’s front cannon is longer than its rear cannon, both have an equal amount of damage, reload, penetration, and recoil.
+* It is the lowest-leveled tank without recoil. Other tanks without recoil are the [[Twin Flank]], [[Triple Twin]], [[Quad Tank]], [[Octo Tank]], [[Overseer]], [[Overlord]], [[Battleship]], and the three types of [[Dominator]]s.
+* Contrary to popular belief, this tank is not faster than other branches. It is roughly the same speed.
+* Flank Guards name comes from the simple fact that its back gun guards it, resulting in Flank Guard.
+* Flank Guards is the 1st Tier 2 Upgrade that has two cannons, the 2nd being the Twin.
+
+== Gallery ==
+<gallery>
+File:Diep.io flank cannon.png|The Flank Guard in FFA
+File:Flank Guard in Sandbox.png|Flank Guard in Sandbox
+</gallery>
+
+{{TankNav|tier2}}
+{{Interlang
+|status = checked
+|de     = Flank Guard
+|es     = Flank Guard
+|fr     = Flank Guard
+|hu     =
+|it     =
+|ja     =
+|ko     = 플랭크 가드
+|pl     = Flank Guard
+|pt-br  = Flank Guard
+|ru     = Flank Guard
+|sv     = Flank Guard
+|tr     = Flank Guard
+|vi     = Flank Guard
+|zh     = Flank Guard
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

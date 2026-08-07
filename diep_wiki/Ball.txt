@@ -1,0 +1,67 @@
+= Ball =
+
+{{Conjecture}}
+{{Infobox
+|image     = <gallery>
+id53 icon 2.png|New Colors
+id53 icon 1.png|Old Colors
+</gallery>
+|title     = ‌
+|tier      = 1<ref>This tank's level requirement in the code is 0, i.e. Tier 1.</ref>
+|previous  = 
+|next      =
+|barrel    =
+|id        = 53
+}}
+An unnamed tank (commonly referred to as "<b>Ball</b>") is the default tank in [[Diep.io]]'s code. It is used as a fallback when the player doesn't have a defined tank, such as in the middle of upgrading between tanks, and for the possession of other entities, such as [[Dominator|Dominators]] and, formerly, [[Auto Turrets|Mounted Turrets]].
+
+== Design ==
+This tank is simply a circle with no offensive weapons.
+
+== Technical ==
+<!-- This tank could NOT survive ramming a Spike while keeping 30% of its health, that is a common misconception -->
+[[File:ID53 in plain sight.gif|thumb|While this tank is upgrading from a [[Twin]] to a [[Twin Flank]], the tank has no weapons for a frame.]]
+This tank is not used as an actual playable tank, and is instead used as a default for certain functions, such as possessing a Dominator. Upon possessing a tank, you gain all of their attributes.
+*This is likely why your tank temporarily loses all weapons before being replaced with the new tank upon upgrading.
+*This tank is used as the template for the control of [[Dominator]]s, and briefly [[Auto Turrets|Mounted Turrets]] (such as the one found on [[Auto Gunner]]).
+**Upon possession of an Auto Turret, your level would be set to 30 and your name would be changed to "Mounted Turret". Contrary to popular belief, these are actually the attributes of the Auto Turret itself, meaning that it's the Auto Turret that's level 30 and has the name "Mounted Turret".
+
+== Trivia ==
+*In the code, this tank has a "devTank" flag that is set to true, meaning that it's inaccessible in [[Sandbox]].
+**The "devTank" flag was previously set to false until approximately 10 minutes after the [[Sandbox]] mode was initially added on 19th November 2016, allowing non-developers to use the tank. The flag was again set to false on 13th January 2017 for unknown reasons, being corrected after about 8 hours.
+*The feature that allowed a player to possess Auto Turrets was most likely removed due to {{w|Multi-boxing}}.
+**Multi-boxing is the action of one player controlling multiple entities at the same time.
+**Another reason could've been that a player acting with malicious intent could effectively disable another tank's turret by idling while controlling it.
+**A bug existed in [[Sandbox]] where holding "K" while controlling a mounted turret [https://www.youtube.com/watch?v=D2yxLtf_Gcs&t allowed the player to get unlimited score].
+*Using the [[Console]], a Smasher can be given a similar appearance by using these commands:
+**ren_stroke_soft_color_intensity 0
+**net_replace_color 0 0xcdcdcd.
+
+== Gallery ==
+<gallery>
+Circle WRA.png|Ball in-game ([[Sandbox]]).
+Browser 2017-01-13 23-30-37.png|Proof that you can kill yourself and another person simultaneously (with o) with this tank.
+File:Diep.io- A very brief frame of ID 53 (Commonly known as "Ball)-2|A video showing that this tank is used in between tank upgrade transitions.
+File:Diep.io - ID 53 by Tacocat-2|Another video showing that this tank is used in between tank upgrade transitions.
+</gallery>
+
+{{TankNav|other}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Ball
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Ball
+|zh     = Ball
+}}
+[[Category:Diep.io]]

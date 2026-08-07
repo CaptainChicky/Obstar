@@ -1,0 +1,4 @@
+= Green Squares =
+
+#REDIRECT [[Green Square]]
+[[Category:Redirect]]

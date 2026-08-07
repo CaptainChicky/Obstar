@@ -1,0 +1,129 @@
+= Overlord =
+
+{{Infobox
+|image     = <gallery widths="185">
+overlord icon 2.png|New Colors
+overlord icon 1.png|Old Colors
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Overseer icon new.png|50px|link=Overseer]]
+|barrel    = [[Spawners]] (4) (8 Controllable [[Drones]])
+|id        = 12
+}}
+{{For|the [[Bosses|Boss]] version of this tank|Fallen Overlord}}
+Overlord is a Tier 4 tank in Diep.io. It upgrades from [[Overseer]] at level 45.
+
+== Design ==
+The Overlord features a circular base with four equally-spaced, trapezoid Spawners. Its Drones look like medium-sized [[Triangles]] and are their respective team color in [[2 Teams]], [[4 Teams]], [[Domination]], and [[Tag]]. They will be blue to the player and red to everyone else in [[FFA]] and [[Maze]]. The Overlord's Drones will disappear when they hit a maze wall or take too much damage. [[Necromancer]]s, [[Manager]]s and other Drone users have the same effect when their Drones hit a maze wall.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       =
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    =
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}Upgrading from Overseer to the Overlord will not result in any stat changes; however, the rate of fire will effectively double due to the addition of two new spawners.
+
+Stats: Same with [[Overseer]]. 
+
+== Drones ==
+{{Main|Drones}}
+Note that all your Overseer Drones will disappear upon upgrading to Overlord. The Overlord features the same Drone system to the Overseer, where Drones go towards the mouse cursor when the left click is held, and move away from the mouse cursor when the right-click is held. The Overlord produces these Drones in pairs at a rate relative to the number of skill points the player has spent on Reload. The Drones deal Damage and take damage as they make contact with enemies. When the Overlord is not controlling its Drones, they will automatically attack nearby [[Polygons]] and tanks, or circle the Overlord if there are none. The Overlord can have up to 8 Drones max at any time.
+
+==Strategy==
+*<b>Strong Against:</b> Almost every tank in 1v1 battles, except very few tanks as well as the Smasher and the Landmine, rammer when having anti-ram build.
+*<b>Weak Against:</b> Multiple enemies, [[Destroyer]] branch and fast rammers when unprepared (like the [[Booster]] or Fallen Booster), [[Penta Shot]]s, [[Spread Shot]]s, [[Sniper]]s, bullet build Fighters, Necromancers if the player is low on reload, skilled [[Factory]], [[Battleship]]s, [[Trapper]] Classes.
+*NOTE: As the Overlord, most tanks can escape the drones based on their speed. Upgrading Drone speed is necessary. Tanks such as Machine Gun can destroy the drones with Bullet Penetration. When playing teams, it is best to support and assist the  Overlord, for it is an extremely valuable tank.
+
+=== As the Overlord ===
+*The Overlord should invest in increasing Drone Speed (to catch enemies), Drone Damage (to harm the enemy), Movement Speed (to chase rammers and fast snipers), and Drone Health (to add protection value and to get Drones past enemy Bullets).
+*In modes with teams, Overlords are extremely valuable tanks. They can hide behind strong bullet spammers, as they support with their Drones, keeping the tanks shielded from enemy fire. Attacking enemy tanks from behind is also an effective strategy; it forces them to turn around, allowing other tanks to close in and kill them. Also, you could make them shoot at your tank while you dodge their Bullets and attack from the side. Most focus only on your tank until they die when none of their Bullets hit you.
+*Rangers, Stalkers, Predators, and similar classes are all easy targets for the Overlord. Because of their low rate of fire, their defense is completely helpless against the drones. Skilled players with tanks mentioned earlier can move in front of the drones if they have enough speed and shoot the Overlord if the Overlord is far enough from them. Players must get close to make sure the tanks above can’t play said strategy to kill you.
+*The Overlord is really good at 1v1 battles but has a hard time in group battles where it can only defend. If the Overlord is surrounded, the best strategy is to run away and use the Drones for shielding.
+*The outcome of a fight between a Body Damage tank and an Overlord depends on the situation. 
+**A rammer will always win if the Overlord has its Drones at the end of its FOV (Field Of Vision) or has repelled its Drones off the screen. 
+**The Overlord will usually win if the Overlord has its Drones near it and a rammer like the Smasher attacks. Beginners might still get killed as Overlords are tricky for beginners to play. 
+**Stalemate happens when the Overlord is near its Drones and a rammer is far but doesn’t attack. The Overlord cannot move fast enough to chase down and kill Body Damage tanks. It is important for Overlords to have at least 6 points in Drone Speed, Penetration, and Damage. They also should have at least 3 points in Movement Speed, because otherwise, rammers can easily kill the player.
+*Players using the Overlord should avoid tanks that have high Bullet Penetration or with high Reload.
+*Repelling the drones at an opponent and then swarming them from behind and sides is an effective maneuver known as the claw.
+**Another variation of this is baiting your opponent to a border of the map. Repelling your drones along the wall, and then swarming them from the sides and front.
+*Overlords should avoid [[Trapper]]<nowiki/>s at all costs unless they are skilled enough or fighting with another [[Overseer]]-class tank.
+*TIP: When a tank is trying to <nowiki/>escape, hold down right click. That way, the drone will spread out, leaving the enemy tanks with no escape. Tanks with extreme reload and damage such as the Sprayer can destroy your drones. Upgrading Drone Health can land a few hits on your rival tanks such as the Machine Gun upgrades.
+
+=== Against the Overlord ===
+* Countering an Overlord is like countering an Overseer. When facing an Overlord, players must either destroy their Drones or flee the scene. If the opportunity presents itself, the player should try to kill the Overlord before it can kill them. 
+**High ROF (Rate Of Fire) tanks can shoot down its Drones. But high ROF tanks that shoot in a single concentrated direction but don’t spread out ([[Triplet]] or [[Sprayer]]), should exercise caution; Although the player can shoot their Drones, skilled Overlords will move their Drones toward the player’s vulnerable sides or flank. Using a Triplet or Sprayer, players can use recoil to boost toward the Overlord while its drones are away, then shoot it. Be careful NOT to kill the drones, as they will spawn from the Overlord and attack. Skilled Overlords may purposely try to kill their drones if you use this strategy, so be careful when using it in Maze.
+**If fleeing is necessary, moving towards a corner of the screen may increase the player's odds of survival. This maneuver makes it more difficult for the Overlord to aim its Drones to target a tank fleeing this way. 
+* The Destroyer branch is effective against Overlords since their Bullets have high Penetration/Damage, and can destroy 4 Drones when maxed out. Players should attack an Overlord when its Drones are attacking someone else. Use the recoil to boost toward the Overlord to get a better shot and attack the Overlord. If the attempt fails, quickly run away and shoot at the Overlord’s Drones.
+* The Necromancer is one of the few tanks that can take on and even kill an Overlord, though the player will quickly die if they have little to no Drones or if the Overlord is much more skilled. Most Overlords will quickly attack by charging their Drones toward you. Immediately run away from their Drones, while using the "claw" to move the player's Drones around the Overlord's Drones; the player mustn't destroy any of their Drones, or they might survive the attack. The player's Drones should now be between the Overlord and its Drones and the Overlord is trapped! Deal the final blow by doing a far repel. When players do this, things can go well or wrong; here are a few possibilities. Just remember that this strategy only works if the Overlord attacks first; Necromancers should try to avoid an Overlord if possible.
+** The Overlord dodges the attack; either they kill the player, or the player has to try again.
+** When the Necromancer did its repel, so did the Overlord, and one or the other died.
+** The player succeeds.
+* Unless using the Factory, players should not attempt to attack an Overlord by charging through its Drones, as this can kill or almost kill most classes.
+* Although the [[Smasher]] and its branch-offs are considered weak against the Overlord's Drones, as it is with the Drones that other tanks carry, the Overlord tank itself is perfect for ramming into. When combatting the Overlord, Smasher-class tanks should try to make contact with the Overlord while denying contact with its Drones. Depending on how much Movement Speed the Smasher-class tank has compared to how much Drone Speed the Overlord has, the Smasher-class tank can be easy pickings for the Drones or the Smasher-class tank can dodge any attack the Overlord tries to make; get 10 points in Movement Speed to make it the latter.
+* One of the most effective classes for destroying an Overlord is with a Bullet damage-based [[Fighter]].
+* [[Battleship]] is very effective against Overlord, the Battleship can repel and run away without taking damage. The player can stop firing (if they think they're safe) so that the drones go into AI mode and go straight for the Overlord. If the Overlord is glass, 1 Battleship repel will almost always kill the Overlord. The player should utilize the AI Drones to locate the Overlord.
+*The [[Trapper]] and its upgrades are effective against the Overlord simply because their traps will shred the Overlord's drones. They are not recommended to attack the Overlord, however, as the Trapper plays a mostly defensive role and is vulnerable without withering fire support.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/YKGLtKv 4.3m by Animal]
+* 2 Teams: [https://www.youtube.com/watch?v=NS3SE8HhC4c 8.23m by rbest]
+* 4 Teams: [https://www.youtube.com/watch?v=Vsq7W4Az9ug 6.63m by Mohsen]
+* Maze: 3.01m by exo
+
+=== Mobile ===
+
+* FFA: 3.06m by Moonlight
+* 2 Teams: 3.1m by Esko
+* 4 Teams: 2.25m by gd1v
+* Maze: 1.01m by darkforce
+
+== Trivia ==
+* The Overlord was one of the first Tier 4 tanks in the game.
+* The Overlord, despite having more Spawners, does not spawn more Drones than an Overseer.
+** However, on much older versions, Overlord did spawn more Drones than Overseer, with Overlord at 8 and Overseer at only 6.
+** When Overlord was first added, it could spawn up to 12 Drones, which was later reduced down to 8 within 24 hours.
+*Despite all the weaknesses, The Overlord is quite powerful with skilled Overlords destroying everything that they can handle.
+
+== Gallery ==
+<gallery widths="185">
+File:Overlord.PNG|An Overlord in Sandbox
+File:Overlord In Sandbox.jpg|Another Overlord in Sandbox
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Overlord
+|es     = Overlord
+|fr     = Overlord
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Overlord
+|pt-br  =
+|ro     =
+|ru     = Overlord
+|sv     =
+|tr     =
+|vi     = Overlord
+|zh     = Overlord
+}}
+[[Category:Diep.io]]

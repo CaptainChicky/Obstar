@@ -1,0 +1,44 @@
+= Auto Spin =
+
+{{PA}} is a feature added on the July 23rd, 2016 [[Changelog|Update]] that makes a [[Tank]] spin around at a slow speed automatically. It can be [[Controls|toggled on/off]] by pressing <code>C</code>.
+
+== Function ==
+[[File:Screenshot_2016-10-09_at_18.17.04.png|thumb|220px|A Tri-Trapper using Auto-Spin]]
+Auto Spin allows the player to spin around at a set speed without moving the mouse. It is activated by pressing C. When activated, a [[Notifications|Notification]] appears at the top of the screen, much like when [[Auto Fire]] is turned on. When Auto Spin is on, the tank will begin spinning clockwise automatically, making a full revolution in just under 6 seconds. For tanks that have controllable [[Drones]] ([[Overseer]], [[Overlord]], [[Necromancer]], [[Manager]], [[Battleship]]), they too will spin clockwise.
+
+== Strategy ==
+This can be useful for tanks like the [[Quad Tank]], [[Triple Twin]] or [[Octo Tank]]. Combined with [[Auto Fire]], it can create a way to farm endlessly and make the player nearly unapproachable, at the cost of control. It can help in some situations, but against tanks like the [[Booster]], whose essence and success feeds off of lacking concentration, it can work against them.
+
+Turning on Auto Spin can slow down the tank, so be careful and only use Auto Spin in certain situations.
+
+The [[Tri-Trapper]] can use this in defensive cases by firing while spinning, creating a circle that stops many projectiles and ramming tanks and creates a temporary “safe zone” in team [[Game Modes]], such as [[2 Teams]], [[4 Teams]], [[Tag]], and [[Domination]]. Its trap base makes a safe refuge for low health tanks if they cannot get to the [[Base]] fast enough.
+
+A player can sit just outside their Base, turn on Auto Spin, and sit back. Assuming they aren't killed and the server does not close, players can rack up points this way. This is slow, however, and players can be pushed out of the safe area.
+
+== Trivia ==
+*The Auto Spin feature was added on July 23rd, 2016.
+*[[Arena Closer]]s and AI-[[Dominator]]s also use this feature when there are no players in the server and when not targeting a player respectively.
+*The [[Auto 5]], [[Auto 3]], [[Smasher]], [[Spike]], [[Auto Smasher]] and [[Landmine]] (and previously [[Mega Smasher]]) all have Auto Spin on passively (although slower than normal), and turning it on and off has no effect while playing as these classes.
+*When a player turns on Auto Spin, then turns it off again, their Barrel, Spawner, Launcher, Deployer, etc. returns to the angle it was at the moment when Auto Spin was turned on.
+*It rotates at 1 rad (or ~57.3°) per second. This means that it takes 2π (or ~6.28) seconds for one full rotation.
+*Auto Spinning tanks, like the [[Auto 5]], do not spin on the [[Map]].
+{{Gameplay|mechanics}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Auto-Spin
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Tự động xoay
+|zh     = 自動旋轉
+}}
+[[Category:Diep.io]]

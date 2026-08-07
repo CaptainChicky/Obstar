@@ -1,0 +1,4 @@
+= Yellow Square =
+
+#REDIRECT [[Square]]
+[[Category:Redirect]]

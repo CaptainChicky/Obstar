@@ -1,0 +1,69 @@
+= Green Pentagon =
+
+{{Polygon
+|image     = <gallery>
+green pentagon polygon 2.png|New Colors
+green pentagon polygon 1.png|Old Colors
+</gallery>
+|rarity    = 1 / 400,000,000
+|hp        = 1,000
+|xp        = 13,000
+}}
+The {{PA}} is the third rarest confirmed [[Polygons|Polygon]] in [[Diep.io]], and the third strongest in regard to health; the strongest being the Green [[Alpha Pentagon]]. The Green Pentagon grants a total of 13,000 EXP when destroyed. There have been very few confirmed sightings of it, but it allegedly has ten times the health of a regular [[Pentagon]]. These have a one in a million chance of spawning instead of a normal Pentagon.
+== List of confirmed videos ==
+[[File:DiepGreenPentagon.png|thumb|94px|A clear image of a green pentagon.]]
+<i><b>Note:</b> More videos may be added, as more people might find the Green Pentagon.</i>
+*{{PL|https://youtu.be/gVoSre8VAt8|Sandbox}} (private)
+*{{PL|1 = https://youtu.be/MNYwK7UE0Qg?t=22m1s|2 = 4 Teams}}
+*{{PL|1 = https://youtu.be/PgWovkK9Lbw?t=14m35s|2 = FFA}}
+*[https://www.reddit.com/r/Diepio/comments/h07c0a/i_got_the_shiny_achievement_by_destroying_a_green/ 2 Teams]
+*{{PL|1 = https://www.youtube.com/watch?v=xt4dEdfvHKM|2=Survival}}
+
+== Trivia ==
+*It is the third most valuable Polygon in the game, awarding 13,000 worth to your score when destroyed. A player killing it at Level 1 will directly rise to Level 37. In [[Domination]], [[Tag]], or [[Survival]], killing this Polygon can allow the player to rise to level 45 almost immediately, due to the 2x score and 3x score, respectively, [[Levels|Experience]] gain bonus in those [[Game Modes]].
+*When you are killed by this shape, it will say “You were killed by: Pentagon” instead of “You were killed by: Green Pentagon”.
+*It has a third of the health of an [[Alpha Pentagon]], making it the third most durable polygon in the game.
+*Like other green Polygons, the Green Pentagon's color code is 0x8AFF69.
+*Unlike Alpha Pentagons, it doesn't just spawn in the [[Pentagon Nest]] (although it is more likely to, as more Pentagons spawn there).
+**Even though it is more common for these to spawn in the Pentagon Nest, it still isn't very common.
+
+== [[Achievements]] ==
+{{SideBox|*<b>Shiny!</b> — Kill a green polygon (Listed as “???” due to the secret nature of Green Shapes)
+|{{Achievement
+|Color        = #68FEF9
+|Name         = Shiny!
+|Description  = ???}}
+}}
+
+== Trivia ==
+*Despite the name Green Pentagon being picked up by the community, the actual game just considers it a type of Pentagon and names it as such.
+
+== Gallery ==
+<gallery>
+File:GREENPENTAGON.PNG|A Green Pentagon in Sandbox.
+File:Tiqy64d4ez661.png|A Green Pentagon.
+File:Green Pentagon.png|Green Pentagon in FFA founded by Mûrderer.
+File:Daddu the best.png|A Green Pentagon in 2 Teams.
+File:SHINYALPHAPENTAGON1010.png|A Green Alpha Pentagon.
+File:SHINYALPHAPENTAGON4TEAMS.png|A Green Alpha Pentagon in 4 Teams.
+File:Screenshot 2026-01-07 185806.png|A Green Alpha Pentagon in FFA.
+</gallery>
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Zielony Pięciokąt
+|pt-br  =
+|ro     = Pentagonul Verde
+|ru     = Green Pentagon
+|sv     =
+|tr     =
+|vi     = Đa giác Xanh
+|zh     = 綠色五角形
+}}

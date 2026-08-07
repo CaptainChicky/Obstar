@@ -1,0 +1,62 @@
+= Hexagon =
+
+{{Stub}}
+{{WIP}}
+{{Polygon
+|image     = <gallery>
+Hexagon polygon new.png|(v6) Currently
+Hexagon polygon 5.png|(v5) Sightly Dark Purple
+Hexagon polygon 4.png|(v4) Dark Purple
+hexagon polygon 3.png|(v3) Orange
+hexagon polygon 2.png|(v2) Purple
+hexagon polygon 1.png|Old
+</gallery>
+|attacks   =
+|rarity    = Uncommon outside the [[Pentagon Nest]]
+|hp        = 1500
+|xp        = 1500
+}}
+The {{PA}} is the second strongest [[Polygons|Polygon]] in [[Diep.io]], second only to the [[Alpha Pentagon]].
+
+It grants a score of 1500 [[XP]] to the player who deals the final shot.
+
+The Hexagon looks very similar to the [[Pentagon]] at first, leading many players to believe it is a special [[Pentagon]], however the Hexagon has a distinct cyan color, with 6 sides instead of 5.
+
+Hexagons are significantly rarer than [[Pentagon|Pentagons]], with roughly a ratio of 50:1.
+
+== Strategy ==
+
+Hexagons help serve as great XP sources, giving the highest amount of all normal Polygons (excluding [[:Category:Rare Polygons|Shiny Variants]] or the [[Alpha Pentagon]]).
+
+Due to the Hexagon being significantly stronger than most [[Polygons]], it is advised to not ram into it, as they can deal great amounts of damage, quickly leading to death.
+
+Mathematically speaking, Hexagons are "better" than Alpha Pentagons: they have exactly half the HP and yield half the XP, but they appear more than twice as often, and most importantly, they aren't as popular.
+
+== Trivia ==
+* Before September 19, 2025, hexagons were small and had less HP and body damage. Now, they are larger and similar to arras.io Hexagons.
+* Before September 19, 2025, they had 10 HP, slightly more Body Damage than a square, and gave 25 XP.
+
+== Gallery ==
+<gallery>
+hexagonteaser.PNG|Many hexagons in Nest from Beta Diep.io
+hexagonhistorycolorsfull.PNG|All Color Hexagons for Versions in History.
+</gallery>
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 
+|pt-br  = 
+|ro     = 
+|ru     = 
+|sv     =
+|tr     =
+|vi     =
+|zh     = 
+}}

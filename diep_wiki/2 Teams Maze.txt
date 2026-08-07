@@ -1,0 +1,43 @@
+= 2 Teams Maze =
+
+{{Stub}}
+{{WIP}}{{For|the regular version without walls|2 Teams}}
+{{Mode|title=2 Teams Maze|image=Maze_2tdm.PNG|closure=Unknown|button=2tdm_maze.PNG|teams=2 Teams|bosses?=No}}
+'''2 Teams Maze'''(Called 2TDM Maze in the [[Changelog]])  is the Latest [[Game Modes|Game Mode]] that is a mix between [[Maze]] and [[2 Teams]]. Players work in two opposing teams rather than fighting against each other individually. There are large gray walls that are scattered around the arena, giving the arena the appearance of a maze. These walls are impenetrable by [[Tanks]] or their [[Bullets]]/[[Traps]]/[[Drones]]. The maze walls are also visible on the minimap.
+
+== Gameplay ==
+=== Base ===
+{{Main|Base}}
+The player can either spawn in the <span style="color:#23DAFF">Blue</span> Base that takes up the left side of the arena, or the <span style="color:#FF3D3D">Red</span> Base that takes up the right side of the arena. This determines their team, and they duke it out anywhere in the arena, usually in the middle. Players of one team cannot shoot into the opposing team’s Base, as enemy [[Bullets]] are instantly destroyed upon contact with it, no matter how strong are the Bullets (except Arena Closers). Players also cannot enter the enemy team’s Base, as they will be instantly stopped, attacked by Base Drones and will begin taking rapid and high damage bursts from the invisible wall.
+
+==== Map ====
+*The blue strip located on the left marks the spawning area for tanks on the Blue team (Unless there is a [[Factory]], as Players can spawn out of Factories on their team)
+*The red strip located on the right marks the spawning area for tanks on the Red team (Unless there is a [[Factory]], as Players can spawn out of Factories on their team)
+
+=== Players ===
+The players are divided into two teams, which are Red and Blue. Tanks of the same team can't kill each other and can only kill players on the enemy team, so Bullets that fired by a tank on a player's team will go through them and if one touch a tank on their team, they will push or bump into it without dealing damage to each other.
+
+=== Base Drones ===
+[[File:NewGuards.png|thumb|130px|A group of 2 Base Drones and a [[Tank]]]]
+The Base areas are defended by [[Base Drones]], tiny triangles (which are even smaller than [[Drones]] and Red [[Triangles]]) with a large amount of health. They will chase down any player from the opposing team but will turn back after straying too far from their base. There are 15 groups of 2 Base Drones spread over each team’s Base. Each group is circling its area, so the whole Base can be protected. The Base Drones will not leave their team’s zone unless an opponent is within proximity. Base Drones continue to seek until an opponent is out of range. Although there are methods of evasion, the simplest of which the player can do is to run away until they are out of range from the Base Drones.. Due to the maze walls despawning [[Base Drones]] the moment it touches it, going behind a wall is an effective method of evading.
+
+=== Walls ===
+As the name insists, there are walls scattered around the map that is normally impenetrable by [[Tanks]] and their [https://diepio.fandom.com/wiki/Category:Ammunition Ammunition], [[Polygons]], [[Crashers]], and even [[Base Drones]] 
+
+== History ==
+
+* This game mode is added alongside [[4 Teams Maze]] on September 9th, 2025 during beta testing on Diep.io.
+* This game mode is added alongside [[4 Teams Maze]] on October 23rd, 2025 on the normal version of Diep.io.
+
+== Gallery ==
+[[File:Maze 2tdm.PNG|left|thumb|A Blue Auto-Tank and a Tri-angle running away from a Red Shotgun]]
+
+
+
+
+
+{{GameNav}}
+(Editor Note: I think it might've been removed)
+
+(Another Editor's Note: It's not removed, it rotates with Maze and 4 Teams Maze, just like with Domination, Tag, Mothership and Breakout. This template hasn't updated yet)
+[[Category:Diep.io]]

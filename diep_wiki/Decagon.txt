@@ -1,0 +1,50 @@
+= Decagon =
+
+{{Stub}}
+{{WIP}}
+{{Removed}}
+{{Polygon
+|image     = <gallery>
+Decagon polygon.png|Currently
+</gallery>
+|attacks   = Yes
+|rarity    = Common
+|hp        = 6,000
+|xp        = 6,000
+}}
+The {{PA}} is the second strongest polygon in the Birthday mode, second only to the Alpha Pentagon. It is a yellow decagon with 5 auto turrets mounted at 72 degree angles. These auto turrets fire small bullets at nearby tanks with very high damage and bullet penetration.
+
+== Strategy ==
+*The Decagon deals extremely high [[Damage]] for how small the bullets are, easily able to kill low level tanks in a single volley.
+*Most tanks will be unable to deal consistent damage due to the Decagon's high [[Bullet Penetration]], requiring them to shoot around the bullets.
+*The easiest way to kill a Decagon is using a [[Destroyer]] class, as their bullets have enough penetration to beat the auto turret bullets and the large bullets deal large amounts of damage to the Decagon
+*The auto-turrets will attempt to target where the player is going rather than they are. This can be abused to guarantee hits against the Decagon.
+**Movement Speed is recommended, but not required as most of the time the auto turrets will heavily overshoot your position when moving left to right.
+*[[Drone]] classes can maneuever their drones around the Decagon's bullets or out from the Decagon's auto-targeting range.
+*[[Sniper]] classes can often out-range the Decagon to guarantee damage, although this will often take a very long time.
+== Trivia ==
+TBA
+
+== Gallery ==
+<gallery>
+decagoningame.PNG|Decagon in game.
+</gallery>
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 
+|pt-br  = 
+|ro     = 
+|ru     = 
+|sv     =
+|tr     =
+|vi     =
+|zh     = 
+}}

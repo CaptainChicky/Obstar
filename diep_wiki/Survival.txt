@@ -1,0 +1,72 @@
+= Survival =
+
+{{Removed}}{{Mode
+|image         = TwinvsAC.png
+|conditional?  = yes
+|closure       = Only one player is remaining in the arena.
+|button        = Survival_MODE_Icon1.png
+|teams         = 
+|bosses?       = yes
+|specials      =
+}}
+{{PA}} was a [[Game Modes|Game Mode]] added on February 15th 2017 and removed on January 2nd 2023. It is just like [[FFA]], except that no players can spawn after the game starts and when players die they can't respawn. When players die, they will be redirected to another server. In this game mode, triple EXP will be given to the player. Also, players passively gain EXP. This means that the players will be able to get to Level 45 by doing nothing. However, this is not a good strategy, as other players will kill the player.
+
+When first joining the game, the player will have to wait for others to join in. If there are at least 10 players, the game will start in 10 seconds. Other players can still join during this countdown. If there being fewer players than 10 during the countdown, the countdown will stop and the game will wait for the players again. When the countdown finishes, players will spawn in the arena and other players can't join anymore. The number of players determines the size of the arena. The more players in the game make the arena larger, fewer players make the arena smaller. When there is only one player left, [[Arena Closing]] will occur immediately.
+
+== Strategy ==
+Similar strategies to [[FFA]] can apply to Survival, since Survival is similar to it, with the exception that the player can't respawn.
+* The [[Pentagon Nest]] is the most important area in the game. The player should reach it as soon as possible and start farming. Note that there will be no Pentagon Nest when there are only a few players left in the game.
+* The [[Triplet]]s and the [[Sprayer]]s are two great choices for Survival. They're both somewhat easy to get to, and they are good for handling lots of tanks. Not only that, but both classes can beat almost any class that they encounter in a 1v1, except skilled [[Overlord]] players.
+* Most [[Trapper]] classes are hard to get to in Survival (even with the experience increase per polygon), thus increasing the risk of dying early in the game. This is unless the player is skilled at killing opponents before they max out their levels.
+* During the final stretch when there’s only four or fewer players in the match, the player leading in score should stay in the middle and assure they don’t get themselves cornered. There is no point trying to hide or flee, since the leader arrow is still used, and opponents will still use it. [[Auto Turrets]] are great choices, as they point at where enemies are, though they may mistake [[Polygons]] for enemies.
+* Using [[Smasher]] classes is also a great strategy, as they have lots of health. They can be useful for taking out the smaller players but aren't very effective against the Triplet or Sprayer. Alternatives include the [[Booster]].
+* A good strategy as the [[Penta Shot]] is to maximize bullet stats, put five into movement speed, and kite the remaining enemies. This strategy is easier than in [[Free For All]] because of the increased experience gain and the lower enemy count.
+* One of the best Survival strategies is as follows: as soon as the player spawn use U or M to put upgrades into the queue, to prevent from the stat bars constantly appear again and again, and distracting the player. Once the queue is filled, immediately begin attacking Polygons. The other players will immediately start to fight one another, which wounds them and keeps them at a low level for some time. Use this time at the start to attack the Polygons in range. If this is done quickly enough, the player can reach Tier 2 before most other tanks. The player can then move in and kill the other low-level, low-health tanks.
+* Another strategy is to do the same as before, just don't attack other players. Spend the player's whole time on polygons, then when only a few players are left, and the player's level is high enough, attack them. Another player might use the same strategy, so when the player is at Level 45, make sure the player watch the [[Scoreboard]]. It is best to kill them from top to bottom.
+* The player could also farm at the side with a high RoF tank, like the [[Twin]] or [[Machine Gun]]. As the arena shrinks, the polygons will gather more thickly and the player can quickly gather points.
+
+== Trivia ==
+*It is the first game mode to have a countdown that waits for players to join.
+* From February 26th until March 5th, 2017, it is the only game mode where no EXP is given for killing a player, which means that the players cannot level up when the players kill a player.
+*The players can see the entire map at the end of the map is shrunk enough.
+*This is the easiest place to gain [[Achievements]], as players are unprepared and easy to defeat, while XP gain is also increased.
+*This game mode is almost similar to [[Sandbox]], fewer players means fewer [[Polygons]] and a smaller arena.
+*It was added in the first update that had happened for almost three months.
+**It was also the first update that was announced in the [[Changelog]] in 2017, the second being Achievements.
+**Until February 26, 2017, kills could give EXP and the EXP multiplier was 3x. After the update, it is now 5x.
+**On the same day, they tweaked the EXP.
+**On March 5th, the EXP multiplier was decreased to two. Kill XP also returned. Also, player's EXP now passively gains.
+**On a Secret update, the EXP multiplier was increased to 3.
+*Bosses can spawn in survival.
+**They can also spawn if a game countdown is still going if it lasts over 10 minutes.
+**The Fallen Overlord was sighted on 6/19/2020 as soon as the game started.
+*This gamemode was removed on January 2nd, 2023, likely due to its general unpopularity and the difficulty of starting a game.
+
+== Gallery ==
+<gallery>
+Timer.png|Waiting to begin the round.
+Wait.png|When first entering the mode.
+Survival.png|The Survival button
+Screenshot 2017-02-27 at 6.27.22 PM.png|Changelog- as of 26th of Feb
+Screenshot (463).png|2 tanks in survival gaining infinite score
+</gallery>
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Survival
+|fr     = Survival
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     = Survival
+|sv     =
+|tr     =
+|vi     = Sinh tồn
+|zh     = Survival
+}}
+[[Category:Diep.io]]

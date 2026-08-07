@@ -1,0 +1,167 @@
+= Necromancer =
+
+{{Infobox
+|image     = <gallery>
+necromancer icon 2.png|New Colors
+necromancer icon 1.png|Old Colors
+</gallery>
+|tier      = 4
+|previous  = [[File:Overseer icon new.png|50px|link=Overseer]]
+|next      = None
+|barrel    = [[Spawners]] (2)
+|id        = 17
+}}
+Necromancer is a Tier 4 tank in Diep.io. It upgrades from [[Overseer]] at level 45. 
+
+== Design ==
+The Necromancer is a square-shaped entity with two inoperative [[Spawners]] mounted at its sides. The class acquires [[Drones#Necromancer Drones (or the Undead)|Drones]] by infecting nearby [[Square]]s upon contact– with its body, its drones, or previously spawned [[Bullets]].
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = ▲
+|Reload            = N/A
+|MovementSpeed     = —
+|HiddenStat1       = Drone Count
+|HiddenStat2       =Damage Reduction
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲▲
+|HiddenStat2Val    =▼▼▼
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+{{Main|Drones#Necromancer Drones (or the Undead)|Necromancer Drones}}
+The Necromancer controls up to 22 to 36 square-shaped [[drones]] that resemble the drones fired from the [[Summoner]] [[Bosses|Boss]], to attack and defend itself. When compared to an [[Overlord]], the drone damage multiplies by 2.4, and the health remains the same. '''While this would mean that a Necromancer Drone should be much stronger than a Basic Tank's Bullet, it is classified as a "Shape" rather than a Bullet, causing it to always take full damage instead of only 25% like other projectiles. This effectively causes Necromancer Drones to be 16% weaker than [[Tank|Basic Tank's]] bullets'''. Upon “infection” the drone’s color pattern is darkened slightly to a peach tone. Though it otherwise duplicates the one of the player’s team; (in all non-[[Free For All|FFA]] modes).
+
+* Stats: 
+** Drone Speed: 0.76x [[Tank]] 
+** Drone Health: 4 (+3 for each point in Drone Health)
+** Drone Damage: 11.76 (+5.04 for each point in Drone Damage) 
+** Drone Count: 22 (+2 for each point in Drone Count) 
+
+Acquiring drones will <i>not</i> give the player [[Levels|XP]] as normal. They will, however, deal collision damage to the tank or the drone that infected them. If infected through another drone, players must destroy the Square to “capture” it. Destroying a Necromancer Drone give the player 10 XP. Note that [[Green Square]]s can also be captured by this tank, the resulting Drone however will not be any different from other Drones. Despite this, if you destroy a Drone which was converted from a Green Square, you will get 1000 XP.
+
+Without any upgrade points, the Necromancer can control a maximum of 22 Square Drones at any time with an additional 2 drones for every point in reloading invested, making for a maximum of 36 controllable Drones.
+
+=== Controls ===
+In terms of controls, the Necromancer is the same as the Overseer and the [[Overlord]]. Pressing E for [[Auto Fire]] causes the Drones to follow the cursor without holding left click or space while holding right-click or shift repels them from the cursor. Having Auto-Fire disabled and leaving the mouse unpressed causes them to congregate around the player in a dense cloud and slowly orbit them in a continuous clockwise rotation or attack the nearest Polygons and tanks.
+
+== Attack Types ==
+
+''Necromancer is one of the few tanks that has multiple attack types.''
+
+'''The Claw.''' The claw is the most famous drone-wielding tank move. To perform the Claw, move your cursor to the opposite side of where you want to attack, and before the drones reach your cursor, right click or press the Shift key to repel the drones. Then, once the drones have formed a semicircle behind your opponent, move your cursor to the side you want to attack and release the Shift key/right click button. If performed successfully, the drones will surround your opponent from the back and sides.
+
+'''The Hammer.''' The Hammer is when you repel your drones so that they seem to move in a way like a tsunami.
+
+[[File:Screenshot 2020-07-07 at 12.24.30 PM.png|thumb|220x220px|A Necromancer using "The Hammer."]]
+
+== Strategy ==
+*<b>Strong Against:</b> Individual tanks, almost slow tanks, Overlords with low Reload, Rammer tanks, [[Sniper]] Branches, [[Smasher]] Branches, [[Skimmer]], [[Battleship]], [[Rocketeer]]s, [[Crashers|Crasher swarms]], Triplet with low reload or with low bullet damage, [[Triple Twin]].
+*<b>Weak Against:</b> [[Penta Shot]]s, [[Spread Shot]]s, [[Octo Tank]]s, Bullet build Tri-Angle branch, [[Destroyer]] classes except [[Skimmer]], Overlords with high Reload, and groups of enemies. When low on drones, highly vulnerable against everything.
+
+=== As the Necromancer ===
+[[File:Claw Technique Jul 29 Sat 2017.PNG|thumb|220x220px|The claw technique, repelling Drones to the left.]]
+*The Necromancer is one of the hardest tanks to use effectively, due to it lacking the ability to spawn Drones. A high skill level is needed for this tank, but it can easily become one of the best tanks in the game if it is effectively used, surpassing even the Overlord if the player is aware of the Necromancer’s repelling ability.
+*Squares are central to the Necromancer’s ability, so the player should upgrade to the Necromancer where Squares can be found with ease & there are no players to interrupt the collection of Drones. A Necromancer’s Drones are its primary offense as well as its defense, so it is wise to put several points into Drone upgrades.
+*Players should <b>never</b> swarm their Drones forward or just block the enemy’s Bullets with Drones. Both of these strategies will lead to the enemy cutting right through the Drones, leaving the Necromancer defenseless. A better strategy is a player using its Drones to quickly attack and hope that they kill them or injure them so severely that they have to retreat. As soon as players see that their Drone fleet is severely reduced, they should immediately retreat and gather more Drones. Players should make sure to also stay near squares when <i>in battle</i>.
+*Players should play this tank like an [[Annihilator]], not like an Overlord. Necromancers are meant to barge in, claw everything, then regroup and try again. Attacking Trappers and Bullet spammers is not recommended until the player has mastered the Necromancer’s tech and ambush ability first.
+*The Necromancer’s main talent is swift kills; long duels will usually put the Necromancer at a disadvantage. This applies to all tanks but affects the Necromancer the most since it can lose its Drones permanently. This disadvantage is very small when fighting rammers since they avoid Drones to ram the player’s hull. Bullet spammers on the other hand, with their massive DPS, will almost always kill the player if the player delays too long.
+*The “claw” is a very common strategy among skilled Necromancers. To perform it, a player must hold their Drones together, then press shift/their right mouse button to repel their Drones and hold their mouse far away from the Drones to keep them in a tight formation. The claw must be tight enough to destroy everything in the area it is sent it in while still being spread far enough apart to kill Bullet spammers. Only three tanks can survive and counter this, so it is a good idea to try mastering it in Sandbox.
+*Necromancers should stay away from the [[Pentagon Nest]] unless they have teammates to protect them there.
+*A Necromancer holding its cursor right in front of themselves in the direction they are moving is a good defensive strategy. This moves all their Drones into an armor-like formation that completely covers their tank, protecting them from enemy attacks and Body Damage tanks like the [[Booster]]. Because of this, using this strategy will make them almost immune to attacks from [[Invisibility|Invisible]] enemies.
+*In team [[Game Modes|game modes]] they make great support tanks, as they can use their large numbers of Drones to cover teammates while healing or under fire, making them very useful.
+*A way for players to quickly gain Drones is for the player to first infect a few, then go to a relatively undisturbed area with a high concentration of Polygons and send their Drones spreading through it by clicking and holding the right mouse button. If the player waits around ten seconds then call their squares back, they can usually gain almost a maximum number of Drones. Before the player attempts this, they should make sure there are no hostile tanks around because they will be undefended.
+*In 2/4 Teams, an effective (albeit slow and conservative) strategy is to stay within the Team [[Base]] and send out all of the player’s Drones along the borders of the base with left click. Because of the sheer amount of Drones and the ability to infect (and thereby resurrect) other Squares, these Drones can continue indefinitely through all but the heaviest enemy fire and destroy every Polygon in their path. The player should be wary of holding shift long enough for the Drones to hit the enemy Base and be destroyed, this is also a bad idea in [[Maze]] since the walls will destroy a large number of Drones.
+**Despite the annoyance of gathering more Drones from within their Base if they are destroyed, it allows the player to effectively grow even if the entirety of the server is controlled by the enemy team. So long as the player never leaves in their Base, they cannot die until the server closes.
+*A famous strategy for killing rammer tanks is the “Border Claw.” To perform, players must use the right mouse button to make their Drones scatter along the border of the Arena, then sit idly above the Drones. If a rammer tank decides to attack the player, the Necromancer can then summon their Drones back and surround the rammer.
+*A Necromancer's best bet of EXP is Battleships. They can potentially have more Drones at a time then Necromancer’s do, but their Drones are much, much weaker. Therefore, Battleships should be easy kills for Necromancers.
+*Skimmers and Rocketeers are also easy targets, the missiles are fairly weak and can be easily bypassed by the drones of the Necromancer.
+*Tanks with high Body Damage (skill 3) can often kill the Necromancer with ease. Try to make a shield with your drone to prevent death.
+*Trapper class is one of the easiest class to defend or attack because of it's low amount of traps.
+
+=== Against the Necromancer ===
+*Necromancers can defeat a wide variety of tanks, but it’s not overly dangerous against some high rate of fire tanks, such as the Penta Shot or Spread Shot. All others should attempt to avoid the Necromancer.
+*Necromancers cannot target fast-moving tanks such as Boosters and Smashers. Unless the Necromancer is skilled, the player can just keep on running around it while killing its Drones (this works especially well with a [[Fighter]]). If the Necromancer does not engage when the player applies this tactic, the player should disengage and go somewhere else. Skilled Necromancers will keep themselves shrouded in their Drones and retreat, and they will try to surround and dispatch of the player should they get too close. It is not recommended to use this strategy with any other tank beside the Fighter.
+*Necromancer Drones are somewhat weak, so a Bullet-build Destroyer, [[Hybrid]] or Annihilator’s large Bullets can destroy most of the player’s Drones in only a few hits; once all of the Drones are destroyed, players can use their recoil to boost towards the now-helpless Necromancer and kill it in a single hit.
+**Skilled Necromancers know <i>not</i> to do this, they will instead keep their drones spread out, this allows them to hit an enemy from all angles while keeping their drones safe. If this happens, the player should either leave or use the Destroyer’s recoil to get close and kill, beware that they will attempt to predict the player’s movements, and may kill them, the player should try to be unpredictable and chaotic.
+*Another useful strategy for the player is to catch inexperienced players who are attempting to learn how to use this tank. Because of its fame and difficulty to master, around a third of Necromancer players will not be able to properly utilize this tank and are easy prey. If they have a score of 100K or above, however, the player should use the tanks that are listed as strong against the Necromancer.
+*The player could also try to team against and stalk the Necromancer. They should keep in mind, however, that this may result in a great deal of the players in the server targeting them, as it has been proved that many Diep.io players hate teamers in [[Free For All|FFA]].
+*On rare occasions, the Octo Tank is an effective counter against the Necromancer. If the Octo Tank is low on health, they would probably die if a Necromancer swarms their Drones at them. If the Octo Tank has low Bullet Speed however, the bullet wall could be impermeable to the Necromancer Drones.
+*Skilled Factory players should try to ambush this tank and/or charge at it. Like with Fighter the goal should be to destroy as many drones as possible. Through continuous combat and depending on the spread of the drones the Factory should be able to strip the enemy from its drones in around 1 to 4 seconds. If surrounded the player should try to rip a hole in the Necromancer's cloud while its drones respawn. Without any bullets, the factory's 6 drones can already take on 20 of Necromancers' sun chips. Factory's Bullet Wall can take out between 8 and 10 more (depending on reload).
+
+== History ==
+[[File:Necromancer in Sandbox.jpg|thumb|213x213px|Necromancer in Sandbox]]
+[[File:Necromancer with shots.PNG|thumb|220x220px|Necromancer Drones with health bars]]
+*Necromancer Drones used to display Health Bars, but they were later removed.
+*In earlier versions of the game, Necromancer Drones could respawn very slowly from the Tanks' spawners, presumably when squares died within a certain distance around it. The Reload stat would then increase the chance of Squares respawning from them. The feature was removed because it would take a humongous amount of time to recover all the drones just with it.
+**As of June 13th, the Reload was changed to Drone Count. The Drone cap was set at 20 when not upgraded and 34 when full Drone count was achieved.
+**As of October 23, the Necromancers’ Drone Count was buffed; the minimum was increased from 20 to 22, while the maximum was increased from 34 to 36 in a secret update.
+*On July 30th, the Necromancer was rebalanced, decreasing its Drone Health but increasing its Drone Speed.
+*On October 23rd, the Necromancer’s Drone Speed was increased in a secret update.
+
+== Record ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=gKVfYtuWxTI 1.78m by JB Colombia]
+* 2 Teams: [https://imgur.com/Wi25rso 3.61m by Saeko]
+* 4 Teams: [https://imgur.com/final-score-3-7m-time-played-9h-30min-FOarj7A 3.73m by d2xy.0]
+* Maze: [https://imgur.com/omwvTqX 1.07m by Baller]
+
+=== Mobile ===
+
+* FFA: 1.55m by HZ6
+* 2 Teams: [https://imgur.com/a/diep-io-necromancer-2-teams-mobile-wr-by-browhattt-sOH49ih 3.02m by browhattt]
+* 4 Teams: [https://imgur.com/a/diep-io-necromancer-4-teams-mobile-wr-by-cheesemuncher63-lxvwLN8 1.00m by cheesemuncher63]
+* Maze: 982.8k by Kevin
+
+== Trivia ==
+*The Necromancer is named after {{w|Necromancy|Necromancers}}, a type of wizard known for raising and controlling the dead. This references the Necromancer’s ability to control Squares when they’re “killed” by the Necromancer.
+*This is the very first tank added to the game after the [[Changelog]] was released. The Necromancer was added in the May 18th update in the same patch the Changelog itself was added.
+*It is the first playable tank with a square-shaped body, the only other square-shaped tanks being the [[Factory]], and the boss, [[Summoner]].
+*It is also the only tank with inactive Spawners. Their only purpose is to show that it’s a Drone Tank.
+*It is also one of the tanks that have had some of their functions removed (spawning squares).
+*Some players (especially on {{PL|https://www.reddit.com/r/Diepio/|Reddit}}) refer to the Necromancer’s Drones as “Sunchips,” as they resemble Sun Chips, minus the ripples.
+**Another common term is “Necro,” a shortened form of “Necromancer”.[[File:Screenshot 2019-06-28 diep io.png|left|thumb|220x220px|Necromancer in sandbox]]
+*If you are [[Triple Twin]] in [[Sandbox]] and have bullets in-game when you switch to Necromancer with the <code>\</code> key, the Squares hit by your [[Triple Twin]] bullets will turn into your Drones.
+*Because of the 25/2 [[Polygon]] per client limit, and the fact that Necromancer Drones are counted as such entities, the players will only get between 12 and 36 drones in [[Sandbox]] mode, after which no more Polygons spawn unless another player joins the arena.
+*In [[Free For All|FFA]] it is hard to distinguish whether a peach-colored Drone belongs to a Necromancer or the [[Summoner]] (If the Summoner is present in the arena), as the only clue to their origin is their behavior (Summoner squares move like Battleship Drones, while Necromancer Drones move in a cloud).
+*The Necromancer possibly has the highest skill floor out of any tank in the game.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Patched or Removed Bugs ===
+[[File:Necromancer & Battleship Drone glitch|thumb]]
+*{{PC}} On Sep 1<sup>st</sup>, 2016, Necromancer and [[Battleship]] Drones were incredibly fast, allowing Necromancer users especially to dominate any game mode they entered.
+=== Unpatched Bugs ===
+[[File:Sandboxglitch.png|thumb|A Sandbox arena that has no polygons.]]
+*{{PC}} Capturing all [[Square]]s in the Sandbox arena alone as a [[Necromancer]] will reduce the amount of, if not totally prevent, any more [[Polygons]] from spawning.
+}}
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Necromancer
+|es     = Necromancer
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Necromancer
+|pt-br  = Necromancer
+|ro     =
+|ru     = Necromancer
+|sv     =
+|tr     =
+|vi     = Necromancer
+|zh     = Necromancer
+}}
+[[Category:Diep.io]]

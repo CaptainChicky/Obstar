@@ -1,0 +1,122 @@
+= Hunter =
+
+{{Infobox
+|image     = <gallery>
+hunter icon 2.png|New Colors
+hunter icon 1.png|Old Colors
+</gallery>
+|previous  = [[File:Sniper icon new.png|50px|link=Sniper]]
+|tier      = 3
+|next      = '''Ingame'''<br>[[File:Predator icon new.png|50px|link=Predator]][[File:Streamliner icon new green.png|50px|link=Streamliner]]<br><br>'''Removed'''<br>
+[[File:Predator 30 icon 1.png|50px|link=Predator (original)]]
+|barrel    = [[Cannons]] (2)
+|id        = 19}}
+{{Confused|the [[Skimmer]] and [[Sprayer]] which share a similar appearance}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Sniper]] at level 30 and upgrades to the [[Predator]] and [[Streamliner]] at level 45.
+
+== Design ==
+The Hunter retains its old Sniper [[Barrel]]. It also has a wide [[Tank]] Barrel overlapping the Sniper Barrel, allowing it to fire two [[Bullets]] in quick succession.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ~▼
+|BulletPenetration = —
+|BulletDamage      = ▼
+|Reload            = ▼
+|MovementSpeed     = —
+|HiddenStat1       = Field of View
+|HiddenStat2       = 
+|HiddenStat3       = 
+|HiddenStat4       = 
+|HiddenStat1Val    = ▲
+|HiddenStat2Val    = 
+|HiddenStat3Val    = 
+|HiddenStat4Val    = 
+}}
+Using its two Barrels, the Hunter has an increased DPS (Damage PBr Second) when compared to its predecessor, the Sniper. One Barrel shoots a small Bullet while the other shoots a normal sized one, both moving at the same velocity. Both bullets are 0.7 times the size of the Barrels they fire from. Bullet damage is reduced by 25% when compared to the Sniper. The smaller Barrel has a slight spread. The tank’s Bullet speed is slightly decreased. This tank’s Barrels barely have any recoil at all.
+
+Stats: 
+
+* Bullet Speed: 1.4x Tank
+* Bullet Damage: 5.25 (+2.25 for each point in Bullet Damage)
+* Reload time: 38t (-3t for the 1st, 2nd, 3rd and 5th point, -2t for the 4th, 6th and 7th point in Reload)
+
+== Strategy ==
+*<b>Strong Against:</b> Slow tanks, tanks that are unaware of it.
+*<b>Weak Against:</b> Fast tanks, high Reload tanks, high DPS tanks, [[Sniper]] Class tanks with higher FoV, [[Drone]] Classes.
+
+=== As the Hunter ===
+*The Hunter is not good at farming, so the player should look for kills instead.
+*The Hunter is not good at fighting other tanks with high [[Movement Speed]] since they will easily dodge Hunter’s shots unless the player is good at aiming. It is also not good at fighting tanks with high [[Reload]].
+*Conversely, the Hunter is incredibly good at sniping low-Level [[Tanks]] due to its single-volley damage. The player should begin hunting tanks of their own, or even higher level, to gain points.
+*It can also be good against very slow tanks. The player should try to shoot around their target's bullets and hit them directly, and the player can kill them in a couple of shots.
+
+=== Against the Hunter ===
+*A [[Destroyer]] class works well against it, due to Hunter’s slow movement and low recoil; it is an easy target for a Destroyer class. Recoil against the Hunter is a good choice as well since the player could ram it as a Body Damage rammer or getting in close to instantly kill it.
+*Bullet spammers, like the [[Triplet]], can counter it. Because of the Hunter’s decreased penetration, the player could block their bullets with their bullets and dodge any that make it past the player’s bullet storm. That way, you may easily overwhelm and kill it.
+*The [[Overseer]] branch (except [[Overtrapper]] due to its uncontrollable drones) could flank the Hunter by front or back, due to the Hunter’s low reload, as it can’t destroy all of the player’s drones in time.
+*The [[Battleship]] can use its increased AI’s range to attack the Hunter from outside its field of view.
+
+== History ==
+*The Hunter has gone through more changes to its fighting style than any other tank. Initially, it had two Bullets, both the size of the cannon which shot it and both quite fast. This was changed probably because of how powerful it would be. Later, it was modified to shoot a group of 6 pellets, all significantly slow like a shotgun. After a while<!-- and much backlash-->, it was reverted to the original bigger-smaller two-shot tank again, except with smaller and slightly slower Bullets. It was part of the June 13, 2016 power buff as well. During the July 4 update, its firing style was reversed to match the new X Hunter firing style.
+*Hunter used to be able to upgrade into [[Predator (original)|the original Predator]] before it was merged with [[Predator|X Hunter]].
+
+==[[Achievements]]==
+{{SideBox|*<b>Huntin’</b> — Upgrade to Hunter
+|{{Achievement
+|Color = #9AFA69
+|Name = Huntin’
+|Description = Upgrade to Hunter}}
+}}
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/PvmiKDi 1m by Mipha]
+* 2 Teams: [https://imgur.com/xDB7wBM 1.47m by Imagine]
+* 4 Teams: 1.79m by qaqa
+* Maze: [https://imgur.com/alkD9XQ 498k by Mipha]
+
+=== Mobile ===
+
+* FFA: 504.5k by buh
+* 2 Teams: 405.3k by Chief Of Map
+* 4 Teams: 295.5k by VløKe
+* Maze: -
+
+== Trivia ==
+*The Hunter is a meme on many Diep.io-related websites, due to the fact that it is often considered ‘weaker’ than other [[Upgrades|classes]] (and the fact that it used to be unable to Upgrade further before the [[X Hunter]] and the [[Predator]] were added).
+*Before the new hunter branch updates, the Hunter shot 6 bullets (3 Gunner bullets and 3 Auto-Turret-sized bullets).
+**This would eventually become the basis for the [[Shotgun]] branch.
+
+== Gallery ==
+<gallery>
+File:Rrrrrrrrrrrrrrrrrrrrr.png|Old firing design for Hunter.
+File:Current Hunter.png|Hunter's current firing design.
+</gallery>
+
+==Footnotes==
+<references />
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Hunter
+|es     = Hunter
+|fr     = Hunter
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Hunter
+|pt-br  =
+|ru     = Hunter
+|sv     =
+|tr     =
+|vi     = Hunter
+|zh     = Hunter
+}}
+[[Category:Diep.io]]

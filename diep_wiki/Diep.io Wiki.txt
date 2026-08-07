@@ -1,0 +1,3 @@
+= Diep.io Wiki =
+
+#REDIRECT [[Project:Home]]

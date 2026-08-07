@@ -1,0 +1,146 @@
+= Quad Tank =
+
+
+{{Infobox
+|image     = <gallery>
+quad tank icon 4.png|New Colors
+quad tank icon 3.png|Old Colors
+quad tank icon 2.png|Old Icon
+quad tank icon 1.png|Nameless
+</gallery>
+|tier      = 3<ref name="quadtank1">Originally classified as a Tier 4 Tank.</ref>
+|barrel    = [[Cannons]] (4)
+|next      = [[File:Octo tank icon new.png|50px|link=Octo Tank]][[File:Auto 5 icon new green.png|50px|link=Auto 5]]
+|previous  = [[File:Flank guard icon new.png|50px|link=Flank Guard]][[File:Twin icon new.png|50px|link=Twin]][[File:TripleShotNAV0.png|50px|link=Triple Shot]]<ref>Removed upgrade option. Removed upgrade options and removed tanks are shown by a gray icon background.</ref>
+|id        = 4}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Flank Guard]], [[Twin]] at level 30 and upgrades to the [[Octo Tank]], [[Auto 5]], and formerly [[Triple Shot]] at level 45.
+
+== Design ==
+The Quad Tank has a circular base surrounded by four [[Cannons]] in a plus shape, designed such that recoil is canceled out because of the position of its weapons, like the Flank Guard, the Twin Flank, and the Triple Twin.
+
+== Technical ==
+{{BaseStats
+|PrevClass          = Flank Guard
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = —
+|BulletDamage       = ▼
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        = Recoil
+|HiddenStat2        =
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     = —
+|HiddenStat2Val     =
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+{{BaseStats
+|PrevClass          = Twin
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = ▲
+|BulletDamage       = ▲
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        = Recoil
+|HiddenStat2        =
+|HiddenStat3        =
+|HiddenStat4        =
+|HiddenStat1Val     = ▼▼▼
+|HiddenStat2Val     =
+|HiddenStat3Val     =
+|HiddenStat4Val     =
+}}
+Individual Bullets fired from this tank are only 75% as durable as the ones spawned by [[Tank|Basic Tank]], the Quad Tank however, shoots in four directions.
+
+Stats: 
+
+* Bullet Penetration: Same with [[Tank]]. 
+* Bullet Damage: 5.25 (+2.25 for each point in Bullet Damage).
+
+== Strategy ==
+*<b>Strong Against:</b> Multiple Low-Level enemies, low health tanks.
+*<b>Weak Against:</b> Focused Bullet spammers such as Twin, [[Destroyer]] branch, Ramming tanks, Snipers, Overseers/Overlords.
+
+=== As the Quad Tank ===
+*It may be better to stay as a Twin until the player can upgrade to an Octo Tank or an Auto 5 just like with the Triple Shot due to this tank’s numerous soft spots.
+*Quad Tanks are decent at dealing with crowds of [[Polygons]] and great at dealing with many lower-leveled tanks. As a result, farming and multi-kills have never been simpler. As the Quad Tank has four Cannons, it can get two or more targets into a range of its Cannons and spam Bullets. All the player needs to do is to turn Auto Fire and Auto Spin on, and watch the XP grow.
+*The player should beware of fast rammers, as they can bump into the tank's weak points (between the cannons), and kill it. To counter, it is best to have high Reload, Bullet Speed, Penetration, and Damage and block its weak spots.
+*Like the Octo Tank, it can spin to defend and block weak points. This is helpful against ramming builds, like the [[Booster]], [[Tri-Angle]], Destroyer, and [[Fighter]].
+*This tank is weak against most tanks with focused fire, such as the Twin and Triple Shot, not to mention the [[Sniper]]. It has many weak points compared with other classes of its tier, so it should try to do its best to protect itself, as it has four weak points where players can damage it from.
+*It can easily defend itself in games by clicking "C" and "E" keys to simultaneously auto-fire and auto-spin. This will make the most of the player's tank, as opponents have difficulty time shooting in the gaps.
+*The player should beware of [[Drone]] users as well, as the speed and damage of their Drones can mean that the Drones easily find and pierce the gaps between the player's Bullets.
+*This tank is best used with a teammate; and though it has a good crowd-control ability, it is generally weak against focused fire tanks when left alone, so staying with the player's teammates is recommended.
+
+=== Against the Quad Tank ===
+*The Sniper tree (excluding the [[Trapper]] branch) are hard counters to the Quad Tank. They can easily pick it off due to the slow speed the Quad Tank has and its four gaps between its Cannons. This allows for an easy kill in all diagonal directions.
+*[[Smasher]] and [[Tri-Angle]] branch tanks can engage the Quad Tank with Body Damage maxed out. They can charge at a Quad Tank while dodging its [[bullets]] and strike their body at a wide gap between the [[Cannons]]. The player should be careful when the Quad Tank has maxed out Bullet Damage, as they may get underestimated in several cases.
+*The [[Sprayer]] is the most effective tank against the Quad Tank. The accurate Bullet spread may deal some quick damage in the wide gaps between the Cannons of the Quad Tank. Due to the Sprayer's high RoF(Rate of Fire), it may also overwhelm the Quad Tank's RoF. Also, accurate firing classes, such as the [[Streamliner]] or [[Triplet]] is also a good idea for this strategy.
+*The Overlord can be effective against this tank, as it can guide its Drones between the gaps between the Cannons of the Quad Tank. The player can do this several times until the Quad Tank gets overwhelmed, making it an easy target.
+
+== [[Achievements]] ==
+{{SideBox|*<b>C+E</b> — Upgrade to Quad Tank
+|{{Achievement
+|Color = #FB6969
+|Name = C+E
+|Description = Upgrade to Quad Tank}}
+}}
+
+== History ==
+*It used to be a Level 45 tank that upgraded from the [[Triple Shot]].
+*It is one of the first tanks to be added in [[diep.io]].
+*Contrary to popular belief, the Quad Tank’s Bullets are slightly stronger than the Twin’s.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/e46Sfee.png 1.34m by NadeWhyTea]
+* 2 Teams: 1.7m by LK2410
+* 4 Teams: [https://imgur.com/BJLywWa 1.58m by Fallen]
+* Maze: [https://imgur.com/V99BKUS 818k by Astral]
+
+=== Mobile ===
+
+* FFA: 592.2k by nikko
+* 2 Teams: 311.7k by lord Waffle
+* 4 Teams: 1.05m by buh
+* Maze: -
+
+== Trivia ==
+*This tank and the [[Twin Flank]] are the only two tanks to upgrade from two [[Tiers|Tier]] 2 tanks.
+*The achievement name, C+E is most likely referencing a strategy as the Quad Tank/Octo Tank as it will rotate while automatically firing making it hard for opponents to get through and a good way to preserve game progress while being AFK.
+
+== Gallery ==
+<gallery>
+2017-03-26.png|A Quad Tank in Sandbox
+quadtank.png|A Quad Tank that is on the blue team
+</gallery>
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Quad Tank
+|en     = Quad Tank
+|es     = Quad Tank
+|fr     = Quad Tank
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Quad Tank
+|pt-br  =
+|ro     =
+|ru     = Quad Tank
+|sv     = Quad Tank
+|tr     =
+|vi     = Quad Tank
+|zh     = Quad Tank
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

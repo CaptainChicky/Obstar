@@ -1,0 +1,121 @@
+= Sprayer =
+
+{{Infobox
+|image     = <gallery>
+sprayer icon 4.png|New Colors
+sprayer icon 3.png|Old Colors
+sprayer icon 2.png|Tier 3
+sprayer icon 1.png|Nameless
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Machine gun icon new.png|50px|link=Machine Gun]]<ref>Upgrades at Level 45, meaning it skips a Tier before upgrading.</ref>
+|barrel    = [[Cannons]] (2)
+|id        = 29
+}}
+{{Confused|the [[Hunter]], which resembles the {{PA}}}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Machine Gun]] at level 45.
+
+==Design==
+[[File:Sprayer Screenshot1.png|thumb|A Sprayer firing bullets from its cannons.]]
+The Sprayer features a circular base with a slightly longer trapezoidal [[Cannon]] similar to the Machine Gun’s, overlapping a longer cylindrical Cannon, much like the [[Skimmer]] and the [[Predator]].  It also seems to resemble a [[Hunter]] but with its top cannon a [[Machine Gun]] cannon.
+
+== Technical==
+{{BaseStats
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = —
+|BulletDamage       = —
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat1        = Bullet Damage (small)
+|HiddenStat2        = Reload (small)
+|HiddenStat3        = Bullet Accuracy
+|HiddenStat4        =Bullet Accuracy (small) 
+|HiddenStat1Val     = ▼▼▼
+|HiddenStat2Val     = ▼
+|HiddenStat3Val     = —
+|HiddenStat4Val=▲}}
+The Sprayer has an increased rate of fire and increased recoil. It fires in a sequence of 3 [[Bullets]] where it shoots 1 normal-sized Bullet and then shoots another normal and 1 smaller Bullet simultaneously. The larger Bullet is as strong as a Machine Gun bullet, and the small one is seven times weaker. However, the big cannon is wider and therefore less accurate, though the small cannon is not wide (and so, very accurate, just at the cost of doing significantly less Damage). Upon upgrading from Machine Gun, the accuracy of the big cannon is slightly buffed.
+
+Stats: 
+
+* Big Bullets: All 8 upgradable stats are the same with [[Machine Gun]]
+* Small Bullets: 
+** Bullet Damage: 0.7 (+0.3 for each point in Bullet Damage)
+** Reload: 15t (-1t for each point in Reload)
+
+==Strategy==
+*<b>Strong Against:</b> Ramming/Melee tanks, tanks with low Penetration and DPS (Damage Per Second), [[Gunner]] branch, [[Triplet]]s (if played properly).
+*<b>Weak Against:</b> [[Sniper]]-class Tanks, [[Trapper]]s (if the player is low on health), [[Destroyer]] branch (if the player is distracted or has low Bullet Speed), skilled [[Overlord]]s and Skimmers.
+
+===As the Sprayer=== 
+*The Sprayer has high Reload and bullet spread. It could be thought of as a mix of a Machine Gun and a Triplet; thus, similar strategies could be used.
+*Because of the Bullet spread, Sprayer actually has a chance at killing a Triplet, despite the Triplet being able to deal more concentrated DPS. Assuming the Sprayer has maxed out Bullet Penetration, its bullets could block the Triplet’s bullets while possibly hitting the Triplet’s sides and damaging it. The Sprayer is also better at long ranges due to its tremendous Bullet spread.
+*The Sprayer has high recoil, making it easy for one to dodge Bullets or escape easily, which is why Sprayers will fare well against the Destroyer branch. Since the Destroyer has slow reload, the Sprayer can dodge its big Bullets and then quickly turn its Cannon to fire at the opponent. However, it gets much more complicated against a Skimmer, because of the opponent’s [[Bullets|Missiles]]. The Sprayer would have to dodge both the Missiles and the small Bullets that it fires, which is no easy feat.
+*This tank, along with other Bullet spammers such as the Triplet, is ideal for [[Survival]], as the Sprayer and its previous upgrades are ideal for quickly killing a player’s low-level peers, who rarely have the time to upgrade to a powerful counter-tank such as the Overlord.
+
+===Against the Sprayer===
+*The Sprayer lacks an increased Field of View, or FoV, radius. Players can use this to their advantage by using any class branching off of Hunter, [[Overseer]], or [[Assassin]]. The [[Smasher]] branch also has an increased FoV radius but isn’t useful since the Smasher’s main purpose is to ram players, something very difficult to do against Sprayers.
+*Classes like the Smasher, [[Annihilator]], or [[Tri-Angle]] classes won’t do well against the [[Sprayer]], at least if they’re using Body Damage. As mentioned earlier, the Sprayer has a very high recoil and can run away from Body Damage classes easily. The Sprayer also deals high damage quickly, which will overwhelm tanks like these.
+*Players using the Overseer branch should maneuver their [[Drones]] at the Sprayer’s back or side. Attacking the Sprayer by surprise is an effective strategy, especially from behind.
+*Players should NOT go up to a Sprayer with a Level 45 regular [[Tank|Basic Tank]] with Bullet Speed, Damage, Penetration, and Reload maxed out. The Sprayer’s bullets may be weak, but they have likely used a glass cannon build which will overwhelm the tank.
+*Tanks in the [[Destroyer]] branch, if used correctly, can be effective against Sprayer since they can flank it if the Sprayer is distracted or low on Bullet Speed.
+
+==History==
+*The Sprayer was immediately nerfed after being released, with the small cannon firing a small Bullet instead of a normal Bullet. After recognizing that the Sprayer was very overpowered, it was nerfed yet again.
+* The Sprayer was originally a Tier 3 Class, but as from the update from July 31st, the Sprayer is now a Tier 4 Class that still upgrades from the Machine Gun, but at Level 45. It is assumed the Sprayer was moved to Tier 4 because the Hunter and the Sprayer were extremely similar. The Sprayer, however, had much better Reload and thus did much more damage than the Hunter’s double bullet. The Sprayer was recognized to be too strong for Tier 3 as well.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/A2owc69 3.94m by exo]
+* 2 Teams: [https://imgur.com/Wyab27G 1.79m by Fallen]
+* 4 Teams: [https://imgur.com/4OdjulB 1.95m by NoName]
+* Maze: [https://web.archive.org/web/20190819221116/https://cdn.discordapp.com/attachments/503985077126955008/511011019980537856/image0.jpg 1.57m by Kyo]
+
+=== Mobile ===
+
+* FFA: 2.95m by buh
+* 2 Teams: 1m by KF-21
+* 4 Teams: -
+* Maze: -
+
+==Trivia== 
+*Sprayer's addition was not immediately announced in the [[Changelog]].
+* The Sprayer is one of only four tanks to have changed tiers during Diep.io's development, the other three being the [[Triplet]], [[Quad Tank]], and [[Octo Tank]].
+*The Sprayer is the only Tier 4 Tank that branches off a Tier 2 Tank.
+*Sprayer and [[Smasher]] are the only tanks that require you to skip a tier to upgrade into them.
+**Also, [[Auto Tank]] skips 2 Tiers because Auto Tank is a Tier 4 tank that upgrades from [[Basic Tank]], which is a Tier 1 tank.
+
+==Gallery==
+<gallery>
+File:Sprayer icon new 1.png|Nameless, new colors
+File:Sprayer in Sandbox.jpg|Sprayer in Sandbox
+</gallery>
+
+==Footnotes ==
+<references />
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Sprayer
+|es     = Sprayer
+|fr     = Sprayer
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Sprayer
+|pt-br  =
+|ro     =
+|ru     = Sprayer
+|sv     = Sprayer
+|tr     =
+|vi     = Sprayer
+|zh     = Sprayer
+}}
+[[Category:Diep.io]]

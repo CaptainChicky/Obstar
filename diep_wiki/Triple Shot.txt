@@ -1,0 +1,126 @@
+= Triple Shot =
+
+{{Infobox
+|image     = <gallery>
+triple shot icon 4.png|New Colors
+triple shot icon 3.png|Old Colors
+triple shot icon 2.png|Old Icon
+triple shot icon 1.png|Nameless
+</gallery>
+|tier      = 3
+|next      = [[File:Triplet icon new.png|50px|link=Triplet]][[File:Penta shot icon new.png|50px|link=Penta Shot]][[File:Spreadshot icon new.png|50px|link=Spread Shot]][[File:QuadTankNAV0.png|50px|link=Quad Tank]]<ref>Removed upgrade option. Removed upgrade options and removed tanks are shown by a gray icon background.</ref>
+|previous  = [[File:Twin icon new.png|50px|link=Twin]]
+|barrel    = [[Cannons]] (3)
+|id        = 3
+}}
+{{Upgraded form|Triplet}}
+{{For| tank with three [[Twin|Twins]]|Triple Twin}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Twin]] at level 30 and upgrades to the [[Triplet]], [[Penta Shot]], [[Spread Shot]], and formerly [[Quad Tank]] at level 45.
+
+== Design ==
+The Triple Shot features a circular base with three rectangular [[Barrels]] roughly 45 degrees off-center from the middle and one rectangular Barrel in front.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = ▲
+|BulletDamage      = ▲
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Recoil
+|HiddenStat2       = 
+|HiddenStat3       = 
+|HiddenStat4       = 
+|HiddenStat1Val    = ▲
+|HiddenStat2Val    = 
+|HiddenStat3Val    = 
+|HiddenStat4Val    = 
+}}
+Compared to the Twin, the Triple shot has three Barrels instead of two, but the downside is that the Barrels are not set in a straight line anymore. This causes the Triple Shot to be seen as a downgrade when compared to the Twin because there is only one Barrel facing straight, the rest unable to hit the target. Because of this, it’s usually considered the worst tank on its tier, which is rather true since it often loses fights with lower tier tanks, because of this, many players tend to remain as Twin until Level 45 where they upgrade to their desired [[Tiers|Tier 4]] Class. However, the Triple Shot gets a slight buff in Bullet Damage (~7.69%) and Penetration (~11.11%) compared to its predecessor.
+
+Stats: 
+
+* Bullet Penetration: 2 (+1.5 for each point in Bullet Penetration) 
+* Bullet Damage: 4.9 (+2.1 for each point in Bullet Damage) 
+
+== Strategy ==
+*<b>Strong Against:</b> Multiple low tier enemies coming from different directions or slow smashers. Distracted destroyers and Drone tanks
+*<b>Weak Against:</b> High Focus Fire tanks, skilled drone tanks, fast rammers.
+
+=== As the Triple Shot ===
+*The Triple Shot excels at farming, one ability the Triplet isn’t viable for, as the bullets do not spread out as much. Though the Triple Shot has little focus on targeting and firing at an opponent, its spread out bullets is useful for applying pressure and taking safe space away from opponents, even when they are approaching the player.
+*This tank can be good for attacking tanks slower than it. If they make a defensive move (dodging the Bullets) chances are they will be pressured in between the two Barrels. However, the opposing tank may try to fire Bullets between the two Barrels while retreating, and as the distance between two tanks increases, the Triple Shot's Bullets start to spread out more, which makes it easier for them to escape.
+*The Triple Shot can be effective against tanks with Drones ([[Overseer]] and its upgrades) because it can be shooting Drones and the tank at the same time with two different Barrels. This tank can destroy the [[Necromancer|Necromancer’s]] Drones very fast - it can use all three Barrels on them as the squares are usually spread out and players are more likely to land hits as they approach.
+*In [[4 Teams]], if the player's team is losing they should just stay on the corner of their [[Base]] and shoot enemies from safety.
+*If the opposing tank was approaching the player directly in a linear fashion, they would have to deal with the Triple Shot's middle bullet. This can be a problem for them, especially if their bullet cannot adequately penetrate through it. If they make a defensive move, like move away from the bullet, up or down, chances are they will be pressured in between the two bullets. The bullets are long-lasting, which makes it even worse for the opposing tank, leaving the tank with no choice but to fire the bullet accurately in between the two bullets while retreating. This may be hard for some tanks, such as the [[Sniper]], [[Assassin]], or [[Destroyer]], all of which are known to deal lots of damage in only a few bullets, as the bigger the bullet, the more vulnerable it is due to the bigger hurt box it possesses as well as its big hitbox to balance the characteristics of the bullet for the rest of the tanks. The reason why it can be very difficult to shoot at the Triple Shot is that the bullets will only spread out more and more as they go further and further, so the chance of hitting the Triple Shot while the bullets have just started being released can be small. Reload is very important if the player wants to pressure the opposing tank even more.
+*As soon as possible, upgrade it to the [[Triplet]], [[Penta Shot]], or [[Spread Shot]]. The Triple Shot cannot last very long in combat against a decently powerful tank.
+*This tank is at a disadvantage to its Twin counterpart in terms of combat due to the spread, so it is recommended to farm [[Polygons]] and kill [[Tank|Basic Tanks]] while avoiding potential threats.
+*However, if one is planning on using a rammer build for a [[Penta Shot]], upgrading to the Triple Shot is advisable, due to its high recoil aiding its speed.
+*0 reload destroyers are a great target, just make sure to strafe up and down/left to right, leaving a huge amount of projectiles, easily damaging the target
+
+=== Against the Triple Shot ===
+[[File:Triple Shot Screenshot2.svg|thumb|151x151px|Triple Shot firing Bullets]]
+*The Triple Shot has three main weak points - the two spaces between its Barrels and its back. If attacked by one, it would be wise to try to shoot accurately between the Barrels. The central Barrel is only one Barrel, which means players can overpower them with enough Bullet Penetration. Tanks such as the [[Mega Trapper]] and [[Landmine]] can easily take advantage of the spread to use their high health and damage Traps to target the weak spots.
+*Spamming tanks like the [[Sprayer]] or Triplet can encounter the Triple Shot. Since two of the Triple Shot's cannons aren't facing forward, it's firing is inaccurate, making it hard for the Triple Shot to touch enemies. A straight line of bullets will get past the Triple Shot's bullets and strike the gaps between its cannons.
+*The [[Overlord]] can guide its drones into a gap between the Triple Shot's cannons.
+*The [[Penta Shot]] is the most effective tank against it, due to that it's larger bullet spread may destroy most of the Triple Shot's multiple bullets. Also, it is good for dealing damage against the Triple Shot.
+*Destroyer classes are also good tanks, as two of the Triple Shot's Cannons will miss the player's large Bullet while the middle Cannon Bullets aren't strong enough to destroy it. Using recoil is an option because the Triple Shot's cannons create too much bullet spread, they are easy to dodge and get close enough for a close shot.
+*If played correctly, the Sniper can exploit the gaps between its cannons and deal damage from a distance. The Sniper’s high Bullet Penetration means that its bullets can break through the Triple Shot’s and damage the tank.
+*In team modes, since the Triple Shot is all about pressure, it's best to stick with tanks that have lot of recoil. Their recoil can create a short burst of speed that may be able to escape the space the Triple Shot is covering. Examples of good options are the Destroyer and the [[Hybrid]] since they both deal insane damage. It's best to go for the Triple Shot in a crowded area. This will mark the importance of the recoil effect some tanks have. It's best to shoot its back whilst it has to put pressure on one or two tanks. This will lead to a decision the Triple Shot must make. It can either turn around and pressure the player instead of pressuring tanks that are being pressured already. There is no solution to its dilemma. The tank turning around and shooting the player can allow the pressured tank to shoot at it, while if it ignores the player it will also be damaged. Also, pressuring the tanks with Triple Shot can be a long process, as the victim may not get hit by the bullets of the Triple Shot the whole way. More experienced players may know how to deal with the Triple Shot, but the Triple Shot can possess a major threat to starter players. Speed is also key against the Triple Shot to retreat out of its bullet range.
+
+== [[Achievements]] ==
+{{SideBox|*<b>Three at the same time</b> — Upgrade to Triple Shot
+|{{Achievement
+|Color = #F868FC
+|Name = Three at the same time
+|Description = Upgrade to Triple Shot}}
+}}
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/zMdxE0w.png 1.39m by RYS]
+* 2 Teams: 1.96m by I'm back
+* 4 Teams: 1.58m by LimX
+* Maze: [https://youtu.be/cUsfVQxDCX8 699k by xTriangleSquare]
+
+=== MOBILE ===
+
+* FFA: 473.5k by lord Waffle
+* 2 Teams: -
+* 4 Teams: 399.7k by buh
+* Maze: -
+
+== Trivia ==
+*The Triplet didn’t upgrade from the Triple Shot until the first [[Changelog]] was added into the game - May 18th, 2016.
+*There used to be a bug which when shooting and upgrading to Triple Shot simutaneously, a Destroyer Bullet would appear. This would have been used to surprise enemies with a Destroyer Bullet.
+*At the very first days of game release, the Triple Shot had to upgrade to [[Quad Tank]] (Level 45) to upgrade to [[Octo Tank]] (Level 60).
+
+== Gallery ==
+<gallery>
+triple shot icon new 1.png|Old icon, new colors.
+</gallery>
+
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Triple Shot
+|es     = Triple Shot
+|fr     = Triple Shot
+|hu     =
+|it     =
+|ja     =
+|ko     = 트리플 샷
+|pl     = Triple Shot
+|pt-br  = Triple Shot
+|ru     = Triple Shot
+|sv     =
+|tr     =
+|vi     = Triple Shot
+|zh     = Triple Shot
+}}
+[[Category:Diep.io]]

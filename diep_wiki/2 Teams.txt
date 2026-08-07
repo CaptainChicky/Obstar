@@ -1,0 +1,66 @@
+= 2 Teams =
+
+{{Mode
+|image         = 2TeamMode.png
+|conditional?  = no
+|closure       = Daily, or when the game is being updated.
+|button        = 2Teams MODE Icon UI.png
+|teams         = 2
+|bosses?       = yes
+|specials      =
+}}
+{{For|the version with 4 teams|4 Teams}}{{For|the maze version|2 Teams Maze}}{{For|the old and removed version|Team Deathmatch}}
+{{PA}}, or <b>Two Teams</b>, is a [[Game Modes|game mode]] in [[Diep.io]], where players work in two opposing teams rather than fighting against each other individually. This game mode has [[Levels|regular EXP gain]].
+
+== Gameplay ==
+=== Base ===
+[[File:Diepio2Teams.png|thumb|145x145px|The [[Map]] that is shown in the 2 Teams game mode.]]
+{{Main|Base}}
+The player can either spawn in the <span style="color:#23DAFF">Blue</span> Base that takes up the left side of the arena, or the <span style="color:#FF3D3D">Red</span> Base that takes up the right side of the arena. This determines their team, and they duke it out anywhere in the arena, usually in the middle. Players of one team cannot shoot into the opposing team’s Base, as enemy [[Bullets]] are instantly destroyed upon contact with it, no matter how strong are the Bullets (except Arena Closers). Players also cannot enter the enemy team’s Base, as they will be instantly stopped, attacked by Base Drones and will begin taking rapid and high damage bursts from the invisible wall.
+
+==== Map ====
+*The blue strip located on the left marks the spawning area for tanks on the Blue team (Unless there is a [[Factory]], as Players can spawn out of Factories on their team)
+*The red strip located on the right marks the spawning area for tanks on the Red team (Unless there is a [[Factory]], as Players can spawn out of Factories on their team)
+
+=== Players ===
+The players are divided into two teams, which are Red and Blue. Tanks of the same team can't kill each other and can only kill players on the enemy team, so Bullets that fired by a tank on a player's team will go through them and if one touch a tank on their team, they will push or bump into it without dealing damage to each other.
+
+=== Base Drones ===
+[[File:NewGuards.png|thumb|130px|A group of 2 Base Drones and a [[Tank]]]]
+The Base areas are defended by [[Base Drones]], tiny triangles (which are even smaller than [[Drones]] and Red [[Triangles]]) with a large amount of health. They will chase down any player from the opposing team but will turn back after straying too far from their base. There are 15 groups of 2 Base Drones spread over each team’s Base. Each group is circling its area, so the whole Base can be protected. The Base Drones will not leave their team’s zone unless an opponent is within proximity. Base Drones continue to seek until an opponent is out of range. Although there are methods of evasion, the simplest of which is to run until you're out of range from the Base Drone.
+
+== Arena Closing ==
+The arena will close if any one of the following requirements is met:
+*[[Diep.io]] is being updated/changed.
+*The server has been open for a really long time and needs to be restarted or being too inactive.
+
+== History ==
+*Before the September 18th update, this game mode and 4 Teams were merged and only known as Team Deathmatch (TDM for short). Players would be taken to a random server with either 2 or 4 teams, making them incapable to choose between 2 Teams and 4 Teams.
+
+== Strategies ==
+*Commonly players stop moving once on the Scoreboard, and their bullet recoil will push them into a corner. Any tank with drones, then, will be able to right-click push the drones across the map, behind the enemy base, and into the opponent. This is a quick way to get to level 45 and to clean up the Scoreboard.
+**This strategy also works in 4 Teams mode.
+*New players to the game should start with this mode, and stay relatively close to the base.
+*It is relatively easy to become a leader in this game mode as there are players that can be relied on for protection and a completely safe Base to retreat to.
+*Besides 4 Teams, this is considered the second easiest game mode, due to that there are lots of players who can protect smaller players and a Base that prevents enemies and the objects they spawn in the Base. [[Domination]] is claimed to be the easiest due to that the enemy team focuses more on winning the game than killing players.
+
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = 2 Equipos
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 2 Teams
+|pt-br  =
+|ro     =
+|ru     = 2 Teams
+|sv     =
+|tr     = 2 Takım
+|vi     = 2 Đội
+|zh     = 2 Teams
+}}
+[[Category:Diep.io]]

@@ -1,0 +1,71 @@
+= Bullets =
+
+{{PA}} are the most common form of {{CA|Ammunition|ammunition}} in [[Diep.io]]. They are fired from [[Cannons]] and [[Auto Turrets]].
+
+In [[Free For All]], [[Survival]], [[Maze]], and [[Sandbox]] game modes, the player’s Bullets are blue, but enemy Bullets are red. In the [[Team Deathmatch]], [[Domination]] and [[Tag]] game modes, the color of the player’s Bullets depends on the color of their team. [[Fallen Booster]]s fire grey bullets, and [[Arena Closer]]s, [[Defender]]s, and neutral [[Dominator]]s fire yellow bullets.
+
+The size of a Bullet depends on the level and class of the tank from which it originated, as further elaborated below.
+
+Some classes of tanks use other types of ammunition as well: [[Drones]] (summoned by [[Spawners]]), [[Traps]] (laid by [[Launcher]]s), and [[Base Drones]] (found in bases and summoned by [[Mothership (Tank)|Motherships]]).
+[[File:TankBulletsWithPolygons.png|thumb|334x334px|A Level 1 Tank shooting it's bullets.]]
+
+== Types of Bullets ==
+[[File:BulletComparison.png|thumb|308x308px|Meshed image comparing multiple bullet sizes (all level 45). Left to right: Gunner, Auto Turret, Basic Tank, Destroyer, Annihilator.]]
+<b>Normal Bullets:</b> Average-sized Bullets that are fired from most classes of [[tanks]], typically from normal rectangular [[Cannons]], such as that found on the [[Tank|Basic Tank]], with no buffs or debuffs. Some Bullets are propelled faster than others, some do more damage than others, and the Sandbox Arena Closer uses a much more powerful version of these.
+
+<b>Large Bullets:</b> Large Bullets, also called Destroyer Bullets, are used by the [[Destroyer]], [[Hybrid]], [[Arena Closer|Arena Closers]] and [[Dominator|Destroyer Dominators]]. They deal greater damage and possess greater penetration than the Normal and Small Bullets, though they travel considerably slower. Arena Closer bullets are exempt from the rule and are extremely fast.  
+
+<b>Small Bullets:</b> The [[Gunner]] branch, [[Drones#Factory Drones|Factory Drones]], and Gunner Dominators use these. They have the weakest penetration of all of the types of ammunition, though they travel fast. Their Bullet damage varies from class to class, but they tend to hit hard for their size, especially when their damage stacks with multiple Bullets. They are also called pellets by an achievement.
+
+<b>Auto Bullets:</b> Bullets fired by [[Auto Turrets]] have a slightly higher amount of penetration than normal Bullets, but also a slower speed and smaller size. It is also the second smallest, as shown in the image.
+
+<b>Multi-Shot:</b> Multiple different-sized Bullets are fired in order. This type of Bullet is generally used by tanks in the [[Hunter]] branch, as well as the [[Sprayer]] and [[Spread Shot]].
+
+'''Huge Bullets:''' These bullets are only used by the [[Annihilator]]. They have the same Penetration and Damage as the Large Bullets, but it’s easier to kill other tanks with them because of their size. They have the highest knockback for a bullet controlled by a player tank. 
+
+'''Missile Bullets''': Those bullets are shot not from individual tanks, but from missiles. They deal 80% of the damage of a single [[Gunner]] bullet, and usually only exist to propel the missile forward.
+
+== Missiles ==
+{{Conjecture|Missile}}Missiles are high-damage projectiles that are launched out of Deployers. Missiles shoot smaller, Gunner-sized bullets through their blue [[Cannons]]. The bullets they fire deal about half of the damage of a normal Destroyer bullet. It looks like a Destroyer Bullet, but with miniature team-color Cannons about the same proportions as that of an Arena Closer cannon but scaled down. In Sandbox mode, a Level 1 Skimmer’s Missile Cannon size is as large as a Level 45 Skimmer’s. Missiles can travel up to four seconds before disappearing, unlike the usual three-second disappearance of normal bullets. An alternative version of the Missile used by the Rocketeer has a single [[Machine Gun]] barrel on the Missile’s back.[[File:MissileRocketSkim.png|thumb|268x268px|Missile designs used by Rocketeer (left) and Skimmer (right).]][[File:Missile.png|thumb|139x139px|The appearance of the [[Glider|Glider's]] missile, with Old Colors. aka. Skimmer's old Missile]]
+
+=== Skimmer Missiles ===
+The [[Skimmer]]'s missiles are used exclusively by the Skimmer and features two cannons positioned 180 degrees apart, similar to the positioning [[Flank Guard]]'s cannons. The missiles spin clockwise, firing small bullets that create a vortex-shaped pattern. If the player holds right-click when firing, the missile will spin counterclockwise. Skimmer Missiles stay alive for approximately five seconds before despawning.
+
+=== Rocketeer Missiles ===
+The [[Rocketeer]]'s missiles are used exclusively by the Rocketeer and features a [[Machine Gun]] cannon mounted at the back, propelling the missile forwards. Due to this, the Rocketeer's Missiles are very fast. However, as soon as the bullet leaves the barrel, there is a slight delay before the Machine Gun cannon will start firing the mini bullets. Rocketeer Missiles stay alive for approximately four seconds before despawning. There is also a similar type of bullet in Arras.io's [https://arrasio.fandom.com/wiki/Leviathan Leviathan] and [https://arrasio.fandom.com/wiki/Rocketeer Rocketeer] branch. 
+
+=== Glider Missiles ===
+The [[Glider]]'s missiles are used exclusively by the Glider and features two cannons at mounted at the back of the missile, positioned like the [[Tri-Angle]]'s back cannons. Those cannons propel the missile forward, as well as slightly damaging nearby enemies that are next to the missile's line of fire. Glider Missiles stay alive for approximately five seconds before despawning. 
+
+== Trivia ==
+*If a player is killed by surviving Bullets from a tank that has just died, then the [[Death Screen]] focuses on the Bullets until they disappear. Their death will then be attributed to “an unnamed tank.”
+*Each Bullet stays alive for three seconds unless it is destroyed via impact with another Bullet, tank, or base. This rule does not apply to Missiles.
+**The are only exception is the bullets fired from the back barrels of the [[Tri-Angle]], [[Booster]], and [[Fighter]], as those lasts only 1.5 seconds. 
+**Therefore, Bullet speed also increases how far the Bullets travel before disappearing.
+**Bigger projectiles decelerate faster than smaller projectiles, which is in line with real-world physics.
+*An achievement refers to the Gunner’s Bullets as “pellets".
+*Missiles are the only type of ammunition that has [[Cannons]] of the same color as the player’s Tank, unlike [[Drones#Factory Drones|Minions,]] which have gray Cannons.
+**In fact, the missiles' cannons are the only cannons in [[Diep.io]] that have a color other than gray.
+
+== Bugs ==
+{{Bugs}}
+A recurring bug allowed Tanks to fire very rapidly by spamming the <code>E</code> [[Controls|key]], for [[Auto Fire]], overwhelming all normal Tanks. The bug has been permanently patched as of August 13<sup>th</sup>, 2016, the last day it was encountered.{{Gameplay|ammo}}
+{{Interlang
+|status = checked
+|de     = Bullets
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     = Пули
+|sv     =
+|tr     =
+|vi     = Đạn
+|zh     = 子彈
+}}
+[[Category:Diep.io]]

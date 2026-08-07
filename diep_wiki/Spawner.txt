@@ -1,0 +1,4 @@
+= Spawner =
+
+#REDIRECT [[Spawners]]
+[[Category:Redirect]]

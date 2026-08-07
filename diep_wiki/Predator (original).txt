@@ -1,0 +1,93 @@
+= Predator (original) =
+
+{{Removed}}
+{{Stub}}
+{{Infobox
+|title      = Predator
+|image     = predator 30 icon 1.png
+|previous  = [[File:Hunter icon old.png|50px|link=Hunter]]
+|tier      = 3
+|next      = 
+|barrel    = [[Cannons]] (2)
+|id        = 30}}
+{{For|the tank formerly known as the X Hunter|Predator}}
+The original <b>Predator</b> was a Class that existed from 11th July 2016 to 9th August 2016. It was a [[Tiers|Tier 4]] tank that upgraded from [[Hunter]]. It shot bullets the same way Hunter did while having the ability to move the camera away from the tank by using [[Controls#Aim|Right Click or Shift]]. This tank was removed due to its scoping functionality being added to the [[Predator|X Hunter]], which also repurposed its name.
+
+== Design ==
+The Predator inherited [[Hunter]]'s two [[Cannons]] and added a trapezoid that's similar to [[Ranger]]'s own trapezoid. Predator's wider cannon is slightly thinner to accommodate for this trapezoid.
+
+== Technical ==
+:<b>Exact stat changes needed! Please and thank you!</b>
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ~▼
+|BulletPenetration = —
+|BulletDamage      = ▼
+|Reload            = ▼
+|MovementSpeed     = —
+|HiddenStat1       = Field of View
+|HiddenStat2       = 
+|HiddenStat3       = 
+|HiddenStat4       = 
+|HiddenStat1Val    = ▲
+|HiddenStat2Val    = 
+|HiddenStat3Val    = 
+|HiddenStat4Val    = 
+}}
+*Predator's two barrels fired identically to Hunter's barrels.
+*It had the ability to move the camera through the use of [[Controls|right-clicking (MOUSE2)]] or by pressing Shift.
+**This ability would have the camera position locked to the new position, allowing the Predator to move to a different spot (e.g. the [[Base]]) while the player behind it is still able to spectate the new view.
+**This ability would later be given to the modern day [[Predator]].
+
+== Strategy ==
+:<b>As and Against section needed! Please and thank you!</b>
+*<b>Strong Against:</b> Slow tanks, tanks that are unaware of it.
+*<b>Weak Against:</b> Fast tanks, high Reload tanks, high DPS tanks, [[Sniper]] Class tanks with higher FoV, [[Drone]] Classes.
+
+=== As the Predator ===
+*
+
+=== Against the Predator ===
+*
+
+== History ==
+*This tank was added on 11th July 2016 as a counterpart to the [[Predator|X Hunter]].
+*It was removed on 9th August 2016.
+
+== Trivia ==
+*Predator's ID (30) goes completely unused in modern Diep due to it being removed.
+*Predator's wider barrel is slightly thinner than Hunter's. This is so that the trapezoid would fit inside of the body.
+**Hunter's barrel width is 56.7% of the tank's body, while Predator's is 54.6% of the tank's body.
+**Humorously, it still slightly clips outside of the body.
+*Predator and Mega Smasher can be found inside the legacy mobile version's asset from version 1.0.4 (1.2.0 for Mega Smasher) to 1.3.0. However, only Predator got added to the actual game.
+**Like the Desktop version, Predator was eventually removed. Its ability was transferred to the X Hunter. However, X Hunter's name remain unchanged.
+
+== Gallery ==
+<gallery>
+Mothershippredator.png|Old Predator in [[Diep.io Mobile (Legacy)]]. Zooming in, you can see the trapezoid extend past the tank and clipping outside of the tank body on the sides.
+predator 30 trapezoid clipping.png|Old Predator's trapezoid clipping out of its body. The modern diep borders are used here to make the clipping more noticeable.
+predator 30 barrel comparison with hunter.png|Old Predator's barrel compared to Hunter's.
+predator 30 hunter proportions.png|Old Predator if it's larger barrel had the same width as Hunter's larger barrel.
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = 
+|es     = 
+|fr     = 
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 
+|pt-br  =
+|ru     = 
+|sv     =
+|tr     =
+|vi     = 
+|zh     = 
+}}
+[[Category:Diep.io]]

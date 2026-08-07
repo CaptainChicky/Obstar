@@ -1,0 +1,1529 @@
+= Changelog =
+
+[[File:chlg.png|thumb|325x325px|The Changelog on June 13th, 2022.]]
+The {{PA}} is a list of the most recent updates to the game. It can be found either at the <b>Menu -> Changelog</b> or at the bottom right corner on the game's main screen and has the most recent updates on it.
+
+__TOC__
+==Official Changelog==
+
+=== June 9th, 2026 ===
+
+* <big>'''Banner:'''</big>
+** All new commands for Custom Sandbox! 
+
+* <big>'''Details:'''</big>
+** <big>'''Custom Sandbox:'''</big>
+*** Added new command for Custom Sandbox
+*** Added a better UI for controlling your Custom Sandbox
+*** Improved the overall Custom Sandbox Experience
+** <big>'''Bug Fixes:'''</big>
+*** Fixed several disconnection issues and improved overall stability
+*** Fixed a Capture the Flag bug that could cause issues during matches
+=== April 16th, 2026 ===
+
+* <big>'''Banner:'''</big>
+** Happy 10th anniversary to diep.io!
+** Added [[Decade|a new boss]]
+** Check out the Birthday gamemode
+** Log in to claim a limited time badge
+
+* <big>'''Details:'''</big>
+** <big>'''Birthday Gamemode:'''</big>
+*** Replaces the old Event gamemode temporarily
+*** Raised the max level cap to 60
+*** Certain tanks now have level 60 upgrades
+*** Added a new Birthday boss
+** <big>'''Accounts:'''</big>
+*** New account features are coming soon, including a friends list and more!
+=== March 22nd, 2026 ===
+
+* <big>'''Banner:'''</big>
+** Custom Sandbox Servers have been released! 
+** Some balance changes
+* <big>'''Details:'''</big>
+** <big>'''Custom Sandbox'''</big>
+*** Create and host your own sandbox servers
+*** Customize settings and gameplay freely
+*** Invite friends and use moderator commands
+*** View available commands at https://diep.io/commands
+*** Currently for VIP-only and PC-only (for now), will be available for all players soon Perfect for testing, events, or casual play
+** <big>'''Gameplay & Balance Adjustments:'''</big>
+*** Modified Firework's explosion pattern, reduced range and removed end of life explosion
+*** Made Skimmer's side bullets slightly bigger
+
+=== February 15th, 2025 ===
+
+*<big>'''Banner:'''</big>
+** Minor balance adjustments
+** More bug fixes
+* <big>'''Details:'''</big>
+** <big><b>Gameplay & Balance Adjustments:</b></big>
+*** Reduced landmine's invisible detection radius
+*** Hover over yourself while invisible to visualize your invisibility radius
+
+=== January 31st, 2026<ref>This log wasn't added until the February 15th, 2026 update</ref> ===
+
+* <big>'''Details:'''</big>
+** <big><b>Gameplay & Balance Adjustments:</b></big>
+*** Invisible tanks are now detectable when nearby
+*** Invisible tanks are more resistant to being revealed by bullets and are stronger while invisible
+
+=== December 31st, 2025 ===
+
+* <big>'''Banner:'''</big>
+** Minor balance adjustments
+** Hexagons no longer spawn in Sandbox
+* <big>'''Details:'''</big>
+** <big><b>Gameplay & Balance Adjustments:</b></big>
+*** Auto 3 damage increased
+*** Auto Smasher bullet damage increased, turret controllable
+
+=== December 24th, 2025 ===
+
+* <big>'''Banner:'''</big>
+** Merry Christmas and Happy Holidays!
+** The Tree-Topper boss has appeared!
+* <big>'''Details:'''</big>
+** <big><b>Gameplay & Balance Adjustments:</b></big>
+*** Shotgun damage increased
+*** Gunner damage increased
+*** Twin Flank and Triple Twin damage increased
+*** Gunner Trapper trap damage increased
+** <big><b>Gamemode Changes:</b></big>
+*** Event modes now cycle once a day as usual
+*** Capture the Flag has been added to the cycle
+
+=== December 15th, 2025 ===
+
+* <big><b>Gameplay & Balance Adjustments:</b></big>
+** Shapes no longer give score for tanks inside a base at 50,000 score or higher
+* <big><b>Streamer Mode:</b></big>
+** New streamer mode added to make sure no abusive or inappropriate names show when streaming/recording
+
+=== December 4th, 2025 ===
+
+* <big><b>Gameplay & Balance Adjustments:</b></big>
+** Added [[Firework]] tank. Branches off [[Destroyer]]
+** Added [[Capture the Flag]]. Bring your opponent's flags back to your base to win
+** [[Shotgun]] and [[Dual-Barrel Shot|Dual-Barrel]] recoil slightly buffed
+** FFA map size now scales based on the number of players
+** Repel button added to mobile. When firing, tap again on the same half of the screen to repel
+
+* <big><b>Bugfixes:</b></big>
+** Fixed some crash and freeze bugs
+
+=== November 18th, 2025 ===
+
+* General bugfixes
+* Added an experimental tank
+** Added [[Firework]] tank. Only accessible in Sandbox
+** Fixed some input issues
+
+=== November 11th, 2025 ===
+
+* Fixed some movement and input bugs
+
+* <big><b>Gameplay & Balance Adjustments:</b></big>
+** [[Sniper]] [[Stats|reload]] change reverted, [[Stats|bullet speed]] slightly decreased
+** [[Spike]], [[Landmine]], and [[Auto Smasher]] knockback resistance removed
+** Nerfed Streamliner bullet [[Stats|speed]] a bit 
+** Increased trap [[Stats|health]] a bit
+** Nerfed [[Tri-Angle]] barrel recoil
+** Buffed [[Dual-Barrel Shot|Dual-Barrel]] and [[Pellet Shot]] [[Stats|damage]]
+
+=== November 2nd, 2025 ===
+
+* UI quality of life improvements
+* Added Dark Mode and Net Predict settings
+* Improved default region balancing
+
+* <big><b>Gameplay & Balance Adjustments:</b></big>
+** [[Overtrapper]] now gets 2 additional controllable drones
+** [[Spike]], [[Landmine]], and [[Auto Smasher]] now have slight knockback resistance
+** Stray bullets are less likely to reveal invisible tanks
+** Buffed Necromancer and Battleship drone speed
+** Buffed Streamliner bullet speed
+** Increased trap size, but decreased trap health
+** Nerfed Sniper
+
+=== October 20th, 2025 ===
+
+* New game mode: [[2 Teams Maze|Maze 2TDM]]
+* New game mode: [[4 Teams Maze|Maze 4TDM]]
+* Added Shotgun Tank Branch
+* Backend optimizations
+* Client optimizations
+* Added Login system
+* Added VIP
+
+* <big><b>Technical Improvements:</b></big>
+** Now using uWebSockets for networking (better performance & scalability)
+** Redid the Maze Algorithm for smoother, more consistent generation
+** General tank balance adjustments across multiple classes
+** Further client & backend optimizations for reduced lag and faster response
+** Infrastructure prepared for future features and events
+
+=== February 16th, 2025 ===
+
+* New [[Auto Tank (tank)|Auto Tank]]
+* Ability to control [[bosses]]
+* Controller support added
+* Restore tank upgrade button on mobile
+* Removed Rivet
+
+=== BIG NEWS - September 3rd, 2024 ===
+
+Diep has officially been acquired by 3AM Experiences.
+=== August 28th, 2024 ===
+
+* Breakout gamemode!
+** ''Based on the [https://www.reddit.com/r/Diepio/comments/4p5zyk/land_grab_a_game_mode_proposal/ 2016 original]''
+
+=== August 26th, 2024 ===
+
+* Made own score visible in tag
+* Got rid of delay between upgrade button and upgrade
+* Preparations for user migration
+* Next up this week: 
+** User accounts
+** New minigame
+
+(and more..)
+
+=== July 26th, 2024 ===
+* Changed homepage (camera moves around the map)
+* Cleaned up rendering code for future changes
+
+=== July 18th, 2024 ===
+* Fixed detection issues with floating joysticks for mobile
+* Aligned mobile dominator icon
+
+=== July 16th, 2024 ===
+* Fixed remaining score issues
+* Default map size in mobile was decreased by 25%
+* Mobile player fov was increased slightly, and mobile boss fov was decreased
+
+=== July 15th, 2024 ===
+* Added in basic sandbox controls for mobile
+* Adjusted mobile upgrading (hold to upgrade quicker)
+* Increased player count per server
+
+=== July 12th, 2024 ===
+
+* Improved score rendering on death screen
+* Cleaning up spectating issues
+
+=== July 8th, 2024 ===
+* Some final touches on new UI
+** Fixed UI disappearing issues in-game
+** Adjusted Achievements page
+** Added a Setting to change border/stroke strength
+** Added this banner for game-wide announcements!
+
+=== July 6th, 2024 ===
+* Added settings for controlling UI
+** Setting to change button border radius
+** Setting to hide in-game exit button
+* Add button to spectate your killer after you die
+* Fixed name saving issues
+
+=== July 5th, 2024<ref>Originally released on June 12th but then unreleased a few hours later. A release on June 17th was planned but was pushed back to June 23rd, then to the final release date, July 5th.</ref>===
+* Enhanced website to integrate with mobile
+* User accounts are temporarily disabled, and will be brought back in the next week.
+
+=== April 16th, 2024===
+* [[Birthday Shape|Happy 8th birthday to the Diep community!]]
+
+=== April 6th, 2024 ===
+* Touchscreen laptops no longer get stuck in joystick mode on mistouch
+* Turned 'L' key into a toggle for latency rather than a hold
+* The [[Guardian|Guardian of the Pentagons]] boss now... actually guards the pentagons
+
+=== March 15th, 2024 ===
+* When playing [[Stalker]] or other [[Invisibility|invisible]] tanks, you can now hover over your tank to see where it is.
+* Changed hCaptcha to Cloudflare's low-touch captcha
+
+=== January 31st, 2024 ===
+* Released handful of script patches
+
+=== December 21st, 2023 ===
+* Reverted knockback tweak
+** Players can no longer push players with higher score in base
+
+=== September 24th, 2023 ===
+
+* Added minor preventions to some commonly used cheats
+
+=== July 11th, 2023 ===
+
+* Tweaked knockback
+** Player knockback is now adjusted slightly by tank size
+
+=== July 5th, 2023 ===
+
+* Prevented pushing outside of base
+* Cleaned up Privacy Policy & Terms of Service page
+* Minor patches to common cheats
+
+=== June 16th, 2023 ===
+
+* Adjusted party link algorithm to shorten party links
+
+=== May 9th, 2023 ===
+
+* Added new [[Glider]] tank, throw back to original version of [[Skimmer|skimmer]]
+* Added respawn bonus available by watching an ad
+* Adjusted Skimmer stats slightly
+
+=== Jan 16th, 2023 ===
+
+* Fixed "no shooting" in base bug
+* As a result of the recent re-release of [[Mothership (Game Mode)|mothership]], we have made the [[Mothership (Tank)|mothership tank]] accessable again in [[sandbox]] mode!
+
+=== Jan 9th, 2023 ===
+
+* Level 45 players now gain less score from destroying shapes while in base
+
+=== Jan 3rd, 2023 ===
+
+* Fixed inconvenience in upgrade tanks
+* As a result of the recent re-release of mothership, we have made the mothership tank accessable again in sandbox mode!
+
+=== Jan 2nd, 2023 ===
+
+* New Gamemode released! Mothership!
+* Converted the 3 gamemodes domination, tag, survival, into a single rotating gamemode. This gamemode rotates between tag, domination, and mothership.
+
+=== Jan 1st, 2023 ===
+
+* Added a cooldown to shooting between upgrades
+* Fixed '''ren_ui''' config variable to now affect new menu buttons
+* You can no longer push players with a higher score than you inside of a teambase
+* Fixed '''ren_ui''' config variable to now affect new menu buttons
+* Fixed the leader arrow related scripts
+
+=== November 30th, 2022 ===
+
+* Added art contest winner '''@EakiTurtle'''<nowiki/>'s design as menu background
+* Added new terms to nickname censorship filter
+
+=== November 12th, 2022 ===
+
+* Reverted back to default username
+* Fixed bug focusing on username input when dismissing friend list
+* Prevent multiple connections to a server using the same account
+* Optimized profile picture download sizes
+
+=== November 2nd, 2022 ===
+
+* Fixed player list sometimes not showing all players
+* Fixed position of users button on mobile
+
+=== November 1st, 2022 ===
+
+* Fixed showing ping not working
+* Fixed "failed to connect to account services"
+* Fixed cancelled sign in requests
+* Fixed ads showing on report screen
+
+=== October 31st, 2022 🎃 ===
+
+* Added accounts
+* Added friends (you have to follow each other, friend requests coming soon)
+* Added ability to see your friends online and join their lobby
+* Added ability to report users
+* More account-related features coming soon:
+** Friend requests
+** Parties
+** Leaderboards
+** In-game chat
+** Synced achievements
+** Competitive teams
+
+=== October 5th, 2022 ===
+
+* Add links to Diep mobile
+* Updated socials
+* Added badge for art contest
+
+=== August 14th, 2022 ===
+
+* Added merch link
+* Fixed bug in settings
+* Fixed lag on Android devices
+* Added bot mitigations
+
+=== July 20th, 2022 ===
+
+* Added setting to toggle retina resolution
+* Fixed privacy consent buttons on mobile (only affects European users)
+** Will be cleaned up in a future update
+* Fixed links opening two new tabs on desktop
+* ''RIP Mr. Tank Man 2022-2022''
+
+=== July 14th, 2022 ===
+
+* Added logo to home screen
+* Added reconnect button to disconnect screen
+* Significantly reduced anti-cheat performance overhead
+* Fixed touch UI not showing on iPadOS in web browser
+
+=== June 13th, 2022 ===
+
+* Added UI scale setting
+* Added back parties
+* Fixed error on death for AdBlock users
+* Fixed UI alignment
+* Made profanity filter more lenient
+
+=== June 13th, 2022 ===
+
+* Rewrote menu UI
+* Implement mobile UI for all aspects of controls
+* Improved profanity filter
+* Added support requests
+* Temporarily removed parties (will be back very soon!)
+
+=== April 16th, 2022 ===
+
+Happy 6th birthday to the Diep community! We look forward to the road ahead in building the future of Diep with you all!<br>''— Shockwave''<ref>This part used to say "''Addicting Games".''</ref>
+
+=== April 15th, 2022 ===
+
+* Added Tokyo region
+
+=== April 11th, 2022 ===
+
+* Moved the changelog here
+* Simplified home layout changes
+
+=== February 25th, 2022 ===
+
+* Add region selector
+* Moved New York to Atlanta for South American players
+* Moved Singapore to Sydney again
+* Added simple profanity filter
+* Added cleaner error messages
+* Fixed preserving game mode after reload
+* WIP fix for ping spikes
+* Added back mobile redirect
+
+===February 6th, 2022===
+*Increase available spots when joining with party link
+
+*Show correct region when pressing L
+
+*Fix getting stuck on connecting
+
+*Fix sporadic disconnects
+
+*More in the works!
+
+===July 2nd, 2021===
+*We invite you to play our latest game: [https://digdig.io/ digdig.io]
+
+===October 19th, 2020===
+
+*Spread Shot and Penta Shot cannons now all shoot at the same time
+
+*We invite you to play our latest game: florr.io
+
+=== January 19th, 2020===
+
+*Nothing. But we'd like to invite you to try out our new game that's under active development: [https://florr.io florr.io]
+
+===April 5th, 2018===
+
+*Fixed clientside prediction to make movement buttery smooth on high refresh rate monitors
+
+===February 27th, 2018===
+
+*Literally nothing
+
+===December 23rd, 2017===
+
+*Reworked [[Skimmer]]
+** Focus on area denial to avoid overlapping with [[Rocketeer]]
+
+*Removed “Disable ads” cryptomining button
+**Unfortunately it doesn’t generate enough revenue compared with ads
+
+===December 22nd, 2017===
+
+*Added [[Rocketeer]]
+
+* We’ve added a “Disable Ads” button
+**If you click it, we ask for permission to mine cryptocurrency for us in the background while you play the game, and in the return we won’t show you any ads
+**We’re still experimenting with this, it might not stay forever, and it’s completely optional
+**Performance impact on the game should be minimal, as it runs in the background
+**This button might not show up if {{PL|https://authedmine.com|authedmine.com}} is blocked in your browser
+
+===December 21st, 2017===
+
+*Added [[Rocketeer]]
+
+===December 19th, 2017===
+
+*Penta shot nerfed slightly
+
+===March 9th, 2017===
+
+* You can now queue up stat upgrades by holding [[controls|U]] then pressing the number keys
+** Pressing [[Controls|M]] will queue upgrades until the selected stat is full
+**Pressing [[Controls|U]] and releasing it resets the queue
+**Dying also resets it
+
+=== March 6th, 2017===
+
+*The color scheme for the game has changed a bit.<br />We’re looking for feedback regarding this change, please discuss it in the {{PL|https://www.reddit.com/r/Diepio/|subreddit}}.
+
+===March 5th, 2017 ===
+
+*[[Survival]] changes:
+**Kill [[XP]] back to normal
+**XP multiplier decreased to 2x
+**There’s now a passive gain of XP
+
+===March 2nd, 2017===
+
+*New [[Skimmer|unnamed class]], branches off [[Destroyer]]
+
+===February 26th, 2017===
+
+*[[Survival|Survival mode]] XP tweaks
+**Kills no longer give [[XP]]
+**XP multiplier changed from 3x to 5x
+
+===February 21st, 2017===
+
+*[[Achievements]]
+**We’re adding achievements to the game, for now there are only 23 as an initial release, we hope to release more soon
+**You can see them on the main menu by moving your mouse to the right side of your screen
+
+===February 15th, 2017===
+
+*New game mode: [[Survival]]
+** Players only have one life
+
+===November 19th, 2016===
+
+*New players now have a chance of spawning out of a [[Factory]]
+*Players can now [[Mounted Turret|assume control of turrets]] built on top of other tanks in their team by pressing H
+
+===November 9th, 2016 (second update)===
+
+*Renamed [[Master]] to [[Factory]]
+
+===November 9th, 2016 (first update) ===
+
+*[[Master]]
+**Changed appearance
+**Can now force its tanks to shoot somewhere
+
+===November 8th, 2016===
+
+*New class: [[Master]], branches off [[Overseer]]
+
+===September 29th, 2016 ===
+
+* New class: [[Spike]], branches off [[Smasher]]
+**Increased base [[Stats#Body damage|body damage]]
+
+=== September 23rd, 2016 ===
+*Walls in [[Maze]] are now less “sticky” which should fix a ton of glitches
+*[[Crashers]] now go through walls
+
+===September 22nd, 2016 ===
+
+*We’ve added a temporary [[Game Modes|game mode]] to replace [[Mothership (Game mode)|Mothership]], called [[Maze]]
+**Same rules as [[FFA]], except:
+***Random walls placed around the map
+***No [[bosses]]
+***[[Arena Closing|Arena closes]] after at most 5 hours
+
+===September 18th, 2016===
+
+*We’ve split [[Team Deathmatch|Team DM]] into two different game modes, for [[2 Teams|2 teams]] and [[4 Teams|4 teams]]
+
+=== September 10th, 2016===
+
+*New class: [[Annihilator]], branches off [[Destroyer]]
+**Slightly improved Destroyer
+*The class upgrade menu has been changed so we can fit more classes in it in the future
+
+===September 4th, 2016===
+
+*[[Sandbox]]
+**Arena now has a party link
+** Increases size as players join it
+**God mode disabled when there is more than one player in the arena
+**Disabled for adblock users
+
+===September 3rd, 2016===
+
+*New game mode: [[Sandbox]]
+**Works like FFA but with a tiny arena
+**[[Controls|Cheats]] enabled: K to level up, O to suicide, \ to switch classes
+**No party link yet, coming eventually
+
+===August 28th, 2016===
+
+*New class: [[Battleship]], branches off [[Overseer]]
+
+===August 26th, 2016===
+
+*There are now a few more types of [[dominator|Dominators]]
+*There’s now a Dominator in the middle of the arena in [[Tag|tag mode]]
+**We’ll see how that plays out
+
+===August 25th, 2016===
+
+*Players can now take control of [[dominator|dominators]] their team control in [[Domination]]
+** You’ll lose control of your tank and it’ll slowly get destroyed
+**If you spam the key to get control of it, you won’t be able to control it
+
+===August 23rd, 2016===
+
+*[[Tag|Tag mode]] now has 4 teams
+*Some [[Game Modes|game modes]] now have a 4 team variant
+**Happens randomly, so we don’t have to split the userbase
+
+===August 22nd, 2016===
+
+*[[Bosses]] tweaked:
+**They now spawn on a timer (first one 10 minutes after the arena opens)
+**Maximum of one at once
+**Only target tanks level 15 or higher (unless provoked first)
+** Some are not aligned with the neutrals so they’ll attack shapes too
+*Most AI has been tweaked a bit
+** They will prioritize tanks over other stuff
+**Some other minor changes to behavior
+
+===August 17th, 2016===
+
+*Arena size in [[Tag|Tag Mode]] now depends on how long the arena has been open for
+
+===August 15th, 2016 ===
+
+*[[Tag|Tag Mode]] is back
+**You now actually die when your HP reaches 0, and respawn on the other team
+**Map decreases in size as one teams starts to have the majority
+**For now, [[Invisibility|invisible]] classes don’t go full invisible
+*New class: [[Auto Trapper]], branches off [[Trapper]]
+*[[Twin Flank|Twin flank]] no longer branches into [[Octo Tank]]
+*The space between the visual map border and the true map border has been decreased
+
+===August 13th, 2016===
+
+*You can now open the class tree by holding down [[Controls|Y]]
+*Tweaked the “spawn at half your previous level” mechanic
+
+===August 12th, 2016 (second update)===
+
+*New class: [[Spread Shot]], branches off [[Triple Shot]]
+*New class: [[Streamliner]], branches off [[Hunter]] and [[Gunner]]
+*Bullet knockback now depends on its damage
+**Before, they all had the same amount of knockback
+
+===August 12th, 2016 (first update)===
+
+*New class: [[Spread Shot]], branches off [[Triple Shot]]
+*New class: [[Streamliner]], branches off [[Hunter]]
+*Bullet knockback now depends on its damage
+** Before, they all had the same amount of knockback
+
+===August 11th, 2016===
+
+*Tweaked [[invisibility]]
+**Now goes completely invisible (so changing color settings doesn’t reveal it)
+**Damage dispells [[invisibility]] a bit
+
+===August 10th, 2016===
+
+*Nerfed [[Landmine]] [[invisibility]] fade-in/fade-out time
+*Last nickname and [[Game Modes|gamemode]] are now saved between sessions
+
+===August 9th, 2016===
+
+*Merged [[X Hunter]] with [[Predator]]
+**[[Predator]] now has a third cannon, and retains its special ability
+*We’ve added basic gamepad support
+**Should work with Xbox controllers and other smiliar ones
+** Still a bit incomplete, you still have to use the mouse to upgrade things
+
+===August 8th, 2016===
+
+*[[Scoreboard]] now shows player classes
+
+===August 7th, 2016 ===
+
+*[[Landmine]] now looks different from the [[Smasher]]
+*Removed knockback reduction bonus from [[Smasher]] and [[Landmine]]
+*Removed [[Mega Smasher]]
+** It’s only bonus was additional knockback reduction, but since that has been removed, it’ll be gone for now.
+
+===August 6th, 2016===
+
+*[[Smasher]] subclasses now have a different max level on their stats
+*Kill notifications in [[Free For All|FFA]] no longer appear if the killer has more than 20 levels over the victim
+**We hope to discourage unnecessary killing of low level tanks with this change
+* Tweaked leader arrow so it disappears sooner
+
+===August 5th, 2016===
+
+*The leader arrow now fades out as it gets closer to the leader
+
+===August 2nd, 2016 (third update)===
+
+*New class: [[Auto 3]], branches off [[Flank Guard]]
+** Has 3 [[Auto Turrets|turrets]] around it that shoot at anything nearby automatically
+*New class: [[Auto 5]], branches off [[Auto 3]]
+**Has 5 [[Auto Turrets|turrets]] around it that shoot at anything nearby automatically
+
+===August 2nd, 2016 (second update) ===
+*New [[Auto 3|unnamed class]], branches off [[Flank Guard]]
+**Has 3 [[Auto Turrets|turrets]] around it that shoot at anything nearby automatically
+*New class: [[Auto 5|Auto Tank]], branches off [[Auto 3|previous unnamed class]].
+** Has 5 [[Auto Turrets|turrets]] around it that shoot at anything nearby automatically
+
+===August 2nd, 2016 (first update)===
+
+*New class: [[Auto 4|Auto Tank]], branches off [[Gunner]]
+**Has 4 turrets around it has shoot at anything nearby automatically
+
+===August 1st, 2016===
+
+* New class: [[Auto Gunner]], branches off [[Gunner]]
+**Has a [[Auto Turrets|turret]] embedded to it that shoots at enemy players nearby
+*Fixed order that classes appear on the upgrade screen
+
+===July 31th, 2016===
+
+*Added new class: [[Landmine]], branches off [[Smasher]]
+*[[Sprayer]] is now a [[Tiers|Tier]] 4 class.
+
+===July 30th, 2016===
+
+*New (previously secret) class: [[Smasher]], upgrades from [[Tank]] at level 30
+**Receives decreased knockback from everything
+**Some of the stats still don’t do anything so we added a reminder to everyone instead
+*All your favourite classes have been nerfed
+*All your most hated classes have been buffed
+
+===July 23rd, 2016 ===
+
+*Pressing [[Controls|C]] will [[Auto Spin|automatically spin]] your tank
+
+===July 21st, 2016===
+
+*Fixed an issue where entities were being retransmitted, causing network issues
+*Fixed a memory leak that would freeze the game after a while
+
+===July 20th, 2016===
+
+*Other players in [[Free For All|FFA]] are now red
+
+===July 18th, 2016===
+
+*Added an entire class tree branching off [[Sniper]]:
+**[[Trapper]]: lays down traps that last a while but don’t move.
+***[[Tri-Trapper]]: lays down [[traps]] faster but they disappear faster
+***[[Gunner Trapper]]: lays down [[traps]] and has cannons to defend itself
+***[[Overtrapper]]: lays down [[traps]] and has [[drones]] to defend itself
+***[[Mega Trapper]]: lays down larger [[traps]] that are much more dangerous than normal ones
+*Pressing [[Controls|M]] plus a number key automatically upgrades that [[Stats|stat]]
+**Pressing M without pressing any number keys cancels that
+
+===July 14th, 2016===
+
+* Tweaked spawning areas in some game modes :
+**[[Team Deathmatch|Team DM]] now has a larger spawning area, from top to bottom
+**[[Domination]] spawning areas are now on a random corner of the map
+
+===July 11th, 2016===
+
+*New class: [[Sprayer]], branches off [[Machine Gun]]
+*New class: [[Predator]], branches off [[Hunter]]
+**Can focus its vision somewhere so it can shoot from further away
+
+===July 10th, 2016===
+
+*There’s now an actual [[Death Screen|death screen]]
+
+===July 4th, 2016 ===
+
+*New class: [[X Hunter]], branches off [[Hunter]]
+*Tweaked [[Hunter]] cannon timing slightly
+*[[Cannons]] now fire a full cycle even if the player releases the trigger mid-cycle
+**This forces some classes to behave as they were meant to behave, so it’s simpler to balance them.
+
+===July 1st, 2016===
+
+*Balance tweaks
+*We’re pleased to announce that the mobile version of this game will be published by Miniclip, it’ll be released shortly, pre-register for the android game here: * [https://play.google.com/store/apps/details?id=com.miniclip.diep.io http://bit<nowiki>.</nowiki>ly/getdiepio]<ref name="bitly1">Link censored to comply with Fandom terms of use</ref>
+
+===June 15th, 2016===
+
+*New [[Game Modes|game mode]]: [[Mothership (Game mode)|Mothership]]
+**In each team, a player gains control of the [[Mothership (Tank)|Mothership]]
+**Player must try to destroy the enemy [[Mothership (Tank)|Mothership]] while keeping theirs alive
+**The game mode is new so it might still have a few bugs
+
+===June 13th, 2016===
+
+*Balance changes:
+**Buffed [[Manager]], [[Hunter]] and [[Fighter]]
+** Nerfed [[Triple Twin]], [[Octo Tank]], [[Necromancer]], [[Sniper]], [[Assassin]] and [[Ranger]]
+**Please remember that we do have access to how well classes do on all servers at all times, and we use that data to decide which classes will get buffs and nerfs in order to keep them at around the same effectiveness in combat
+*Reload now affects number of [[drones]] a [[Necromancer]] can control
+**From 28 to 20 + 2 * Reload
+
+=== June 12th, 2016===
+
+*We have added support for party codes in certain [[Game Modes|game modes]]
+**It’s still experimental so there might be a few bugs, please report those in the subreddit
+
+===June 11th, 2016===
+
+*Balance changes
+*[[Drones]] now seek out and attack enemies close to their owners automatically
+
+===June 8th, 2016===
+
+*Balance changes
+*We felt the previous changelog was a bit too brief, so we wanted to clarify:
+**Things have changed
+** Changes have been made to things
+***More specifically, in-game things
+***Those changes relate to in-game balance changes<!-- Zeach you sassy dog lol -->
+
+===June 7th, 2016 (second update)===
+
+*We’ve tweaked how bullet penetration works
+*New class: [[Hybrid]], branches off [[Destroyer]]
+*New class: [[Manager]], braches off [[Overseer]]
+** Mix of [[Overseer]] with [[Stalker]]
+*Nerfed [[Stalker]] fade-out time
+
+===June 7th, 2016 (first update)===
+
+*We’ve tweaked how bullet penetration works
+*New [[Hybrid|unnamed class]], branches off [[Destroyer]]
+*Nerfed [[Stalker]] fade-out time
+
+===June 6th, 2016===
+
+*We’ve tweaked how bullet penetration works:
+**Bullet penetration is (and has always been) [[Bullets|bullet]] health
+** Before: [[Bullets]] would always deal their entire damage, even if they had little health left
+**After: [[Bullets]] now deal a proportional amount of damage if they’re about to die while dealing that damage
+**This has some deep changes in how [[Bullets|bullet]] penetration plays out in a few scenarios, so let us know what you think
+**It should make [[bullets]] behave more fairly when two players have different penetration values
+** This change actually affects anything that deals damage on touch, be it tanks or [[drones]]. It also means that body damage also decreases damage taken
+**Thus we have also adjusted some other values in the game to offset this change
+*New [[Hybrid|unnamed class]] which branches off [[Destroyer]]
+
+=== June 5th, 2016===
+
+*Kill [[notifications]]
+*Tweaks to [[Sniper]] and [[Hunter]]
+
+===June 2nd, 2016===
+
+* New game mode: [[Domination]]
+**Two teams compete for control of the [[Dominator]]s, powerful guns that will destroy any enemy nearby
+**Increased XP game to offset shorter game length
+**This is the first game mode with a win condition, so it’s not completely polished yet
+*Two new classes that branch off [[Tri-Angle]]: [[Fighter]] and [[Booster]]
+
+===June 1st, 2016===
+
+* New class: [[Ranger]], has an even larger field of view than [[Assassin]], that’s it.
+*Added [[Auto Fire]] (press [[Controls|E]])
+
+===May 31st, 2016===
+
+* We’ve added a [[minimap]]
+**While we’re not sure if it’ll stay or not, it’s there so we can get some feedback on it
+*Spawn area in [[Team Deathmatch|TDM]] now blocks bullets and enemies from entering it
+
+===May 29th, 2016===
+
+*We’ve added support for different game modes
+**For now the only new game mode is “[[Team Deathmatch|Team DM]]”, which is basically [[Free For All|FFA]] played with teams
+**This will serve as a basic test for those teams mechanics, but we plan to add more complex game modes in the future (for example, a MOBA-style team game mode)
+
+===May 27th, 2016===
+
+*New class: [[Stalker]], branches off [[Assassin]]
+*Increased base movement speed and field of view of all tanks
+*Added arrow that points to the leader of the scoreboard
+
+===May 24th, 2016===
+
+* New class: [[Hunter]], branches off [[Sniper]]
+*New class: [[Gunner]], branches off [[Machine Gun]]
+*Players are now invulnerable for up to 15 seconds after spawning
+
+===May 23rd, 2016===
+
+*New class: [[Triple Twin]], branches off [[Twin Flank]] as an alternative to [[Octo Tank|Octotank]]
+*You can now upgrade your [[stats]] with the numeric keys
+*Players are now invulnerable for up to 10 seconds after spawning
+
+===May 18th, 2016===
+
+* Added changelog
+*Added [[Necromancer]] class
+**It controls squares that it kills or die around it.
+**Attributes work similarly to Overlord but Reload does nothing for now
+*[[Triplet]] now evolves from [[Triple Shot]]
+*Classes that control units now have a secondary fire
+**It makes units move away from the mouse instead of towards it (right mouse button or shift).
+
+==Unmentioned Changes==
+Sometimes, updates are added but are not mentioned in the Changelog, e.g. the secret [[Smasher]] update, or the [[Fighter]] Buff update.
+
+=== June 9th, 2026 ===
+
+* Fixed Spectator not working in Custom Sandbox.
+* God Mode now heals the player to full health upon activating.
+
+=== May 1st, 2026 ===
+
+* Concludes the Anniversary Event.
+* Custom Games:
+** Added more commands to Custom Games.
+** Rate limit command execution.
+* Changed the player cap in some modes. 
+* Reverted the invisibility change on April 16th.
+* Reduced the player limit in a lobby. 
+
+=== April 18th, 2026 ===
+
+* <big>'''Event'''</big>
+** Nerfed Blender's Body Damage to be the same as Spike and increased the max point per stat from 10 to 12. Nerfed Blender's base speed to be the same as Tank
+** Nerfed Battalion's Drone Health.
+** Reduced Decagon's spawn rate.
+* (Sandbox and Custom Game): Player can no longer use <code>\</code> to switch tank while controlling a boss.
+
+=== April 16th, 2026 ===
+
+* Now, instead of gradually being revealed to a set opacity as a player approach the tank within detection radius, invisible tanks will now be revealed to said opacity as soon as the player steps into the detection radius. 
+
+=== April 2nd, 2026 ===
+
+* Concludes the April Fools event.
+
+=== March 31st, 2026 ===
+
+* Slightly nerfed Necromancer's Drone Speed.
+* Slightly buffed Firework's Missile Speed.
+* The leader arrow will now disappear if the leader goes invisible.
+* Added extra commands to Custom Lobby.
+* The creator of a Custom Lobby can no longer be banned from their own lobby.
+* (April Fools) Raised the level cap in 2 Teams and 4 Teams to 120.
+
+=== March 26th, 2026 ===
+
+* Custom Game changes: 
+** Limited the number of bosses that can be in the arena to 6.
+** The max level is decreased to 120.
+** The Scoreboard now displays which team a player is on. 
+** Changes to shape spawning:
+*** The max shape count is decreased to 1999.
+*** The maximum number of shapes that can be in the arena now depends on the arena size, even if the max count is set to be much higher.
+**** If a large arena with a lot of shapes is shrunken, the excessive shapes will be destroyed.
+*** Decreasing the max shape count now destroys the excessive shapes.
+* Necromancer's drones are no longer immune to Maze Walls.
+* Auto Turrets and Drone Spawners no longer fire while the invincibility shield is up.
+
+=== March 23rd, 2026 ===
+
+* Reverted the changes on Rocketeer.
+
+=== March 22nd, 2026 ===
+
+* Factory drones now receive more knockback.
+* Increased Landmine's detection radius.
+* Added a Console command to disable grids.
+* Added a toggle that allow spectators in-game. The key is defaulted to <code>T</code>.
+* Altered some stats on Rocketeer's missile:
+** Slightly nerfed the missile's speed.
+** Slightly buff the missile's cannon recoil.
+* Drone tanks can no longer repel from inside/near the base.
+* Increased shape spawn rate in Maze.
+* Necromancer Drones are now immune to Maze Walls.
+
+=== February 26th, 2026 ===
+
+* Bug fixes and performance improvements.
+
+=== February 15th, 2026 ===
+
+* Buffed Firework missile's bullet's lifespan
+
+=== February 7th, 2026 ===
+
+* Disconnecting will now more explicitly show disconnect reasons.
+* Fixed several server-related crashes.
+
+=== January 31st, 2026 ===
+
+* Nerfed [[Pellet Shot]]'s Bullet lifetime and damage. 
+* Reworked [[invisibility]]. 
+** Invisible tanks can now be detected within a close radius, with [[Landmine]] having slightly further detection range than [[Manager]] and [[Stalker]].
+** When outside of detection radius, invisible tanks now take more hits to be revealed than before. 
+** Invisible tanks will deal higher Body Damage when invisible. 
+* Removed flipfire from Maze. 
+* Slightly nerfed Skimmer's Missile's Bullet Penetration. 
+
+=== January 1st, 2026 ===
+
+* Bug fixes and performance improvements.
+
+=== December 31st, 2025 ===
+
+* Concluded the Christmas event. 
+
+=== December 28th, 2025 ===
+
+* Brazil Region Added!
+
+=== December 24th, 2025 ===
+
+* Reverted the buff on [[Destroyer]].
+* Slightly nerfed [[Annihilator]] and [[Hybrid]]<nowiki/>s' Penetration.
+* [[Shotgun]]'s bullets are now smaller.
+* Buffed [[Dual-Barrel]]'s Bullet Damage.
+* Reverted the nerf on December 4th, 2025 on [[Tri-Angle]] branch in all mode except Maze and Sandbox.
+* Nerfed [[Battleship]]'s Drones' AI range.
+* Nerfed boss's AI detection range.
+* Major changes to [[Fallen Overlord]]: 
+** Drone count reduced to 12 and increased drone's size.
+** Buffed the drones' Damage and Penetration.
+** Nerfed the drones' speed.
+** Reduced Reload speed.
+* Removed Teams Maze from the rotation.
+* Christmas event: 
+** [[Square|Squares]], [[Hexagon|Hexagons]] and [[Alpha Pentagon|Alpha Pentagons]] now have a wrapped-gift appearance.
+** Hexagons and Alpha Pentagons now explode into other shapes (including [[Crashers|Crasher]]) upon destruction.
+** [[Polygons|Shapes]] now spawn more often.
+** Bosses spawn once every 5 minutes if there's no boss in the arena.
+*** Tree-Topper is the only boss that spawn during the event. 
+
+=== December 19th, 2025 ===
+
+* Fixed some disconnection issues.
+* Buffed [[Shotgun]] branch's accuracy and nerfed its range.
+* Buffed [[Destroyer]] branch's Bullet Penetration.
+* Reverted the nerf on [[Overlord]]'s Drones' AI. 
+
+=== December 15th, 2025 ===
+
+* Buffed [[Firework]]'s explosion radius.
+* Updated [[Pellet Shot]]'s icon on the [[Death Screen|death screen]].
+* Nerfed Shotgun branch's FOV: 
+** [[Shotgun]] and [[Dual-Barrel]] now have Tank's FOV.
+** Pellet Shot now has [[Sniper]]'s FOV.
+
+=== December 4th, 2025 ===
+
+* Changed [[Firework]]'s exploding mechanism.
+* Changed Hexagon's color again. 
+* Changed the designs of [[Shotgun]] branch. 
+* Re-added [[Dual-Barrel]] right-click function. 
+* Added delay on [[Tri-Angle]] branch's back cannons in [[Sandbox]] and [[Maze]]. 
+* Nerfed the lifespan of [[Tri-Angle]] branch's back cannons. 
+* Nerfed [[Booster]]'s back cannons' damage. 
+* Buffed [[Sprayer]]'s accuracy. 
+* Added a boss arrow. 
+* Temporarily took out Minigame modes servers ([[Tag]], [[Domination]], [[Breakout]]) to focus on Capture the Flag. 
+* Fixed dark mode not working. 
+
+=== November 22nd, 2025 ===
+
+* Changed Firework's exploding pattern.
+* Changed Hexagon's color.
+* Added firing delay upon upgrading to a different tank.
+* Nerfed [[Penta Shot]] and [[Spread Shot]]'s [[Stats|Bullet Damage]].
+* Buffed [[Skimmer]]'s missile's bullet. 
+
+=== November 11th, 2025 ===
+
+* Removed [[Smasher]]'s knockback resistance. 
+* Removed Alpha Pentagon's explosion. 
+* Nerfed the damage of all Trappers. 
+* Slightly nerfed [[Mega Trapper]]'s Trap Size. 
+* Buffed [[Dominator|Trapper Dominator]]'s Trap Health but nerfed its Trap Damage. 
+* Slightly buffed [[Assassin]] branch's recoil and FOV. 
+* Removed Leader Arrow from FFA and FFA Maze. 
+* [[Hexagon]] now spawns outside of the [[Pentagon Nest]], and is given a new color, as well as its own net color command. 
+* Re-added the old maze generation for [[Maze|Maze FFA]]. 
+
+=== November 2nd, 2025 ===
+
+* Buffed all Trappers' Trap Damage. 
+* Buffed [[Mega Trapper]]'s Trap Speed. 
+* Buffed [[Overtrapper]]'s Drones. 
+* Buffed the accuracy of the [[Assassin]] branch. 
+* Buffed [[Battleship]]'s drone's lifespan. 
+* Buffed [[Skimmer]]'s missile's speed and health. 
+** Buffed Skimmer's missile's bullet's lifespan. 
+* Shortened Dual-Barrel Shot to [[Dual-Barrel Shot|Dual-Barrel]]. 
+* Nerfed [[Pellet Shot]] and Dual-Barrel's bullet damage. 
+** Dual-Barrel now fires both barrels with left-click, with the second barrel having a delay before firing (player must hold down left-click for it to fire). 
+* Give Smasher knockback resistance and buff the whole branch's base Movement Speed.
+* Concluded the Halloween event.
+* Removed deathscreen blur.
+
+=== October 31st, 2025 (event) ===
+
+* Drastically increased Shiny (Green Shapes) chance.
+* Temporarily brought back [[Mothership (Game Mode)|Mothership game mode]]. 
+* The Diep.io logo on the homescreen is Halloween-themed. 
+
+=== October 20th, 2025 ===
+
+* Buffed [[Booster]]'s back cannons. 
+* Buffed AI targeting, but nerfed Overlord's Drones' AI. 
+* Buffed Streamliner's bullet lifespan. 
+* Set Movement Prediction to false by default. 
+* [[Alpha Pentagon]] now explodes into [[Pentagon|Pentagons]] upon destruction. 
+* Re-added several [[Console]] commands and added a few new ones. 
+* Some modification to teams-related Notifications. 
+* Removed base invincibility inside base when players ram shapes (they are still immune to tank/projectile).
+* Added [[Hexagon]]. 
+* [[Achievements]] is no longer hidden and can now be accessed by hovering the cursor on the right side of the screen. 
+* Added deathscreen blur. 
+* Fixed a bug in Breakout where Auto 3 and Auto 5 would take damage from enemy tiles if they upgrade into either of these tanks in their team's tiles.
+* Removed boss controlling from FFA-based mode and minigames.
+* [[Arena Closer|Arena Closers]] now immediately attack players instead of having a 10-second inactive state.
+* Swapped the IDs of [[Flank Guard]] and [[Tri-Angle]].
+
+=== September 19th, 2025 ===
+
+* The background on the homescreen is now back to the original one.
+
+=== May 15th, 2025 ===
+
+* Removed the firing delay on the back cannons of all Tri-Angle branch tanks.
+* Buffed Fighter's side cannons' Reload to match with the front cannon and slightly nerfed their damage.
+
+=== April 28th, 2025 ===
+
+* Tanks inside the base are now invincible
+** Moving out of the base removes the invincibility, moving back in makes the tank invincible again. 
+
+=== April 17th, 2025 ===
+
+* Tanks on the same team now phase through each other inside the base.
+
+=== April 2nd, 2025 ===
+
+* Reverted the April Fools update
+** The phasing through teammates inside base was also reverted for some reasons. 
+
+=== April 1st, 2025 (April Fools) ===
+
+* Doubled the number of points that can be put into a stat (14 for normal tanks, 20 for Smasher branch). 
+* (Probably non-April Fools) Tanks on the same team now phase through each other inside the base.
+
+=== March 3rd, 2025 ===
+
+* Re-added leader arrow into non-team modes
+
+=== February 16th, 2025 ===
+
+* Removed the <code>B</code> cheat from Sandbox due to abuse.
+
+=== February 12th, 2025 ===
+
+* Added [[Auto Tank (tank)|Auto Tank]], branches off [[Tank]] at Level 45.
+* Added a new cheat for Sandbox, which is accessible via the <code>B</code> key. 
+** This gives you 160 stat points and increases the maximum point upgradable in each stat to 20. 
+
+=== February 11th, 2025 ===
+
+* Changed the size of the map. 
+* Removed leader arrow from non-team modes
+
+=== February 5th, 2025 ===
+
+* Re-added Singapore and removed Osaka
+
+=== January 30th, 2025 ===
+
+* Increased the hard player count in a lobby.
+** As a result, the size of all maps except Sandbox is increased.
+*** As a result of this, entities that scale with the size of the map ([[Base|Bases]], [[Maze]] Walls, [[Breakout]] Tiles) are all enlarged.
+
+=== January 26th, 2025 ===
+
+* Replace Singapore with Osaka region due maintenance going on in the former one
+
+=== November 29th, 2024 ===
+
+* Removed Osaka and Los Angeles region
+
+=== November 27th, 2024 ===
+
+* Added Shiny variant for Alpha Pentagon and Crasher
+* Re-added Singapore region for testing
+
+=== November 21st, 2024 ===
+
+* Changed the server from Rivet to Vultr
+
+=== September 17th, 2024 ===
+
+* Some changes to the UI
+* Removed ui_prevent_right_click command from Console.
+
+=== August 29th, 2024 ===
+
+*Addicting Games sells Diep.io to 3AM Experiences.<ref>https://redd.it/1f4htfw</ref>
+
+=== July 7th, 2024 ===
+
+* Fixed spectating logic
+* Setting for border intensity
+
+=== January 9th, 2024 ===
+
+* Arena Closers now spawn inside the map.
+** They now have a sleeping state that lasts for 10 seconds before waking up and "close" the arena.
+
+=== January 4th, 2024 ===
+
+* Increased the player limit of a server.
+* Replaced Tokyo with Osaka.
+* Replaced San Francisco with Los Angeles.
+
+=== August 11th, 2023 ===
+
+* Reduced the player requirement for a Tag game to progress.
+
+=== March 26th, 2023 ===
+
+* Re-added Captcha.
+
+=== March 23rd, 2023 ===
+
+* Removed Captcha.
+
+=== January 1st, 2023 ===
+
+* The console command "ren_minimap_viewport" was removed.
+* Limited the number of tanks that can be spawned in a server from the same IP address to 5.
+
+=== June 27th, 2022 ===
+
+* Miniclip transfers ownership of the mobile version of Diep.io to Addicting Games.
+
+=== June 9th, 2022 ===
+
+* The console commands "lb_reconnect" and "ren_ui_scale" were removed.
+* The changelog entry for April 15th, 2022 no longer includes "Mobile update coming soon!"
+
+=== April 15th, 2022 ===
+
+* The changelog entry for April 11th, 2022 no longer includes "Mobile update & another region coming soon!"
+
+=== January 3rd, 2022 ===
+
+* All Diep.io Servers have been switched to servers hosted by Addicting Games instead.
+* The Player Count is removed.
+* The Official Changelog rolls back to the October 19th, 2020 Update, but without any references to florr.io available.
+*There is now no limit to how many tanks can be spawned in a server from the same IP address.
+
+=== December 12th, 2021 ===
+
+* Diep.io is now playable on certain mobile browsers, when previously it would redirect to the play store. 
+
+===November 19th, 2021===
+
+*A new Advertisement Window is added to the left side of the Main Menu.
+
+===August 6th, 2021===
+
+*The "More Games" Button at the front page is renamed to "io games".
+
+===July 24th, 2021===
+
+*Zeach / M28 Sells Diep.io to Addicting Games, according to a [https://i.redd.it/hvdmrashe5d71.png message] they have sent on Discord.
+
+===June 26th, 2021===
+
+*Player count above the [[Map|Minimap]] was added yet again.
+
+===June 21st, 2021===
+
+*Player count above the [[Map|Minimap]] was removed yet again.
+
+===December 20th, 2020===
+
+*Newly-joined players can no longer shoot while at the base until reaching level 5.
+
+===October 19th, 2020===
+
+*Added “Disable VPNs or proxies if this takes too long” message while the game is connecting to a server.
+
+===September 24th, 2020===
+
+*[[Arena Closer]], [[Dominator]] and [[Mothership]] can no longer be played in [[Sandbox]].
+
+===March 23rd, 2018===
+
+*Player count above the [[Map|Minimap]] was removed again.
+
+=== December 17th, 2017===
+
+*Player count above the [[Map|Minimap]] was returned to the game.
+
+=== December 14th, 2017===
+
+*Added “More games” button to the home page, leading to a list of {{w|Browser game|browser}} {{w|Massively multiplayer online game|MMOs}}.
+
+=== November 27th, 2017===
+
+*Player count above the [[Map|Minimap]] was temporarily removed from the game.
+*Several servers were restored.<ref name="servers1">The servers restored were in {{w|Frankfurt}}, {{w|Dallas}}, and {{w|Singapore}}.</ref>
+*The L Server info was cleaned up. It now displays as <tt>[Milliseconds of Latency (1 decimal point)] ms linode-[Server Location (e.g. Tokyo)]</tt>
+
+===March 22nd, 2017===
+
+*Unnamed Destroyer Upgrade is given a name: [[Skimmer]].
+
+===March 9th, 2017===
+
+*More commands are added on [[Console]].
+
+===March 7th, 2017 ===
+
+*The Developer [[Console]] is added to the game.
+
+===March 6th, 2017===
+
+*XP multiplier in [[Survival]] changed from 2x to 3x.
+
+===March 5th, 2017 (second update)===
+
+*Removed FPS in corner of the game.
+
+===March 5th, 2017 (first update)===
+
+*Your FPS is now shown on the top left corner of the game.
+
+===March 2nd, 2017 (second update)===
+
+*[[Battleship]] is now buffed.
+
+===March 2nd, 2017===
+
+*[[Achievements]] now have a percentage to how much of it is completed.
+
+=== February 26th, 2017===
+
+*There’s now a player number countdown in Survival.
+* Countdown is now added to every [[Game Modes|game mode]].
+
+=== February 25th, 2017 ===
+
+* The total number of [[Achievements]] is now displayed at the top e.g. “34 out of 50 unlocked”
+* There are now 50 achievements. (Fourth Batch)
+
+=== February 22nd, 2017 ===
+
+*You can scroll through [[achievements]] now.
+*Achievements can no longer be obtained in [[Sandbox]].
+* There are now 34 achievements. (Second Batch and Third Batch)
+*Pre-existing Achievements were recoloured.
+
+===January 13th, 2017===
+
+*[[Ball|An untitled tank]] is added exclusively to the [[Sandbox]] [[Game Modes|Game Mode]] but lasted only 8 hours before removal.
+*The [[Drone Speed]] of (Triangular) [[Drones]] & [[Base Drones]] have been buffed.
+
+=== November 12th, 2016===
+
+*Changed [[Tag|Tag Mode]] button’s text to “Tag”
+
+===October 23rd, 2016 ===
+
+*The [[Necromancer|Necromancers’]] [[Stats#Reload|Drone Count]] is now buffed, from 20 minimum to 22, and 34 maximum to 36.
+
+===Unknown Date===
+
+*[[Arena Closer]]s will now have the same speed, even if they bump into items.
+
+===September 25th, 2016===
+
+*Walls in [[Maze]] now kill [[drones]] upon contact
+*[[Arena Closer]]s and their bullets can now go through [[Maze]] walls like [[Crashers]].
+
+===September 22nd, 2016===
+
+*With the addition of the new [[Maze]] game mode, [[wikipedia:Adblock|Adblock]] users can now play [[Sandbox]] mode. (Adblock now blocks the Maze game mode instead)
+
+===September 20th, 2016===
+
+*Now, after pressing the ignore button, by moving the cursor to the near top left area of that area, the upgrades selections will be brought back, similar to viewing the upgrade table when no upgrade points are available.
+
+===September 13th, 2016 ===
+
+*New class: [[Auto Smasher]], branches off [[Smasher]]
+
+===September 10th, 2016===
+
+*Buffed [[Destroyer]].
+
+===September 6th, 2016===
+
+*[[Arena Closer]]s now have scores.
+
+===September 3rd (before sandbox) ===
+
+*You now can choose gamemodes from the new Game mode selection in the top centre of the menu!
+*There is now a copy party link in the top right corner of the menu for Team DM, Domination, Tag Mode and Mothership!
+
+===August 30th, 2016===
+
+*Half of [[Battleship|Battleship’s]] [[drones]] can now be controlled.
+
+===August 27th, 2016===
+
+*Removed the [[Dominator]] in [[Tag|Tag Mode]].
+
+===August 24th, 2016 ===
+
+*[[4 Teams]] [[Domination]] and 4 Teams Mothership was removed.
+*The colors of the [[4 Teams|four teams]] were changed to green, blue, red and purple.
+
+===August 23rd, 2016===
+
+* Added the [[Defender]] boss. It has 3 [[Auto Turrets|auto turrets]] and 3 [[Launcher|launchers]] to protect/defend itself.
+
+===August 20th, 2016===
+
+*Added a boss that is the shape of a [[Square]], it has 4 [[spawners]], unlike <i>[[Necromancer]]</i>. The Squares are spawning out of spawners.
+**Named as [[Summoner|The Summoner]].
+*Added [[Fallen Booster]] & [[Fallen Overlord]]
+
+=== August 19th, 2016 ===
+
+* Removed the Continue button from the death screen.
+
+===August 18th, 2016===
+
+*Added a boss that is the shape & color of a giant [[Crasher]]
+**Later named as [[Guardian|The Guardian of Pentagons]].
+
+=== August 16th, 2016 ===
+
+* Added a Continue button on the death screen.
+
+===Unknown Date===
+
+*Buffed [[Arena Closer]]s and their weapon.
+
+===July 31st, 2016===
+
+*[[Arena Closer]]s now spawn several seconds after the [[Arena Closing]] notification.
+
+===July 11th, 2016===
+
+*Nerfed [[Machine Gun]]
+
+===June 6th, 2016===
+
+*[[Ranger]] now looks different from [[Assassin]], you can tell of the additon of the trapizoidal base on it's [[cannon]].
+
+===June 5th, 2016 (second update)===
+
+*Removed [[Tag|Tag Mode]] due to lag issues.
+
+===June 5th, 2016 (first update) ===
+
+*New game mode: [[Tag|Tag Mode]]
+*One team must kill all players on the enemy team(s).
+
+=== June 3rd, 2016 ===
+
+* Neutral [[Dominator]]s are now yellow instead of gray.
+
+===June 2nd, 2016===
+
+*Buffed the strength and speed of [[Arena Closer|Arena Closers]] and [[Fighter|Fighters]].
+
+==Quick Notes==
+===September 18th ===
+We’d like to announce that [[Mothership (Gamemode)|Mothership]] will be removed in the future so we can use those servers for a new game mode. We’re announcing this in advance to give players time to play it while they can
+
+===July 21st ===
+Side note: We recommend going full screen by pressing F2 for maximum performance
+
+===July 18th - July 21st===
+We’ve added a link on the bottom right to the Diep.io Wiki, which will be maintained by volunteers.<ref name="gamepedia1">This link points towards the now-defunct Diep.io Wiki on Gamepedia, which was [[Thread:194908|redirected]] to here on December 21st, 2018.</ref>
+
+Also, there’s an unofficial subreddit for those wanting to discuss the game: /r/diepio
+
+=== July 11th - July 18th===
+We’re pleased to announce that the mobile version of this game will be published by Miniclip, it’ll be released shortly, pre-register by clicking on button below
+
+Also, there’s an unofficial subreddit for those wanting to discuss the game: /r/diepio
+
+===July 1st, 2016 - July 11th===
+We’re pleased to announce that the mobile version of this game will be published by Miniclip, it’ll be released shortly, pre-register for the android game here: * [https://play.google.com/store/apps/details?id=com.miniclip.diep.io http://bit<nowiki>.</nowiki>ly/getdiepio]<ref name="bitly2">Link censored to comply with Fandom terms of use</ref>
+
+Also, there’s an unofficial subreddit for those wanting to discuss the game: {{PL|https://www.reddit.com/r/Diepio/|/r/diepio}}
+
+===May 27th, 2016 - June 30th, 2016===
+Quick note: There isn’t a mobile version of the game, beware of clones.
+
+Also, there’s an unofficial subreddit for those wanting to discuss the game: {{PL|https://www.reddit.com/r/Diepio/|/r/diepio}}
+
+==History==
+
+*The game was never officially updated in October 2016, December 2016, January 2017, and April-November 2017. Also, from April 2018 to October 2020, the game was not updated, apart from an unmentioned change during September 2020.
+**The “update” in January 19th 2020 wasn't really considered a game update, as it only promotes the Developer's new game, [https://florr.io/ florr.io]. This doesn't have much connection to diep.io apart from similar-looking aesthetics/graphics and the appearance of [[Square]]<nowiki/>[[Square|s]] as usable weapons.
+*The changelog was introduced on May 18th, 2016.
+*In addition to the November 19th update, there was also an update with it. It’s logged as “[[Tanks|Players]] can now assume control of [[Auto Turret|turrets]] built on top of other tanks in their team by pressing H.” This part of the update was removed shortly after due to the ability to gain control of one’s own [[Auto Turret]] via [[wikipedia:Multi-boxing|Multi-boxing]].
+*In addition to the March 9th update, there was also an update with it. It’s logged as “Stat maximized has been removed (since the above change is better than it)”. This part of the update was removed shortly.
+*The October 31st 2022 update is the first changelog update containing an emoji in its title.
+*The original log of the January 31st 2024 was "Released handful of cheat patches".
+**It also had the incorrect date "January 31st 2023", although the home screen of the game shown the correct one.
+*Around October 20th 2025, 20% of the playerbase quit.
+
+==Gallery==
+<gallery>
+
+UpdateScreen2.png|Updating screen (While the game is updating and someone plays the game).
+ConnectingScreen2.png|Connecting screen (Appears after updating for 10 minutes or when the game has connection problems).
+Literallynothing.png|Humorous [[#February 27th, 2018|February 27th]] update, 2018
+File:October19th2020UpdateChangelog.png|Update as of October 19th, 2020. A message appears when the game is connecting to a server.
+
+</gallery>
+
+==Footnotes==
+<references />
+{{Gameplay|general}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Registro de Cambios
+|fr     = Nouveautés
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Changelog
+|zh     = 更新日誌
+}}
+[[Category:Diep.io]]

@@ -1,0 +1,131 @@
+= Mega Trapper =
+
+{{Infobox
+|title     = {{PAGENAME}}
+|image     = <gallery>
+mega trapper icon 4.png|Modern
+mega trapper icon 3.png|Old Borders
+mega trapper icon 2.png|Old Design
+mega trapper icon 1.png|Nameless
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Trapper icon new.png|50px|link=Trapper]]
+|barrel    = [[Launcher]] (1)
+|id        = 34}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Trapper]] at level 45.
+
+== Design ==
+The Mega Trapper features a circular body and a larger version of the [[Launcher]]. When upgraded to, the Mega Trapper decreases the Reload but increases the size and strength of the [[Traps]] significantly.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = ▲▲▲
+|BulletDamage      = ▲▲
+|Reload            = ▼▼
+|MovementSpeed     = —
+|HiddenStat1       = Trap Size
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲▲
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+*Traps are much larger but are proportionally weaker to knockback. They are also more durable than a normal trap.
+*Firing rate is heavily decreased in comparison to the Trapper.
+*Fires with more recoil than the Trapper but much less than the [[Destroyer]].
+*Stats: 
+**Bullet Speed: 2.5x [[Tank]]
+**Bullet Penetration: 4.5 (+3.375 for each point in Bullet Penetration)
+**Bullet Damage: 12.6 (+ 5.4 for each point in Bullet Damage)
+**Reload time: 50t (-4t for the first three points, -3t from the 4th to 6th point, -2t for the 7th point in Reload) 
+
+== Strategy ==
+*<b>Strong Against:</b> Cornered enemies, other Trapper classes if played well, melee or low bullet speed classes, unfocused fire such as [[Penta Shot]]s, [[Spread Shot]]s, and sometimes [[Machine Gun]]s.
+*<b>Weak Against:</b> [[Sniper]]-style classes or builds with high bullet speed, [[Drones|Drone]] classes except the [[Necromancer]], [[Destroyer]] classes, highly mobile classes e.g. [[Fighter]], concentrated DPS classes such as the [[Triplet]], [[Gunner]] branch tanks, and [[Factory]].
+
+=== As the Mega Trapper ===
+*As with other Trappers, strategies for the Mega Trapper mainly revolve around building up fortifications and limiting mobility, as without a wall of Traps a Mega Trapper is virtually defenseless. Most of the time, the gameplay is based around strategically fortifying areas to render them impassable to most enemy tanks and eventually trapping unaware or surrounded tanks with the Mega Trapper’s strong traps at short range.
+**If the player encounters mobile classes such as the [[Booster]], they have to predict enemy movements and place Traps in the way of opponents, such as in front of a player being chased by [[Crashers]].
+**In close quarters such as [[Survival]] or [[Sandbox]], the Mega Trapper can easily corner all but the strongest opponents with its powerful Mega Traps, easily defeating them.
+**However, in wide-open areas, enemies can escape easily and attack the relatively defensive Mega Trapper with near impunity, as the Mega Trapper is weak without staying in one area to build up fortifications.
+* Mega Trappers are especially effective in conjunction with a [[Trapper]] or any of its upgrades. Here, the Mega Trapper helps to plug the holes opened by enemy fire and can be used to fortify areas of a wall that are fired more frequently against.
+*The Mega Trapper dominates the [[Maze]] mode. Its Traps are large enough that they can completely block tunnels. Remembering this technique is important especially in defensive scenarios, such as when a Mega Trapper is cornered by an enemy, or when trying to lock down an area.
+*It is also effective in [[Domination]] as a defensive tank, as it can hide behind a [[Dominator]] and build a near-impenetrable fortress due to the large Traps and stationary nature of any Dominator.
+*The Mega Trapper (as with other Trapper classes) can be a major counter to high bullet spread tanks such as the Spread Shot if used correctly. While approaching a high bullet spread tank, the [[Traps|Mega Traps]] can completely block the opponent’s spread bullets and collide with the opponent once close enough, thus killing them.
+*The Mega Trapper is also capable of barging open trap walls of other Trapper classes, thus destroying the defense of the opponent. Despite this, most Trappers (e.g. the [[Auto Trapper]]) have additional weapons, so support is often necessary.
+*It must be remembered that, like all Trappers, the Mega Trapper is a primarily defensive tank, and must be used as such. The ideal game mode for this tank is a team mode (for mid-field bases, or fortifying the Pentagon Nest), or Maze (for trapping enemies).
+**Attempting to actively go on the offense with Traps with usually be unsuccessful, as without a large defensive barrier built over time the Mega Trapper is helpless against high DPS tanks.
+**Meanwhile, the Mega Trapper can be an invaluable supportive and defensive tank in team modes, creating powerful fortifications to protect more offensive tanks and assist in attacks, or act as a powerful defensive barrier against enemy assaults.
+
+=== Against the Mega Trapper ===
+*All players must keep a safe distance from the Mega Trapper and its extremely powerful Mega Traps. Body Damage classes will not survive, so [[Smasher]]s and [[Booster]]s have to retreat on sight. In contrast, tanks that can overwhelm the Mega Trapper from a distance or simply outrange its Traps with high Bullet Speed can easily overcome the Mega Trapper’s defenses.
+*The Mega Trapper uses strong and dangerous Traps to attack and defend. However, its traps are also weaker to knockback and the tank’s Reload reduced. The player can take advantage of this by using a concentrated DPS (Damage Per Second) tank like the [[Triplet]], [[Streamliner]], or Gunner classes. The player must pressure the Mega Trapper constantly by shooting through holes in the Trap wall at the range, thus killing the opponent through attrition while not being as susceptible to Trap attacks.
+**The [[Factory]] can use the same strategies while attacking from multiple angles at once, destroying traps when necessary.
+**[[Destroyer]] branch tanks can similarly defeat a Mega Trapper since they outclass the Mega Trapper offensively with higher damage bullets and increased mobility, enabling them to wear down a Mega Trapper’s defensive Traps and eventually destroy it.
+*High FoV Sniper classes such as the Assassin and Hunter branches are also surprisingly effective against Mega Trappers since they can sneak bullets between Mega Traps from afar. An opponent will likely be too busy trying to patch any holes in the wall and can be susceptible to flank attacks.
+*Most Drone classes can easily defeat the Mega Trapper, as their ranged Drones allow one to constantly harass a Mega Trapper with flank attacks while remaining relatively safe from afar. However, sending all of their Drones through the Mega Traps may leave the player vulnerable for some time.
+**The [[Battleship]] is an especially powerful counter to the Mega Trapper, as the small but abundant flanking Drones allow one to pierce through a wall of Mega Traps easily and defeat the Mega Trapper.
+**In contrast, the [[Necromancer]] is relatively ineffective against entrenched Mega Trappers, as the limited, less agile Necromancer Drones fare worse against a wall of Mega Traps.
+*Very high mobility classes such as the [[Fighter]] can generally tire out if not defeat a Mega Trapper, encircling it and shooting between Traps.
+
+== History ==
+*Mega Trapper used to have a different design, where the [[Launchers|launcher]]'s trapezoid used to be the same length as [[Trapper|Trapper's]] and the width of the trap launcher was wider.
+
+== Records ==
+
+=== PC ===
+
+* FFA: 560.6k by PEANUTBUTTER
+* 2 Teams: [https://www.youtube.com/playlist?list=PLKY9zsXvIn0vLEnBB2-vCDur-1hfk6D0O 1.09m by Denied]
+* 4 Teams: 1.07m by hades
+* Maze: [https://imgur.com/7pfGvbA 426k by swi]
+
+=== MOBILE ===
+
+* FFA: 415.2k by Kevin
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*This was one of the 5 tanks added in the [[Changelog#July_18th.2C_2016|July 18th, 2016 Update]], which introduced the [[Trapper]] branch.
+**The Mega Trapper was unnamed initially, being named later on the day of the update.
+*This tank's trap launcher is identically sized to that of [[Gunner Trapper]]'s.
+*Mega Trapper's original design was the only tank which had a singular weapon that was wider than the tank itself.
+
+== Gallery ==
+<gallery>
+Mega Trapper Traps.png|A Mega Trapper and its Traps
+MegaTrapper.png|A Mega Trapper fighting with a Spike in Sandbox
+MegaTrapsVSMediumTrapsVSSmallTraps.png|Mega Traps, Medium Traps, and Regular Traps side-by-side
+MegaTrapper2Teams.png|A Mega Trapper defending in 2 Teams
+mega trapper icon new 1.png|Nameless, new colors
+</gallery>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Mega Trapper
+|es     = Mega Trapper
+|fr     = Mega trapper
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Mega Trapper
+|pt-br  =
+|ro     =
+|ru     = Mega Trapper
+|sv     =
+|tr     =
+|vi     = Mega Trapper
+|zh     = Mega Trapper
+}}
+[[Category:Diep.io]]
+[[Category:Trapper Tanks]]

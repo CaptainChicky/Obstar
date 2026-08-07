@@ -1,0 +1,125 @@
+= Spread Shot =
+
+{{Cleanup|Exact stat changes upon upgrading from Triple Shot, primarily reload. Also update strategies if whenever old ones do not apply anymore. Refer to Oct 19th 2020 update.}}
+{{Infobox
+|image     = <gallery>
+spread shot icon 2.png|New Colors
+spread shot icon 1.png|Old Colors
+dingbat1991 spreadshot tank.png|Dingbat1991
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Triple shot icon new.png|50px|link=Triple Shot]]
+|barrel    = [[Cannons]] (11)
+|id        = 42|categories = 4}}
+Spread Shot is a Tier 4 tank in Diep.io. It upgrades from [[Triple Shot]] at level 45. It was conceptualized by [https://www.deviantart.com/dingbat1991 Dingbat1991], [[:File:dingbat1991 class tree 2016.jpg|posted to Deviantart]], and officially added on 12th August 2016.
+
+== Design ==
+Compared to its predecessor, the Triple Shot, this tank shrinks the side cannons and adds eight more (four are added on each side), between the side-most and center cannons, giving a total of eleven barrels. The two side cannons are covered by the other additional barrels, whilst the center cannon stays layered on the top of all of them.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = ▲
+|Reload            = ▼
+|MovementSpeed     = —
+|HiddenStat1       = Barrel count
+|HiddenStat2       = Side Bullet Damage
+|HiddenStat3       = 
+|HiddenStat4       =
+|HiddenStat1Val    = ▲▲▲
+|HiddenStat2Val    = ▼
+|HiddenStat3Val    = 
+|HiddenStat4Val    =}}
+Upon upgrading into Spread Shot, the reload time is doubled and recoil is significantly nerfed. When Compared to its predecessor, the main barrel remains unchanged, with the sole exception of its bullet damage, which is augmented by approximately 42.86%. However, the smaller barrels deal less bullet damage (reduced by approx. 21.429%).
+
+The Spread Shot is commonly used for close-range combat, particularly shotgunning enemies.
+
+Stats: 
+
+* Middle Bullets:
+** Bullet Damage: 7 (+3 for each point in Bullet Damage) 
+** Reload: 30t (-2t for the 1st, 2nd, 4th, 6th and 7th point, -3t for the 3rd point and -1t for the 5th point in Reload)
+* Small Bullets: 
+** Bullet Damage: 3.85 (+1.65 for each point in Bullet Damage) 
+** Reload: 30t (-2t for the 1st, 2nd, 4th, 6th and 7th point, -3t for the 3rd point and -1t for the 5th point in Reload)
+
+== Strategy ==
+*<b>Strong against:</b> Large groups of fragile enemy tanks with a low rate of fire, [[Drones|Drone]] classes such as the [[Overlord]] and [[Battleship]], melee classes.
+*<b>Weak against</b>: Tanks with heavy concentrated fire such as the [[Triplet]], [[Sprayer]], [[Streamliner]], [[Destroyer]] branches, Sniper classes, skilled [[Factory]] users, and spread tanks with higher penetration like the [[Penta Shot]]. 
+
+=== As the Spread Shot ===
+*Just like its predecessor, the Spread Shot is great for damaging groups of enemies and its main cannon deals decent damage. It excels in farming but often fails when opposed by enemy tanks with high RoF and health.
+*The Spread Shot has more DPS than any other tank, but only on large targets such as the old [[Mothership (Tank)|Mothership]], and only if the Spread Shot is angled correctly in a way that most (or all, if possible) projectiles hit. Otherwise, it is weaker than most tanks. Also, the [[Auto Turrets|Auto Turret]]-sized bullets deal a surprising amount of damage (more than twice that of a [[Gunner|Gunner’s]] bullet).
+*In team modes, the Spread Shot is an effective counter to the [[Battleship]] or [[Skimmer]]. The high spread blocks their defenses and overwhelms them. Just make sure to be around teammates for protection.
+*The Spread Shot is effective for taking down other’s defenses and offenses, this makes it great counter against the [[Necromancer]] by shooting down all of the drones easily with its wide-area spread, and then haplessly disposing of the Necromancer.
+*When fighting a [[Fallen Overlord]], [[Summoner]], or [[Guardian]], a good strategy is to circle the boss and shoot away from the drones while dealing with fast damage with bullets. However, this can take some time due to disturbances from aggressive players.
+*The Spread Shot is considered to be an alternative to the Penta Shot. However, its bullets cover more area, making it more reliable in area denial situations. This does come at the cost of less penetration per bullet (except the central barrel) though, so make sure not to get into any risky fights with rapid-fire/high penetration tanks.
+*As the Spread Shot, try looking for a Drone-reliant class like an Overlord. If the Spread Shot has a build with high DPS and penetration, they should be able to defeat the Overlord due to the high spread and its ability to easily wipe out Drones.
+*The Spread Shot is generally a support tank, so it is best used with teammates since the Spread Shot has good area denial stats that is especially useful in hectic team-based combat.
+*In [[Survival]], the Spread Shot is a good choice. The spread of bullets can wipe out most enemies from upgrading to a tank that can counter the Spread Shot, like Triplet or Penta Shot for example.
+
+=== Against the Spread Shot ===
+*The Spread Shot’s spread fire makes it very vulnerable to tanks with focused fire such as the Streamliner and Triplet. So concentrated fire can break through the Spread Shot’s thin spread and hit it.
+*The Destroyer branch may also be effective as the large bullet may easily crash through the Spread Shot’s individually small bullets. However, the Spread Shot has a widespread and a few stray bullets may reach the Destroyer, so it is best to catch the Spread Shot by surprise and kill it before it has time to react.
+*[[Factory|Factories]] can create Bullet walls capable of piercing through the Spread Shot’s stream — whilst using their Drones as shields in order to safely go close to it. Please note that this strategy is very difficult; if your drone shield is just one background square to the side of you you may get shredded. Only attempt this strategy if you are experienced.
+*Tanks with a high Field of View, such as a [[Ranger]] can attack the Spread Shot by surprise, since the Spread Shot has a lower FoV, also keeping in mind the high speed and penetration of the Ranger’s bullet being able to easily pierce the spread of the Spread Shot.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=mm10tdlT4sY 831k by Smurfish]
+* 2 Teams: -
+* 4 Teams: [https://www.youtube.com/watch?v=jV5ExwEUxrE 3.21m by Endless]
+* Maze: [https://www.youtube.com/watch?v=wTPJgEJpEo4 876k by Legit Developer]
+
+=== Mobile ===
+
+* FFA: 1.92m by HZ6
+* 2 Teams: 2.85m by 1mぃく
+* 4 Teams: [https://imgur.com/a/aBLbwXh 926.6k by darkforce]
+* Maze: 431.6k by darkforce
+
+== Trivia ==
+*As with [[Streamliner]] and [[Skimmer]], Spread Shot was conceptualized by [https://www.deviantart.com/dingbat1991 Dingbat1991]. The original conception image may be found [[:File:dingbat1991 class tree 2016.jpg|here]].
+*A few hours after the Spread Shot was released, many players complained and criticized the tank, mainly because the small Bullets deal very little damage and the main Bullet is very strong.
+**The Spread Shot got an immediate reload boost after being released to buff it.
+***The small [[Bullets|Bullet]] damage was later buffed.
+***But then it got nerfed again, due to the small bullets doing <i>too much</i> damage.
+*The Spread Shot has the most cannons on a single tank out of all the tanks in Diep.io.
+*Surprisingly, the Spread Shot has very little recoil despite the many Barrels and Bullets fired. This might be due to the size of the side Bullets. Because of this, this tank is good for chasing down weaker tanks, at the same time dealing significant damage and suffering from almost no recoil at all. Or it may be hardcoded value, not depending on bullets that have been fired.
+**The fan version of this tank had nine barrels, but the in-game version has eleven.
+* As 2020 Oct 19 update, this tank now fires all its cannons at the same time, along with [[Penta Shot]].
+** Previously, its attack pattern consisted of its main barrel shooting first, followed by the next two barrels on each side in an outward spread. Once the last two barrels on each side fire, the main one shoots again to restart the cycle endlessly.
+*With the old firing pattern, some really good people or hackers who use scripts can rotate the Spread Shot in such a way that most of its bullets form a straight line.
+**For those who use scripts, this is known for "scripting", and this seemed to be the main reason its firing pattern was changed.
+
+== Gallery ==
+<gallery widths="185">
+File:Screen Shot 2020-11-11 at 8.32.46 AM.png|Spread Shot with its new firing pattern.
+</gallery>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Spread Shot
+|es     = Spread Shot
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Spread Shot
+|pt-br  =
+|ro     =
+|ru     = Spread Shot
+|sv     =
+|tr     =
+|vi     = Spread Shot
+|zh     = Spread Shot
+}}
+[[Category:Diep.io]]

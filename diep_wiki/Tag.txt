@@ -1,0 +1,108 @@
+= Tag =
+
+{{Mode
+|image         = TagInfobox.png
+|conditional?  = yes
+|closure       = All other teams are defeated.
+|button        = Tag MODE Icon UI.png
+|teams         = 4
+|bosses?       = yes
+|specials      =
+}}
+{{PA}} or <b>Tag Mode</b> is a [[Game Modes|game mode]] where the goal is to defeat all of the enemy team’s [[Player|players]] and become the last Team to exist. Players who are killed will be “tagged” and will join the team of the [[Tanks|Tank]] that killed them.
+
+==Technical==
+The players will initially spawn at random points and teams on the map. Being able to quickly level up due to the Mode’s 3x (3 times) XP Multiplier. Players may then proceed to kill or be killed by enemies in attempts to tag them. If they die by a [[Polygon]] or a [[Boss]] however– they will respawn on the same team. The leaderboard will show how many players remain in each team. And after some time the arena itself will shrink every 12 to 13 seconds to speed up the game. This game mode is also good if you want to learn a new [[Tiers|Class]]. It takes much less work to reach level 45 than it would in other game modes like [[FFA]]. This is even more helpful to new players who find it easier to level up and have supported teams to help them.
+
+The game only begins when each team has at least four players. Before then, when a player dies they stay on the same team. Once each team has enough players, killing a player will convert them to your team. If the server doesn't have enough players, the game may never begin.
+
+=== Strategy ===
+It is completely life or death in Tag, due to the lack of Bases to take cover in. There’s a chance that a newly-spawned player may start on the winning team. And there are often turnarounds (Where one team is dominant but a smaller team still manages to beat the bigger team against all odds, successfully becoming the dominant one), but the moment a given team has less than 5 players it is usually game over for them. To support its teammates more efficiently the player may take into consideration the following bits:
+
+*Focused Spammers are great overall. They can fulfill both offensive and defensive roles that make them incredibly valuable in Tag.
+
+*[[Overseer|Overseers]] are incredibly good offensive classes. Capable of getting swift kills, especially at the early stages of the game. (Especially against focused spammers and distracted tanks). But which may need some support in later parts of the mode.
+
+*[[Destroyer]] branches are a good choice in 1v1 because they are great for countering rammers and bullet rammers and able to hold their own at the early stages of the mode. However– they will struggle against the “Bullet Hell” often present in the later parts of the game. (Mostly because of their low Area Coverage; The [[Rocketeer]] and the [[Skimmer]] being exceptions to this). They will need support to perform their fullest in them.
+
+*Spread Spammers like the [[Penta Shot]] or the [[Spread Shot]] are really good tanks that can take on multiple enemies at once. Classes that– when paired with other tanks can deal with quick enemy loss due to their moderately high damage and area coverage. They should be along with the Focused Spammers– the main pillars of the player's team.
+
+*Ramming Tri-angle branches are also a very good choice for Tag. If the player wants to survive for the longest time and doesn’t mind taking a somewhat less active role in the game. Their large supply of health and speed may let the player defend itself and outrun the hordes of enemies– either distracting them so a teammate can get the kills– or smashing into the weak tanks that are distracted or have nobody on their team defending them. They can also use a bullet build and relentlessly chase down players from other teams.
+
+*Classes like the [[Necromancer]], [[Battleship]]— along with branches of [[Assassin]], [[Trapper]] and [[Hunter]] have niche roles that can be useful in this mode. But much like Destroyers– they will need support to fulfill their functions.
+
+*Invisibility is incredibly crippled in Tag. It is inadvisable to use these tanks at all.
+
+*Some people may get themselves intentionally killed by the other team to get themselves switch teams (usually the team they started with or the smaller team) hoping that they can overtake the game back, which sometimes results in very long games.
+
+== Details ==
+[[File:EndOfTag.png|thumb|350px|The game ends when one team has all of the players.]]
+*Like the [[4 Teams]] servers, it has four teams: red, blue, purple, and green.
+*When a player dies, the player will join the killer’s team. If a [[Polygon]] or [[Boss]] kills a player, the player will respawn in the same team.
+*Players can’t become fully [[Invisibility|invisible]], unlike in the other Gamemodes.
+**This is possibly to prevent tanks like [[Landmine]] and [[Stalker]] from hiding in the corner of the map and preventing the game from ending.
+*This game mode has triple experience points gain similar to [[Survival]] and the removed [[Mothership (Game Mode)|Mothership]].
+*The battle area shrinks as time proceeds, similar to [[Survival]].
+*There are no bases, similar to [[Free For All|FFA]], [[Survival]], [[Maze]], [[Sandbox]] and the removed [[Mothership (Game Mode)|Mothership]] Gamemode. Instead, players will spawn randomly all over the map.
+*Once a team kills all enemy players, that team wins and the arena will be closed, as shown in the image above.
+*This gamemode was removed on Feburary the 14th, 2023, at around 12:30 PM AEDT.
+*It came back temporarily on May 26th, 2024, at around 12:00 PDT, but soon disappeared.
+
+== History ==
+[[File:GMtag.png|thumb|Tag selected in the title screen (old)]]
+*It was originally added on June 5<sup>th</sup> but soon removed 2 hours later due to lag. It was later re-added on August 15<sup>th</sup>.
+**Players directly became a member of the opposing team at that time when they got killed, contrary to the common belief that Players become a member of the opposing team upon respawn.
+*As of August 17<sup>th</sup>, the map slowly gets smaller as time progresses. Previously, they grew and shrunk as players joined and left the server respectively, much like [[Sandbox]] and [[Survival]].
+*As of August 23<sup>rd</sup>, the game mode now has 4 teams, adding the colors Purple and Green.
+*During August 26<sup>th</sup>, the game mode had a [[Dominator]] in the middle of the servers, inside the [[Pentagon Nest]].
+**The Dominator was soon removed the following day because this confused players how to win the game.
+*As of November 12<sup>th</sup>, Tag has been renamed from Tag Mode to Tag. The win condition and gimmicks stay the same.
+[[File:Tag_MODE_Icon2.png|thumb|Tag, before merging with Domination and Mothership]]
+*As of January 2<sup>nd</sup> of 2023, Tag was turned into a rotating gamemode along with [[Domination]] and [[Mothership (Game Mode)|Mothership]]. The gamemode's secondary icon changed as a result.
+
+== Trivia ==
+*There's technically <i>no way to lose</i>; since the winning team is the one that gets all the players onto it, respawning to join the winning team while the winning team wins automatically makes the player win as well.
+**If the player joins in between arena closure and the team winning message, however, they can be on another team due to the mode respawn system. Also, if the player is the last surviving member of the team opposing the winning team, they can get killed by a Polygon/Boss and respawn in the same team. In neither case does this stop the opposite team from winning though as the counter reaches zero the moment the last member dies.
+* [[Bosses]] are likely to live longer than other [[Game Modes|modes]] since there are no [[Base Drones|base drones]].
+*Tag is the only game mode in which the player can switch teams without rejoining.
+**Tag is also the only mode to have teams but with no bases, besides [[Mothership (Game Mode)|Mothership]].
+**There no bases in this team mode. It may be because players could stay in their ally base as long as they want, preventing the enemy teams from killing that player, which would be unfair and cripple the Mode, causing games to end without a winner.
+**Tag mode's party links are unsharable. It is one of 4 game modes that don't allow links to be shared: Survival, FFA, and Maze are the others.
+*If there are too few players in a Tag game, it appears that players won't be changing teams.
+**This makes for a unique challenge since the arena is at its smallest and a boss is often present.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Unpatched Bugs ===
+*When killing a player, they can remain on their team after death.
+*If a team manages to get all the players in its team, it is possible for it to glitch and no one to win.
+=== Bug Gallery ===
+<gallery>
+TagGlitch5.png|An Overlord about to kill the last tank on the red team.
+TagGlitch4.png|TThe notification after killing the tank. Notice the Scoreboard showing there is still one remaining member of the red team.
+TagGlitch1.png|A player playing as Twin on the green team.
+TagGlitch2.png|The previous player being killed by a purple Twin.
+TagGlitch3.png|The previous player respawning, still part of the green team.
+</gallery>
+}}
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Tag mode
+|fr     = Tag Mode
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     = Tag
+|sv     =
+|tr     =
+|vi     = Tag Mode
+|zh     = Tag
+}}
+[[Category:Diep.io]]

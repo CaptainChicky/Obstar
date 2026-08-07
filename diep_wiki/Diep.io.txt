@@ -1,0 +1,135 @@
+= Diep.io =
+
+[[File:DiepLogo.png|thumb|255px]]
+<b>{{PL|https://diep.io|Diep.io}}</b> is a 2D MMO game. The player controls a simple [[Tank]] that can shoot [[Bullets]], [[Drones]], or [[Traps]] (depending on the tank used) at [[Polygons]] and other tanks to level up and [[Tiers|upgrade]] their tank.
+
+== Controls ==
+{{Main|Controls}}
+<br/>
+[[File:ControlsDiagram.png|right|255x255px]]
+
+=== Movement ===
+*<b>Move Up:</b> <code>W</code> or <code>↑</code>
+*<b>Move Left:</b> <code>A</code> or <code>←</code>
+*<b>Move Down:</b> <code>S</code> or <code>↓</code>
+*<b>Move Right:</b> <code>D</code> or <code>→</code>
+*<b>[[Auto Spin]]:</b> Press <code>C</code> to turn on Auto Spin - the tank will spin slowly, no matter what one's mouse is doing. Press <code>C</code> again to turn Auto Spin off.
+
+=== Attacking ===
+*<b>Aiming:</b> Cursor - the tank will point toward the player's cursor.
+*<b>Shooting (or Directing Drones, depending on the tank):</b> Left click, or press the space bar. You can alternatively hold the keys/buttons down. The player can press <code>E</code> to enable [[Auto Fire]], which makes your tank automatically shoot. Drones from the [[Overseer]] and its upgrades will be directed to the player's cursor.
+*<b>Repelling Drones:</b> Right-click or <code>Shift</code> - drones from the Overseer, [[Overlord]], [[Manager]], and [[Necromancer]] will move away from the mouse). For the drones from the [[Factory]], they will either move away from the mouse or collapse to the position of the mouse, depending on their position to the mouse. Some other tanks have other interactions when you Right-click or <code>Shift</code>. For more info on this, see the section about Right-click in [[Controls]].
+
+=== Miscellaneous ===
+*<b>[[Levels|Upgrade stat]]:</b> Either click the "+" button next to the stat the player wants to upgrade with the cursor or press he number key shown next to the upgrade stat.
+*<b>Maximize Stat:</b> Holding <code>M</code> and a number key will automatically place upgrade points as they become available into the stat corresponding to the number. Pressing M alone will cancel maximization.
+*'''Queue Upgrades:''' Holding <code>U</code> while upgrading without and upgrade points can queue your upgrades, which will be automatically be upgraded in the order you queued. Pressing U twice without upgrading will empty the queue.
+*<b>Full screen:</b> Press <code>F2</code> or <code>F11</code>. If either of these keys are mapped to another function (like lowering brightness or volume), hold the FN key (which should be right next to the left control key on most keyboards) when pressing <code>F2</code> or <code>F11</code>.
+*'''Show region/latency:''' Currently set to <code>;</code> by default, which doesn't work. You can change the keybind in the game's Settings.
+*<b>Open class tree:</b> Hold <code>Y</code> to show the entire class tree (all the classes, and the path to get them). After the player finishes looking at it, they may release the Y key to avoid lag.
+*<b>Take control of [[Dominator]]:</b> After the player’s team has captured the Dominator, they can press <code>H</code> to take control of it (without spamming it). The controls stay the same, except the player cannot move.
+*<b>Releasing control of Dominator:</b> Press <code>H</code> to release control. If the player spams the <code>H</code> button wanting to take control of the Dominator, they will end up killing themselves and not taking control of the tank.
+*'''Copy lobby link:''' Press <code>L</code> to copy the lobby's link to the clipboard, which you can share with your friends to play together.
+
+=== Sandbox ===
+''These controls can '''only''' be used in [[Sandbox]].''
+*<b>Self-destruction:</b> Press <code>O</code> to instantly destroy your tank.
+*<b>Instant level up:</b> Press <code>K</code> to instantly level up your tank. It works best if you hold the key down.
+*<b>Switch class:</b> Press <code>\</code> to switch between a predetermined list of playable tanks in the order they were added in reverse. (The [[Tank|Basic Tank]], arguably the oldest tank in the game, is at the back of the list. The [[Auto Tank|<s>Auto Tank</s>]] [https://diepio.fandom.com/wiki/Glider Glider], <s>the newest tank in the game</s>, is at the front of the list.)
+*<b>God Mode:</b> Press <code>;</code> to become invulnerable. This only works if the Sandbox server you are in has only one player, which is most likely you.
+
+== Game Modes ==
+'''There is a total of 9 [[Game Modes]] that suits a wide range of play styles.'''
+
+* [[Free For All]]: Every player for themselves. You can kill anyone and anyone can kill you.
+* [[2 Teams]] & [[4 Teams]]: Teams of different colors compete to dominate the leaderboard. These modes were formerly part of the same gamemode, known as [[Team Deathmatch]].
+* [[Sandbox]]: Players can test out different tanks and play with friends.
+=== Rotating Game Modes ===
+
+* Minigames: 
+** [[Domination]]: 2 teams compete to take over 4 [[Dominator]]s on different sides of the map.
+** [[Tag]]: 4 teams try to convert players on opposing teams to their own. Last team remaining wins.
+** [[Breakout]]: 2 teams battle to claim all territory in the map.
+* Maze: 
+** [[Maze]]: Similar to Free For All, but with walls that force players to take paths.
+** 2 Teams Maze & 4 Teams Maze: Similar to 2 Teams and 4 Teams, but with walls that force players to take paths.
+
+=== Removed Game Modes ===
+There are three game modes that are no longer playable. 
+
+* [[Team Deathmatch]]: Also abbreviated as Team DM, it is identical to [[2 Teams]] and [[4 Teams]], except for the fact that you couldn't choose how many teams there are. Each server would have either 2 or 4 teams, meaning you would have to continue reloading the page until you ended up in the server you wanted. This [[Game Modes|Game Mode]] was later split into [[2 Teams]] and [[4 Teams]].
+* [[Survival]]: 10 players compete to be the last one alive.
+* [[Mothership (Game Mode)|Mothership]]: The goal in this [[Game Modes|Game Mode]] is to destroy the other team's [[Mothership (Tank)|Mothership]].
+{{GameNav|false}}
+
+== Classes ==
+[[File:Final_Tier1.png|right|300x300px]]
+In Diep.io, you control a tank, which can be upgraded at [[Levels]] 15, 30, and 45. The player starts as a normal [[Tank]] with a single Cannon which shoots a single Bullet and begins to work their way up from there. Every 15 levels, they may choose to step up to the next available [[Tiers|Tier]], which is an organization of classes. Tiers, in turn, are sorted in the class tree, shown on the right. 
+
+Sometimes, in the case of the [[Smasher]] (an upgrade from the [[Tank|Basic Tank]]) and the [[Sprayer]] (an upgrade from the [[Machine Gun]]), there may be tanks that require you to skip a level and continue playing as the previous tank until reaching the level required to upgrade to them. (The [[Smasher]] requires you to get to Level 30 as the [[Tank|Basic Tank]], and the [[Sprayer]] requires you to get to Level 45 as a [[Machine Gun]])
+
+Below is an expanded table of tanks, sorted by [[Tiers|Tier]] and by availability: 
+<br/>
+{{TankNav}}
+
+== Stats ==
+When one levels up, they also gain points that can be put towards upgrading the [[Stats]] of their tank, which boosts certain characteristics:
+[[File:The_skill-tree.png|right]]
+* [[Stats#Health Regen|<span style="color:#EEB690">'''Health Regen'''</span>]] - Allows the tank to regenerate health faster
+* [[Stats#Max Health|<span style="color:#EC6CF0">'''Max Health'''</span>]] - Increases the amount of health the tank has
+* [[Stats#Body Damage|<span style="color:#9A6CF0">'''Body Damage'''</span>]] - Increases the damage done by body collisions
+* [[Stats#Bullet Speed|<span style="color:#6C96F0">'''Bullet Speed'''</span>]] - Increases the ammunition velocity
+* [[Stats#Bullet Penetration|<span style="color:#F0D96C">'''Bullet Penetration'''</span>]] - Increases bullet health and hence its penetration
+* [[Stats#Bullet Damage|<span style="color:#F06C6C">'''Bullet Damage'''</span>]] - Increases the damage done by ammunition
+* [[Stats#Reload|<span style="color:#98F06C">'''Reload'''</span>]] - Increases the rate of fire
+* [[Stats#Movement Speed|<span style="color:#6CF0EC">'''Movement Speed'''</span>]] - Increases the tank's speed of movement
+
+After every level up through 2-28 the player gets an upgrade point to upgrade one of those stats from a menu like the one seen here. Then, every 3 levels from 30-45 they get an upgrade point.
+
+== Bosses ==
+In Diep.io, as well as opponents, the player can fight powerful, AI-controlled [[Bosses]] every 10-23 minutes the server is online. They will grant one a lot of experience (30,000, enough to get a level 1 tank beyond the required experience needed for level 45) for the assailant. To be fair to new users, bosses will not target players under level 15 unless provoked. There are a total of 5 different bosses to battle:
+{{BossNav}}
+
+== Achievements ==
+[[Achievements]] are rewards in Diep.io. A player can obtain them through reaching specific requirements, shown on the achievement; some are harder than others, while some are extremely easy. There are 50 achievements in the game as of March 4th, 2017. The player can see all achievements (Not anymore), with earned ones in color, by moving their mouse to the right side of the screen. They are purely for bragging rights and do not change how the game works.
+
+== Trivia ==
+* Many believe that .io is a game tag for multiplayer games. It is a domain in the British Indian Ocean Territory, where the British and the Chagossians take some of the profit from the people who use the .io domain. Since no Chagossians are living in the area, and the British soon denied the profits from the domain, .io is a free domain.
+* Each server can harbor a maximum of 80 players (not including AI).
+* The game came out from an old browser game that creator and former [[Developer]] M28 (commonly known as "Zeach") made called “Diepix”.<ref>https://news.ycombinator.com/item?id=13268012</ref>
+* If you are on mobile and play in the normal server instead of the mobile server, and it detects that you are in mobile (touching the screen), joysticks will appear, you will only see the top 5 players on the leaderboard, well everything will be like the mobile version.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+===Unpatched Bugs===
+*The web page is sometimes unable to load the font of the game, resulting in various texts like those in [[Game Modes]] and “Copy party link” buttons not showing up, though they can still be clicked and are fully functional.
+**FIX: Refreshing cache or waiting for a while may sometimes resolve the issue.
+*The grid may periodically become solid black. The constant flashing can vary in speed and the timing between each flash is irregular. The reason is unknown.
+**FIX: Switching to a different web browser may sometimes resolve this issue.
+===Patched Bugs===
+*The game may wrongly show the current player count, sometimes leading to numbers much lower than the current amount of players within the server. The false player count varies, depending on the current [[Game Modes|Game Mode]] being played.
+}}
+
+== Footnotes ==
+<references/>
+{{Gameplay|general|false}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Diep.io
+|fr     = Diep.io
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Diep.io
+|pt-br  = Diep.io
+|ro     =
+|ru     = Diep.io
+|sv     =
+|tr     =
+|vi     = Diep.io
+|zh     = Diep.io
+}}
+[[Category:Diep.io]]

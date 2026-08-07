@@ -1,0 +1,506 @@
+= Console =
+
+[[File:Screenshot_(110).png|thumb|400px|A picture of what the Console looks like in-game.]]
+[[File:Home-key.jpg|thumb|220px|The location of the Home key on a keyboard.<ref name="consoleimage1">Remember to have Num Lock off.</ref>]]
+
+The '''Console''' can be accessed by pressing the Home button<ref name="console-mac"><code>Fn &larr;</code> on a Mac; <code>Ctrl Alt ^</code> on a Chromebook.</ref> and appears at the top of the screen. It works similarly to Chrome Developer Tools, allowing players to enter different commands and variables that can customize the game, mostly for coloring and rendering. Press Home again to close the Console. Reloading the page resets all commands, so they must be entered again. The Console cannot be activated on phones or tablets, as there is no Home key on their keyboards.
+
+==List of actions==
+===Current Commands===
+{| class="wikitable mw-collapsible mw-collapsed" width="100%"
+! scope="col" width="40%" |Commands
+! scope="col" width="60%" |Details
+|-
+| style="white-space:nowrap;" |con_toggle
+| style="white-space:nowrap;" |Toggles the console on or off
+|-
+| style="white-space:nowrap;" |game_spawn [name]
+| style="white-space:nowrap;" |Spawns with the given name, if possible
+|-
+| style="white-space:nowrap;" |help
+| style="white-space:nowrap;" |Prints help text<ref name="console1">This is a list of all commands.</ref>
+|-
+| style="white-space:nowrap;" |net_replace_color [id] [hex]
+| style="white-space:nowrap;" |Replace a color from the network color table
+|-
+| style="white-space:nowrap;" |net_replace_colors [hex1] [hex2] ...
+| style="white-space:nowrap;" |Replace colors from the network color table in order
+|-
+| style="white-space:nowrap;" |ui_replace_colors [hex1] [hex2] ...
+| style="white-space:nowrap;" |Replace colors from the UI color palette table in order
+|}
+
+Note: The color commands below use the default values. Players can replace the hexadecimal colors with their own. (The hex colors use the format <code>0xRRGGBB</code>, where <code>RR</code> is the red value in hexadecimal, <code>GG</code> is the green value in hexadecimal, and <code>BB</code> is the blue value in hexadecimal. Each value must be two digits, so a leading zero can be added if needed. Opacity values use <code>0</code> for transparent and <code>1</code> for solid, with decimals representing values in between.)
+
+{| class="wikitable mw-collapsible mw-collapsed" width="100%"
+|-
+! scope="col" width="40%" |Color Command
+! scope="col" width="60%" |Description
+|-
+| net_replace_color 0 0x555555
+| Smasher and Dominator Bases
+|-
+| net_replace_color 1 0x999999
+| Barrels, Spawners, Launchers, and Auto Turrets
+|-
+| net_replace_color 2 0x00B2E1
+| Body (You)
+|-
+| net_replace_color 3 0x00B2E1
+| Blue Team
+|-
+| net_replace_color 4 0xF14E54
+| Red Team
+|-
+| net_replace_color 5 0xBF7FF5
+| Purple Team
+|-
+| net_replace_color 5 0xC390D4
+| Purple Team (makes Purple Team use its original first color)
+|-
+| net_replace_color 5 0xE77FF5
+| Purple Team (makes Purple Team use its original second color)
+|-
+| net_replace_color 6 0x00E16E
+| Green Team
+|-
+| net_replace_color 6 0xD68165
+| Green Team (making Green Team brown, like it was formerly)
+|-
+| net_replace_color 7 0x8AFF69
+| Shiny Polygons (Green Square, Green Triangle, Green Pentagon)
+|-
+| net_replace_color 8 0xFFE869
+| Square
+|-
+| net_replace_color 9 0xFC7677
+| Triangle
+|-
+| net_replace_color 10 0x768DFC
+| Pentagon
+|-
+| net_replace_color 11 0xF177DD
+| Crashers
+|-
+| net_replace_color 12 0xFFE869
+| Arena Closers, Neutral Dominators, and Defender Ammo
+|-
+| net_replace_color 12 0xA0A0A0
+| Neutral Team (makes the Neutral Team use its original color)
+|-
+| net_replace_color 13 0x43FF91
+| Scoreboard
+|-
+| net_replace_color 14 0xBBBBBB
+| Maze Walls
+|-
+| net_replace_color 15 0xF14E54
+| Others (FFA)
+|-
+| net_replace_color 16 0xFCC376
+| Summoned Squares (Necromancer and Summoner)
+|-
+| net_replace_color 17 0xC0C0C0
+| Fallen Bosses, Sleeping Arena Closers
+|-
+| net_replace_color 18 0x35C5DB
+| Hexagon
+|-
+| net_replace_color 18 0xBF7FF5
+| Hexagon (makes Hexagon use its original first color)
+|-
+| net_replace_color 18 0xFCAD76
+| Hexagon (makes Hexagon use its original second color)
+|-
+| net_replace_color 18 0x8543FF
+| Hexagon (makes Hexagon use its original third color)
+|-
+| net_replace_colors 0x555555 0x999999 0x00B2E1 0x00B2E1 0xF14E54 0xBF7FF5 0x00E16E 0x8AFF69 0xFFE869 0xFC7677 0x768DFC 0xF177DD 0xFFE869 0x43FF91 0xBBBBBB 0xF14E54 0xFCC376 0xC0C0C0 0x35C5DB
+| All network colors
+|-
+| ui_replace_colors 0x43FFF9 0x82FF43 0xFF4343 0xFFDE43 0x437FFF 0x8543FF 0xF943FF 0xFCAD76
+| Stat colors and the backgrounds of achievements and upgrades (goes from Movement Speed to Health Regeneration)
+|-
+| ren_background_color 0xCCCCCC
+| Base color for the background
+|-
+| ren_border_color 0x000000
+| The area outside the map (overlayed on top of the inside-the-map color, semi-transparent)
+|-
+| ren_border_color_alpha 0.100000
+| Alpha for the area outside the map
+|-
+| ren_minimap_arrow_color 0
+| Color of the minimap arrow
+|-
+| ren_minimap_background_color 0xCDCDCD
+| Minimap
+|-
+| ren_minimap_border_color 0x555555
+| Minimap border
+|-
+| ren_health_fill_color 0x85E37D
+| Health bar
+|-
+| ren_health_background_color 0x555555
+| Health bar background
+|-
+| ren_xp_bar_fill_color 0xFFDE43
+| EXP bar
+|-
+| ren_score_bar_fill_color 0x43FF91
+| Score bar
+|-
+| ren_bar_background_color 0x000000
+| EXP bar, score bar, and scoreboard background
+|-
+| ren_stroke_solid_color 0x555555
+| Outlines (for <code>ren_stroke_soft_color false</code>)
+|-
+| ren_stroke_soft_color_intensity 0.250000
+| Outline opacity (for <code>ren_stroke_soft_color true</code>; the color is <code>#000000</code>, and this is the opacity)
+|-
+| ren_grid_color 0x000000
+| Grid lines (actual results vary, since the border is different for each section)
+|-
+| ren_grid_base_alpha 0.100000
+| Alpha for the grid lines
+|-
+| ren_shadow_alpha 0.14
+| Opacity of shadows on entities
+|-
+| ren_shadow_blur 12.694444444444445
+| Shadow blur radius around entities
+|-
+| ren_shadow_color 0x000000
+| Color of shadows on entities
+|}
+Note: The commands with [allow] and [show] use the same values as the commands with [bool] (<code>true</code>/<code>1</code> or <code>false</code>/<code>0</code>). The [playerId] and [clientID] are the ID of the player (shown in the Admin panel or via <code>ren_player_ids true</code>. For commands with [tankID], please refer to [https://diepio.fandom.com/wiki/Upgrades#Tank_IDs this page] for a list of tank IDs.
+{| class="wikitable mw-collapsible mw-collapsed" width="100%"
+! scope="col" width="40%" |Custom Games Commands
+! scope="col" width="60%" |Details
+|-
+| allow_boss_control [bool]
+| Sets whether or not players can control bosses
+|-
+| allow_fast_leveling [bool]
+| Sets whether or not fast leveling is allowed
+|-
+| style="white-space:nowrap;" |allow_new_joins [bool]
+| style="white-space:nowrap;" |Allows new connections
+|-
+| allow_self_destruct [bool]
+| Sets whether or not self destruct is allowed
+|-
+| allow_tank_switch [bool]
+| Sets whether or not switching is allowed
+|-
+| style="white-space:nowrap;" |ban [playerId]
+| style="white-space:nowrap;" |Ban a player from the server. CANNOT BE UNDONE
+|-
+|ban_tank [tankID]
+|Prevents a tank from being used
+|-
+|broadcast [duration] [...message]
+|Sends a notification to everyone
+|-
+| style="white-space:nowrap;" |demote [playerId]
+| style="white-space:nowrap;" |Revokes a player's admin permissions
+|-
+| style="white-space:nowrap;" |freeze_teams
+| style="white-space:nowrap;" |Prevents team switching
+|-
+| style="white-space:nowrap;" |join_team [num]
+| style="white-space:nowrap;" |Joins the team with the given id
+|-
+| style="white-space:nowrap;" |kick [playerId]
+| style="white-space:nowrap;" |Kicks a player from the server
+|-
+| kill_bosses
+| Kills all bosses
+|-
+| map_fixed_size [width] [height]
+| Sets the map to a fixed size
+|-
+| map_sbx_size
+| Sets the map to sandbox size
+|-
+|message [clientID] [duration] [...message]
+|Sends a notification to a specific player
+|-
+| promote [playerId]
+| Gives a player admin permissions
+|-
+| set_invulnerability [bool]
+| Sets your invulnerability (true/false)
+|-
+| set_max_level [num]
+| Sets the maximum possible level in the arena
+|-
+|set_scoreboard_visibility [show]
+|Sets whether or not you're visible on the scoreboard
+|-
+| set_shape_max_count [num]
+| Sets the max number of shapes (-1 to use default)
+|-
+| set_team [playerId] [num]
+| Forces a player to join the given team
+|-
+|set_spectator [playerId] [allow]
+|Sets a player's spectator permission
+|-
+| set_team_count [num]
+| Sets the max number of teams (cannot decrease)
+|-
+| show_leader_arrow [bool]
+| Sets whether or not the leader arrow is visible
+|-
+| spawn_boss [name]
+| Spawns a boss with the given name (remove spaces)
+|-
+|unban_tank [tankID]
+|Removes a tank ban
+|-
+| unfreeze_teams
+| Allows team switching
+|}
+
+{| class="wikitable mw-collapsible mw-collapsed" width="100%"
+! scope="col" width="40%" |Variables
+! scope="col" width="60%" |Details
+|-
+| style="white-space:nowrap;" |game_stats_build #
+| style="white-space:nowrap;" |Stat build to aim for. Must be each individual character.<br />Example: <code>556556556656664444884844888877233</code><br /><br />That queues a <code>01277727</code> build. It is the same as pressing <code>U</code> and queueing upgrades.
+|-
+| joystick_setting_auto_fire false
+| Automatically autofire
+|-
+| joystick_setting_floating false
+| Floating or fixed joysticks
+|-
+| joystick_setting_invert false
+| Swap left and right joysticks
+|-
+| joystick_setting_position both
+| Which joysticks to render
+|-
+| joystick_setting_scale 1
+| The factor to scale the joysticks by
+|-
+| joystick_setting_sensitivity_horizontal 100
+| Horizontal joystick sensitivity
+|-
+| joystick_setting_sensitivity_vertical 100
+| Vertical joystick sensitivity
+|-
+| net_latency_history_size 25
+| Number of samples to average latency with
+|-
+| net_predict_movement true
+| Enable client-side prediction for movement
+|-
+| ren_achievements true
+| Render achievements
+|-
+| ren_background true
+| Render background<ref name="console4">and grid</ref>
+|-
+| ren_background_color 13487565
+| Base color for the background
+|-
+| ren_bar_background_color 0
+| Background color for many bars in game
+|-
+| ren_border_color 0
+| Color for the area outside the map
+|-
+| ren_border_color_alpha 0.1
+| Alpha for the area outside the map
+|-
+| ren_cache_grid true
+| Cache grid rendering on a separate canvas
+|-
+| ren_changelog true
+| Render changelog
+|-
+| ren_context_reinitialization false
+| Reinitialize contexts if FPS is too low<ref name="console2">Browser heuristics.</ref>
+|-
+| ren_dark_mode false
+| Enables dark mode
+|-
+| ren_debug_collisions false
+| Render collidable debug info<ref name="console3">Those are not hitboxes.</ref>
+|-
+| ren_debug_grid false
+| Render spatial debug grid info
+|-
+| ren_debug_info false
+| Render some debug info on the server stats text
+|-
+| ren_disable_grid false
+| Disables the grid for extra performance
+|-
+| ren_fps false
+| Render FPS
+|-
+| ren_grid_base_alpha 0.1
+| Base alpha for the grid
+|-
+| ren_grid_color 0
+| Grid color
+|-
+| ren_health_background_color 5592405
+| Color for the health bar background
+|-
+| ren_health_bars true
+| Render health bars
+|-
+| ren_health_fill_color 8774525
+| Color for the health bar filling
+|-
+| ren_joystick_crosshair false
+| Render the joystick aim crosshair
+|-
+| ren_latency false
+| Render latency
+|-
+| ren_minimap_arrow_color 0
+| Color of the minimap arrow
+|-
+| ren_minimap_background_color 13487565
+| Background color for the minimap
+|-
+| ren_minimap_border_color 7960953
+| Border color for the minimap
+|-
+| ren_name_outline_blend 0.3
+| The amount of blending the name outline is from the name color
+|-
+| ren_names true
+| Render names
+|-
+| ren_pattern_grid true
+| Use canvas <code>createPattern</code> for the grid; it is faster but looks slightly worse
+|-
+| ren_player_ids false
+| Renders player IDs. For custom sandbox only
+|-
+| ren_profilers false
+| Render profiler charts
+|-
+| ren_raw_health_values false
+| Render raw health bar values
+|-
+| ren_score_bar_fill_color 4456337
+| Fill color for the score bar
+|-
+| ren_scoreboard true
+| Render scoreboard
+|-
+| ren_scoreboard_names true
+| Render scoreboard names
+|-
+| ren_shadow_alpha 0.14
+| Opacity of shadows on entities
+|-
+| ren_shadow_blur 13.125
+| Shadow blur radius around entities
+|-
+| ren_shadow_color 0
+| Color of shadows on entities
+|-
+| ren_shadow_x 5.25
+| Shadow X offset from the center of entities
+|-
+| ren_shadow_y 5.25
+| Shadow Y offset from the center of entities
+|-
+| ren_shadows false
+| Render entity shadows
+|-
+| ren_solid_background false
+| Render the background as a solid color, without the grid
+|-
+| ren_stats true
+| Render stat upgrades
+|-
+| ren_stroke_soft_color true
+| Renders strokes as a darker shade of the fill color
+|-
+| ren_stroke_soft_color_intensity 0.25
+| How much to blend black with the fill color (<code>0</code> = nothing, <code>1</code> = black)
+|-
+| ren_stroke_solid_color 5592405
+| Color for solid borders
+|-
+| ren_ui true
+| Render UI layer
+|-
+| ren_ui_scale 1
+| UI scale
+|-
+| ren_upgrades true
+| Render class upgrades
+|-
+| ren_use_shadow_color true
+| Use the provided color for shadows on entities
+|-
+| ren_xp_bar_fill_color 16768579
+| Fill color for the XP bar
+|-
+| ui_prevent_right_click true
+| Prevent right click from triggering the context menu
+|-
+| ui_safe_names false
+| Changes all names to safe versions
+|}
+
+===Removed Commands<ref>These commands previously worked in the Console and were listed after entering the <code>help</code> command, but were removed at one point. Entering these commands into the Console will no longer recognize them.</ref>===
+{| class="wikitable mw-collapsible mw-collapsed" width="100%"
+! scope="col" width="40%" |Variables
+! scope="col" width="60%" |Details
+|-
+| style="white-space:nowrap;" |<i><span style="color:#AFAFAF;">lb_force_region</span></i>
+| style="white-space:nowrap;" |<i><span style="color:#AFAFAF;">Force load balancer region</span></i><ref name="console5">Requires reconnect. The gamemode must also be appended, like <code>:tag:</code>.</ref>
+|-
+| style="white-space:nowrap;" |<i><span style="color:#AFAFAF;">lb_required_latency_samples 15</span></i>
+| style="white-space:nowrap;" |<i><span style="color:#AFAFAF;">Number of latency samples before picking the best region</span></i>
+|-
+| style="white-space:nowrap;" |<i><span style="color:#AFAFAF;">lb_search_duration 5000</span></i>
+| <i><span style="color:#AFAFAF;">Duration in ms until the best region is forced to be picked, even without enough latency samples</span></i>
+|-
+| <span style="color:#AFAFAF;">''lb_reconnect''</span>
+| <span style="color:#AFAFAF;">''Disconnect from the current server and find a new server''</span>
+|-
+| <span style="color:#AFAFAF;">''ren_minimap_viewport false''</span>
+| <span style="color:#AFAFAF;">''Render the viewable area as a rectangle on the minimap''</span>
+|}
+
+==Trivia==
+* The Console was inspired by a feature that can be opened by pressing the Home button in [http://www.muchgames.com/games/diepix-heroes-beta Diepix 2 (Diepix Heroes Beta)], a game made by Zeach.
+** Commands: <code>sentrygoingup</code>, <code>m28</code>, <code>givemethekeys</code>, <code>join_class ''Class name''</code>, <code>about</code>, <code>whatsnew</code>.
+* Multiple commands can be executed at once by separating them with <code>;</code>. Example: <code>ren_background_color 0;ren_grid_color 0xffffff</code>.
+
+==Footnotes==
+<references />
+{{Gameplay|feature}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Consola
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Konsola
+|pt-br  =
+|ro     =
+|ru     = Консоль разработчика
+|sv     =
+|tr     =
+|vi     = Console
+|zh     = 指令
+}}
+[[Category:Diep.io]]

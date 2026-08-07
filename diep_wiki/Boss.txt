@@ -1,0 +1,5 @@
+= Boss =
+
+#REDIRECT [[Bosses]]
+__STATICREDIRECT__
+[[Category:Redirect]]

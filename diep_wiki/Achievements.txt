@@ -1,0 +1,536 @@
+= Achievements =
+
+[[File:Achievements new ui.png|thumb|344x344px]]
+[[File:Achievement in game.png|thumb|What they look like in game.]]
+{{PA}} are rewards that may be earned for various feats. They were added to the game on February 21st. There are currently 50 achievements in total.
+
+If you earn an achievement, it will be saved if cookies are enabled. Once one is saved, it can be viewed in full color on the Achievement panel, accessible by clicking the Achievements button on the main screen. Until then, the achievement icon is in grayscale. There is no prize for finishing an achievement, except for possible bragging rights. There is still no prize for finishing all the achievements. 
+
+== Individual Achievements ==
+=== Initial 23 Release ===
+{|class="wikitable left mw-collapsible<!-- mw-collapsed-->" width="100%"
+!width="5%"|Order
+!width="30%"|Achievement
+!width="20%"|Condition
+!width="45%"|Image
+|-
+|align="center"|1
+|A moment to cherish forever
+|Destroy your first [[Tanks|Tank]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=A moment to cherish forever|Description=Destroy your first tank|Color = #66EAE6}}</center>
+<div style="display: none">[[File:A moment to cherish forever.png|thumb|250px|center]]
+</div>
+|-
+|align="center"|2
+|Git gud
+|Destroy 10 tanks
+|valign="center" align="center"|
+<center>{{Achievement|Name=Git gud|Description=Destroy 10 tanks|Color = #92EA66}}
+</center>
+<div style="display: none">[[File:GG.png|thumb|107px|center]]
+</div>
+|-
+|align="center"|3
+|Gitting gud
+|Destroy 100 tanks
+|valign="center" align="center"|
+<center>{{Achievement|Name=Gitting gud|Description=Destroy 100 tanks|Color = #EA6666}}
+</center>
+<div style="display: none">[[File:Gig.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|4
+|Got gud
+|Destroy 1000 tanks
+|valign="center" align="center"|
+<center>{{Achievement|Name=Got gud|Description=Destroy 1000 tanks|Color = #E7D063}}
+</center>
+<div style="display: none">[[File:Gog.png|thumb|121px|center]]
+</div>
+|-
+|align="center"|5
+|Starting out
+|Destroy something<ref>Things include Polygons and other tanks as well.</ref>
+|valign="center" align="center"|
+<center>{{Achievement|Name=Starting out|Description=Destroy something|Color = #6690EA}}
+</center>
+<div style="display: none">[[File:Starting out.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|6
+|Getting good
+|Destroy 500 things
+|valign="center" align="center"|
+<center>{{Achievement|Name=Getting good|Description=Destroy 500 things|Color = #9566EA}}
+</center>
+<div style="display: none">[[File:Gg.png|thumb|148px|center]]
+</div>
+|-
+|align="center"|7
+|Destroy EVERYTHING
+|Destroy 10000 things
+|valign="center" align="center"|
+<center>{{Achievement|Name=Destroy EVERYTHING|Description=Destroy 10000 things|Color = #E666EA}}
+</center>
+<div style="display: none">[[File:De.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|8
+|Gotta start somewhere
+|Destroy 10 [[Square]]s
+|valign="center" align="center"|
+<center>{{Achievement|Name=Gotta start somewhere|Description=Destroy 10 squares|Color = #E8B18A}}
+</center>
+<div style="display: none">[[File:0b0f52391cc0491cb4f446a600f1d3bc.jpeg|thumb|150px|center]]
+</div>
+|-
+|align="center"|9
+|Square hater
+|Destroy 500 squares
+|valign="center" align="center"|
+<center>{{Achievement|Name=Square hater|Description=Destroy 500 squares|Color = #66EAE6}}
+</center>
+<div style="display: none">[[File:SquareHater.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|10
+|These squares gotta go
+|Destroy 10000 squares
+|valign="center" align="center"|
+<center>{{Achievement|Name=These squares gotta go|Description=Destroy 10000 squares|Color = #92EA66}}
+</center>
+<div style="display: none">[[File:Tsgg.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|11
+|Fire power
+|[[Upgrades|Upgrade]] to [[Twin]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=Fire power|Description=Upgrade to Twin|Color = #E666EA}}
+</center>
+<div style="display: none">[[File:Screenshot 2017-02-22 at 8.55.09 AM.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|12
+|Eat those [[bullets]]
+|Upgrade to [[Machine Gun]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=Eat those bullets|Description=Upgrade to Machine Gun|Color = #E8B18A}}
+</center>
+<div style="display: none">[[File:Eat.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|13
+|Snipin’
+|Upgrade to [[Sniper]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=Snipin'|Description=Upgrade to Sniper|Color = #66EAE6}}
+</center>
+<div style="display: none">[[File:Snipin'.png|centre|thumb|150px]]
+</div>
+|-
+|align="center"|14
+|Ain’t no one sneaking up on ME
+|Upgrade to [[Flank Guard]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=Ain't no one sneaking up on ME|Description=Upgrade to Flank Guard|Color = #92EA66}}
+</center>
+<div style="display: none">[[File:擷取2.jpg|thumb|150px|center]]
+</div>
+|-
+|align="center"|15
+|Try some other [[Tiers|classes]] too
+|Upgrade to Sniper 100 times
+|valign="center" align="center"|
+<center>{{Achievement|Name=Try some other classes too|Description=Upgrade to Sniper 100 times|Color = #E666EA}}
+</center>
+<div style="display: none">[[File:TRYSOMEOTHERS.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|16
+|That was tough
+|Kill a [[Bosses|Boss]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=That was tough|Description=Kill a boss|Color = #66EAE6}}
+</center>
+<div style="display: none">[[File:Boss.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|17
+|Boss Hunter
+|Kill 10 bosses
+|valign="center" align="center"|
+<center>{{Achievement|Name=Boss Hunter|Description=Kill 10 bosses|Color = #92EA66}}
+</center>
+<div style="display: none">[[File:Bh.png|thumb|136px|center]]
+</div>
+|-
+|align="center"|18
+|Eh, you’re trying
+|Reach 1k points
+|valign="center" align="center"|
+<center>{{Achievement|Name=Eh you're trying|Description=Reach 1k points|Color = #EA6666}}
+</center>
+<div style="display: none">[[File:EH.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|19
+|Starting to git gud
+|Reach 10k points
+|valign="center" align="center"|
+<center>{{Achievement|Name=Starting to git gud|Description=Reach 10k points|Color = #E7D063}}
+</center>
+<div style="display: none">[[File:Stgg.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|20
+|You aren’t that bad at this
+|Reach 100k points
+|valign="center" align="center"|
+<center>{{Achievement|Name=You aren't that bad at this|Description=Reach 100k points|Color = #6690EA}}
+</center>
+<div style="display: none">[[File:Youarenotbadathis.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|21
+|Okay you’re pretty good
+|Reach 1m points
+|valign="center" align="center"|
+<center>{{Achievement|Name=Okay you're pretty good|Description=Reach 1m points|Color = #9566EA}}
+</center>
+<div style="display: none">[[File:Dabf1ddbad1e49e8ad2de30a02dbf371.jpeg|thumb|150px|center]]
+</div>
+|-
+|align="center"|22
+|Jackpot!
+|Get 20k points in a single kill
+|valign="center" align="center"|
+<center>{{Achievement|Name=Jackpot!|Description=Get 20k points in a single kill|Color = #E666EA}}
+</center>
+<div style="display: none">[[File:Ddd.jpeg|thumb|150px|center]]
+</div>
+|-
+|align="center"|23
+|LAAAAAAAAAAAAG
+|Play with over 1000 ms of latency<ref name="LAAAAAAAAAAAAG1">Server info, including latency, can be accessed by pressing L.</ref>
+|valign="center" align="center"|
+<center>{{Achievement|Name=LAAAAAAAAAAAAG|Description=Play with over 1000 ms of latency|Color = #E8B18A}}
+</center>
+<div style="display: none">[[File:7e21d07ae5ab00385393ff7ca6fc17ab.png|thumb|150px|center]]
+</div>
+|}
+
+=== Second Batch ===
+{|class="wikitable left mw-collapsible<!-- mw-collapsed-->" width="100%"
+! width="5%"|Order
+! width="30%"|Achievement
+! width="20%"|Condition
+! width="45%"|Image
+|-
+|align="center"|1
+|Three at the same time
+|Upgrade to [[Triple Shot]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=Three at the same time|Description=Upgrade to Triple Shot|Color = #EA6666}}
+</center>
+<div style="display: none">[[File:ThreeAtTheSameTime.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|2
+|I’ve got places to be
+|Upgrade to [[Tri-Angle]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=I've got places to be|Description=Upgrade to Tri-Angle|Color = #E7D063}}
+</center>
+<div style="display: none">[[File:Tri-Angle.png|center]]
+</div>
+|-
+|align="center"|3
+|BOOM, you’re dead
+|Upgrade to [[Destroyer]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=BOOM, you're dead|Description=Upgrade to Destroyer|Color = #6690EA}}
+</center>
+<div style="display: none">[[File:C06df80448b64286b655b4643bec1b75.jpeg|thumb|150px|center]]
+</div>
+|-
+|align="center"|4
+|Drones are love
+|Upgrade to [[Overseer]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=Drones are love|Description=Upgrade to Overseer|Color = #9566EA}}
+</center>
+<div style="display: none">[[File:F499105087414c61b2ab9d229c15d6c1.jpeg|thumb|150px|center]]
+</div>
+|-
+|align="center"|5
+|C + E<ref name="C + E1">When C (Auto Spin) and E (Auto Fire) are pressed, the Quad Tank’s bullets fly out in a spiral.</ref>
+|Upgrade to [[Quad Tank]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=C + E|Description=Upgrade to Quad Tank|Color = #E666EA}}
+</center>
+<div style="display: none">[[File:5b2e661ef0614217b28f79ab479c4dfd.jpeg|thumb|150px|center]]
+</div>
+|-
+|align="center"|7
+|Drones are life
+|Upgrade to Overseer 100 times
+|valign="center" align="center"|
+<center>{{Achievement|Name=Drones are life|Description=Upgrade to Overseer 100 times|Color = #E8B18A}}
+</center>
+<div style="display: none">[[File:Dal.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|8
+|Shiny!
+|???<ref name="???1">This achievement has not been officially announced by the Developer and thus is “secret”. Hover over the next reference to view it.</ref><ref name="???2">Destroy a {{CA|Rare Polygons|Rare Polygon}} to acquire.</ref>
+|align="center" valign="center"|
+<center>{{Achievement|Name=Shiny!|Description=???|Color = #66EAE6}}
+</center>
+<div style="display: none">[[File:Ghff.png|thumb|center|150px]]
+</div>
+|}
+
+=== Third Batch ===
+{|class="wikitable left mw-collapsible<!-- mw-collapsed-->" width="100%"
+! width="5%"|Order
+! width="30%"|Achievement
+! width="20%"|Condition
+! width="45%"|Image
+|-
+|align="center"|1
+|There are other classes?
+|Get to level 45 as a [[Tank|Basic Tank]]
+|align="center" valign="center"|
+<center>{{Achievement|Name=There are other classes?|Description=Get to level 45 as a basic tank|Color = #92EA66}}
+</center>
+<div style="display: none">[[File:Toc.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|2
+|It hurts when I do this
+|Ram into something
+|align="center" valign="center"|
+<center>{{Achievement|Name=It hurts when I do this|Description=Ram into something|Color = #EA6666}}
+</center>
+<div style="display: none">[[File:Ihwidt.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|3
+|Who needs bullets anyway
+|Ram into 100 things
+|align="center" valign="center"|
+<center>{{Achievement|Name=Who needs bullets anyway|Description=Ram into 100 things|Color = #E7D063}}
+</center>
+<div style="display: none">[[File:Wnba.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|4
+|Look mom, no cannons!
+|Ram into 3000 things
+|align="center" valign="center"|
+<center>{{Achievement|Name=Look mom, no cannons!|Description=Ram into 3000 things|Color = #6690EA}}
+</center>
+<div style="display: none">[[File:Lmnc.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|5
+|They ain’t a real tank
+|Destroy 100 [[Drones#Factory Drones|Factory Drones]]
+|align="center" valign="center"|
+<center>{{Achievement|Name=They ain't a real tank|Description=Destroy 100 factory drones|Color = #9566EA}}
+</center>
+<div style="display: none">[[File:They ain't a real tank.JPG|thumb|150px|center]]
+</div>
+|}
+
+=== Fourth Batch ===
+{|class="wikitable left mw-collapsible<!-- mw-collapsed-->" width="100%"
+! width="5%"|Order
+! width="30%"|Achievement
+! width="20%"|Condition
+! width="45%"|Image
+|-
+|align="center"|1
+|Now you really ain’t sneaking up on me
+|Upgrade to [[Twin Flank]]
+|valign="center" align="left"|
+<center><small>{{Achievement|Name=Now you really ain't sneaking up on me|Description=Upgrade to Twin Flank|Color = #E8B18A}}</small>
+</center>
+<div style="display: none">[[File:Тф.png|thumb|center|150px]]
+</div>
+|-
+|align="center"|2
+|Insert uncreative achievement name here
+|Upgrade to [[Assassin]]
+|valign="center" align="center"|
+<center><small>{{Achievement|Name=Insert uncreative achievement name here|Description=Upgrade to Assassin|Color = #66EAE6}}</small>
+</center>
+<div style="display: none">[[File:Ас.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|3
+|Huntin’
+|Upgrade to [[Hunter]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=Huntin'|Description=Upgrade to Hunter|Color = #92EA66}}
+</center>
+<div style="display: none">[[File:Ха.png|thumb|center|150px]]
+</div>
+|-
+|align="center"|4
+|Eat those pellets!
+|Upgrade to [[Gunner]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=Eat those pellets!|Description=Upgrade to Gunner|Color = #EA6666}}
+</center>
+<div style="display: none">[[File:Га.png|thumb|center|150px]]
+</div>
+|-
+|align="center"|5
+|BUILD A WALL
+|Upgrade to [[Trapper]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=BUILD A WALL|Description=Upgrade to Trapper|Color = #E7D063}}
+</center>
+<div style="display: none">[[File:Buildawall.png|thumb|center|150px]]
+</div>
+|-
+|align="center"|6
+|Can’t bother using both hands to play?
+|Upgrade to [[Auto 3]]
+|valign="center" align="center"|
+<center><small>{{Achievement|Name=Can't bother using both hands to play?|Description=Upgrade to Auto 3|Color = #6690EA}}</small>
+</center>
+<div style="display: none">[[File:А3.png|thumb|center|150px]]
+</div>
+|-
+|align="center"|7
+|Where did my cannon go?
+|Upgrade to [[Smasher]]
+|valign="center" align="center"|
+<center>{{Achievement|Name=Where did my cannon go?|Description=Upgrade to Smasher|Color = #9566EA}}
+</center>
+<div style="display: none">[[File:См.png|thumb|center|150px]]
+</div>
+|-
+|align="center"|8
+|2fast4u
+|Upgrade [[Movement Speed]] to its maximum value
+|align="center" valign="center"|
+<center>{{Achievement|Name=2fast4u|Description=Upgrade Movement Speed to its maximum value|Color = #E666EA}}
+</center>
+<div style="display: none">[[File:2fast4u.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|9
+|Ratatatatatatatata
+|Upgrade [[Reload]] to its maximum value
+|valign="center" align="center"|
+<center>{{Achievement|Name=Ratatatatatatatata|Description=Upgrade Reload to its maximum value|Color = #E8B18A}}
+</center>
+<div style="display: none">[[File:Re.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|10
+|More dangerous than it looks
+|Upgrade [[Bullet Damage]] to its maximum value
+|valign="center" align="center"|
+<center>{{Achievement|Name=More dangerous than it looks|Description=Upgrade Bullet Damage to its maximum value|Color = #66EAE6}}
+</center>
+<div style="display: none">[[File:Bd.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|11
+|There’s no stopping it!
+|Upgrade [[Bullet Penetration]] to its maximum value
+|valign="center" align="center"|
+<center>{{Achievement|Name=There's no stopping it!|Description=Upgrade Bullet Penetration to its maximum value|Color = #92EA66}}
+</center>
+<div style="display: none">[[File:Bp.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|12
+|Mach 4
+|Upgrade [[Bullet Speed]] to its maximum value
+|valign="center" align="center"|
+<center>{{Achievement|Name=Mach 4|Description=Upgrade Bullet Speed to its maximum value|Color = #EA6666}}
+</center>
+<div style="display: none">[[File:Bs.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|13
+|Don’t touch me
+|Upgrade [[Body Damage]] to its maximum value
+|valign="center" align="center"|
+<center>{{Achievement|Name=Don't touch me|Description=Upgrade Body Damage to its maximum value|Color = #E7D063}}
+</center>
+<div style="display: none">[[File:Bod.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|14
+|Indestructible
+|Upgrade [[Max Health]] to its maximum value
+|valign="center" align="center"|
+<center>{{Achievement|Name=Indestructible|Description=Upgrade Max Health to its maximum value|Color = #6690EA}}
+</center>
+<div style="display: none">[[File:In.png|thumb|150px|center]]
+</div>
+|-
+|align="center"|15
+|Self-repairing
+|Upgrade [[Health Regen]] to its maximum value
+|valign="center" align="center"|
+<center>{{Achievement|Name=Self-repairing|Description=Upgrade Health Regen to its maximum value|Color = #9566EA}}
+</center>
+<div style="display: none">[[File:Hr.png|thumb|150px|center]]
+</div>
+|}
+
+== Strategies ==
+It’s best to finish the achievement ‘Got Gud’ in [[Survival]] mode (which was removed when Mothership got added back), as lots of players spawn at level one and in a small area, allowing the player to battle low leveled players and kill them. Suggested classes for this strategy and game mode include using the Twin or the Machine Gun.
+
+If one is trying to finish ‘Destroy EVERYTHING’ quickly, the player needs to focus on destroying [[Polygons]] more than Bosses or other players. Crowd control tanks like the [[Penta Shot]], [[Octo Tank]], [[Battleship]], or [[Spread Shot]] will likely work, since the spread-out bullets are likely to destroy all nearby polygons quickly.
+
+== Trivia ==
+[[File:sidebar.png|thumb|344x344px|The Achievement Sidebar before the UI update]]
+*In earlier versions, achievements use be in menu if the mouse hovers to the right. The archievements themeselves would cycle though conveyor style, fading in and out of the screen.
+*The Square is the only specific polygon to be used for earning at least three achievements.
+**Player can also destroy Necromancer Drones for the achievements, as they are classified as "Squares" themselves. 
+***This doesn't work with Summoner Drones, however. 
+*Players could once achieve achievements in [[Sandbox]], but it was soon removed.
+*“There are other classes?” achievement used to be “Wait, there are other classes?”
+*As of the March 2nd update, the progress toward acquiring each achievement is now numbered as a percentage (only for achievements that this feature applies to; ones that involve quantity)
+*The colors of earned achievements are the UI theme colors (same ones as the game mode buttons, stats, etc.) looping repeatedly.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Patched or Removed Bugs ===
+[[File:BugAchievements.png|thumb|213x213px|What the “Achievements Not Hidden During Gameplay” Bug looked like before it was patched.]]
+*{{PC}} The entire Achievements list sometimes would not hide during gameplay, blocking part of the screen, before it was patched.
+}}
+
+== Footnotes ==
+<references/>
+{{Gameplay|feature}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Logros
+|fr     = Réalisations
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Osiągnięcia
+|pt-br  =
+|ro     =
+|ru     = Achievements
+|sv     =
+|tr     = Başarılar
+|vi     = Thành tựu
+|zh     = 成就
+}}
+[[Category:Diep.io]]

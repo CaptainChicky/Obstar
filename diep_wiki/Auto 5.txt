@@ -1,0 +1,158 @@
+= Auto 5 =
+
+{{Infobox
+|image     = <gallery>
+auto 5 icon 5.png|New Colors
+auto 5 icon 4.png|New Colors
+auto 5 icon 3.png|Old Name 2
+auto 5 icon 2.png|Old Name 1
+auto 5 icon 1.png|Old Design
+</gallery>
+|tier      = 4
+|next      = ''None''
+|previous  = [[File:Auto 3 icon new.png|50px|link=Auto 3]][[File:Quad tank icon new.png|50px|link=Quad Tank]]
+|barrel    = [[Auto Turrets]] (5)
+|id        = 40
+}}
+{{Unupgraded form|Auto 3}}
+Auto 5 is a Tier 4 tank in Diep.io. It upgrades from the [[Auto 3]] and [[Quad Tank]] at level 45.
+
+== Design ==
+=== Modern Design ===
+The Auto 5 has a design similar to the Auto 3, except for the fact that it has two additional [[Auto Turrets]] for a total of 5 Auto Turrets, hence its name. Its Auto Turrets are evenly placed around its body at 72-degree intervals.
+
+=== Old Design ===
+The Auto Tank, while it upgraded from [[Gunner]], had four Auto Turrets placed around its body at 90-degree intervals.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▲
+|BulletPenetration = —
+|BulletDamage      = ▼
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Bullet Size
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▼
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+|PrevClass=Quad Tank}}
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = 
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = 
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+|PrevClass=Auto 3}}
+*The Auto 5 gains two more Auto Turrets (from the Auto 3) that aim at anything in sight. Like a [[Dominator]], it has a locking mechanism. Once a target is spotted, even if something gets closer, the turret will continue to focus down the original target. However, if something more aggressive comes near, the cannons will prioritize that object; other players can use this to their advantage by not firing at the Auto 5 until they are very close.
+*Players can aim the Auto Turret(s) closest to their cursor by left-clicking, or by having [[Auto Fire]] turned on.
+*It can have a total of 3 turrets aimed at a single enemy (each turret has about 170° range).
+*The player can also aim away from their cursor by [[Controls#Tank Controls|right-clicking]] (or pressing shift).
+*No [[Stats]] are changed when upgrading from the Auto 3, although some are changed when upgrading from the Quad Tank:
+** Bullet Speed: 1.2x Tank (Higher than Quad Tank)
+** Bullet Damage: 2.8 (+1.2 for each point in Bullet Damage) (Lower than Quad Tank)
+
+== Strategy ==
+*<b>Strong Against:</b> Slow RoF Tanks, [[Smasher]]/Melee Tanks (only with high Movement Speed)
+*<b>Weak Against:</b> [[Invisibility|Invisible]] Tanks, [[Drone]] Tanks, [[Destroyer]] branch, Tanks with high DPS or concentrated fire such as the [[Sprayer]] or [[Triplet]], [[Sniper]] classes
+
+=== As the Auto 5 ===
+* The Auto 5 is especially useful for farming in the [[Pentagon Nest]], as this tank can shoot at the Pentagons while also aiming at the [[Crashers]] to keep them away. It is recommended that players stay near teammates, as an undefended Auto 5 can be taken out with ease. Because of this, it is best to invest some points into Max Health and Health Regeneration, or just into Movement Speed, to effectively flee to safety.
+* The Auto 5 is to be used defensively as their turrets aim at the most aggressive thing close to you. Do not assault without a tank that provides no concentrated fire and has good penetration as they can shoot off bullets for you.
+* Auto 5s are also very useful in team modes such as [[Tag]], as they provide supporting fire on many targets due to their numerous cannons. However, a disadvantage is that the turrets also attack all [[Polygons]] on sight, which removes the EXP sources for lower-Level tanks.
+* It is also useful when dealing with Bosses, Alpha Pentagons, etc, as some Cannons can attack the target, while the others can deal with enemies.
+*The Auto 5 is a great choice in [[Survival]], especially for the final stretch, when there are only a few players left. The Auto Turrets can detect enemy players and lead the player to them (though, sometimes Turrets might just be aiming at a polygon).
+
+=== Against the Auto 5 ===
+*[[Necromancer]]s are ridiculously effective against this tank due to the time it takes Auto Turrets to lock onto targets. Also, the turrets don’t target its square Drones, so it is easy to approach and swamp them with a blanket of minions, especially since they may only aim a maximum of three turrets. Be cautious of them when they are near teammates, however, as killing them will leave the player with too few Drones to defend against the other enemies.
+*Members of the Sniper branch, such as the [[Ranger]], are also effective for damaging Auto 5s since the Auto 5 is almost entirely unable to retaliate due to its much lower FoV. And since the Bullets of Snipers are so fast and powerful, they can easily punch through whatever the Auto 5 fires.
+*Fast rammers with high health and speed stats may also be able to kill the Auto 5 by surprising it. However, the Auto Turrets still deal a lot of damage (assuming they have high Bullet Stats), so it is a risky strategy.
+*[[Trapper]] classes, particularly the [[Tri-Trapper]] or [[Mega Trapper]], can advance to the Auto 5 by protecting themselves with traps. The Auto Turrets won’t be able to rip through traps well and therefore they won't be able to damage the player. This can make the Auto 5 helpless (assuming they don't run away).
+*Bullet spammers like the Triplet or the Sprayer excel against the Auto 5, as the Auto 5's Bullets aren't strong enough to penetrate through their bullets. However, if the Auto 5's Bullets are fast, they can reach the bullet spammer despite being weaker by “ghosting.”
+
+== History ==
+*When this tank was first added on 2nd August 2016, it was named Auto Tank, had four cannons, and upgraded from [[Gunner]].
+**During Auto Tank's tenure, [[Gunner Trapper]] was also added as a Gunner upgrade with a unique red icon. 
+*Later on the same day, its Auto Turret count was increased from four to five. It was changed to upgrade from the then unnamed [[Auto 3]], which upgraded from [[Flank Guard]].
+*Later on the same day, Auto Tank was renamed to Auto 5. This was the same update that gave Auto 3 its name.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://i.imgur.com/qblCg6s.png 2.26m by Unknown User☯]
+* 2 Teams: [https://i.imgur.com/qcMmE35.png 2.2m by ⚡Raiden Ei⚡]
+* 4 Teams: [https://youtu.be/DJeBBqgzUh0 2.34m by ⚡Raiden Ei⚡]
+* Maze: [https://i.imgur.com/XURJe5f.png 1.04m by Baller]
+
+=== Mobile ===
+
+* FFA: 1.56m by HZ6
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*This is one of the seven tanks that passively have [[Auto Spin]] activated, the others being the [[Mega Smasher]] (now {{CA|Removed}}), [[Landmine]], [[Smasher]], [[Spike]], [[Auto Smasher]], and [[Auto 3]].
+*This tank was previously called the Auto Tank, making it one of the two tanks to change their name, the other one being the [[Factory]]. This tank originally had 4 Turrets but got one more Turret at a later date.
+**The name now goes to the [[Auto Tank (tank)|Auto Tank]].
+*This tank used to be an [[Upgrades|Upgrade]] from the [[Gunner]], but that path was soon removed.
+*If the player right-clicks and holds at the very middle of the Auto 5 (as well as Auto 3), they can make all turrets shoot while facing directly straight from the tank.
+
+== Gallery ==
+<gallery>
+File:Auto 5.jpg|An '''Auto 5''' in action in [[Sandbox]]
+File:Auto 5 in Sandbox.png|Auto 5 in Sandbox
+File:Screenshot 107.png|An '''Auto 5''' in game.
+File:Auto 5 icon 5 blue.png|New Colors
+File:Auto 5 icon 4 blue.png|Old Colors
+File:Auto 5 icon 3 blue.png|Old Name 2
+File:Auto 5 icon 2 blue.png|Old Name 1
+File:Auto 5 icon 5 green.png|New Colors
+File:Auto 5 icon 4 green.png|Old Colors
+File:Auto 5 icon 3 green.png|Old Name 2
+File:Auto 5 icon 2 green.png|Old Name 1
+File:Auto5Transparent.png|An '''Auto 5'''.
+File:Aut05G.png|A green '''Auto 5'''.
+File:AutoVarious.png|An '''Auto 5''' with a [[Spike]] and an [[Overlord]].
+File:Auto5Target.png|'''Auto 5'''s can attack multiple targets at the same time. 
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Auto 5
+|es     = Auto 5
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Auto 5
+|pt-br  =
+|ro     =
+|ru     = Auto 5
+|sv     =
+|tr     =
+|vi     =
+|zh     = Auto 5
+}}
+[[Category:Auto Tanks]]
+[[Category:Diep.io]]

@@ -1,0 +1,125 @@
+= Spike =
+
+{{Infobox
+|image     = <gallery>
+spike icon 2.png|New Colors
+spike icon 1.png|Old Colors
+</gallery>
+|tier      = 4
+|next      =
+|previous  = [[File:Smasher icon new.png|50px|link=Smasher]]
+|barrel    =
+|id        = 51
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Smasher]] at level 45. The upgrade replaces the hexagonal base with 12 spikes surrounding the tank and increases its base [[Body Damage]] by 8 HP per hit.
+
+== Design ==
+The Spike has a similar design to the Smasher. It features a circular body surrounded by twelve black spikes which turn very quickly and are unique to the class. 
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = ▲
+|MovementSpeed     = ▲
+|HiddenStat1       =
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    =
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}The Spike, just like the Smasher, is a melee Class. It can’t upgrade the bullet [[stats]] since it doesn’t have a [[Barrel]] to shoot. As a Smasher-branched class, it can upgrade the [[Health Regen]], [[Max Health]], Body Damage and [[Movement Speed]] ten times instead of seven times. These [[Stats]] are not different from any other units of its Class, besides the base Body Damage of 8 HP more, and 10% extra Movement Speed, which is slightly higher than of any other tank, making the Spike the most potent melee tank in the game.
+
+Stats: 
+
+* Body Damage:
+** Against shapes: 28 (+4 for each point in Body Damage)
+** Against tanks: 42 (+ 6 for each point in Body Damage)
+** Against bullets: 7 (+1 for each point in Body Damage)
+* Movement Speed: 1.1x Tank
+
+== Strategy ==
+*<b>Strong Against:</b> Low DPS, Smasher branch, Ramming [[Booster]]s, unskilled [[Overseer]] type classes, anything if working with another rammer.
+*<b>Weak Against:</b> [[Destroyer]] branch, High DPS, [[Necromancer]]s, high RoF tanks, Trapper classes.
+
+=== As the Spike ===
+*The Spike can easily defeat other melee Classes, but ramming something leaves the player relatively vulnerable to attack by any tank with high DPS or RoF.
+*Maxing out all stats except for Health Regen is a possibly effective strategy, as this will allow the player to defeat almost any other melee class, and also take bullet spammer Classes like the [[Triple Twin]] and [[Penta Shot]] by surprise. However, even with 10 Movement Speed, this tank is not suitable for chasing tanks with moderate to high DPS because the player may be damaged, or even killed before reaching their target.
+*It is advisable for the player to be wary of other Spikes with this build, as colliding when both are at full health will kill both Spikes at the same time. Other spikes may also attack when the player is at low health. When facing an extremely high DPS tank like the [[Triplet]], players should choose flight (run away).
+*Other Spikes still can attack the player, even though the player <b>is</b> a Spike.
+*In [[2 Teams]] or [[4 Teams]], the player may aim to ‘pin’ an enemy tank by blocking the path back to their [[Base]], leaving them vulnerable. The player can also force them towards their Base this way. However, doing so may expose the player to the enemy team’s [[Base Drones]].
+*Using an “odd” build in a team [[Game Modes|gamemode]] may also be an effective strategy because the player can catch other players off guard. Spikes can play both attack and defense well, so they should stick near teammates, especially fellow Spikes.
+*Teaming with another rammer or be beneficial as bullet spammers and overseer-class tanks are unable to target two or more entities effectively, allowing one tank to distract an enemy tank and another to kill it from behind.
+
+=== Against the Spike ===
+*If a player is a Class with high DPS, they shouldn’t have a problem fending off the Spike. All the player has to do is keep it in the line of fire, and their bullet knockback will probably push the Spike back enough. The player should still be careful, however, as skilled Spikes can attempt to catch them off guard.
+
+*The player should aim to flee at all costs if they are another melee class. There’s not much they can do unless the Spike is at low health, and even then it’s a risky prospect to take it on. If the player’s opponent is another Spike, a possible idea would be to tap them slightly and see which tank has more Health and Body Damage, if both of them are at full health. If the opposing Spike has equal or more Health or Body Damage, then the player should not ram it until it loses some health.
+
+*As a Class from the Destroyer branch, the player may use the threat of their extremely powerful Bullet to keep the Spike at bay. If they don’t have enough Reload to get a second shot at the Spike, they should run, as most Spikes have maxed-out health. If the player has enough health to not get killed instantly by the Spike, they should challenge it. It all depends on the Max Health of the Spike and the player’s ability to get two shots off before it kills them.
+
+*Classes from the Overseer branch can be very situational. If the Spike has low health, the player should chase after it before it can regenerate. If it has full health, then they should use their Drones as a defensive shield and flee. The player should <b>never</b> let the Spike get in-between them and their Drones because the Spike can then kill them instantly. [[Necromancer]]s with all of their Drones should have no problem dealing with a Spike, but like the [[Overlord]], and the Overseer, the player should not let the Spike get in between them and their Drones.
+*[[Gunner]]-based classes (except for the [[Streamliner]] and [[Gunner Trapper]]) work surprisingly well against a Spike. The player could use a build with a few points in Movement Speed to back off as much as possible while shooting decent bullets to slow the Spike down. That way, the Spike may either retreat or die.
+
+*Classes from the [[Tri-Angle]] branch with bullet builds are certainly the best counter to the Spike, as they are very fast and can chase it down. They must still be careful, however, and not get too close to it or it may turn back and kill them. If it attempts to do so, the player should either move as though they were retreating but keep shooting it or just run away until they’re far enough to resume attacking. [[Fighter]]s should strafe it with their side barrels to avoid danger.
+
+== Record ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/AJrrYCE 1.5m by Blazeknight]
+* 2 Teams: [https://www.youtube.com/watch?v=P2DRoweTsRU 3.41m by Sonic]
+* 4 Teams: [https://imgur.com/HNj3Kuk 2.18m by Jorgito Gamer]
+* Maze: [https://imgur.com/6MKLu2l 950k by Dlupa]
+
+=== Mobile ===
+
+* FFA: 1.47m by Panic
+* 2 Teams: 1.35m by Bacteria
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+[[File:spike transparent facing up.png|thumb|A depiction of Spike facing up. Notice how the spikes are not aligned with the up direction, making this tank asymmetrical.]]
+*By default, Spike's shell is rotated clockwise by approximately 7.5 degrees. This makes Spike and [[Triple Twin]] the only two tanks that are asymmetrical.
+**This fact can be proven by examining the class tree.
+*Spike deals 8 HP more damage than any other tank, making it the most powerful melee tank in the game.
+*Spike's shell is constructed out of four triangles.
+*This tank is the sixth class to have a locked auto spin, aside from the [[Smasher]], <s>[[Mega Smasher]]</s>, [[Auto 5]], [[Auto 3]], [[Auto Smasher]], and the [[Landmine]].
+*When maximized [[Stats|Body Damage and Maximum Health]], it is approximately 40% the Strength of an [[Alpha Pentagon]], dealing 1,149.2/3,000 Damage to the [[Alpha Pentagon]] (Leaving 1,850.8 HP).
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Patched or Removed Bugs ===
+*{{PC}} If two Spikes of the same team collided, they would both “bounce” a goodly distance away from each other at high speeds. This bug also affected the Smasher, albeit to a lesser degree.
+}}
+
+== Gallery ==
+<gallery>
+File:Spike in Sandbox.jpg|Spike in Sandbox
+File:All smasher upgrades are terrible.png|A visualization showing how every Smasher shell is not properly aligned with what "forward" should be. Auto Smasher's auto turret is facing the rear to show exactly where the direction of "back" is. Landmine and Spike have guides to show exactly where the lines of symmetry are to showcase how they are not aligned whatsoever.
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Spike
+|es     = Spike
+|fr     = Spike
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Spike
+|pt-br  =
+|ro     =
+|ru     = Spike
+|sv     =
+|tr     =
+|vi     = Spike
+|zh     = Spike
+}}
+[[Category:Diep.io]]

@@ -1,0 +1,74 @@
+= Mega Smasher =
+
+{{Infobox
+|image     = 
+<gallery>
+mega smasher icon 2.png|10th anniversary
+mega smasher icon 1.png|Old
+</gallery>
+|previous  = [[File:Smasher icon new.png|50px|link=Smasher]]<ref>No longer does, as the Mega Smasher was removed from [[Diep.io]].</ref>
+|next      =
+|tier      = 4
+|barrel    =
+|id        = <span class = "grey">37</span>
+84
+}}
+The {{PA}} was a Tier 4 tank in Diep.io. It upgraded from the [[Smasher]] at level 45. Its main difference from the [[Smasher]] was its added knockback reduction. On August 7th, it was removed after the knockback reduction was added to all Smasher branches.
+
+On the game's 10th anniversary, it was added again as an upgrade to Smasher at Level 45. It retains its knockback reduction ability. 
+
+== Design ==
+The Mega Smasher looked very similar to the normal Smasher but had a much larger outer hull, which was about 1.13 times as big as Smasher's hull.
+
+== Technical ==
+Like the Smasher, it suffered less knockback from projectiles, but had more knockback resistance than the Smasher, as well as being far more durable. Like the rest of the tanks in the Smasher branch, its [[Stats]] could be upgraded up to 10. However, like the other Smashers, it could only have points in Movement Speed, Health Regeneration, Max Health, and Body Damage.
+
+The original version of this tank (ID 37) was slightly slower than the Smasher. Due to the slower Movement Speed, some players preferred not to upgrade, and instead stuck with the Smasher, or upgraded to the [[Landmine]] for its ability to turn [[Invisibility|Invisible]].
+
+== Strategy ==
+*<b>Strong Against:</b> Slow Tanks, Snipers, Smasher and Landmine and low health tank.
+*<b>Weak Against:</b> Bullet Spammers such as the [[Triplet]] or [[Sprayer]], Drone classes like the Overseer and Overlord and Destroyer 
+===As the Mega Smasher===
+*Similar strategies to the Smasher apply; avoid [[Overseer]]s and [[Overlord]]s.
+*Attack cornered or unaware tanks.
+*Mega Smashers were perfect guards/teammates for any tank with high coverage, such as the [[Penta Shot]] or [[Octo Tank]], as well as Overseers & Overlords, as their weakness is a lack of defense.
+*Mega Smashers could outmatch all non-Smasher body build tanks, the main problem being slower speeds, so it was advisable to invest upgrade points in Movement Speed.
+*Bullet Spammers are very hard to ram, it is best to keep away from them.
+===Against the Mega Smasher===
+*Bullet spammers were very effective against this tank, as they spam a large number of bullets in a short amount of time, overwhelming the Mega Smasher. This works best if they have a focused fire tank, like the Triplet or the Sprayer.
+*Overseer and its branches could make light work of this tank. An Overlord with maxed out reload can easily kill this tank.
+*[[Destroyer]] and its upgrades can kill this tank easily. All they need to do is use their recoil to boost towards the Mega Smasher, then hit it with two bullets, which will kill the tank.
+*Tri-Angle and its upgrades can fight this tank if they are using a glass cannon build. However, they should back away if they are using a rammer build.
+*When upgrading to Mega Smasher, the only buff the Smasher gets is increased knockback reduction. Therefore, a Level 45 Smasher is acceptable against this tank.
+
+== Trivia ==
+*Due to the thicker hexagonal shell, this tank looked like the largest playable tank in the game.
+**However, its hitbox is the same size as a Level 45 tank.
+*Like the Smasher, the developers originally wanted this to be a secret tank branch, but after everyone realized its existence, they revealed it in the [[Changelog]] and added another upgrade alongside it, Landmine.
+*The most likely replacement for this class is the [[Spike]] since it has increased body damage.
+*This is the second class removed from the game. The Mega Smasher was removed because the knockback reduction ability of the Smasher branch was removed, rendering the Mega Smasher a completely useless Upgrade, as its only purpose was to increase knockback reduction.
+*Mega Smasher can be found inside the legacy mobile version's asset from version 1.2.0 to 1.3.0. However, it went unused and never got added to the actual game.
+*The tank was re-added during the game's 10th anniversary. 
+**While it retains its knockback reduction, its base movement speed remains the same with Smasher.
+**It was the only extra tank to be available at Level 45 for the event. All other tanks were Level 60. 
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Mega Smasher
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Mega Smasher
+|pt-br  =
+|ro     =
+|ru     = Mega Smasher
+|sv     =
+|tr     =
+|vi     = Mega Smasher
+|zh     = Mega Smasher
+}}
+[[Category:Diep.io]]

@@ -1,0 +1,85 @@
+= Dual-Barrel =
+
+{{Stub}}
+{{WIP}}
+{{Infobox
+|image     = <gallery>
+DualBarrelcurrent.png|Current design
+DualBarrelOld.png|Scrapped design
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Shotgun icon old.png|50px|link=Shotgun]]
+|barrel    = [[Cannon]] (1)
+|id        = 60
+}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Shotgun]] at level 45.
+
+== Design ==
+The Dual-Barrel features a wider Machine Gun barrel (almost like a [[Manager]]), overlapping two smaller Machine Gun-like barrels that arrange like a Twin.
+
+== Technical ==
+The Dual-Barrel Shot features a mechanic where the left mouse button fires the left [[Cannons|cannon]] and the right mouse button fires the right cannon. Each cannon fires twelves bullets.
+
+Upon upgrading from Shotgun, the Reload speed is reduced (increased Reload time). 
+
+* Bullet Speed: TBA
+* Bullet Penetration: 1.2 (+0.9 for each point in Bullet Penetration)
+* Bullet Damage: 3.5 (+1.5 for each point in Bullet Damage)
+* Reload time: 90t (-7t for each of the first 3 points, -6t for the 4th point, -5t for each of the last 3 points in Reload)
+
+== Strategy ==
+*<b>Strong Against:</b>  Rammers, tanks caught by surprise, slower tanks, drone class
+*<b>Weak Against:</b>  Bullet spammers, sniper branch
+
+=== As the Dual-Barrel ===
+
+A strategy while using the Dual-Barrel is to fire both sides of the shotgun at once by pressing both the right and left mouse button at the same time to shoot a large cluster of bullets. 
+
+== Records ==
+
+=== PC ===
+
+* FFA: 506.8k by Fire
+* 2 Teams: 774k by GLITCHER TM
+* 4 Teams: [https://www.youtube.com/watch?v=UZtZJVYXG-U 736.8k by Corrupt X]
+* Maze: -
+
+=== Mobile ===
+
+* FFA: -
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+
+* When first introduced to the beta, each cannon of Dual-Barrel fires six small bullets instead of twelves. This was changed to buff the tank.
+* The tank's name was shortened from "Dual-Barrel Shot" to "Dual-Barrel", possibly to stop its name from leaking outside its upgrade icon.
+
+== Gallery ==
+<gallery>
+File:Dual-barrel shot in action 1.webp|Dual-Barrel in action
+File:Dual-Barrel In Sandbox.jpg|Dual-Barrel in Sandbox
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     =
+|zh     =
+}}
+[[Category:Diep.io]]

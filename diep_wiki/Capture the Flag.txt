@@ -1,0 +1,49 @@
+= Capture the Flag =
+
+{{Stub}}
+{{Mode
+|image         =CTFgameplay2.png 
+|conditional?  = yes
+|closure       = First team to capture 10 flags from the enemy team.
+|button        = CTF_Button.png
+|teams         = 2
+|bosses?       = no
+|specials      =
+}}
+
+'''Capture the Flag''' is a [[Game Modes|Game Mode]] in [[Diep.io]] that is similar to other win-based game modes like [[Domination]]. It is based on the traditional outdoor sport with the same name. In this mode, there are two teams, each have two flags and a center base, and the objective is to be the first team to capture the other team's flag, located at the team's secondary bases, and bring it safely back to their own center base 10 times.
+
+== Gameplay ==
+This game mode is a minigame in which tanks of either team must capture flags of the opposing team 10 times first to win. A player can obtain a flag by ramming it, at which point the flag will follow said player. To capture it, the player with the flag must make it back to the center base of their own team. 
+
+Each team starts out with one center base and two secondary bases at opposite side of the map. The center base acts like bases in 2 Teams and 4 Teams, preventing enemies and their projectiles from entering, with the exception being that there is no Base Drones. The secondary bases, one above and one below the center base for each team, house the flag and have no effects on enemies. Each secondary base only has one single flag. If a flag of gets captured, it will respawn in its corresponding secondary base.
+
+A player can obtain/pick up a flag from the opposing team by ramming it (shooting it has no effects). A player from a team can only obtain flags of the opposing team. When a flag is obtained by a player, it will follow the player that picked it up wherever they go. Carrying a flag slows the player down. A player can carry more than one flag, but it will cost them a lot of Movement Speed as a result. When a player carries a flag back to the center base of their team, the flag is captured, and their team score a point. The flag would then respawn at its corresponding secondary base. If the player dies, any flag they are carrying will be dropped at the spot.
+
+There's a time limit on how long a player can hold on to a flag. When the time runs out, the flag will be dropped and stop following the player, and said player won't be able to pick it up for a short amount of time. If a flag is not at the center of its secondary base and is not carried by a player, it will stay still for a few seconds before automatically move back to its secondary base.
+
+At the beginning of the game, there's a barrier at the center of the arena that stretches the length of the map vertically, preventing players from opposite teams from interacting with each other as well as letting them prepare for the real battle. The barrier is removed after 5 minutes. 
+
+== Strategy ==
+To be added...
+
+== Arena Closing ==
+In this game mode, the Arena Closes only if one of these requirements are met:
+
+* Diep.io is being updated.
+* One team captures 10 flags before the other team does.
+* The rotation timer for minigame is up. 
+
+== History ==
+* Capture the Flag mode was added on December 4th, 2025.
+
+== Trivia ==
+
+* The base for this mode was a Beta mode called "Vault." This mode has the same layout with the current Capture the Flag, except:
+** There is no secondary base, flags or barrier.
+** The center bases can take damage. Each base has 10,000 HP.
+** The goal of the mode was to destroy the other team's base. This essentially makes this mode a simplified version of [[Breakout]]. 
+{{GameNav}}
+
+== Gallery ==
+[[Category:Diep.io]]

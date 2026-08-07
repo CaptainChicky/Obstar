@@ -1,0 +1,127 @@
+= Tri-Angle =
+
+{{Infobox
+|image     = <gallery>
+tri-angle icon 4.png|New Colors
+tri-angle icon 3.png|Old Colors
+tri-angle icon 2.png|Old Icon
+tri-angle icon 1.png|Nameless
+</gallery>
+|tier      = 3
+|previous  = [[File:Flank guard icon new.png|50px|link=Flank Guard]]
+|next      = [[File:Fighter icon new.png|50px|link=Fighter]][[File:Booster icon new.png|50px|link=Booster]]
+|barrel    = [[Cannons]] (3)
+|id        = 8
+}}
+{{For|the red [[Polygon]]|Triangle}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Flank Guard]] at level 30 and upgrades to the [[Fighter]] and [[Booster]] at level 45.
+== Design ==
+The Tri-Angle features a circle body with a [[Tank|Basic Tank's]] cannon mounted at the front, and two propulsion barrels on its rear.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Rear Bullet Damage
+|HiddenStat2       =Recoil (front cannon) 
+|HiddenStat3       =Recoil (rear cannon) 
+|HiddenStat4       = 
+|HiddenStat1Val    = ▼▼▼
+|HiddenStat2Val    =▼▼ 
+|HiddenStat3Val    =▲▲ 
+|HiddenStat4Val    =
+}}The Tri-Angle has three [[Barrels]]. One faces the front and deals considerable damage. The other two are much weaker and are mostly only used for propulsion. When moving in the same direction it shoots, the recoil from the rear-barrels will propel the tank forwards, potentially doubling its speed (depending on the amount of [[Stats#Reload|Reload]] it has) in the process. All 3 [[Cannons]] have the same reload as a [[Tank]] of the same build. However, while projectiles fired from the main cannon are just as durable, Bullets fired by the barrels at the back are just 20% as strong. They despawn in about half the time (1.5 seconds).
+
+Stats: 
+
+* Front: Same as [[Tank]]
+* Rear: 
+** Bullet Damage: 1.4 (+0.6 for each point in Bullet Damage) 
+
+== Strategies ==
+*<i>Strong Against:</i> Assassin branch, [[Drones|Drone]] tanks, Low-level tanks, Slow tanks.
+*<i>Weak Against:</i> High Burst-Damage tanks, High DPS tanks, Spread-spammers.
+
+=== As the Tri-Angle ===
+Unlike other classes, the Tri-Angle branch is particularly flexible with the builds they can use. (Due to their innate forward-recoil). All of the Tri-Angle’s builds fall under one of the following categories: Glass cannons, Bullet Rammers, and Rammers; each with playstyles that are distinct to them.
+*As a [[Builds#Rammers|Body Damage build]], the player should use their speed to avoid projectiles (As the knockback received will slow them down), and charge at the enemy if distracted, or if the enemy is not on the 'Weak Against' list. If they encounter a [[Smasher]] (which can upgrade its stats up to 10 instead of 7), try to tap it to test its stats. If the Smasher regenerates very quickly from the ram, refrain from making contact. If it doesn't, you might have a chance by tapping it, regenerating, tapping it again until its health gets low enough for you to kill it. Beware, however, that the Smasher's momentum is so big that if it suddenly changes directions and hits, you will die.
+*Players using this tank should avoid charging at their enemy head-on, especially if they are being fired at. Instead, try to weave in through the projectiles and slowly get closer until the opponent can be struck. If below 30% HP the player should consider retreating, regen its health and try again.
+*Think twice before entering a fight when a high Burst-Damage tank like the [[Destroyer]] is near, since unless you have a large amount of health, one bullet at the right angle could potentially one-shot you.
+*As a Bullet Rammer Tri-Angle, the player should only consider putting up to two points into Bullet Speed. Two points are just enough to keep up with a max speed and Reload Tri-Angle. This, combined with maxing Bullet Penetration can create a Bullet wall that serves for both protection and offensive fire.
+*It is the player’s choice of the amount of health they want to upgrade at the cost of speed. It should be noted, however, that the most efficient way to spend Health points past level 36 (durability-wise), is to always invest 1 or 2 more points on Body Damage than Max Health.
+*Due to the player’s forward recoil — retreating from a fight may be difficult when using bullet builds. As one would have to completely turn to achieve max speed — but wouldn't be able to protect its rear that way. ‘Tap-firing’, or clicking the mouse repeatedly over a short time will stop the rear-cannons from firing every time, allowing you to move at normal speed while shooting backward. This lets you put some distance between you and the enemy before turning around and retreating fully.
+*Due to its high Front-Cannon’s DPS, the Tri-Angle is very effective against [[Overseer]], [[Overlord]], [[Manager]] and [[Necromancer]] (As the enemy drones usually can't be respawned faster that they can be taken out). However, one should keep in mind that the momentum or burst damage of multiple drones is still extremely high, and thus a certain distance should be kept until an opening arises.
+*The [[Sniper]] and its upgrades are usually easy prey when moving forwards, due to their low reload. The player should use their movement speed and dexterity to avoid the projectiles or tank them with their Bullet-Cloud, closing in for the kill while taking minimum damage. If not facing (and thus shooting towards) the Sniper, however, the player should retreat, turn or try to put some distance between them and the enemy. Projectiles not previously weakened by the Front-Cannon can still deal considerable damage.
+*The slower you go, the more bullets you can group in front of your tank, the bigger your momentum is/more damage you can tank.
+*When charging in a given direction and unsure of what’s ahead, releasing the WASD keys regularly (while shooting continuously), will allow you to slow down your tank on demand so that your Bullet-Cloud or Shield can be momentarily strengthened.
+*Avoid collisions with Body Damage tanks before you weaken them. Bullet-Rammer builds can use their Bullet-Clouds to severely weaken Rammers before colliding with the tanks themselves. However, due to their still very high momentum — if the rammer changes directions quickly it could still kill you (Given its health was high enough or that it managed to avoid your cloud).
+*[[Destroyer]]s and [[Hybrid]]s are major threats to a body damage Tri-Angle. Their projectile’s recoil, combined with the fact that they can either build Body Damage or Bullet Damage makes it very difficult to ram into them. If one wants to kill this tank, they should try to bait the Destroyer into chasing them, then making a sharp turn as soon as they boost. This allows you to kill them before they have the time to reload another bullet.
+
+=== Against the Tri-Angle ===
+*A Tri-Angle can easily be countered by other Tri-Angles or [[Booster]]s. [[Machine Gun]]s, [[Sprayer]], [[Gunner]]s, [[Hybrid]]s or [[Triplet]]s, as their projectiles and high fire rate simply go through the Tri-Angle’s projectiles while also being able to protect themselves from Body Damage Tri-Angles.
+*If the player is a basic tank, they should move to the side sharply as the Tri-Angle comes in to ram them. Its momentum and the user’s shock will make it fly way past the player. This ought to be done multiple times and the Tri-Angle should simply give up. The player should remember to stay away from the border or Maze walls when doing this.
+*As an Overseer, Overlord, Necromancer, or Manager, the player should avoid trying to send their [[Drones]] directly at the Tri-Angle. Chances are, the opposing Tri-Angle may see this as an opportunity to strike back, most likely destroying the player. Instead, the player should keep their Drones around them and try to find cover from other tanks.
+*Using the [[Destroyer]] branch might also be an effective counter, as the Destroyer’s [[Bullets]] deal a very large amount of damage. Although the Tri-Angle can be extremely fast, its bullets are weaker than a normal tank’s bullets would be, the Destroyer Bullets will be able to pierce through its bullets and kill it. If it uses a Bullet [[Builds|Build]], however, the player could retreat, as their recoil could make them fast enough to outrun it.
+
+==[[Achievements]]==
+{{SideBox|*<b>I’ve got places to be</b> — Upgrade to Tri-Angle.
+|{{Achievement|
+|Color = #FB6969
+|Name = I've got places to be
+|Description = Upgrade to Tri-Angle}}
+}}
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/A2kjsVV 2.15m by RYS]
+* 2 Teams: [https://imgur.com/MVZCiuv 2.08m by Minty]
+* 4 Teams: [https://www.youtube.com/watch?v=fkGp-IMGY5E 1.91m by RYS]
+* Maze: [https://youtu.be/XDtQUeBvIkk 1.25m by RYS]
+
+=== Mobile ===
+
+* FFA: 1.75m by Moonlight
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+==Trivia==
+*The Tri-Angle’s name is based upon the “triangle” shape.
+*The Tri-Angle along with the [[Fighter]] are the third-fastest branches in diep.io, the second being the [[Booster]] and the first being [[Annihilator]].<!-- This might be inaccurate (Booster v Annihilator) -->
+
+== Gallery ==
+<gallery>
+Tri-angle.jpg|What the Tri-Angle looks like in-game.
+Screenshot 2017-04-11 17-08-13.jpg|A Tri-Angle using its recoil to propel forward.
+TAgainstM.jpg|A Tri-Angle was fighting a [[Machine Gun]].
+</gallery>
+
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Tri-Angle
+|es     = Tri-Angle
+|fr     = Tri-Angle
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Tri-Angle
+|pt-br  =
+|ro     =
+|ru     = Tri-Angle
+|sv     = Tri-Angle
+|tr     =
+|vi     = Tri-Angle
+|zh     = Tri-Angle
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

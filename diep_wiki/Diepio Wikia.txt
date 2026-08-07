@@ -1,0 +1,4 @@
+= Diepio Wikia =
+
+#REDIRECT [[Project:Home]]
+[[Category:Redirect]]

@@ -1,0 +1,187 @@
+= Game Modes =
+
+{{WIP|Need to add Birthday game mode for Diep.io's 10th anniversary}}
+
+
+[[File:Gamemodes as of 8 31 24.png|thumb|300x300px|Game mode selection as of August 31th, 2024.]]
+
+The {{PA}} are the features in [[Diep.io]], that determine how the players play. There are currently nine Game Modes in Diep.io. These are in order: [[Free For All|FFA]], [[2 Teams]], [[4 Teams]], [[Maze]], [[Domination]], [[Tag]], [[Capture the Flag]], [[Breakout]], [[Sandbox|and Sandbox]]. Each game mode has different mechanics; for example, the Maze game mode has walls preventing players from freely wandering around the map. There are a few mini-game modes where there is a winning condition.
+
+Players can switch Game Modes before they enter the game by clicking the drop down at the left of the region selection. In earlier versions of the game, these were individual buttons at the top of the screen. 
+
+==Current Game Modes==
+These game modes are always available. These have no strict win condition.
+[[File:FFA.png|thumb|320x320px|A player in Free For All]]
+
+===<b>FFA <i>(Free For All)</i></b>===
+{{Main|Free For All}}
+The player spawns into the Arena at [[Levels|Level]] 1, like in every other game mode, as a [[Basic Tank]] ready to explore and work its way to the top, having no special quirks as the first Game Mode.
+
+The goal in Free For All is to work one’s way to the top of the [[Scoreboard]]. To get experience, kill any enemy tanks or [[Polygons]]. This was the only game mode in Diep.io for a while, before Team DM was introduced.
+
+===<b>2 Teams</b>===
+[[File:2TeamMode.png|thumb|320x320px|A battle in 2 Teams]]
+
+{{Main|2 Teams}}
+As the title states, players are split into 2 separate teams. A player's Level one Basic Tank spawns as either a red or blue tank in a designated area of the map. Points are gained the same way as in FFA, but the player can’t destroy tanks of their same color. Only red tanks can destroy blue, and vice versa. Wandering too close to the enemy’s spawn area will alert the  [[Base Drones]], who will swarm and kill any nearby enemy on sight. Any Bullets that travel into the opponent’s base will disappear. These two factors prevent spawn killing, unlike in FFA.
+
+Also unlike FFA, the scoreboard displays what team color each player is. The main player's goal of 2 Teams is to have everyone on the scoreboard be on their team. After a team has filled the scoreboard for a certain amount of time, [[Arena Closing|the arena will be closed]]. On September 18th, the now-defunct [[Team Deathmatch|Team DM]] was split into two separate game modes: 2 Teams and 4 Teams. Teams are chosen depending on the number of players in a team. Usually, newly-joined players will spawn on the team with the least players.
+
+===<b>4 Teams</b>===
+[[File:TDMDefending.png|thumb|320x320px|A battle in 4 Teams]]
+
+{{Main|4 Teams}}
+A game mode similar to 2 Teams, except all players are split into 4 separate teams now. The player's tank will spawn either in the red, blue, purple, or green (formerly brown) team. Otherwise, gameplay is exactly the same as 2 Teams, with the added complexity of two additional teams bearing onto the player. The end goal is the same - have everyone on the scoreboard belong on the player's team. This game mode was split from Team DM on September 18th, 2016. Much like 2 Teams, teams are chosen depending on the number of players in a team. Again, if only one team colour is on the scoreboard then after a while, [[Arena Closing|the arena will be closed]].
+
+===<b>Maze</b>===
+[[File:Maze walls.png|thumb|320x320px|A tank playing in the Maze surrounded by Maze Walls]]
+{{Main|Maze}}
+Maze mode is essentially FFA but with a caveat: random walls litter the map, making survival much more difficult, as it is easy to get lost, cornered, and trapped. Maze walls are completely solid, and cannot be penetrated by tanks or their Bullets; only [[Crashers]] and Arena Closer Bullets can pass through them. These walls have friction, so grinding against them will slow the tank down. The walls also have a lot of bounciness, causing any speeding tanks to rebound off them (but without inflicting any damage to the tanks).
+
+The [[Pentagon Nest]] along with its Crashers still exist in this game mode, though they might be entrapped in the walls (however, as stated before, Crashers <i>can</i> move through walls).
+
+Unlike in other game modes, [[Bosses]] do not spawn in Maze. After 5 hours have passed since the start of the game, the match is closed.
+
+===<b>Sandbox</b>===
+[[File:YellowNicksSandbox2.png|thumb|320x320px|Players in sandbox.]]
+
+{{Main|Sandbox}}
+Sandbox mode is for testing classes and builds. It is possible to invite other players to the room by pressing the “Copy party link” button and sharing the link with friends. The arena’s size along with the number of shapes that spawn in it varies depending on the number of players connected to it.
+
+====<b>Controls</b>====
+<code>K</code> - Level up. Maximum level is 45, even for special classes. Holding K will level up the tank quickly.
+
+<code>\</code> (Or other keys, possibly depending on the keyboard the player have) - Cycle between all available classes
+
+<code>O</code> - Self-destruct instantly.
+
+<code>;</code> - Enable/Disable God Mode (may not work on some keyboards)
+
+All tanks start out small, even Tier 4 classes, but, as normal, grow in size as they gain levels.
+
+[[Bosses]] still spawn in Sandbox, given 50-60 minutes have passed.
+
+==Mini-Games (Rotating Game Modes)==
+These game modes are open temporary at a time. They have a strict win condition, resetting once it is won. There are currently four.
+
+===<b>Domination</b>===
+[[File:Autodominator.png|thumb|320x320px|The Blue Team attacking a Dominator captured by the Red Team.]]
+
+{{Main|Domination}}
+In Domination, players and their teammates work together to capture four [[Dominator]]s located on the map, while also competing with the opposite team for control.
+
+Dominators are powerful, stationary turrets, and can quickly destroy any tanks careless enough to venture too close. To capture the Dominators, players have to deal damage to them until their health bars are depleted. When a Dominator is captured, it takes on the color of the tank that dealt the last blow, regains all its health, and will attack all tanks of the opposite color. Until it is captured, a Dominator remains yellow, signifying that it is neutral, and will attack all tanks. Neutral Dominators need to be killed only once to be captured, but enemy Dominators become Neutral Dominators on kill instead of being immediately captured.
+
+Once a Dominator is captured for the team, a player on that team can control it by pressing H, if there is not another player already controlling it.
+
+Once a team claims all four Dominators, the game ends and [[Arena Closer|Arena Closers]] spawn to shut down the server. Leveling up in this game mode is quicker, as XP gain has been doubled to speed up the game.
+
+===<b>Tag</b>===
+[[File:TagInfobox.png|thumb|320x320px|A battle in Tag.]]
+
+{{Main|Tag}}
+Tag is a game mode similar to [[4 Teams|Team Deathmatch]] with no bases and a win condition. Initially, the players will spawn at random teams and points in the map. Available Teams are Red, Green, Blue, and Purple. As usual, players with the same color will be unable to damage each other. It is, however, possible to switch teams on purpose by suiciding into the desired color.
+
+The player's aim of the game is to convert every single player into their team. Once a team has “tagged” every player in the map, the game ends and [[Arena Closing|Arena Closers]] come in to restart the match. If another player kills them, they will respawn on the team that killed the player. If a player dies because of a polygon, however, they will stay on their team’s color.
+
+The leaderboard shows the number of players each team has. As time elapses, the arena itself shrinks, at around every 12-13 seconds to speed up the game.
+
+===<b>Breakout</b>===
+[[File:Breakoutinfobox.png|thumb|320x320px|Breakout at the start of match.]]
+[[File:Breakout_minimap_example.png|thumb|120x120px|The mini map showing claimed territory.]]
+
+{{Main|Breakout}}
+Featuring a turf-war style of gameplay where two teams claim territory in the form of interactive tiles. Players start on opposing corners of the map. The objective is similar to that of Domination where one team has to claim all of the tiles from the enemy team. These tiles resemble [[Base|Bases]] and will take damage from most forms of ammunition. Unclaimed tiles appear similar to Maze walls. Whether unclaimed or from an opponent, these tiles will block projectiles from outside of their territory (there can still be intruders!). Players are only able to capture new tiles while within their territory.
+
+If one or more player(s) remain stationary in a tile for too long, the game may attempt to reset the tile they are standing on. These are indicated by a warning message at the top and the color flashing yellow for a few seconds. Any player within these will be instantly killed by a collapsing wall and the tile becomes unclaimed (white).
+
+The scoreboard shows the percentage of capture by both teams. 
+
+Like other cycling game modes, once a team captures all tiles from the enemy team, Arena Closers will appear to eliminate remaining players to prepare for a new match. Leveling is accelerated in this game mode.
+
+=== Capture the Flag ===
+{{Main|Capture the Flag}}
+[[File:CTFgameplay.png|thumb|211x211px|A Blue Firework trying to stop a Red Penta Shot from bringing a Blue Flag back to Red's center base]]
+The newest game mode in Diep.io as of the time of this edit. Two teams race against each other to be the first to capture 10 flags from the other team.
+
+Each team has 3 bases, one center base and 2 secondary bases. The secondary bases house the flag. Players can grab a flag from the other team by touching it. A flag is captured when it reaches the center base of the other team, scoring a point for said team. The scoreboard shows the number of flags captured by both teams. A barrier divides the map in half vertically at the beginning of the game, allowing players to prepare. After a few minutes, the barrier disappears and the fighting commence. 
+
+Once a team has captured 10 flags, the arena closes. 
+
+==Removed Game Modes==
+{{Removed|section}}
+
+===<b>Team Deathmatch</b>===
+[[File:TeamDM_MODE_Icon1.png|thumb|170x170px|The now removed Team DM mode button.]]
+<b>Team Deathmatch</b>, <b>TDM</b> or <b>Team DM</b>, was a game mode in Diep.io, where players randomly spawned in <span style="font-weight:normal;">either two or four team servers while </span>working together. This game mode required more EXP to level up as compared to Domination or Mothership. This game mode has now been split into 2 Teams and 4 Teams.
+
+===<b>Mothership</b>===
+{{Main|Mothership (Game Mode)}}
+[[File:Mothership-fight.png|thumb|320x320px|Two opposing [[Mothership (Tank)|Motherships]] engaged in battle.]]
+
+A game mode similar to Team DM and Domination, but both teams piloted Motherships, and there were no more than 2 teams. Motherships were massive hexadecagons, with 1 spawner per side, controlled by players, and switched off the person in control every 5 minutes. The players' aim of the game was to destroy the enemy Mothership while defending their own. Leveling up in this game mode was very quick, as XP gain had been tripled to speed up the game. There also are no bases, or spawn areas, as the Motherships could simply hide in those zones.
+
+Just like Domination, if one of the teams won, the Arena Closers came in, destroyed the players and surviving Mothership, and started a new server.
+
+===<b>Survival</b>===
+[[File:TwinvsAC.png|thumb|330x330px|Survival when the Arena is being closed]]
+{{Main|Survival}}
+Before the game, if there are not enough players, everyone who joins will need to wait until there are at least 10 players. When there are enough players, a ten-second countdown will start. Other players can still join while the countdown is taking place. When the countdown is over, everyone will spawn and nobody will be able to join the server anymore. Once a player dies, the player will not be able to respawn on the same server, and the player will be redirected to another server instead. The last player wins, and if there is one player left, the arena closes. As the players are killed, the arena shrinks. Leveling up in this game mode is quicker, as XP gain has been multiplied by 3 and there is a passive gain of XP to speed up the game.
+
+==History== 
+*Mothership existed since June 15th, 2016.
+**Maze was added on September 22, 2016, replacing Mothership.
+**Mothership was re-added again on January 2nd, 2023; replacing Survival.
+*Before September 18th, 2016, 2 Teams and 4 Teams existed as a single game mode, the now-removed Team DM. Whether a player was placed into 2 Team or 4 Team battle was random.  
+**Team DM had existed since May 29th, 2016.
+* Also on September 18, it has been confirmed in the [[Changelog]] that Mothership mode will be removed soon, so those servers can be used for a new game mode.
+*Sandbox was added on September 3, 2016.
+*Before September 3rd, 2016, you had to press the tab key to switch Game Modes, this was changed to buttons as players didn't know how to switch Game Modes.
+*After Tag was removed due to lag issues, the developer decided to bring it back 15th of August.
+**In the old Tag, you kept all your upgrades if you died.
+*In older updates, players would be taken to an entirely new server at the end of a game of Domination or Mothership, but as of an update in late June or early July the server is just reset by Arena Closers, and the map is renewed.
+*As of July 20th, the player is blue and everyone else is red in FFA.
+*Domination was added on June 2nd, 2016. It is the first game mode with a win condition.
+*Each one of the Gamemode's icons were revamped in the June 9th, 2022 update. 
+** Tag Mode's icon is now a pun.
+*As of January 2nd, 2023, Mothership, Domination and Tag were converted into one single mode, rotating every 24 hours.
+*As of July, 2024, landing page UI changed the buttons to be a drop down instead of on top of the screen.
+*On August 29th, 2024, Breakout is added to the pool of cycling game modes.
+*On December 4th, 2025, Capture the Flag is added, becoming the newest mode as of this edit.
+
+==Trivia==
+*The locations of bases in Domination change within each server.
+*For a very short time, Tag featured a Dominator in the center of the arena, though capturing this Dominator did not affect the scoreboard or whether a team won.
+*A region selector was added on February 25th, 2022 which allows players to change what server region they would play on and also changed game mode selection buttons.
+*In some older versions of the game, the only way to switch Game Modes was by pressing the tab key, which cycled through the Game Modes.
+
+==Bugs==
+{{Bugs}}
+{{BugList|
+=== Unpatched Bugs ===
+[[File:Umm..png|thumb|250px|The “Unable to load font” bug on the title screen]]
+*{{PC}} The web page is sometimes unable to load the font of the game, resulting in various texts like those in [[Game Modes]] and “Copy party link” buttons not showing up, though they can still be clicked and are fully functional.
+**Another symptom of this issue is how the name input box uses the browser’s default font rather than the game’s.
+**This bug is local, possibly due to browser issues, and it will not be experienced by everyone. Refreshing cache or waiting for a while would fix the issue.
+}}
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|en     = Game Modes
+|es     = Modos De Juego
+|fr     = Modes de jeu
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Tryby gry
+|pt-br  =
+|ru     = Режимы игры
+|sv     =
+|tr     =
+|vi     = Chế độ chơi
+|zh     = 遊戲模式
+}}
+[[Category:Diep.io]]
+[[Category:General Information]]

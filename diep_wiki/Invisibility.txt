@@ -1,0 +1,80 @@
+= Invisibility =
+
+[[File:Final_manager_GIF.gif|thumb|250px|What the Manager looks like when turning invisible.]]
+{{PA}} is an ability exclusive to the [[Manager]], [[Stalker]], and [[Landmine]], and is used for defense, evasion, or deception. It is activated only when a player is not moving or firing.
+
+== Technical ==
+[[File:invisibility march 15th 2024.gif|thumb|300px|Moving the cursor over your own tank makes it visible to yourself!]]
+Invisibility engages when the player is stationary and not firing, but disengages slightly when the player moves or shoots. Once engaged, the tank will become transparent (along with the health bar, although the player will be able to see it). Damaging the tank dispels the invisibility a bit. When positioning the cursor close to the tank, the player may see themselves without any other players seeing them.
+
+[[Crashers]] will not be able to see invisible tanks and will seek out other targets should it become invisible. However, Crashers can still hit invisible tanks if they are in the way of its target, dissipating the invisibility and alerting other Crashers (and enemy tanks) to the invisible tank’s presence. Since there are often a great many Crashers moving around the [[Pentagon Nest]], this makes it a poor place to hide.
+
+== Users ==
+*[[Stalker]] - ~2.2s for Invisibility
+*[[Manager]] - ~2.35s for Invisibility
+*[[Landmine]] - ~13.015s for Invisibility
+
+== Strategy ==
+Players can maintain invisibility by slightly moving a very short distance at a time. This slightly reveals the player but allows Body Damage builds to get close to their opponent slowly before closing in for the kill. The [[Stalker]] is best used to snipe enemies from close by to get a few more hits on the target. The [[Manager]] is best used to silently farm or to use the tactics of the Stalker. The [[Landmine]] is best used to ram into [[Tanks]] with the [[Invisibility#Body Damage Strategy|Body Damage Strategy]].
+
+Probably the best game Mode for application of invisibility is [[Maze]]. A player must find an area with high tank-traffic (possibly a narrow passage), shielded from stray bullets and crashers, and sit there. Then, they let an enemy player come within point-blank range (for stalkers), an open fire. This is risky as the player may be a rammer, but for others, they can be destroyed like so. Entry points to large fenced in areas, narrow passages, and such places are ideal. Trying to employ such a strategy in wide, open areas is inadvisable. The enemy can escape or the player can be struck by stray bullets.
+
+In all [[builds]], invisibility lends an effective way of secretly moving behind enemy lines and attacking those that pass nearby. Moving into an uncrowded area where few tanks go and ambushing those that pass by is a very useful strategy for quickly climbing the [[Scoreboard]], so long as the player can fade back into invisibility before being spotted by enemies. This strategy may become obsolete should the player become the leader, as enemies will be tipped off to the player's location; however, in an update, the leader arrow was slightly nerfed, so other players will no longer see the arrow once they come within a certain distance of the leader.
+
+=== [https://diepio.fandom.com/wiki/Landmine Landmine] Strategy ===
+[[File:Final_landmine_GIF.gif|thumb|200px|What the Landmine looks like when turning invisible.]]
+This is especially effective as the Landmine but poorly effective as the Manager. Due to the Landmine being built for body damage, it is ideal for this usage. Wait for an unsuspecting tank to move within range, then rush forward and slam them until they die. Afterward, it is best to fade back into invisibility or to quickly retreat a good distance if it has been spotted. The Stalker can also pull off this build with sufficient Body Damage and Max Health. If a player invests the rest into [[Bullets|Bullet]] attributes then he may be able to utilize both the [[Invisibility#Sniper Strategy|Sniper Strategy]] and the Body Damage Strategy. However, the Manager is least effective at this, and should only be used in self-defense while the remaining attributes go to [[Drones|Drone]] upgrades because of the presence of its Drones (and the respawning of them) will tip-off anyone nearby to its presence.
+
+=== [https://diepio.fandom.com/wiki/Stalker Stalker] Strategy ===
+[[File:Final_stalker_GIF.gif|thumb|200px|What the Stalker looks like when turning invisible.]]
+Only usable by the Stalker, the Sniper Strategy entails waiting for enemies to approach within range of either the tank's [[Bullets]], and then sniping them, after which it quickly returns to invisibility or flee as needed.
+
+For full utilization, a Stalker would have to invest almost every perk in [[Bullet Speed]], [[Bullet Penetration]], and [[Bullet Damage]] ([[Reload]] is also helpful for botched shots) to make a quick end of its would-be victims. However, they can suitably utilize both this and the [[Invisibility#Body Damage Strategy|Body Damage Strategy]] simultaneously with the 0/7/6/6/7/7/0/0 attribute allocation.
+
+=== [https://diepio.fandom.com/wiki/Manager Manager] Strategy ===
+For Managers there is more room for error, being able to chase an enemy with your [[Drones]], but it entails more risks due to its location being generally easier to discover because of the presence of said Drones. Avoid [[Necromancer]]s unless their Drones are far enough away that the Manager can kill it before its Drones return.
+
+This only works for the Manager. Use a rammer build, except put the last 5 Skill Points into drone speed. Then when an enemy comes into range, have the [[Drones]] chase the enemy towards the Manager, so they bump into you.
+
+== Drawbacks ==
+There is an approximately 2-second delay after becoming stationary before invisibility takes effect, and an even longer delay for Landmines (about 10 seconds). This makes it easier to be spotted. Also, for both the Stalker and the Landmine, it is entirely impossible to attack without becoming at least partially visible, which makes attacks on groups unwise, as their allies will turn on you for killing their comrade. Additionally, [[Base Drones]], [[Arena Closer]]s and AI-controlled [[Dominator]]s will still be able to see invisible tanks.
+
+In [[FFA]], [[2 Teams]], and [[4 Teams]], a major drawback of invisibility is that it works too well. When you become the Leader, everyone in the lobby gets an arrow pointing toward your location, which disappears only when they get close. Should you become the leader, you may wish to abandon a solo strategy in favor of working with teammates, at least until someone passes you on the [[Scoreboard]]. In FFA however, there is no remedy for it, and you must adjust your usual strategy to work with the handicap until you die.
+
+In [[Tag]], the player cannot be fully invisible. Instead, they will be partially invisible to stop them from hiding and making the game go on indefinitely.
+
+== History ==
+* Before the [[Changelog#August_11th,_2016|2016 August 11th Update]], there was a faintly visible outline when players were invisible.
+* Before the [[Changelog#March_15th,_2024|2024 March 15th Update]], there was no way to see yourself while invisible.
+
+== Trivia ==
+[[File:INVISIBILITY.png|thumb|220x220px|Invisibility in [[Tag]]]]
+*Tanks that go fully invisible cannot be seen by auto turrets such as those of the [[Auto 3]], [[Auto 5]], [[Auto Gunner]], [[Auto Trapper]] or [[Auto Smasher]].
+**There is some controversy about this, as some have claimed that they have been targeted by [[Auto Turrets]] even after going invisible. This is likely because the Auto 3 and Auto 5 tanks can manually direct one or two Auto Turrets when they choose to do so, and can, therefore, continue to manually shoot at invisible tanks so long as they noticed them become invisible.
+*The Stalker was the first tank with this ability, followed by the Manager, and then most recently by the Landmine.
+*Invisible classes are still targeted by [[Arena Closer]]s, even if they have already or aren't seen turning invisible.
+*Managers can still spawn [[Drones]] without dispelling their invisibility.
+*The Developer made invisible tanks fully invisible due to players changing the display colors and being able to see the silhouettes.
+**Invisible classes still don’t go fully invisible in Tag.
+*Invisibility on the Landmine has been nerfed several times, making players more reluctant to utilize the Manager and Stalker classes, although the Landmine remained popular due to its rammer build stats and it still has the Invisibility ability unlike the [[Smasher]], until it was surpassed by the [[Spike]], which had more Body Damage, but moved slower.
+
+{{Gameplay|mechanics}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Tàng Hình
+|zh     = 隱形
+}}
+[[Category:Diep.io]]

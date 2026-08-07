@@ -1,0 +1,67 @@
+= Green Triangle =
+
+{{Polygon
+|image     = <gallery widths="185">
+green triangle polygon 2.png|New Colors
+green triangle polygon 1.png|Old Colors
+</gallery>
+|rarity    = Extremely rare
+|hp        = 300
+|xp        = 2,500
+}}
+The {{PA}} is an extremely rare [[Polygons|Polygon]] in [[Diep.io]], and the third strongest in regards to health. When killed, it rewards 2,500 [[Levels|XP]] to the player who deals the final shot. It is approximately 10 times stronger than a regular [[Triangle]]. The only two [[Polygons]] to be confirmed stronger than this one are the [[Green Pentagon]] and the [[Alpha Pentagon]]. These have a one in a million chance of spawning instead of a normal triangle.
+
+== List of Confirmed Videos ==
+[[File:DiepGreenTriangle.png|thumb|65px|A clear image of a green triangle.]]
+*{{PL|1 = https://www.youtube.com/watch?v=85lc5M3UvDc|2 = Green Triangle in Domination}}
+*{{PL|1 = https://www.youtube.com/watch?v=CFztVI_JS7s|2 = Green Triangle spotted by Adasba}}
+*{{PL|1 = https://www.youtube.com/watch?v=OzxAaELoKPk|2 = Green Triangle spotted by Lumalee}}
+
+== Trivia ==
+*When the player is killed by this shape, the death screen will say “You were killed by: Triangle” instead of “You were killed by: Green Triangle”, much like every other Green Polygon in the game.
+*The Green Triangle is very similar to the regular [[Triangle]] if the player uses the [[Console]] on triangles.
+*The Green Triangle is the same size and shape as a regular triangle.
+*It is the 2nd most rare [[Polygons|Polygon]], the rarest being the [[Green Pentagon]].
+
+== [[Achievements]] ==
+{{SideBox|*<b>Shiny!</b> — Kill a green polygon(Listed as “???” due to the secretive nature of Green Shapes)
+|{{Achievement
+|Name        = Shiny!
+|Description = ???
+|Percentage  =
+}}
+}}
+
+== Trivia ==
+*Despite the name Green Triangle being picked up by the community, the actual game just considers it a type of Triangle and names it as such.
+
+== Gallery ==
+<gallery widths="185">
+Green-Triangle-Savaphoong-Ursuul.png|Green Triangle spotted by {{MW|Ursuul}}
+Green Tri.png|Green Triangle spotted by {{MW|Mother Of Ships|MOS}}
+Green Tri Cropped.png|Green Triangle cropped by {{MW|Jimmy is back}}
+Shiny.png|Destroying the green triangle will give you the “Shiny!” achievement.
+2017-08-15 GREEN SQUARE FOUND!.png|Green Triangle Found by {{MW|NiceSlimeGaming|NiceSlimeGaming (jimbo)}}
+2017-08-15 (1).png|The Achievement
+Destroy.png|A Green triangle's final moments.
+</gallery>
+
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Zielony Trójkąt
+|pt-br  =
+|ro     = Triunghiul Verde
+|ru     = Green Triangle
+|sv     =
+|tr     =
+|vi     = Tam giác Xanh
+|zh     = 綠色三角形
+}}

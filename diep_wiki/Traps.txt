@@ -1,0 +1,57 @@
+= Traps =
+
+[[File:Traps.png|thumb|220x220px|The different types and sizes of Traps]]{{PA}} are a type of ammunition, fired from a [[Launcher]]. Traps are shaped like concave hexagons or three-pointed stars.
+
+== Technical ==
+*Traps move forward, quickly losing velocity before becoming stationary.
+*Traps last for a long time: 24 seconds for traps spawned from the Trapper, Mega Trapper, Overtrapper and Auto Trapper, though only 10 seconds for Tri-Trapper. Trap lifetimes are fixed and are not affected by any [[Stats]].
+*Traps can be shot to move them, but only by enemy tanks (and the launcher of the Trap for a limited amount of time).
+*If playing on [[2 Teams]] or [[4 Teams]], traps created by a player cannot hurt members of their team.
+*Traps do have health, and if they take enough damage, (i.e. from bullets), they will fade away and disappear.
+
+== Users ==
+*[[Trapper]]: This tank uses a single Launcher.
+*[[Tri-Trapper]]: This upgrade gives the tank three Launchers instead of one, but with a significantly shorter Trap lifespan.
+*[[Mega Trapper]]: This upgrade gives the Trapper much larger Traps, with a longer [[Reload]] time but increased damage and penetration.
+*[[Gunner Trapper]]: This upgrade has one Launcher on the back that shoots slightly larger Traps, and two [[Gunner]] [[Cannons]] in the front.
+*[[Overtrapper]]: This upgrade has one launcher, and two [[Drones|Drone]] [[Spawners]]. The placement of these guns is like the [[Tri-Angle]], with the Launcher in the front, and Spawners at the back. The drones are similar to the [[Hybrid]], in that they cannot be controlled.
+*[[Auto Trapper]]: This upgrade has one Launcher and an [[Auto Turrets|Auto Turret]] on the top of the tank.
+*[[Dominator|Trapper Dominator]]: This tank uses eight, equally spaced Launchers. It is only playable in the [[Domination]] game mode.
+*[[Defender]]: This [[Boss]] tank uses three, equally spaced Launchers and three Auto Turrets on top of it in a triangular pattern.
+
+== Types ==
+Small Trap: They have the power of exactly two Bullets of the basic [[Tank]]. Trapper, Tri-Trapper, Auto Trapper and Overtrapper use these Traps, they have the longest lifespan, except the Tri-Trapper’s Traps which last only slightly longer than the Mega Trapper’s.
+
+Medium Trap: The Gunner Trapper’s Traps are slightly bigger than the Trapper, Tri-Trapper, and Overtrapper’s Traps, but are smaller than the Mega Trapper’s. However, it does equal damage as a small Trap.
+
+Mega Trap: The size of the Trap it uses is similar to the size of an [[Annihilator|Annihilator’s]] Bullet. They are more than twice as strong as small Traps, and they have a power of more than 5 Bullets of the basic Tank. It is rarely worthwhile to destroy these Traps, as they will often die on their own before you can fully deplete their health. This trap is exclusive to the Mega Trapper.
+
+== Trivia ==
+*Unsurprisingly, all playable tanks that use Traps can upgrade from the [[Trapper]].
+**However, in a new update, it made the Overtrapper an [[Upgrades|upgrade]] of the [[Overseer]] as well as the Trapper, and the Gunner Trapper an upgrade of the [[Gunner]].
+*Only two of the six Trap users released on July 18th had names when the update first dropped: The Trapper and the Tri-Trapper. Later the same day; however, the Mega Trapper was named.
+**Days later the Overtrapper and Gunner Trapper were given names.
+**On August 15, 2016, the Auto Trapper was added.
+*Originally, the Traps could bounce off the boundary wall, thus this was a very good advantage for Gunner Trapper to stay at the corner and shoot while the Traps bounce off to your front.
+*Traps resemble caltrops in a way, with sharp apexes that protrude from the center, as well as the nature of their use.
+*If you die, respawn, then hit your Traps from before you died, they will damage you. If you die from these traps, your death will be attributed to "An unnamed tank". This phenomenon can be explained by the fact that all ammo is attached to their owner, and share the team of their owner. Once their owner dies, though Drones will immediately disappear, Bullets and Traps will still exist on their own, having their attachment lost and resulting their owner to be void, making them no longer friendly to their previous owner or each other.
+
+{{Gameplay|ammo}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ru     = Мины
+|sv     =
+|tr     =
+|vi     = Traps
+|zh     = 陷阱
+}}
+[[Category:Diep.io]]

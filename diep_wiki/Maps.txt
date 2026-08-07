@@ -1,0 +1,4 @@
+= Maps =
+
+#REDIRECT [[Map]]
+__STATICREDIRECT__

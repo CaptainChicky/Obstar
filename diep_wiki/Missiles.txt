@@ -1,0 +1,5 @@
+= Missiles =
+
+#REDIRECT [[Bullets#Missiles]]
+__STATICREDIRECT__
+[[Category:Redirect]]

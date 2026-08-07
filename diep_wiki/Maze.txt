@@ -1,0 +1,115 @@
+= Maze =
+
+{{Mode
+|image         = Maze.png
+|conditional?  = no
+|closure       = Five hours after the server opened.
+|button        = Maze MODE Icon UI.png
+|teams         = 
+|bosses?       = no
+|specials      =
+}}
+{{PA}} is a "temporary<ref>According to Zeach it is temporary, but in effect, it has been essentially permanent.</ref>" [[Game Modes|Game Mode]] that works similarly to [[Free For All]], replacing the Mothership mode (which was once removed but later added again). However, there are large gray walls that are scattered around the arena, giving the arena the appearance of a maze. These walls are impenetrable by [[Tanks]] or their [[Bullets]]/[[Traps]]/[[Drones]]. The maze walls are also visible on the minimap.
+
+[[Crashers]] will spawn less while defending the Pentagon Nest, likely because there are so many Pentagons. Large Crashers will be rare in these conditions but small Crashers can be a nuisance while going to the Pentagon Nest, so an Auto Trapper is ideal as it can seal off the entrance and shoot Crashers at the same time.
+
+Unlike other game modes, [[Bosses]] <b>do</b> <b>not</b> spawn in Maze. This may be because sometimes Bosses may run into walls or get trapped if they spawned, or they may even spawn IN the Maze wall, which would make the Boss unable to be killed, stopping more Bosses from spawning.
+
+== Leveling System ==
+The [[Scoreboard]] and [[Levels|leveling system]] is exactly like FFA as well as the goal of this game mode: Be the player at the top of the Scoreboard and avoid death for as long as possible. The massive walls make survival significantly more difficult, as the player is easily able to be backed into a corner with no escape. Also, the player may be able to make "bases" with a Maze surrounding while sealing off the entrances with a [[Trapper]] or a member of the Trapper branch. Sometimes, the [[Pentagon Nest]] may be contained inside a Maze wall, with only one entrance, easily sealed off by Trappers. This can be exploited to have a huge Pentagon Nest with extreme numbers of Pentagons and Alpha Pentagons. A common strategy using this is to defend the Pentagon Nest, wait until there are the maximum amount of Pentagons and Alpha Pentagons, then destroy the Pentagon Nest for extreme amounts of EXP.
+
+== Strategy ==
+[[File:Maze minimap.png|thumb|An example of what the [[Map]] looks like in Maze Mode. The walls are displayed.]]
+Firstly, make use of the [[Map]]. The player may hide behind walls if need be, using them to protect them from heavy fire. Often there are cases where small "rooms" can be filled with a load of untouched polygons, so it would be in their best interest to search out for one of these. Otherwise, beware: it is incredibly easy to be backed into a wall by multiple enemies, and readily slaughtered, with exceptions to some tanks, such as [[Destroyer]] classes. This is because even at the highest levels, cornering one is a very risky move, because of the Destroyer’s huge Bullet that can easily kill nearly any tank, combined with no room to dodge - a recipe for disaster. The most effective strategy in this mode is to use a build that allows to easily corner other players. The classes that are the most effective are generally ramming builds and tanks inside the summoning class. Classes that spam Bullets with heavy damage are effective, although the barriers may block your Bullets. Such classes include [[Octo Tank]]s or the [[Triple Twin]]. Also, using an [[Annihilator]] is the best tank to use in Maze, because like mentioned earlier in this paragraph, the player can free themselves if they are cornered or Trapped by killing the enemies in a single hit. The enemies will eventually get hit in a very few tries as the Bullets are large and the closed-in walls eliminate room to dodge a single hit. If there’s enough room for the enemy, try adding high reload, Bullet speed, Bullet damage, and Bullet penetration as the enemy will get hit at some point or give up backing away from the player’s tank learning that it is dangerous to corner or Trap it. If it doesn’t learn and manages to try again, the player must quickly escape by recoiling the other direction so they would speed themselves up. Go to a random safe path when the enemy is not looking, if the enemy is so, get further away and make sure that the enemy is off on the screen then find a path to go before the enemy goes back on the screen.
+
+The player can use the walls to their advantage as a [[Trapper]] class. Find a corner and build a wall of mines around it, creating a semi-permanent fort. However, this only works well if they can properly defend themselves, either as an [[Auto Trapper]] or [[Gunner Trapper]]. It is an overall strategy with risk since if multiple enemies come bearing down on them, they have no escape route but straight into the enemy.
+
+[[Manager]] is very good in this mode too, as it can become invisible and control Drones. It is stated above that Drone-user classes are effective in Maze mode. Becoming invisible is another positive aspect making it impossible for anyone to see the player when invisible. Being a Drone class may be difficult in this game mode, as Drones will die instantly on contact with a Maze wall.
+
+Also, once the player has leveled up, they must pay attention to the minimap. There is often at least one area of the map that will have a variable-size room with 1 entrance. The fewer entrances and the more reasonable size it is, the better. Make sure to sweep any hostile tanks out of the area first. If a one-entrance chamber cannot be found, go for something close (see minimap above for reference). Trappers, as mentioned in the second paragraph, can seal off entrances and make a perfect temporary fort. The Gunner Trapper and Auto Trapper are ideal for doing this, as they can make their wall and attack any tanks that venture too close as well. Be careful when using the Gunner Trapper for this however, as the Gunner Cannons and the Medium Size Launcher are at opposite ends, so this can be difficult.
+
+As this is also the game mode with the most/largest teams (of players teaming up in FFA game modes), the player should ensure they have protocols to use against them. Teams can be a nuisance, they may use a base and have multiple members. Crowd control tanks work well, like the Octo Tank, Triple Twin, and Auto 5, ensuring teams will not be too much of a problem.
+
+Teaming is very common in maze because leveling is hard when enemies are a constant threat. Usually, there is one big team and many teams of two players. This makes the game especially hard if you are not teaming.
+
+== History ==
+*This game mode was added on September 22nd, 2016, officially marking the removal of the [[Mothership (Game Mode)|Mothership Gamemode]].
+*Before September 23rd, crashers couldn’t go through walls.
+*On September 23rd, the walls were made "less sticky", which may have fixed some bugs.
+*As of before, the [[Arena Closer]]s could not go through the walls, which made it possible to survive their onslaught, at least until the server forcefully closed. Like the crashers, they can now go through walls.
+*Since the 25th of September, 2016, the walls can kill Drones when a [[Drones|Drone]] touches the wall.
+
+== Trivia ==
+*5 Hours after a Maze server starts, the Arena will close and the server will be reset.
+*This is the first game mode with any sort of complete physical barrier, other than the outside border.
+**The barriers also appear to resemble the edges of the [[Base]] in [[2 Teams]] and [[4 Teams]], as they give knockback, except without Body Damage.
+*There is a glitch with this game mode where most entities will disappear and the game will become unplayable.
+**On September 23rd, the walls were made "less sticky", which may have fixed some of these issues.
+*Maze was switched with Sandbox, in that you must disable AdBlock (and any tracking protection) before you are allowed to play. Also, any "tracking protection" in some browsers, like Firefox, had to be disabled as well.
+*This now makes Maze the only game mode the only feature in all of [[Diep.io]] - to be purposefully disabled for certain users.
+*Like Free For All’s August 6, 2016 update, kill notifications don’t appear if you destroy a tank that is at least 20 [[Levels]] below your current level.
+
+*The leader arrow is not visible behind walls.
+*There was a glitch that let the Drones of the [[Overseer]] and Manager (not verified if the [[Necromancer|Necromancer’s]] Drones could do this) freely go through walls.
+**However since 25th September 2016, the wall kills the Drones.
+*There is a small chance of a Pentagon spawning inside the Pentagon Nest walls.
+*As this Game Mode was released, something was changed in the properties of invisible map borders in the whole game, they now shake your tank if you try to move out of the map.
+*A now fixed glitch, caused a tank to stick in the corner of two walls.
+*Maze tends to be the toughest game mode in terms of survival, newly joined players might find it very hard to avoid merciless deaths from higher-level tanks. Teaming in the Maze became a common phenomenon as well. This continues to remain a problem.
+*The walls are randomly generated.
+**Sometimes because of this, a huge chunk of maze wall will take up the middle of the map, disabling most of the playable area and the Pentagon nest.
+*This was the game mode that replaced [[Mothership (Game Mode)|Mothership]].
+*This is the only game mode where Bosses do not spawn.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Patched or Removed Bugs ===
+*{{PC}} In the early hours after Maze was added, walls had some bad coding which made them “sticky” rather than solid, resulting in some players getting stuck on the walls until death; [[Drones]] and [[Crashers]] also could become stuck to the walls.
+=== Unpatched Bugs ===
+*{{PC}} Walls will block a [[Tanks|Tanks’]] body, but not its [[Barrels]], as Barrels are not part of the Tanks’ hitbox. This allows Barrels to poke “through” walls, but the [[Bullets]] will still be destroyed. However, when pointed at an exact 45° angle, Barrels can shoot “through” double corners, and attack and eventually defeat the entities at the opposite side. This bug previously affected [[Drones]], until [[Changelog#September 25th, 2016|an update]] caused all Drones to instantly die upon contact with a wall.
+=== Bug Gallery ===
+<gallery widths="150" spacing="small">
+Glitch
+Maze Gameplay - Drone GLITCH -.io
+Shooting Through Walls GLITCH.io - Epic Overlord Maze Gameplay!
+Stuck on a wall...|In this video, the “sticky” wall glitch took effect only a while after upgrading to [[Overlord]].
+</gallery>
+}}
+
+== Gallery ==
+<gallery>
+MazeBattle.png|A Machine Gun taking potshots sitting next to a square wall
+01.png|A maze mode server being closed|linktext=A maze mode server being closed
+LOeFDAh.png|A [[Manager]] and its [[Drones]] cornered by pentagons
+cramped pentagon nest.png|A photo of the Pentagon Nest squashed between walls
+Crampedpntgonnest.png|Another flattened Pentagon Nest
+PENTAGON MADNESS.PNG|A highly crowded, but not flat, Pentagon Nest
+RangerInMaze.png|Using Ranger to scope out the maze
+Jtg.png|Photo of the Drone glitch in action. (JustThatGood)
+NoPentagonNest2.png|An Example of a map without Pentagon Nest, making it difficult to reach higher scores.
+</gallery>
+
+== Footnotes ==
+<references/>
+{{GameNav}}
+{{Interlang
+|status = checked
+|de     =
+|en     = Maze
+|es     = Maze
+|fr     = Maze
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Maze
+|pt-br  =
+|ro     =
+|ru     = Maze
+|sv     =
+|tr     =
+|vi     = Maze
+|zh     = Maze
+}}
+[[Category:Diep.io]]

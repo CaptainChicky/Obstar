@@ -1,0 +1,117 @@
+= Assassin =
+
+{{Infobox
+|image     = <gallery>
+assassin icon 2.png|New Colors
+assassin icon 1.png|Old colors
+</gallery>
+|tier      = 3
+|next      = [[File:Ranger icon new.png|50px|link=Ranger]]
+[[File:Stalker icon new.png|50px|link=Stalker]]
+|previous  = [[File:Sniper icon new.png|50px|link=Sniper]]
+|barrel    = [[Cannons|Cannon]] (1)
+|id        = 15}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Sniper]] at level 30 and upgrades to the [[Ranger]] and [[Stalker]] at level 45.
+
+== Design ==
+The Assassin features a circular base with a long [[Cannons|Cannon]] on the front, considerably longer than the [[Sniper|Sniper’s]] Cannon.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = ▼
+|MovementSpeed     = —
+|HiddenStat1       = Field of View
+|HiddenStat2       =  
+|HiddenStat3       =  
+|HiddenStat4       =  
+|HiddenStat1Val    = ▲▲
+|HiddenStat2Val    = 
+|HiddenStat3Val    =
+|HiddenStat4Val    = 
+}}
+Upon upgrading, you receive:
+*Increased Field of View (FoV)
+*Increased Bullet Speed
+*Increased Recoil
+*Decreased [[Reload]] (Rate of fire)
+*[[Stats]]:
+**Bullet Speed: 1.5x [[Tank]]
+**Reload time: 30t (-2t for the 1st, 2nd, 4th, 6th and 7th point, -3t for the 3rd point and -1t for the 5th point in Reload)
+
+== Strategy ==
+*<b>Strong Against:</b> Tanks with a low Field of View, unprepared tanks, off-alert tanks, Bullet build Destroyers.
+*<b>Weak Against:</b> High DPS, [[Tri-Angle]] branch (if not fully Leveled up and upgraded) High RoF (Rate of Fire) tanks
+
+=== As the Assassin ===
+*As the player has a larger field of view than most other tanks, they can attack them before they even see the player. This works very well against slow tanks, as the player can attack and retreat without ever being spotted.
+**When fighting a tank as an Assassin, players always have the advantage of a high [[Bullet Penetration]] and [[Bullet Speed|Speed]], making destroying tanks easy; also, since players have such a large FoV, they can see stray [[Bullets]] and dodge them more easily or even spot unsuspecting players and go in for the kill. However, those stat advantages may be nullified should enemies have a high DPS (Damage Per Second). An Assassin's Bullet may be able to get past a few of the enemy’s Bullets but probably not through a whole stream of them. Players should keep changing their position to get a better angle, deal more damage, and avoid detection.
+**Assassins are surprisingly viable for killing [[Smasher]] branches, as players can shoot at the tank while retreating backwards. Slow rammers will not be able to catch up and will take large amounts of damage from the Assassin's Bullets. Fast rammers, on the other hand, pose a great threat to Assassin.
+*If a tank charges at an Assassin, players should shoot while retreating since the Assassin is stronger at a long range. Once enemies get close to the player, they will be able to damage Assassins easily. Players should keep shooting at them and try their best to predict their movements to inflict as much damage as possible to the target (e.g. a Body Damage [[Booster]] build).
+**Since it has a low rate of fire, players should try not to be attacked by two or more tanks; players should also use their upgraded Field of View to locate opponent's whereabouts and avoid them as much as possible.
+
+=== Against the Assassin ===
+*Rammers can kill an Assassin, because of the Assassin's slow Speed and low Recoil; if the Rammer's stats are high on Movement Speed, the Assassin can't escape.
+*Because of the Assassin's low reload, tanks like the [[Sprayer]], [[Machine Gun]], [[Twin]] branch (except [[Battleship]]), or [[Gunner]] branch could spam a lot of bullets and overwhelm the Assassin.
+*The [[Overseer]] branch with controllable drones could flank an Assassin by the front or back since it can't run away or destroy the Drones in time due to its slow Movement Speed and Reload.
+*The large FOV of the assassin allows it to easily strike first. As with any long FOV troop, be ready to dodge any stray/aimed bullet from this tank. If approaching an Assassin, try to get within its range. Once its reload becomes a disadvantage, it is easier to kill them. But the penetration and speed of the bullet may come as a surprise, so do not allow any contact with its bullets.
+
+== [[Achievements]] ==
+{{SideBox|*<b>Insert uncreative achievement name here</b> — Upgrade to Assassin
+|{{Achievement
+|Name         = Insert uncreative achievement name here
+|Description  = Upgrade to Assassin}}
+}}
+
+== Record ==
+
+=== PC ===
+
+* FFA: 1.25m by Overr
+* 2 Teams: [https://youtu.be/HlGjAUpgU0Y 1.88m by Lambo]
+* 4 Teams: [https://imgur.com/KDtdeAZ 1.54m by Wash]
+* Maze: [https://imgur.com/d3f2Q1W 1m by Baller]
+
+=== Mobile ===
+
+* FFA: 519.4k by Pianzage
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*The Assassin was the second class to be added to the Sniper branch with the first one being Overseer.
+*The Assassin's upgrade button is blue, even though it was added after Overseer was added. If the button was true to its time added, like other tanks, then its upgrade button would be green, and the Overseer's upgrade button would be blue.
+*The Assassin one of the only two tanks to, at one point, have [[Ranger|an upgrade that looked just like it]], the other one being [[Smasher]].
+
+== Gallery ==
+<gallery>
+File:Screenshot (76).png|The Assassin in the game with its FOV
+File:Diep.io assassin 2.jpeg|A picture of an Assassin on the arena. Notice the larger FoV.
+File:Assassin in Sandbox.png|Assassin in Sandbox
+File:AssassinFiring.png|An Assassin firing one of its high-speed bullets.
+</gallery>
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Assassin
+|es     = Assassin
+|fr     = Assassin
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Assassin
+|pt-br  =
+|ru     = Assassin
+|sv     =
+|tr     = Assassin
+|vi     = Assassin
+|zh     = Assassin
+}}
+[[Category:Diep.io]]

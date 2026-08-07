@@ -1,0 +1,124 @@
+= Triplet =
+
+{{Infobox
+|image     = <gallery>
+triplet icon 3.png|New Colors
+triplet icon 2.png|Old Colors
+triplet icon 1.png|Nameless
+</gallery>
+|tier      = 4 (Old: 3)
+|next      = None
+|previous  = [[File:Triple shot icon new.png|50px|link=Triple Shot]][[File:TwinNAV0.png|50px|link=Twin]]<ref name="triplet1">Removed Upgrade Option. Removed upgrade options and removed tanks are shown by a gray icon background.</ref>
+|barrel    = [[Cannons]] (3)
+|id        = 2}}
+Triplet is a Tier 4 tank in Diep.io. It upgrades from the [[Triple Shot]] and formerly [[Twin]] at level 45.
+
+== Design ==
+The Triplet features a circular base with three rectangular turrets on the front with the two on the side being slightly retracted into the base resembling similar features of the [[Gunner]] and [[Twin]] designs. In comparison to the Triple Shot, its cannons are packed near each other instead of being spread out.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = ▼
+|BulletDamage      = ▼
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       =Direct Firepower 
+|HiddenStat2       = 
+|HiddenStat3       = 
+|HiddenStat4       = 
+|HiddenStat1Val    =1 
+|HiddenStat2Val    = 
+|HiddenStat3Val    = 
+|HiddenStat4Val    = 
+}}
+Upon upgrading:
+*Bullet damage is decreased by ~14.286%.
+*Bullet penetration is decreased by 30%.
+*The [[Cannons]] are changed back to a streamlined formation instead of a spread, like that of the [[Twin]], allowing for concentrated fire.
+Stats: 
+
+* Bullet Penetration: 1.4 (+1.05 for each point in Bullet Penetration)
+* Bullet Damage: 4.2 (+1.8 for each point in Bullet Damage)
+
+== Strategy ==
+*<b>Strong Against</b>: [[Overseer]]-type classes with low to mediocre skill, Melee classes, classes that lack concentrated fire, such as [[Spread Shot]] or [[Penta Shot]] and Sniper type classes (when close up). 
+*<b>Weak Against</b>: Multiple enemies, [[Sniper]]-type classes (when far away), [[Destroyer]] branch (if Triplet has low bullet speed or caught by surprise), skilled drone users, Auto Trappers or getting caught unprepared, necromancers.
+
+=== As the Triplet ===
+*The Triplet has the highest single target damage per second excluding [[Dominator]]s, [[Mothership]]s and [[Arena Closer]]s. Its bullets can block most frontal shots and still get through (with maxed-out bullet penetration) and propel itself backward using recoil. However, the Triplet must be careful when chasing and firing. While shooting at the enemy, if the player approaches them slowly, then their bullets will move slowly as well, making it easier for them to escape. It is more efficient to chase with the Triplet by firing at the opposite direction of your movement, and then when within range, continue shooting at the enemy. Repeat this process until the enemy is killed. Do NOT try this against multiple Level 45 opponents.
+*In a 1v1 battle against a drone tank like [[Overlord]], a good tactic to do is to ‘lockdown’ the enemy. If you notice the tank moving in a certain direction, briefly aim your bullets so that they are blocking their path. That way they’re forced to hit the brakes if they don't want to suffer HP loss, but most of the time they’ll hit at least a few bullets and lose some health anyway. This also works for the [[Sprayer]] and other high DPS tanks. Note that you have to destroy any drone that is close to you before doing the 'lockdown', or they will destroy you first. Skilled drone users will try to surround you with their drones, so you need to act quick.
+*Using a build that lacks bullet speed can block enemy fire much better as the bullets are much closer to you that way and could block fast and strong bullets such as the Ranger's or Predator's. However, it requires the triplet to travel very close to players to kill them, as the bullets aren't strong enough to reach them otherwise. If you are lucky, you could close up on a distracted player that is low on health, this makes it easy to quickly kill them before they have time to react.
+*Your concentrated column of bullets may also act as a shield for you, in the case of low RoF tanks.<!--
+
+==== [[Survival]] ====
+This Tank, along with other bullet spammers such as the [[Machine Gun]] or the [[Twin]] is ideal for [[Survival]], as the Triplet and its previous [[upgrades]] are ideal for quickly killing the player’s low-level peers, who rarely have the time to upgrade to a powerful counter-tank such as the [[Overlord]]. 
+
+==== [[Domination]] ====
+The Triplet is a great tank for [[Domination]], its focused and rapid-fire can deal heavy damage against [[Dominator]]s and its guards. A team of Triplets is recommended since they can take out multiple guards or invaders. This proves both for offense and defense.
+
+It is also effective to have a Triplet in the Pentagon Nest, as it can quickly drain alpha pentagons of their health so that lower level tanks can level up quickly. 
+-->
+
+=== Against the Triplet ===
+*Going either left or right is the simplest way of getting out of the way of the cannons. Unfortunately, if you’re the target, it may be hard for you to escape alive unless you are also a high DPS tank with high bullet penetration.
+*The best tank to counter the Triplet is a [[Sniper]], or its upgrades. Use a [[Ranger]], [[Assassin]] or a [[Predator]] and snipe the Triplet. 
+*The [[Manager]] has a high chance of defeating a Triplet, make sure to be out of the Triplet's field of view then quickly turn invisible to hide your position without letting the Triplet see you doing it. Guide the drones towards the Triplet's flank most likely killing it, if the attempt fails, retreat, then come back shortly after. The Overlord might also be a good choice but not as effective due to the lack of invisibility. 
+*A Sprayer can deal with it easily but neither the Triplet or the Sprayer is going to hurt each other because they are both high RoF tanks. 
+*If the Triplet is not a glass cannon, a [[Trapper]], [[Mega Trapper]], [[Auto Trapper]], or [[Overtrapper]] can at least take it to a stalemate, in which case the best thing to do afterward would be to wait until another tank, preferably with high damage, decides to attack the Triplet. 
+*When playing as a tank in the Destroyer branch, you can defeat a Triplet by plowing all of the fired bullets since you have more penetration than the Triplet. However, Triplets have a high rate of fire and can be very overwhelming at times, so the best option is to stay stealthy and kill the Triplet from behind by surprise. If the attempt fails before you have time to react, retreat, then keep trying until success.
+*A Necromancer with high amounts of drones can repel its drones towards the Triplet then collapse the drones to the Triplet. Since the Triplet is a focus fire tank, it will not be able to kill all of the drones coming from multiple directions before they kill the Triplet.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/b3nmfte 2.68m by Unknown User☯]
+* 2 Team: 2.33m by Ricardo
+* 4 Teams: [https://web.archive.org/web/20190819220323/https://cdn.discordapp.com/attachments/222132681394225155/227537428238303233/Triplet_2.00m.PNG 2m by RipDreams]
+* Maze: [https://imgur.com/vneDuFb 1.72m by Kyo]
+
+=== Mobile ===
+
+* FFA: 2.54m by HZ6
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+* The Triplet was originally a Level 30 upgrade to the [[Twin]], and is actually the 3rd tank to be added to diep.io after it and the Basic [[Tank]].
+* The Triplet's cannons used to overlap randomly. This was because early versions of diep.io used randomly layered cannons, meaning there were six separate Triplet designs that could appear. This did not change the functionality of the tank.
+* The Triplet is one of only four tanks to have changed tiers during Diep.io's development, the other three being the [[Sprayer]], [[Quad Tank]], and [[Octo Tank]].
+* Although the Triplet looks stronger than the Twin, it has almost the same penetration, since the cannon type is the same.
+
+== Gallery ==
+<gallery>
+Screenshot 2016-10-08 at 4.43.37 PM.png|Death screen glitch.
+Triplet2Squares.png|The Triplet with the new color scheme.
+</gallery>{{Clear}}
+
+== Footnotes ==
+<references/>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Triplet
+|es     = Triplet
+|fr     = Triplet
+|hu     =
+|it     =
+|ja     =
+|ko     = 트리플렛
+|pl     = Triplet
+|pt-br  = Triplet
+|ru     = Triplet
+|sv     =
+|tr     =
+|vi     = Triplet
+|zh     = Triplet
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

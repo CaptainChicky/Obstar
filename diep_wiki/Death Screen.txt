@@ -1,0 +1,66 @@
+= Death Screen =
+
+[[File:Diep deathscreen example1.png|thumb|390x390px|Example of a death screen showing the killer, score, level, time alive, and the tank class played. One can then choose to spectate or return menu.]]
+The {{PA}} is a miscellaneous feature in [[Diep.io]] that was added on [[Changelog#July 10th, 2016|July 10th 2016]]. The Death Screen is displayed after you die. It displays the tank you last used, your Score, time alive and the entity that killed you. It will also spectate the entity that killed you.
+
+== Content ==
+It currently shows:
+* The name of the user who killed you, under the phrase “You were killed by: (tank name)”.
+**Unnamed killers and [[Base Drones]] (As they lack an in-game name) will be shown as “An unnamed tank” in this section.
+***They will also provide a special message: “<i>They seem to prefer to keep an air of mystery about them</i>”.<!--, as shown on the image above.-->
+**If you are killed by going into a [[Polygons|Polygon]] it will be appropriately identified by its name, with an exception.
+***Green Polygons will not be distinguished from regular ones, e.g. a [[Green Square]] will be referred to simply as a [[Square]].
+*How long you survived (in hours, minutes, and seconds).
+*Your Score.
+*Your [[Levels|Level]].
+*Your [[Tiers|Class]], including a still image of the class and its official name.
+*Spectating the entity that killed you (On the death spectator screen), until it dies.
+**When the entity you are spectating dies, the camera will stay where the enemy died.
+*A Light Blue-coloured button which has to be clicked in order to respawn.
+
+==Trivia==
+*When it was first released, the Death Screen said that you have played for 60 hours before dying. Later that day, it got patched.
+*Due to a bug, if a [[Tanks|Tank]] died and its remaining Bullets/Traps destroyed other tanks, to the latter their player will receive a death message stating that they were killed by “An unnamed tank”, no matter how the ammo’s original owner was named. This is because ammo is tied to their owner and when the owner dies, it is no longer connected to the owner anymore.
+*Before [[Polygons]] were given their in-game names, they were referred to as “An unnamed tank” in the death screens. This bug was fixed in the August 21<sup>st</sup> update.
+**Similar things happened when players were kicked off the [[Mothership (Tank)|Mothership]] because time was up. This was also fixed in the August 21<sup>st</sup> update<sup><i>(Revision needed)</i></sup>, and removed with the removal of [[Mothership (Game mode)|Mothership]] [[Game Modes|Game Mode]].
+*Before the Death Screen, when a [[Tanks|Tank]] killed you, it would only lead to an empty translucent screen, following the person that killed you. Pressing Enter would take you back to the naming screen.
+*There was a bug (now fixed) that made the Death Screen zoom out, and make it look like a minimap.
+
+{{Bugs}}
+{{BugList|
+=== Patched Bugs ===
+*{{PC}} If a person dying in-game had an Ad Blocker enabled, the death screen would fail to render, causing a game crash.
+}}
+
+== Gallery ==
+<gallery>
+2023KilledByPlayer.png|When killed by a normal Player
+ACDEATH.png|When a Player dies as an Arena Closer, it is not yellow; instead it is blue
+Arena Closed.png|A rare event where the Arena Closes in FFA
+2023BaseDronesDeath.png|When killed by Base Drones
+Alpha Pentagon Death Screen.png|When killed by an Alpha Pentagon
+2023Pentagon.png|When killed by a Pentagon
+2023Triangle.png|When killed by a Triangle
+2023Square.png|When killed by a Square
+2023Suicide.png|When killed by suicide (Pressing <code>O</code> in sandbox)
+</gallery>
+{{Gameplay|mechanics}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Death Screen
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Ekran Śmierci
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Màn Hình Chết
+|zh     = 死亡畫面
+}}
+[[Category:Diep.io]]

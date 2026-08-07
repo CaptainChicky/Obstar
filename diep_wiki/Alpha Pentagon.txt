@@ -1,0 +1,54 @@
+= Alpha Pentagon =
+
+{{Polygon
+|image     = <gallery>
+alpha pentagon polygon 2.png|New Colors
+alpha pentagon polygon 1.png|Old Colors
+</gallery>
+|rarity    = *Rare in [[Pentagon Nest]],
+*Cannot be found outside the [[Pentagon Nest]].
+|hp        = 3,000
+|xp        = 3,000
+|variants  =
+|alt=
+|attacks=}}
+
+The {{PA}} is a larger version of the [[Pentagon]] found only in the [[Pentagon Nest]] which is located in the middle of the map in all Game Modes. It is guarded by [[Crashers]] and surrounded by many more [[Pentagons]]. It is the strongest polygon in the game, with <b>3,000 health</b>, and<b> 20 Body Damage</b>. Destroying an Alpha Pentagon grants 3,000 [[Levels|XP]] to the tank who lands the killing shot.
+
+== Strategy ==
+*It is recommended to kill them as quickly as possible, as many other players will also want the points. The Alpha Pentagon has a high amount of health, so it is recommended to quickly destroy it with strong Bullets and good Reload so someone else doesn’t take the kill. Take care to not get pushed into one of them. If rammed, it will kill the rammer unless it has very low health left. When the center is being contested by multiple teams, Alpha Pentagons make good places to take cover against attacks.
+*The tank that will deal the most damage to an Alpha Pentagon is an [[Annihilator|Annihilator’s]], [[Hybrid|Hybrid’s]], or [[Destroyer|Destroyer’s]] bullet, as well as High-DPS tanks (e.g. [[Triplet]]; [[Streamliner]]). [[Sniper]]s, Body Damage builds, and classes that summon drones are ineffective but can be used to get the last hit and take the 3,000 experience points. This is useful when using [[Body Damage]] builds and [[Drones|Drone]]-summoning Classes. The [[Battleship]] can attack an Alpha Pentagon like a bullet spammer, however, since it spams drones.
+*Only the killing blow gives the experience points, so waiting until there is little health left is a good strategy to net the 3,000 experience points. Classes like the Destroyer, [[Hunter]], or other high-damage per hit Classes are the best to steal the death blow. Another effective strategy is, as a Drone summoning class like [[Overseer]], [[Overlord]] or [[Necromancer]], keep your drones very close to the Alpha Pentagon, then when it is around 1/8th health, direct all of the Drones into it. This will almost always get the final blow. It is also possible to crash into it when it is at low health to kill it via Body Damage, but this is not recommended for glass cannon builds. A [[Spike|Rammer]] can pull this off by waiting until the Alpha Pentagon is on the verge of death, then ram it and take all the XP. The reason glass cannons cannot ram it is because of their poor health.
+*Since all XP goes to the player who lands the last hit and if you are already a Level 45 tank, it is advisable to lower an Alpha Pentagon to a minuscule amount of its health and then leaving it for your weaker teammates so they can quickly level up and contribute to the genocide of the opposing team. Please note that you may need to ward off enemy players as they may “steal” the XP. This can be done only in team game modes.
+*In [[Game Modes|Team Modes]], it is advised that players be cautious around their teammates, as they can be prone to shove their comrades into Alpha Pentagons, thus killing them. This is often done to effectively remove competition for Alpha Pentagons and weaken them at the same time.
+
+== Trivia ==
+[[File:DiepAlphaPentagon.png|thumb|232px|A clear image of an Alpha Pentagon.]]
+*It was believed for long that Alpha Pentagon has 2,000 HP, but tests showed that it has approximately 1,071 HP (or 3,000 HP if you convert the value into the current metric system), and recently it was confirmed that the Alpha Pentagon has 3,000 HP (by using the developer tools), which is the same HP as all of the [[Bosses]] in the game. The Alpha Pentagon has less body damage, though. 
+*The Alpha Pentagon might represent the Pentagon Boss. That would explain why there is no actual Boss based on the Pentagon or that has the appearance of a Pentagon.
+*The Alpha Pentagon, along with the [[Crashers]] used to be the only [[Polygons]] that do not have a confirmed green variant.
+*This polygon gives the least XP per hit (excluding Crashers), of only 2.8 XP per hit (with a level 1 [[Tank|Basic Tank]]).
+*If a Level 1 Tank with no experience kills an Alpha Pentagon, then the tank will directly go to level 23. Higher level tanks might rise to level 45 if they are not already at the experience cap.
+[[File:Alpha pentagon sandbox.png|thumb|An Alpha Pentagon in [[Sandbox]].]]
+[[File:AlphaHangout.png|thumb|An Alpha Pentagon in [[Tag]].]]
+[[File:Pentagons.png|thumb|200px|The larger pentagon in the upper right is the Alpha Pentagon. Humorously, it also appears that the player is getting chased by [[Crashers]].]]
+
+{{PolyNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     = Pentagones Alpha
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Alpha Pentagon
+|pt-br  =
+|ro     = Pentagonul Alpha
+|ru     = Alpha Pentagon
+|sv     =
+|tr     =
+|vi     = Alpha Pentagon
+|zh     = 大型五角形
+}}

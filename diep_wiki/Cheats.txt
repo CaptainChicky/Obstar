@@ -1,0 +1,78 @@
+= Cheats =
+
+{{Stub}}
+{{PA}} (also known as "'''Special Controls'''") are commands that can be used in Sandbox.
+
+== List of known Cheats ==
+All of these can be accessed in [[Sandbox]].
+*<code>O</code> = Suicide (There will be a <code>You've killed (Player name)</code> message stating that the player were killed by [their name])
+*<code>\</code> = Switch classes
+**Cycles through Classes beginning with [[Changelog|the most recently added]] tanks, including the [[Mothership (Tank)]].
+**Special Tanks are the same size as normal tanks.
+**Previously, this also included all three types of [[Dominator]]s and the [[Arena Closer]].
+*<code>K</code> = Level Up (hold down to gain [[Levels]] quicker)
+**Maximum level is 45 in [[Sandbox]].
+*<code>;</code> = Activates God mode, which grants invulnerability, similarly to an [[Arena Closer]].
+**May not work on some keyboards.<ref>If the player is not using an English (US) QWERTY keyboard, they can find the key to activate the God mode by opening an On-screen keyboard and changing the Windows keyboard language to see the position of the key.</ref>
+**'''God mode can only be used when only one player is on the server. This function will be automatically deactivated if a second player joins the Sandbox and when all the other players leave it will become available again.'''
+
+== Outside Sandbox ==
+{{Myth|section}}
+Cheats were originally made by the original creator and former developer, M28, before the release of [[Sandbox]]. On one occasion, he accidentally left the cheats without a password, which could allow people to exploit them.
+
+Using the cheats suite outside of sandbox removes the level restriction for the Level Up command and also allows the user to dramatically increase their size. 
+
+=== Reports ===
+Obviously with such a massive tank running around, people are going to notice.
+
+==== August 29th 2016 Report ====
+[[File:Developer.PNG|thumb|240x240px|M28 posting on Reddit regarding the Developer tank]]
+A large tank named "Algebra" is screenshotted and mentioned in a reddit post. M28 replied to the post explaining that he had accidentally left some "developer cheats" without a password. It is still unknown if this has been corrected.
+
+====[https://web.archive.org/web/20201016231429/https://www.youtube.com/watch?v=18_frObyD_w&gl=US&hl=en  October 3rd 2016 Report]====
+This report seems to be unedited, and shows a large developer tank messing around. Even if it wasn’t M28, it proves the huge tanks can be controlled by exploiters.
+
+====[https://web.archive.org/web/20230805152430/https://old.reddit.com/r/Diepio/comments/86wl1c/umm_guys March 24th 2018 Report]====
+[[File:Landminedevrecent.png|thumb|An image from the report in question. Note the large landmine.]]
+Shortly after M28 made a return to the Reddit, posting for the first time in months, a large [[Landmine]] was seen in a server in the Pentagon Nest. In the comments of the Reddit post, user u/pnvv shared a video which appears to show the very same situation, linked [https://web.archive.org/web/20180616012818/https://streamable.com/lxmrt here].
+
+====[https://web.archive.org/web/20210101002153/https://www.reddit.com/r/Diepio/comments/8jqe8g/you_look_like_ants May 15th 2018 Report]====
+This was a Reddit post made by M28, showing him as a Level 301 Arena Closer named "Dev", captioned with "You look like ants". This has similarity to the April 15th 2019 report, which also showed a large Arena Closer named "Dev".
+
+====[https://web.archive.org/web/20201016231456/https://www.youtube.com/watch?v=Cvo7Ca-KG2E&gl=US&hl=en April 15th 2019 Report]====
+This report shows a player joining an FFA server, and the leader was named "Dev". When they got closer, the "Dev" tank was shooting erratically.
+
+'''[https://www.reddit.com/r/Diepio/comments/1ol52uw/what_in_tarnation_is_this/ October 31st 2025 Report]'''
+[[File:What.PNG|thumb|Context about the developer sighting on October 31st 2025]]
+This report shows a player named "Aero" abusing admin powers in [[2 Teams Maze]], while using a [[Dual-Barrel Shot]]. This was a scheduled event for celebrating Aero's birthday and last day of admin. This was also reported in a [https://www.youtube.com/watch?v=-knZmT71v9E YouTube video.]
+
+==Trivia ==
+[[File:M28 enabled sandbox cheats in all gamemodes once..png|thumb]]
+*'''Tutorials on how to use cheats outside of Sandbox are fake. Take everything you read with a grain of salt!'''
+*Certain cheats (like resizing your tank) are not available in Sandbox.
+*At one point, M28 accidentally made cheats available in all modes once. It was quickly patched in 10 minutes.
+*Many instances of extremely large tanks were slightly smaller than dominators (7x7 tiles) while one was approximately <i>45x45</i> tiles big, which is four times larger than a [[Mothership (Tank)|Mothership]].
+
+==Gallery==
+<gallery>
+Screenshot (32).png|A [[Predator]] using cheats outside of Sandbox
+</gallery>
+
+{{Interlang
+|status = checked
+|de     =
+|es     = Developer
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Developer
+|pt-br  = Developer
+|ru     = Developer
+|sv     =
+|tr     =
+|vi     = Developer
+|zh     = Developer
+}}
+[[Category:Diep.io]]

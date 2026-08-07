@@ -1,0 +1,131 @@
+= Twin =
+
+{{Infobox
+|image     = <gallery>
+twin icon 3.png|New Colors
+twin icon 2.png|Old Colors
+twin icon 1.png|Nameless
+</gallery>
+|tier      = 2
+|next      = [[File:Triple shot icon new.png|50px|link=Triple Shot]][[File:Quad tank icon new.png|50px|link=Quad Tank]][[File:Twin flank icon new.png|50px|link=Twin Flank]][[File:TripletNAV0.png|50px|link=Triplet]]<ref name="twin1">Removed Upgrade Option. Removed tanks and removed upgrade options are shown by a gray icon background.</ref>
+|previous  = [[File:Tank icon new.png|50px|link=Tank]]
+|barrel    = [[Cannons]] (2)
+|id        = 1
+}}
+The {{PA}} is a Tier 2 tank in Diep.io. It upgrades from the [[Tank]] at level 15 and upgrades to the [[Triple Shot]], [[Quad Tank]], [[Twin Flank]], and formerly [[Triplet]] at level 30. 
+
+== Design ==
+The Twin features a circular body with two grey [[Cannons]] mounted on the front that looks like the Cannons on a Basic Tank. The Cannons are slightly larger than the basic tank.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = ▼
+|BulletDamage      = ▼
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Recoil
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▼
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+Upon upgrading, the Twin gets another cannon, but Bullet Damage decreases by 35% and Bullet Penetration decreases by 10%:
+
+* Bullet Penetration: 1.8 (+1.35 for each point in Bullet Penetration) 
+* Bullet Damage: 4.55 (+1.95 for each point in Bullet Damage) 
+
+The Cannons don’t fire simultaneously, doubling its rate of fire. Instead, the Twin has two different firing patterns. If shot normally, it will alternate shooting with its two Cannons. However, if you turn the auto fire on and off enough times, then the Cannons may begin to shoot simultaneously. A Twin's barrel recoil is also decreased by 75% compared to the [[Tank|Basic]]'s.
+
+== Strategy ==
+*<b>Strong Against:</b> Tanks with low Reload and Penetration, non-focused spammers, Drone tanks with lower skill.
+*<b>Weak Against:</b> Skilled Drone users, focus spammers with higher DPS, skilled [[Destroyer]]/[[Hybrid]]/[[Annihilator]] users, Assassin branch at long range.
+=== As the Twin ===
+*The Twin is similar to the [[Machine Gun]]. It has the advantage of a very quick default Reload speed. Twin players are capable of fighting certain Tier 3 tanks with relative ease due to its double fire-rate compared to most other tanks, but one difference between the Machine Gun and the Twin is that the Twin’s Bullets are more focused.
+*The Twin has high DPS (Damage Per Second), but unlike the Quad Tank or Twin Flank upgrades, it only shoots in one direction, making it vulnerable to [[Bullets]] or other threats from behind. With its good default Bullet Penetration, it can be used as a counter to the [[Sniper]]. The [[Flank Guard]] is considered weaker than the Twin. The Twin’s effectiveness compared to the Machine Gun is debatable.
+*It is advised for players to invest points in Bullet Penetration as this makes a large number of Bullets form a barrier against other incoming Bullets. However, stronger Bullets will still pass through the shield, making Twins somewhat vulnerable to other Twins, [[Triplet]]s or Machine Guns. Twins and other Bullet Spammers that do not have spread out bullets like the Machine Gun, the [[Sprayer]], the [[Spread Shot]] or the [[Penta Shot]] can shake their mouse to spread the bullets out, making them harder to dodge. The Twin can use this in a Twin vs Twin battle to hit the other Twin more and therefore gain the upper hand in the battle. This can be used against various tanks.
+*Should the player be forced to retreat, they can turn so that the Cannons are away from the direction they wish to go and use their recoil to propel themselves away.<!--=== Survival ===
+This tank is a very popular pick in [[Survival]] because of the high DPS and easy accessibility. It can easily overwhelm ramming classes, [[Sniper]]s, and drone tanks. In matches with other Twins, the outcome relies entirely on which player has more skill, so make sure not to go the glass cannon route or you may be beaten by other Twins.-->
+
+=== Against the Twin ===
+*Having a tank with a high Bullet Penetration, such as the [[Destroyer]], can make an encounter with a Twin much easier to handle. Being able to shoot through the Twin’s Bullets is vital to winning the fight, as it will be tough to combat its stream of Bullets head-on; this may give ramming classes a hard time with this class.
+*As firing through its stream of Bullets is often not an option, flanking can be an effective maneuver against this tank. High movement speed can allow the player to avoid its Bullets and hit it from the side or behind. A ranged class such as the Assassin or Ranger can Flank the Twin by going behind it and shooting, getting the first shot. When a ranged class fires, its bullets have a high Bullet Speed, and it is recommended to max out this stat point so the Ranger/Assassin’s bullet can “ghost” through their bullets.
+*As the Twin's fire rate is doubled, a more focused stream of bullets projects from it, therefore allowing more gracious spread. When approaching a Twin, be aware of this fact and try to circle it, keeping ahead or behind the stream of bullets. High penetration/damage tanks will work as the bullets can effectively penetrate that of the Twin’s.
+
+== [[Achievements]] ==
+{{SideBox|*<b>Fire Power</b> — Upgrade to Twin
+|{{Achievement
+|Color        = #FB6969
+|Name         = Fire Power
+|Description  = Upgrade to Twin}}
+}}
+
+== History ==
+*The Twin was the first Tier 2 Tank to be added to the game, as it was added pre-release.
+**At this time, the player had no other upgrade choices, and they would automatically upgrade from the basic Tank into a Twin at Level 15.
+**It was also the second tank to be added into the game, after the Basic Tank.
+*The Twin, alongside the basic Tank, Triple Shot, Triplet, Quad Tank, and [[Octo Tank]], were the first tanks ever added to the game.
+*It used to have only one firing pattern, in which the Cannons shoot alternatively. It now has two different firing patterns, accessible by firing and stopping repeatedly.
+*The Twin used to upgrade to the Triplet at Level 30. It was, however, far too overpowered for a Tier 3 tank and was changed to a Level 45 upgrade to the Triple Shot, similar to what they did to the Sprayer.
+**This makes the Twin the only tank to have one of its Upgrades changed to an Upgrade of its Upgrade.
+*With the initial release of Achievements on February 21st, 2017, upgrading to the Twin for the first time awards the player the achievement “Fire Power”.
+
+== Records ==
+
+=== PC ===
+
+* FFA: 1.97M by ☢
+* 2 Teams: [https://i.imgur.com/mxdZLqD.png 1.53m by Unknown User☯]
+* 4 Teams: [https://imgur.com/9VCHMEI.png 1.71M by ☢]
+* Maze: [https://www.youtube.com/watch?v=zPaGvvh581Y 1.42m by Kesler]
+
+=== Mobile ===
+
+* FFA: 4.34m by HZ6
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*Sometimes when ignoring its Level 30 Upgrades, when the player reached Level 45, no Upgrades would appear, and they would be stuck as a Twin. This was fixed shortly after.
+*The Twin is the smallest Tier 2 branch, having only 7 total Tier 4 tanks branch from it and its Upgrade choices.
+*The base shooting speed for the Twin and the [[Machine Gun]] are very similar, if not, the same.
+*When shooting, you may shoot 2 bullets and once by clicking twice. By clicking twice to shoot, you get a new pattern of shots.
+*Twin has around 4.55 damage and 1.8 health per one Bullet at its base stats.[[File:DiepTwin.png|thumb|101x101px|A clear image of a twin]]<br />
+
+== Gallery ==
+<gallery>
+Screenshot (73).png|The Twin in-game.
+Twin Shot.png|The Twin up-close.
+Screenshot 2017-04-12 16-47-52.png|The Twin firing (new color scheme).
+</gallery>
+
+== Footnotes ==
+<references/>
+{{TankNav|tier2}}
+{{Interlang
+|status = checked
+|de     = Twin
+|es     = Twin
+|fr     = Twin
+|hu     =
+|it     = Twin
+|ja     = Twin
+|ko     = 트윈
+|pl     = Twin
+|pt-br  = Twin
+|ro     =
+|ru     = Twin
+|sv     = Twin
+|tr     = Twin
+|vi     = Twin
+|zh     = Twin
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

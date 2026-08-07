@@ -1,0 +1,123 @@
+= Landmine =
+
+{{Infobox
+|image     = <gallery>
+landmine icon 3.png|New Colors
+landmine icon 2.png|Old Colors
+landmine icon 1.png|Old Design
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Smasher icon new.png|50px|link=Smasher]]
+|barrel    =
+|id        = 38}}The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Smasher]] at level 45.
+
+== Design ==
+The Landmine has two hexagon shells rather than the Smasher's one. The extra one [[Auto Spin|spins]] half as fast.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|MovementSpeed     = ▲
+|HiddenStat1       = Invisibility
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = +
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}The Landmine has no ranged capabilities, as such its only means of damage is to melee other tanks, which makes the tank at first seemingly identical to its predecessor, the Smasher. However, the tank can become [[Invisibility|invisible]] when immobile, similar to that of the [[Stalker]] and the [[Manager]], with a 13 second fade-out time. Like the Smasher, the Landmine has a greater field of vision than the [[Tank]]. When invisible, any damage dealt to the tank will cause it to lose some of its invisibility. This means if an enemy tank is already aware and constantly firing [[Bullets]] at the location of an invisible Landmine, it's not a viable strategy to remain stationary, as players will probably be knocked away and become quite visible. It should be reminded that enemy Bullets will interact and most likely dissipate prematurely when making contact with a Landmine, making this another hint an enemy tank has when targeting an invisible Landmine. Upon upgrading, Movement Speed is increased by 10%.
+
+As a unique feature which is present in all other tanks of the Smasher branch, the Landmine only has four available upgrades: Health Regeneration, Max Health, Body Damage and Movement Speed, each with can be applied a maximum of 10 upgrade points.
+
+Stats:
+
+* Movement Speed: 1.1x Tank
+
+== Strategy ==
+[[File:Final_landmine_GIF.gif|thumb|200px|What the Landmine looks like when turning invisible.]]
+*<b>Strong Against:</b> Most unsuspecting tanks (while invisible), [[Sniper]]s with low Reload or Movement Speed.
+*<b>Weak Against:</b> Tanks with highly focused fire (like the [[Triplet]]), Smasher-branch tanks (particularly [[Spike]]s), [[Destroyer]] branch tanks, [[Auto Gunner]]s, crowd control tanks and other tanks with auto cannons that can detect invisible enemies.
+
+=== As the Landmine ===
+*The best way to utilize this tank is to stealthily (if possible) enter a crowded or contested area, such as the [[Pentagon Nest]], around a [[Dominator]] in [[Domination]], or near the Bases (not too close, as [[Base Drones]] can see you) in [[2 Teams]], [[4 Teams]], and [[Domination]], and hold still. Take note of the [[Crashers]] in the Pentagon Nest, as they can continuously hit players if there’s no other tanks to draw them away. This will keep players visible and sliding around (possibly out of the nest or into other [[Pentagon]]s).
+**The Landmine can also be used effectively in [[Maze]]. All the player needs to do is wait anywhere in the Maze. Once the Landmine is invisible, all it has to do is wait for another tank to ram into it. As long as the player has maxed out Max Health and Body Damage, they will instantly be able to kill almost any tank. Even other Maxed out Body Damage builds like the Booster will be killed by this tank. However, if the player sees a [[Spike]] or a member of the [[Overseer]] class and its upgrades, they should evacuate quickly, as a Spike has more Body Damage, and the Overseer branch, especially the [[Necromancer]] can kill it quickly, as long as its has all its [[Drones]].
+*Another strategy for this tank, though risky, is to go to a crowded area (such as the Pentagon Nest) and attack opponents that are distracted. Any tank that is busy fighting another tank can be attacked, but players must be ready to escape if their health is depleted. It is recommended to quickly barge in the area and attack the first tank seen. If the player still has a decent amount of health remaining, then attacking other tanks is a good choice. An alternative in [[Maze]] would be to place oneself in a narrow gap between walls, and then bottleneck any Tanks coming through the gap.
+*Yet another strategy is placing this tank on the gray border and wait for a fleeing tank to arrive.
+*The player should beware of "witch hunters," or tanks that relentlessly pursue other tanks who are usually slower. This strategy is often wielded by Tri-angle branch tanks with high bullet speed. These tanks can use their superior movement and bullet speed to shoot at the player while hovering just out of ramming range. If the player is already low or even moderately damaged this strategy can eliminate the player if the player doesn't escape to or have access to a safe zone like a Team Base. Other friendly tanks (e.g., [[Octo Tank]]) can ward off witch hunters, so seeking friendly tanks for protection is a beneficial strategy.
+
+=== Against the Landmine ===
+*The goal is becoming aware of the tank first because they have little reason to move at all, if ever, due to their massive Max Health and Body Damage, coupled with invisibility being their only real weapon.  
+*The best thing to do is to spray areas in case a Landmine is invisible around you. The bullets will reveal any Landmines. [[Octo Tank]]s and [[Penta Shot]]s excel at this due to their wide bullet spread, fast Reload speed and great crowd control.  
+*If the player has been tipped off to the presence of a Landmine, they can shoot them to ensure that they don’t leave the player’s sight, which will restart their invisibility timer. [[Overlord]]s and Necromancers should keep their Drones close to and in front of their tank so that they will become aware of a Landmine when close to one. Once aware, surround the enemy with Drones to kill it, which is especially easy for Necromancers. Managers and Stalkers should stop and become invisible, then wait for the Landmine to become visible again before attacking.  
+*High DPS tanks should keep their cannon facing whichever direction they’re are moving, and watch their bullets in case they suddenly start hitting or moving a faint looking “ghost-tank”. Focus on that place until the enemy is dead or runs away.  
+*[[Trapper]]s should slow down and allow their [[Traps]] to precede them wherever they go, and begin trapping it if they see their Traps rebound off of an invisible object until it is dead.  
+*Body Damage build tanks such as the [[Booster]] should flee far away from the area. When fighting other Landmines such tanks need to make sure the Landmine has lower health than the player.  
+*[[Spike]]s are also useful for warding off the Landmine, as they generally have more Body Damage than Landmines.  
+*Some tanks have [[Auto Turrets]] that can reveal any cloaked Landmines. They will reveal the Landmine’s position.  
+*<b>Remember:</b> You can never be too paranoid when a Landmine appears on the [[Scoreboard]].  
+**The Landmine will be easy to find if it is in the first place, as the arrow pointing to the leader will give the Landmine's location away.
+
+== History ==
+*When it was initially released, it was visually identical to the Smasher. It was redesigned in the August 7 update.
+*The update on August 12th, 2016 date also marks a change where getting hit makes you visible, and partially restarts the timer for invisibility, effectively rendering the Landmine toothless.
+*As of August 12th, 2016, its invisibility has been nerfed to take roughly 13 seconds for total invisibility (as opposed to the 3 seconds it took upon the class's introduction), in exchange for no longer being visible at all once the timer finishes.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/pQsbAoo 1.3m by Relentless]
+* 2 Teams: [https://imgur.com/HvqidnU 1.98m by Sonic]
+* 4 Teams: [https://imgur.com/7NO3LDf 1.32m by Sonic]
+* Maze: [https://imgur.com/h58JVHU 1.07m by Relentless]
+
+=== Mobile ===
+
+* FFA: [https://imgur.com/a/diep-io-landmine-ffa-mobile-wr-by-cheesemuncher-63-HtEfjZT 1.97m by cheesemuncher63]
+* 2 Teams: 1.01m by buh
+* 4 Teams: 619.9k by VløKe
+* Maze: -
+
+== Trivia ==
+*It, alongside the three other tanks of its [[Smasher|Class]], are the only tanks that cannot use projectiles to attack, being solely dependent on Body Damage.
+*It can survive up to 3 [[Mega Trapper]] Traps or 2 [[Destroyer]] Bullets with Max Health and Body Damage upgrades.
+*With maxed out Health Regen, Max Health and Body Damage, one [[Arena Closer]] bullet will halve its health.
+*In the past, if the player clicked with their mouse while being or turning invisible, that would slightly reduce invisibility. If the player held the click or turned on the [[Auto Fire]] feature, the player would not become invisible at all. Quite some time passed before this was fixed.
+*On the legacy mobile version, any tank branching off from the Smasher including itself once upgraded to, the shoot button would disappear. However, if one is to touch the button as if it is there, the minimap showing the direction of the player would still move despite the button being invisible.
+*Landmine's upgrade icon and appearance on the class tree is not symmetrical. Both shells are slightly rotated with respect to the front.
+**For a visualization of this, see the Gallery section below.
+**All other Smasher tanks ([[Smasher]], [[Auto Smasher]], and [[Spike]]) also suffer from this asymmetry.
+
+== Gallery ==
+<gallery>
+landmine is annoying 1.png|Landmine's icon by itself, acquired by upscaling the "diep-native" canvas element.
+landmine is annoying 3.gif|A gif showing Landmine's asymmetry by having its upgrade icon layered on top of itself, with the copy rotated by exactly 30 degrees and with a transparency effect. 
+landmine is annoying 2.png|An image showing the exact difference between two Landmine icons by using paint.net's "difference" filter.
+all smasher upgrades are terrible.png|A visualization showing how every Smasher shell is not properly aligned with what "forward" should be. Auto Smasher's auto turret is facing the rear to show exactly where the direction of "back" is. Landmine and Spike have guides to show exactly where the lines of symmetry are to showcase how they are not aligned whatsoever.
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Landmine
+|es     = Landmine
+|fr     = Landmine
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Landmine
+|pt-br  =
+|ro     =
+|ru     = Landmine
+|sv     =
+|tr     =
+|vi     = Landmine
+|zh     = Landmine
+}}
+[[Category:Invisibility]]
+[[Category:Diep.io]]

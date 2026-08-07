@@ -1,0 +1,51 @@
+= Launchers =
+
+{{Conjecture|Launcher}}{{PA}} are a unique type of weapon that shoot [[Traps]], which disappear over time and deal great amounts of damage when an enemy touches it. Launchers have reduced recoil compared to cannons. Regardless, all Trap launchers behave the same.
+
+== Types of Launchers ==
+[[File:Mini_Trapper.png|thumb|75px]]
+*<b>Normal Launchers:</b> This Launcher features a small rectangular base with an upside-down trapezoid at the end. This Launcher shoots tiny Traps that can be used as a defense and close-range ammunition. The [[Trapper]], [[Overtrapper]], [[Auto Trapper]] and [[Tri-Trapper]] bear this. The [[Defender]] and the [[Dominator|Trapper Dominator]] use this type of Launcher too.
+[[File:Big Trapper.png|thumb|75px]]
+*<b>Mega Launchers:</b> This Launcher lays bigger and more durable Traps, with extra penetration and damage, but with slightly less speed. The upgraded Traps allow stronger defenses and longer-lasting walls. Only [[Mega Trapper]]s use these launchers. This is the only Launcher that shoots traps that are the same size as the tank's body.
+[[File:Big_Trapper.png|thumb|75px]]
+*<b>Medium Launchers:</b> Although these Launchers look the same as Mega Launchers, the Traps they fire are about half as big. Their Traps move slightly slower than normal. This Launcher is only seen on the [[Gunner Trapper]], along with the two upgraded [[Gunner]] cannons.
+
+== Users ==
+Tanks that have Launchers as their weapons include:
+* [[Trapper]], upgrades from Sniper, one Normal Launcher
+* [[Gunner Trapper]], upgrades from Gunner, one Medium Launcher and 2 Gunner barrels
+* [[Mega Trapper]], upgrades from Trapper, one Mega Launcher
+* [[Auto Trapper]], upgrades from Trapper, one Normal Launcher and an Auto Turret
+* [[Overtrapper]], upgrades from Overseer and Trapper, one Normal Launcher with 2 Secondary Drone Spawners, they spawn 2 drones
+* [[Tri-Trapper]], upgrades from Trapper, three Normal Launchers
+
+Other things that wield Launchers include:
+* [[Dominator|Trapper Dominator]], Dominator, 8 Launchers
+* [[Defender]], Boss, 3 Launchers
+
+== Trivia ==
+*Launchers were first added on the July 18th update, being possessed by Trapper, Mega Trapper, Tri-Trapper, Overtrapper and by Gunner Trapper.
+**The Auto Trapper was later added with the August 15th update.
+**The Defender was added in the August 23rd update, being the first (and only) [[Bosses|Boss]] to use launchers, with a total of three Launchers (along with three [[Auto Turrets]]).
+**The Trapper Dominator was the last tank added with the August 26th update, which is the only Dominator variant (and {{CA|Special Tanks|special tank}}) to use Launchers, with a total of eight Launchers.
+
+{{Gameplay|weapon}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     =
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Ống phòng thủ
+|zh     = 發射器
+}}
+[[Category:Diep.io]]

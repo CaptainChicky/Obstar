@@ -1,0 +1,4 @@
+= Game Mode =
+
+#REDIRECT [[Game Modes]]
+[[Category:Redirect]]

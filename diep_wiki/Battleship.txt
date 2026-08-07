@@ -1,0 +1,177 @@
+= Battleship =
+
+{{Infobox
+|image     = <gallery>
+battleship icon 2.png|New Colors
+battleship icon 1.png|Old Colors
+</gallery>
+|tier      = 4
+|next      =
+|previous  = [[File:Overseer icon new.png|50px|link=Overseer]][[File:Twin flank icon new.png|50px|link=Twin Flank]]
+|barrel    = [[Spawners]] (4)
+|id        = 48
+}}
+{{Confused|the protoype design for the [[Mothership#History|Mothership]], which was named Battleship}}
+Battleship is a Tier 4 tank in Diep.io. It upgrades from [[Overseer]] and [[Twin Flank]] at level 45. Upon upgrading, the tanks’ weapons are replaced with four[[Spawners| Modified Spawners]] that can be toggled on and off. The class was added on August 28th, 2016.
+== Design ==
+The Battleship features a blue circular base, while essentially looking like the Twin Flank, but using Spawners instead of barrels.
+
+== Technical ==
+{{BaseStats
+|PrevClass         = Overseer
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▲
+|BulletPenetration = ▼
+|BulletDamage      = ▼▼
+|Reload            = ▲▲
+|MovementSpeed     = —
+|HiddenStat1       = Drone Size
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▼▼
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+{{BaseStats
+|PrevClass         = Twin Flank
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = ▲
+|BulletPenetration = —
+|BulletDamage      = ▼▼▼
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = {{CA|Ammunition|Ammo}} Size
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▼▼
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+Upon upgrading to the Battleship, Overseer Drones will disappear. The Drone Count capacity is removed, as the Battleship fires endlessly due to the Drones' limited lifespan.
+*The Drones will have a very short lifespan — only about 4.2 seconds.
+*Drone Speed will increase.
+*Drone Penetration (health) and Damage will drastically decrease.
+*Reload increases.
+*It will gain four Mini Spawners.
+*Two Spawners will spawn controllable Drones, two spawn uncontrollable Drones.
+*Stats:
+** Bullet Speed: 1.2x Tank
+** Bullet Penetration: 2 (+1.5 for each point in Bullet Penetration)
+** Bullet Damage: 1.05 (+0.45 for each point in Bullet Damage)
+** Reload: 15t (-1t for each point in Reload) 
+
+== Strategy ==
+*<b>Strong against:</b> Everything except weaknesses, due to the ability of the AI drones to attack accurately offscreen.
+*<b>Weak against:</b> Skilled [[Factory|Factories]]; [[Overlord|Overlords]] with a high-health build; Rammers and [[Destroyer|Destroyers]] when unprepared, especially [[Annihilator]]; Sea Serpent [[Fighter|Fighters]]/[[Booster|Boosters]].
+
+=== As the Battleship ===
+*Always invest equal points in drone speed and drone reload as reload makes you shoot more drones, thus, meaning more offensive and defensive weapons. However, faster speed means longer range and makes chasing enemy tanks easier. 
+*The Battleship behaves extremely similarly to the non-playable [[Guardian]]; as such, they both share similar weaknesses. However, since the Drones spawn at such a quick rate and don’t move in a straight line, very few tanks can take out the Battleship without taking hefty amounts of damage. It can overwhelm an unprepared weak tank and quickly destroy them without much time for the target to react, especially in a 1v1 situation. As a result, players should generally try to have 5-6  Movement Speed, especially if playing in [[FFA]]. It also works in teams (albeit less well); there have been multiple Battleship 2/4TDM takeover videos on YouTube.
+*Overseer branch and Destroyers are food due to their inability to defend against drones and attack at the same time. The only way they can kill the Battleship is if they take the Battleship by surprise from below.
+*Ambushes should be used for easier kills, but it should be attacking an enemy from where their guns are not pointed or a gap between their guns instead of camping somewhere. Players should also build up some Movement Speed to ensure that they can chase opponents and fend off rammers. Note that max movement speed isn't as important as power.
+*Pentagon nests are not good for Battleships as the pentagons take a while to kill — meaning the Battleship can be ambushed and trapped relatively easily.
+*The Battleship is a good counter against some Trapper classes. The player’s Drones are small enough that they have a chance to slip through a Trap wall. The Battleship does especially well against the [[Mega Trapper]] class as it is not able to fire Traps fast enough to block all incoming Drones.
+*In game modes with teams, the Battleship, like the [[Tri-Trapper]], is an incredibly good supporting tank — its small, fast drones can assist in damaging a tank who is fighting another tank of your team, or alternatively, distract an opposing tank’s attention to make way for a more offensive tank like the [[Annihilator]].
+*A skilled Battleship player can kill ramming/melee tanks, like [[Spike]]s, [[Booster]]s, and ramming [[Annihilator]]s or [[Fighter]]s. To kill rammers:
+**1. The player must immediately hit the rammer with the manual clump of drones (unless they are already close).
+**2. The player should build up the clump of drones behind or in the Battleship while the automatic drones wear away the rammer's health.
+**3. When the rammer gets very close (or if the Annihilator is somewhat close and has just fired), the player should hit the rammer with the clump of drones again. This should either kill them or take them so low that they no longer pose a threat.
+**4. If the rammer has already got extremely close and is not an Annihilator, the player should turn the Battleship sideways so that two of the barrels spawn drones inside the rammer. This constantly pushes the rammer back while dealing damage (this is very effective against baby rammers). If the rammer has got extremely close and is an Annihilator, the player should simply put what remains of the clump of drones between them and the rammer and try to juke the rammer until it dies/runs away. 
+*Staying just out of range of a Destroyer Dominator chips off its health slowly. The Drones have higher range then the bullet but it is somewhat risky.
+*Overall, Battleship repels can beat the vast majority of (unskilled) concentrated bullet spammers, fend off less concentrated glass bullet spammers (other than Spreadshot, which is actually very vulnerable to battleship) and easily kill any other glass enemies (that is not a high-level [[Sniper]]-type class or a Factory).
+
+=== Against the Battleship ===
+*It is strongly advised for players to stay far away from the Battleship and attack from a distance because its Drones can do a very respectable amount of damage in a small amount of time.
+*The [[Streamliner|Steamliner]] may work against unaware battleships but if the enemy is skilled, then Streamliner fails miserably.
+*Low-speed Snipers are sub-optimal against skilled Battleships.
+*Rammers don't work unless they witch-hunt.
+*Using the Battleship against another Battleship only works if the aggressor is skilled and the victim is unskilled. Battleships are not tanks to be chased — using another Battleship does not change this.
+*Factories and [[Necromancer]]s are hard counters against the Battleship as they can cut through the Drones and easily overwhelm it (assuming that they are using good builds). However, Factories need skill to kill skilled battleships.
+*Sea Serpent [[Fighter]]s (Fighters with the build 0/2/3/0/7/7/7/7) can also destroy a Battleship, providing they destroy the main clump of drones before it hits.
+*All bullet wall tanks are good against Battleships as the bullet wall stops virtually all of the drones due to the drones' low health
+*A Battleship's uncontrollable drones can reach very far, making a Battleship very dangerous to [[Destroyer]] classes. However, if they get close enough, the Battleship will almost always die; the drones are not strong enough to block the bullet and the bullets can be fast although maybe not but usually, they are fast because destroyers upgrade bullet speed but they might not always but they still might.
+
+== History ==
+*Battleship was added on August 28, 2017.
+*This replaced Octo Tank when it was added as a [[Twin Flank]] upgrade between 15th April and 17th April 2016.
+
+== Records ==
+
+=== PC ===
+
+* FFA: 1.41m by Baller
+* 2 Teams: 2.04m by Trix
+* 4 Teams: 1.55m by LK2410
+* Maze: [https://i.imgur.com/Oy0x2Uh.png 1.18m by Baller]
+
+=== Mobile ===
+
+* FFA: 559.2k by Athu
+* 2 Teams: -
+* 4 Teams: 1.02m by Esko
+* Maze: -
+
+== Trivia ==
+*When it was added, there was a glitch that made the Drones spread without right-clicking or pressing shift. 
+*The Battleship is the first “true” Drone Class to use a Drone type with a different name and control to the others.
+*The Battleship used to shoot only uncontrollable AI Drones. On August 30th, it was updated, and now the front left barrel and back right barrel shoot controllable Drones while the other two shoot uncontrollable drones (from the Battleship's perspective).
+**This makes it the first tank to have its Drone control reworked.
+*It is also the first “true” Drone class to not be an Overseer-exclusive upgrade (also branches off Twin Flank).
+*The Battleship is currently the only tank in-game that requires [[Auto Fire]] to be turned on (or the mouse held down) to fire Drones.
+*It is the first Drone tank with no Drone limit and with a Drone lifespan and a lot of Drones
+*Sometimes, there is a glitch that will make the Battleship selection in Overseer’s Upgrade branch move to the top and have a green background instead of dark blue.
+*Although the Battleship is a drone user, the upgrading stats remains “bullets” rather than “drones”. The Battleship’s drones are technically bullets since Battleship Partisans will go through the border as well as bullets, while normal drones or Partisans will not.
+*The Battleship’s name comes from the fact that it fires many Partisans, which resemble the weapons used by most real Battleships; also, the Battleship vaguely resembles a real Battleship.
+*Battleship is the tank that can upgrade from the most Tier 2 tanks. They are [[Flank Guard]], Sniper, and Twin.
+*There also once was a glitch that Battleship drones, along with Necromancer drones, would move with nearly indefinite speed but crash into a tree.
+*It, alongside the [[Auto Trapper]], [[Smasher]], and [[Glider]] are the only tanks to have a dark blue background on their icon.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Patched or Removed Bugs ===
+[[File:Necromancer & Battleship Drone glitch|thumb]]
+*{{PC}} On Sep 1<sup>st</sup>, 2016, Battleship and [[Necromancer]] Drones were incredibly fast, allowing Necromancer users especially to dominate any game mode they entered.
+}}
+== Gallery ==
+<gallery>
+File:GreenBattleShip.png|[[File:I lagged for ten seconds and walked into purple base -c.png|thumb|A green Battleship with auto fire on near green base. Notice how half the AI drones lock on to the offscreen target.]]
+File:Screen Shot 2016-08-28 at 3.31.58 PM.png|A Battleship at a glance
+File:Im king.png|Controlling the Drones
+File:Battleship Drones demo.png|A Battleship sitting in space. Notice the manual drones going to the cursor and the automatic drones randomly searching the screen.
+File:Screenshot 2020-06-10 at 10.51.19 AM.png|An Overseer, Manager, Auto-Gunner, and Battleship (most importantly) in a Raider Group.
+File:Battleship in Sandbox.png|Battleship in Sandbox
+File:Battleship icon 2 dblue.png|New Colors
+File:Battleship icon 1 dblue.png|Old Colors
+File:Battleship icon 2 green.png|New Colors
+File:Battleship icon 1 green.png|Old Colors
+</gallery>
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Battleship
+|es     = Battleship
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     = 배틀쉽
+|pl     = Battleship
+|pt-br  =
+|ro     =
+|ru     = Battleship
+|sv     =
+|tr     = Battleship
+|vi     = Battleship
+|zh     = Battleship
+}}
+[[Category:Auto Tanks]]
+[[Category:Diep.io]]

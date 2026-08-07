@@ -1,0 +1,54 @@
+= Protector (tank) =
+
+{{Stub}}{{Removed}}{{WIP}}
+{{Infobox
+|image     = <gallery>
+Protector icon 1.png|Current
+</gallery>
+|tier      = N/A
+|previous = Using [[Controls|cheats]] (Developer)
+|barrel    = [[Cannons]]
+[[Spawners]]
+|id        = 59
+}}
+
+== Design ==
+The Protector looks like an [[Overseer|Overseer]] but with 3 small but very spammy [[Cannons|barrels]]. The barrels are extremely similar to the Gunner [[Dominator]]'s.
+
+== Technical ==
+The Protector appears in Team Modes with bases. In 4 Teams, a Protector is placed at the middle of each base while in 2 Team, several Protectors are place along the bases. 
+
+Upon detecting an enemy player, the Protector will start attacking said player by firing bullets and spawning drones in quick succession. Both the drones and the bullets have low damage per hit, but extremely high Penetration. The drones also have a limited lifespan, similar to Battleship's Drones. 
+
+== Strategy ==
+* <b>Strong Against:</b> Mostly everything.
+* <b>Weak Against:</b> Mostly nothing.
+
+== Gallery ==
+<gallery>
+File:protectortankbetadiep.png|Protector Tank (for dev cheat switching tank bug) with real Protector in Beta Diep.io
+</gallery>
+
+== Trivia ==
+
+
+{{TankNav}}
+{{Interlang
+|status = checked
+|de     =
+|es     = 
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = 
+|pt-br  =
+|ro     =
+|ru     = 
+|sv     =
+|tr     =
+|vi     = 
+|zh     = 
+}}
+[[Category:Diep.io]]

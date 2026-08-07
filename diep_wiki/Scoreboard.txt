@@ -1,0 +1,79 @@
+= Scoreboard =
+
+The {{PA}}, also called the Leaderboard, is a miscellaneous feature in [[Diep.io]]. It is located at the top right corner of the screen during the gameplay, the scoreboard does not display on the title screen. The scoreboard displays the top 10 players of [[Survival]], [[Free For All]], [[2 Teams]], and [[4 Teams]], the number of players on each team in [[Tag]] and the Health of the two [[Mothership (Tank)|Motherships]] of the now-defunct [[Mothership (Game mode)|Mothership Game Mode]]. There is no leaderboard in [[Domination]].
+
+== The Score ==
+The score determines your position on the scoreboard and the [[Levels|Level]] of your tank. Your score and level are always indicated below in the center of your screen during the gameplay in the score bar, which also displays a bar (color depends on the team—default green) which shows your score compared to the top player. In Free For All, 2 Teams, and 4 Teams, your score will be indicated on the scoreboard if it’s high enough. When there are lower then 10 players in the server, like in Sandbox or Survival, the number of bars will be that number of players, say if there are 7 players alive in a Survival server, it will show the 7 players' score compared to the number one player.
+
+To increase your score you have to destroy [[Polygons]], other players or [[Bosses]].
+
+== Scoreboards by [[Game Modes|Game Mode]] ==
+=== Free For All, Survival, Maze, and Sandbox ===
+In [[Free For All]], [[Survival]], [[Maze]], and [[Sandbox]], the top 10 players are arranged from highest to lowest score. In VERY old versions of Diep.io it was arranged by the number of kills, then it was changed to highest to lowest score (no bars), then the comparison to the first bar was added, and then at the right of the comparison bar, the class of that player was added.
+
+=== 2 Teams and 4 Teams ===
+In the [[2 Teams|2]] and [[4 Teams]] modes, the top 10 players are arranged from highest to lowest score, no matter what team they are on. The scoring system is the same as Free For All. However, instead of the bar being green, it will be blue and red for 2 teams, and blue, green, red, and purple for 4 teams, depending on what team the player is on.
+
+=== Domination ===
+[[Domination]] is the only game mode without a scoreboard.
+
+=== Mothership ===
+In [[Mothership]], the health of both [[Mothership (Tank)|Motherships]] is displayed and arranged from highest to lowest HP. When both Motherships die, blue would always be shown first, due to it being team 1 in the code.
+
+=== Tag ===
+In [[Tag]], the amount of players the four teams have are displayed and arranged from highest to lowest number. If the four teams have the same score, the order will be Blue>Red>Purple>Green, according to the order of the teams in the code.
+
+== Leader ==
+[[File:ARROWLEADER.png|thumb|56x56px|The Leader Arrow]]
+The leader is number one on the scoreboard. An arrow will show where the leader is, but if the leader is close, the arrow will disappear. The leader also cannot see the arrow. Most leaders are very skilled and often focus more on [[Tanks]] instead of [[Polygons]].
+
+== Trivia ==
+*The old Scoreboard had no bars and the score was shown inside the parenthesis after the player’s name. <i>Player Name (Score)</i>.
+*Domination is the only game mode without a scoreboard.
+*The removed [[Team Deathmatch]] and [[Mothership (Game mode)|Mothership]] modes had their kind of new player spawning system depending on the scoreboard. New players would spawn on the team with the lowest contribution to the scoreboard. For example, if there are more red team players than blue team players listed on the scoreboard, then new players will spawn on the blue team. If Red Team’s [[Mothership (Tank)|Mothership]] has lower HP than Blue Team’s [[Mothership (Tank)|Mothership]], then new players will spawn on Red Team.
+*As of August 8th, 2016, the players’ classes now appear on the scoreboard right on the left, near their username.
+*When you hover over a player on the Scoreboard, the bar turns brighter.
+* At the beginning of a server, you spawn on the leaderboard as the leader until the bar immediately goes down.
+*The leader’s tank portrayed on the scoreboard is backward compared to others. (Left facing)
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Unpatched Bugs ===
+*{{PC}} Sometimes, the scoreboard, mini-map, and the player's bar status will disappear at various times then they will reappear after. This bug usually crashes the game, eventually kicking people out of the server and upsetting them as then they lose all of their EXP and levels. Notifications are also not visible when they appear during this bug.
+}}
+
+== Gallery ==
+<gallery>
+ScoreboardOld.png|Old Scoreboard, calculated with the number of kills
+Score2.png|Second design, calculated with Score
+ScoreboardNewDesign.png|Third Free For All Scoreboard (no tank classes have been shown)
+UpdatedScoreboard.png|Current Free For All Scoreboard
+ScoreboardTDMold.png|Old TDM Design (no tank classes shown)
+MillionaireTank.png|TDM (2 teams) Current Scoreboard
+ScoreboardTDMFourTeams.png|TDM Scoreboard (4 teams)
+Tag Score.png|Old Tag Mode Scoreboard
+Edited.png|Current Tag Mode Scoreboard
+Mothership Scoreboard.png|[[Mothership (Game Mode)|Old Mothership Scoreboard]]
+</gallery>
+
+{{Gameplay|feature}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Tabla de líderes
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Ranking
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Bảng Xếp Hạng
+|zh     = 排行榜
+}}
+[[Category:Diep.io]]

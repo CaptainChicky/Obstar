@@ -1,0 +1,59 @@
+= Pentagon Nest =
+
+[[File:Pentagon_Nest.png|thumb|250pxpx|A [[Tank|Player]] being chased by a swarm of Crashers in the Pentagon Nest.]]
+The {{PA}} is an area with a large number of [[Pentagon|Pentagons]] and is the only place where [[Alpha Pentagon|Alpha Pentagons]] can spawn. It is located at the center of the [[Map]]. The area contains [[Crashers]] that spawn around it, which guard the nest and aim for players nearby.
+
+The Pentagon Nest is known for containing the two strongest/most EXP-giving [[Polygons]] (Excluding Green Variants): the [[Pentagon]] and the [[Alpha Pentagon]]. It is also known for the notorious [[Crashers]] that pursue every player they notice and reset the regeneration timer.
+== Rewarding Features ==
+The Pentagon Nest is considered the best place to level up if the player can survive the danger as the numerous [[Pentagons]] and [[Alpha Pentagon|Alpha Pentagons]] reward huge amounts of EXP.
+*Many [[Pentagons]] spawn here, each giving 130 EXP, a considerable boost to larger tanks, and a huge bonus to smaller tanks.
+*Usually, 1-6 [[Alpha Pentagon|Alpha Pentagons]] are often present in the Pentagon Nest. Dealing the final blow gives the tank '''3000 EXP''', which is a significant and game-changing amount if the player can manage to do so. It’s best to use a [[Destroyer]]-class or any high RoF tank.
+== Precautions ==
+*The area will often have a very high chance of high tier players due to the density of the [[Pentagons]] and the amount of it, also due to the [[Alpha Pentagon|Alpha Pentagons]].
+*As stated above, the area is guarded by Crashers. Their knockback is usually only irritating, but they may come in large groups. If the player has any points to spend, spend it on Max Health or Body Damage to counter the Crashers; otherwise, the best strategy is to retreat if the player is not strong enough to take them down. If the player is low on health, they shouldn’t enter the nest for safety reasons. The Crashers could knock a player into [[Pentagon]]s or an [[Alpha Pentagon]], dealing massive damage. If the player is knocked into an Alpha Pentagon, they will probably die.
+*The [[Crashers]] also stall regen, an irritating effect.
+*As only the last hit on the [[Pentagons]] count, it is important to beware of others with high [[Bullet Damage]] and [[Reload]] - they may steal the kill shot, wasting the effort the player has spent on damaging it.
+*Even if the player's team has occupied the Pentagon Nest, it doesn’t mean that the enemy is unable to enter. The player ought to be alert of enemy tanks approaching the nest.
+== Strategies ==
+[[File:Pentagon Nest1-0.PNG|thumb|220x220px|Pentagons and an Alpha Pentagon in the Pentagon Nest]]
+*[[File:Pentagon Nest in Sandbox.png|thumb|A Pentagon Nest in Sandbox]]As a [[Trapper]] or one of its upgrades, players can surround the area with [[Traps]], hindering any enemies attempting to enter the area and protecting themselves against the [[Crashers]]. This is especially effective in [[Game Modes|Team Modes]] as it secures the area better, and because teams can work together with fellow [[Trapper|Trappers]] to more thoroughly cover the area, thus cementing the team’s hold over the Nest.
+*As an [[Overseer]], [[Overlord]], or [[Necromancer]] in [[2 Teams]] or [[4 Teams]], a player can send their [[Drones]] into an [[Alpha Pentagon]] once their team damages it enough.
+*[[Manager|Managers]] and [[Stalker|Stalkers]] in [[2 Teams]] and [[4 Teams]] can defend the nest from invaders while [[Invisibility|Invisible]]. This will give time for low-tier players to level up without dying.
+*[[Smasher|Smashers]] and [[Landmine|Landmines]] can use the [[Crashers]] to push themselves toward [[Pentagons]] while avoiding the [[Alpha Pentagon|Alpha Pentagons]].
+*The [[Destroyer]], [[Hybrid]], and [[Annihilator]] can use their massive [[Bullets]] to steal the [[Alpha Pentagon|Alpha Pentagons]]' experience. [[Hybrid|Hybrids]] can use their drones to help defend against the[[Crasher| Crashers]].
+*Attempting the nest at a lower level is not often recommended. However, if you want to, here are some things that can help.
+**Staying at the edge can help with picking off a few straggling [[Pentagons]] that spawn there.
+**Avoid the [[Crashers]] as much as possible; as they can kill unless the player has very high health/damage/body damage/speed, or have maxed out reload and lots of bullet damage/bullet penetration. If players have low health, [[Crashers]] will reset the regeneration timer (the time it takes to get fast regeneration) then eventually lead to death. '''They are also notorious for pushing players around.'''
+**Getting points in [[Movement Speed]] and [[Body Damage]], with [[Max Health]] and [[Health Regen]] optional, then running in, body damaging as many [[Pentagons]] as possible then retreating to regenerate, can be an effective strategy to get lots of EXP, especially as a [[Smasher]] or its upgrades.
+***A popular strategy is to wait until someone has lowered an [[Alpha Pentagon]]’s health, enough then to run in, ram the Pentagon and steal the kill for the score.
+*[[Octo Tank|Octo Tanks]] in [[Team Deathmatch]] can use their huge quantity of omnidirectional bullets to repel other players, preventing them from entering the Pentagon Nest.
+*High-leveled tanks in team modes can help lower the health of [[Alpha Pentagon|Alpha Pentagons]] and give the EXP to lower leveled players.
+*[[Spread Shot|Spread Shots]] and [[Penta Shot|Penta Shots]] can easily eliminate Crashers with their massive spreads, and deal massive damage to Alpha Pentagons if all shots hit.
+*In [[Maze]], the Nest may be surrounded by Walls and have a few entrances only. A Trapper-branch tank can seal the entrances off and take the whole Nest for themselves. [[Auto Trapper|Auto Trappers]] are best at this because their [[Auto Turret]] can attack [[Crashers]] and [[Pentagons]] while they seal off entrances.
+**[[Gunner Trapper|Gunner Trappers]] also work because it also has cannons facing the opposite direction in which it is laying traps.
+
+== Trivia ==
+*When the following happens, the [[Death Screen]] will lead to the Pentagon Nest:
+**A controlled [[Dominator]] steps down.
+**In [[Domination]], [[Tag]], or the [[Mothership (Game Mode)|Mothership Gamemode]], when the arena is closed and the player is killed.
+*A pile of [[Polygons]] replaces the starting pentagon nest in [[Survival]], but [[Crashers]] and [[Alpha Pentagon|Alpha Pentagons]] still spawn.
+*In [[Tag]], there used to be a [[Dominator]] in the middle of the Pentagon Nest. It was removed soon after.
+{{PolyNav|other}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Nido de Pentágonos
+|fr     = Zone des pentagones
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Pentagon Nest
+|pt-br  =
+|ro     =
+|ru     = Склад
+|sv     =
+|tr     = Beşgen Yuvası
+|vi     = Pentagon Nest
+|zh     = 中央經驗區
+}}

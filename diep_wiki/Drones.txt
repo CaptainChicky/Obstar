@@ -1,0 +1,167 @@
+= Drones =
+
+[[File:Overdrones.png|thumb|A group of Drones that are used by the [[Overseer]], [[Overlord]] and the [[Manager]] (Old Colors).]]<i>Not to be confused with the AI-controlled [[Base Drones]] or  [[Crashers]].</i>
+
+{{PA}} are weapons used by the [[Overseer]] branches and the [[Hybrid]]. Most drones look like smaller versions of [[Triangle]]s, with the only exceptions being the [[Necromancer|Necromancer’s]] Drones, which look like [[Square]]s, and the [[Factory|Factory’s]], which look like small [[Arena Closer]]s. 
+[[File:Factory_Drone_(3)_Jun_8_Thu_2017.PNG|thumb|A lone [[Factory]] drone/minion.]]
+
+== Technical ==
+=== Behavior ===
+All Drones (with the exceptions of Hybrid’s and Overtrapper’s AI-controlled ones and the Factory’s Minions, which exhibit more complex behavior) can be controlled via left-clicking or by pressing E to enable Auto-Fire. This forces them to follow the player’s cursor. Right-clicking or pressing Shift will force drones to move away from it.
+
+If not controlled, all the Drones regardless of their type will automatically seek the nearest enemy in their immediate area. If no target is available, they’ll become "idle" and passively orbit around their tank.
+
+The [[Mothership (Tank)|Mothership]] and the Battleship present both controllable drones and uncontrollable Drones. (Presumably, due to their exceptionally high Drone Count). The latter, automatically protecting the tanks from enemy users.
+
+<b>Note</b>: When a tank with controllable drones uses [[Auto Fire]] and [[Auto Spin]] simultaneously, the Drones will orbit the tank uncontrollably unless either auto function is off.
+
+=== Stats ===
+Drones are affected by these Stats:
+*[[Stats#Bullet Penetration|Bullet Penetration]] increases their Max Health.
+*[[Stats#Bullet Damage|Bullet Damage]] increases their Body Damage
+*[[Stats#Bullet Speed|Bullet Speed]] increase their Movement Speed.
+*[[Stats#Reload|Reload]] increases their respawn rate (or Drone Count in the case of sunchips)
+
+Note that in Factory’s case the mentioned Stats also modify these Traits:
+*[[Stats#Bullet Penetration|Bullet Penetration]] increases their Bullet Penetration.
+*[[Stats#Bullet Damage|Bullet Damage]] increases their Bullet Damage.
+*[[Stats#Bullet Speed|Bullet Speed]] increases their Bullet Speed.
+*[[Stats#Reload|Reload]] increases their Bullet Reload.
+
+== Drone Users ==
+Tanks that use controllable Drones are:
+*[[Overseer]]: up to 8 drones per tank.
+*[[Overlord]]: up to 8 drones per tank.
+*[[Manager]]: up to 8 drones per tank.
+*[[Necromancer]]: up to 22-36 per tank depending on the reload. (Max Drone Count)
+*[[Factory]]: up to 6 drones per tank.
+
+Tanks that use uncontrollable Drones are:
+*[[Hybrid]]: up to 2 drones per tank.
+*[[Overtrapper]]: up to 4 drones per tank. 2 controllable, 2 fully AI.
+
+Tanks that use both controllable and uncontrollable drones are:
+*[[Mothership (Tank)|Mothership]]: 16 controllable drones and 16 uncontrollable drones.
+*[[Battleship]]: Infinite controllable drones and infinite uncontrollable drones; both types disappear 4 seconds after spawning.
+
+[[Bosses]] that use Drones are:
+
+Polygons
+*The [[Guardian]]: 24 swarm drones.
+*The [[Guardian (8th Anniversary)]]: 24 swarm drones, 40 drones, 5 drones (smaller Guardians).
+*The [[Defender (8th Anniversary)]]: 6 drones (yellow, have trap launcher on each side)
+*The [[Summoner]]: 28 square drones.
+*The [[Summoner (8th Anniversary)]]: 56 square drones.
+Fallen
+*The [[Fallen Overlord]]: 12 drones.
+
+== Battleship Drones ==
+Their drones are only accessible by the Battleship and Mothership. They are aesthetically the same, except:
+*The Battleship’s drones decay after a certain amount of time.
+*The Battleship’s drones are much weaker than those of the Mothership’s
+*Only half the drones can be controlled by the Tank at any given time.
+*They exhibit an exceptionally wide Trigger Range.
+
+== Necromancer Drones ==
+These drones, also known as undead drones, are only accessible by the Necromancer. They are essentially the same, except:
+*They are presented in far greater numbers, but in return, they take full damage instead of only 25% like other drones.
+*They have a square shape and somewhat reduced Speed.
+*All the tanks that use this type of drone have a Square base.
+*The Necromancer must collect its drones by infecting squares since it doesn’t spawn them on its own.
+*Unlike other types of drones, you can get points (10 EXP) by destroying a Necromancer Drone. If the Drone is converted from a Green Square however, you will get 1000 EXP.
+*They are considered Shapes (or more specifically, Squares) by the game. 
+*Note: The Summoner's drones are almost identical to the Necromancer's drones, except for the fact that the Summoner's drones are generated via four spawners, as well as do not give any EXP upon destroying. They are also considered Drones rather than Shapes like regular Necromancer's Drones.
+
+== Factory Drones ==
+These Drones are exclusive to the Factory. They are also known as Minions. They present some singular characteristics in the sense that:
+*They move at roughly half the speed of normal Triangle Drones.
+*They are twice as strong as normal Triangle Drones.
+*They are the only type of drones in which their body isn’t their main offensive weapon.
+*They are smaller than Level 1 Tanks and have a similar appearance to the [[Arena Closer]].
+*They do not chiefly use melee attacks — they keep their distance and shoot, like miniature tanks.
+
+=== Technical ===
+*Both the Factory’s projectile types are affected by the same stats. (e.g. Bullet Damage increases both the Minion’s Body Damage and their Bullet Damage)
+*When idle, the Minions will orbit the player, similar to other Drones but further away from the player’s body.
+*When using Left-Click the minions will go, and fire, in the cursor’s direction. Given a certain distance, the drones will start orbiting around the pointer while shooting at it.
+*When using Right-Click, and depending on their position with the cursor, the minions will either orbit the cursor while shooting outwards, clump together in a star formation, or go away from it like normal repelled drones.
+
+== [[Achievements]] ==
+{{SideBox|*<b>They ain’t a real tank</b> — Destroy 100 Factory drones
+|{{Achievement
+|Color        = #A682E1
+|Name         = They ain’t a real tank
+|Description  = Destroy 100 Factory Drones}}
+}}
+
+== History ==
+*After the June 15<sup>th</sup> [[changelog]], when you upgrade to Overseer or any of its branches, Bullet Penetration, Bullet Speed and Bullet Damage will, respectively, become Drone Health, Drone Speed and Drone Damage. For Necromancers, Reload will also change to Drone Count.
+*Since [[Changelog|November 19<sup>th</sup>]], 2016 the Factory has a chance of spawning new players in team game modes.
+
+*Back when the [[Factory]] was first introduced, its drones were fully automatic. The mechanic was changed later because the AI was flawed and the Drones did not defend their Owner.
+
+== Trivia ==
+[[File:Drones2.png|thumb|Stat Table of a Drone Class cropped down to 4 Stats. Notice how "Bullet" is now replaced with "Drone".]]
+*The Hybrid's and Overtrapper's drones are AI-controlled because it is more difficult to control Drones and Cannons at the same time .
+*A Necromancer’s maximum number of Drones increases by two for every skill point spent on Reload/Drone Count. Combined with a basic maximum of 22 Drones, a Necromancer player can have up to 36 Drones under control depending on the number of skill points spent on Drone Count.
+*The Factory has the most powerful drones in the game, their Health and Speed being on par with the Mothership’s.
+*The Factory is the only class to spawn drones that also have weapons of their own.
+*Individual Minion Bullets are stronger than a Battleship’s Drones.
+*Minions are the first drone type to exhibit more complex movements than the normal attract and repel of other Overseer branches.
+*Unlike other classes that use them, Necromancer tanks do not spawn Drones of their own. Instead, the player must run into Yellow Squares to convert them into Drones. When there is at least one Drone under control, the player can start infecting Squares with its Drones instead.
+**In older versions of the game, a Necromancer Drone would occasionally, albeit very rarely, spawn from the side of the tank. This could not be used to reach the maximum Drone capacity, however, as it would take many hours or perhaps even days to reach even 20. Considering that Servers don’t stay open that long, it would be an impossible task to accomplish via this method. Its ineffectiveness was likely the reason why this feature was later removed.
+*The size of most Drones increases based on the tank’s level, except for the Necromancer's drones, which always stay the same size.
+*Occasionally, Drones can be spotted surrounding and attempting to attack another Drone.
+**This is a result of the player controlling their Drones while the cursor is stationary. As all the drones pile into the same space where their cursor is, it gives the appearance of them cannibalizing each other. No damage is incurred by the Drones when this happens, however.
+*After the July 18th changelog, a new class of [[Trapper]] tanks was added which introduced the Overtrapper, which spawns two uncontrollable Drones like the Hybrid.
+**Overtrapper was later buffed to have 4 drones, 2 of them are controllable.
+*Drone AI cannot detect the tanks that are already invisible, but they can still detect any tanks that aren’t fully cloaked.
+*Uncontrollable Drones, generated by the Hybrid, are weaker than controlled drones.
+*Drones in the game mode [[Breakout]] are unable to claim territory, which has interesting gameplay implications.
+**Necromancer is not affected by this.
+*[[Defender (8th Anniversary)]] and [[Guardian (8th Anniversary)|Guardian of the Pentagons (8th Anniversary)]] use unique drones.
+**Defender 8th anniversary: Small yellow triangles that have a trap launcher on each of their sides.
+**Guardian 8th anniversary: [[Pentagon]]-sized pink triangles with a drone spawner on the back.
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+
+===Patched Bug===
+[[File:ykkiki7lii7.gif|thumb|An example of the Necromancer abusing this bug.]]
+
+*{{PC}} Drones would go at rapid speeds.
+}}
+
+== Gallery ==
+<gallery widths="185">
+NecroDrones.png|Necromancer with some of its drones
+NecroDronesNew.png|Necromancer with some of its drones (New colors)
+Battleship drones.png|Battleship drones
+CS Guard Count.png|Guardian with its drones
+Overlord Boss Drone Count.png|Fallen Overlord with drones
+Mother Guardian.png|Mothership drones, only right ones are player-controlled (removed)
+Dooooooooooooooooooooooooooooooooo.jpg|An Example of Factory Drones and Factory
+GOOOOOOOOOOOOOOOOO.png|A red Teams Drones
+</gallery>
+
+{{Gameplay|ammo}}
+{{Interlang
+|status = checked
+|de     = Drone
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Drony
+|pt-br  =
+|ro     =
+|ru     = Дроны
+|sv     =
+|tr     =
+|vi     = Drones
+|zh     = 無人機
+}}
+[[Category:Diep.io]]

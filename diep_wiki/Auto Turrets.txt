@@ -1,0 +1,97 @@
+= Auto Turrets =
+
+{{DISPLAYTITLE:Mounted Turrets}}
+{{Image}}
+{{For|the tank formerly used internally to control Mounted Turrets|Ball}}
+[[File:AutoTIcon.png|thumb|A Mounted Turret]]
+<b>Mounted Turrets</b>, also known as <b>Auto Turrets</b> or simply as <b>Turrets</b>, are weapons that the [[Auto 3]], "Auto" tank upgrades, and [[Defender]] use. Mounted Turrets are gray circles with [[Cannons]] on them, attached to or on top of a tank that fire at nearby targets automatically without needing player input. When attached to the side of a tank (as seen on the Auto 3 and the Auto 5) only half of the circle beneath the Cannon can be seen, because of the tank's body covering some of the turret.
+
+== Technical==
+===Properties===
+*Mounted Turrets are half the size of the tank body.
+*Mounted Turrets share the same fire rate as standard Tank cannons.
+* Mounted Turrets fire [[Bullets]] which are smaller (70%) than that of standard size.
+* Mounted Turrets have slight recoil, like normal cannons.
+*They have decent Bullet Penetration for their size.
+
+===Targeting ===
+*Mounted Turrets on the side of the tank can only turn their cannons a certain total angle.
+** These '''can''' be controlled.
+**Should an object leave their angle range, the next turret may take over.
+*A Mounted Turret on the body of the tank can turn full circle. 
+**These '''cannot''' be controlled (except Auto Smasher).
+
+===When AI-controlled===
+*The Mounted Turrets will shoot targets within range.
+** The Mounted Turrets will not attack projectiles.
+**The Mounted Turrets prioritize [[Tiers|Tanks]] over [[Polygons]].
+**The Mounted Turrets will prioritize its attacker when the user takes damage.
+*In [[Game Modes]] with teams, Mounted Turrets will not target players on your team, they will only target players on the enemy teams.
+
+=== When it is possible to take control of them as the player===
+* Players could control the Mounted Turrets(s) closest to their mouse by left-clicking, pressing space or having [[Auto Fire]] turned on.
+*Right-clicking or pressing Shift would instead fire from the Mounted Turret most far away from the cursor.
+** Mounted Turrets closest to their mouse would fire in the opposite direction, giving a boost.
+*Multiple Turrets could be controlled if both were close enough to the mouse (only applied to Auto 3 and Auto 5).
+*Mounted Turrets that are located in the middle of a tank (not including the Auto 3 or Auto 5) would slowly revolve around the tank when unable to be forced to target any entity.
+
+==Users==
+
+=== Tanks ===
+*[[Auto 3]]: Has three evenly spaced controllable Mounted Turrets attached to the tank.
+*[[Auto 5]]: Has five (previously [[Auto 5#History|four]]) evenly spaced controllable Mounted Turrets attached to the tank.
+* [[Auto Gunner]]: It is a [[Gunner]] with a Mounted Turret on top of it.
+* [[Auto Trapper]]: It is a [[Trapper]] with a Mounted Turret on top of it.
+*[[Auto Smasher]]: It is a [[Smasher]] with a Mounted Turret on top of it. Has Health, Bullet and Movement stats which can all be upgraded 10 times each.
+*[[Auto Tank]]: It is a [[Tank|Basic Tank]] with a Mounted Turret on top of it.
+
+=== Polygons ===
+*[[Defender]]: Has three evenly spaced Mounted Turrets on its body near each point. They all have free rotation.
+*[[Defender (8th Anniversary)]]: Has three evenly spaced Mounted Turrets on its body near each point. They all have free rotation.
+*[[Tree-Topper]]: Has five evenly spaced Mounted Turrets on its body near each point. They all have free rotation.
+
+=== Fallen ===
+*[[Fallen Overlord (8th Anniversary)]]: It is a Fallen Overlord with a Mounted Turret on top of it.
+
+==History==
+* The [[Auto Gunner]] was the first to use Mounted Turrets on August 1, 2016.
+*On August 2nd, 2016, the [[Auto 5]] (at the time known as the "Auto Tank") was added.
+**On the same day, the [[Auto 3]] was added (albeit unnamed) and the Auto 5 gained an extra Mounted Turret and later received its current name.
+*Mounted Turrets used to default to face the front of the tank instead of the back of the tank.
+**This change was likely made between the releases of the Auto Gunner and Auto Trapper.
+*On August 15th, 2016, the [[Auto Trapper]] was added.
+*On September 13th, 2016, the [[Auto Smasher]] was secretly added.
+**This is because the developer was pushing some hotfixes and forgot he added it, as described in {{PL|https://www.reddit.com/r/Diepio/comments/52ljt5/theres_a_new_secret_class/d7lg2l4/|this Reddit post}}.
+*On November 19th, 2016, it was briefly possible to control the Mounted Turrets of Auto Gunners/Trappers/Smashers by pressing H while near one. This functionality was removed after 10 minutes.
+*On February 12th, 2025, the [[Auto Tank]] was added.
+
+==Trivia ==
+*[[Drones]] (when not manually controlled) exhibit very similar behavior to Mounted Turrets in the fact that they spin/follow their owner slowly when nothing is in range and attacking nearby tanks.
+**The [[Battleship|Battleship's]] [[Drones#Battleship_Drones|Drones]] will not circle the player due to them being able to detect tanks and polygons from far distances.
+*If a tank with a Mounted Turret on the top of its tank body is killed, then the Mounted Turret doesn't become transparent.
+*The Auto Smasher’s Turret fires slightly less accurately.
+
+==Gallery==
+<gallery>
+AutoTurretSc4.png|When killed, Mounted Turrets don’t go transparent.
+</gallery>
+{{Gameplay|weapon}}
+{{Interlang
+|status = checked
+|de     =
+|es     =
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Auto Turret
+|pt-br  =
+|ro     =
+|ru     =
+|sv     =
+|tr     =
+|vi     = Tháp pháo tự động
+|zh     = 自動砲管
+}}
+[[Category:Diep.io]]

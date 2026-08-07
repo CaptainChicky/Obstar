@@ -1,0 +1,53 @@
+= Custom Games =
+
+'''Custom Games''' are a feature in ''[[Diep.io]]'' that allow players to create private arenas with additional administrative tools and controls. Unlike normal public matches, a Custom Game gives the creator access to an '''Admin''' window, the [[Console]], and '''Sandbox Cheats''', allowing various gameplay, team, and server settings to be changed.
+
+Custom Games can also raise the maximum level beyond the normal cap of Level 45. For detailed information about [[Stats|Skill Points]] and stat progression, see [[Stats]].
+
+==Overview==
+Custom Games are accessed through the '''Custom Games''' button in the game's interface. Once inside a Custom Game, extra buttons appear in the upper-left corner of the screen, providing access to the Admin window and Sandbox Cheats. The standard gameplay interface remains visible, including the stat bars, level bar, scoreboard, and minimap.
+
+Custom Games are primarily used for private or controlled gameplay, testing, and experimentation with game mechanics. They can be used to change team settings, limit joins, adjust the level cap, spawn bosses, alter map size, and modify server behavior with commands.
+
+==Interface==
+===Admin window===
+The '''Admin''' window has two tabs:
+* '''Players'''
+* '''Server'''
+
+In the '''Players''' tab, the creator is marked with a '''CREATOR''' badge. This tab also includes the following actions:
+* <code>Kick</code>
+* <code>Ban</code>
+* <code>Set Team</code>
+
+A team number field is also present, allowing the selected player to be assigned to a specific team.
+
+===Console===
+Custom Games include access to the [[Console]], which can be used to enter commands and change variables related to gameplay, networking, rendering, and the user interface.
+
+===Sandbox Cheats===
+The '''Sandbox Cheats''' window includes the following options:
+* '''Max Level'''
+* '''Self Destruct'''
+* '''Invincibility'''
+
+==Mechanics==
+Custom Games allow the maximum level to be raised above the normal Level 45 cap with <code>set_max_level [num]</code>. The maximum level can be set as high as Level 120. This also increases the total number of obtainable [[Stats|Skill Points]]; for detailed stat progression, see [[Stats]].
+
+Various other settings can also be changed through console commands, including boss control, tank switching, team management, shape limits, and join permissions.
+
+==Notes==
+* The creator is marked with a '''CREATOR''' badge in the Admin window.
+* The Admin window includes both '''Players''' and '''Server''' tabs.
+* Due to a current bug, enabling invulnerability may require running <code>promote 0</code> and then <code>set_invulnerability true</code>.
+* Although the Sandbox Cheats window labels the toggle as '''Invincibility''', the corresponding console command is <code>set_invulnerability [bool]</code>.
+
+==See also==
+* [[Console]]
+* [[Sandbox]]
+* [[Stats]]
+* [[Levels]]
+* [[Controls]]
+
+{{Gameplay|feature}}
+[[Category:Diep.io]]

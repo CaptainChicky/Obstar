@@ -1,0 +1,123 @@
+= Hybrid =
+
+{{Infobox
+|image     = <gallery>
+hybrid icon 3.png|New Colors
+hybrid icon 2.png|Old Colors
+hybrid icon 1.png|Unnamed
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Destroyer icon new.png|50px|link=Destroyer]]
+|Cannons   = [[Cannons]] (1)<br/>[[Spawners|Spawner]] (1)<br/>[[Drones]] (2)
+|id        = 25
+|barrel    = [[Cannons|Cannon]] (1)<br/>[[Spawners|Spawner]] (1)}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Destroyer]] at level 45.
+
+== Design ==
+A Hybrid features a circle with a large Destroyer [[Cannon]] in front of the tank (the cannon that follows the cursor) and a trapezoidal [[Spawner]] in the back of the tank.
+
+== Technical ==
+*The Hybrid has 2 types of ammunition:
+**[[Bullets]]
+***The Bullets deal massive damage and thus cause huge recoil.
+**[[Drones]]
+***The Reload affects both the Bullets and the Drones.
+***Its Drones are AI-controlled and attack all [[Polygons]] and enemy tanks within 20 pixels.
+***They also automatically follow the Hybrid around.
+***There can be no more than 2 Drones at any given time.
+***Drones spawn a lot slower in comparison to the [[Overseer]] and its upgrades.
+*** Also, these Drones are weaker than Drones from any natural drone user.
+***These Drones’ capabilities increase with the tank’s [[Stats]] in Bullet Damage, Bullet Penetration, and Bullet Speed.
+*Stats: 
+**Bullets: 
+*** Bullet Speed: 0.7x Tank
+*** Bullet Penetration: 4.8 (+3.6 for each point in Bullet Penetration)
+*** Bullet Damage: 21 (+9 for each point in Bullet Damage)
+*** Reload time: 60t (-5t for the 1st and 3rd point, -4t for the 2nd, 4th and 6th point, -3t for the 5th and 7th point in Reload)
+**Drones: 
+***Drone Speed: 1x Tank
+***Drone Health: Same with [[Overseer]].
+***Drone Damage: 2.8 (+1.2 for each point in Bullet Damage). 
+***Reload time: Same with Overseer.
+
+== Strategy ==
+*<b>Strong Against:</b> [[Trapper]]s, lone/unprepared Overseer classes, slow tanks, Melee classes, most Bosses, nearly every tank that gets taken by surprise
+*<b>Weak Against:</b> High DPS, [[Sniper]]s, focused-fire tanks, skilled [[Overlord]] and [[Streamliner]] players.
+
+=== As the Hybrid ===
+*Using the Hybrid is very similar to using the Destroyer. Players should use the powerful recoil of the Hybrid to boost towards enemy tanks while using their Drones to defend themselves. Hybrid players should be careful in aiming their shots, as well as avoiding long-range tanks like [[Ranger]]s since the Hybrid’s Bullets are very slow and are easy to dodge from long distances. However, one hit can cripple any tank into fleeing, if not killing them instantly. Also, most Hybrid players use the immense recoil of the tank to retreat or dodge shots quickly and easily.
+*When fighting against rapid-firing tanks like the Sprayer or [[Triplet]], the player's Bullets are very good for providing protection. With maxed Bullet Penetration, a Hybrid’s Bullet can take out at least 40 Sprayer or Triplet Bullets before getting destroyed.
+*When fighting a [[Penta Shot]] using their recoil to get into close range before firing, turn around and shoot them. That will almost definitely be their last time doing that. This will defeat a bullet damage Penta Shot almost every time and the move can be used on many other bullet-spamming tanks.
+**If, however, it is a long, drawn-out battle, turn on [[Auto Fire]] and push forward. The bullets will provide cover while advancing, and the player can get close enough to kill the enemy Penta shot or drive it away.
+*The Hybrid is one of the best tanks in the game for defeating [[Bosses]]. With high Reload, Bullet Damage, and Bullet Penetration it can go right through the defenses of the Bosses as most use Drones or [[Traps]]. The [[Fallen Booster]] can be a deadly threat for the Hybrid if it has a low Movement Speed or Reload, though. But if the player has these stats high or maxed, then it is the other way around: the Fallen Booster doesn’t stand a chance.
+*The Hybrid is exceptional at farming [[Alpha Pentagon]]s and [[Pentagon]]s, but not so good at [[Square]]s and [[Triangle]]s.
+**With bullet damage and penetration maxed out, it can kill an Alpha Pentagon in 8 hits.
+*The Hybrid’s Drones can be used strategically to the player’s advantage. Since the Drones automatically attack nearby shapes and enemies, they can clear the way when the Hybrid is retreating from a fight as well as helping it farm better. Also, when an enemy is near the Drones, the enemy will automatically get attacked.
+*A very useful strategy when using the Hybrid is to attack by moving towards targets from above or below, as it gives them less reaction time, making it easier to one-shot them before they can even react. Another way to utilize this is by using the Hybrid's massive recoil to get close to the enemy and then turn around very quickly to get a shot in. This usually scares away or kills enemy tanks. This strategy, however, generally requires 5+ points in Reload.
+*Hybrid Bullets are very powerful, but it’s hard to hit targets from far away. In [[Domination]], the Hybrid’s best option is to try to retake the enemy [[Dominator]]s, as they are stationary and have a massive health pool. The Drones can be used to attack the turret repeatedly as well.
+*As Hybrid Bullets are similar to a Dominator’s, they can also be used for defending friendly Dominators. Stay behind the Dominator and help shoot down enemies. The Hybrid's drones will also attack anyone who gets too close, although they won't do significant damage.
+*In the final stages of [https://diepio.fandom.com/wiki/Tag Tag], a glass build Hybrid can be very useful for hunting down the last few remaining players. There is no base, so the hybrid can easily corner and kill slower enemies.
+
+=== Against the Hybrid ===
+*The Hybrid is extremely powerful, but there are many ways to counter it, as it has the same weaknesses as the Destroyer. For instance, players can use the [[Booster]] to counter the Hybrid, given the Booster has a glass Bullet build. Its speed can outrun the Hybrid, while the rapid rate of fire will also help kill Drones as they spawn. However, the Booster must be careful not to be hit by any of the Hybrid’s Bullets, as a single hit will kill it immediately.
+*A more effective Class to use against the Hybrid is the [[Predator]], especially when combined with bullet stacking. A Predator with a glass cannon build can easily out-range the Hybrid’s Bullets and its defense Drones, rendering it almost entirely useless. However, the Hybrid can use Recoil to dodge Predator Bullets.
+*One of the best ways to defeat a Hybrid is a Bullet Speed Streamliner, as the rapid Reload will overwhelm the Hybrid due to its low RoF. Players should try to force it into a corner and shoot a fast stream of bullets at the Hybrid while dodging any incoming Bullets or Drones. Hybrids can be killed in the open with such a Streamliner when using the "spraying" technique to increase spread.
+*If skilled with the [[Necromancer]], the player can engage Hybrids, using their massive number of Drones to kill it. However, players should be careful since a few shots can kill most of the Drones. Just like the Triplet, the best way to kill a Hybrid is to use the [https://www.youtube.com/watch?v=tAdKQ8jfyBk/ “Claw”]. This move will flank and kill the Hybrid. Even if the Hybrid goes off-screen, players should keep their drones in the "Claw" formation since there is still a chance the Hybrid will get destroyed, and it could destroy other tanks as well. Players can also use an [[Overlord]], but its mere 8 Drones are a setback.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://youtu.be/WnDOQWecvO4 3.08m by lagbreaker]
+* 2 Teams: [https://web.archive.org/web/20190819221223/https://cdn.discordapp.com/attachments/222132681394225155/238415142117703681/Screen_Shot_2016-10-19_at_5.32.46_PM.png 2.51m by vado]
+* 4 Teams: [https://imgur.com/kaX4JOa 2.65m by jorgito gamer]
+* Maze: [https://imgur.com/pOjGHhU 1.61m by Tri-Trapper]
+
+=== Mobile ===
+
+* FFA: 1.24m by FlareYT
+* 2 Teams: -
+* 4 Teams: -
+* Maze: -
+
+== Trivia ==
+*The Hybrid used to have the fan name “Destructeer” before it was officially named Hybrid after an update.
+*The Drones spawned by the Hybrid are slightly weaker than normal Drones, but there can only be two spawned at a single time, and these cannot be controlled because it is impossible to control both bullets and drones at the same time.
+*The Hybrid will spawn the Drones whether or not [[Auto Fire]] is on or not.
+*“Hybrid” means “of mixed character, composed of mixed parts”, referencing its odd combination of using Drones and a high-damage Cannon.
+**It was the first tank to use multiple forms of ammunition in the game.
+*Before the [[Arena Closer]] was buffed to have much more penetration, a Hybrid Bullet could destroy an Arena Closer’s Bullet, but the Bullet was, and still is helpless against the Arena Closer itself.
+*It is one of the 6 [[Tanks]] that have multiple forms of attack, having Bullets & Drones: the others being the [[Gunner Trapper]] ([[Traps]] & Bullets), [[Overtrapper]] (Traps & Drones), [[Auto Trapper]] (Traps & Auto Bullets), [[Auto Gunner]] (Bullets & Auto Bullets), and the [[Auto Smasher]] (Auto Bullets & Body Damage).
+*Until the [[Overtrapper]] was released, this was the only tank with completely uncontrollable drones.
+*There is a very small recoil every time Drones are spawned.
+*This is the only tank released thus far that uses Drones but doesn’t branch off the [[Overseer]].
+
+== Gallery ==
+<gallery>
+File:Hybrid.png|Hybrid in game.
+File:Hybridingame2.PNG|Hybrid shooting
+File:Hybrid in Sandbox.png|'''Hybrid in Sandbox'''
+File:Dhybrid0.png|A hybrid sleeping in the Purple base.
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Hybrid
+|es     = Hybrid
+|fr     = Hybrid
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Hybrid
+|pt-br  =
+|ro     =
+|ru     = Hybrid
+|sv     =
+|tr     = Hybrid
+|vi     = Hybrid
+|zh     = Hybrid
+}}
+[[Category:Diep.io]]

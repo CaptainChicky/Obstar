@@ -1,0 +1,140 @@
+= Twin Flank =
+
+<!-- (Strong Against/Weak Against Stats need to be reviewed and checked)-->
+
+{{Infobox
+|image     = <gallery>
+twin flank icon 3.png|New Colors
+twin flank icon 2.png|Old Colors
+twin flank icon 1.png|Old Icon
+</gallery>
+|tier      = 3
+|next      = [[File:Triple twin icon new.png|50px|link=Triple Twin]][[File:Battleship icon new green.png|50px|link=Battleship]][[File:OctoTankNAV0.png|50px|link=Octo Tank]]<ref>Removed Upgrade Option. Removed upgrade options and removed tanks are shown by a gray icon background.</ref>
+|previous  = [[File:Flank guard icon new.png|50px|link=Flank Guard]][[File:Twin icon new.png|50px|link=Twin]]
+|cannons   = [[Cannons]] (4)
+|id        = 13
+|barrel    = [[Cannons]] (4)
+}}
+The {{PA}} is a Tier 3 tank in Diep.io. It upgrades from the [[Flank Guard]] and [[Twin]] at level 30 and upgrades to the [[Triple Twin]], [[Battleship]], and formerly [[Octo Tank]] at level 45.
+
+== Design ==
+The Twin Flank features a circular base with two sets of two rectangular cannons mounted on opposing sides of the tank.
+
+== Technical ==
+{{BaseStats
+|PrevClass          = Twin
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = ▲
+|BulletDamage       = ▼
+|Reload             = —
+|MovementSpeed      = —
+|HiddenStat2Val     = ▼▼▼
+|HiddenStat2        = Recoil
+}}
+{{BaseStats
+|PrevClass          = Flank Guard
+|HealthRegen        = —
+|MaxHealth          = —
+|BodyDamage         = —
+|BulletSpeed        = —
+|BulletPenetration  = —
+|BulletDamage       = ▼
+|Reload             = ▲▲▲
+|MovementSpeed      = —
+|HiddenStat2Val     = —
+|HiddenStat2        = Recoil
+}}
+Upon upgrading from the Twin, it adds two cannons at the opposite side of the two other cannons. However, it decreases the Bullet Damage further. It has no recoil since the recoil from each of the [[cannons]] cancels each other out.
+
+Stats: 
+
+* Bullet Penetration: 1.8 (+1.35 for each point in Bullet Penetration)
+* Bullet Damage: 4.2 (+1.8 for each point in Bullet Damage)
+
+== Strategy ==
+*<b>Strong Against:</b> Multiple weak tanks.
+*<b>Weak Against:</b> High Penetration tanks Such as the [[Assassin]], [[Hunter]], or other tanks from the [[Sniper]] and [[Destroyer]] branch, drone tanks, fast melee builds, [[Necromancer]]s, the [[Smasher]] branch.
+
+=== As the Twin Flank ===
+The Twin Flank can be used to farm points by putting the Twin Flank’s 2 twins North-South or East-West and then moving side to side, or up and down, respectively.
+
+Unlike the [[Quad Tank]], the Twin Flank has a more concentrated point of fire on each side. Players can use this to defeat tanks with a widespread of Bullets (like the Octo Tank and [[Triple Shot]]) if the player has maximum bullet penetration. Also, because of its high fire concentration, it is a great farming tank, especially in the Pentagon Nest. Players aiming for Triple Twin or Battleship should choose this tank, as it allows them to farm and upgrades quickly.
+
+Without putting points into Bullet Speed and putting a lot of points into Reload, Bullet Penetration, and Movement Speed, the player can run in the direction where the player's front cannon is pointed, and then fire. This allows the player to create a bullet wall which serves as both a strong offensive tool and a strong defensive tool.
+
+The Twin Flank has a backside, so players should use it. When a Twin Flank is running away, it should direct its back bullets toward the enemy, showering the enemy with bullets allowing the Twin Flank to get away, or at least damaging enemy projectiles to minimize damage taken. If the Twin Flank is maxed out in Bullet Damage, Bullet Penetration, Bullet Speed, and Bullet Reload, this may damage the enemy to a critical point so the Twin Flank can come back to the enemy and kill it. Movement Speed may also be recommended so if the enemy is too powerful, the Twin Flank can escape safely.
+
+=== Against the Twin Flank ===
+All high RoF tanks can shoot at the Twin Flanks on one side. As the Twin Flank only has the power equivalent of a regular Twin, powerful Bullet Spammers or high RoF tanks can use this to their advantage and overwhelm the Twin Flank.
+
+The Necromancer can stand a chance to attack the Twin Flank if it has enough drones to claw the Twin Flank from all areas of the Twin Flank. The Overlord and Manager may also be used to serve this strategy.
+
+Destroyers are great against a Twin Flank, the large bullet is very powerful and can crash through the Twin Flank's bullets to hit and kill the Twin Flank. Snipers may tend to stay at a far distance and kill the Twin Flank by shooting it from range.
+
+Smashers are fairly good against a Twin Flank, as with their high movement speed, they can easily dodge the Twin Flank's bullets and slowly get closer to the Twin Flank, finally dropping in for the kill.
+
+== [[Achievements]] ==
+{{SideBox|*<b>Now you really ain't sneaking up on me</b> — Upgrade to Twin Flank
+|{{Achievement
+|Color        = #F1B78F
+|Name         = Now you really ain't sneaking up on me
+|Description  = Upgrade to Twin Flank}}
+}}
+
+== History ==
+*The Twin Flank used to upgrade to the Octo Tank until the August 15th update, this was because the Quad Tank and the Twin Flank both upgraded from the same Tier 2 tank, therefore the Octo Tank already had an upgrade. It was also deemed too easy to upgrade to the Octo Tank.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/a/GAjD02I 1.36m by IHazDiepression]
+* 2 Teams: [https://youtu.be/gHoP-Nxna9I 2m by Mr Cheeky]
+* 4 Teams: [https://imgur.com/bNCVbla 1.46m by Peregrine]
+* Maze: [https://imgur.com/U79XX0C 1.39m by exo]
+
+=== Mobile ===
+
+* FFA: 1.06m by buh
+* 2 Teams: 378.5k by VløKe
+* 4 Teams: 257.1k by VløKe
+* Maze: -
+
+== Trivia==
+*The Twin Flank and [[Quad Tank]] are the only Tier 3 tanks that do not experience recoil from their bullets.
+*The Twin Flank is the last class in alphabetical order if you do not include the removed [[X Hunter]].
+*When Octo Tank was not able to upgrade from Twin Flank on the August 15th update, Battleship replaced its upgrade spot on the August 25th update, 10 days later.
+*This tank and Quad Tank are the only two tanks to upgrade from two [[Tiers|Tier]] 2 tanks.
+
+== Gallery ==
+<gallery>
+TwinFlankIngame.png|A level 30 Twin Flank in-game
+TwinFlankFiring.png|A Twin Flank firing
+twin flank icon new 1.png|Old icon, new colors
+</gallery>
+
+== Footnotes ==
+<references/>
+{{TankNav|tier3}}
+{{Interlang
+|status = checked
+|de     = Twin Flank
+|es     = Twin Flank
+|fr     = Twin Flank
+|hu     =
+|it     =
+|ja     =
+|ko     = 트윈 플랭크
+|pl     = Twin Flank
+|pt-br  =
+|ru     = Twin Flank
+|sv     =
+|tr     = Twin Flank
+|vi     = Twin Flank
+|zh     = Twin Flank
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

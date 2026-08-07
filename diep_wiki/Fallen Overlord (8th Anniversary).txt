@@ -1,0 +1,84 @@
+= Fallen Overlord (8th Anniversary) =
+
+{{Stub}}
+
+{{Boss
+|image      = fallen_overlord_8th_anniversary.png
+|weapons    = [[Spawners]] (4)
+[[Auto Turret]] (1)
+|attacks    = [[Drones]] (28)
+[[Bullets]]
+|xp         = 30,000
+|hp         = 3,000
+|bd         =
+}}
+{{For|the standard version of this [[Bosses|Boss]]|Fallen Overlord}}
+
+This variant of [[Fallen Overlord]] was added on 16th April 2024, [[Diep.io]]'s 8th anniversary.
+
+== Design ==
+Like its [[Fallen Overlord|regular counterpart]], it is an Overlord but much larger and light grey. It has an additional [[Auto Turrets|Mounted Turret]] on top of the tank, which is larger than a normal Auto Turret due to the size of the tank.
+
+The Drones act like [[Crashers]] but will return to the Fallen Overlord if the target leaves its range.
+
+Its Mounted Turret acts the nearly same way with the one found on [[Auto Smasher]], [[Auto Gunner]] and [[Auto Trapper]].
+
+== Technical ==
+
+=== Behavior ===
+Its [[Drones]] and the [[Auto Turrets|Turret]] will target the closest tank. It won’t target players under level 15 unless shot at first. If no tanks are nearby, it will target and destroy all [[Polygons]] in range, including Pentagons and Crashers. The Drones and the Turret will stop attacking the target when the target goes out of range.
+
+=== Crashers ===
+The Fallen Overlord spawns 8 gray Crasher-like Drones every second, which is much faster than a normal Overlord’s spawn rate, but its Drones have a rather low HP. It can have a maximum of 28 drones out. Its Drones’ speed is similar to a [[Battleship|Battleship’s]] Drones with max stats. If the Fallen Overlord dies, its Drones will die alongside it similar to every drone user.
+
+=== Mounted Turret ===
+The Auto Turret automatically fires [[Bullets]] at anything that comes into its Field of View, with the exception of tanks below level 15 unless it damages the boss's hull.
+
+=== Stats ===
+This tank has a great health pool, 3,000 health points, but has a slow healing factor. It reloads considerably faster than an Overlord does with maximum Reload Speed. However, it is moderately slow. 
+
+===Miscellaneous===
+Upon destruction, it awards 30,000 experience points to the player who killed it. It is targeted by Base Drones and [[Crashers]]. A team spawn area (base) will damage its drones and the tank itself.
+
+== Strategy ==
+*<b>Strong Against:</b>  Ramming builds, low-level players, and low DPS tanks.
+*<b>Weak Against:</b> High DPS/penetration tanks, [[Trapper]]s, [[Hybrid]]s, [[Annihilator]]s, Overlords (if the player is skilled enough), Necromancers (if played correctly)
+
+=== Against the Fallen Overlord ===
+Almost all [[Fallen Overlord#Against the Fallen Overlord|strategies used against Fallen Overlord]] can be applied. However, players need to take extra caution when fighting against this boss due to its additional [[Auto Turrets|Mounted Turret]].
+*
+
+== Trivia ==
+
+* Like other 8th Anniversary Variant of bosses, its name shown above the tank constantly shifted between every second in a cycle of blue, red, purple, green, and then back to blue (based off the [[4 Teams|Teams Colors]]).
+* Like its regular counterpart, if the player causes damage only to its Drones while being under level 15, the player will be attacked by the Drones which received the damage from them. Interestingly, other Drones and the Mounted Turret won’t attack.
+* If one hits the hull of the Fallen Overlord, it will target the player with all its Drones, as well as with its [[Auto Turrets|Mounted Turret]], even if they are below level 15.
+* This is one of the only two entities to use both [[Spawners|Spawner]] and [[Auto Turrets|Auto Turret]] as weapons, the other one is the [[Defender (8th Anniversary)|8th Anniversary Variant of Defender]].
+
+== Gallery ==
+<gallery>
+File:Fallen Overlord(8th Anniversary).png|Fallen Overlord, 8th anniversary edition
+File:8th anniversary fallen overlord.png|A 8th Anniversary Fallen Overlord killed a Battleship
+File:Fallen Overlord(8th Anniversary) 2.png|Its Mounted Turret shooting
+File:Diep.io - 8th Anniversary Edition Fallen Overlord-2|In action
+</gallery>
+
+{{BossNav|fallen}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Fallen Overlord
+|fr     =
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Fallen Overlord
+|pt-br  =
+|ru     = Fallen Overlord
+|sv     =
+|tr     = Fallen Overlord
+|vi     = Fallen Overlord
+|zh     = Fallen Overlord
+}}
+[[Category:Diep.io]]

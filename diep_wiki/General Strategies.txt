@@ -1,0 +1,4 @@
+= General Strategies =
+
+#REDIRECT [[Gameplay Strategies]]
+[[Category:Redirect]]

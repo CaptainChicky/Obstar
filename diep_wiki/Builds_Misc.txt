@@ -1,0 +1,134 @@
+= Builds/Misc =
+
+__NOTOC__
+<div class="mw-collapsible mw-collapsed" style="width:100%">
+== Tank of your choice ==
+<div class="mw-collapsible-content">
+{{#ifeq:{{{transcludesection|Tank of Your Choice}}}|Tank of Your Choice|
+{{Build|
+|build name          = lol
+|health regen        = 0
+|max health          = 0 to 3
+|body damage         = 0 to 2
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0 to 5
+|description         = you look like a noob that don't know how to upgrade when you are a basic tank. You can use this point to trick other people. a tank is already strong enough to take out a slow rammer or tier 4 glass cannon in lv45 so do be afraid using this.
+}}
+{{Build|
+|build name          = tank
+|health regen        = 7
+|max health          = 7
+|body damage         = 0
+|bullet speed        = 0
+|bullet penetration  = 5
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0
+|description         = destroy stronger enemies quick but watch out for quicker builds, better for starters
+}}
+
+{{Build|
+|build name          = D-fense
+|health regen        = 7
+|max health          = 7
+|body damage         = 2
+|bullet speed        = 1
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 1
+|movement speed      = 1
+|description         = Good thing for auto tanks. :)
+}}
+
+{{Build|
+|tank                = Any tank
+|build name          = Da bullets
+|health regen        = 3
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 6
+|bullet penetration  = x
+|bullet damage       = x
+|reload              = x
+|movement speed      = 0
+|description         = This build is good for anyone who wants bullets. Apply this  build on tanks with high reload, if you want to apply this build on a destroyer branch switch the numbers of the reload with the bullet speed. 
+}}
+{{Build|
+|build name          = Ultra damage
+|health regen        = 3
+|max health          = 4
+|body damage         = 4
+|bullet speed        = 3
+|bullet penetration  = 3
+|bullet damage       = x
+|reload              = x
+|movement speed      = 3
+|description         = The ultra damage build is good for constantly damaging another tank, while slowly moving in to body slam them. if you use this build, try to target sniper branches. Do not pick a fight with tanks like penta shot or octo tank. this build is good for applying with tri-angle branches.
+}}
+{{Build|
+|build name          = Full-on
+|health regen        = 0
+|max health          = 5
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0
+|description         = You can change any of the stats with 0 on them! It's recommended to not use a tank from the smasher tree.
+}}
+{{Build|
+|build name          = The Bullet Giver
+|health regen        = Max
+|max health          = Max
+|body damage         = 5
+|bullet speed        = 0
+|bullet penetration  = 0
+|bullet damage       = Max
+|reload              = Max
+|movement speed      = 0
+|description         = Something that gives you nightmares!
+}}
+{{Build|
+|build name          = Well Rounded
+|health regen        = 4
+|max health          = 4
+|body damage         = 4
+|bullet speed        = 4
+|bullet penetration  = 4
+|bullet damage       = 4
+|reload              = 4
+|movement speed      = 4
+|description         = Use any tank. Spare point can be used towards anything.
+}}
+{{Build|
+|build name          = The Terminator
+|health regen        = 1
+|max health          = 2
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 2
+|description         = This is a build that works for pretty much any tank.
+}}
+
+{{Build|
+|build name          = Outta Here
+|health regen        = 0
+|max health          = 2
+|body damage         = 3
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 0
+|reload              = 7
+|movement speed      = 7
+|description         = This build is useful for ramming- it's your choice to use it or not.
+}}
+}}
+</div></div>
+[[Category:Diep.io]]

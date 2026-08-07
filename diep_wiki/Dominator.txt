@@ -1,0 +1,200 @@
+= Dominator =
+
+{{Infobox
+|title    = Destroyer Dominator
+|image    = <gallery>
+dominator tank 4.png|New Colors
+dominator tank 3.png|Old Colors
+dominator tank 2.png|Old Design
+dominator tank 1.png|Old Neutral
+</gallery>
+|tier     = Supposedly 6
+|next     =
+|previous = Pressing H exactly once if at least one friendly Dominator is unclaimed
+|barrel   = 1 [[Cannon]]
+|id       = 45}}
+{{Infobox
+|title    = Gunner Dominator
+|image    = <gallery>
+Gunner dominator tank 2.png|New Colors
+Gunner dominator tank 1.png|Old Colors
+</gallery>
+|tier     = Supposedly 6
+|next     =
+|previous = Pressing H exactly once if at least one friendly Dominator is unclaimed
+|barrel   = 3 [[Cannon]]s
+|id       = 46}}
+{{Infobox
+|title    = Trapper Dominator
+|image    = <gallery>
+Trapper dominator tank 2.png|New Colors
+Trapper dominator tank 1.png|Old Colors
+</gallery>
+|tier     = Supposedly 6
+|next     =
+|previous = Pressing H exactly once if at least one friendly Dominator is unclaimed
+|barrel   = 8 [[Launcher]]s
+|id       = 47}}
+
+A {{PA}} is a large turret in the [[Domination]] game mode. In Domination, if your team captures all of the Dominators, your team wins. Since the 25th of August update, the Dominator is a playable entity; if your team captures a Dominator, be the fastest to press the <code>H</code> key once without spamming to take control of the Dominator. The Dominators are also playable in the [[Sandbox]] game mode. There, the player is able to play as the smaller versions of the 3 types of Dominators. The Dominators are among the largest entities in the game besides the [[Arena Closer]]s, the [[Levels|level 140]] [[Mothership (Tank)|Mothership]] and the [[bosses]].
+
+==Dominator Variants==
+[[File:Dominator-0.png|thumb|220x220px|What playing as a Dominator looks like.]]
+As of the August 26th update, 2 new types of Dominators were added, bringing the total up to 3. See them below.
+
+==Design==
+[[File:Level1dominator.png|thumb|62x62px|A Level 1 dominator.]]
+===Universal===
+All Dominators feature a circle as their bodies and a hexagonal base, like the Smasher but the Dominators have weapons, and are much larger and much tougher. Their colors are dependent on which team captures it, but the base is always black.
+
+===Destroyer Dominator===
+The Destroyer Dominator is equipped with a short, wide cannon in front that has a small trapezoidal base, similar to the [[Ranger]].
+
+=== Gunner Dominator ===
+The Gunner Dominator has three cannons in front. The cannon in the middle is longer and wider than the other cannons but shoots the same bullets, similar to the [[Triplet]].
+
+===Trapper Dominator===
+The Trapper Dominator is surrounded by eight equal-sized launchers. Each launcher faces a different direction, but they are evenly spaced. Its circle of Traps defends it from all sides but such protection has a very limited range and is weaker against tanks with focused bullet fire. It is also called the Octo Trapper Dominator.
+
+==Technical==
+===Stats ===
+
+====All Dominators====
+Dominators can’t move (except the now-removed Sandbox Versions) and have 6148 (6000-6088 in Sandbox) health points (per Dominator) with weak healing factors. Note that the health increases by 2 every level (including level 1), like other tanks. It does not have upgrades and has a base health of 5998. The regeneration rate is the same for all Dominators. Their field of vision is at least a bit larger than the [[Sniper]]. All Dominators, including the Sandbox versions, suffer no recoil.
+
+====Trapper Dominator====
+This Dominator’s FoV (Field of Vision) is about the same as the [[Hunter|Hunter’s]]. It is surrounded by eight [[Launcher]]s. Its trap speed is higher than a maxed [[Tri-Trapper|Tri-Trapper’s]], while its trap health and damage being 30 (x15 Tank) and 25.2 (x3.6 Tank) respectively. Also, its reload is the same as Trappers with 0 points invested in Reload. Auto-fire is always enabled with no exceptions.
+
+====Gunner Dominator====
+This Dominator’s FoV is about the same as the Hunter and its [[upgrades]] (not including the zoom out on the [[Predator]]). It has three cannons in front. Its reload is high and the bullet speed is normal. However, it has low bullet penetration (10 Health, 5x Tank) and damage (7, 1x Tank).
+
+====Destroyer Dominator====
+This Dominator’s field of vision is slightly greater than a Sniper’s. It has one [[Cannons|Cannon]] in front and very high Penetration, being 200 health (x100 Tank), and a Bullet Damage equivalent to a basic bullet with 21 points in damage (70 damage per hit, x10 Tank). It has the bullet size of a [[Hybrid]]. Also, its bullets can be knocked by enemy bullets or drones. However, its Reload is about that one of Hybrid with 3 points in the respective stat and Bullet Speed is lower than a Hybrid or [[Destroyer]].
+
+===Behavior===
+The Dominator, when AI-controlled, targets the closest enemy. Even if another player comes closer or the player himself or herself gets away, the Dominator will continue to target the player until the player goes out of its field of view. However, when a Dominator gets contested or changes the team, it will ignore its current target and attack the closest person to the Dominator. Also, if the current target has not harmed the Dominator for a certain amount of time, the Dominator will start attacking a new target, if there are any others around. Dominators’ AI was updated on [[Changelog#August 22nd.2C 2016|August 22nd]] which enabled them to predict movements of players and shoot ahead, making it harder to dodge their attacks.
+
+Dominators can harm shapes, but they cannot when neutral. They will also not target players out of their field of view unless provoked. Interestingly, they will not target back if you harm one when using a tank that has a higher range than the [[Assassin]].
+
+Dominators prioritize players but if there are no players, they will target [[Polygons]], [[Bosses]] or Arena Closers.
+
+If the game is over and you manage to decrease its health to 0, it will be contested. However, it won’t change the winner.
+
+==Gameplay==
+In [[Domination]], these tanks are used as control points. They start neutral, but any team can capture it by lowering its health to 0 and being the last team to shoot it. Once the Dominator is under that team’s control, it can no longer damage that team. The team can shoot through the Dominator, but the enemy still can’t.
+
+To capture a Dominator from the enemy team, you need to drop its health to 0 twice. When you do it for the first time, the Dominator will turn back to neutral mode. When you do that for the second time, the Dominator will be owned by your team. Whichever team lands the last blow on a contested Dominator will capture it.
+
+As of August 25th update, if you press H before other players do, you will take control of a randomly selected (and uncontrolled) Dominator on your team, at the cost of losing the control of your tank, which will be destroyed slowly. A recent update added a Dominator in the center of the [[Tag|Tag Mode]] map but capturing it was not essential to win. However, it was removed soon after.
+
+==Strategy==
+===All Dominators===
+*<b>Strong against:</b> Low DPS (Damage Per Second) tanks, melee builds.
+*<b>Weak against:</b> High DPS tanks.
+
+===Destroyer Dominator===
+Similar to the [[Destroyer]].
+*<b>Strong against:</b> Slow tanks.
+*<b>Weak against:</b> Fast tanks, long-range classes.
+
+===Gunner Dominator===
+Similar to the [[Gunner]] tank.
+*<b>Strong against:</b> Low rate of fire tanks.
+*<b>Weak against:</b> High penetration, high rate of fire tanks.
+
+===Trapper Dominator===
+*<b>Strong against:</b> Body build tanks.
+*<b>Weak against:</b> Long range, high rate of fire, tanks with strong penetration, such as [[Destroyer]], [[Annihilator]], or [[Hybrid]]. Effectively all tanks excepting body build tanks due to its lack of attack.
+
+===Against the Dominator ===
+The best strategy is to swarm the Dominators. Your team should attack with all single-point troops (such as the Triplet or the Destroyer) and guard with crowd control troops (such as the [[Octo Tank]] or the [[Spread Shot]]). The “point troops” will cause massive damage to the Dominator while the crowd controls will prevent the opposing team from recapturing it.
+
+Also, try to avoid the [[Bullets]] from the Dominators, particularly Destroyer Dominator Bullets as they would likely kill you in one shot. Assuming that the player has put some points into Movement Speed, they could distract the Dominator by avoiding shots, as the bullets are slow (This does not work on a Trapper Dominator because the traps are omnidirectional). Try to not do this in front of teammates, as the projectile can accidentally hit and destroy them.
+
+If you want to attack Dominators without risking yourself from being near to them, a Ranger with few points on Bullet Speed is a good choice. You can simply attack the Dominator without having to go near it, thanks to high FoV of your tank and decent Bullet Speed, although it would take time to do this by solo, especially against Trapper Dominators, as you have to change positions sometimes.
+
+The [[Mega Trapper]] is very effective against a Trapper Dominator. This is because the Mega Trapper’s Traps are stronger than that of the Trapper Dominator.
+
+===As and/or Defending a Dominator ===
+As an [[Octo Tank]], an effective tactic is to stay in the middle of a Dominator and shoot enemies. Another strategy is to use Max HP, Health Regen, Reload and Bullet Damage. Get to the opposing side’s Dominator and use one side for the Dominator and the other for the other tanks.
+
+Two tanks with high Reload and Penetration could move a Dominator’s Bullets and not get hit like [[Triplet]] and [[Gunner]] or any high Reload classes.
+
+If you like to stay hidden, use the [[Manager]] or the [[Stalker]]. Just camp out at your base and protect a Dominator. A great tip for using the Manager is that you get a "glass" build (with maxed out [[Drone]] Speed, Penetration, and Damage) and hide your Drones in the middle of the Dominator, thus making the Dominator appear alone if no players are roaming around. However, enemy Dominators can see hidden tanks, so don’t think you can get away with it. Be extremely cautious when you’re camping near your Dominators, as most tanks that capture Dominators are usually [[Triple Shot]] upgrades, [[Sprayer]]s, or other spray-and-pray tanks. The massive amount of stray shots fired from these tanks may hit you, forcing you to relocate your camping zone or otherwise facing death.
+
+If you are a Dominator, keep your mouse close to the center. That way you can rotate faster.
+
+== History==
+*In very old versions of Domination, there could be a rare message which says “The (Location) Dominator is now controlled by some mysterious group”. The notification would be gray.
+* As of the 22nd of August update, the Dominator’s AI still prioritize players, but if there are none in range, they can target the [[Polygons]], [[Bosses]], or even [[Arena Closer]]s.
+*As of the August 25th update, players can control a taken Dominator of their team as if it was a controlled tank, but still can’t move.
+*When the [[Arena Closer]]s have finished killing regular tanks, they will start to target Dominator(s) with a player controlling it. That Dominator then becomes contested.
+*As of the August 26th update, a Dominator was added to the center of the Tag Mode map, and could be captured by any of the four teams. It was removed the next day. The update also added the new Dominator types explained above.
+*It used to be so that if a Dominator’s health reaches 0 when the [[Arena Closing|Arena is closed]], it will disappear<ref>[https://www.youtube.com/watch?v=IV2vxz9pMNE Video Evidence]</ref>. But the arena’s and [[minimap|Minimap]]’s tile color of the Dominator stays the same. On the 25th of August, this was changed; the Dominator now gets contested instead.
+
+==Trivia==
+*At the release of Domination, Neutral Dominators used to be the #A6A6A6 shade of gray. The color was soon changed to yellow in an update on July 3rd.
+*If a neutral dominator gets destroyed by one of fallen bosses, it will refill its health back to full.
+*If you use a [[Smasher]], you can, with some difficulty, hide under a Dominator.
+*A Dominator’s [[Death Screen]] is special. When they die, the death screen doesn’t show how long they were alive, how much score they have, etc.
+*The Dominators' shells/bases, [[Traps]], and the Smasher branch (including the defunct [[Mega Smasher]]) is the only hexagons ([[Polygons]] made up of 6 straight lines) in the game.
+*The bullet of the Destroyer Dominator has the second-highest Penetration, after the Arena Closer’s, and third-highest Damage, only beaten by the Destroyer's Bullet and Arena Closer's bullet, of all bullets in the game.
+*The Dominators are the second most resistant entities of the game.
+* Along with bosses, Arena Closers, and [[Base Drones]], Dominators (when neutral or Al-Controlled), are the only things in Diep.io that can detect invisible tanks.
+*The Dominators are all level 75, which is unreachable by the tanks that players use.
+**However, according to the size of the tank, its level is 120, not 75.
+*Back then, Dominators would turn to the enemy team's color when they are killed once. Currently, they become contested when the enemy team kills it, giving a chance for the other team to recapture it.
+*Destroyer Dominators used to have a different design, although the only difference was that there was no trapezium on the front gun. It was changed with the addition of other Dominator variants.
+*If the victory message appears in Domination and the lost team manages to capture a Dominator, the game will still proceed to close the arena.
+
+==Bug==
+{{Bugs}}
+{{BugList|
+=== Patched or Removed Bugs ===
+[[File:Diep.io GLITCH ! FREE DOMINATORS ?!-3|thumb]]
+*{{PC}} A bug that allow players to push the dominator around.
+}}
+
+==Gallery==
+<gallery>
+DestDom.png|A Destroyer Dominator in-game.
+A1f456eGunnerDominator.png|A Gunner Dominator in-game.
+1a546gzLauncherDominator.png|A Trapper Dominator in-game.
+Gunner dom.png|A Gunner Dominator in [[Sandbox]] mode.
+Trapper dom.png|A Trapper Dominator in [[Sandbox]] mode.
+Basic Dom.png|A Destroyer Dominator in [[Sandbox]] mode.
+Neutral Dominator.png|A neutral Dominator almost at full health.
+TagDom.png|A Trapper Dominator in [[Tag]] Mode.
+Turret Hexagon.png|Base of a Dominator after being ‘destroyed’ when the server is closed (Outdated).
+Azr54ef65Dominator.png|Dominators can be player-controlled.
+Dominatortrap positions.PNG|Differences in trap spacing.
+A real shield.PNG|A Trapper Dominator alongside a [[Tri-Trapper]].
+Vg1f2fd4PurpleDominator.png|Purple Dominator in [[Tag]] Mode.
+Screenshot_140.png|A Trapper Dominator in [[Sandbox]].
+shooting trapper dominator.png|Players on the red team shooting a Trapper Dominator.
+Destroyers_normal.png|The old design of a Dominator.
+Dominator Vs Players.png|Fighting a Dominator in the [[Diep.io Mobile|mobile version]] of [[Diep.io]].
+</gallery>
+
+==References==
+<references />
+{{TankNav|special}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Dominadores
+|fr     = Dominator
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Dominator
+|pt-br  =
+|ro     =
+|ru     = Dominator
+|sv     =
+|tr     =
+|vi     = Dominator
+|zh     = 佔點大砲
+}}
+[[Category:Diep.io]]

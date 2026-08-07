@@ -1,0 +1,112 @@
+= Triple Twin =
+
+{{Infobox
+|image        = <gallery>
+triple twin icon 3.png|New Colors
+triple twin icon 2.png|Old Colors
+triple twin icon 1.png|Old Icon
+</gallery>
+|title        = {{PAGENAME}}
+|tier         = 4
+|id           = 18
+|next         = None
+|previous     = [[File:Twin flank icon new.png|50px|link=Twin Flank]]
+|barrel       = [[Cannons]] (6)
+|releasedate  =
+}}
+Triple Twin is a Tier 4 tank in Diep.io. It upgrades from [[Twin Flank]] at level 45.
+
+== Design ==
+The Triple Twin features a round base with 3 pairs of 2 [[Barrels]] each spaced out evenly (or 120 Degrees). It resembles three [[Twin]]s merged.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       =
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    =
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}
+The Triple Twin adds two other Barrels giving it a fifth and a sixth Barrel.
+
+Stats: All 8 upgradable stats are the same with [[Twin Flank]].
+
+== Strategy ==
+*<b>Strong Against:</b> Multiple enemy tanks surrounding It, low RoF (Rate of Fire), low penetration.
+*<b>Weak Against:</b> Tanks with focused fire or tanks with high DPS (Damage Per Second) such as [[Sprayer]]s and [[Triplet]]s, [[Destroyer]] branch, [[Assassin]] or [[Hunter]] branch, Rammers who find their way through the firing pattern (and they often do), [[Overlord|Overlords]].
+
+=== As the Triple Twin ===
+*Like the [[Octo Tank]], the Triple Twin has great crowd control ability. Players can spam Bullets in three lateral directions, making it great for farming and spinning the [[Pentagon Nest]]. It has no major differences between it and its predecessor, the Twin Flank, with another pair of Twin Barrels added on, with all cannons on awkward angles.
+*The Triple Twin is quite good at hiding under a [[Dominator]] in [[Domination]] to kill enemies that come near. That way, the player could do very good defense. Octo Tank works too. The Triple Twin could use C (Auto Spin) and E (Auto Fire) to fend off enemies. Two Triple Twins could fire between each other's gaps, making the Dominator be protected by six lateral rotating streams of bullets.
+*The only major advantage to using the Triple Twin is good crowd control, great for players who don’t wish to be targeted a lot and don’t wish to be countered using the Octo Tank, the Triple Twin is a great balance. Players using the Triple Twin may need to be more careful, because of the three gaps between the Barrels in its defense.
+*The Triple Twin has gaps between its [[Cannons]], and the gaps between the twin cannons are enough for sniping tanks (Especially [[Ranger]]'s) for their [[Bullets]] to go through. To combat this, players can move and point their tanks erratically to minimize the risk of getting bombarded from one side. This is known as spraying.
+*This tank and the Octo Tank are also quite good at moving near enemy bases to kill all sources of exp you can, thus prolonging any dominating phase/pentagon zones for your team.
+*Unlike the Octo Tank, The Triple Twin can focus fire due to its cannon placement.
+
+=== Against the Triple Twin ===
+*Like the Octo Tank, the Triple Twin is dangerous to approach due to its crowd control capability. The Triple Twin may be good for Bullet spamming and attacking multiple enemies but can struggle with tanks that have more focused fire. Players countering the Triple Twin can use the [[Auto Gunner]], as it has good overall DPS and its Bullets can ghost through the Triple Twin's, dealing damage. Tanks like Triplet can defeat the Triple Twin but may have more trouble than they may think, despite the focused fire advantage.
+*An Overlord is recommended for trying to attack the Triple Twin since the Overlord's Drones will have an easy time getting past the Triple Twin's Bullets since their Bullets don't have a lot of penetration compared to the [[Twin]].
+*[[Hybrid]]s and [[Annihilator]]s are also great counters for the Triple Twin. The Triple Twin is usually not very maneuverable, so the large Bullets will be hard to avoid.
+*When countering the Triple Twin the best option with other tanks is for the player to try to shoot at the gaps between its Barrels, where the Triple Twin can’t counter them. It is advised to keep moving while attacking a Triple Twin so it can’t focus its fire and try to attack it while it isn’t paying attention.
+*A rammer [[Tri-Angle]] or its upgrades can defeat this tank. The player should get near to it while dodging its Bullets, and ram to one of its gaps. A Smasher or its upgrades can also do the trick, although it is slightly slower, making it harder to approach this tank.
+*A sniper could also flank it, and attack from its sides, while staying outside of its FoV. This is a good approach, due to the low approachability of the tank.
+
+== Gallery ==
+<gallery>
+File:Screenshot 2018-04-04 at 7.29.10 PM.png|Triple Twin closed up.
+File:Triple Twin in Sandbox.jpg|Triple Twin in Sandbox
+File:Triple twin icon new 1.png|Old icon, new colors
+</gallery>
+
+== Records ==
+
+=== PC ===
+
+* FFA: 1.93m by exo
+* 2 Teams: [https://imgur.com/zpZ1btO 1.71m by Will]
+* 4 Teams: [https://imgur.com/gEeBXY1 4.19m by exo]
+* Maze: [https://web.archive.org/web/20190819220813/https://cdn.discordapp.com/attachments/232654459858190346/232654633825206272/Screen_Shot_2016-09-29_at_9.06.09_PM.png 1.95m by Dragonis]
+
+=== Mobile ===
+
+* FFA: 1.3m by HZ6
+* 2 Teams: 505.6k by darkforce
+* 4 Teams: 507.7k by VløKe
+* Maze: -
+
+== Trivia ==
+*This tank, alongside the Twin Flank, the [[Battleship]], and the Gunner [[Dominator]] are the only tanks in the game with multiple Barrels facing a specific direction that have no recoil.
+*On July 30th it was nerfed, which reduced its and the Octo Tank’s health.
+*Triple Twin and [[Spike]] are the only tanks that are asymmetrical.
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Triple Twin
+|es     = Triple Twin
+|fr     = Triple Twin
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Triple Twin
+|pt-br  =
+|ro     =
+|ru     = Triple Twin
+|sv     =
+|tr     =
+|vi     = Triple Twin
+|zh     = Triple Twin
+}}
+[[Category:Old Classes]]
+[[Category:Diep.io]]

@@ -1,0 +1,79 @@
+= Builds/Basic Tank =
+
+__NOTOC__
+<div class="mw-collapsible mw-collapsed" style="width:100%">
+==[[Tank|Basic Tank]]==
+<div class="mw-collapsible-content">
+{{#ifeq:{{{transcludesection|tier1}}}|tier1|
+{{Build|
+|build name          = Ram Trolling
+|health regen        = 3
+|max health          = 7
+|body damage         = 7
+|bullet speed        = X
+|bullet penetration  = X
+|bullet damage       = X
+|reload              = X
+|movement speed      = 7
+|description         = Strong against ram tanks in full health.
+}}
+{{Build|
+|build name          = Simple but Strong
+|health regen        = 3
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 6
+|movement speed      = 0
+}}
+{{Build|
+|build name          = Bully
+|health regen        = 2
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 6
+|bullet penetration  = 7
+|bullet damage       = 6
+|reload              = 6
+|movement speed      = 3
+}}
+{{Build|
+|build name          = Advanced Pursuit
+|health regen        = 2
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 6
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 5
+|movement speed      = 3
+}}
+{{Build|
+|build name          = Mechanism
+|health regen        = 1
+|max health          = 4
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 7
+|reload              = 7
+|movement speed      = 0
+}}
+{{Build|
+|build name          = The Mighty
+|health regen        = 1
+|max health          = 3
+|body damage         = 0
+|bullet speed        = 7
+|bullet penetration  = 7
+|bullet damage       = 6
+|reload              = 7
+|movement speed      = 2
+|description         = Not recommended for newbies. Dodge or block bullets, and keep distance unless the foe isn't focused fire (like Spreadshot)
+}}
+}}
+</div>
+</div>
+[[Category:Diep.io]]

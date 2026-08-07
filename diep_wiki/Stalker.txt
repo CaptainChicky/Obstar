@@ -1,0 +1,127 @@
+= Stalker =
+
+{{Infobox
+|image     = <gallery>
+stalker icon 3.png|New Colors
+stalker icon 2.png|Old Colors
+stalker icon 1.png|Old Icon
+</gallery>
+|tier      = 4
+|previous  = [[File:Assassin icon new.png|50px|link=Assassin]]
+|next      = None
+|barrel    = [[Cannons]] (1)
+|id        = 21
+}}Stalker is a Tier 4 tank in Diep.io. It upgrades from [[Assassin]] at level 45. It is currently one of the three tanks that can turn [[Invisibility|invisible]].
+
+== Design ==
+The Stalker features a circular base with a single long, thin trapezoidal [[Barrel]].
+
+== Technical ==
+{{BaseStats
+|BulletDamage      = —
+|HealthRegen       = —
+|MaxHealth         = —
+|BulletSpeed       = ▲
+|BulletPenetration = —
+|BodyDamage        = —
+|Reload            = -
+|MovementSpeed     = —
+|HiddenStat1       = Invisibility
+|HiddenStat2       =Field Of View
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲
+|HiddenStat2Val    =▲▲
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}The Stalker has the ability to become invisible when it is immobile, with a short fade-in and fade-out time (approximately 2 seconds). It is an ability unique to it, the [[Manager]] and the [[Landmine]].
+
+The Stalker will lose invisibility by moving, firing a [[Bullet]], enabling [[Auto Fire]], or when taking damage. It is important to note that shooting once while invisible will make the tank lose some invisibility, though not all while enabling [[Auto Fire]] will remove invisibility completely. If the Stalker carries on fading in for too long, it will completely lose its invisibility. Enemy Bullets making contact with the tank will interact normally and dissipate prematurely. Lastly, if a Stalker is at the top of the [[Scoreboard]], the leader arrow will still point to it, even while invisible. These are the only ways for enemy tanks to know the location of a hidden Stalker without using hacks.
+
+Similar to all other tanks in the [[Sniper]] branch, the Stalker has increased Bullet Speed and a greatly widened field of vision, with the trade-off of a fairly slower rate of fire when compared to the [[Tank]]. Its field of vision remains the same size after it is upgraded from the [[Assassin]]. The Stalker’s Bullet Damage seems to be less than that of an average Tier 4 Sniper-class tank.
+
+Stats: All 8 upgradable stats are the same with [[Assassin]].
+
+== Strategies ==
+[[File:Final_stalker_GIF.gif|thumb|200px|What the Stalker looks like when turning invisible.]]
+*<b>Strong Against:</b> Unsuspecting tanks, slow tanks, low DPS tanks, weak tanks, tanks with a small FoV
+*<b>Weak Against:</b> Prepared tanks, high area denial tanks, fast tanks, high DPS, Melee Classes, [[Drone]] Classes, tanks with high FoV, other [[Sniper]] branch tanks if caught off-guard.
+
+=== As the Stalker ===
+*The player can maintain their invisibility by moving slowly, but not too fast. When moving slowly, the Stalker will only slightly uncloak, which makes it hard for all but eagle-eyed players to notice. This strategy is unreliable however since the player will never know if the player has good eyesight and responds quickly.
+*Stalkers are excellent for lying in wait in undisturbed areas of the [[Maze]] game mode.
+*A Stalker with maxed out Bullet Speed/Penetration/Damage can normally take out a tank in three hits or less, making it a good tank to cause sudden deaths.
+*Players won’t notice Stalkers when they are invisible. As such, some builds use full Body Damage and Max Health [[Stats]], awaiting unsuspecting players to run into them and die. The Landmine has better stats for this strategy, but a longer fade-out time.
+*Smart placement and camping are required to survive as a Stalker. The player has to understand how hiding in certain places can benefit and/or put themselves at risk.
+**Hiding in areas with very low concentrations of [[Polygons]] are the safest areas to camp in. Farmers won’t stray near since there aren’t any Polygons nearby to kill. This also means, however, that there’s a lower chance of opponents drawing near.
+**Hiding near large concentrations of [[Polygons]] is another option. It increases the chance of unsuspecting farmers appearing, giving the player more kill opportunities. The risk of doing this is that [[Necromancer]]s could come near to farm the squares for themselves, and Necromancers are bulk counters to Stalkers due to the sheer number of Drones they can carry.
+**The [[Pentagon Nest]] is the riskiest but most rewarding area to camp in. It is a popular area for most farmers, and the player can simply hide there and kill off stronger players while their attention is focused on the [[Pentagon]]s. Additionally, [[Crashers]] do not target invisible tanks, as long as they are invisible and were not targeted when visible.
+*Using a ramming build for a Stalker requires patience and proper positioning. Players should try to place themselves near crowded areas and wait until someone runs into them or is nearby. If there is no target, move to another location without getting noticed.
+*Stalkers require patience. They may have to sit and wait for a while before finding an enemy. Alternatively, if being annoying is the goal, simply wait until someone strays too close and pop out of nowhere, surprising them and getting a headstart shot off.
+*The Stalker is occasionally a better alternative to the Landmine in terms of Body Damage builds, as it can cloak quickly and has a cannon to try and finish off weaker enemies. However, compared to the Landmine, it trades off with slower Movement Speed and regular Stats, forcing the player to put spare stat points into another Stat.
+*Assassins, [[Hunter]]s and other classes branching off of them have a field of view capable of reaching and/or exceeding the Stalker’s own. This is important to know when encountering them.
+*A Stalker can fight Drone classes by shooting when their Drones are away, then quickly escaping. If the Stalker gets out of the range of the drone tank, it can turn invisible again, watching as the drone tank wanders off in a different direction. This is effective in Maze.
+*In team game modes many Stalkers can fight together, with each player shooting slowly. This gives off an illusion of one Stalker teleporting.
+**Due to the constant appearing and disappearing of the Stalkers, it will also be hard to predict just how many there are. You can use this to your advantage by scaring away tanks in the Pentagon Nest.
+
+=== Against the Stalker ===
+*Stalkers are completely invisible when they hide (except in [[Tag]]). If spotting a Stalker going invisible, try to remember where they are and then kill them. This works well for tanks like the [[Destroyer]].
+*Like when dealing with the Landmine, tanks should always be firing in the direction they’re moving (or clustering their drones in front of them), which will force the Stalker to either reveal itself or run if one’s path is crossed.
+*Pretending to not see a Stalker going invisible and then pouncing as a surprise attack is a viable way to catch unaware Stalkers thinking they’re safe invisible off guard. This works well with the Landmine, too.
+*Necromancers, should they see a Stalker going invisible, should sweep the area with their drones leaving no spot unchecked. This will force the Stalker to run or get grievously damaged and most likely die.
+*Boosters with Body Damage builds can easily reveal Stalkers by spraying bullets everywhere. Damaging or touching a Stalker will reveal them slightly, giving the player a chance to chase them.
+
+== Records ==
+
+=== PC ===
+
+* FFA: [https://www.youtube.com/watch?v=J-Ni_YXRrD8 1.03m by JB Colombia]
+* 2 Teams: [https://youtu.be/V3408MZ1hV4 2.5m by Rop]
+* 4 Teams: [https://imgur.com/hHqcXgd 1.71m by f22 birkin]
+* Maze: 550k by Sunset
+
+=== Mobile ===
+
+* FFA: 622.9k by buh
+* 2 Teams: 333.8k by VløKe
+* 4 Teams: 1m by buh 
+* Maze: -
+
+== Trivia ==
+*The Stalker is the first tank added to have the Invisibility ability.
+*The Stalker used to immediately switch from invisible to visible and vice-versa in the web version. This was later changed.
+*Enabling auto-fire completely disables the Stalker’s Invisibility, even while one bullet is fired, while independently firing one bullet only partially removes the tank’s Invisibility.
+*Just like the [[Ranger]], a Stalker can one-shot kill a low-level player if they have high Bullet Damage.
+*Before, a Stalker's location could be revealed by using high contrast, as shown in iXPLODE’s video. However, this was patched.
+
+== Gallery ==
+<gallery>
+stalker icon new 1.png|New colors, before ranger
+</gallery>
+
+== Bugs ==
+{{Bugs}}
+{{BugList|
+=== Patched Bugs ===
+*{{Mobile}} The Stalker switches from visible to invisible mode instantaneously instead of fading in and out, allowing for instantaneous cover.
+}}
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Stalker
+|es     = Stalker
+|fr     = Stalker
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Stalker
+|pt-br  =
+|ru     = Stalker
+|sv     =
+|tr     =
+|vi     = Stalker
+|zh     = Stalker
+}}
+[[Category:Diep.io]]
+[[Category:Invisibility]]

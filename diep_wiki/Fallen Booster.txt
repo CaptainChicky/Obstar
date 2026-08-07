@@ -1,0 +1,105 @@
+= Fallen Booster =
+
+{{Boss
+|image      = <gallery>
+fallen booster boss 2.png|New Colors
+fallen booster boss 1.png|Old Colors
+</gallery>
+|weapons    = [[Cannons]] (5)
+|attacks    = [[Bullets]]
+|xp         = 30,000
+|hp         = 3,000
+|bd         =
+}}{{For|the playable version of this tank|Booster}}
+The {{PA}} is an AI-controlled [[Bosses|Boss]] that was added on the August 20th update. It has a chance to spawn 45 minutes after the server has started and 0-45 minutes after the previous boss has been destroyed.
+
+== Design ==
+The Fallen Booster features a light gray circle as its body with five [[Cannons]]. One Cannon faces the front (which does low damage) and the other four are paired up on the back (doing even less damage). Summed up, it is just a larger version of the playable [[Booster]] with a grey base and AI control. The angles between the Cannons clockwise from the front cannon are 135º, 15º, 60º, 15º, & 135º.
+
+== Technical ==
+[[File:BOOSTER PLANS.png|right|thumb|139x139px|The angles of the Booster’s back thrusters in comparison to a back thruster in the direct back of the tank.]]
+=== Behavior ===
+When it goes on the offensive, it attacks by ramming into its target, much like a player-controlled the [[Booster]] that is using a Body Damage focused [[Builds|Build]]. The Fallen Booster doesn't target players that are under level 15 unless provoked. If the player survives for a couple of minutes, the Fallen Booster may ignore the target and attack another tank nearby instead. When there are no valid players that can be targeted, the Fallen Booster will target the nearest [[Polygons|Polygon]].
+
+=== Stats ===
+It has a big health pool of 3,000, which is the same as all of the bosses. It has decent [[Bullet Speed]], high [[Bullet Penetration]], but very low [[Bullet Damage]]. Its recoil and [[Movement Speed]] is equal to that of a [[Booster]] with max [[Reload]] but no Movement Speed. Its Field of View is large, likely comparable to the field of view of an [[Assassin]]'s. Like other bosses, when it hasn’t been attacked in over 30 seconds, it will slowly regenerate all of its health.
+
+=== Miscellaneous ===
+The Fallen Booster is targeted by [[Base Drones]] once it comes close to the base. The tank itself and its bullets are damaged upon making contact with the [[Base]].  Upon destruction, it awards 30,000 experiences to the player who kills it.
+
+== Strategy ==
+*<b>Strong Against:</b> [[Overseer]] branch, most other tanks, unskilled/unaware players, and tanks with slow [[Movement Speed]]
+*<b>Weak Against:</b> [[Tri-Angle]] classes, [[Sprayer]]s, [[Destroyer]] branches, [[Trapper]] classes if played correctly, multiple [[Alpha Pentagon]]s, [[Dominator]]s, and [[Bullet]] [[Builds]] with max [[Movement Speed]].
+=== As the Fallen Booster ===
+TBA
+=== Against the Fallen Booster ===
+* The best way to kill the Fallen Booster is using the [[Tiers|Tank]] with high [[Movement Speed]] like the [[Booster]] or the [[Fighter]], because the Booster can outrun the Fallen Booster.
+** This is because the Fallen Booster has more mass, and therefore moves slower because of the decreased recoil boost.
+* With this advantage, the next course of action is to take it into the [[Pentagon Nest]] and try to make it ram into [[Alpha Pentagon]]s, as the Fallen Booster will not try to avoid them.
+** Be wary, as the Fallen Booster is known to pass right through them.
+** Also, however, there is a chance that the Fallen Booster might die to the Alpha Pentagons.
+* Once it has very low health, ramming into it with full health may defeat it.
+** However, be very careful when ramming the Fallen Booster, as it has a very large amount of Health and Body Damage, and if one rams it while it still has too much health, it may kill the player via Body Damage.
+** This may take a long time and it is generally considered best to simply run away and hope that it targets someone else.
+** To ensure maximum damage, the player should avoid traveling in a straight line. Instead, it is best to zig-zag left and right by up to 45 degrees (because the Booster’s cannons are in 30-degree and 45-degree angles) to shower the Fallen Booster with a spray of projectiles. The player can also travel in a huge circle, to focus all of the bullets on the Fallen Booster.
+* [[Booster]]s can also use the Fallen Booster to its advantage, making it follow them wherever they go, which means the Booster has full control over the Fallen Booster. As such, the player can make the Fallen Booster ram other players the pair passes by. Just make sure that when the Fallen Booster loses interest in the player, that the player make it attack the player again to keep up the Booster and Fallen Booster teamwork combo in play.
+* The [[Sprayer]] class is also very adept at killing the Fallen Booster. The Sprayer has to goad the Fallen Booster into chasing after it, and then move backward while spraying [[Bullets]] at the Fallen Booster. This gradually wears down the Fallen Booster’s health and prevents the Fallen Booster or its Bullets from reaching the player, since the Sprayer with high [[Reload]] that is moving backward while firing continuously for knockback has the same speed of the Fallen Booster.
+* If the player is using one of the [[Trapper]] classes, preferably the [[Tri-Trapper]], [[Mega Trapper]], or the [[Overtrapper]], they can throw [[Traps]] to surround themselves quickly. Then, when the Fallen Booster locks on, it will have to move through a field of traps (and [[Drones]] if using the Overtrapper) to get to the player. Note however that Trappers cannot handle multiple tanks very well (with some exception to the Tri-Trapper) and a player may not survive long enough to fight the Fallen Booster. Also, a Mega Trapper can move backward while shooting Mega Traps at it, and while the Mega Trapper Launcher has extremely low recoil, the Mega Trap will the slow Fallen Booster down, and it will also do a lot of damage to the Fallen Booster. Again, Mega Trappers may not survive long enough to fight the Fallen Booster.
+* An alternative is to use the [[Hybrid]] or [[Annihilator]] to boost away and attack at the same time. This ensures that the player is faster than the Fallen Booster, and the [[Bullet]]s - if playing as a bullet build - will deal sufficient damage to the Fallen Booster. Make sure to fully utilize recoil and to do as much damage as possible to the Fallen Booster.
+* In [[Domination]], the player can also attempt to goad it into hitting an enemy [[Dominator]]. This way it will also help in taking down the enemy team. Note that if the Dominator is in its Neutral state, the Dominator will simply refill its health.
+* If the player is targeted while playing as another class, the chances of survival are almost zero unless the player is highly skilled <b>and</b> fast enough to get away. Otherwise, the best strategy is to run to the center and duke it out between an Alpha Pentagon (the Fallen Booster will likely ram into the Alpha Pentagon if it’s full health) or try to retreat to a [[Base]] if in the correct game mode.
+* It's highly recommended not to attempt to ram into the Fallen Booster, even when playing as a Tri-Angle, Booster, [[Landmine]], or even a [[Spike]] with full Body Damage and Max Health, as it will kill or will severely injure the player the second they make contact with it. Even should the Fallen Booster be low on health, its body damage is never to be underestimated; only when the Fallen Booster is within an inch of death is it advised to ram it.
+* In [[2 Teams]], have a teammate be a distraction for the booster (They need good movement speed). They need to zigzag so they don't get destroyed. Approach the Fallen Booster from the side (not the back because that's where bullets are shooting from). Hit the Fallen Booster from the side so that it takes damage. '''Tip: '''It is advised that you have max Reload. You will also need MAX BULLET DAMAGE AND PENETRATION. That way you will be able to get as many hits as possible on the booster before it starts attacking you. The teammate should have Max Reload as well. They get as many hits as possible and so on.
+* Generally speaking, if you are slower than the Fallen Booster, you are screwed, but if you are faster than the Fallen Booster, it is screwed.
+
+== History ==
+*Before 22nd August 2016, when it spawned, there would be no notification signifying it, as with all the other bosses before that date.
+*Before 22nd August 2016, it could target shapes and players below level 15.
+*On 23rd August 2016, it was balanced. The balance lowered its Movement Speed and recoil significantly and increased its Bullet Speed, Penetration, and Damage exponentially.
+*Before 24th August 2016, it was not targeted by the Base Drones.
+
+== Trivia ==
+*It is the fourth AI-controlled boss in the game.
+*It is currently the fastest and most aggressive boss in the game.
+*The Fallen Booster is the first boss to fire bullets instead of using drones, it is also the only boss to use Barrels, as the [[Defender]] uses Auto Turrets.
+*Its name alludes to its appearance of being undead.
+*A Level 45 tank with 5 or more points in Movement Speed can outrun this boss.
+*The only way to see an idle movement of The Fallen Booster is by going in [[Sandbox]]. One has to be a [[Necromancer]] under Level 15 and “steal” all polygons.
+**Tip: The player must do this before it spawns, or it might never give the player the last polygon, it will lock the target (each square), and even if the player turns it into its drone before it gets destroyed, it will continue to attack it.
+**When it is idle, it will not fire any bullets and slowly roam around the arena.
+*The Fallen Booster, along with the [[Fallen Overlord]] is the only boss that can destroy polygons.
+*It is the only boss which does not use either traps or drones.
+*It is the fallen version of one of the most notorious tanks in Diep.io.
+
+== Gallery ==
+<gallery>
+Fallen Booster.png|Close upshot of the Fallen Booster
+Fallen Booster notification.png|Spawn notification
+FallenboosterChase.png|A Booster being chased by a Fallen Booster
+Image-1.jpg|Many Tanks on the red team attacking the Fallen Booster
+Screen Shot 2016-08-20 at 4.01.31 PM.png|The Fallen Booster on low health
+dominator kill fallen booster.png|Notification saying that the Fallen Booster has been Defeated by a Dominator
+RfYu251.png|A Fallen Booster attacking another tank
+Fallen Booster Transparent.png|A Fallen Booster.
+Booster (1).jpg|Another image of the Fallen Booster.
+</gallery>
+
+{{BossNav|fallen}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Fallen Booster
+|fr     = Fallen Booster
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Fallen Booster
+|pt-br  =
+|ru     = Fallen Booster
+|sv     =
+|tr     = Fallen Booster
+|vi     = Fallen Booster
+|zh     = Fallen Booster
+}}
+[[Category:Diep.io]]

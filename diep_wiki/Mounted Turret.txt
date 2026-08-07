@@ -1,0 +1,4 @@
+= Mounted Turret =
+
+#REDIRECT [[Auto Turrets]]
+[[Category:Diep.io]]

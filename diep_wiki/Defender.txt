@@ -1,0 +1,89 @@
+= Defender =
+
+{{Image}}
+{{Boss
+|image      = <gallery>
+defender boss 3.png|New Colors
+defender boss 2.png|Old Colors
+defender boss 1.png|Old Design
+</gallery>
+|weapons    = [[Launchers]] (3)<br/>[[Auto Turrets]] (3)
+|attacks    = [[Traps]]<br/>[[Bullets]]
+|xp         = 30,000
+|hp         = 3,000
+|bd         =
+}}
+The {{PA}} is an AI-controlled [[Bosses|Boss]] that was added on August 23rd, 2016. The Defender has a chance to spawn 45 minutes after the server starts, and 0-45 minutes after the death of the previous boss. It is one of the three bosses that are not attacked by Base Protectors as soon as they get close.
+
+== Design ==
+The Defender features a large Red [[Triangle]] as its body with three evenly-spaced trap [[Launchers]], one on each side. Three [[Auto Turrets]] are placed on top of it on each corner.
+
+== Technical ==
+=== Stats ===
+Like every other boss, the Defender has 3,000 HP, with a slow heal rate. Its launchers have a high reload, and its Auto Turrets have an average fire rate. Its traps are normal-sized with high penetration and damage. Auto Turrets and bullets act identically to the [[Auto 5]] but have a lower speed. The Defender also moves very slowly.
+
+=== Miscellaneous ===
+*Upon destruction, it awards 30,000 experience, giving it to the player who deals the final shot.
+*When the Defender happens to drift near a wall, it will immediately change its path to move parallel to the wall.
+*It is not targeted by the Base Protectors unless it provokes them and the Base itself has an effect on it.
+*The Defender has auto-spin passively enabled.
+*Similarly to [[Arena Closer]]s, it is not slowed down at all when bumping into [[Polygons]].
+*The Defender suffers from its own Auto Turrets’ [[Stats|Recoil]].
+*When idle, the Defender slowly circles the arena until it sees a player.
+
+== Strategy ==
+*<b>Strong Against:</b> Low DPS tanks, Melee classes, [[Drone]] classes, such as the Overlord and Overseer. (Unless distracted), Spread classes, most [[Trapper]]s.
+*<b>Weak Against:</b> High DPS, [[Assassin]] branch, [[Predator]]s, [[Streamliner]]s and other focused RoF classes, [[Destroyer]] branch, [[Overlord]]s and [[Factory|Factories]] if caught off guard.
+
+=== As the Defender ===
+
+* The defender is very slow, so recoil is the preferred way for movement. You can use recoil to slowly crawl to the center of the map,where you can use the [[Alpha Pentagon|alpha pentagons]] as additional armor, and as your cannons can fire through polygons you can become almost unkillable.
+
+=== Against the Defender ===
+*While drone classes are regarded as weak to it, they can easily deal with this boss with a certain tactic. Go to the defender but keep it on the left or right edge of your screen. Send your drones into it, then retreat. It'll stop firing within a second of it going offscreen, so go back and attack again, then retreat and repeat until it's dead.
+*The Factory can be particularly good against this boss due to its drone shield being able to tank the Defenders' direct auto fire if needed, which is the main threat when fighting this Boss.
+*Use a Destroyer, [[Annihilator]], or [[Hybrid]] as one giant Bullet with good penetration stats can plow right through many of the Defender’s tough [[Traps]]. It's also highly recommended to use a high reload build and keep firing to get protection from the auto turret bullets.
+*A [[Streamliner]] is capable of defeating a Defender since its RoF could easily shorten the Defender’s health and push away traps as well as block the [[Bullets]].
+*Use a [[Rocketeer]], as they can fire decent missiles towards the Defender while the back barrels on the missiles push away the traps, dealing significant damage towards it.
+*Use a Gunner class like the [[Gunner Trapper]] or possibly an [[Auto Trapper]], as it can defend itself while shooting decent Bullets. Be careful around the tiny gaps between Traps that the Auto Turret’s small bullets may squeeze through.
+*It is heavily advised not to use Body Damage focused builds, other Trappers, or solely Auto classes as they will not be able to get through the trap/bullet storm.
+*Use a [[Ranger]], [[Stalker]] or Predator to hit the Defender as they can hit the Defender out of its FoV.
+
+== Trivia ==
+*It is the first boss to use Traps and wield Auto Turrets at the same time.
+*It is the only boss that uses more than one type of projectile (minus the 8th Anniversary Variant of bosses), using both Traps and Bullets.
+*The Defender, alongside Arena Closers, neutral [[Dominator]]s, and Summoners, are the only entities to use yellow {{CA|Ammunition}}.
+*As of 22nd of August, when a boss spawns, a notification appears.
+*Although this Boss’ Launchers are about the same size as [[Mega Trapper]] Launchers, it shoots regular size traps.
+*The Defender’s Auto Turrets seem to have a complex behavior. It is the only tank that uses Auto Turrets that are controlled by the Defender’s AI. The Defender’s Auto Turrets don’t control themselves, as other Auto Turrets do.
+*The Defender is rather small compared to other Bosses.
+*It has the same amount of Launchers as the [[Tri-Trapper]], which is the largest amount of Launchers that can be found on a single tank ([[Dominator]]s not included).
+**Its turret layout is reminiscent of that of the [[Auto 3]].
+*The Defender’s Traps go through Polygons.
+*The Defender does not spawn on the [[Diep.io Mobile/Legacy|legacy mobile]] version of the game for an unknown reason.
+*For an unknown reason, the Defender's auto turrets will not fade into nothing when it dies, instead they will simply grow and disappear instantaneously.
+[[File:Bandicam 2023-02-18 14-42-03-004.png|thumb|The Defender in 4TDM mode|250x250px]]
+[[File:Bandicam 2023-02-19 23-38-47-521.png|thumb|250x250px|The Defender in 2TDM mode]]
+[[File:Bandicam 2023-02-19 23-39-04-055.png|thumb|256x256px|The Defender defeated.]]
+__FORCETOC__
+[[Category:Diep.io]]
+
+{{BossNav|polygon}}
+{{Interlang
+|status = checked
+|de     =
+|es     = Defender
+|fr     = Defender
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Defender
+|pt-br  =
+|ro     =
+|ru     = Defender
+|sv     =
+|tr     = Defender
+|vi     = Defender
+|zh     = Defender
+}}

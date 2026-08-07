@@ -1,0 +1,129 @@
+= Booster =
+
+{{Infobox
+|image     = <gallery>
+booster icon 3.png|New Colors
+booster icon 2.png|Old Colors
+booster icon 1.png|Nameless
+</gallery>
+|tier      = 4
+|next      = None
+|previous  = [[File:Tri-angle icon new.png|50px|link=Tri-Angle]]
+|barrel    = [[Cannons]] (5)
+|id        = 23
+}}
+{{For|the [[Bosses|Boss]] based off of this tank|Fallen Booster}}
+The {{PA}} is a Tier 4 tank in Diep.io. It upgrades from the [[Tri-Angle]] at level 45.
+== Design ==
+It has a total of five [[Barrels]]. Four of them are at the back with two pairs close together made for the accelerators which shoot weak [[Bullets]] and one Barrel in front of the tank which does moderate damage. The angles between Booster Barrels clockwise from the front cannon are: 135º, 15º, 60º, 15º, & 135º.
+
+The only visible feature that differs from the Tri-Angle is that it has two more Barrels on the back, and is, therefore, faster, because of recoil.
+
+== Technical ==
+{{BaseStats
+|HealthRegen       = —
+|MaxHealth         = —
+|BodyDamage        = —
+|BulletSpeed       = —
+|BulletPenetration = —
+|BulletDamage      = —
+|Reload            = —
+|MovementSpeed     = —
+|HiddenStat1       = Recoil
+|HiddenStat2       =
+|HiddenStat3       =
+|HiddenStat4       =
+|HiddenStat1Val    = ▲▲
+|HiddenStat2Val    =
+|HiddenStat3Val    =
+|HiddenStat4Val    =
+}}Upon upgrading, this tank adds two barrels at the back, further increasing its recoil and by extension, while shooting, Movement Speed. The Barrels at the back shoot weaker and faster Bullets that last only for 1.5 seconds instead of 3 seconds. This tank has recoil that speeds the tank up while going forward when shooting but has a horrendous backward Movement Speed while firing because the Booster’s back barrels work against the tank’s reverse thrust.
+
+Stats (Back cannons only, the rest are the same with [[Tri-Angle]]):  
+
+* Bullet Damage: 2.1 (+0.9 for each point in Bullet Damage). 
+
+== Strategy ==
+*<b>Strong Against:</b> Low DPS/RoF tanks, Slow [[Smasher]]s/Melee Tanks if they have low health, unprepared [[Drones|Drone]] classes
+*<b>Weak Against:</b> High DPS, Skilled Drone Players, High RoF tanks (such as the [[Twin]] tree, [[Gunner]]s, [[Auto Gunner]]s, [[Fighter]]s, [[Trapper]]s, [[Destroyer]] branch), [[Smasher]] branch (when they have full health).
+
+=== As the Booster ===
+*Because of this tank’s speed, the Booster can be one of the hardest tanks to kill, depending on the attacker’s skill/[[Stats]] and the target’s maneuverability/skill/Stats. It is also one of the few tanks that can go up against an [[Overlord]], [[Overseer]], [[Manager]], [[Necromancer]], [[Battleship]], or [[Factory]] as its speed allows it to outmaneuver the enemy’s Drones.
+*A commonly used strategy with this tank is to dive in, deal damage, dodge Bullets and retreat before the enemy can kill the player. This tank is well known for its ramming capabilities, as it can use its fast speed to crash into enemies easily. This is particularly useful against tanks with slow Reload and Bullet Speed, as the player can circle them and easily avoid the Bullets.
+*However, this strategy usually doesn’t work against high DPS (Twin classes especially and [[Machine Gun]] classes) tanks, as it is difficult to push through their rapid-fire Bullets to make contact with them. If the player gets too close, they can simply push the player back and destroy the player with their Bullets. However, sneaking up to these tanks vertically and running into them before they can react may work.
+*Another option is a bullet spamming Booster. With maxed Bullet Damage, Bullet Penetration, Bullet Speed, and Reload, the player becomes a threat due to double concentrated fire on the back, with a head cannon to clear the way. However, this makes the player very vulnerable, as the player lacks defense—if the opponent lands some hits, the player can quickly die. The Fighter, however, is a more appropriate choice for this strategy.
+*A third option as a Booster is to get high Bullet Damage, Bullet Penetration (but not Bullet Speed), Movement Speed, and medium/high Max Health and Health Regeneration and attack low-level tanks. Players can chase them down and kill them with their Bullets. They will probably assume the player is using a Body Damage build and try to avoid the Booster itself instead of its Bullets. This strategy can work well against Level 45 tanks, since the player’s high Damage and Penetration can easily deal damage and kill them.
+*One very important reminder: avoid [[Octo Tank]]s and [[Triple Twin]]s. When players see them, they should quickly evacuate, as touching the Octo Tank/Triple Twin with high Body Damage will certainly kill the player. Octo Tanks/Triple Twins without Body Damage usually focus on Bullet Damage, meaning that the player would probably die even before reaching them. However, the Octo Tank has 8 small gaps where a Booster can ram them from, so by simply running to those gaps, the player can avoid a lot of Bullets, while also getting a chance at destroying the Octo Tank. A Triple Twin has far larger gaps, making it easier to kill one. Nevertheless, only skilled players should attempt this.
+*Players could use a rammer build in [[Domination]] and camp by enemy [[Dominator]]s; using high speed, players could ram the enemy guards. But be careful with enemy tanks in the Destroyer or Smasher branch (especially [[Spike]]s), they are very dangerous to Boosters. This also works very well for [[Tag]].
+*In Team Game Modes players can use their superior speed to chase an enemy and place themselves between the enemy and their base, cutting off their escape route.
+*Note: The Bullets fired from the back Barrels shoot Bullets that are five times weaker than the Bullets fired from the front Barrel but have high recoil in return, so don’t rely on them to damage enemies.
+
+=== Against the Booster ===
+[[File:Booster.svg|thumb|100px|Old Booster SVG]]
+*The most effective counter against the Booster is by using [[Traps]] to lock down an area, or using a high DPS tank.
+*Another effective counter (unless they are a bullet build) is to simply bait them as a Necromancer and then kill them. However, skilled players may not fall for the bait and could even kill the player.
+*If the player is not going down the [[Trapper]] route, then the second-best way to deal with Boosters is through raw Bullet damage output. Using the [[Destroyer]], [[Annihilator]] or the [[Hybrid]]'s massive Bullet will instantly kill any non-Body Damage based tank, and even these ramming builds lose over half of their health. However, since most Destroyer bullet builds don’t max out Bullet Damage, it may only take down a third of a rammer’s health and a quarter of a Smasher’s health, this means that the Booster has another chance to escape, like all rammers.
+*If the player is skilled, an Overseer is an effective counter. Players should keep their Drones very close, slowly moving the Drones towards the Booster to surround it. Players will often survive and with minimum losses. However, it is of paramount importance that the player not let the Booster come between their body and their drones; otherwise, the Booster can get to them before the Drones can and kill the player. If this happens, then you have a chance of dodging them, then have your drones return, however.
+*Tanks in the Twin branch (not including the [[Auto 5]] or [[Battleship]]) or the [[Sprayer]] could spam plenty of bullets at a Booster most likely overwhelming the Booster even if it has extreme Body Damage and Max Health. This especially works for a [[Triplet]] since high Reload and Bullet Damage quickly adds up.
+*Tanks in the Gunner branch (except for [[Streamliner]] and [[Gunner Trapper]]) are very effective against Boosters. Despite the tiny bullets being weaker than a Machine Gun’s, the Gunner has a very high Reload and Bullet Speed, which could drain a rammer’s health in just 10 seconds.
+*Always approach Boosters by the side, blasting it with bullets using high reload. The same cannot be done against Fighters because they have cannons on side. If you don't have high reload, use Movement Speed and run around the booster in a wide circle, shooting while at it. Tip: In Team Modes, have more teammates join the Assault. Boosters cant handle multiple rammers as the rammers will run into both sides, with one rammer each side. A class that could prove useful is the Trapper class with Trap Speed and Movement Speed maximized. You can create multiple barriers and have a teammate shoot the Booster.
+*The last, and by far the simplest way to deal with them, is to simply avoid them. Use the [[Sniper]] branch’s high field of view to avoid them. If the player just spawned/respawned next to a hungry Booster, they should invest as many points as possible into Reload and Movement Speed and get out of there. If the player is a low-level Tri-Angle, the player should use their Movement Speed to evacuate (or ram the Booster if it has lost at least 1/4 HP).
+
+== Record ==
+
+=== PC ===
+
+* FFA: [https://imgur.com/UeLbwCH 3.4m by exo]
+* 2 Teams: [https://www.youtube.com/watch?v=lSTh1SwwwaU 1.98m by Sprunk]
+* 4 Teams: [https://www.youtube.com/watch?v=R5jqo5r6qTU 3.02m by Wash]
+* Maze: [https://imgur.com/1P0SL66 1.69m by exo]
+
+=== Mobile ===
+
+* FFA: 1.25m by buh
+* 2 Teams: -
+* 4 Teams: 1.05m by Pianzage
+* Maze: -
+
+== Trivia ==
+*The Booster [https://www.youtube.com/watch?v=NqDwyc8MLE0 is faster] than [[Fighter]] and [[Tri-Angle]] tanks of the same level.
+*The recoil from the back cannons were likely to be an inspiration to its name.
+*Along with the [[Fighter]], it is one of two names submitted by fans to be given to a tank in-game.
+*The Booster, along with the Tri-Angle, Fighter, and the [[Sprayer]] are the best Classes at avoiding the [[Arena Closer]].
+*The rear barrels of the Booster (alongside the Tri-Angle and the Fighter) has one of the lowest base Bullet Damage in the game. Each projectile fired is as durable as one of the [[Streamliner]].
+*A ram-build Booster (With full Body Damage, Health Regeneration, and Max Health) has about 1/4 the health of an [[Alpha Pentagon]].
+*The Booster, along with the Overlord, are the only two tanks to have Bosses named after them (the [[Fallen Overlord]] and [[Fallen Booster]]).
+*A Booster with maxed out reload and movement speed is the second fastest level 45 tank. The fastest is the Annihilator, which is barely faster than the Booster. [https://www.youtube.com/watch?v=Ugxybir0TsQ Source]
+*When its name was being decided, one of the choices was the name Master, which was a nod to an unskilled yet well-known YouTuber named [https://www.youtube.com/channel/UCYfybUu1hUKRZl3r7FYAgHg MasterOv]. Strangely, the name Master was the one that won, but the name Booster was chosen over that name.**That name was later used for [[Factory|another tank]], which was later renamed Factory; therefore, the name Master is currently unused.
+
+== Gallery ==
+<gallery>
+File:Booster First Place.png|1st Place With Booster (Red team)
+File:Booster In Sandbox With Build.jpg|Booster in Sandbox
+File:BoosterFight.png|Two Boosters fighting each other in Sandbox. Notice the yellow names.
+File:OneMoreBoosterFight.png|A Booster being chased by a Booster in Sandbox.
+File:BoosterLook.png|The Booster using its recoil to gain speed.
+File:Screenshot 2021-03-02 at 8.45.18 AM.png|A booster in a base.
+File:Booster icon new 1.png|...in new colors, nameless
+</gallery>
+
+{{TankNav|tier4}}
+{{Interlang
+|status = checked
+|de     = Booster
+|es     = Booster
+|fr     = Booster
+|hu     =
+|it     =
+|ja     =
+|ko     =
+|pl     = Booster
+|pt-br  =
+|ro     =
+|ru     = Booster
+|sv     =
+|tr     =
+|vi     = Booster
+|zh     = Booster
+}}
+[[Category:Diep.io]]

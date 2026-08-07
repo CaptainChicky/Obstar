@@ -1,0 +1,47 @@
+= Draft:Arras:Classic =
+
+{{Stub}}
+
+''Don't be confused with [[Arras:Squads|Squads]] or [[Maze|Maze from diep.io]].''
+
+{{Mode|title=Classic|closure=4 Hours, Unconfimed.|teams=Squads|bosses?=Yes|specials=[[Arras:Crashers|Crashers ( Egg, Square, Triangle, Pentagon, Hexagon. Betas, Alphas]]}}
+
+== Information in Changelog ==
+
+* Added a new event called Classic!
+* In this event, you do not have the luxury of instant level 45! You will need to farm or fight for your place among the top.
+* There is a new shape mutation within this event's ecosystem, and it's a rather vicious one. Proceed with caution...
+
+== Servers List ==
+
+=== Existed ===
+
+* #wt - US West server
+* #et - Europe server
+* #ot - Oceania server
+
+=== Not Existed ===
+
+* #ct - US Central server
+* #at - Asia server
+
+== Trivia ==
+
+* In this gamemode you can't press '''N''' or play with enabled '''Auto-Level Up'''
+* There was spawning [[Arras:Bosses|Arras.io Bosses]], but not spawning [[Bosses|Diep.io Bosses]]
+* Classic like an [[Arras:Worlds Collide|Worlds Collide]]
+* This gamemode released in 05.02.2024
+* There was no portal spawning
+* There is a new type of [https://diepio.fandom.com/wiki/Arras:Mutation#Crasher Crasher] called Polygon Crasher it also has beta and alpha variations as well
+* The new crashers were seen as quite strong by the community, some even taking a few minutes to kill with a group, so they were nerfed.
+
+== Gallery ==
+<gallery>
+File:Egg Poly.png|Crasher Egg
+File:Square Poly.png|Crasher Square
+File:Triangle Poly.png|Crasher Triangle / Crasher
+File:Pentagon Poly.png|Crasher Pentagon
+File:Hexagon Poly.png|Crasher Hexagon
+</gallery>[[File:Ahh.png|Portal For Classic (Unused)|right]]
+[[Category:Arras Game Modes]]
+[[Category:Stubs]]
