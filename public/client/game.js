@@ -479,6 +479,7 @@
 					case '5': case '6': case '7': case '8': {
 						const Ui = General['Ui'];
 						if (!Ui) { break; }
+						Ui.UP.poke();
 						const wireIdx = CONST.UP_ORDER[parseInt(key) - 1];
 						if (Global.inputs.m) {
 							// m+digit: fill that stat's bar - spend what's banked right now, queue the
@@ -494,7 +495,7 @@
 							// u+digit: queue one point on that stat, spending it now if affordable.
 							Ui.UP.enqueue(Ui, wireIdx, 1);
 							Ui.UP.drain(Ui);
-						} else if (Ui.still > 0) {
+						} else if (Ui.UP.avail(Ui) > 0) {
 							// bare digit: spend one point on that stat now.
 							General['WS'].send(PROTO.encode('upgrade', wireIdx));
 						}
@@ -502,11 +503,13 @@
 					};
 					case 'u': {
 						// m+u (u pressed while m is held): clear the queue.
+						if (General['Ui']) { General['Ui'].UP.poke(); }
 						if (Global.inputs.m && General['Ui']) { General['Ui'].UP.clearQueue(); }
 						break;
 					};
 					case 'm': {
 						// m+u (m pressed while u is held): clear the queue.
+						if (General['Ui']) { General['Ui'].UP.poke(); }
 						if (Global.inputs.u && General['Ui']) { General['Ui'].UP.clearQueue(); }
 						break;
 					};
@@ -776,19 +779,25 @@
 			Game.width = data.head.width;
 			Game.height = data.head.height;
 			Game.baseSize = data.head.baseSize;
-			// plan.md A4/C5 - real since A4, on the wire since C5; fixed at OPEN/0/0 for every mode
-			// except Survival's own COUNTDOWN. No consumer yet (no "waiting for players" screen
-			// built - PENDING.md), stored here so one has the data the moment it's written.
+			// The arena state machine's own fields - fixed at OPEN/0/0 for every mode except
+			// Survival's own COUNTDOWN, which is what drives the lobby screen (ui.js's lobby()).
 			Game.arenaState = data.head.arenaState;
 			Game.ticksUntilStart = data.head.ticksUntilStart;
 			Game.playersNeeded = data.head.playersNeeded;
-			// Predator zoom (plan.md C9) - the world point the server wants the viewport centred
-			// on this tick; read every packet, but only actually used by User.update()'s own
-			// camera-target blend while User.zooming (states[4], below) says the lock is live.
+			// Predator zoom - the world point the server wants the viewport centred on this tick;
+			// read every packet, but only actually used by User.update()'s own camera-target blend
+			// while User.zooming (states[4], below) says the lock is live.
 			Game.camX = data.head.camX;
 			Game.camY = data.head.camY;
+			// Whether this viewer could respawn right now, and how many contenders the room's
+			// lobby has gathered so far - read by the lobby/death screens.
+			Game.canRespawn = data.head.canRespawn;
+			Game.playersJoined = data.head.playersJoined;
 			if (General['Ui']) {
 				General['Ui'].xp = data.head.xp;
+				// Clears the in-flight counter once the server's own still catches up with what we
+				// already sent - must run before both the assignment and drain() below.
+				General['Ui'].UP.noteStill(data.head.still);
 				General['Ui'].still = data.head.still;
 				General['Ui'].classLvl = data.head.cLvl;
 				General['Ui'].lvl = data.head.level;
@@ -808,6 +817,8 @@
 							User.followDir = data.User[param][1];
 							///
 							if (General['Ui']) {
+								// A dead tank never carries its upgrade queue into the next life.
+								if (!General['Ui'].dead && data.User[param][2]) { General['Ui'].UP.clearQueue(); }
 								General['Ui'].dead = data.User[param][2];
 							}
 							///

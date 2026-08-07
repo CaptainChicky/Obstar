@@ -284,6 +284,12 @@
 				let CLASS = 0;
 				// Indexed the same way Ui.upNb is (wire stat index), not panel order.
 				const QUEUE = [0, 0, 0, 0, 0, 0, 0, 0];
+				// Upgrade packets sent whose effect has not shown up in head.still yet. head.still can
+				// lag the server by a tick, so draining straight against it spends the same points twice.
+				let pending = 0;
+				let lastStill = -1;
+				// How long (ms timestamp) the panel stays visible after the last upgrade keypress/click.
+				let holdUntil = 0;
 				function desaturate(hex, amt = 0.55) {
 					const r = parseInt(hex.substring(1, 3), 16);
 					const g = parseInt(hex.substring(3, 5), 16);
@@ -323,6 +329,7 @@
 				// whose per-stat caps actually differ (every class but the uniform ones, where
 				// every row shares one value and the bug had nothing to expose).
 				function statCap(wireIdx) {
+					if (!STATES || !STATES.up.length) { return CONST.MAX_PER_STAT; }
 					const row = STATES.up[CONST.UP_ORDER.indexOf(wireIdx)];
 					return (row && typeof row.max === 'number') ? row.max : CONST.MAX_PER_STAT;
 				}
@@ -334,21 +341,36 @@
 				}
 				function clearQueue() {
 					for (let i = 0; i < QUEUE.length; i++) { QUEUE[i] = 0; }
+					pending = 0;
+					lastStill = -1;
+				}
+				// Called with every head.still the server sends. A changed value is proof the server
+				// has processed everything already in flight, so the in-flight count resets.
+				function noteStill(v) {
+					if (v !== lastStill) { pending = 0; lastStill = v; }
+				}
+				// Points actually free to spend right now: the server's own count minus whatever we
+				// already sent packets for but head.still has not confirmed yet.
+				function avail(Ui) {
+					return Math.max(0, Ui.still - pending);
 				}
 				function drain(Ui) {
-					let still = Ui.still;
-					if (!still) { return; }
+					let still = Ui.still - pending;
+					if (still <= 0) { return; }
 					for (let i = 0; i < QUEUE.length && still > 0; i++) {
 						while (QUEUE[i] > 0 && still > 0) {
 							if ((Ui.upNb[i] || 0) >= statCap(i)) { QUEUE[i] = 0; break; }
 							QUEUE[i]--;
 							still--;
+							pending++;
 							Ui.upNb[i] = (Ui.upNb[i] || 0) + 1;
 							General['WS'].send(PROTO.encode('upgrade', i));
 						}
 					}
-					Ui.still = still;
 				}
+				// Keeps the panel on screen for CONST.UP_HOLD_MS after the last upgrade keypress/click.
+				function poke() { holdUntil = Date.now() + CONST.UP_HOLD_MS; }
+				function holding() { return Date.now() < holdUntil; }
 				///
 				// `max` is the number of segments in each stat's bar - the per-stat cap, 7 since
 				// PENDING #30. It is geometry as well as logic: the widget's width is
@@ -584,13 +606,13 @@
 				drawAll(
 					'Basic',
 					['Health Regen',
-						'Reload',
 						'Max Health',
-						'Bullet Speed',
-						'Movement Speed',
-						'Bullet Damage',
 						'Body Damage',
-						'Bullet Penetration'], CONST.MAX_PER_STAT);
+						'Bullet Speed',
+						'Bullet Penetration',
+						'Bullet Damage',
+						'Reload',
+						'Movement Speed'], CONST.MAX_PER_STAT);
 				///
 				return {
 					can: can,
@@ -608,7 +630,11 @@
 					enqueue: enqueue,
 					budget: budget,
 					clearQueue: clearQueue,
-					drain: drain
+					drain: drain,
+					noteStill: noteStill,
+					avail: avail,
+					poke: poke,
+					holding: holding
 				}
 			})();
 			this.TNK = (() => {
@@ -937,6 +963,76 @@
 					can: can
 				};
 			})();
+			/*
+				The pre-match lobby overlay (Room.ArenaState COUNTDOWN, Game.arenaState === -1) -
+				an opaque full-screen backdrop plus a headline, a joined-count line and a row of dots,
+				rasterized once and re-drawn only when the numbers actually change (this file's own
+				set/redraw idiom - see MAP/LB above).
+			*/
+			this.LOBBY = (() => {
+				const can = document.createElement('CANVAS');
+				const ctx = can.getContext('2d');
+				const R = CONST.RESOLUTION * CONST.OFFCAN;
+				const fill = '#f0f0f0';
+				const stroke = '#333333';
+				const titleS = 44;
+				const subS = 22;
+				const dotR = 6, dotGap = 10;
+				let lastKey = null;
+				function redraw(title, joined, needed) {
+					const key = title + '|' + joined + '|' + needed;
+					if (key === lastKey) { return; }
+					lastKey = key;
+					const total = joined + needed;
+					const sub = joined + ' / ' + total + ' players';
+					ctx.font = '700 ' + titleS + 'px Catamaran';
+					const tm = ctx.measureText(title).width;
+					ctx.font = '700 ' + subS + 'px Catamaran';
+					const sm = ctx.measureText(sub).width;
+					const dotsW = total > 0 ? total * (dotR * 2 + dotGap) - dotGap : 0;
+					const w = Math.max(tm, sm, dotsW) + 40;
+					const titleY = titleS / 2 + 4;
+					const subY = titleS + 20 + subS / 2;
+					const dotY = subY + subS / 2 + 20 + dotR;
+					const h = (total > 0 ? dotY + dotR : subY + subS / 2) + 8;
+					can.width = Math.ceil(w * R) + 4;
+					can.height = Math.ceil(h * R) + 4;
+					// The translation term of setTransform is in DEVICE pixels (can.width's own
+					// units), not the pre-scale logical ones tm/sm/w are measured in - dividing it by R
+					// a second time put the origin well left of true centre and clipped the leading
+					// letter of every title.
+					ctx.setTransform(R, 0, 0, R, can.width / 2, 0);
+					ctx.textBaseline = 'middle';
+					ctx.lineJoin = 'round';
+					///
+					ctx.font = '700 ' + titleS + 'px Catamaran';
+					ctx.lineWidth = 5;
+					ctx.fillStyle = fill;
+					ctx.strokeStyle = stroke;
+					ctx.strokeText(title, -tm / 2, titleY);
+					ctx.fillText(title, -tm / 2, titleY);
+					///
+					ctx.font = '700 ' + subS + 'px Catamaran';
+					ctx.lineWidth = 3.5;
+					ctx.strokeText(sub, -sm / 2, subY);
+					ctx.fillText(sub, -sm / 2, subY);
+					///
+					if (total > 0) {
+						let dx = -dotsW / 2 + dotR;
+						for (let i = 0; i < total; i++) {
+							ctx.beginPath();
+							ctx.arc(dx, dotY, dotR, 0, Math.PI * 2);
+							ctx.closePath();
+							ctx.lineWidth = 2.5;
+							ctx.strokeStyle = stroke;
+							ctx.stroke();
+							if (i < joined) { ctx.fillStyle = fill; ctx.fill(); }
+							dx += dotR * 2 + dotGap;
+						}
+					}
+				}
+				return { redraw, can };
+			})();
 			this.END = (() => {
 				///
 				const xpS = 50;
@@ -1200,6 +1296,7 @@
 			})();
 			/////
 			this.map = function () {
+				if (Game.arenaState === -1) { return; }
 				// Base overlay as a fraction of the map, so the minimap tracks a live mapResize
 				// as well as the initial baseSize. No-op on every frame but the ones where it
 				// actually changed - see the note on MAP above.
@@ -1251,6 +1348,7 @@
 				ctx.fill();
 			};
 			this.states = function () {
+				if (Game.arenaState === -1) { return; }
 				this.dlvl += (this.lvl - this.dlvl) * 0.05;
 				///
 				if (this.ST.tank !== User.class || this.ST.score !== this.xp || this.dlvl !== this.ST.dlvl) {
@@ -1267,6 +1365,9 @@
 				//ctx.globalAlpha = 1;
 			};
 			this.upgrade = function () {
+				// The lobby screen owns the whole canvas while gathering players - no stat panel, and
+				// critically no click-to-spend packets, until the match actually starts.
+				if (Game.arenaState === -1) { return; }
 				// a possessed Dominator has no selectable stat rows/points at all
 				// bail before UP.init()/drawing/hit-testing rather than feeding drawAll() an empty
 				// array (its own Math.max(...maxArr) assumes at least one row).
@@ -1276,20 +1377,24 @@
 					this.UP.clearQueue();
 					return;
 				}
-				if (!this.still) {
+				this.UP.init(User.class, CLASS[User.class].ups ? CLASS[User.class].ups : TanksConfig.defaultUps, CLASS[User.class].statMax || CONST.MAX_PER_STAT);
+				// avail is still minus points already sent but not yet confirmed by head.still - see
+				// UP.drain()'s own comment for why still alone races. held keeps the panel up while a
+				// key is down or within CONST.UP_HOLD_MS of the last upgrade action.
+				const avail = this.UP.avail(this);
+				const held = Global.inputs.u || Global.inputs.m || this.UP.holding();
+				if (!avail) {
 					this.UP.isShowing = 0;
 				} else {
-					this.UP.setNb(this.still);
+					this.UP.setNb(avail);
 				}
 				///
-				if (this.UP.isShowing || Global.inputs.u || Global.inputs.m || parseInt(this.END.offy + .1)) {
+				if (this.UP.isShowing || held || parseInt(this.END.offy + .1)) {
 					this.UP.show = Math.min(this.dead ? 1 : 1.8, this.UP.show + (this.dead ? this.UP.speed * .6 : this.UP.speed));
 				} else {
 					this.UP.show = Math.max(0, this.UP.show - this.UP.speed);
 				}
-				if (!this.still && !Global.inputs.u && !Global.inputs.m && !this.UP.show && !parseInt(this.END.offy + .1)) { return; }
-				///
-				this.UP.init(User.class, CLASS[User.class].ups ? CLASS[User.class].ups : TanksConfig.defaultUps, CLASS[User.class].statMax || CONST.MAX_PER_STAT);
+				if (!avail && !held && !this.UP.show && !parseInt(this.END.offy + .1)) { return; }
 				///
 				const SHOW = Math.min(General['ease-in-out'](this.UP.show, 3), 1);
 				const ALPHA = ctx.globalAlpha;
@@ -1312,7 +1417,7 @@
 					ctx.globalAlpha = ALPHA * SHOW;
 					let n = 0;
 					const dis = Math.PI / this.UP.up.length * 1;
-					if (this.still) {
+					if (avail) {
 						ctx.drawImage(this.UP.can,
 							this.UP.logo.sx,//sx
 							this.UP.logo.sy,//sy
@@ -1339,6 +1444,7 @@
 						if (j && Global.inputs.mouseL) {
 							if (!up.press) {
 								General['WS'].send(PROTO.encode('upgrade', CONST.UP_ORDER[i]));
+								this.UP.poke();
 								up.press = 1;
 							}
 						} else {
@@ -1348,7 +1454,7 @@
 								up.press = 1;
 							}
 						}
-						this.UP.redraw(i, this.upNb[CONST.UP_ORDER[i]], j, this.still, this.UP.queue[CONST.UP_ORDER[i]])
+						this.UP.redraw(i, this.upNb[CONST.UP_ORDER[i]], j, avail, this.UP.queue[CONST.UP_ORDER[i]])
 						ctx.drawImage(this.UP.can,
 							up.sx,//sx
 							up.sy,//sy
@@ -1362,7 +1468,7 @@
 					}
 				}
 				///
-				if (this.still) {
+				if (avail) {
 					ctx.globalAlpha = ALPHA;
 					ctx.drawImage(this.UP.can,
 						this.UP.nb.sx,//sx
@@ -1382,7 +1488,7 @@
 					if (j) {
 						Global.mouse_out = CONST.MOUSE_OUT;
 					}
-					if ((j && Global.inputs.mouseL) || Global.inputs.u) {
+					if ((j && Global.inputs.mouseL) || held) {
 						this.UP.isShowing = 1;
 					}
 					j = General.isMouseCirc(
@@ -1519,6 +1625,7 @@
 				)
 			};
 			this.leaderboard = function () {
+				if (Game.arenaState === -1) { return; }
 				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, 0, 0);
 				ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
 				if (this.isReady) {
@@ -1562,9 +1669,22 @@
 					ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW / 2, Global.canH / 2);
 					ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
 					ctx.drawImage(this.END.title, -this.END.title.width / 2, -this.END.title.height - this.END.tank.height * .8 - 200 * invert);
-					ctx.drawImage(this.END.tank, -this.END.tank.width, this.END.tank.height / 2 - 200 * invert);
-					ctx.drawImage(this.END.enter, 0, this.END.tank.height - this.END.enter.height / 4 - 200 * invert)
-					// Batch G: the clickable "change game mode" pill, centred under the enter prompt.
+					// Centred like every other panel here (title/enter/change) - was drawn with its
+					// RIGHT edge at screen centre instead of centred on it.
+					ctx.drawImage(this.END.tank, -this.END.tank.width / 2, this.END.tank.height / 2 - 200 * invert);
+					// Everything below stacks off the tank canvas's own drawn bottom edge, not off
+					// tank.height alone - that put the change pill inside the tank artwork whenever
+					// the prompt above it is hidden (Game.canRespawn false, e.g. Survival past open).
+					const tankBottom = this.END.tank.height * 1.5 - 200 * invert;
+					const stackGap = 10;
+					let stackY = tankBottom + stackGap;
+					if (Game.canRespawn) {
+						// Also centred - was drawn at x=0 despite its own canvas already centring the
+						// text around its width/2, which offset the prompt a whole half-width right.
+						ctx.drawImage(this.END.enter, -this.END.enter.width / 2, stackY);
+						stackY += this.END.enter.height + stackGap;
+					}
+					// The clickable "change game mode" pill, centred under whatever sits above it.
 					// Drawn in the same centre-origin, Seff-scaled space as the images above, so its
 					// hit-test converts the window-space mouse back into that space with the exact
 					// inverse transform (Seff = UIRATIO / (OFFCAN * RESOLUTION), origin at canvas
@@ -1572,7 +1692,7 @@
 					// same rising-edge click the upgrade panel does.
 					const ch = this.END.change;
 					const bx = -ch.width / 2;
-					const by = this.END.tank.height + this.END.enter.height + 10 - 200 * invert;
+					const by = stackY;
 					ctx.drawImage(ch, bx, by);
 					if (!this.END.switching) {
 						const Seff = Global.UIRATIO / (CONST.OFFCAN * CONST.RESOLUTION);
@@ -1598,6 +1718,25 @@
 					}
 				}
 			};
+			/* The whole-canvas pre-match hold - opaque, so nothing of the arena reads through it,
+			   drawn every frame the room reports COUNTDOWN. Suspends every other panel (map/states/
+			   leaderboard/upgrade already bail on this same check) so a lobby click cannot leak into
+			   the hidden game underneath. */
+			this.lobby = function () {
+				if (Game.arenaState !== -1) { return; }
+				ctx.setTransform(1, 0, 0, 1, 0, 0);
+				ctx.globalAlpha = 1;
+				ctx.fillStyle = '#1c1c22';
+				ctx.fillRect(0, 0, Global.canW, Global.canH);
+				///
+				const ticksPerSecond = 1000 / CONST.TICK_MS;
+				const title = Game.playersNeeded > 0 ? 'Waiting for players'
+					: 'Starting in ' + Math.ceil(Game.ticksUntilStart / ticksPerSecond);
+				this.LOBBY.redraw(title, Game.playersJoined, Game.playersNeeded);
+				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW / 2, Global.canH / 2);
+				ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
+				ctx.drawImage(this.LOBBY.can, -this.LOBBY.can.width / 2, -this.LOBBY.can.height / 2);
+			};
 			///
 			this.draw = function () {
 				ctx.globalAlpha = 0.25;
@@ -1611,6 +1750,7 @@
 				ctx.globalAlpha = .4;
 				this.messages();
 				///
+				this.lobby();
 				ctx.globalAlpha = .9;
 				this.endScreen();
 				ctx.globalAlpha = 0.7

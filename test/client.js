@@ -20,6 +20,7 @@
 
 		node test/client.js
 */
+const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const boot = require('./clientDom.js');
@@ -960,6 +961,97 @@ console.log('\nheartbeat survives a plain socket close with no prior kick:');
 		s1.sent.length === sentAtClose, s1.sent.length + ' vs ' + sentAtClose);
 	check('General.WS is no longer the dead socket after preRun() ran again',
 		General.WS !== s1);
+}
+
+console.log('\nupgrade panel wire/panel index bridge (CONST.UP_ORDER) is consistent:');
+{
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+	const CONST = a.sandbox.window.CLIENT.CONST;
+	const Palette = a.sandbox.window.CLIENT.Palette;
+	const TanksConfig = a.sandbox.TanksConfig;
+
+	const order = CONST.UP_ORDER;
+	const isPermutation = Array.isArray(order) && order.length === 8
+		&& new Set(order).size === 8 && order.every((v) => Number.isInteger(v) && v >= 0 && v <= 7);
+	check('CONST.UP_ORDER is a permutation of 0..7', isPermutation, JSON.stringify(order));
+
+	// shop.js never executes outside a real shop DOM, so its UP_ORDER is compared by reading
+	// the source rather than running the file.
+	const shopSrc = fs.readFileSync(path.join(ROOT, 'public', 'shop.js'), 'utf8');
+	const shopMatch = shopSrc.match(/UP_ORDER:\s*\[([^\]]*)\]/);
+	const shopOrder = shopMatch ? shopMatch[1].split(',').map((s) => s.trim()).filter((s) => s.length).map(Number) : null;
+	check("config.js's UP_ORDER deep-equals shop.js's",
+		!!shopOrder && JSON.stringify(order) === JSON.stringify(shopOrder),
+		JSON.stringify(order) + ' vs ' + JSON.stringify(shopOrder));
+
+	check('TanksConfig.defaultUps has 8 entries', TanksConfig.defaultUps.length === 8);
+	let badClass = null;
+	for (const name in TanksConfig.class) {
+		const ups = TanksConfig.class[name].ups;
+		if (ups && ups.length !== 8) { badClass = name; break; }
+	}
+	check('every per-class ups[] override (where present) has 8 entries', !badClass, badClass);
+
+	check('Palette.up has 8 entries', Palette.up.length === 8);
+}
+
+console.log('\nUP.drain() does not double-spend against a stale (unchanged) head.still:');
+{
+	function classPacket(t, still) {
+		return PROTO.encode('GameUpdate', {
+			head: { timestamp: t, width: 8000, height: 8000, screen: 1920, xp: 0, level: 5, still: still || 0, cLvl: 0 },
+			main: {
+				states: [0, 0, 0, 0, 0, 0], class: 'Basic', color: 0, x: 0, y: 0, vx: 0, vy: 0, dir: 0,
+				size: 25, alpha: 1, hp: 1, name: 'tester', nameC: 0,
+				recoil: new Array(15).fill(0), canDir: [0]
+			},
+			instances: []
+		});
+	}
+	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
+	a.start(classPacket(1, 0));
+	const CLIENT = a.sandbox.window.CLIENT;
+	const UP = CLIENT.General.Ui.UP;
+	const sentCount = () => CLIENT.General.WS.sent.length;
+
+	// Drive UP directly against a standalone stub Ui, not the live General.Ui - this is a race
+	// between drain() and the server's own head.still, independent of packets or render frames.
+	const Ui = { still: 3, upNb: [0, 0, 0, 0, 0, 0, 0, 0] };
+	UP.noteStill(3);   // the GameUpdate that first reported still=3
+
+	UP.enqueue(Ui, 7, Infinity);
+	check('enqueue banks the whole remaining bar for wire index 7', UP.queue[7] === 7, UP.queue[7]);
+
+	let before = sentCount();
+	UP.drain(Ui);
+	check('drain spends exactly the 3 points available', sentCount() - before === 3, sentCount() - before);
+	check('4 points remain queued after spending 3', UP.queue[7] === 4, UP.queue[7]);
+
+	// A second GameUpdate arrives before the server has processed the sends above, so it still
+	// reports the same still=3 it always did - this must not let drain() spend those points again.
+	before = sentCount();
+	UP.noteStill(3);
+	UP.drain(Ui);
+	check('a stale, unchanged still sends no further packets', sentCount() === before, sentCount() - before);
+	check('the queue is untouched by the stale drain', UP.queue[7] === 4, UP.queue[7]);
+
+	before = sentCount();
+	UP.noteStill(0);
+	Ui.still = 0;
+	UP.drain(Ui);
+	check('still at 0 sends nothing either', sentCount() === before, sentCount() - before);
+	check('the queue is still untouched', UP.queue[7] === 4, UP.queue[7]);
+
+	before = sentCount();
+	UP.noteStill(2);
+	Ui.still = 2;
+	Ui.upNb[7] = 3;
+	UP.drain(Ui);
+	check('a still that genuinely advanced lets drain spend the newly available points',
+		sentCount() - before === 2, sentCount() - before);
+	check('the queue drops to 2 after spending the last 2 affordable points', UP.queue[7] === 2, UP.queue[7]);
+
+	UP.clearQueue();
 }
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');

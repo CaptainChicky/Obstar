@@ -999,13 +999,13 @@
 				},
 				ups: [
 					'Health Regen',
-					'Drone Count',
 					'Max Health',
-					'Bullet Speed',
-					'Movement Speed',
-					'Bullet Damage',
 					'Body Damage',
-					'Bullet Penetration'
+					'Bullet Speed',
+					'Bullet Penetration',
+					'Bullet Damage',
+					'Drone Count',
+					'Movement Speed'
 				]
 			},
 			// type 2 (plan.md A2): a real trapezoid, wide at the muzzle - see Machine Gun above.
@@ -2844,7 +2844,7 @@
 					offTime: 0,
 					type: 1,
 					life: -1,
-					auto: 0,
+					auto: 1,   // a drone barrel fires on its own up to maxDrone, no input needed
 					///
 					offdir: 0,
 					offx: 0,
@@ -2997,6 +2997,7 @@
 			"Overtrapper": new function () {
 				this.screen = BASE_SCREEN / 0.9;   // diep fieldFactor 0.9 (TankDefinitions.json)
 				this.maxDrone = 4;
+				this.droneSplit = true;   // budget split 2/2 per group instead of one pooled count
 				let c = [{
 					reload: 23,
 					offTime: 0,
@@ -3017,7 +3018,7 @@
 					push: 0.27426,
 					back: 1.12
 				}];
-				c = c.concat(new Array(2).fill(null).map(() => ({
+				c = c.concat(new Array(4).fill(null).map(() => ({
 					reload: 90,
 					offTime: 0,
 					type: 1,
@@ -3038,7 +3039,12 @@
 					push: 0.45709,
 					back: 1.12
 				})));
-				c[2].offdir = Math.PI * 4 / 3; c[2].offTime = .5;
+				// Two spawners (left/right), each holding one controllable drone (type 1) and one
+				// uncontrollable one (type 1.1) that only ever runs its own targeting AI.
+				c[1].offdir = Math.PI * 2 / 3;
+				c[2].offdir = Math.PI * 2 / 3; c[2].type = 1.1;
+				c[3].offdir = Math.PI * 4 / 3; c[3].offTime = .5;
+				c[4].offdir = Math.PI * 4 / 3; c[4].offTime = .5; c[4].type = 1.1;
 				this.cannons = c;
 			},
 			"Auto Trapper": new function () {
@@ -3947,7 +3953,7 @@
 					// rand: scatterRate 1 x 0.174533.
 					weapon: { reloadRef: 15, damage: 2.8, pene: 0.8, speed: 0.896, size: 8.89056, life: 75, rand: 0.174533, weight: 4.2, push: 0.36567 }
 				}];
-				this.ups = ['Health Regen', 'Reload', 'Max Health', 'Drone Speed', 'Movement Speed', 'Drone Damage', 'Body Damage', 'Drone Health'];
+				this.ups = ['Health Regen', 'Max Health', 'Body Damage', 'Drone Speed', 'Drone Health', 'Drone Damage', 'Reload', 'Movement Speed'];
 			},
 			"Mothership": new function () {   // id27 - gamemode entity, spawned by rooms/Mothership.js (plan.md G1)
 				this.screen = screenAtLevel(140, 1); // real level-140 camera
@@ -4008,19 +4014,19 @@
 					// class's own lower figure: below it, a maxed tank simply outruns the drones.
 					speed: 0.896, pene: 4, damage: 4.9, size: 3.675, weight: 4.2, push: 0.36567, back: 0
 				}));
-				this.ups = ['Health Regen', 'Reload', 'Max Health', 'Drone Speed', 'Movement Speed', 'Drone Damage', 'Body Damage', 'Drone Health'];
+				this.ups = ['Health Regen', 'Max Health', 'Body Damage', 'Drone Speed', 'Drone Health', 'Drone Damage', 'Reload', 'Movement Speed'];
 			}
 		};
 	///
 	exports.defaultUps = [
 		'Health Regen',
-		'Reload',
 		'Max Health',
-		'Bullet Speed',
-		'Movement Speed',
-		'Bullet Damage',
 		'Body Damage',
-		'Bullet Penetration'
+		'Bullet Speed',
+		'Bullet Penetration',
+		'Bullet Damage',
+		'Reload',
+		'Movement Speed'
 	];
 	/*
 		Rebuilt to match diep's own tree verbatim (plan.md T1) for every diep-native edge, on top

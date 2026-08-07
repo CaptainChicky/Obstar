@@ -202,7 +202,12 @@
 				// as baseSize being 0 in a mode with no bases - one shape, no client-side branch on
 				// whether the field is meaningful this tick.
 				'camX': 'float32',
-				'camY': 'float32'
+				'camY': 'float32',
+				// Whether THIS viewer could respawn right now, and how many contenders the room's
+				// lobby has gathered so far - a mode's own rule (Room#allowsRespawn/contenderCount),
+				// sent rather than re-derived client-side from arenaState alone.
+				'canRespawn': 'uint8',
+				'playersJoined': 'uint8'
 			},
 			///////////
 			'CONSTRUCTOR': 'uint8',
@@ -346,6 +351,8 @@
 				'playersNeeded',
 				'camX',
 				'camY',
+				'canRespawn',
+				'playersJoined',
 			],
 			///////////
 			'Players': [

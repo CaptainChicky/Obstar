@@ -1067,6 +1067,21 @@ class Room {
 	botBudget(humanCount) {
 		return Math.max(0, this.rules.botCount - humanCount);
 	}
+	/* Every live non-scripted player - a lobby gate's own headcount and the wire's own
+	   `playersJoined`. Counts a mid-respawn player too; only bosses/Closers are excluded. */
+	contenderCount() {
+		let n = 0;
+		for (const p of this.INSTANCE.players.live()) { if (!p.boss && !p.closer) { n++; } }
+		return n;
+	}
+	/* Whether respawn() may create a new tank right now - a mode's own no-comeback rule. */
+	allowsRespawn() {
+		return true;
+	}
+	/* Whether player input is suspended this tick - a mode's pre-match hold. */
+	inputsFrozen() {
+		return false;
+	}
 	/*
 		Spawn one boss into a free player slot, if the mode has bosses and is not already at its
 		limit. rules.maxBoss 0 makes this a no-op, which is what keeps the 'summonRandBoss' admin
@@ -2029,7 +2044,12 @@ class Room {
 			// Predator zoom (plan.md C9) - the world point the client's own camera should track
 			// this tick; equal to the viewer's own x/y whenever `main.states[4]` (zooming) is off.
 			camX: RAW.main.zooming ? RAW.main.zoomX : RAW.main.x,
-			camY: RAW.main.zooming ? RAW.main.zoomY : RAW.main.y
+			camY: RAW.main.zooming ? RAW.main.zoomY : RAW.main.y,
+			// Whether this viewer could actually respawn right now, and how many contenders the
+			// lobby has gathered so far - the death/lobby screens read both rather than
+			// hard-coding a gamemode's own rule.
+			canRespawn: this.allowsRespawn() ? 1 : 0,
+			playersJoined: this.contenderCount()
 		};
 		///
 		const lvl = RAW.main.level, xp = RAW.main.xp, arr = RAW.main.XPLVL;

@@ -57,17 +57,15 @@
 		// still the authority, this is only what the upgrade widget draws and pre-caps against.
 		MAX_UP_POINTS: 33,
 		MAX_PER_STAT: 7,
-		UP_ORDER: [
-			7,
-			1,
-			6,
-			2,
-			0,
-			4,
-			5,
-
-			3
-		]
+		// panel row -> wire index (entities/Player.js's this.up key order: 0 MSpeed, 1 Reload,
+		// 2 BSpeed, 3 BPene, 4 BDamage, 5 BodyDam, 6 HpUp, 7 HpRegan).
+		UP_ORDER: [7, 6, 5, 2, 3, 4, 1, 0],
+		// How long the upgrade panel stays up after the last m/u/digit press or click, in ms.
+		UP_HOLD_MS: 2000,
+		// Real ms per server simulation step (lib/config.js's TICK_MS) - the client has no access
+		// to that server-only module, so this is a hand-mirrored copy, same convention as
+		// drawings.js's own REF_TICK_MS. Only consumer is the lobby screen's own countdown text.
+		TICK_MS: 25
 	};
 	const CLASS = TanksConfig.class;
 	const CLASS_TREE = TanksConfig.tree;
@@ -138,14 +136,14 @@
 		shiny: ["#38f77c", "#1fbf5c"],
 		botName: '#f6f1b5',
 		up: [
-			'#e6ab22',///Reload
-			'#4bd79d',///M Speed
-			'#e66a22',///BodyDamage
-			'#4fd3d3',
-			'#eddd2a',
-			'#4a6dd8',
-			'#e62222',
-			'#50a5dc'
+			'#d9ac8c', // 1 Health Regen
+			'#d381d6', // 2 Max Health
+			'#9b81d6', // 3 Body Damage
+			'#81a1d6', // 4 Bullet Speed
+			'#d6c681', // 5 Bullet Penetration
+			'#d68181', // 6 Bullet Damage
+			'#a1d681', // 7 Reload
+			'#81d6d4'  // 8 Movement Speed
 		],
 		class: [
 			'#cd9797',
@@ -194,11 +192,14 @@
 		// 2team, the square's side in 4team. 0 means the mode has no bases, which is what
 		// render.js/ui.js check rather than testing POST.gm again.
 		baseSize: 0,
-		// Room.ArenaState's own numbering (plan.md A4/C5) - OPEN (0) until the first real
-		// GameUpdate head lands.
+		// Room.ArenaState's own numbering - OPEN (0) until the first real GameUpdate head lands.
 		arenaState: 0,
 		ticksUntilStart: 0,
 		playersNeeded: 0,
+		// Whether this viewer could respawn right now, and how many contenders the room's lobby
+		// has gathered so far - both straight off GameUpdate's head.
+		canRespawn: 1,
+		playersJoined: 0,
 	};
 	///
 	CLIENT.CONST = CONST;

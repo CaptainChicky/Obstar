@@ -1493,6 +1493,22 @@ function mothershipTests() {
 		check('...and spawns the Arena Closer swarm', room.closers.length === 4, room.closers.length);
 	}
 
+	// mothershipUpdate() fully replaces Player.prototype.update(), so the ordinary regen block
+	// there has to be called explicitly (regenTick()) or up.HpRegan is dead data and the
+	// Mothership never heals. Own isolated room so the drone-count block above's own state
+	// (droneCount/droneGroup/shootTimer) is untouched.
+	{
+		const regenRoom = makeRoom('mothership');
+		const m = regenRoom.motherships[0];
+		m.hp = m.maxHp / 2;
+		m.lastHp = m.hp;
+		m.noDamageTicks = 0;
+		const before = m.hp;
+		for (let i = 0; i < 50; i++) { regenRoom.step(); }
+		check('a damaged Mothership regenerates through its own update(), and does not exceed its max',
+			m.hp > before && m.hp <= m.maxHp, before + ' -> ' + m.hp);
+	}
+
 	return room;
 }
 
@@ -4482,7 +4498,10 @@ function withTickMs(assumedTickMs, fn) {
 	 whenever a class has stealth alpha, and every test through here uses a class that doesn't. Never
 	 a real SlotMap. */
 function fakeRoom() {
-	return { map: { width: 1e6, height: 1e6 }, createBullet() { }, rules: { invisFloor: 0 } };
+	return {
+		map: { width: 1e6, height: 1e6 }, createBullet() { }, rules: { invisFloor: 0 },
+		inputsFrozen() { return false; }
+	};
 }
 
 /*
@@ -5973,6 +5992,56 @@ function droneBatchTests() {
 	}
 }
 
+/// Overtrapper drone group split /////////////////////////////////////////////
+function overtrapperDroneSplitTests() {
+	console.log('\novertrapper drone split (2 controllable + 2 uncontrollable):');
+	const room = makeRoom('ffa');
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const p = player(room, 0);
+	p.class = 'Overtrapper';
+	p.droneCount = 0;
+	p.droneGroup = [0, 0];
+	p.shootTimer = new Array(CLASS['Overtrapper'].cannons.length).fill(0);
+	p.shield = 0;
+	p.inputs.e = 0; p.inputs.mouseL = 0;   // every drone cannon here is can.auto - no input needed
+
+	for (let i = 0; i < 2000 && p.droneCount < CLASS['Overtrapper'].maxDrone; i++) { p.shoot(); }
+
+	check('group 0 (controllable, type 1) settles at exactly half the drone cap',
+		p.droneGroup[0] === 2, p.droneGroup[0]);
+	check('group 1 (uncontrollable, type 1.1) settles at exactly half the drone cap',
+		p.droneGroup[1] === 2, p.droneGroup[1]);
+	check('total live drone count is the full cap, not double-counted across groups',
+		p.droneCount === 4, p.droneCount);
+
+	for (let i = 0; i < 100; i++) { p.shoot(); }
+	check('firing past the cap does not overshoot either group',
+		p.droneGroup[0] === 2 && p.droneGroup[1] === 2 && p.droneCount === 4,
+		p.droneGroup.join(',') + ' / ' + p.droneCount);
+
+	// Kill one uncontrollable drone (group 1) and confirm the refund lands in the right pool -
+	// release() is keyed off the bullet's own droneGroup, not re-derived from its type.
+	const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.origin && b.origin.oId === p.id.oId);
+	const uncontrollable = drones.find((b) => b.type === 1.1);
+	check('there is an uncontrollable drone bullet to kill', !!uncontrollable);
+	uncontrollable.release(p);
+	check('killing one uncontrollable drone refunds group 1 only',
+		p.droneGroup[0] === 2 && p.droneGroup[1] === 1 && p.droneCount === 3,
+		p.droneGroup.join(',') + ' / ' + p.droneCount);
+
+	// A second release() call on the same bullet must not double-refund.
+	uncontrollable.release(p);
+	check('release() is idempotent - a second call on the same drone refunds nothing further',
+		p.droneGroup[1] === 1 && p.droneCount === 3,
+		p.droneGroup.join(',') + ' / ' + p.droneCount);
+
+	// Firing again refills only group 1, since group 0 is already at its own cap.
+	for (let i = 0; i < 2000 && p.droneGroup[1] < 2; i++) { p.shoot(); }
+	check('...and it refills back to 2/2 without group 0 growing past its own cap',
+		p.droneGroup[0] === 2 && p.droneGroup[1] === 2 && p.droneCount === 4,
+		p.droneGroup.join(',') + ' / ' + p.droneCount);
+}
+
 /// Factory drone steering ////////////////////////////////////////////////////
 function factoryTests() {
 	console.log('\nfactory drones (Minion.ts - aim and movement are separate angles):');
@@ -6439,6 +6508,100 @@ function defenderGeometryTests() {
 		ct.every((c, i) => near(c.height, turr[i].canonLength)), ct.map((c) => c.height).join(','));
 }
 
+/*
+	Survival's lobby state machine (rooms/Survival.js): the gather/pad/countdown gate, the bot
+	grace window and pacing, and the hard no-respawn-once-open rule. All three are pure ordering/
+	timing logic invisible from a single playtest session - a 20s grace and a 10s countdown are
+	not something a person can eyeball into a pass/fail.
+*/
+function survivalTests() {
+	console.log('\nrooms (survival):');
+	const clock = require(path.join(ROOT, 'lib', 'clock.js'));
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const Room = require(path.join(ROOT, 'rooms', 'Room.js'));
+	const MIN_PLAYERS = 10;
+	const COUNTDOWN_TICKS = Math.round(10000 / clock.STEP_MS);
+	const BOT_GRACE = Math.round(20000 / clock.STEP_MS);
+	const BOT_INTERVAL = Math.round(1200 / clock.STEP_MS);
+
+	// Countdown gate: short of MIN_PLAYERS the timer is held at its full value and the state
+	// never leaves COUNTDOWN, no matter how long that takes; once the roster reaches the gate,
+	// exactly COUNTDOWN_TICKS later the match opens.
+	{
+		const room = makeRoom('survival');
+		check('starts in COUNTDOWN', room.state === Room.ArenaState.COUNTDOWN, room.state);
+		for (let i = 0; i < COUNTDOWN_TICKS + 50; i++) { room.step(); }
+		check('one player alone never opens the match', room.state === Room.ArenaState.COUNTDOWN,
+			room.state);
+		check('the timer is held at its full value while the roster is short',
+			room.ticksUntilStart === COUNTDOWN_TICKS, room.ticksUntilStart);
+
+		for (let i = 1; i < MIN_PLAYERS; i++) {
+			room.ask({ name: 'p' + i, key: '0'.repeat(25), pet: -1, gm: 'survival' });
+		}
+		// playersNeeded/ticksUntilStart only update inside manageCountdown(), which runs from
+		// step() - one tick is needed after the roster fills before either reflects it.
+		room.step();
+		check('playersNeeded reaches 0 once the roster is full', room.playersNeeded === 0,
+			room.playersNeeded);
+		for (let i = 0; i < COUNTDOWN_TICKS; i++) { room.step(); }
+		check('state flips to OPEN once the countdown actually elapses',
+			room.state === Room.ArenaState.OPEN, room.state);
+	}
+
+	// Bot grace: nothing pads the roster before BOT_GRACE, one bot arrives right at that
+	// boundary, one more every BOT_INTERVAL after, and it stops the instant the gate is met -
+	// never overshooting MIN_PLAYERS.
+	{
+		const room = makeRoom('survival');   // one human already seated, slot 0
+		const neededBots = MIN_PLAYERS - 1;
+		for (let i = 0; i < BOT_GRACE - 1; i++) { room.step(); }
+		check('no bot joins before the grace period elapses', room.bots.length === 0,
+			room.bots.length);
+
+		room.step();
+		check('the first bot joins right at the grace boundary', room.bots.length === 1,
+			room.bots.length);
+
+		for (let n = 2; n <= neededBots; n++) {
+			for (let i = 0; i < BOT_INTERVAL; i++) { room.step(); }
+			check('bot ' + n + ' follows one interval later', room.bots.length === n, room.bots.length);
+		}
+		check('the roster is exactly MIN_PLAYERS, humans and bots combined',
+			room.contenderCount() === MIN_PLAYERS, room.contenderCount());
+
+		for (let i = 0; i < BOT_INTERVAL * 3; i++) { room.step(); }
+		check('padding stops once the gate is satisfied - it never overshoots',
+			room.bots.length === neededBots && room.contenderCount() === MIN_PLAYERS,
+			room.bots.length + ' bots, ' + room.contenderCount() + ' contenders');
+	}
+
+	// No respawn once open: an ordinary respawn() is refused for every contender the instant the
+	// match leaves COUNTDOWN, but a forced one (bots, internal callers) still goes through.
+	{
+		const room = makeRoom('survival');
+		for (let i = 1; i < MIN_PLAYERS; i++) {
+			room.ask({ name: 'q' + i, key: '0'.repeat(25), pet: -1, gm: 'survival' });
+		}
+		for (let i = 0; i < COUNTDOWN_TICKS + 1; i++) { room.step(); }
+		check('match opens once the full roster holds for the whole countdown',
+			room.state === Room.ArenaState.OPEN, room.state);
+
+		const victim = player(room, 0);
+		victim.hp = 0;
+		victim.dead = tick.DEAD_DELAY;
+		victim.destroy = tick.DES;
+		check('an ordinary respawn is refused once the match is open',
+			room.respawn(0) === undefined);
+		check('allowsRespawn() agrees', room.allowsRespawn() === false, room.allowsRespawn());
+		check('no new tank was created', player(room, 0) === victim);
+
+		room.respawn(0, 1);
+		check('a forced respawn still works - internal callers rely on it',
+			player(room, 0) !== victim);
+	}
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -6455,6 +6618,7 @@ statSourceTests();
 rosterSweepTests();
 necromancerTests();
 droneBatchTests();
+overtrapperDroneSplitTests();
 factoryTests();
 factoryFireTests();
 factoryPlayerSpawnTests();
@@ -6482,6 +6646,8 @@ crasherChaseTests();
 broadPhaseTests();
 wallTests();
 predatorZoomTests();
+survivalTests();
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);
+

@@ -87,17 +87,9 @@
 		SIZE: 35,
 		MOUSEDELAY: 60 / 15,
 		MOUSE_OUT: 3,
-		UP_ORDER: [
-			7,
-			1,
-			6,
-			2,
-			0,
-			4,
-			5,
-
-			3
-		]
+		// panel row -> wire index (entities/Player.js's this.up key order: 0 MSpeed, 1 Reload,
+		// 2 BSpeed, 3 BPene, 4 BDamage, 5 BodyDam, 6 HpUp, 7 HpRegan).
+		UP_ORDER: [7, 6, 5, 2, 3, 4, 1, 0]
 	};
 	const PETS_POS = 0;
 	const zoneWidth = 280;
@@ -126,14 +118,14 @@
 		alphaPnt: ["#b2b2cc", "#8686ab"],
 		botName: '#f6f1b5',
 		up: [
-			'#e6ab22',///Reload
-			'#4bd79d',///M Speed
-			'#e66a22',///BodyDamage
-			'#4fd3d3',
-			'#eddd2a',
-			'#4a6dd8',
-			'#e62222',
-			'#50a5dc'
+			'#d9ac8c', // 1 Health Regen
+			'#d381d6', // 2 Max Health
+			'#9b81d6', // 3 Body Damage
+			'#81a1d6', // 4 Bullet Speed
+			'#d6c681', // 5 Bullet Penetration
+			'#d68181', // 6 Bullet Damage
+			'#a1d681', // 7 Reload
+			'#81d6d4'  // 8 Movement Speed
 		],
 		class: [
 			'#cd9797',

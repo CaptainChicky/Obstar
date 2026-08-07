@@ -391,7 +391,11 @@ class Player {
 		const key = this.inputs;
 		const motion = new Vec(0, 0);
 		const accel = Physics.moveAccel(this.up.MSpeed, this.level);
-		if (!this.state.disconnect) {
+		// A mode's pre-match hold (rooms/Room.js's inputsFrozen()) suspends a real contender's own
+		// input for the tick - a scripted entity (boss/Closer) never freezes. Friction/position
+		// integration still runs below regardless, exactly as it does with no keys held.
+		const frozen = !this.boss && !this.closer && this.room.inputsFrozen();
+		if (!this.state.disconnect && !frozen) {
 			if (key.w || key.arrw) { motion.y -= accel; }
 			if (key.s || key.arrs) { motion.y += accel; }
 			if (key.a || key.arra) { motion.x -= accel; }
@@ -452,6 +456,11 @@ class Player {
 		}
 		////
 		if (this.state.disconnect) {
+			return;
+		}
+		// A mode's pre-match hold (rooms/Room.js's inputsFrozen()) stops every cannon, auto ones
+		// included - nobody fires until the lobby screen actually lets the match start.
+		if (!this.boss && !this.closer && this.room.inputsFrozen()) {
 			return;
 		}
 		// diep's own per-tick reveal-while-shooting (TankBody.ts:347-355, plan.md C8):
@@ -813,8 +822,7 @@ class Player {
 			// stale cone lingers forever. Bots are skipped - gameAI rebuilds their own AI
 			// cone every tick, so they never hold a stale one nor need a churned allocation.
 			if (!this.bot && this.DETEC && !CLASS[this.class].DETEC) { this.DETEC = null; }
-			this.droneCount = 0;
-			this.droneGroup = [0, 0];
+			this.resetDroneBudget();
 			this.necro = CLASS[this.class].necro;
 			this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
 			this.applyClassSwitchStats(oldClass);
@@ -838,6 +846,23 @@ class Player {
 		became unspendable", it's "those points can never do anything again", and eating them
 		punishes the evolution rather than pricing it.
 	*/
+	/*
+		Starts a fresh drone budget for a class switch. The outgoing class's drones outlive the
+		switch by one tick (entities/Bullet.js's update() destroys them on the `play.class !==
+		this.class` guard), and their release() would otherwise refund into the new, already-zeroed
+		counters - driving droneCount negative by exactly the size of the old swarm and letting the
+		new class spawn that many drones past its own maxDrone. Marking them released first pays
+		them off against the old budget, so the refund cannot land twice.
+	*/
+	resetDroneBudget() {
+		if (this.room && this.room.INSTANCE) {
+			for (const b of this.room.INSTANCE.bullets.live()) {
+				if (b.origin && b.origin.oId === this.id.oId) { b.released = 1; }
+			}
+		}
+		this.droneCount = 0;
+		this.droneGroup = [0, 0];
+	}
 	applyClassSwitchStats(oldClass) {
 		this.damage += (CLASS[this.class].bodyDamage || 0) - (CLASS[oldClass].bodyDamage || 0);
 		if (!CLASS[this.class].statMax) { return; }
@@ -878,8 +903,7 @@ class Player {
 		const i = CYCLABLE_CLASSES.indexOf(this.class);
 		this.class = CYCLABLE_CLASSES[(i + 1) % CYCLABLE_CLASSES.length];
 		if (!this.bot && this.DETEC && !CLASS[this.class].DETEC) { this.DETEC = null; }
-		this.droneCount = 0;
-		this.droneGroup = [0, 0];
+		this.resetDroneBudget();
 		this.necro = CLASS[this.class].necro;
 		this.shootTimer = new Array(CLASS[this.class].cannons.length).fill(0);
 		this.applyClassSwitchStats(oldClass);
@@ -1210,6 +1234,36 @@ class Player {
 			this.unlock('kawaii_smash');
 		}
 	}
+	// Health regen: linear rate from the Regen stat, plus hyper regen once noDamageTicks clears
+	// HYPER_REGEN_DELAY. Shared by the ordinary tank update() below and any scripted entity
+	// (Mothership, bosses) whose own update() replaces Player.prototype.update() wholesale.
+	regenTick() {
+		// Hyper-regen gate: any HP loss resets the no-damage clock. Capped at the threshold
+		// rather than left to grow unbounded over a long AFK stretch. One tick of slop by
+		// construction (this compares against the value stored at the END of last tick's pass,
+		// i.e. before whatever happened to hp since) - the same shape the old hpregan[0]
+		// baseline used, harmless against a 750-tick threshold.
+		if (this.hp < this.lastHp) {
+			this.noDamageTicks = 0;
+		} else {
+			this.noDamageTicks = Math.min(this.noDamageTicks + 1, HYPER_REGEN_DELAY);
+		}
+		if (this.hp < this.maxHp) {
+			// diep_wiki/Stats.txt: HPS = MaxHp x (0.03 + 0.12 x Regen Stat) / 30, per SECOND; /25
+			// converts that to per-REFERENCE-tick, then tick.perTick() below converts that to the
+			// live tick - always on, regardless of the hyper-regen gate below.
+			let hps = this.maxHp * (0.03 + 0.12 * this.up.HpRegan) / 30 / 25;
+			// Hyper regen ADDS to the linear rate above, it does not replace it (diepcustom/src/
+			// Entity/Live.ts:130-135) - HYPER_REGEN_RATE is already per-REFERENCE-tick (1/250 =
+			// diep's maxHp/250 per tick), so no further /25 conversion belongs here.
+			if (this.noDamageTicks >= HYPER_REGEN_DELAY) { hps += this.maxHp * HYPER_REGEN_RATE; }
+			this.hp += tick.perTick(hps);
+			this.hp = Math.min(this.maxHp, this.hp);
+		} else {
+			this.hp = this.maxHp;
+		}
+		this.lastHp = this.hp;
+	}
 	update() {
 		this.hit = Math.max(0, this.hit - 1);
 		if (this.pet) {
@@ -1265,31 +1319,7 @@ class Player {
 				this.destroy = tick.DES;
 				this.dead = 1;
 			}
-			// Hyper-regen gate: any HP loss resets the no-damage clock. Capped at the threshold
-			// rather than left to grow unbounded over a long AFK stretch. One tick of slop by
-			// construction (this compares against the value stored at the END of last tick's pass,
-			// i.e. before whatever happened to hp since) - the same shape the old hpregan[0]
-			// baseline used, harmless against a 750-tick threshold.
-			if (this.hp < this.lastHp) {
-				this.noDamageTicks = 0;
-			} else {
-				this.noDamageTicks = Math.min(this.noDamageTicks + 1, HYPER_REGEN_DELAY);
-			}
-			if (this.hp < this.maxHp) {
-				// diep_wiki/Stats.txt: HPS = MaxHp x (0.03 + 0.12 x Regen Stat) / 30, per SECOND; /25
-				// converts that to per-REFERENCE-tick, then tick.perTick() below converts that to the
-				// live tick - always on, regardless of the hyper-regen gate below.
-				let hps = this.maxHp * (0.03 + 0.12 * this.up.HpRegan) / 30 / 25;
-				// Hyper regen ADDS to the linear rate above, it does not replace it (diepcustom/src/
-				// Entity/Live.ts:130-135, plan.md step 4) - HYPER_REGEN_RATE is already per-REFERENCE-
-				// tick (1/250 = diep's maxHp/250 per tick), so no further /25 conversion belongs here.
-				if (this.noDamageTicks >= HYPER_REGEN_DELAY) { hps += this.maxHp * HYPER_REGEN_RATE; }
-				this.hp += tick.perTick(hps);
-				this.hp = Math.min(this.maxHp, this.hp);
-			} else {
-				this.hp = this.maxHp;
-			}
-			this.lastHp = this.hp;
+			this.regenTick();
 		}
 		///
 		// `stealth` (plan.md T3) replaces the old single `alpha` decay constant with diep's

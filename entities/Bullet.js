@@ -63,9 +63,21 @@ const CHARGE_CHANCE = tick.chance(0.0006061);
 */
 const MINION_FOCUS = World.gu(16);
 const MINION_FOCUS_IN = World.gu(16) / Math.sqrt(7);
-// Minion.ts's ai.viewRange = 900 du - also the range the OWNER must be within of a candidate
-// target, not just the drone itself.
+// Minion.ts's ai.viewRange = 900 du, doubling as the flat floor every drone type's aggro radius
+// (droneAggroR below) is clamped to.
 const MINION_VIEW = World.gu(18);
+
+// A drone's aggro radius scales with its owner's own half-FOV rather than a flat constant, with
+// MINION_VIEW as a floor so a narrow-FOV owner never gets a leash shorter than diep's baseline.
+// An uncontrollable drone (never obeys the mouse) gets DRONE_AGGRO_UNCTRL of that - the floor is
+// applied before the multiplier so the ratio holds at every FOV, not only wide ones.
+const DRONE_AGGRO_MIN = MINION_VIEW;
+const DRONE_AGGRO_HYST = 1.15;
+const DRONE_AGGRO_UNCTRL = 0.65;
+function droneAggroR(play, controllable = true) {
+	const r = Math.max(DRONE_AGGRO_MIN, (play.screen || 0) / 2);
+	return controllable ? r : r * DRONE_AGGRO_UNCTRL;
+}
 
 /*
 	SPEED_RESCALE (the old x1.6 TICK_MS-invariance fix for the `speed` column's tick.quadratic()
@@ -119,6 +131,33 @@ const BASE_DRONE_CHASE_TURN = tick.perTick(config.BASE_DRONE_CHASE_TURN);
 const BASE_DRONE_ACCEL = tick.perTick(config.BASE_DRONE_ACCEL);
 const BASE_DRONE_SWITCH_COOLDOWN = tick.ticks(config.BASE_DRONE_SWITCH_COOLDOWN);
 const BASE_DRONE_LEVEL_RELAX = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
+
+// Idle tank-drone orbit (droneIdleSteer, below) - see lib/config.js for the shape of the table.
+// SPEED_FRAC/CROSS_SPEED_MUL are plain fractions of the drone's own maxspeed (a thrust, like
+// every other bullet.speed in this file) - no tick.perTick() conversion, since they scale a
+// figure that is already in the right units rather than adding to one.
+const TANK_DRONE_ORBIT_R = config.TANK_DRONE_ORBIT_R;
+const TANK_DRONE_ORBIT_GAP = config.TANK_DRONE_ORBIT_GAP;
+const TANK_DRONE_ORBIT_SPEED_FRAC = config.TANK_DRONE_ORBIT_SPEED_FRAC;
+const TANK_DRONE_ORBIT_TOL = config.TANK_DRONE_ORBIT_TOL;
+const TANK_DRONE_ORBIT_LEAN = config.TANK_DRONE_ORBIT_LEAN;
+const TANK_DRONE_LEVEL_RELAX = tick.ticks(config.TANK_DRONE_LEVEL_RELAX);
+const TANK_DRONE_CROSS = tick.ticks(config.TANK_DRONE_CROSS);
+const TANK_DRONE_CROSS_JITTER = config.TANK_DRONE_CROSS_JITTER;
+const TANK_DRONE_CROSS_SPEED_MUL = config.TANK_DRONE_CROSS_SPEED_MUL;
+const TANK_DRONE_CROSS_LEAD = config.TANK_DRONE_CROSS_LEAD;
+const TANK_DRONE_CROSS_MAX = tick.ticks(config.TANK_DRONE_CROSS_MAX);
+// Every idle drone circles its owner the same way - counterclockwise, on screen - rather than
+// each drone rolling its own direction.
+const TANK_DRONE_ORBIT_DIR = -1;
+
+// Re-rolls an idle drone's orbit level, weighted [1, 2, 1] over levels 1..3 so the middle ring
+// stays the busiest.
+function rerollTankOrbitLevel(bullet) {
+	const r = Math.random();
+	bullet.orbitLevel = (r < 0.25) ? 1 : (r < 0.75) ? 2 : 3;
+	bullet.orbitTimer = TANK_DRONE_LEVEL_RELAX;
+}
 
 /*
 	One segment of a quintic Hermite: position, velocity AND acceleration are matched at both
@@ -522,29 +561,32 @@ function droneSteer1(bullet, play) {
 	bullet.speed = bullet.maxspeed;
 	///
 	if (!bullet.DETEC) {
-		bullet.DETEC = new Detector(play, bullet.x, bullet.y, 300, [KIND.PLAYER, KIND.OBJECTS])
+		bullet.DETEC = new Detector(play, bullet.x, bullet.y, droneAggroR(play), [KIND.PLAYER, KIND.OBJECTS])
 		bullet.DETEC.team = bullet.team
 	} else {
 		bullet.DETEC.x = bullet.x;
 		bullet.DETEC.y = bullet.y;
+		bullet.DETEC.size = bullet.DETEC.dis = droneAggroR(play);
 	}
 	///
 	if (play.inputs.mouseR) {
 		const mx = play.x + play.inputs.mouse_x, my = play.y + play.inputs.mouse_y;
 		bullet.dir = Math.atan2(bullet.y - my, bullet.x - mx);
+		bullet.orbitLevel = undefined;
 		return true;
 	} else if (play.inputs.mouseL || play.inputs.e) {
 		const mx = play.x + play.inputs.mouse_x, my = play.y + play.inputs.mouse_y;
 		bullet.dir = Math.atan2(my - bullet.y, mx - bullet.x);
+		bullet.orbitLevel = undefined;
 		return true;
 	} else {
 		if (bullet.DETEC.select) {
 			bullet.DETEC.enabled = 0;
 			const other = bullet.DETEC.select;
-			const dis = Math.sqrt(Math.pow(bullet.x - other.x, 2) + Math.pow(bullet.y - other.y, 2));
 			const playdis = Math.sqrt(Math.pow(other.x - play.x, 2) + Math.pow(other.y - play.y, 2));
-			if (dis < 300 && !other.destroy && playdis < play.screen / 4 && other.alpha) {
+			if (!other.destroy && other.alpha && playdis < droneAggroR(play) * DRONE_AGGRO_HYST) {
 				bullet.dir = Math.atan2(other.y - bullet.y, other.x - bullet.x);
+				bullet.orbitLevel = undefined;
 				return true;
 			} else {
 				bullet.DETEC.reset();
@@ -557,25 +599,82 @@ function droneSteer1(bullet, play) {
 }
 
 /*
-	The "nothing to attack" half of a controllable drone's steering: hang around the owner,
-	circling it at close range and flying home from further out. Shared by an ordinary drone
-	(type 1, above) and a Factory minion (type 1.5, below) once each has given up on a target.
+	The "nothing to attack" half of a controllable drone's steering: an orbit around the owner
+	with three radius levels, occasionally swooshing straight across to the far side instead of
+	following the ring round. Shared by an ordinary drone (type 1, above), a Factory minion (type
+	1.5, below) and an uncontrollable drone (case 1.1) once each has given up on a target.
+
+	The orbit is a VELOCITY FIELD, not a chase after a point travelling round the ring. A bullet
+	only ever gets a thrust along `dir` and carries momentum through BODY_FRICTION, so aiming it
+	at a nearby point makes it overshoot that point every tick and flip 180 degrees - it shudders
+	in place instead of circling. Steering by direction alone has no such fixed point: the drone
+	flies tangentially and leans in or out in proportion to how far off its ring it is, which
+	spirals it onto the ring and holds it there. It also gives the owner-moves behaviour for free
+	- the ring is re-derived from the owner's live position every tick, so a tank that drives off
+	leaves its drones outside their radius and they fly at it until it stops.
 */
 function droneIdleSteer(bullet, play) {
-	if (!bullet.comingDir) {
-		bullet.comingDir = 0;
+	if (bullet.orbitLevel === undefined) {
+		rerollTankOrbitLevel(bullet);
+		// Randomised on the first interval only, so a swarm spawned together does not swoosh in
+		// lockstep - re-armed to the plain CROSS afterwards.
+		bullet.crossIn = Math.max(1, Math.round(TANK_DRONE_CROSS *
+			(1 + (Math.random() * 2 - 1) * TANK_DRONE_CROSS_JITTER)));
+		bullet.orbitCrossing = 0;
 	}
-	const playDis = Math.sqrt(Math.pow(bullet.x - play.x, 2) + Math.pow(bullet.y - play.y, 2));
-	if (playDis < play.size * 3.5) {
-		bullet.speed = 0.117008;   // .08 one-time-rescaled, then x SPEED_RESCALE (top of file)
-		if (Math.random() < REAIM_CHANCE) {
-			bullet.comingDir += Math.PI / 2;
+
+	const R = play.size * (TANK_DRONE_ORBIT_R + (bullet.orbitLevel - 2) * TANK_DRONE_ORBIT_GAP);
+	// Steady-state thrust as a fraction of the drone's own maxspeed. The angular rate it produces
+	// is whatever the resulting cruise velocity over R happens to be, so it can never ask for a
+	// tangential speed the drone cannot actually reach.
+	const cruise = bullet.maxspeed * TANK_DRONE_ORBIT_SPEED_FRAC;
+
+	if (bullet.orbitTimer > 0) { bullet.orbitTimer--; } else { rerollTankOrbitLevel(bullet); }
+
+	const dx = bullet.x - play.x, dy = bullet.y - play.y;
+	const ang = Math.atan2(dy, dx);
+
+	// Swoosh: cut straight across the ring to a point on the far side, passing close by the owner
+	// on the way. The target point is recomputed from the owner's live position every tick, so a
+	// moving owner cannot strand the drone chasing a stale one; CROSS_MAX bounds it anyway, since
+	// a drone that is shoved off course mid-crossing should rejoin the ring rather than keep
+	// hunting a point it has already flown past.
+	if (bullet.orbitCrossing) {
+		const cx = play.x + Math.cos(bullet.crossPhase) * R;
+		const cy = play.y + Math.sin(bullet.crossPhase) * R;
+		const cdx = cx - bullet.x, cdy = cy - bullet.y;
+		bullet.dir = Math.atan2(cdy, cdx);
+		bullet.speed = Math.min(bullet.maxspeed, cruise * TANK_DRONE_CROSS_SPEED_MUL);
+		bullet.comingDir = bullet.dir;
+		if (--bullet.crossT <= 0 || Math.hypot(cdx, cdy) < R * TANK_DRONE_ORBIT_TOL) {
+			bullet.orbitCrossing = 0;
+			bullet.crossIn = TANK_DRONE_CROSS;
 		}
-		bullet.dir = Math.atan2(play.y + Math.sin(play.autoDir * 2 + bullet.comingDir) * play.size * 3 - bullet.y,
-			play.x + Math.cos(play.autoDir * 2 + bullet.comingDir) * play.size * 3 - bullet.x);
 		return;
 	}
-	bullet.dir = Math.atan2(play.y - bullet.y, play.x - bullet.x);
+
+	if (bullet.crossIn > 0) { bullet.crossIn--; }
+	else {
+		// Aim past the plain antipode by CROSS_LEAD so the drone rejoins the ring moving roughly
+		// with the orbit instead of head-on into it.
+		bullet.crossPhase = ang + Math.PI + TANK_DRONE_ORBIT_DIR * Math.PI * TANK_DRONE_CROSS_LEAD;
+		bullet.crossT = TANK_DRONE_CROSS_MAX;
+		bullet.orbitCrossing = 1;
+		return;
+	}
+
+	// err is signed and in units of R: positive outside the ring, negative inside. The lean is
+	// blended against the tangent as a unit vector (hence the sqrt), so a hard lean is a genuine
+	// turn toward or away from the owner rather than just a slower orbit.
+	const err = (Math.hypot(dx, dy) - R) / R;
+	const lean = Math.max(-1, Math.min(1, err * TANK_DRONE_ORBIT_LEAN));
+	const along = Math.sqrt(1 - lean * lean);
+	const tang = ang + TANK_DRONE_ORBIT_DIR * Math.PI / 2;
+	bullet.dir = Math.atan2(Math.sin(tang) * along - Math.sin(ang) * lean,
+		Math.cos(tang) * along - Math.cos(ang) * lean);
+	// Off the ring by more than TOL (the owner moved, or the drone just broke off a chase) it
+	// sprints; on the ring it only holds the cruise thrust that sets the orbit's angular rate.
+	bullet.speed = (Math.abs(err) > TANK_DRONE_ORBIT_TOL) ? bullet.maxspeed : cruise;
 	bullet.comingDir = bullet.dir;
 }
 
@@ -587,11 +686,12 @@ function droneIdleSteer(bullet, play) {
 function minionSteer(bullet, play) {
 	bullet.speed = bullet.maxspeed;
 	if (!bullet.DETEC) {
-		bullet.DETEC = new Detector(play, bullet.x, bullet.y, MINION_VIEW, [KIND.PLAYER, KIND.OBJECTS]);
+		bullet.DETEC = new Detector(play, bullet.x, bullet.y, droneAggroR(play), [KIND.PLAYER, KIND.OBJECTS]);
 		bullet.DETEC.team = bullet.team;
 	} else {
 		bullet.DETEC.x = bullet.x;
 		bullet.DETEC.y = bullet.y;
+		bullet.DETEC.size = bullet.DETEC.dis = droneAggroR(play);
 	}
 	///
 	let fx, fy, aim;
@@ -605,9 +705,8 @@ function minionSteer(bullet, play) {
 		aim = Math.atan2(fy - bullet.y, fx - bullet.x);
 	} else if (bullet.DETEC.select) {
 		const other = bullet.DETEC.select;
-		const dis = Math.sqrt(Math.pow(bullet.x - other.x, 2) + Math.pow(bullet.y - other.y, 2));
 		const playDis = Math.sqrt(Math.pow(other.x - play.x, 2) + Math.pow(other.y - play.y, 2));
-		if (dis < MINION_VIEW && playDis < MINION_VIEW && !other.destroy && other.alpha) {
+		if (!other.destroy && other.alpha && playDis < droneAggroR(play) * DRONE_AGGRO_HYST) {
 			bullet.DETEC.enabled = 0;
 			fx = other.x;
 			fy = other.y;
@@ -628,6 +727,7 @@ function minionSteer(bullet, play) {
 	bullet.dir = (d > MINION_FOCUS) ? aim
 		: (d > MINION_FOCUS_IN) ? aim + Math.PI / 2
 			: aim + Math.PI;
+	bullet.orbitLevel = undefined;
 	return true;
 }
 
@@ -720,11 +820,9 @@ class Bullet {
 	}
 	/*
 		A permanent drone (life -1) occupies one slot of its owner's budget until it actually goes
-		away. `droneCount--` used to live at exactly one site - the tail of collision() - so a drone
-		that died any other way (its owner dying/evolving, the out-of-arena sweep in rooms/Room.js,
-		case 1.1's own play.droneCount === -1 self-destruct) leaked its slot forever, ratcheting the
-		counter up until the owner could barely refill. Idempotent via `released`, since a drone can
-		be destroyed and then swept in the same pass.
+		away, whichever way it goes - killed, expired, its owner dying or evolving, or the
+		out-of-arena sweep in rooms/Room.js. Idempotent via `released`, since a drone can be
+		destroyed and then swept in the same pass.
 	*/
 	release(play) {
 		// `counted`, not `life !== -1`: a maxDrone-capped cannon can be finite-life now (Guardian's
@@ -735,8 +833,13 @@ class Bullet {
 		this.released = 1;
 		if (!play) { play = this.room.INSTANCE.players.get(this.origin.oId); }
 		if (!play) { return; }
-		play.droneCount--;
-		if (this.droneGroup >= 0 && play.droneGroup) { play.droneGroup[this.droneGroup]--; }
+		// Clamped at zero: a negative pool is not "room for more drones", it is a refund that had
+		// no matching spend, and letting it go under would raise the owner's effective maxDrone by
+		// however far it went.
+		play.droneCount = Math.max(0, play.droneCount - 1);
+		if (this.droneGroup >= 0 && play.droneGroup) {
+			play.droneGroup[this.droneGroup] = Math.max(0, play.droneGroup[this.droneGroup] - 1);
+		}
 	}
 	collision(other, option = {}) {
 		if (option.type) {
@@ -1002,46 +1105,30 @@ class Bullet {
 					this.comingDir = 0;
 				}
 				this.speed = this.maxspeed;
-				if (play.droneCount === -1) {
-					this.release(play);
-					this.destroy = tick.DES;
-				}
 				///
 				if (!this.DETEC) {
-					this.DETEC = new Detector(play, this.x, this.y, 300, [KIND.PLAYER, KIND.OBJECTS])
+					this.DETEC = new Detector(play, this.x, this.y, droneAggroR(play, false), [KIND.PLAYER, KIND.OBJECTS])
 					this.DETEC.team = this.team
 				} else {
 					this.DETEC.x = this.x;
 					this.DETEC.y = this.y;
+					this.DETEC.size = this.DETEC.dis = droneAggroR(play, false);
 				}
 				///
 				if (this.DETEC.select) {
 					this.DETEC.enabled = 0;
 					const other = this.DETEC.select;
-					const dis = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
 					const playdis = Math.sqrt(Math.pow(other.x - play.x, 2) + Math.pow(other.y - play.y, 2));
-					if (dis < 300 && !other.destroy && playdis < play.screen / 4 && other.alpha) {
+					if (!other.destroy && other.alpha && playdis < droneAggroR(play, false) * DRONE_AGGRO_HYST) {
 						this.dir = Math.atan2(other.y - this.y, other.x - this.x);
+						this.orbitLevel = undefined;
 						break;
 					} else {
 						this.DETEC.reset();
 						this.DETEC.enabled = 1;
 					}
 				}
-				const playDis = Math.sqrt(Math.pow(this.x - play.x, 2) + Math.pow(this.y - play.y, 2))
-				if (playDis < play.size * 3) {
-					this.speed = 0.117008;   // .08 one-time-rescaled, then x SPEED_RESCALE (top of file)
-					if (Math.random() < REAIM_CHANCE) {
-						this.comingDir += Math.PI / 2;
-					}
-					const dir = Math.atan2(play.y + Math.sin(play.autoDir * 2 + this.comingDir) * play.size * 3 - this.y,
-						play.x + Math.cos(play.autoDir * 2 + this.comingDir) * play.size * 2.5 - this.x);
-					this.dir = dir;
-					break;
-				}
-				const dir = Math.atan2((play.y) - this.y, play.x - this.x)
-				this.dir = dir;
-				this.comingDir = this.dir;
+				droneIdleSteer(this, play);
 				break;
 			};
 			//battleShip xcontrol//
