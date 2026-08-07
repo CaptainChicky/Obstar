@@ -1823,11 +1823,13 @@
 				],
 				body: { shape: 0 }
 			},
+			// TankDefinitions.json id52: sides 4, drawn as a generic n-gon (body shape 3) like
+			// Summoner, not the rounded-rect body shape 1 (which needs width/height it never had).
 			"Factory": {
 				cannons: [
 					{ type: 2, height: 49, width: 29.4, offx: 0, offdir: 0, open: 0, trapezoidDirection: false }
 				],
-				body: { shape: 1 }
+				body: { shape: 3, sides: 4, rot: -Math.PI / 4 }
 			},
 			"Mothership": {
 				// draw-type 2 (trapezoid) + the half-step offset (plan.md R6) - see the
@@ -3932,19 +3934,18 @@
 				this.screen = BASE_SCREEN / 0.9;
 				this.maxDrone = 6;
 				this.cannons = [{
-					// type 1.5 = a true diepcustom Minion (plan.md B3): the existing type-1
-					// controllable-drone steering (entities/Bullet.js's droneSteer(), factored out of
-					// case 1 unchanged) plus MinionBarrelDefinition's own weapon, auto-fired whenever
-					// that steering is actually engaged on a target/aim rather than drifting home.
-					// `weapon` converted the same way as Skimmer's `sub` above: damage 7x0.4, pene
-					// 2x0.4, speed 1.12x0.8, size (width/2)x0.70 at sizeRatio 1, reloadRef 1x15
-					// (diep's own barrel.reload=1, i.e. the same cadence as the minion's live reload
-					// stat) - weight/push again borrow this cannon's own row, same missing-table caveat.
-					// `weapon` and the outer cannon are both on the reference-relative 0.70 axis
-					// (plan.md R1 - C2 had mistakenly dropped both to 0.56, the absolute-length factor).
-					reload: 45, offTime: 0, type: 1.5, life: -1, offdir: 0, offx: 0, canonLength: 49, rand: 0.174533,
-					speed: 0.6272, pene: 8, damage: 4.9, size: 14.7, weight: 4.2, push: 0.36567, back: 1.12,
-					weapon: { reloadRef: 15, damage: 2.8, pene: 0.8, speed: 0.896, size: 17.6375, life: 75, rand: 0, weight: 4.2, push: 0.36567 }
+					// A minion (Minion.ts) fires its own MinionBarrelDefinition, converted the same
+					// way as any other weapon: reloadRef 1x15, damage 0.4x7, pene 0.4x2, speed 0.8x1.12.
+					// `auto: 1` - a minion bullet type fires on its own cadence regardless of input,
+					// capped by maxDrone, same as every other drone class in this file.
+					auto: 1, reload: 45, offTime: 0, type: 1.5, life: -1, offdir: 0, offx: 0, canonLength: 49, rand: 0.174533,
+					// size: minion body radius = (barrel width 42/2) x sizeRatio 1 x 0.70 x 1.2 - Minion.ts
+					// scales a minion's physics size 20% above an ordinary bullet of this barrel.
+					speed: 0.6272, pene: 8, damage: 4.9, size: 17.64, weight: 4.2, push: 0.36567, back: 1.12,
+					// weapon.size: MinionBarrelDefinition's width (50.4) converts against the minion's
+					// OWN reference body, not the Factory's - (50.4/2) x 0.70 x scaleFactor 0.504.
+					// rand: scatterRate 1 x 0.174533.
+					weapon: { reloadRef: 15, damage: 2.8, pene: 0.8, speed: 0.896, size: 8.89056, life: 75, rand: 0.174533, weight: 4.2, push: 0.36567 }
 				}];
 				this.ups = ['Health Regen', 'Reload', 'Max Health', 'Drone Speed', 'Movement Speed', 'Drone Damage', 'Body Damage', 'Drone Health'];
 			},

@@ -1816,11 +1816,15 @@ class Room {
 		// your killer in step() - it just no longer gates this.
 		if (!tank || (!force && !tank.dead)) return;
 		///
-		const pos = this.spawnPoint(tank);
 		// respawnTeam(), not tank.team, so Tag can put you on your killer's side. Every other mode
 		// returns tank.team and is unaffected. Read BEFORE the new Player exists, because it has to
 		// look at who killed the OLD one (tank.murder), which the new one knows nothing about.
-		const newTank = new Player(tank.id, pos.x, pos.y, tank.name, this.respawnTeam(tank), this.XPLVL, this);
+		const team = this.respawnTeam(tank);
+		// Arena.ts's attemptFactorySpawn: team modes only (rules.teamPlay), and only once the roll
+		// and a living Factory on the new team both hit - otherwise fall through to the mode's own
+		// spawnPoint() exactly as before.
+		const pos = (this.rules.teamPlay && this.factorySpawnPoint(team)) || this.spawnPoint(tank);
+		const newTank = new Player(tank.id, pos.x, pos.y, tank.name, team, this.XPLVL, this);
 		if (bot) {
 			newTank.motion = CONFIG.BOTS[0].bind(newTank);
 			newTank.bot = 1;
@@ -1864,6 +1868,34 @@ class Room {
 	*/
 	respawnTeam(tank) {
 		return tank.team;
+	}
+	/*
+		Arena.ts's attemptFactorySpawn: a small chance (config.FACTORY_SPAWN_CHANCE) for a team-mode
+		respawn to come out of a living teammate's Factory instead of the mode's own base placement,
+		at that Factory's own cannon muzzle - the same barrel-tip math entities/Player.js's shoot()
+		uses to spawn a bullet, evaluated at the Factory's current facing/size rather than fired.
+		Returns null on a missed roll or with no eligible Factory, so the caller falls through to its
+		own spawnPoint(tank).
+	*/
+	factorySpawnPoint(team) {
+		if (Math.random() > config.FACTORY_SPAWN_CHANCE) { return null; }
+		const factories = [];
+		for (const p of this.INSTANCE.players.live()) {
+			if (p.team === team && p.class === 'Factory' && !p.dead) { factories.push(p); }
+		}
+		if (!factories.length) { return null; }
+		const factory = factories[Math.floor(Math.random() * factories.length)];
+		const can = CLASS[factory.class].cannons[0];
+		const ra = factory.size / 35;
+		const offx = can.offx * ra;
+		const len = can.canonLength * ra;
+		const offlen = Math.hypot(len, offx);
+		const offdir = Math.atan2(offx, len);
+		const mountDir = factory.dir + can.offdir;
+		return {
+			x: factory.x + Math.cos(mountDir + offdir) * offlen,
+			y: factory.y + Math.sin(mountDir + offdir) * offlen
+		};
 	}
 	/*
 		How much xp survives a death: a fractional power of what you had, floored at nothing and

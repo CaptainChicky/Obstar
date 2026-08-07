@@ -53,26 +53,19 @@ const REAIM_CHANCE = tick.chance(0.0012121);
 const CHARGE_CHANCE = tick.chance(0.0006061);
 
 /*
-	Factory (Minion, type 1.5) manual steering zones - issues.md: "when you left click on
-	something, the drones dont go to that place like normal triangle drones, but instead go
-	towards, then stop at a distance and start circling it... when you right click, outside of a
-	certain distance they repel, but inside a radius of the mouse pointer, they instead cluster
-	together." Before this a Minion shared droneSteer1's generic "fly straight at/away from the
-	cursor" with every other drone, which is exactly the "ram the target" behaviour diep_wiki
-	explicitly says the Factory does NOT have ("unlike with the other branches of Overseer, the
-	Factory's Drones won't just ram targets when clicking upon them").
-	Left-click (Attract, diep_wiki): beyond the 16-square "blue orbit" radius, close in; inside it,
-	orbit; closer still, back off toward the ring. Right-click (Repel): beyond 18 squares, straight
-	repel; 5-18 squares, spiral off it; under 5, collapse into a clustered "star formation" pulled
-	toward the pointer. diepcustom's own Minion.ts (FOCUS_RADIUS = 800 du^2) puts the attract/orbit
-	seam at 800 du = 16 gu (World.gu(16), matching the wiki exactly) and its own inner seam at
-	800/sqrt(7) du = 16/sqrt(7) gu (~6.05 gu) - used here for the left-click inner seam since the
-	wiki gives no exact figure for it, and it is close to the right-click "5" the wiki DOES give.
+	Factory Minion (type 1.5) steering - Minion.ts. A minion carries two angles: `showDir` (aim -
+	where its own barrel fires) and `dir` (movement) move independently, unlike an ordinary drone
+	where they're the same. The aim tracks the cursor on left-click/autofire and points away from
+	it on right-click; the same three movement zones apply either way, which is what turns a
+	right-click repel into a reversed spiral and, inside the inner seam, a star formation that
+	moves toward the cursor while still facing away from it (diep_wiki/Factory.txt). Minion.ts's
+	FOCUS_RADIUS is 800 du squared; the inner seam is that same 800 du over sqrt(7).
 */
-const FACTORY_ORBIT_OUT = World.gu(16);
-const FACTORY_ORBIT_IN = World.gu(16) / Math.sqrt(7);
-const FACTORY_REPEL_OUT = World.gu(18);
-const FACTORY_REPEL_IN = World.gu(5);
+const MINION_FOCUS = World.gu(16);
+const MINION_FOCUS_IN = World.gu(16) / Math.sqrt(7);
+// Minion.ts's ai.viewRange = 900 du - also the range the OWNER must be within of a candidate
+// target, not just the drone itself.
+const MINION_VIEW = World.gu(18);
 
 /*
 	SPEED_RESCALE (the old x1.6 TICK_MS-invariance fix for the `speed` column's tick.quadratic()
@@ -517,12 +510,9 @@ function planSwitchArc(drone, r1) {
 }
 
 /*
-	Ordinary controllable-drone steering - what used to be case 1's own body verbatim, factored
-	out so a Minion (case 1.5, plan.md B3) can share the exact same movement decision its type-1
-	siblings (Overseer/Necromancer/Manager/BattleShip-swarm) already make instead of drifting from
-	it as a second copy. Returns whether the drone is actively aiming at something (a live DETEC
-	target, or the owner's own mouse) rather than idling near or returning to its owner - the one
-	new thing a Minion needs, to decide whether its own barrel (case 1.5) should be firing.
+	Ordinary controllable-drone steering (Overseer/Necromancer/Manager/BattleShip-swarm, type 1).
+	Returns whether the drone is actively aiming at something (a live DETEC target, or the
+	owner's own mouse) rather than idling near or returning to its owner.
 */
 function droneSteer1(bullet, play) {
 	bullet.showDir = bullet.dir;
@@ -541,35 +531,11 @@ function droneSteer1(bullet, play) {
 	///
 	if (play.inputs.mouseR) {
 		const mx = play.x + play.inputs.mouse_x, my = play.y + play.inputs.mouse_y;
-		const away = Math.atan2(bullet.y - my, bullet.x - mx);
-		if (bullet.type === 1.5) {
-			const dis = Math.sqrt(Math.pow(bullet.x - mx, 2) + Math.pow(bullet.y - my, 2));
-			if (dis > FACTORY_REPEL_OUT) {
-				bullet.dir = away;
-			} else if (dis > FACTORY_REPEL_IN) {
-				bullet.dir = away - Math.PI / 2;   // clockwise spiral off the pointer
-			} else {
-				bullet.dir = away + Math.PI;   // star formation - drawn in toward the pointer
-			}
-			return true;
-		}
-		bullet.dir = away;
+		bullet.dir = Math.atan2(bullet.y - my, bullet.x - mx);
 		return true;
 	} else if (play.inputs.mouseL || play.inputs.e) {
 		const mx = play.x + play.inputs.mouse_x, my = play.y + play.inputs.mouse_y;
-		const toward = Math.atan2(my - bullet.y, mx - bullet.x);
-		if (bullet.type === 1.5) {
-			const dis = Math.sqrt(Math.pow(bullet.x - mx, 2) + Math.pow(bullet.y - my, 2));
-			if (dis > FACTORY_ORBIT_OUT) {
-				bullet.dir = toward;
-			} else if (dis > FACTORY_ORBIT_IN) {
-				bullet.dir = toward + Math.PI / 2;   // counter-clockwise orbit around the pointer
-			} else {
-				bullet.dir = toward + Math.PI;   // too close - back off toward the orbit ring
-			}
-			return true;
-		}
-		bullet.dir = toward;
+		bullet.dir = Math.atan2(my - bullet.y, mx - bullet.x);
 		return true;
 	} else {
 		if (bullet.DETEC.select) {
@@ -585,22 +551,84 @@ function droneSteer1(bullet, play) {
 				bullet.DETEC.enabled = 1;
 			}
 		}
-		const playDis = Math.sqrt(Math.pow(bullet.x - play.x, 2) + Math.pow(bullet.y - play.y, 2))
-		if (playDis < play.size * 3.5) {
-			bullet.speed = 0.117008;   // .08 one-time-rescaled, then x SPEED_RESCALE (top of file)
-			if (Math.random() < REAIM_CHANCE) {
-				bullet.comingDir += Math.PI / 2;
-			}
-			const dir = Math.atan2(play.y + Math.sin(play.autoDir * 2 + bullet.comingDir) * play.size * 3 - bullet.y,
-				play.x + Math.cos(play.autoDir * 2 + bullet.comingDir) * play.size * 3 - bullet.x);
-			bullet.dir = dir;
-			return false;
-		}
-		const dir = Math.atan2((play.y) - bullet.y, play.x - bullet.x)
-		bullet.dir = dir;
-		bullet.comingDir = bullet.dir;
+		droneIdleSteer(bullet, play);
 		return false;
 	}
+}
+
+/*
+	The "nothing to attack" half of a controllable drone's steering: hang around the owner,
+	circling it at close range and flying home from further out. Shared by an ordinary drone
+	(type 1, above) and a Factory minion (type 1.5, below) once each has given up on a target.
+*/
+function droneIdleSteer(bullet, play) {
+	if (!bullet.comingDir) {
+		bullet.comingDir = 0;
+	}
+	const playDis = Math.sqrt(Math.pow(bullet.x - play.x, 2) + Math.pow(bullet.y - play.y, 2));
+	if (playDis < play.size * 3.5) {
+		bullet.speed = 0.117008;   // .08 one-time-rescaled, then x SPEED_RESCALE (top of file)
+		if (Math.random() < REAIM_CHANCE) {
+			bullet.comingDir += Math.PI / 2;
+		}
+		bullet.dir = Math.atan2(play.y + Math.sin(play.autoDir * 2 + bullet.comingDir) * play.size * 3 - bullet.y,
+			play.x + Math.cos(play.autoDir * 2 + bullet.comingDir) * play.size * 3 - bullet.x);
+		return;
+	}
+	bullet.dir = Math.atan2(play.y - bullet.y, play.x - bullet.x);
+	bullet.comingDir = bullet.dir;
+}
+
+/*
+	Factory minion steering (Minion.ts). Sets `showDir` (aim - where its own barrel fires, case
+	1.5 below) and `dir` (movement) independently. Returns whether it has a focus at all (cursor
+	or an acquired target) - diep's own condition for the minion's barrel being live.
+*/
+function minionSteer(bullet, play) {
+	bullet.speed = bullet.maxspeed;
+	if (!bullet.DETEC) {
+		bullet.DETEC = new Detector(play, bullet.x, bullet.y, MINION_VIEW, [KIND.PLAYER, KIND.OBJECTS]);
+		bullet.DETEC.team = bullet.team;
+	} else {
+		bullet.DETEC.x = bullet.x;
+		bullet.DETEC.y = bullet.y;
+	}
+	///
+	let fx, fy, aim;
+	if (play.inputs.mouseR) {
+		fx = play.x + play.inputs.mouse_x;
+		fy = play.y + play.inputs.mouse_y;
+		aim = Math.atan2(bullet.y - fy, bullet.x - fx);
+	} else if (play.inputs.mouseL || play.inputs.e) {
+		fx = play.x + play.inputs.mouse_x;
+		fy = play.y + play.inputs.mouse_y;
+		aim = Math.atan2(fy - bullet.y, fx - bullet.x);
+	} else if (bullet.DETEC.select) {
+		const other = bullet.DETEC.select;
+		const dis = Math.sqrt(Math.pow(bullet.x - other.x, 2) + Math.pow(bullet.y - other.y, 2));
+		const playDis = Math.sqrt(Math.pow(other.x - play.x, 2) + Math.pow(other.y - play.y, 2));
+		if (dis < MINION_VIEW && playDis < MINION_VIEW && !other.destroy && other.alpha) {
+			bullet.DETEC.enabled = 0;
+			fx = other.x;
+			fy = other.y;
+			aim = Math.atan2(fy - bullet.y, fx - bullet.x);
+		} else {
+			bullet.DETEC.reset();
+			bullet.DETEC.enabled = 1;
+		}
+	}
+	///
+	if (aim === undefined) {
+		droneIdleSteer(bullet, play);
+		bullet.showDir = bullet.dir;
+		return false;
+	}
+	const d = Math.sqrt(Math.pow(bullet.x - fx, 2) + Math.pow(bullet.y - fy, 2));
+	bullet.showDir = aim;
+	bullet.dir = (d > MINION_FOCUS) ? aim
+		: (d > MINION_FOCUS_IN) ? aim + Math.PI / 2
+			: aim + Math.PI;
+	return true;
 }
 
 class Bullet {
@@ -934,13 +962,11 @@ class Bullet {
 			case 1: droneSteer1(this, play); break;
 			//minion//
 			case 1.5: {
-				const engaged = droneSteer1(this, play);
-				// diepcustom Minion.ts's tickMixin: `inputs.flags |= InputFlags.leftclick` whenever
-				// not idle - i.e. whenever droneSteer1 above actually found something to aim at,
-				// rather than drifting home. MinionBarrelDefinition's own weapon
-				// (TanksConfig.js's `weapon`, plan.md B3), fired from the minion's own position
-				// along its current facing, reload read LIVE off the owner's Reload stat every shot
-				// (`play.up.Reload`) exactly like Barrel.calculateStatData() reads `tank.reloadTime`.
+				const engaged = minionSteer(this, play);
+				// Minion.ts's tickMixin: the minion's own barrel is live whenever it isn't idle
+				// (has a focus to aim at) - `engaged` above. Reload read LIVE off the owner's
+				// Reload stat every shot (play.up.Reload), same as Barrel.calculateStatData()
+				// reading tank.reloadTime.
 				if (engaged && this.weapon) {
 					this.weaponTimer = (this.weaponTimer || 0) + 1;
 					const reloadMax = tick.ticks(Math.round(this.weapon.reloadRef * play.up.Reload)) || 1;
@@ -948,8 +974,13 @@ class Bullet {
 						this.weaponTimer = 0;
 						const speed = this.weapon.speed;
 						const muzzleKick = speed / BULLET_MAINTAIN + 16.8;
-						const dir = this.dir + Math.random() * this.weapon.rand - this.weapon.rand / 2;
-						const b = new Bullet(this.origin, this.x, this.y, dir, speed, muzzleKick, this.room);
+						// Along the aim (showDir), not the movement direction - an orbiting minion
+						// travels sideways while still shooting at what it's circling. Spawned at
+						// the muzzle (1.7 body radii out, matching the drawn barrel length).
+						const dir = this.showDir + Math.random() * this.weapon.rand - this.weapon.rand / 2;
+						const muzzle = this.size * 1.7;
+						const b = new Bullet(this.origin, this.x + Math.cos(this.showDir) * muzzle,
+							this.y + Math.sin(this.showDir) * muzzle, dir, speed, muzzleKick, this.room);
 						b.type = 0;
 						b.class = this.class;
 						b.pene = this.weapon.pene;

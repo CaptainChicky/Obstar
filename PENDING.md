@@ -233,16 +233,17 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   drone-cap check (evaluated barrel-by-barrel within that tick) already both fires them together and
   stops exactly at the cap. Verified empirically (Overseer: batches of 2,2,2,1; Overlord: 4,4) and
   pinned by `test/rooms.js`'s `droneBatchTests()` - no code change.
-- **A Factory's Minions (type 1.5) shared `droneSteer1` with every other drone type**, so left/
-  right-click just flew them straight at/away from the cursor - literally the "will just ram
-  targets" behaviour diep_wiki says the Factory does NOT have. Added a Minion-only three-zone field
-  in `entities/Bullet.js`'s `droneSteer1` (left-click: attract beyond World.gu(16), orbit between
-  that and World.gu(16)/sqrt(7), back off inside it; right-click: repel beyond World.gu(18), spiral
-  between that and World.gu(5), cluster toward the cursor inside it) - diep_wiki's own measured
-  squares, cross-checked against `Minion.ts`'s `FOCUS_RADIUS = 800**2` (800 du = 16 gu exactly).
-  Movement and aim still share one `dir` field (the existing architecture for every drone type), so
-  the wiki's "aim outward while clustering" nuance in the star formation isn't separately modelled -
-  the drones cluster together but don't specifically face outward while doing it.
+- **A Factory's Minions (type 1.5) now carry two separate angles, `showDir` (aim/own-barrel fire)
+  and `dir` (movement), instead of sharing `droneSteer1`'s single `dir` with every other drone
+  type** - the old shared path made an orbiting minion shoot sideways and a clustered one face the
+  wrong way, literally the "will just ram targets" behaviour diep_wiki says the Factory does NOT
+  have. `entities/Bullet.js`'s `minionSteer()` sets `showDir` toward the cursor on left-click/`e`,
+  away from it on right-click, or at an acquired target/idle-orbit when neither button is held; one
+  distance-banded field then picks `dir` off that same `showDir` regardless of which button is
+  held (`> World.gu(16)`: `showDir`, `> World.gu(16)/sqrt(7)`: `showDir + PI/2`, else `showDir +
+  PI`) - `Minion.ts`'s own `FOCUS_RADIUS` (800 du squared). The single flip between left/right-click
+  is what turns the same three zones into attract/orbit/back-off vs. repel/reverse-spiral/star (the
+  minion moves inward but keeps aiming outward), matching the wiki's separately-modelled nuance.
 
 ## Settled by the B2 pass (boss projectiles + Dominator z-order, kept only for the nuance)
 
@@ -330,10 +331,6 @@ research question - the source for every one of them is cited here so nobody has
   the SAME `Drawings.turrets[0]` canDir-tracking render Auto Smasher uses, so the barrels track and
   idle-spin identically. Any FUTURE centered/ring auto-turret still rendering frozen at its resting
   `offdir` (a plain `aboveBody` cannon) should move onto the same mechanism.
-- **Factory geometry**: square body (`sides: 4`), trapezoid spawner, `MinionBarrelDefinition` size
-  85 / width 50.4, drone `size *= 1.2`. (The AI half - `ai.viewRange = 900`, `FOCUS_RADIUS = 800**2`
-  circle-and-attack, the right-click cluster - is done, see "Settled by the fourth issues.md pass"
-  below. This is drawing-only now, Batch B territory.)
 - **Skimmer** (`Skimmer.ts`): `SkimmerBarrelDefinition` size 70 / width 42, two opposed sub-barrels,
   drawn BELOW the main bullet. `skimmerandbullet.png` at the repo root is the reference, with
   measured proportions in issues.md.

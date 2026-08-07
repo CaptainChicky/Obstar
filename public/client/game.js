@@ -346,8 +346,8 @@
 					recoils: this.recoil,
 					canDir: this.canDdir
 				});
-				const can = o.can;
-				if (can) {
+				const can = o && o.can;
+				if (can && can.width > 0 && can.height > 0) {
 					const w = can.width / (CONST.OFFCAN), h = can.height / (CONST.OFFCAN);
 					ctx.drawImage(can, -w / 2, -h / 2, w, h);
 				}

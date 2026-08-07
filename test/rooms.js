@@ -2495,9 +2495,9 @@ function baseDroneAiTests() {
 			ordinary drone (type 1), a trap (type 2, post-arming) and a minion (type 1.5) - both
 			against a teammate's tank and against a different owner's same-type projectile.
 		*/
-		// type 1/1.5 both steer through droneSteer1 (entities/Bullet.js), which needs a live
-		// owning Player to build its own Detector from - unlike a base drone or a trap, `alone`
-		// is not an option here, so each gets a real (distant, otherwise inert) owner.
+		// type 1 steers through droneSteer1 and type 1.5 through minionSteer (entities/Bullet.js);
+		// both build their own Detector from a live owning Player - unlike a base drone or a trap,
+		// `alone` is not an option here, so each gets a real (distant, otherwise inert) owner.
 		function plantDrone(room, owner, x, y, type) {
 			const b = new Bullet({ GM: room.gm, sId: room.id, oId: owner.id.oId }, x, y, 0, 0, 0, room);
 			b.team = owner.team; b.life = -1; b.type = type; b.class = owner.class;
@@ -5975,7 +5975,7 @@ function droneBatchTests() {
 
 /// Factory drone steering ////////////////////////////////////////////////////
 function factoryTests() {
-	console.log('\nfactory drones (issues.md - orbit/cluster, not ram):');
+	console.log('\nfactory drones (Minion.ts - aim and movement are separate angles):');
 	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
 	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
 	const room = makeRoom('ffa');
@@ -5991,29 +5991,228 @@ function factoryTests() {
 		return b;
 	}
 	const deg = (b) => Math.round(b.dir * 180 / Math.PI + 360) % 360;
+	const degShow = (b) => Math.round(b.showDir * 180 / Math.PI + 360) % 360;
 
-	// diep_wiki Attract: beyond the 16-square orbit, close in; inside it, orbit (not ram); too
-	// close, back toward the ring - a Minion (type 1.5) gets this three-zone field, the same
-	// left-click that an ordinary drone (type 1) still just rams the cursor with.
+	// diep_wiki Attract: beyond the 16-square focus, close in; inside it, orbit (not ram); too
+	// close, back toward the ring. `showDir` (aim/fire direction) stays fixed at the cursor
+	// through all three zones - only `dir` (movement) changes.
 	p.inputs.mouseL = 1; p.inputs.mouseR = 0;
-	check('left-click beyond the 16-square orbit moves the drone straight at the cursor',
-		deg(droneAt(World.gu(30), 0)) === 180);
-	check('...inside the orbit band it moves perpendicular (orbits), not straight at the cursor',
-		deg(droneAt(World.gu(10), 0)) === 270);
-	check('...and closer than that it backs off outward, away from the cursor',
-		deg(droneAt(World.gu(2), 0)) === 0);
+	check('left-click beyond the focus radius moves the drone straight at the cursor',
+		deg(droneAt(World.gu(30), 0)) === 180 && degShow(droneAt(World.gu(30), 0)) === 180);
+	check('...inside the band it moves perpendicular (orbits) while still aiming at the cursor',
+		deg(droneAt(World.gu(10), 0)) === 270 && degShow(droneAt(World.gu(10), 0)) === 180);
+	check('...and closer than that it backs off outward, still aiming at the cursor',
+		deg(droneAt(World.gu(2), 0)) === 0 && degShow(droneAt(World.gu(2), 0)) === 180);
 	check('an ordinary (non-Minion) drone type still just rams the cursor at any distance',
 		(() => { const b = new Bullet(p.id, World.gu(10), 0, 0, 0, 0, room); b.type = 1; b.team = p.team; b.class = 'Factory'; b.maxspeed = 1; b.update(); return deg(b); })() === 180);
 
-	// diep_wiki Repel: past 18 squares, straight repel; 5-18, spiral off; under 5, star formation
-	// pulled together toward the pointer.
+	// diep_wiki Repel: the same three movement zones as Attract, but the aim is flipped to face
+	// away from the cursor - which turns the mid-band orbit into the OPPOSITE rotational sense
+	// (a reversed spiral) and the inner zone into a star formation that moves in while aiming out.
 	p.inputs.mouseL = 0; p.inputs.mouseR = 1;
-	check('right-click beyond 18 squares repels the drone straight away from the cursor',
-		deg(droneAt(World.gu(30), 0)) === 0);
-	check('...between 5 and 18 squares it spirals off (perpendicular), not a straight repel',
-		deg(droneAt(World.gu(10), 0)) === 270);
-	check('...and under 5 squares it clusters, pulled back toward the cursor',
-		deg(droneAt(World.gu(2), 0)) === 180);
+	check('right-click beyond the focus radius repels the drone straight away, aiming away',
+		deg(droneAt(World.gu(30), 0)) === 0 && degShow(droneAt(World.gu(30), 0)) === 0);
+	check('...inside the band it spirals the OPPOSITE way to the left-click orbit',
+		deg(droneAt(World.gu(10), 0)) === 90 && degShow(droneAt(World.gu(10), 0)) === 0);
+	check('...and under the inner seam it moves IN (star formation) while still aiming away',
+		deg(droneAt(World.gu(2), 0)) === 180 && degShow(droneAt(World.gu(2), 0)) === 0);
+
+	// Phase 2's `auto: 1` (Barrel.ts's alwaysShoot for a minion bullet) fires this cannon on its
+	// own cadence with no input at all - the cap has to actually stop it AT maxDrone rather than
+	// overshoot by one once shoot() keeps getting called after the pool is full, same edge case
+	// droneBatchTests() above pins for Overseer/Overlord.
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const capRoom = makeRoom('ffa');
+	const cp = player(capRoom, 0);
+	cp.class = 'Factory';
+	cp.droneCount = 0;
+	cp.shootTimer = new Array(CLASS['Factory'].cannons.length).fill(0);
+	cp.shield = 0;
+	cp.inputs.e = 0; cp.inputs.mouseL = 0; cp.inputs.mouseR = 0;
+	for (let i = 0; i < 2000 && cp.droneCount < CLASS['Factory'].maxDrone; i++) { cp.shoot(); }
+	check('a Factory with no input at all still reaches its maxDrone cap on its own cadence',
+		cp.droneCount === CLASS['Factory'].maxDrone, cp.droneCount);
+	for (let i = 0; i < 50; i++) { cp.shoot(); }
+	check('...and never overshoots the cap once it is reached',
+		cp.droneCount === CLASS['Factory'].maxDrone, cp.droneCount);
+}
+
+/*
+	Factory player-spawn (Arena.ts's attemptFactorySpawn) - the roll, the team/liveness filter and
+	the muzzle math are exercised directly rather than by mocking Math.random: each case below
+	swaps config.FACTORY_SPAWN_CHANCE for a guaranteed hit/miss instead (Math.random() is never
+	outside [0,1)), and keeps at most one eligible Factory in play so the
+	`factories[Math.floor(Math.random() * factories.length)]` pick (length 1 -> always index 0)
+	is deterministic too.
+*/
+function factoryPlayerSpawnTests() {
+	console.log('\nfactory player spawn (Arena.ts attemptFactorySpawn):');
+	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const near = (a, b) => Math.abs(a - b) < 1e-6;
+	const savedChance = config.FACTORY_SPAWN_CHANCE;
+	const room = makeRoom('2team');
+	const owner = player(room, 0);
+
+	const factory = room.INSTANCE.players.add((id) =>
+		new Player({ GM: room.gm, sId: room.id, oId: id }, 100, 200, 'factory', owner.team, room.XPLVL, room));
+	factory.class = 'Factory';
+	factory.dir = Math.PI / 4;
+	factory.size = 70;   // ra = 2, so any offx/canonLength mistake shows up doubled
+
+	try {
+		config.FACTORY_SPAWN_CHANCE = -1;   // Math.random() >= 0 > -1 always: guaranteed miss
+		check('a missed roll never returns a spawn point', room.factorySpawnPoint(owner.team) === null);
+
+		config.FACTORY_SPAWN_CHANCE = 2;    // Math.random() < 1 < 2 always: guaranteed hit
+		check('a hit roll with no living Factory on the team falls through',
+			room.factorySpawnPoint(1 - owner.team) === null);
+
+		const can = CLASS['Factory'].cannons[0];
+		const ra = factory.size / 35;
+		const offx = can.offx * ra, len = can.canonLength * ra;
+		const offlen = Math.hypot(len, offx), offdir = Math.atan2(offx, len);
+		const mountDir = factory.dir + can.offdir;
+		const expected = {
+			x: factory.x + Math.cos(mountDir + offdir) * offlen,
+			y: factory.y + Math.sin(mountDir + offdir) * offlen
+		};
+		const got = room.factorySpawnPoint(owner.team);
+		check('spawns at the Factory\'s own cannon muzzle, not its centre',
+			!!got && near(got.x, expected.x) && near(got.y, expected.y),
+			got && (got.x + ',' + got.y + ' vs ' + expected.x + ',' + expected.y));
+
+		factory.dead = tick.DEAD_DELAY;
+		check('a Factory mid death animation is not a candidate',
+			room.factorySpawnPoint(owner.team) === null);
+		factory.dead = 0;
+
+		factory.team = 1 - owner.team;
+		check('an enemy Factory is never a candidate', room.factorySpawnPoint(owner.team) === null);
+		factory.team = owner.team;
+
+		// Wired into respawn(): a dying owner comes back at the Factory's muzzle instead of the
+		// mode's own base placement whenever the roll and a living Factory both hit.
+		owner.hp = 0;
+		owner.dead = tick.DEAD_DELAY;
+		owner.destroy = tick.DES;
+		room.respawn(owner.id.oId, 0, 0);
+		const respawned = player(room, owner.id.oId);
+		check('respawn() actually spends the Factory spawn point, not the mode\'s own placement',
+			near(respawned.x, expected.x) && near(respawned.y, expected.y),
+			respawned.x + ',' + respawned.y + ' vs ' + expected.x + ',' + expected.y);
+
+		// A non-team mode must never roll this at all, even with a guaranteed hit and a live
+		// Factory sitting right there - respawn() gates the whole attempt on rules.teamPlay.
+		const ffaRoom = makeRoom('ffa');
+		const ffaOwner = player(ffaRoom, 0);
+		const ffaFactory = ffaRoom.INSTANCE.players.add((id) =>
+			new Player({ GM: ffaRoom.gm, sId: ffaRoom.id, oId: id }, 100, 200, 'factory', ffaOwner.team, ffaRoom.XPLVL, ffaRoom));
+		ffaFactory.class = 'Factory';
+		ffaOwner.hp = 0;
+		ffaOwner.dead = tick.DEAD_DELAY;
+		ffaOwner.destroy = tick.DES;
+		ffaRoom.respawn(ffaOwner.id.oId, 0, 0);
+		const ffaRespawned = player(ffaRoom, ffaOwner.id.oId);
+		check('a non-team mode (rules.teamPlay false) never spawns you off a Factory',
+			!near(ffaRespawned.x, ffaFactory.x) || !near(ffaRespawned.y, ffaFactory.y),
+			ffaRespawned.x + ',' + ffaRespawned.y);
+	} finally {
+		config.FACTORY_SPAWN_CHANCE = savedChance;
+	}
+}
+
+/*
+	A minion's own barrel (case 1.5's fire block, entities/Bullet.js) has to aim along `showDir`
+	even while it's moving somewhere else entirely (the mid-band orbit), spawn its sub-bullet at
+	the drawn barrel tip rather than its own centre, reset its reload rather than re-firing every
+	tick, and stay silent while idle - none of which is something a glance at Sandbox pins down.
+*/
+function factoryFireTests() {
+	console.log('\nfactory minion own-barrel fire (aims along showDir, spawns at its muzzle):');
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const near = (a, b, eps) => Math.abs(a - b) < eps;
+	const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+
+	function spawnMinion(room, p) {
+		p.droneCount = 0;
+		p.shootTimer = new Array(CLASS['Factory'].cannons.length).fill(0);
+		p.shield = 0;
+		p.inputs.e = 0; p.inputs.mouseL = 0; p.inputs.mouseR = 0;   // can.auto - no input needed
+		for (let i = 0; i < 200 && p.droneCount < 1; i++) { p.shoot(); }
+		return [...room.INSTANCE.bullets.live()].find((b) => b.type === 1.5);
+	}
+
+	// Orbit band: cursor pinned at the owner, drone parked 10 squares out - inside MINION_FOCUS
+	// (16 sq) but outside MINION_FOCUS_IN (16/sqrt(7) sq), so `dir` (movement) and `showDir`
+	// (aim) sit 90 degrees apart every tick (Phase 4's steering) - the case that actually tells
+	// firing-along-dir and firing-along-showDir apart.
+	const room = makeRoom('ffa');
+	const p = player(room, 0);
+	p.class = 'Factory'; p.x = 0; p.y = 0;
+	const drone = spawnMinion(room, p);
+	check('a Factory cannon actually produced a minion to test against', !!drone);
+	p.inputs.mouseL = 1; p.inputs.mouse_x = 0; p.inputs.mouse_y = 0;
+	drone.x = World.gu(10); drone.y = 0;
+
+	const expectedReload = tick.ticks(Math.round(drone.weapon.reloadRef * p.up.Reload)) || 1;
+	let child = null, prevX, prevY, ticksElapsed = 0;
+	for (let i = 0; i < expectedReload * 3 && !child; i++) {
+		prevX = drone.x; prevY = drone.y;
+		const before = [...room.INSTANCE.bullets.live()].length;
+		drone.update();
+		ticksElapsed++;
+		if ([...room.INSTANCE.bullets.live()].length > before) {
+			child = [...room.INSTANCE.bullets.live()].find((b) => b !== drone && b.type === 0 && b.class === 'Factory');
+		}
+	}
+	check('fires on its own reload cadence (reloadRef x the owner\'s LIVE up.Reload)',
+		!!child && ticksElapsed === expectedReload, ticksElapsed + ' vs ' + expectedReload);
+
+	const muzzle = drone.size * 1.7;
+	const expectedX = prevX + Math.cos(drone.showDir) * muzzle;
+	const expectedY = prevY + Math.sin(drone.showDir) * muzzle;
+	check('spawns its sub-bullet at its own muzzle (1.7 body radii out), not its centre',
+		!!child && near(child.x, expectedX, 1e-6) && near(child.y, expectedY, 1e-6),
+		child && (child.x + ',' + child.y + ' vs ' + expectedX + ',' + expectedY));
+	check('...aimed along showDir (its aim), not dir (the sideways orbit heading it is moving in)',
+		!!child && Math.abs(angleDiff(child.dir, drone.showDir)) <= drone.weapon.rand / 2 + 1e-9,
+		child && angleDiff(child.dir, drone.showDir));
+	check('...and its fields come from `weapon`, not the minion\'s own body stats',
+		!!child && child.pene === drone.weapon.pene && child.damage === drone.weapon.damage &&
+		near(child.size, drone.weapon.size, 1e-9) && child.life === tick.ticks(drone.weapon.life),
+		child && [child.pene, child.damage, child.size, child.life].join(','));
+
+	// The reload has to actually RESET on a shot, not just have crossed the threshold once - a
+	// missing `weaponTimer = 0` would fire every tick from here on instead of a cadence later.
+	let secondGap = 0;
+	for (let i = 0; i < expectedReload * 3; i++) {
+		const before = [...room.INSTANCE.bullets.live()].length;
+		drone.update();
+		secondGap++;
+		if ([...room.INSTANCE.bullets.live()].length > before) { break; }
+	}
+	check('...and its reload timer resets (the next shot is a full cadence later, not next tick)',
+		secondGap === expectedReload, secondGap);
+
+	// Idle: no cursor focus and no acquired target - `engaged` is false every tick, so the fire
+	// block never runs at all. A silent minion must not bank reload progress toward a free shot.
+	const room2 = makeRoom('ffa');
+	const p2 = player(room2, 0);
+	p2.class = 'Factory'; p2.x = 0; p2.y = 0;
+	const idleDrone = spawnMinion(room2, p2);
+	idleDrone.x = World.gu(50); idleDrone.y = World.gu(50);
+	let fired = false;
+	for (let i = 0; i < expectedReload * 4; i++) {
+		const before = [...room2.INSTANCE.bullets.live()].length;
+		idleDrone.update();
+		if ([...room2.INSTANCE.bullets.live()].length > before) { fired = true; break; }
+	}
+	check('an idle minion (no cursor focus, no acquired target) never fires its own barrel', !fired);
 }
 
 /// Boss projectile identity (B2) /////////////////////////////////////////////
@@ -6257,6 +6456,8 @@ rosterSweepTests();
 necromancerTests();
 droneBatchTests();
 factoryTests();
+factoryFireTests();
+factoryPlayerSpawnTests();
 bossProjectileTests();
 autoTurretMultiTargetTest();
 defenderGeometryTests();

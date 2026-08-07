@@ -245,7 +245,7 @@
 				canDir: this.canDdir
 			});
 			const can = o && o.can;
-			if (!can) { return; }
+			if (!can || !can.width || !can.height) { return; }
 			const w = can.width / (CONST.OFFCAN), h = can.height / (CONST.OFFCAN)
 			ctx.drawImage(can, -w / 2, -h / 2, w, h);
 			///

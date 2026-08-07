@@ -554,18 +554,21 @@
 				ctx.closePath();
 			},
 			(ctx, param) => {
-				// type 5 = Factory's Minion (plan.md B3/R7): a small controllable tank body with
-				// its own barrel, not one of diep's real Bullets.type values - a draw-only id
-				// assigned at the encode site (rooms/Room.js's bulletWireType()) because the wire's
-				// Bullets.type is a uint8 and can't carry the source cannon's fractional `1.5`.
+				// type 5 = Factory's Minion: a small controllable tank body with its own barrel,
+				// not one of diep's real Bullets.type values - a draw-only id assigned at the
+				// encode site (rooms/Room.js's bulletWireType()) because the wire's Bullets.type
+				// is a uint8 and can't carry the source cannon's fractional `1.5`.
 				ctx.save();
 				ctx.rotate(param.dir);
-				const barrelLen = param.size * 1.3, barrelHalf = param.size * 0.45;
+				// MinionBarrelDefinition (Minion.ts) is size 85 / width 50.4 against the minion's
+				// own 50-du reference body: 85/50 = 1.7 body radii long, 50.4/100 = 0.504 half-wide.
+				const barrelLen = param.size * 1.7, barrelHalf = param.size * 0.504;
 				ctx.beginPath();
 				ctx.rect(0, -barrelHalf, barrelLen, barrelHalf * 2);
 				ctx.closePath();
-				ctx.fillStyle = Palette[param.color][0];
-				ctx.strokeStyle = Palette[param.color][1];
+				// Gray like every other barrel in the game - a minion is drawn as a tiny tank.
+				ctx.fillStyle = Palette.gray[0];
+				ctx.strokeStyle = Palette.gray[1];
 				ctx.lineWidth = CONST.LINEWIDTH;
 				ctx.lineJoin = 'round';
 				ctx.fill();

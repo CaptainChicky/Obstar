@@ -173,6 +173,11 @@
 				// LINEWIDTH/2 outward.
 				canSize += LW / 2;
 				mR += LW / 2;
+				// A malformed body/cannon row (a shape-1 body missing its width, say) poisons both
+				// radii with NaN, and a NaN canvas size becomes a 0x0 canvas that every drawImage
+				// of it throws on. Fall back to the bare body instead.
+				if (!Number.isFinite(canSize)) { canSize = S + LW / 2; }
+				if (!Number.isFinite(mR)) { mR = canSize; }
 				///
 				return {
 					mX: middleX,
