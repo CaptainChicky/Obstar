@@ -16,6 +16,8 @@ additional issues are present:
 
 - survival arena managemetn and arena management in general needs fine tuning.
 
+- SUMMONER AND GUARDIAN'S drones shoudl not be able to push them, just phase through them asif they are on the same team. fallen overlord already has this (probably because its modelled like the overlord). as a person controlling guardian or summoner we should also be able to control drones, currently onlyt can control fallen overlord's drones
+
 >One thing worth your attention
 A level-45 Overlord's top speed is 485 u/s but its drones' terminal is 229 u/s — the probe confirms a chasing drone peaks at the same 229, so this is pre-existing physics in maxspeed/BULLET_CRUISE_ORDER, not the orbit. Consequence: at full sprint the swarm strings out ~4500 units behind you no matter how good the orbit is. Diep avoids this by only dividing a drone's muzzle kick by 3 (Drone.ts:71) while leaving its cruise thrust equal to a bullet's. If the trailing looks wrong in-game, that's the knob — but it's a balance change touching TanksConfig.js, so I left it alone.
 might want to imeplment this lowkey but only for later
@@ -54,7 +56,7 @@ breaks you deleted code, not a comment.
 /web, /net, /db, and /views?
 
 /db [DONE]
-/entities
+/entities [DONE except bullet.js]
 /lib [DONE]
 /net [DONE]
 /public
@@ -63,3 +65,13 @@ breaks you deleted code, not a comment.
 /views [DONE]
 /web [DONE]
 anything else at root (eslint, server.js)
+
+
+this is the foundainqr btw
+```
+node ../idkman/send.js --repo .
+
+git reset --hard HEAD
+git clean -fd
+git pull
+```

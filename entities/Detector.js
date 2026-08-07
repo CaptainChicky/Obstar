@@ -1,7 +1,5 @@
 /*
 	Detector - an invisible entity used as a vision-cone query for the AI.
-
-	Extracted from the old Alex.js monolith (now server.js + lib/ + rooms/ + entities/).
 	A leaf: it never reaches into another entity's room or the Controller.
 */
 const KIND = require('../public/SHARE/kinds.js');
@@ -44,7 +42,6 @@ class Detector {
 				}
 			}
 		}
-		////
 		if (!this.self) {
 			if (kind === this.from.kind && other.id.oId === this.from.id.oId) {
 				return;
@@ -54,13 +51,8 @@ class Detector {
 			if (kind === KIND.BULLET && this.id.oId === other.origin.oId) {
 				return;
 			}
-			// An Arena Closer is not a target for anything. It is invulnerable and never dies
-			// (entities/Player.js's collision() returns before any damage or knockback), so a base
-			// drone that acquired one would abandon its ring, chase forever and never resolve -
-			// which is exactly what a whole base did when a Closer wandered past. diep never has
-			// this problem because a Closer is on the arena's own team and a base's drones are on
-			// the base's, but our base drones scan by proximity, so the exclusion is stated here at
-			// the one place every detector-driven target passes through.
+			// An Arena Closer is invulnerable and never dies, so it must never be selected as
+			// a target - otherwise a chasing drone would latch onto it and never disengage.
 			if (kind === KIND.PLAYER && other.closer) {
 				return;
 			}
@@ -77,15 +69,8 @@ class Detector {
 			}
 		}
 	}
-	// Clears `select` too - previously left pointing at the last thing it ever
-	// found, which meant every "forget this target and re-scan" call site was silently only half
-	// working: collision() only ever OVERWRITES select on a fresh, closer find, so a stale
-	// reference survived reset() indefinitely and got re-read (and, for a base drone's scout,
-	// re-published into the shared levels.threat - see rooms/Room.js's tickDroneCentres()) before
-	// anything had a chance to confirm it was still valid. The one caller that must NOT clear
-	// select this way is a chasing base drone, which deliberately never calls reset() while
-	// chasing (entities/Bullet.js's case 1.4) precisely so its target survives across ticks with
-	// DETEC.enabled = 0 - see that file's comment.
+	// Clears `select` and re-arms for the next scan. A chasing base drone deliberately never
+	// calls this while chasing, so its target survives across ticks with the detector disabled.
 	reset() {
 		this.dis = this.size;
 		this.construc = this.type.length;
