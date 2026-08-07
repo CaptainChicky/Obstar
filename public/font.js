@@ -296,46 +296,24 @@ function draw() {
 			break;
 		}
 		case 'domination': {
-			// Same diagonal two-corner wipe silhouette as 2 Teams (Domination is a 2-team mode
-			// too, SocketSchema's own team order), not the fixed-width centre gap the first
-			// draft used - PENDING #10 caught that the fixed ~180px gap left the reveal a tiny
-			// sliver of the screen no matter how wide it was, since the gap never scaled with
-			// Width/Height the way every other mode's wipe does. Colours are green/red like 2
-			// Teams; a thin diamond outline (not a filled panel, so it never blocks the reveal)
-			// stays stencilled at the centre - the loose diamond the four Dominators sit in
-			// (PENDING #27) - fading in only as the screen closes.
+			// Two opposite corner bases, green top-left and red bottom-right, the same wipe
+			// 4team uses for that corner pair. The axis-aligned square at the centre is where
+			// the four Dominators sit, between the two bases.
 			ctx.beginPath();
 			ctx.moveTo(0, 0);
-			ctx.lineTo(225 + toOpen * (Width / 2 - 225) + Math.sin(T / 78) * 15, 0);
-			ctx.lineTo(0 + toOpen * (Width / 2) + Math.sin(T / 78) * 15, Height * 1.25 + 375);
-			ctx.lineTo(0, Height)
+			ctx.lineTo(300 + toOpen * (Width - 300) + Math.sin(T / 80) * 15, 0);
+			ctx.lineTo(0, 600 + toOpen * (Height - 600) + Math.sin(T / 80) * 30);
 			///
 			ctx.moveTo(Width, Height);
-			ctx.lineTo(Width - 225 - toOpen * (Width / 2 - 225) + (1 - toOpen) * (Math.sin(1 + T / 75) * 15), Height);
-			ctx.lineTo(Width - toOpen * (Width / 2) + (1 - toOpen) * (Math.sin(1 + T / 75) * 15), (Height - Height * 1.25) - 375);
-			ctx.lineTo(Width, 0);
+			ctx.lineTo((1 - toOpen) * (Width - 300) - Math.sin(1 + T / 80) * 15, Height);
+			ctx.lineTo(Width, (1 - toOpen) * (Height - 600) - Math.sin(1 + T / 80) * 30);
 			///
-			ctx.closePath();
-			ctx.fillStyle = 'white';
-			ctx.fill();
-			//////////////////////////////////////////
-			ctx.beginPath();
-			ctx.moveTo(0, 0);
-			ctx.lineTo(180 + toOpen * (Width / 2 - 180) + (Math.sin(.5 + T / 83) * 10) * (1 - toOpen), 0);
-			ctx.lineTo(0 + toOpen * (Width / 2) + (Math.sin(.5 + T / 83) * 10) * (1 - toOpen), Height + 300);
-			ctx.lineTo(0, Height)
-			///
-			ctx.moveTo(Width, Height);
-			ctx.lineTo(Width - 180 - toOpen * (Width / 2 - 180) + (1 - toOpen) * (Math.sin(1.5 + T / 80) * 10), Height);
-			ctx.lineTo(Width - toOpen * (Width / 2) + (1 - toOpen) * (Math.sin(1.5 + T / 80) * 10), -300);
-			ctx.lineTo(Width, 0);
-			///
-			ctx.closePath();
+			//ctx.closePath();
 			ctx.fillStyle = 'white';
 			ctx.fill();
 			ctx.save();
 			ctx.translate(Width / 2, Height / 2);
-			ctx.rotate(Math.PI / 4 + Math.sin(T / 200) * 0.08);
+			ctx.rotate(Math.sin(T / 200) * 0.08);
 			const d = Math.min(Width, Height) * 0.2;
 			ctx.strokeStyle = 'rgba(255,255,255,' + Math.max(0, (1 - toOpen) * 0.6) + ')';
 			ctx.lineWidth = 6;
@@ -348,6 +326,70 @@ function draw() {
 				grd.addColorStop(0.00, '#36e27f');
 				grd.addColorStop(.500, '#ffd400');
 				grd.addColorStop(1.00, '#ff5242');
+				ctx.fillStyle = grd;
+				ctx.globalAlpha = Math.max(0, (1 - toOpen) / 5.5);
+				ctx.fillRect(0, 0, Width, Height);
+			}
+			break;
+		}
+		case 'mothership': {
+			// Two flagship hulls sliding in from the sides, meeting in the middle when the screen
+			// closes; the 16-gon at the centre is the Mothership's own barrel ring.
+			const wob = Math.sin(T / 88) * 12 * (1 - toOpen);
+			const w = Math.max(0, toOpen * (Width / 2) + wob);
+			ctx.fillStyle = 'white';
+			ctx.fillRect(0, 0, w, Height);
+			ctx.fillRect(Width - w, 0, w, Height);
+			ctx.save();
+			ctx.translate(Width / 2, Height / 2);
+			ctx.rotate(T / 400);
+			const r = Math.min(Width, Height) * 0.16;
+			ctx.beginPath();
+			for (let i = 0; i < 16; i++) {
+				const a = Math.PI * 2 * i / 16;
+				const px = Math.cos(a) * r, py = Math.sin(a) * r;
+				if (i) { ctx.lineTo(px, py); } else { ctx.moveTo(px, py); }
+			}
+			ctx.closePath();
+			ctx.strokeStyle = 'rgba(255,255,255,' + Math.max(0, (1 - toOpen) * 0.6) + ')';
+			ctx.lineWidth = 6;
+			ctx.stroke();
+			ctx.restore();
+			ctx.globalCompositeOperation = 'hard-light';
+			{
+				const grd = ctx.createLinearGradient(0, 0, Width, 0);
+				grd.addColorStop(0.00, '#36e27f');
+				grd.addColorStop(0.50, '#6fa8dc');
+				grd.addColorStop(1.00, '#ff5242');
+				ctx.fillStyle = grd;
+				ctx.globalAlpha = Math.max(0, (1 - toOpen) / 5.5);
+				ctx.fillRect(0, 0, Width, Height);
+			}
+			break;
+		}
+		case 'survival': {
+			// The arena closing in: a panel advancing from all four edges at once, with the
+			// shrinking arena border stencilled just inside them. The panels never fully retract,
+			// so a thin frame stays on screen at rest.
+			const margin = 16;
+			const px = Math.max(0, margin + toOpen * (Width / 2 - margin) + Math.sin(T / 92) * 6 * (1 - toOpen));
+			const py = Math.max(0, margin + toOpen * (Height / 2 - margin) + Math.sin(1 + T / 96) * 6 * (1 - toOpen));
+			ctx.fillStyle = 'white';
+			ctx.fillRect(0, 0, px, Height);
+			ctx.fillRect(Width - px, 0, px, Height);
+			ctx.fillRect(0, 0, Width, py);
+			ctx.fillRect(0, Height - py, Width, py);
+			ctx.strokeStyle = 'rgba(255,255,255,' + Math.max(0, (1 - toOpen) * 0.5) + ')';
+			ctx.lineWidth = 5;
+			ctx.strokeRect(px + 10, py + 10,
+				Math.max(0, Width - (px + 10) * 2), Math.max(0, Height - (py + 10) * 2));
+			ctx.globalCompositeOperation = 'hard-light';
+			{
+				const grd = ctx.createLinearGradient(0, Height, Width, 0);
+				grd.addColorStop(0.00, '#4a1c1c');
+				grd.addColorStop(0.40, '#7a2e12');
+				grd.addColorStop(0.70, '#b4531a');
+				grd.addColorStop(1.00, '#f2c14e');
 				ctx.fillStyle = grd;
 				ctx.globalAlpha = Math.max(0, (1 - toOpen) / 5.5);
 				ctx.fillRect(0, 0, Width, Height);

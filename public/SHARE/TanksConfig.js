@@ -3975,23 +3975,20 @@
 				// createBoss()/createCloser() already use, since this engine's class table has no
 				// generic per-class maxHealth field for an ordinary tank to read.
 				//
-				// diep's own generic AI.findTarget() (plan.md E3) - the same shared shape
-				// Dominator's own DETEC below uses, so an unpossessed Mothership only fires once
-				// it actually has a live enemy in range instead of always (see the cannons' own
-				// note on why `auto: 1` retired) - `screen`/BASE_SCREEN doubles as its own view range
+				// A live enemy this close is what droneSteer1 (entities/Bullet.js) sends the swarm
+				// after, whether the Mothership is AI-driven (lib/gameAI.js's aiAimInputs) or
+				// piloted (a human's own click) - `screen`/BASE_SCREEN doubles as its own view range
 				// for lack of a captured diep fieldFactor for this class. Detection range, not camera
 				// width - spawn site applies FOV_MUL to the instance's `screen` only, not to this.
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				this.cannons = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
-					// No `auto` (plan.md E3) - diep's shared AI.tick() only force-shoots
-					// (`inputs.flags |= leftclick`) once it actually HAS a target
-					// (`state === hasTarget`), passively spinning with no firing otherwise
-					// (`state === idle`) - `auto: 1` baked a wrong "always attacking" reading of
-					// "spins its own idle aim continuously" onto every cannon, which also meant a
-					// pilot (H-key piloting, plan.md E4) could never hold fire. lib/gameAI.js's
-					// mothershipUpdate() now sets `inputs.e` itself, the same shape
-					// dominatorUpdate() already uses.
-					reload: 90, offTime: 0,
+					// `auto: 1` - the swarm spawns/replenishes continuously up to maxDrone, the same
+					// always-on spawner every other multi-drone class here (Overlord/Overseer) uses,
+					// rather than only refilling while a target happens to be in range. Whether the
+					// live drones actually attack something or just idle-orbit their owner is a
+					// separate decision, made per tick by droneSteer1 off `inputs.e`/`mouseL` - AI-set
+					// by aiAimInputs when unpossessed, or the pilot's own click once possessed.
+					auto: 1, reload: 90, offTime: 0,
 					// `canControlDrones` (TankDefinitions.json id27, plan.md E3): true on even
 					// barrels, false on odd - when a player pilots the Mothership, half its drones
 					// obey the mouse and half stay AI. Type 1 (droneSteer1, entities/Bullet.js)
@@ -4006,7 +4003,9 @@
 					// 0.19634954... rad = pi/16, not 0) - matches the trapezoid body's own
 					// vertices sitting between barrels rather than under them.
 					offdir: Math.PI / 16 + i * Math.PI * 2 / 16, offx: 0, canonLength: 42, rand: 0.174533,
-					speed: 0.5376, pene: 4, damage: 4.9, size: 3.675, weight: 4.2, push: 0.36567, back: 0
+					// The shared drone speed row every drone class here uses, rather than this
+					// class's own lower figure: below it, a maxed tank simply outruns the drones.
+					speed: 0.896, pene: 4, damage: 4.9, size: 3.675, weight: 4.2, push: 0.36567, back: 0
 				}));
 				this.ups = ['Health Regen', 'Reload', 'Max Health', 'Drone Speed', 'Movement Speed', 'Drone Damage', 'Body Damage', 'Drone Health'];
 			}

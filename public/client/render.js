@@ -405,6 +405,16 @@
 							}
 							break;
 						}
+						// Two opposite corner bases - green top-left, red bottom-right.
+						case 'domination': {
+							const s = bs * Global.RATIO;
+							const w = Game.width * Global.RATIO, h = Game.height * Global.RATIO;
+							ctx.fillStyle = Palette.green[0];
+							ctx.fillRect(left, top, s, s);
+							ctx.fillStyle = Palette.red[0];
+							ctx.fillRect(left + w - s, top + h - s, s, s);
+							break;
+						}
 					}
 					// The 2team case used to set globalAlpha and never put it back, so 0.2 leaked
 					// out of background() into whatever drew next.

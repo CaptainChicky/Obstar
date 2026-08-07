@@ -1041,9 +1041,9 @@ function dominatorTests() {
 	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
 	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
 
-	check('same base/team tuning as 2team, just gm and xpMul differ',
+	check('same team tuning as 2team, but a 4team-sized corner base',
 		room.rules.teams.join(',') === '0,1' && room.rules.teamPlay === true &&
-		room.rules.baseSizeRatio.num === 40 && room.rules.baseSizeRatio.den === 400,
+		room.rules.baseSizeRatio.num === 67 && room.rules.baseSizeRatio.den === 400,
 		room.rules.teams.join(','));
 	check('xp is doubled (diep_wiki/Polygons.txt)', room.rules.xpMul === 2, room.rules.xpMul);
 
@@ -1073,7 +1073,33 @@ function dominatorTests() {
 			doms.map((d) => d.screen).join(',') + ' vs ' + expectedScreen);
 	}
 
-	// createDominator() with an explicit variant, for the Sandbox admin command.
+	{
+		const d = room.map.width / 6;
+		check('the four Dominators sit on the corners of a square centred on the arena',
+			doms.every((x) => Math.abs(Math.abs(x.x) - d) < 1e-6 && Math.abs(Math.abs(x.y) - d) < 1e-6) &&
+			new Set(doms.map((x) => Math.sign(x.x) + ',' + Math.sign(x.y))).size === 4,
+			doms.map((x) => x.x.toFixed(1) + '/' + x.y.toFixed(1)).join(' '));
+		const destroyers = doms.filter((x) => x.class === 'Destroyer Dominator');
+		check('both Destroyers sit on the base diagonal, one per base',
+			destroyers.length === 2 && destroyers.every((x) => Math.sign(x.x) === Math.sign(x.y)),
+			destroyers.map((x) => x.class + '@' + Math.sign(x.x) + ',' + Math.sign(x.y)).join(' '));
+		check('the Gunner and the Trapper take the empty diagonal',
+			doms.filter((x) => x.class !== 'Destroyer Dominator')
+				.every((x) => Math.sign(x.x) !== Math.sign(x.y)));
+	}
+	{
+		// Each side spawns inside its own corner and is fenced out of the other's.
+		for (const team of room.rules.teams) {
+			const p = room.spawnPoint({ team: team });
+			check('team ' + team + ' spawns inside its own base',
+				!room.inEnemyBase({ team: team, x: p.x, y: p.y }), p.x + '/' + p.y);
+			check('team ' + team + ' is fenced out of the other corner',
+				room.inEnemyBase({ team: team ? 0 : 1, x: p.x, y: p.y }), p.x + '/' + p.y);
+		}
+	}
+
+	// createDominator() with an explicit variant, for the Sandbox admin command. Adds a 5th
+	// entry to room.dominators, so every geometry check above must run before this point.
 	{
 		const d = room.createDominator(0, 0, 1);
 		check('createDominator(variant) picks the named cannon table, not a random one',
@@ -1206,6 +1232,32 @@ function dominatorTests() {
 			dom.team === before && dom.hp === dom.maxHp, dom.team + ' hp=' + dom.hp);
 	}
 
+	// Team is what decides ally/enemy for every other entity in this engine, and a Dominator is
+	// no exception: two Dominators on the same real team (including both still neutral) are
+	// teammates and must not damage each other, while two on different real teams - captured by
+	// opposite sides, or one still neutral against a captured one - fight for real, through the
+	// actual pair loop rather than a direct collision() call. Each pair gets its own fresh room so
+	// one pass's pair, left sitting at the map centre, cannot bleed into the next.
+	{
+		const pairs = [
+			{ tA: 2, tB: 2, fight: false },
+			{ tA: 0, tB: 0, fight: false },
+			{ tA: 0, tB: 1, fight: true },
+			{ tA: 2, tB: 1, fight: true },
+			{ tA: 2, tB: 0, fight: true }
+		];
+		for (const { tA, tB, fight } of pairs) {
+			const pairRoom = makeRoom('domination');
+			const a = pairRoom.createDominator(0, 0, 0);
+			const b = pairRoom.createDominator(0, 0, 1);
+			a.team = tA; b.team = tB;
+			pairRoom.step();
+			const hurt = a.hp < a.maxHp && b.hp < b.maxHp;
+			check('team ' + tA + ' vs team ' + tB + ' Dominators ' + (fight ? 'damage' : 'do not damage') + ' each other',
+				hurt === fight, 'a.hp=' + a.hp + ' b.hp=' + b.hp);
+		}
+	}
+
 	// Batch F - Dominator/Mothership takeover (FOV transfer). Taking a boss moves the socket's
 	// camera/identity onto it (rooms/Room.js's per-viewer buffer reads `piloting` as its `main`),
 	// you control only it, and - the whole point - the old body dying does NOT open your death
@@ -1311,6 +1363,17 @@ function mothershipTests() {
 			Math.abs(atLevel140 - 0.28940692204312074) < 1e-9, atLevel140);
 		check('...and is materially lower than the level-0 figure (the fresh-tank-speed bug this fixes)',
 			atLevel140 < atLevel0 / 4, atLevel140 + ' vs ' + atLevel0);
+
+		// A Mothership's drones are its only offence, so they have to actually run down a maxed
+		// tank rather than the tank simply walking away from them.
+		const droneSpeedUp = 1 + 0.15 * 7;
+		const motherDrone = CLASS['Mothership'].cannons[0].speed * droneSpeedUp * 10;
+		const overlordDrone = CLASS['Overlord'].cannons[0].speed * droneSpeedUp * 10;
+		const tank30 = Physics.moveAccel(7, 30) * 10;
+		check('a Mothership drone is at least as fast as a maxed Overlord drone',
+			motherDrone >= overlordDrone - 1e-9, motherDrone + ' vs ' + overlordDrone);
+		check('...and outruns a level-30 tank with maxed Movement Speed',
+			motherDrone > tank30, motherDrone + ' vs ' + tank30);
 	}
 
 	// plan.md E3 - `canControlDrones` (TankDefinitions.json id27): true on even barrels, false on
@@ -1644,7 +1707,7 @@ function statSourceTests() {
 			if (source !== statSource) { statSource = source; if (source) { sent.push(source.upNb); } }
 		}
 		tick(pilot); // initial spawn
-		check('initial spawn sends the pilot\'s own snapshot', sent.length === 1 && sent[0] == pilot.upNb);
+		check('initial spawn sends the pilot\'s own snapshot', sent.length === 1 && sent[0] === pilot.upNb);
 		room.togglePossession(pilot);
 		tick(pilot); // H possession
 		check('possessing a Dominator sends its own array', sent.length === 2 && sent[1] === dom.upNb);
@@ -6009,6 +6072,13 @@ function bossProjectileTests() {
 	check('...in Necromancer beige (drawColor 9 = necro), not the body\'s EnemySquare yellow',
 		!!s.d && s.d.drawColor === 9 && s.room.bulletColor(s.d) === 9,
 		s.d && (s.d.drawColor + '/' + s.room.bulletColor(s.d)));
+
+	// A team mode must not repaint a per-cannon drawColor with the boss body's own colour.
+	for (const gm of ['tester', '2team', '4team', 'tag']) {
+		const teamRoom = makeRoom(gm);
+		check('...still beige in ' + gm, teamRoom.bulletColor({ drawColor: 9, color: 13, team: 1 }) === 9,
+			teamRoom.bulletColor({ drawColor: 9, color: 13, team: 1 }));
+	}
 
 	// Arena Closer + Fallen Booster: every bullet is the width of the barrel that fired it (B2).
 	// diep gives both classes' barrels width 42 / sizeRatio 1, so bullet diameter = width; on this

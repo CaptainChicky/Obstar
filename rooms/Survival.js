@@ -1,18 +1,16 @@
 /*
-	Survival - one shrinking arena, no teams, no respawn once it starts, last one standing wins
-	(diepcustom Gamemodes/Survival.ts, plan.md G1/A4).
+	Survival - one shrinking arena, no teams, no respawn once it starts, last one standing wins.
 
-	The one mode in the tree that actually GATES anything on the arena state machine
-	(rooms/Room.js's this.state, plan.md A4) - every other mode opens straight into OPEN and
-	never reads the field again. Here it does real work: COUNTDOWN holds the room open for
-	joining/respawning while it waits for MIN_PLAYERS humans, then OPEN cuts off every future
-	respawn() call and starts the shrink/win-condition loop.
+	The one mode in the tree that actually gates anything on the arena state machine
+	(rooms/Room.js's this.state) - every other mode opens straight into OPEN and never reads the
+	field again. Here it does real work: COUNTDOWN holds the room open for joining/respawning
+	while it waits for MIN_PLAYERS contenders, then OPEN cuts off every future respawn() call and
+	starts the shrink/win-condition loop.
 
-	diep's own MIN_PLAYERS is 6; diepcustom's own server already scales that down to 4 "in
-	Diep.io" per its own comment - kept at 4 here for the same reason. Bots are not seeded at all
-	(diepcustom's own Survival has none, and the whole point of the gate is "wait for real
-	people" - bots would defeat it), so a solo session simply never leaves COUNTDOWN, which is
-	the correct diep behaviour, not a bug to route around.
+	Bots fill out the roster so a solo session actually reaches OPEN: they count toward the start
+	gate and the win condition exactly like a human contender, and they freely respawn while the
+	room is still waiting. Once the match is open nothing comes back, bots included - the arena
+	genuinely runs out of contenders as it shrinks.
 */
 const Room = require('./Room.js');
 const Player = require('../entities/Player.js');
@@ -49,7 +47,7 @@ class Survival extends Room {
 			betaPentRng: 0.99,
 			bossRng: 2,   // diepcustom's Survival gamemode constructs no BossManager hook at all
 			maxBoss: 0,
-			botCount: 0,   // diep's own Survival has none - see this file's header
+			botCount: 5,
 			botIdStart: 10,
 			teams: [1],
 			teamPlay: false,
@@ -71,20 +69,19 @@ class Survival extends Room {
 		// independent of shape/kill XP, while the match is actually open.
 		this.scorePerTick = 0.2;
 	}
-	/* Every connected human, alive or mid-respawn - not diepcustom's own
-	   `clientsAwaitingSpawn.size` (this engine has no separate waiting-room queue, see this
-	   file's header), the closest equivalent this engine can express. */
-	humanCount() {
+	/* Everyone the match is waiting on - humans and bots alike, alive or mid-respawn. Scripted
+	   entities (bosses, Closers) are not contenders. */
+	contenderCount() {
 		let n = 0;
-		for (const p of this.INSTANCE.players.live()) { if (!p.bot && !p.boss && !p.closer) { n++; } }
+		for (const p of this.INSTANCE.players.live()) { if (!p.boss && !p.closer) { n++; } }
 		return n;
 	}
-	/* Every human with a live tank right now - what the shrink formula and the win condition
-	   both read, matching Survival.ts's own getAlivePlayers(). */
-	aliveHumans() {
+	/* Every contender with a live tank right now - what the shrink formula and the win condition
+	   both read. */
+	aliveContenders() {
 		const list = [];
 		for (const p of this.INSTANCE.players.live()) {
-			if (!p.bot && !p.boss && !p.closer && !p.dead && !p.destroy) { list.push(p); }
+			if (!p.boss && !p.closer && !p.dead && !p.destroy) { list.push(p); }
 		}
 		return list;
 	}
@@ -93,7 +90,7 @@ class Survival extends Room {
 	   back below MIN_PLAYERS during the wait never sneaks into OPEN early. */
 	manageCountdown() {
 		if (this.state !== Room.ArenaState.COUNTDOWN) { return; }
-		const humans = this.humanCount();
+		const humans = this.contenderCount();
 		this.playersNeeded = Math.max(0, MIN_PLAYERS - humans);
 		if (this.playersNeeded > 0) {
 			this.ticksUntilStart = COUNTDOWN_TICKS;
@@ -115,7 +112,7 @@ class Survival extends Room {
 	   check the win condition (one player left, or the room started with exactly one and that
 	   one is still standing). */
 	updateSurvivalState() {
-		const alive = this.aliveHumans();
+		const alive = this.aliveContenders();
 		this.setSurvivalArenaSize(alive.length);
 		if (alive.length <= 1 && this.state === Room.ArenaState.OPEN) {
 			this.state = Room.ArenaState.OVER;
@@ -175,6 +172,11 @@ class Survival extends Room {
 	respawn(id, force = 0, bot = 0) {
 		if (this.state === Room.ArenaState.OPEN && !force) { return; }
 		return super.respawn(id, force, bot);
+	}
+	/* Bots refill freely while the room is still waiting to start; once the match is open nothing
+	   comes back, bots included. */
+	botBudget(humanCount) {
+		return (this.state === Room.ArenaState.COUNTDOWN) ? Infinity : 0;
 	}
 };
 

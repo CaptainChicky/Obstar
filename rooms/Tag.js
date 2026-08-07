@@ -354,9 +354,6 @@ class Tag extends Room {
 	mainColor(player) {
 		return player.team;
 	}
-	bulletColor(bullet) {
-		return bullet.color ? bullet.color - 1 : bullet.team;
-	}
 	leaderColor(player, viewerId) {
 		return player.team;
 	}

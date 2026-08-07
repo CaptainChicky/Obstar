@@ -116,6 +116,16 @@ body {
 	background-image: linear-gradient(to right, #36e27f, #ffd400, #ff5242);
 }
 
+/* Mothership: the two team colours with the flagship's own steel hull between them. */
+#gamemode-box .mothershipgm {
+	background-image: linear-gradient(to right, #36e27f, #6fa8dc, #ff5242);
+}
+
+/* Survival: the closing arena, in scorched amber - there are no teams here to take a colour from. */
+#gamemode-box .survivalgm {
+	background-image: linear-gradient(to left top, #4a1c1c, #7a2e12, #b4531a, #e08a2b, #f2c14e);
+}
+
 /* Height is set from JS (public/queue.js's syncGamemodeListHeight()) to match .right-zone's own
    rendered height - CSS alone can't know that ahead of the account chip/info panel's real content.
    overflow-x hidden since a button's own width already fits the box; only the vertical list scrolls.
