@@ -6651,6 +6651,54 @@ function defenderGeometryTests() {
 }
 
 /*
+	Summoner boss geometry, same axis as defenderGeometryTests above. Anchored to diepcustom
+	Summoner.ts / SummonerSpawnerDefinition (scaleFactor 1, SUMMONER_SIZE 150 du).
+*/
+function summonerGeometryTests() {
+	console.log('\nSummoner geometry (re-derived off Summoner.ts, scaleFactor 1):');
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const CLIENT = require('./clientTanks.js')().class;
+	const near = (a, b) => Math.abs(a - b) < 0.02;
+
+	const K = 0.56, CS = 35;
+	const SUMMONER_SIZE = 150;
+	const SPAWN_LEN_DU = 135, SPAWN_W_DU = 71.4;   // SummonerSpawnerDefinition size/width
+	const DRONE_RAD_DU = 55 * Math.SQRT1_2;          // bullet.sizeRatio cancels barrel.width/2
+
+	const boss = CLASS['Summoner'], cli = CLIENT['Summoner'];
+	const bossSize = boss.bossSize;
+	const conv = (du) => du * K * CS / bossSize;
+	const r = bossSize / CS;
+
+	check('body is a square at SUMMONER_SIZE 150 du (bossSize = 150*K*cos(pi/4))',
+		near(bossSize, SUMMONER_SIZE * K * Math.cos(Math.PI / 4)) && cli.body.sides === 4,
+		bossSize + ' / sides ' + cli.body.sides);
+	check('drawn circumradius = SUMMONER_SIZE * K (bossSize * sqrt(2))',
+		near(bossSize * Math.SQRT2, SUMMONER_SIZE * K),
+		(bossSize * Math.SQRT2).toFixed(3) + ' vs ' + (SUMMONER_SIZE * K));
+
+	const spawners = boss.cannons;
+	check('4 spawner cannons (SummonerSpawnerDefinition x4)', spawners.length === 4, spawners.length);
+	check('canonLength re-derived off SummonerSpawnerDefinition size 135 du (44.548)',
+		spawners.every((c) => near(c.canonLength, conv(SPAWN_LEN_DU))),
+		spawners.map((c) => c.canonLength).join(','));
+	const cc = cli.cannons;
+	check('client height === server canonLength',
+		cc.length === 4 && cc.every((c, i) => near(c.height, spawners[i].canonLength)),
+		cc.map((c) => c.height).join(','));
+	check('client width re-derived off SummonerSpawnerDefinition width 71.4 du (23.561)',
+		cc.every((c) => near(c.width, conv(SPAWN_W_DU))), cc.map((c) => c.width).join(','));
+	const barLenWorld = cc.map((c) => c.height * r);
+	check('rendered barrel length = 135 du x 0.56 (75.6 units)',
+		barLenWorld.every((d) => near(d, SPAWN_LEN_DU * K)), barLenWorld.map((d) => d.toFixed(2)).join(','));
+	const droneRadDu = spawners.map((c) => c.size * r / K);
+	check('drone radius = 55*sqrt(1/2) du (spawned 21.78 units)',
+		droneRadDu.every((d) => near(d, DRONE_RAD_DU)), droneRadDu.map((d) => d.toFixed(2)).join(','));
+	check('body rot -PI/4 (edge-up, not corner-up)',
+		near(cli.body.rot, -Math.PI / 4), cli.body.rot);
+}
+
+/*
 	Survival's lobby state machine (rooms/Survival.js): the gather/pad/countdown gate, the bot
 	grace window and pacing, and the hard no-respawn-once-open rule. All three are pure ordering/
 	timing logic invisible from a single playtest session - a 20s grace and a 10s countdown are
@@ -6768,6 +6816,7 @@ factoryPlayerSpawnTests();
 bossProjectileTests();
 autoTurretMultiTargetTest();
 defenderGeometryTests();
+summonerGeometryTests();
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);
