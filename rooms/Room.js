@@ -315,7 +315,7 @@ const NO_OWN_TEAM_TYPES = new Set([0, 1.2, 1.3, 4]);
 // Mothership's type-1.1 half) uncovered - the exact bug reported ("battleship drones
 // should not have knockback and interact with anything on its own team", "mothership should be
 // able to overlap with its own drones").
-const SAME_OWNER_TYPES = new Set([1, 1.1, 1.5, 2, 3]);
+const SAME_OWNER_TYPES = new Set([1, 1.1, 1.5, 2, 3, 3.1]);
 function teamRoot(e, kind) {
 	return kind === KIND.BULLET ? e.origin.oId : (kind === KIND.PLAYER ? e.id.oId : null);
 }

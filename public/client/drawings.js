@@ -328,7 +328,9 @@
 					const mountDir = c.ring ? Drawings.ringMountDir(c, param) : (param.dir + c.offdir);
 					ctx.translate(Math.cos(mountDir) * c.distance * r, Math.sin(mountDir) * c.distance * r);
 				}
-				ctx.rotate(param.canDir[i] ? param.canDir[i] : 0);
+				// a ring turret with no live canDir defaults to pointing radially outward
+				const aimDir = param.canDir[i] ? param.canDir[i] : (c.ring ? Drawings.ringMountDir(c, param) : 0);
+				ctx.rotate(aimDir);
 				ctx.moveTo(0, (c.offx - c.width / 2) * r);
 				ctx.lineTo(0, (c.offx + c.width / 2) * r);
 				ctx.lineTo((c.height * recoil) * r, (c.offx + c.width / 2 + c.open / 2) * r);
