@@ -13,8 +13,6 @@
 - **Finish gamemodes one by one** — sandbox gaps (party links, arena/shape scaling, bosses
   after 50–60 min), survival arena management, mothership/survival polish.
 
-- **H to take control** of Dominator/Mothership needs fine tuning and balancing.
-
 - **XP gain rate** — too much xp gained too fast?
 
 - **Summoner/Guardian drone push-through** — their drones should not push the boss body, just

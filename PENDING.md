@@ -107,12 +107,6 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
 
 - **Maze**: minor wall-on-wall visual overlap remains. (Spawn-inside-wall is fixed —
   `rooms/Maze.js`'s `spawnPoint()` rejects candidates via `clearOfWalls()`.)
-- **A gamemode switcher on the death screen.** Not started. It is not a drawing job: `ui.js`'s
-  `END` is canvas-only with no hit-testing of its own, and the only path into a different mode is
-  `POST /play` (`web/app.js`), which sets the `preference` cookie and re-renders `play.ejs` — so
-  this needs a click region, a form POST or an equivalent navigation, and a decision about whether
-  the socket closes cleanly first. The "Enter respawns immediately" half of the same issues.md
-  line is done (`rooms/Room.js`'s `respawn()` gate, pinned by `test/rooms.js`).
 
 ## Knowingly wrong / do-not-"fix"
 
