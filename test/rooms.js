@@ -3197,6 +3197,14 @@ function baseDroneAiTests() {
 		const drone = room.INSTANCE.bullets.get(post.slot);
 		drone.crossIn = 1e9; drone.levelTimer = 1e9;
 		drone.switchCooldown = 0; drone.reactPending = 0; drone.tooClose = 0;
+		// Pin room state: silence other drones' DETEC and clear stray shapes so ours has a clear path.
+		for (const p of room.dronePosts) {
+			if (p === post) continue;
+			const d = room.INSTANCE.bullets.get(p.slot);
+			if (d && d.DETEC) { d.DETEC.select = 0; d.DETEC.enabled = 0; }
+		}
+		for (const o of room.INSTANCE.objs.live()) { o.destroy = 1; }
+		room.step();
 		const beforeLevel = drone.level;
 		// One tick ahead of the drone along its own ring, so they meet within a few ticks.
 		const ang = Math.atan2(drone.y - drone.oy, drone.x - drone.ox) + (drone.spin || 1) * 0.06;
@@ -5469,7 +5477,7 @@ function crasherChaseTests() {
 	// maxspeed/2 cap, not diep's own chase terminal.
 	{
 		const sq = new Objects('bull', 'bull', { GM: room.gm, sId: room.id, oId: -1 }, room.map, room);
-		sq.x = 0; sq.y = 0; sq.vec.x = 5; sq.vec.y = 0;
+		sq.x = 0; sq.y = 0; sq.rx = 0; sq.ry = 0; sq.vec.x = 5; sq.vec.y = 0; // home = start, no edge/HOME_PULL
 		for (let i = 0; i < 400; i++) { sq.update(); }
 		check('idle drift (no live DETEC target) is unaffected by the chase rewrite',
 			sq.vec.length() < 1, sq.vec.length());

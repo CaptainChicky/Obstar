@@ -279,13 +279,9 @@ diep"**; the codebase map and load-bearing invariants (the two frictions, `weigh
   barrel is width 42 / sizeRatio 1 in diep (bullet diameter = width); on the 0.7 axis that is
   bullet radius 14.7 against a drawn barrel width 29.4 = 2 * 14.7. Now pinned in
   `bossProjectileTests()` against diep's own 42 (not back-derived from the client width).
-- **The clientDiff golden did NOT move in B2 and is still stale from B1.** B1's rendering changes
-  moved it from the recorded `281738/3e2fc0d8` to `314622/d032c652` and were never rebaselined
-  (per the user: "don't bother - B1 changes golden"). B2 was verified to add ZERO further movement
-  (identical `314622/d032c652` before and after) because the seeded ffa/2team/4team/boss replay
-  draws no Guardian, Summoner, or Dominator - which is exactly why B2's rendering is guarded by
-  `bossProjectileTests()` instead. So `npm test` still fails at clientDiff on the B1 delta; that
-  rebaseline is a B1 follow-up, out of B2 scope.
+- **The clientDiff golden was rebaselined** to `297099/410e33bd`. If `npm test` fails on it after
+  further changes, rebaseline with `OBSTAR_DIFF_CAPTURE=1 node test/clientDiff.js` and paste the
+  new values into `GOLDEN` in `test/clientDiff.js`.
 
 ## Still open from issues.md (second batch)
 
@@ -331,11 +327,8 @@ research question - the source for every one of them is cited here so nobody has
   the SAME `Drawings.turrets[0]` canDir-tracking render Auto Smasher uses, so the barrels track and
   idle-spin identically. Any FUTURE centered/ring auto-turret still rendering frozen at its resting
   `offdir` (a plain `aboveBody` cannon) should move onto the same mechanism.
-- **Skimmer** (`Skimmer.ts`): `SkimmerBarrelDefinition` size 70 / width 42, two opposed sub-barrels,
-  drawn BELOW the main bullet. `skimmerandbullet.png` at the repo root is the reference, with
-  measured proportions in issues.md.
-- **Maze**: choose the player spawn area AFTER the walls are generated so a spawn inside a wall is
-  impossible, and remove the remaining minor wall-on-wall visual overlap.
+- **Maze**: minor wall-on-wall visual overlap remains. (Spawn-inside-wall is fixed —
+  `rooms/Maze.js`'s `spawnPoint()` rejects candidates via `clearOfWalls()`.)
 - **Base drones overshoot** a target they cannot kill quickly, circling too fast - left alone this
   pass (Batch C/D session): `BASE_DRONE_CHASE_SPEED`/`_CHASE_TURN` are diep-derived (756 u/s flat,
   a turn radius pinned to one tank diameter - `lib/config.js`'s own citations), not ad-hoc tuning
