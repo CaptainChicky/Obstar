@@ -79,13 +79,13 @@ cookie.
 
 | File | Lines | Role |
 |---|---|---|
-| `server.js` | 69 | **The only entry point.** Crash handler, flags, `boot()`, one http server. |
+| `server.js` | 55 | **The only entry point.** Crash handler, flags, `boot()`, one http server. |
 | `web/app.js` | 205 | `createApp()` — the Express site. Menu, cookies, shop purchase, leaderboard reads. Opens no port. |
 | `lib/boot.js` | 22 | Constructs the `Controller` singleton, memoised. |
-| `net/gameSocket.js` | 336 | `attach(httpServer, controller)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
-| `lib/Controller.js` | 660 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
+| `net/gameSocket.js` | 370 | `attach(httpServer, controller)`: `income()` router, per-socket `loop`, `talk()`, `kick()`. |
+| `lib/Controller.js` | 653 | `Main` — the singleton controller. Connections, rooms, chat, admin commands, leaderboard. |
 | `lib/clock.js` | 160 | Fixed-timestep clock (§4). One accumulator drives every room's `step()`. |
-| `rooms/Room.js` | 1848 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, Dominators, per-player views. Takes a `controller` constructor argument (§3). |
+| `rooms/Room.js` | 2446 | **The simulation, once.** Tick, quadtree, collision, spawning, bosses, Dominators, per-player views. Takes a `controller` constructor argument (§3). |
 | `rooms/index.js` | 19 | **The one list of gamemodes**, keyed by the string the client's `init` packet sends. |
 | `rooms/Ffa.js` | 43 | Free-for-all: tunables only. `Room`'s defaults *are* ffa's behaviour. |
 | `rooms/TwoTeam.js` | 147 | 2-team: two base strips, guard drones, team colours. Constructor takes an optional `extraRules` param that `Domination.js` merges over. |
@@ -93,13 +93,16 @@ cookie.
 | `rooms/BossMode.js` | 45 | Boss hunt: ffa with the boss knobs turned up. |
 | `rooms/Tag.js` | 358 | Tag: 4 teams, no bases, killer-tags-victim respawn, timed arena shrink, per-team leaderboard, ×3 xp, Arena Closer win condition. No new entity types — a Closer is a `Player` bound to `CONFIG.CLOSER`, like a boss. |
 | `rooms/Maze.js` | 211 | Maze: ffa's own tuning plus a real generated rectangular wall layout (`lib/mazeGenerator.js`), a real minimap RECTANGLE per wall, a 5-hour close reusing Tag's Arena Closer swarm. |
-| `rooms/Tester.js` | ~280 | **A diagnostic room, not a game mode.** Godmode player alternating green/red per death, both base layouts at once, one of each boss (respawned), all three Dominators, a Mothership (respawned) and an Arena Closer on a 5s-on/15s-off duty cycle. No new entity kinds - every one of those is composed out of hooks `Room` already has. |
+| `rooms/Mothership.js` | 219 | Mothership: two sides, each team's "base" is a real killable Mothership tank. Lose yours and Arena Closers end the match. No drone-post base strip. |
 | `rooms/Domination.js` | ~40 | Domination: `TwoTeam`'s own base/tuning plus 4 neutral Dominators placed from `build()`. No new entity types — a Dominator is a `Player` bound to `CONFIG.DOMINATOR`. |
-| `entities/Player.js` | 983 | Tank entity: motion, shooting, upgrades, class changes, collision — including a Closer's invincibility guard and a `lastAttacker` write a Dominator's AI reads. Takes a `room` constructor argument (§3). |
-| `entities/Bullet.js` | 1384 | Projectiles, incl. drone/trap/necro behaviour and the base-drone steering field. Takes a `room` constructor argument. |
+| `rooms/Sandbox.js` | 57 | Sandbox: single-player godmode room with self-levelling and class selection. |
+| `rooms/Survival.js` | 250 | Survival: countdown lobby, bot padding after a grace period, no respawn once the match opens. |
+| `rooms/Tester.js` | ~280 | **A diagnostic room, not a game mode.** Godmode player alternating green/red per death, both base layouts at once, one of each boss (respawned), all three Dominators, a Mothership (respawned) and an Arena Closer on a 5s-on/15s-off duty cycle. No new entity kinds - every one of those is composed out of hooks `Room` already has. |
+| `entities/Player.js` | 1202 | Tank entity: motion, shooting, upgrades, class changes, collision — including a Closer's invincibility guard and a `lastAttacker` write a Dominator's AI reads. Takes a `room` constructor argument (§3). |
+| `entities/Bullet.js` | 2031 | Projectiles, incl. drone/trap/necro behaviour and the base-drone steering field. Takes a `room` constructor argument. |
 | `entities/Objects.js` | 296 | Farmable polygons, incl. the Closer body-damage exemption. Takes a `room` constructor argument. |
 | `entities/Detector.js` | 96 | Invisible "vision cone" query entity used by AI. A leaf — no `room`/`controller` reference needed. |
-| `lib/gameAI.js` | 690 | Bot/boss/pet/Arena-Closer/Dominator AI. A plain module — `module.exports = CONFIG` directly. Bots steer through `Physics.stepBody` (tank `FRICTION`); the boss's drift, the Closer's chase, the Dominator (stationary) and the pet do not. |
+| `lib/gameAI.js` | 1095 | Bot/boss/pet/Arena-Closer/Dominator/Mothership AI. A plain module — `module.exports = CONFIG` directly. Bots steer through `Physics.stepBody` (tank `FRICTION`); the boss's drift, the Closer's chase, the Dominator (stationary) and the pet do not. |
 | `lib/quadTree.js` | 124 | Spatial index for broad-phase collision. |
 | `lib/SlotMap.js` | 147 | Server-only integer-slot entity store (allocation, `KEEP_PLACE` tombstoning, live iteration) behind `INSTANCE.players`/`objs`/`bullets`/`detectors`. `maxIndex` is the highest allocatable id, not a capacity. |
 | `lib/crash.js` | 47 | Fail-fast crash handler (both entry points share it). |
@@ -116,8 +119,8 @@ cookie.
 | `lib/botNames.js` | 1 | Bot name list. Non-ASCII, deliberately. |
 | `public/SHARE/kinds.js` | 37 | Entity type tags (`KIND`), used for `obj.kind` dispatch. Dual-mode: server `require()` + client global. |
 | `public/SHARE/World.js` | 22 | The one grid-pitch constant (`GU`/`gu()`) — 1 grid square = 1 diep grid unit = 28 world units. |
-| `public/SHARE/SocketSchema.js` | 1005 | Binary wire protocol, declarative (§5). Dual-mode. |
-| `public/SHARE/TanksConfig.js` | 3123 | Tank classes, stats, barrels, upgrade tree. Shared client/server. Cross-checked against itself by `test/tanks.js`. |
+| `public/SHARE/SocketSchema.js` | 1078 | Binary wire protocol, declarative (§5). Dual-mode. |
+| `public/SHARE/TanksConfig.js` | 4177 | Tank classes, stats, barrels, upgrade tree. Shared client/server. Boss geometry (Defender, Summoner, Mothership) is cross-checked by dedicated tests in `test/rooms.js`. |
 | `public/SHARE/Physics.js` | 112 | **The one movement integrator** (`moveAccel`/`stepBody`/`FRICTION`) — `entities/Player.js`, `lib/gameAI.js`'s bots and `public/client/game.js` all call into it. Its `FRICTION` is the **tank's**; bullets/shapes/the boss decay through `lib/constants.js`'s `BODY_FRICTION`. |
 | `public/SHARE/ObjectsConfig.js` | 22 | Rarity tiers for farmable polygons (Shiny, packed into 3 bits of the existing `states` field). |
 | `public/SHARE/PetsConfig.js` | 132 | Cosmetic pet definitions. |
@@ -125,11 +128,11 @@ cookie.
 | `public/client/runtime.js` | 38 | **Late-bound client registry** (`CLIENT`). Purely a client-side sequencing device for scripts loaded by `<script>` tag with no bundler. |
 | `public/client/config.js` | 177 | `CONST`, palette `C`, `CLASS`/`CLASS_TREE`, mutable bags `Global`/`Game`. |
 | `public/client/util.js` | 148 | `roundedPoly`, `roundRect`, `sleep`, the `General` namespace, `NET`/`Interp`. |
-| `public/client/drawings.js` | 324 | Shape table: one function per body/barrel/turret/bullet/pet. |
-| `public/client/entities.js` | 675 | `Tank`, `Obj`, `Bullet` — everything the server can put in the world. `Obj.update()` derives a Crasher's facing from its own movement delta (the wire has no facing angle). |
+| `public/client/drawings.js` | 734 | Shape table: one function per body/barrel/turret/bullet/pet. |
+| `public/client/entities.js` | 648 | `Tank`, `Obj`, `Bullet` — everything the server can put in the world. `Obj.update()` derives a Crasher's facing from its own movement delta (the wire has no facing angle). |
 | `public/client/render.js` | 241 | `initRender()` (off-screen sprite caches), `initBackground()` (grid + team zones). |
-| `public/client/ui.js` | 1395 | `initUi()`: minimap, stats, upgrades, class picker, leaderboard, messages, death screen, doors. |
-| `public/client/game.js` | 908 | `CLIENT.Run()`: world state, camera, input, frame loop, `SetPacket`, `onmessage`. |
+| `public/client/ui.js` | 1800 | `initUi()`: minimap, stats, upgrades, class picker, leaderboard, messages, death screen, doors. |
+| `public/client/game.js` | 1011 | `CLIENT.Run()`: world state, camera, input, frame loop, `SetPacket`, `onmessage`. |
 | `public/client/overlay.js` | 240 | `General.DEV` and `General.CHAT` — the two DOM-rendered widgets. |
 | `public/client/boot.js` | 156 | `preRun()`: connecting screen, socket handshake, handover to `CLIENT.Run()`. |
 | `public/motion.js` | 376 | Client motion primitives (§6): snapshot interpolation, frame-rate-independent smoothing. |
@@ -138,7 +141,7 @@ cookie.
 | `public/font.js` | 851 | Animated canvas background on the menu, incl. the per-mode "door" reveal. |
 | `views/index.ejs` | 187 | Menu page. |
 | `views/play.ejs` | 131 | Game page. **`<script>` order is the client's dependency graph** — §6. |
-| `test/*.js` | ~2835 total | 9 suites, see §8. |
+| `test/*.js` | ~9900 total | 8 suites + 2 helpers, see §8. |
 
 `public/SHARE/` is loaded by `<script>` in the browser **and** by `require()` in Node, via a
 `typeof(exports)` sniff footer. `public/motion.js` and everything in `public/client/` carry the
@@ -209,9 +212,14 @@ The things in this codebase that are *not* obvious from reading the code around 
   non-obvious knock-on: standing *inside* another body is no longer possible, which is why a
   boss's aggro radius has to be measured from its hull rather than its centre (PENDING).
   **The tank-vs-shape arm has no equivalent overlap resolution** — open, see PENDING.
-  `public/SHARE/TanksConfig.js`'s client (drawn) and server (spawn) cannon tables are
-  cross-checked index-by-index by `test/tanks.js`, which fails `npm test` on drift instead of
-  relying on a comment asking the next editor to keep two hand-authored tables in sync.
+  `public/SHARE/TanksConfig.js`'s client (drawn) and server (spawn) cannon tables for
+  boss-scale entities (Defender, Summoner, Mothership) are cross-checked by dedicated geometry
+  tests in `test/rooms.js` (`defenderGeometryTests()`, `summonerGeometryTests()`,
+  `mothershipGeometryTests()`). `test/tanks.js` (the old per-class cross-check covering every
+  class) was removed — its `diepCitations()` pass assumed the normal-tank barrel identity
+  (`du × 0.7`) for every class, which is wrong for boss-scale entities; the boss geometry tests
+  replaced its coverage for those classes. `test/clientTanks.js` (the `vm`-based helper that
+  loads TanksConfig in client mode) remains for use by any test that needs the client half.
 - **Health, regen and the damage model are diep's own shape**, though the *magnitude* of damage
   itself is currently wrong on a stale scale factor — see [plan.md](plan.md) item D1 before
   touching any damage number. What's structurally correct and load-bearing:
@@ -615,20 +623,20 @@ pattern, gated behind `config.DB.AUTH`:
 
 ## 8. Test coverage
 
-`npm test` runs 9 suites in dependency order (cheapest/most load-bearing first):
+`npm test` runs 8 suites in dependency order (cheapest/most load-bearing first):
 
 | Suite | What it covers |
 |---|---|
 | `test/proto.js` | Wire protocol: golden bytes, self-sizing, round trips, input validation, Unicode, `UiUpdate.map`, Objects rarity-tier bits, the `Walls` record. |
-| `test/tanks.js` | Cross-checks `TanksConfig.js`'s client (drawn) and server (spawn) cannon tables index-by-index, via a client-mode load of the file (`test/clientTanks.js`) — every whitelisted deviation carries a reason, re-verified live each run rather than trusted to sit in the file forever. `offdir` is compared mod 2π (`sameAngle()`). |
 | `test/interp.js` | Client motion arithmetic. |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
-| `test/rooms.js` | All six gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner detecting a nearby player, `respawn()` carrying a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, killability, respawn delay, the base fence's bullet margin), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A), the FOV formula, the 45/7/33 upgrade economy and its client-mirrored constants, `Room.rejectSample()`'s hard cap and fallback on an unsatisfiable/too-small map. Tag's win condition (team reassignment not a random match, to stay unseeded-RNG-free; a spawned Closer takes no damage/knockback; `respawn()` no-ops once `closing`; a stealth class settles at `rules.invisFloor`). `KIND.WALL` direct-collision tests. No socket, built via `boot()`. |
+| `test/rooms.js` | All ten gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner detecting a nearby player, `respawn()` carrying a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, killability, respawn delay, the base fence's bullet margin), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A), the FOV formula, the 45/7/33 upgrade economy and its client-mirrored constants, `Room.rejectSample()`'s hard cap and fallback on an unsatisfiable/too-small map. Tag's win condition (team reassignment not a random match, to stay unseeded-RNG-free; a spawned Closer takes no damage/knockback; `respawn()` no-ops once `closing`; a stealth class settles at `rules.invisFloor`). `KIND.WALL` direct-collision tests. Boss geometry re-derivation for Defender, Summoner, and Mothership (`defenderGeometryTests()`, `summonerGeometryTests()`, `mothershipGeometryTests()`) — anchored against diepcustom's own du figures, not just client-vs-server consistency. Survival's countdown gate, bot grace period, and no-respawn-once-open rule. Mothership's spawn, HP, level, win condition, drone saturation, possession, and regen. No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, that the input-prediction lead reaches the same steady state at 30/60/144fps, dead-reckoning behaviour, own-bullet ramp; a `Walls` instance draws/updates without throwing. |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. |
-| `test/smoke.js` | End-to-end: real socket, real protocol, real server, all six modes. |
+| `test/smoke.js` | End-to-end: real socket, real protocol, real server, all ten modes. |
 | `test/web.js` | The merged entry point: one port serves site + socket, `play.ejs` script order, split-mode wiring, and that the auth routes degrade to a clean `{error}` (never a 500) with `DB.AUTH` off. |
 | `test/clientProto.js` | Loads `SocketSchema.js` in *client* mode inside Node via `vm` — used by the above, not a standalone suite. |
+| `test/clientTanks.js` | Loads `TanksConfig.js` in *client* mode inside Node via `vm` — used by geometry tests in `test/rooms.js`, not a standalone suite. |
 
 **What's not covered:** a full match beyond the first minute, two real human players in one room,
 the client under real browser frame timing, the full signup→login DB round trip, admin

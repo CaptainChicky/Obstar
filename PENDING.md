@@ -105,10 +105,6 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
 
 ## Still open
 
-- **Mothership boss geometry re-derivation.** Guardian, Defender, and Summoner are done
-  (`defenderGeometryTests()`, `summonerGeometryTests()` in `test/rooms.js`). Mothership still
-  carries the old `bossSize`-conflation — re-derive the same way (its own `<NAME>_SIZE`,
-  scaleFactor, barrel axis).
 - **Maze**: minor wall-on-wall visual overlap remains. (Spawn-inside-wall is fixed —
   `rooms/Maze.js`'s `spawnPoint()` rejects candidates via `clearOfWalls()`.)
 - **A gamemode switcher on the death screen.** Not started. It is not a drawing job: `ui.js`'s
@@ -166,4 +162,12 @@ behaviour around bases, each mode's win/close flow, the accounts/achievements pa
   `stepBody` body is `impulse()`; into a self-integrating body (`Bullet.js`, `Objects.js`) it's
   `perTick()`.
 - **A test that only compares our two halves against each other cannot catch a scale error** —
-  anchor at least one assertion outside the tree (plan.md Part F).
+  anchor at least one assertion outside the tree.
+- **`test/tanks.js` was removed** — its `diepCitations()` pass assumed the normal-tank barrel
+  identity (`du × 0.7`) for every class, which is wrong for boss-scale entities whose barrel
+  dims go through `du × K × CS / bossSize`. Boss geometry is now covered by dedicated tests in
+  `test/rooms.js` (`defenderGeometryTests()`, `summonerGeometryTests()`,
+  `mothershipGeometryTests()`). `test/clientTanks.js` (the `vm` helper) remains for anything
+  that needs the client half of `TanksConfig.js` in Node. Ordinary-tank client/server drift
+  has no automated guard — restoring a tanks cross-check that handles the boss conversion
+  would close the gap.

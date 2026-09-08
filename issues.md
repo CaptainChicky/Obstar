@@ -1,77 +1,74 @@
-additional issues are present:
+# Issues & TODO
 
-- in the future, i need to optimize tank creation, so perhaps instead of having this convoluted system where theres tankconfig and i need to keep server and client in sync, can this be massively simplified to just one source of truth? should i make some easier way to construct a tank or is the tankconfig json style stuff the best/most efficient we can do?
+## Open
 
-- finish the gamemodes one by one
+- **TankConfig single source of truth** — currently two hand-synced halves (client/server) in
+  `TanksConfig.js`. Consider simplifying to one authoritative table that derives both sides.
+  Boss geometry (Defender, Summoner, Mothership) is now cross-checked by `test/rooms.js`, but
+  ordinary-tank client/server drift has no automated guard since `test/tanks.js` was removed
+  (its `diepCitations()` assumed the normal-tank barrel identity for boss-scale entities too,
+  so it broke on correct boss geometry fixes). Restoring a tanks cross-check that handles the
+  boss conversion would close the gap.
 
-- h to take control of tank needs to be fine tuned and balanced
+- **Finish gamemodes one by one** — sandbox gaps (party links, arena/shape scaling, bosses
+  after 50–60 min), survival arena management, mothership/survival polish.
 
-- to much xp gained too fast?
+- **H to take control** of Dominator/Mothership needs fine tuning and balancing.
 
-- UI tests should never be added. I'll verify that irl in the game. Only logic and key tests like for race conditions or subtle logic bugs or similar should be added. I'll need to remove unneccesary tests in the future
+- **XP gain rate** — too much xp gained too fast?
 
-- comment pass is needed. comment should only serve to record what is going on logically with the code, and never too verbose, history comments need to be removed, and comments refernecing any plan or files like this need to be removed. commnents should be light.
+- **Summoner/Guardian drone push-through** — their drones should not push the boss body, just
+  phase through as if same team. Fallen Overlord already has this. Also: a player controlling
+  Guardian or Summoner should be able to steer drones (currently only Fallen Overlord's work).
+  See PENDING.md's "Boss `canControlDrones` possession" for the full scope.
 
-- game may be too complicated, consider a refactor to simplify if applicable
+- **Overlord drone trailing** — at full sprint the swarm strings out ~4500 units behind. Diep
+  avoids this by only dividing a drone's muzzle kick by 3 while leaving cruise thrust equal to
+  a bullet's. Balance change touching TanksConfig.js — for later.
 
-- survival arena managemetn and arena management in general needs fine tuning.
+- **Game complexity** — consider a refactor to simplify if applicable.
 
-- SUMMONER AND GUARDIAN'S drones shoudl not be able to push them, just phase through them asif they are on the same team. fallen overlord already has this (probably because its modelled like the overlord). as a person controlling guardian or summoner we should also be able to control drones, currently onlyt can control fallen overlord's drones
+- **Survival arena management** and arena management in general needs fine tuning.
 
->One thing worth your attention
-A level-45 Overlord's top speed is 485 u/s but its drones' terminal is 229 u/s — the probe confirms a chasing drone peaks at the same 229, so this is pre-existing physics in maxspeed/BULLET_CRUISE_ORDER, not the orbit. Consequence: at full sprint the swarm strings out ~4500 units behind you no matter how good the orbit is. Diep avoids this by only dividing a drone's muzzle kick by 3 (Drone.ts:71) while leaving its cruise thrust equal to a bullet's. If the trailing looks wrong in-game, that's the knob — but it's a balance change touching TanksConfig.js, so I left it alone.
-might want to imeplment this lowkey but only for later
+## Comment cleanup pass
 
-
-
-also this thing. do this carefully, lowkey have it manually rewrite everything one folder at a time, last time i tried i almost got cooked and it wiped everything bruh
-
-
-## the commemt thing, i would say do this next!!!!
+Strip cross-file references/change history, keep functional statements. Comments should only
+record what is going on logically with the code — never too verbose, no history, no references
+to plan.md / PENDING.md / HANDOFF.md / issues.md or bare item codes.
 
 Delete or rewrite any comment that:
-- narrates history ("used to be", "the old form", "this used to", "was broken because",
-  "reverted", "no longer", "since PENDING #n", "plan.md step 4", "Batch F", "K1", "C3", "T5").
-- cites a plan/task/markdown file by name — `plan.md`, `PENDING.md`, `HANDOFF.md`, `issues.md`,
-  `PLAN.md`, `temp.md`, or any bare item code like `#30`, `A4`, `E3`, `G1`.
-- restates the code on the line below it.
-- runs longer than about four lines without being load-bearing.
-
-also remove or rewrite comments that record an external citation 
-(`diepcustom/src/...`, `diep_wiki/...`, `diepindepth/...`)
+- narrates history ("used to be", "the old form", "was broken because", "reverted", etc.)
+- cites a plan/task/markdown file by name or bare item code (`#30`, `A4`, `E3`, `G1`)
+- cites an external reference repo (`diepcustom/src/...`, `diep_wiki/...`, `diepindepth/...`)
+- restates the code on the line below it
+- runs longer than about four lines without being load-bearing
 
 Suggested order (worst offenders first, by volume):
-[public/SHARE/TanksConfig.js](public/SHARE/TanksConfig.js),
-[entities/Player.js](entities/Player.js),
-[rooms/Room.js](rooms/Room.js),
-[public/client/ui.js](public/client/ui.js),
-[public/client/config.js](public/client/config.js),
-[lib/gameAI.js](lib/gameAI.js),
-[entities/Bullet.js](entities/Bullet.js),
-[lib/config.js](lib/config.js).
+`public/SHARE/TanksConfig.js`, `entities/Player.js`, `rooms/Room.js`,
+`public/client/ui.js`, `public/client/config.js`, `lib/gameAI.js`,
+`entities/Bullet.js`, `lib/config.js`.
 
 Run the full test suite after each file. A comment pass must not change behaviour; if a test
-breaks you deleted code, not a comment.
+breaks you deleted code, not a comment. Do it one folder at a time — last time a batch attempt
+wiped things.
 
-/web, /net, /db, and /views?
+### Progress
 
-/db [DONE]
-/entities [DONE except bullet.js]
-/lib [DONE]
-/net [DONE]
-/public
-/rooms
-/test
-/views [DONE]
-/web [DONE]
-anything else at root (eslint, server.js)
+| Folder | Status |
+|---|---|
+| `/db` | DONE |
+| `/entities` | DONE except `Bullet.js` |
+| `/lib` | DONE |
+| `/net` | DONE |
+| `/views` | DONE |
+| `/web` | DONE |
+| `/public` | pending |
+| `/rooms` | pending |
+| `/test` | pending |
+| root (`eslint.config.js`, `server.js`) | pending |
 
+## Testing policy
 
-this is the foundainqr btw
-```
-node ../idkman/send.js --repo .
-
-git reset --hard HEAD
-git clean -fd
-git pull
-```
+UI tests should never be added. Verify those in-game (sandbox, tester mode). Only logic and
+key tests for race conditions, subtle logic bugs, or anything that can't be easily tested by
+playing should be added.

@@ -6699,6 +6699,52 @@ function summonerGeometryTests() {
 }
 
 /*
+	Mothership boss geometry, same axis as defenderGeometryTests above. Anchored to diep
+	TankDefinitions.json id27 (scaleFactor 1, level-140 body via camera.setLevel(140)).
+*/
+function mothershipGeometryTests() {
+	console.log('\nMothership geometry (re-derived off TankDefinitions.json id27, scaleFactor 1):');
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const CLIENT = require('./clientTanks.js')().class;
+	const near = (a, b) => Math.abs(a - b) < 0.02;
+
+	const K = 0.56, CS = 35;
+	const circumradius_du = 50 * Math.pow(1.01, 139);
+	const BARREL_LEN_DU = 60, BARREL_W_DU = 10.5;
+	const DRONE_RAD_DU = BARREL_W_DU / 2;   // sizeRatio 1
+
+	const boss = CLASS['Mothership'], cli = CLIENT['Mothership'];
+	const bossSize = boss.bossSize;
+	const conv = (du) => du * K * CS / bossSize;
+	const r = bossSize / CS;
+
+	check('body is a 16-gon at level-140 circumradius (bossSize = circumradius*K*cos(pi/16))',
+		near(bossSize, circumradius_du * K * Math.cos(Math.PI / 16)) && cli.body.sides === 16,
+		bossSize + ' / sides ' + cli.body.sides);
+	check('drawn circumradius = level-140 body size (bossSize / cos(pi/16))',
+		near(bossSize / Math.cos(Math.PI / 16), circumradius_du * K),
+		(bossSize / Math.cos(Math.PI / 16)).toFixed(3) + ' vs ' + (circumradius_du * K).toFixed(3));
+
+	const barrels = boss.cannons;
+	check('16 drone cannons (TankDefinitions.json id27)', barrels.length === 16, barrels.length);
+	check('canonLength re-derived off barrel size 60 du (10.74)',
+		barrels.every((c) => near(c.canonLength, conv(BARREL_LEN_DU))),
+		barrels.map((c) => c.canonLength).join(','));
+	const cc = cli.cannons;
+	check('client height === server canonLength',
+		cc.length === 16 && cc.every((c, i) => near(c.height, barrels[i].canonLength)),
+		cc.map((c) => c.height).join(','));
+	check('client width re-derived off barrel width 10.5 du (1.88)',
+		cc.every((c) => near(c.width, conv(BARREL_W_DU))), cc.map((c) => c.width).join(','));
+	const barLenWorld = cc.map((c) => c.height * r);
+	check('rendered barrel length = 60 du x 0.56 (33.6 units)',
+		barLenWorld.every((d) => near(d, BARREL_LEN_DU * K)), barLenWorld.map((d) => d.toFixed(2)).join(','));
+	const droneRadDu = barrels.map((c) => c.size * r / K);
+	check('drone radius = barrel width/2 du (sizeRatio 1, spawned 2.94 units)',
+		droneRadDu.every((d) => near(d, DRONE_RAD_DU)), droneRadDu.map((d) => d.toFixed(2)).join(','));
+}
+
+/*
 	Survival's lobby state machine (rooms/Survival.js): the gather/pad/countdown gate, the bot
 	grace window and pacing, and the hard no-respawn-once-open rule. All three are pure ordering/
 	timing logic invisible from a single playtest session - a 20s grace and a 10s countdown are
@@ -6817,6 +6863,7 @@ bossProjectileTests();
 autoTurretMultiTargetTest();
 defenderGeometryTests();
 summonerGeometryTests();
+mothershipGeometryTests();
 respawnTests(rooms);
 respawnCarryoverTests(rooms);
 modeTableTests(rooms);

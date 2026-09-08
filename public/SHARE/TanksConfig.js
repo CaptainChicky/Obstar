@@ -1832,11 +1832,9 @@
 				body: { shape: 3, sides: 4, rot: -Math.PI / 4 }
 			},
 			"Mothership": {
-				// draw-type 2 (trapezoid) + the half-step offset (plan.md R6) - see the
-				// server's own Mothership comment for both. Body shape 3 = a generic n-gon
-				// (`body.sides`, plan.md R6), TankDefinitions.json id27's own `sides: 16`.
+				// draw-type 2 (trapezoid) + half-step offset - see server Mothership comment.
 				cannons: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
-					type: 2, height: 42, width: 7.35, offx: 0, offdir: Math.PI / 16 + i * Math.PI * 2 / 16, open: 0, trapezoidDirection: false
+					type: 2, height: 10.740003, width: 1.879500, offx: 0, offdir: Math.PI / 16 + i * Math.PI * 2 / 16, open: 0, trapezoidDirection: false
 				})),
 				body: { shape: 3, sides: 16 }
 			}
@@ -3968,15 +3966,10 @@
 				// droneGroup. 32 total = 16 controllable + 16 not.
 				this.droneSplit = true;
 				// Mothership.ts sets no explicit body size - it comes from the ordinary tank-body
-				// growth formula (plan.md M3: size = 28 x 1.01^level) at `camera.setLevel(140)`,
-				// diep's own literal figure (mostly there to max every stat, not for the size
-				// alone). `28 x 1.01^140` is ALREADY in our units (28 IS the level-0 radius, the
-				// same quantity `this.size` grows from everywhere else in this file) - it is not
-				// a diep du figure needing the 0.56 absolute-length conversion, so applying it a
-				// second time (plan.md R6) shrank this boss 44%. Correct value: 112.8 (cross-
-				// check: diep's own `50 x 1.01^139 du x 0.56` = 111.6, the same body one level
-				// down expressed the OTHER way, through the ordinary du->unit factor).
-				this.bossSize = 112.8;
+				// growth formula at `camera.setLevel(140)`: circumradius = 50 x 1.01^139 du.
+				// Drawings.body[3] draws from the APOTHEM (`param.size`), so bossSize =
+				// circumradius x 0.56 x cos(pi/16) = 109.497178 (same axis as Defender/Summoner).
+				this.bossSize = 109.497178;
 				// diep's own receiver-side absorbtionFactor for this class (D7's table) - recorded
 				// but not wired into collision(), which only special-cases Dominator/Closer today
 				// (PENDING.md: no generic per-class absorbtionFactor mechanism exists yet).
@@ -4014,10 +4007,14 @@
 					// are a half-step OFF the plain i x 2pi/16 spacing (barrel 0 sits at
 					// 0.19634954... rad = pi/16, not 0) - matches the trapezoid body's own
 					// vertices sitting between barrels rather than under them.
-					offdir: Math.PI / 16 + i * Math.PI * 2 / 16, offx: 0, canonLength: 42, rand: 0.174533,
+					offdir: Math.PI / 16 + i * Math.PI * 2 / 16, offx: 0,
+					// TankDefinitions.json id27: size 60, width 10.5 du - `du x 0.56 x 35/bossSize`.
+					canonLength: 10.740003, rand: 0.174533,
 					// The shared drone speed row every drone class here uses, rather than this
 					// class's own lower figure: below it, a maxed tank simply outruns the drones.
-					speed: 0.896, pene: 4, damage: 4.9, size: 3.675, weight: 4.2, push: 0.36567, back: 0
+					speed: 0.896, pene: 4, damage: 4.9,
+					// Drone radius = (width/2) x sizeRatio = 5.25 du -> size = (5.25 x 0.56) / ra.
+					size: 0.939750, weight: 4.2, push: 0.36567, back: 0
 				}));
 				this.ups = ['Health Regen', 'Max Health', 'Body Damage', 'Drone Speed', 'Drone Health', 'Drone Damage', 'Reload', 'Movement Speed'];
 			}

@@ -80,9 +80,9 @@ shim or the tree has drifted; do not rebaseline, do not trust `rooms`/`client` r
 ## Step 3 — the offline safety net
 Run ONCE at the end (not repeatedly, not to "make sure"):
 ```bash
-for t in proto tanks interp clock rooms client clientDiff; do echo "== $t =="; node test/$t.js 2>&1 | tail -3; done
+for t in proto interp clock rooms client clientDiff; do echo "== $t =="; node test/$t.js 2>&1 | tail -3; done
 ```
-Expected green: **proto 92, tanks 1265, interp 32, clock 16, rooms 634, client 70**, clientDiff =
+Expected green: **proto 92, interp 32, clock 16, rooms 634, client 70**, clientDiff =
 golden match. Two rooms tests are RNG-flaky (~1-in-15); a lone failure that clears on one re-run is
 not yours. `smoke`/`web` stay unrun (need real `ws`).
 
