@@ -164,6 +164,9 @@ const TANK_DRONE_SWITCH_COOLDOWN = tick.ticks(config.TANK_DRONE_SWITCH_COOLDOWN)
 const TANK_DRONE_SWITCH_PUSH = config.TANK_DRONE_SWITCH_PUSH;
 const TANK_DRONE_CROSS = tick.ticks(config.TANK_DRONE_CROSS);
 const TANK_DRONE_CROSS_JITTER = config.TANK_DRONE_CROSS_JITTER;
+const TANK_DRONE_PHASE_SPIN = config.TANK_DRONE_PHASE_SPIN;
+const TANK_DRONE_SEPARATION = config.TANK_DRONE_SEPARATION;
+const TANK_DRONE_SEP_NUDGE = config.TANK_DRONE_SEP_NUDGE;
 // Every idle drone circles its owner the same way - counterclockwise, on screen - rather than
 // each drone rolling its own direction.
 const TANK_DRONE_ORBIT_DIR = -1;
@@ -183,6 +186,27 @@ function droneTerminal(bullet) {
 // them - the property BASE_DRONE_LEVEL_GAP's flat gu(1) has for a fixed-size base drone.
 function tankGap(bullet) {
 	return bullet.size * TANK_DRONE_LEVEL_GAP;
+}
+
+function tankDroneSepNudge(bullet, desired) {
+	const sep = bullet.size * TANK_DRONE_SEPARATION;
+	const sep2 = sep * sep;
+	const oid = bullet.origin.oId;
+	let nearDx = 0, nearDy = 0, nearD2 = sep2;
+	for (const other of bullet.room.INSTANCE.bullets.live()) {
+		if (other === bullet || other.destroy || !other.origin || other.origin.oId !== oid) { continue; }
+		if (other.orbLevel === undefined) { continue; }
+		const t = other.type;
+		if (t !== 1 && t !== 1.1 && t !== 1.2 && t !== 1.3 && t !== 1.5 && t !== 3 && t !== 3.1) { continue; }
+		const dx = other.x - bullet.x, dy = other.y - bullet.y;
+		const d2 = dx * dx + dy * dy;
+		if (d2 < nearD2) { nearD2 = d2; nearDx = dx; nearDy = dy; }
+	}
+	if (nearD2 >= sep2) { return desired; }
+	const push = Math.atan2(-nearDy, -nearDx);
+	const closeness = 1 - Math.sqrt(nearD2) / sep;
+	const nudge = TANK_DRONE_SEP_NUDGE * closeness;
+	return desired + nudge * Math.atan2(Math.sin(push - desired), Math.cos(push - desired));
 }
 
 // The radius of one energy level: the home ring scales with the OWNER's body (a Mothership's swarm
@@ -723,7 +747,11 @@ function droneIdleOrbit(bullet, play, replan = false) {
 		// lockstep - re-armed to the plain CROSS afterwards.
 		bullet.orbCrossIn = Math.max(1, Math.round(TANK_DRONE_CROSS *
 			(1 + (Math.random() * 2 - 1) * TANK_DRONE_CROSS_JITTER)));
-	} else {
+	}
+	if (bullet.orbPhase === undefined) {
+		bullet.orbPhase = Math.random() * Math.PI * 2;
+	}
+	if (!replan && bullet.orbLevel !== undefined) {
 		// An EXTERNAL impulse - a collision knockback, another drone shoving past - is whatever
 		// `vec` carries that we did not write ourselves last tick. Past SWITCH_PUSH of terminal
 		// speed it counts as the tank-side equivalent of a base drone's `tooClose`: the drone
@@ -812,6 +840,7 @@ function droneIdleOrbit(bullet, play, replan = false) {
 	}
 
 	// ---- the orbit field: tangential, leaned toward this level's radius ----------------------
+	bullet.orbPhase += TANK_DRONE_PHASE_SPIN * bullet.orbSpin;
 	const ux = rx / r, uy = ry / r;
 	const tx = -uy * bullet.orbSpin, ty = ux * bullet.orbSpin;
 	const err = rTarget - r;   // + = must move outward
@@ -826,12 +855,21 @@ function droneIdleOrbit(bullet, play, replan = false) {
 	// the ring it is returning to.
 	const e = Math.min(1, Math.abs(err) / (play.size * TANK_DRONE_RETURN_ERR));
 	const k = e * e * (3 - 2 * e);
+	// Far from the ring, aim at this drone's own slot on it rather than the shared radial - so
+	// a swarm left behind by a moving owner fans out instead of beelining to one point.
+	const tgtX = Math.cos(bullet.orbPhase) * rTarget, tgtY = Math.sin(bullet.orbPhase) * rTarget;
+	const returnDesired = Math.atan2(tgtY - ry, tgtX - rx);
+	const dx1 = Math.cos(desired), dy1 = Math.sin(desired);
+	const dx2 = Math.cos(returnDesired), dy2 = Math.sin(returnDesired);
+	const bx = (1 - k) * dx1 + k * dx2, by = (1 - k) * dy1 + k * dy2;
+	let finalDesired = Math.atan2(by, bx);
+	finalDesired = tankDroneSepNudge(bullet, finalDesired);
 	const targetSpeed = vOrbit + (vTerm - vOrbit) * k;
 	// Headroom over the rate this ring actually needs at this speed (v/R), rather than a flat
 	// rad/tick - a tank drone's ring and speed both scale with the owner and the drone.
 	const turnLimit = TANK_DRONE_TURN_HEADROOM * bullet.orbSpd / Math.max(r, rTarget * 0.25);
 
-	let dHead = Math.atan2(Math.sin(desired - bullet.orbHead), Math.cos(desired - bullet.orbHead));
+	let dHead = Math.atan2(Math.sin(finalDesired - bullet.orbHead), Math.cos(finalDesired - bullet.orbHead));
 	dHead = Math.max(-turnLimit, Math.min(turnLimit, dHead));
 	bullet.orbHead += dHead;
 	const accel = vTerm * TANK_DRONE_ACCEL_FRAC;

@@ -56,8 +56,8 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
 - **Damage-flash duration** — client re-times its own flash (`sleep(50)`+`sleep(16)`) instead
   of tracking how long the server holds the states[0] bit (~75 ms). Rewrite `hit()` to follow
   the bit; needs eyes on it.
-- Sandbox self-levelling, the smasher panels, the class-picker slide-in, and every plan.md
-  silhouette fix — one eyeball pass against the six reference webp files at the end.
+- Sandbox self-levelling, the smasher panels, the class-picker slide-in, and silhouette
+  fixes — one eyeball pass against the six reference webp files at the end.
 - **B2 render, against the reference webp files:** a Guardian's drones should read as small pink
   Crashers (identical to a wild small Crasher), a Summoner's as beige Necromancer squares, and a
   Destroyer/Gunner Dominator's grey barrels AND cosmetic trapezoid should both sit under the
@@ -89,16 +89,9 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
   unreferenced knobs.
 - **Boss `canControlDrones` possession** (Guardian's rear spawner, Summoner's 4 spawners) — diep
   lets a player pilot these two bosses and steer their drones by hand (`AbstractBoss.ts:186-192`),
-  the same `H`-key claim flow plan.md E4 built for Dominator/Mothership. `rooms/Room.js`'s
-  `togglePossession()` only iterates `this.dominators.concat(this.motherships)` — a boss was left
-  out deliberately, not by oversight.
-  Extending it would need a third claimable-entity list, a possession-timer decision (Guardian/
-  Summoner have no diep precedent for one the way Mothership's 5-minute clock does), and the
-  drone-steering path (`entities/Bullet.js`'s `droneSteer1`) taught to read a piloted boss's own
-  inputs the way it already does for Mothership's even-numbered barrels.
-- **Optional Fallen variants** (`Entity/Misc/Boss/FallenAC.ts`/`FallenMegaTrapper.ts`/
-  `FallenSpike.ts`) — plan.md Part D explicitly marks these optional; not built. Cite their own
-  files (`movementSpeed`/barrel-reuse/`damagePerTick` overrides) if/when they are.
+  but this was deliberately left out. `togglePossession()` only covers Dominators and Motherships.
+- **Optional Fallen variants** (`FallenAC.ts`/`FallenMegaTrapper.ts`/`FallenSpike.ts`) —
+  explicitly optional; not built.
 - **Survival/Mothership modes**: no waiting-room countdown UI (data is on the wire), no
   per-mode front-page door art, no `shapeScoreRewardMultiplier` (×3 shapes-only XP has no hook
   in `awardXp()`), Survival's shape density doesn't rescale with the arena.
