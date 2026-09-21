@@ -2787,7 +2787,7 @@
 					///
 					this.offdir = 0;
 					this.offx = 0;
-					this.canonLength = 60;
+					this.canonLength = 65;
 					this.life = 75;
 					this.rand = 0.523599;
 					///

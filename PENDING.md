@@ -147,11 +147,7 @@ behaviour around bases, each mode's win/close flow, the accounts/achievements pa
   `perTick()`.
 - **A test that only compares our two halves against each other cannot catch a scale error** —
   anchor at least one assertion outside the tree.
-- **`test/tanks.js` was removed** — its `diepCitations()` pass assumed the normal-tank barrel
-  identity (`du × 0.7`) for every class, which is wrong for boss-scale entities whose barrel
-  dims go through `du × K × CS / bossSize`. Boss geometry is now covered by dedicated tests in
-  `test/rooms.js` (`defenderGeometryTests()`, `summonerGeometryTests()`,
-  `mothershipGeometryTests()`). `test/clientTanks.js` (the `vm` helper) remains for anything
-  that needs the client half of `TanksConfig.js` in Node. Ordinary-tank client/server drift
-  has no automated guard — restoring a tanks cross-check that handles the boss conversion
-  would close the gap.
+- **Ordinary-tank client/server geometry** — guarded by `test/tanks.js` (baked numbers,
+  pairing rules for turrets, stacked drones, necro stubs, hidden testbed cannons). Boss
+  du-derivation stays in `test/rooms.js`. Comparing the two halves alone still cannot catch a
+  scale error; boss tests stay externally anchored (bullet above).

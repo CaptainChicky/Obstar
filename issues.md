@@ -2,12 +2,6 @@
 
 ## Open
 
-- **TankConfig single source of truth** — currently two hand-synced halves (client/server) in
-  `TanksConfig.js`. Consider simplifying to one authoritative table that derives both sides.
-  Boss geometry (Defender, Summoner, Mothership) is now cross-checked by `test/rooms.js`, but
-  ordinary-tank client/server drift has no automated guard since `test/tanks.js` was removed.
-  Restoring a tanks cross-check that handles the boss conversion would close the gap.
-
 - **Overlord/controlalboe drone class is kinda meh rn** - the idling orbits, and the chasing 
   is still kinda meh. finish this later ig
 

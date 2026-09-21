@@ -9,8 +9,7 @@ Obstar is an open-source clone of diep.io: a 2D multiplayer arena shooter. Playe
 that shoot bullets, farm polygon "objects" for XP, level up, pick stat upgrades, and evolve
 through a class tree.
 
-There is no `plan.md`. Fidelity work that is still open lives in PENDING; finished fidelity
-work is the code.
+Open decisions live in **[PENDING.md](PENDING.md)**; finished fidelity work is the code.
 
 ---
 
@@ -152,7 +151,7 @@ Do not treat sizes in this table as load-bearing — they drift. Roles do not.
 | `public/font.js` | Animated canvas background on the menu, incl. the per-mode "door" reveal. |
 | `views/index.ejs` | Menu page. |
 | `views/play.ejs` | Game page. **`<script>` order is the client's dependency graph** — §6. CSS is `play.css`. |
-| `test/*.js` | 8 suites + 3 helpers (`clientDom`, `clientProto`, `clientTanks`), see §8. |
+| `test/*.js` | 9 suites + 3 helpers (`clientDom`, `clientProto`, `clientTanks`), see §8. |
 
 `public/SHARE/` is loaded by `<script>` in the browser **and** by `require()` in Node, via a
 `typeof(exports)` sniff footer. `public/motion.js` and everything in `public/client/` carry the
@@ -225,14 +224,14 @@ The things in this codebase that are *not* obvious from reading the code around 
   standing *inside* another body is no longer possible, which is why a boss's aggro radius has to
   be measured from its hull rather than its centre (PENDING).
   **The tank-vs-shape arm has no equivalent overlap resolution** — open, see PENDING.
-  `public/SHARE/TanksConfig.js`'s client (drawn) and server (spawn) cannon tables for
-  boss-scale entities (Defender, Summoner, Mothership) are cross-checked by dedicated geometry
-  tests in `test/rooms.js` (`defenderGeometryTests()`, `summonerGeometryTests()`,
-  `mothershipGeometryTests()`). `test/tanks.js` (the old per-class cross-check covering every
-  class) was removed — its `diepCitations()` pass assumed the normal-tank barrel identity
-  (`du × 0.7`) for every class, which is wrong for boss-scale entities. `test/clientTanks.js`
-  (the `vm`-based helper that loads TanksConfig in client mode) remains for use by any test
-  that needs the client half. Ordinary-tank client/server drift has no automated guard.
+  `public/SHARE/TanksConfig.js` still has separate client (drawn) and server (spawn) cannon
+  tables — not one derived table. `test/tanks.js` guards baked `client.height ===
+  server.canonLength` (and `offx`/`offdir`) for every class, with pairing for `autoDir`
+  turrets, stacked drone barrels, necro decorative stubs, and hidden testbed cannons; it does
+  not convert from diep du. Boss-scale entities (Defender, Summoner, Mothership) are still
+  cross-checked by dedicated geometry tests in `test/rooms.js` (`defenderGeometryTests()`,
+  `summonerGeometryTests()`, `mothershipGeometryTests()`). `test/clientTanks.js` is the
+  `vm`-based client-mode loader; used by `test/tanks.js` and those boss tests.
 - **Health, regen and the damage model are diep's own shape.**
   `entities/Player.js`'s `maxHp` starts at diep's `MH₀ = 50`, gains `+2` per level-up and `+20`
   per Max Health point. Regen reads two direct `tick.perTick()` rates in `update()`: diep's linear
@@ -664,20 +663,21 @@ pattern, gated behind `config.DB.AUTH`:
 
 ## 8. Test coverage
 
-`npm test` runs 8 suites in dependency order (cheapest/most load-bearing first):
+`npm test` runs 9 suites in dependency order (cheapest/most load-bearing first):
 
 | Suite | What it covers |
 |---|---|
 | `test/proto.js` | Wire protocol: golden bytes, self-sizing, round trips, input validation, Unicode, `UiUpdate.map`, Objects rarity-tier bits, the `Walls` record. |
 | `test/interp.js` | Client motion arithmetic. |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
+| `test/tanks.js` | Baked client/server tank geometry for `TanksConfig.js` (`height === canonLength`, `offx`, `offdir`; turret/collapse/skip pairing). Uses `test/clientTanks.js`. No room boot. |
 | `test/rooms.js` | All eleven gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner detecting a nearby player, `respawn()` carrying a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, killability, respawn delay, the base fence's bullet margin), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A), the FOV formula, the 45/7/33 upgrade economy and its client-mirrored constants, `Room.rejectSample()`'s hard cap and fallback on an unsatisfiable/too-small map. Tag's win condition (team reassignment not a random match, to stay unseeded-RNG-free; a spawned Closer takes no damage/knockback; `respawn()` no-ops once `closing`; a stealth class settles at `rules.invisFloor`). `KIND.WALL` direct-collision tests. Boss geometry re-derivation for Defender, Summoner, and Mothership (`defenderGeometryTests()`, `summonerGeometryTests()`, `mothershipGeometryTests()`) — anchored against diepcustom's own du figures, not just client-vs-server consistency. Survival's countdown gate, bot grace period, and no-respawn-once-open rule. Mothership's spawn, HP, level, win condition, drone saturation, possession, and regen. No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, that the input-prediction lead reaches the same steady state at 30/60/144fps, dead-reckoning behaviour, own-bullet ramp; a `Walls` instance draws/updates without throwing. |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. Current golden is in that file (and mirrored in PENDING). |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server. Covers ffa, 2team, 4team, boss, sandbox, tag — not maze / domination / mothership / survival / tester. |
 | `test/web.js` | The merged entry point: one port serves site + socket, `play.ejs` script order, split-mode wiring, and that the auth routes degrade to a clean `{error}` (never a 500) with `DB.AUTH` off. |
 | `test/clientProto.js` | Loads `SocketSchema.js` in *client* mode inside Node via `vm` — used by the above, not a standalone suite. |
-| `test/clientTanks.js` | Loads `TanksConfig.js` in *client* mode inside Node via `vm` — used by geometry tests in `test/rooms.js`, not a standalone suite. |
+| `test/clientTanks.js` | Loads `TanksConfig.js` in *client* mode inside Node via `vm` — used by `test/tanks.js` and the boss geometry tests in `test/rooms.js`, not a standalone suite. |
 | `test/clientDom.js` | Stub DOM + script loader for `test/client.js` / `test/clientDiff.js`. |
 
 UI tests should never be added — verify those in-game (sandbox, tester). Only logic, race
