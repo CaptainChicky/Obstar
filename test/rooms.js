@@ -6129,8 +6129,9 @@ function tankDroneOrbitTests() {
 	drone.type = 1; drone.team = p.team; drone.class = p.class; drone.size = 10.5; drone.life = -1;
 	drone.map = room.map;
 	const gap = drone.size * config.TANK_DRONE_LEVEL_GAP;
-	const ringOf = (lvl) => p.size * config.TANK_DRONE_ORBIT_R +
-		(lvl - config.TANK_DRONE_LEVEL_HOME) * gap;
+	const ringMin = p.size * config.TANK_DRONE_ORBIT_R +
+		(1 - config.TANK_DRONE_LEVEL_HOME) * gap;
+	const ringOf = (lvl) => ringMin + (lvl - 1) * gap + config.TANK_DRONE_ORBIT_BIAS * ringMin;
 
 	let maxRingErr = 0, maxTurn = 0, prevHead = null, totalAng = 0, prevAng = null;
 	const seen = {};

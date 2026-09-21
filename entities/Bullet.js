@@ -150,6 +150,7 @@ const BASE_DRONE_LEVEL_RELAX = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
 	so one table serves a slow necro drone and a fast boss drone; droneTerminal() below converts.
 */
 const TANK_DRONE_ORBIT_R = config.TANK_DRONE_ORBIT_R;
+const TANK_DRONE_ORBIT_BIAS = config.TANK_DRONE_ORBIT_BIAS;
 const TANK_DRONE_LEVEL_GAP = config.TANK_DRONE_LEVEL_GAP;
 const TANK_DRONE_LEVELS = config.TANK_DRONE_LEVELS;
 const TANK_DRONE_LEVEL_HOME = config.TANK_DRONE_LEVEL_HOME;
@@ -212,7 +213,10 @@ function tankDroneSepNudge(bullet, desired) {
 // The radius of one energy level: the home ring scales with the OWNER's body (a Mothership's swarm
 // stands proportionally as clear of it as an Overseer's), the steps off it with the drone's.
 function tankLevelR(play, bullet, level) {
-	return play.size * TANK_DRONE_ORBIT_R + (level - TANK_DRONE_LEVEL_HOME) * tankGap(bullet);
+	const gap = tankGap(bullet);
+	const rMin = play.size * TANK_DRONE_ORBIT_R + (1 - TANK_DRONE_LEVEL_HOME) * gap;
+	return play.size * TANK_DRONE_ORBIT_R + (level - TANK_DRONE_LEVEL_HOME) * gap
+		+ TANK_DRONE_ORBIT_BIAS * rMin;
 }
 
 /*
