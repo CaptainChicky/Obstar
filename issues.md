@@ -20,43 +20,6 @@
 
 - **Survival arena management** and arena management in general needs fine tuning.
 
-## Comment cleanup pass
-
-The main coding task right now. Strip cross-file references/change history, keep functional
-statements. Comments should only record what is going on logically with the code — never too
-verbose, no history, no references to plan.md / PENDING.md / HANDOFF.md / issues.md or bare
-item codes.
-
-Delete or rewrite any comment that:
-- narrates history ("used to be", "the old form", "was broken because", "reverted", etc.)
-- cites a plan/task/markdown file by name or bare item code (`#30`, `A4`, `E3`, `G1`)
-- cites an external reference repo (`diepcustom/src/...`, `diep_wiki/...`, `diepindepth/...`)
-- restates the code on the line below it
-- runs longer than about four lines without being load-bearing
-
-Suggested order (worst offenders first, by volume):
-`entities/Player.js`, `rooms/Room.js`, `lib/gameAI.js`,
-`entities/Bullet.js`, `lib/config.js`.
-
-Run the full test suite after each file. A comment pass must not change behaviour; if a test
-breaks you deleted code, not a comment. Do it one folder at a time — last time a batch attempt
-wiped things.
-
-### Progress
-
-| Folder | Status |
-|---|---|
-| `/db` | DONE |
-| `/entities` | DONE |
-| `/lib` | DONE |
-| `/net` | DONE |
-| `/views` | DONE |
-| `/web` | DONE |
-| `/public` | DONE |
-| `/rooms` | DONE |
-| `/test` | DONE |
-| root (`eslint.config.js`, `server.js`) | pending |
-
 ## Testing policy
 
 UI tests should never be added. Verify those in-game (sandbox, tester mode). Only logic and

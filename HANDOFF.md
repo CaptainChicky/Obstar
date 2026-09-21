@@ -655,6 +655,11 @@ commands/chat over a live dev-authed socket, load with several busy rooms at onc
 - Bare `parseInt(x)` (no radix arg) is still used throughout for numeric truncation — that's why
   `radix` is off in `eslint.config.js`. Random-int generation is `Math.floor(Math.random()*n)`;
   if you see `parseInt(Math.random()*n)`, that's old code, not a pattern to copy.
+- **Comments** explain non-obvious logic (invariants, ordering, why a constant exists), not
+  change history, task IDs, or pointers into `plan.md` / `PENDING.md` / other markdown. Match
+  the tone of the file you're in; `eslint.config.js` is the exception where extra prose is
+  load-bearing. When you edit a file, clean up nearby comments that violate that — no standing
+  repo-wide sweep unless drift piles up again.
 
 ---
 

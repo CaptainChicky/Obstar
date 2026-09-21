@@ -1,17 +1,14 @@
 /*
-	Single entry point for both the game server and the menu website.
+	Game server and/or menu site entry point.
 
-			node server.js                 game + menu site on http://localhost   (PORT, default 80)
-			node server.js --game-only     just the game    on ws://localhost:8080 (PORT, default 8080)
-			node server.js --web-only      just the menu site                      (PORT, default 80)
+	node server.js              game + menu on http://localhost (PORT default 80)
+	node server.js --game-only  game only on ws://localhost:8080 (PORT default 8080)
+	node server.js --web-only   menu only (PORT default 80)
 
-	In single-port mode the browser reaches the game over the same origin that served the
-	page, so nothing has to be configured. Split mode needs the web half told where the game
-	half lives: WS_LINK=wss://game.example.com node server.js --web-only.
+	Same-origin in combined mode; split web-only needs WS_LINK pointing at the game host.
 
-	boot() constructs the Controller singleton and must finish before any player can connect,
-	so it runs before server.listen(). Listening is not part of boot() so test/rooms.js can
-	stand the whole game up in-process without opening a port.
+	boot() runs before listen so the controller exists before any connection; listen stays
+	here so in-process tests can boot without binding a port.
 */
 require('./lib/crash.js').install('error.log');
 
@@ -35,8 +32,7 @@ if (runWeb) {
 	app = require('./web/app.js')();
 }
 
-// With --game-only there is no http content to serve, but ws still needs an http server to
-// upgrade from, so 404 everything.
+// --game-only: no pages, but WebSocket still upgrades from HTTP — return 404 for all routes.
 const server = http.createServer(app || function (request, response) {
 	response.writeHead(404);
 	response.end();
