@@ -1,14 +1,8 @@
 /*
 	Tank, Obj and Bullet: the three things the server can put in the world.
 
-	These moved out of the monolith untouched. Their draw(ctx)/drawUi(ctx) methods take the
-	context as a parameter - none of them closes over Run()'s `ctx`, and none of them reads
-	Instances.
-
-	The one exception is Bullet.update(), which reads CLIENT.User.predic to keep your own
-	bullets on the muzzle - see the comment there. It has to go through CLIENT lazily rather
-	than aliasing it up top like the consts below: Run() does not assign CLIENT.User until it
-	is called, long after this file has been evaluated.
+	draw(ctx)/drawUi(ctx) take the context as a parameter. Bullet.update() reads
+	CLIENT.User.predic lazily to keep own bullets on the muzzle.
 */
 (function (CLIENT) {
 	const CONST = CLIENT.CONST;
@@ -288,9 +282,7 @@
 			this.hitted = 0;
 			this.alpha = 1;
 			this.dalpha = 0;
-			// Overwritten by the first packet's own `dir` (plan.md C5/S4) the instant it arrives -
-			// entities/Objects.js is now server-authoritative for this (idle BASE_ROTATION spin, or
-			// a Crasher's real facing while chasing), so this is only ever visible for zero frames.
+			// Placeholder until the first packet's dir arrives.
 			this.dir = Math.PI * 2 * Math.random();
 			this.hitted = 0;
 			this.hpBar = (() => {
@@ -356,12 +348,8 @@
 			const k = General['lerpK'](CONST.SMOOTH * 2);
 			this.dsize += (this.size - this.dsize) * k;
 			this.dalpha += (this.alpha - this.dalpha) * k;
-			// `this.dir` is server-authoritative now (plan.md C5/S4/S1) - entities/Objects.js sends
-			// its own real facing (idle BASE_ROTATION spin, or a Crasher's live atan2-to-target while
-			// chasing) over the wire, snapped straight onto `this.dir` by SetPacket's default-field
-			// assignment the same way a Bullet's `dir` already was. Nothing to do here any more.
-			// Rarity tier. RARITY[0].color is null, so an ordinary (tier 0) polygon never enters
-			// the branch below.
+			// Rarity tier. RARITY[0].color is null, so an ordinary polygon never enters the
+			// branch below.
 			const tier = RARITY[this.tier || 0];
 			if (tier.color && this.color !== tier.color) {
 				this.color = tier.color;
@@ -437,129 +425,24 @@
 			this.reckonRamp = 0;
 		}
 		/*
-			DEAD RECKONING (PENDING #24(b), plan.md step 8) - how far ahead of the interpolator's
-			usual read point this bullet is drawn, in ms, or 0 to stay on plain interpolation.
+			Dead reckoning: how far ahead of the interpolator this bullet is drawn, in ms,
+			or 0 to stay on plain interpolation.
 
-			Every other entity is deliberately drawn one packet interval in the PAST, because that
-			is what guarantees a known-good snapshot on both sides of the instant being drawn (see
-			public/motion.js's header). For a bullet that delay is the whole problem: an incoming
-			shot is drawn ~12 units behind where the server has it, so it damages you before it
-			visually arrives. A non-drone bullet is the one entity where paying that delay buys
-			nothing, because its motion is fully deterministic between collisions - `vec += speed *
-			dir; vec *= BODY_FRICTION`, with no input and no steering - so the position it is
-			heading for is knowable rather than guessable.
-
-			The lead is NET.leadMs(), the SAME measured quantity the local tank's own prediction
-			uses: `interval` cancels the render delay, `rtt/2` cancels how stale the newest snapshot
-			already was in flight. Together they put the bullet where the server has it NOW, which is
-			the frame it will actually be judged in. Nothing here is tuned - the only tuned number is
-			the ceiling, and that exists only to bound a hostile measurement.
-
-			WHAT STAYS ON PLAIN INTERPOLATION, and why each one is not an oversight:
-			  - DRONES (`type >= 1`). They steer toward a target every tick, so "deterministic
-			    between collisions" is false for them - extrapolating a drone just flings it along
-			    whatever heading it happened to have last packet, and it turns.
-			  - PETS. Same reason: a pet chases its owner, so its velocity is a control output, not
-			    a constant. (It is also usually `type >= 1` already; the check is explicit rather
-			    than incidental.)
-			  - TRAPS are `type >= 1` too and so are excluded by the same test. That is fine rather
-			    than merely tolerable: a trap decays to a standstill within a few ticks, so there is
-			    no delay worth cancelling.
-
-			YOUR OWN BULLETS (`this.mine`) get the full lead too, but RAMPED IN rather than switched
-			on - `this.reckonRamp`, advanced in update()'s decay block. They cannot just be switched
-			on because they already carry a compensation of their own that genuinely conflicts with
-			this one. For its first packet interval an own bullet is deliberately WELDED TO THE
-			DRAWN MUZZLE (update()'s phase 1) - a spatial lie that exists so a shot appears to leave
-			the barrel instead of open space beside it. Dead reckoning is the opposite claim about
-			the same bullet: that it should already be `leadMs` of travel downrange, because the
-			server has already moved it there. Both are defensible and neither can be drawn at full
-			strength while the other still is. Switching from one to the other in a single frame
-			pops the bullet forward by roughly a bullet-speed at the phase 1 -> phase 2 handoff
-			(measured: ~54 units on a frame whose steady travel is ~18) - worse than the lateness
-			either fixes on its own. `reckonRamp` starts at 0 while the weld offset (`this.lead`) is
-			still large and eases toward 1 on the SAME clock (`CONST.BULLET_LEAD_DECAY`) the weld
-			offset decays on, so the two trade off against each other continuously instead of
-			handing off in one frame. test/client.js's "no jump where its own interpolation takes
-			over" is what proves the ramp avoids the pop the plain switch produced.
-
-			#24(c) is still the floor even with both halves ramped: the shooter and the target
-			disagree by RTT/2, and zero error is unreachable client-side without server-side lag
-			compensation, which diep does not do either. Bounded, symmetric error was always the
-			target, not zero.
-
-			For every OTHER bullet this composes with the muzzle offset rather than competing: that
-			offset is SPATIAL (it slides a new bullet sideways onto the drawn barrel), this is
-			TEMPORAL (it slides the bullet along its own velocity), and a bullet that is not yours
-			never takes the muzzle path at all.
+			An ordinary bullet's motion is deterministic between collisions, so it can be
+			drawn where the server has it now. Drones, pets, traps, and a bullet already in
+			its death fade stay interpolated. Own bullets ramp the lead in on the same
+			clock the muzzle-weld offset decays, so the two do not pop at the handoff.
 		*/
 		reckonMs() {
-			// plan.md C1 - a bullet already in its death fade (server-side `destroy` countdown,
-			// alpha < 1) is no longer "deterministic between collisions" in the sense this lead
-			// relies on - it is decaying through friction toward a stop, not cruising - and
-			// extrapolating it fights the shrink-to-a-point read the fade is going for. Once the
-			// death state arrives, fall back to plain interpolation like a drone/pet.
 			if (this.type >= 1 || this.pet || this.alpha < 1) { return 0; }
 			const full = Math.min(NET.leadMs(), NET.interval * CONST.DEAD_RECKON_MAX_INTERVALS);
 			return this.mine ? full * this.reckonRamp : full;
 		}
 		update() {
 			/*
-				Keeping your own bullets on the muzzle.
-
-				The server spawns a bullet at the *server's* tank position plus the barrel offset.
-				The client draws your tank somewhere else: at that same server position plus
-				`predic`, the local input lead (public/client/game.js, User.update()), which is
-				real lag compensation - roughly interp delay + RTT worth of travel, up to
-				CONST.SIZE*2 - and points along the direction you are *moving*.
-
-				This used to be papered over by drawing own bullets one packet interval further
-				into the future than everything else. That cannot work, and strafing is the proof:
-				a temporal lead only ever slides the bullet along its own velocity, i.e. straight
-				out of the barrel, while the error it has to cancel is `predic` - which when you
-				strafe perpendicular to your aim is entirely *sideways*. So the bullet appeared
-				a tank-width or two to the side of the muzzle, looking like it came from open space
-				next to the tank rather than out of the barrel.
-
-				Instead: draw own bullets on the same clock as every other entity (no lead), and
-				carry a spatial offset that puts the bullet on the muzzle. It runs in two phases,
-				because a brand new bullet and a flying one are in different situations.
-
-				PHASE 1, the first packet interval. The bullet has one snapshot, so there is
-				nothing to interpolate between and sample() parks it on its spawn point (see
-				Interp.n in public/motion.js) - while the tank's own interpolator is still crossing
-				the interval that ends at the tick that fired it. The two are on different parts of
-				the same span, so no fixed offset lines them up. Weld the bullet to the tank
-				instead: `User.x`/`User.y` is the raw newest server tank position and it arrived in
-				the very same packet as this bullet, so it *is* the position the server fired from,
-				and (drawn tank - that) is exactly the shift that carries the spawn point onto the
-				drawn muzzle, whatever the interpolator is doing underneath.
-
-				PHASE 2, from the second snapshot on. The bullet's own interpolation is live and
-				running on the same clock as everything else, so the shift it needs is just the
-				tank's `predic` - which is what phase 1 has naturally converged to by then, the two
-				phases meeting exactly rather than stepping. Hold it and bleed it off
-				(CONST.BULLET_LEAD_DECAY) so the bullet settles onto the true server path it will
-				actually be judged against, while it is far enough away for the slide not to read
-				as a curve.
-
-				(arras.io never has this problem because it never puts the local tank in its own
-				reference frame: one lag-compensation clock is set per frame and *every* instance,
-				player included, goes through the same predict() - see its public/client/app.js.
-				The barrel and the bullet cannot disagree if nothing is predicted separately. The
-				price is a tank that answers the keyboard a network round trip late, which is the
-				one thing `predic` exists to avoid, so we pay for it here instead.)
-
-				Under ~30fps two packets can land between frames, and `User.x` is then already the
-				tick after the one that fired - phase 1 anchors one packet of tank travel off. It
-				self-corrects at the phase 2 handoff and is bounded by that, so it is left alone.
-
-				Both phases above are why reckonMs() ramps rather than switches an own bullet's
-				dead-reckon lead in: the muzzle weld and the dead-reckon lead are contradictory
-				claims about where the same bullet is, and swapping between them in one frame pops
-				it forward by about a bullet-speed. `reckonRamp` (advanced below, alongside
-				`this.lead`'s own decay) is what turns that swap into a crossfade. See reckonMs()'s
-				own comment for the measurement that made a plain switch a non-starter.
+				Own bullets: weld to the drawn muzzle for the first packet interval, then
+				hold the tank's predic offset and bleed it off. A temporal lead cannot cancel
+				a sideways predic error (strafing).
 			*/
 			const tw = this.tween.sample(NET.now(), this.reckonMs());
 			const U = this.mine ? CLIENT.User : null;
@@ -613,13 +496,8 @@
 		}
 	};
 	/*
-		Wall - a static axis-aligned RECTANGLE of Maze geometry (plan.md Step 12). Much smaller
-		than Obj: a wall never moves, never changes hp/alpha/tier after spawn, so update() is a
-		no-op - but it still has to exist, since game.js's render loop calls it unconditionally on
-		every live instance of every construc (see the Draw()/update() loops there). tween is set
-		for the same reason: SetPacket() calls `.tween.push(obj.x, obj.y, at)` on every instance
-		regardless of kind - a wall's own tween never actually moves it anywhere, since x/y never
-		change after spawn.
+		Wall: a static axis-aligned rectangle. update() is a no-op; tween is set because
+		SetPacket calls it on every instance.
 	*/
 	class Wall {
 		constructor(x, y, w, h) {

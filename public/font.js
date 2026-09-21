@@ -1,7 +1,6 @@
 var canvas = document.getElementById('font');
 var ctx = canvas.getContext('2d');
-// Builds CLIENT.General.drawTank et al. (plan.md A5) - safe to call here since it only builds
-// closures/off-screen canvases, nothing that needs the game's own Run() state.
+// Builds CLIENT.General.drawTank et al. Safe to call here: closures/off-screen canvases only.
 CLIENT.initRender();
 window.onresize = resize;
 function resize() {
@@ -159,14 +158,8 @@ function draw() {
 	//ctx.filter = 'drop-shadow(0 0 16px rgba(0,0,0,0.3))'
 	switch (toState) {
 		case 'tag': {
-			// Just a white circle running around the screen's own border - simplified down from
-			// the punch-a-hole approach (rect + evenodd) after that turned into a real bug (a
-			// huge false-filled circle, PENDING #10) once already. This paints the circle
-			// directly instead, so there is no hole/fill-rule trick to get backwards: it is big
-			// enough to cover the whole screen from any point on the perimeter while the mode
-			// switch is actually closing (`toOpen` near 1), then shrinks down to a small ball
-			// that just keeps circling once open (`toOpen` near 0), instead of growing into
-			// something that blocks the view.
+			// White circle on the screen border. Covers the screen while the mode switch
+			// is closing, then shrinks to a small ball that keeps circling once open.
 			const perim = 2 * (Width + Height);
 			function pointOnPerim(p) {
 				p = ((p % perim) + perim) % perim;
@@ -204,12 +197,7 @@ function draw() {
 			break;
 		}
 		case 'boss': {
-			// No literal boss silhouette drawn here on purpose - more bosses than the Summoner are
-			// coming (diep_wiki has several), so nothing in the menu should read as "this specific
-			// one". Instead, a slow ominous iris: a circular hole in a white sheet that grows from
-			// nothing (closed) to the whole screen (open), rather than wiping in from a corner like
-			// every team mode. A faint ring is left trailing just inside the hole's edge - an "eye"
-			// without a face - and the whole thing breathes gently rather than holding still.
+			// Slow iris: a circular hole in a white sheet, rather than a specific boss silhouette.
 			const maxR = Math.hypot(Width, Height) / 2;
 			const pulse = 1 + Math.sin(T / 70) * 0.04;
 			const r = Math.max(0, (1 - toOpen) * maxR * pulse);
@@ -524,11 +512,8 @@ function draw() {
 	}
 }
 
-// Draws through the real client render pipeline (plan.md A5) - TanksConfig.class for geometry,
-// CLIENT.General.drawTank (public/client/render.js) for the shapes - instead of a private,
-// hand-authored CLASS table that had drifted from every in-game silhouette. isOpac=1 makes
-// drawTank draw straight into the passed ctx (no off-screen sprite cache, unneeded for a fully
-// opaque background tank - see render.js's own isOpac branch).
+// Draws through the real client render pipeline instead of a private silhouette table.
+// isOpac=1 draws straight into the passed ctx (no off-screen sprite cache).
 function tank(x, y, angle, size, type, color) {
 	if (!TanksConfig.class[type]) { return; }
 	ctx.save();

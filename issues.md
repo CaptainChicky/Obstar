@@ -53,7 +53,7 @@ wiped things.
 | `/net` | DONE |
 | `/views` | DONE |
 | `/web` | DONE |
-| `/public` | pending |
+| `/public` | DONE |
 | `/rooms` | pending |
 | `/test` | pending |
 | root (`eslint.config.js`, `server.js`) | pending |

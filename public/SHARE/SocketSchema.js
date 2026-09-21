@@ -15,12 +15,8 @@
 		LIMITS   message    -> legal packet size, and the string bounds the encoder enforces
 		MSG      message    -> the framing around those fields, when it is not just [type][fields]
 
-	Adding a field is therefore two edits (TYPE and SCHEMA) plus a CODEC entry if it is not
-	stored raw - not the five hand-synchronised edits the old encoder/decoder pairs needed. The
-	byte arithmetic is gone entirely: the Encoder grows itself and reports its own length, so
-	there is no size expression to get wrong and no silent truncation when you do.
-
-	The wire format is unchanged, byte for byte, from the hand-rolled version this replaced.
+	Adding a field is two edits (TYPE and SCHEMA) plus a CODEC entry if it is not stored raw.
+	The Encoder grows itself and reports its own length.
 */
 (function (exports, platform) {
 	///////////////////////////////////////////////////////////////////// primitives
@@ -144,10 +140,7 @@
 		'kick': {
 			'reason': 'uint8'
 		},
-		// `probe` is what makes RTT measurable (PENDING #24a). 0 is the plain heartbeat this
-		// message has always been - server->client every second, client echoes it back. 1 is a
-		// client-initiated probe the server echoes verbatim, so the client can time the round
-		// trip itself; the server keeps no state for it.
+		// 0 is the heartbeat; 1 is a client-initiated RTT probe the server echoes.
 		'ping': {
 			'probe': 'uint8'
 		},
@@ -182,25 +175,13 @@
 				'level': 'float32',
 				'still': 'uint8',
 				'cLvl': 'uint8',
-				// The size of one team's base in world units, straight off rooms/Room.js's
-				// this.baseSize - the strip's width in 2team, the square's side in 4team, 0 in any
-				// mode without bases. Sent rather than re-derived client-side from a hardcoded
-				// 600 and could not draw 4team's at all.
+				// One team's base size in world units. 0 in a mode without bases.
 				'baseSize': 'uint16',
-				// plan.md A4/C5 - diep's own ArenaFlags/ticksUntilStart, real server-side since A4
-				// but not exposed until now. `arenaState` is Room.ArenaState's own literal numbering
-				// (COUNTDOWN -1, OPEN 0, OVER 1, CLOSING 2, CLOSED 3), hence int8, not uint8.
+				// COUNTDOWN -1, OPEN 0, OVER 1, CLOSING 2, CLOSED 3.
 				'arenaState': 'int8',
 				'ticksUntilStart': 'uint16',
 				'playersNeeded': 'uint8',
-				// Predator zoom (plan.md C9, diepcustom TankBody.ts:338-345's `usesCameraCoords`):
-				// the world point the viewport should actually be centred on this tick - equal to
-				// the viewer's own x/y whenever they are not holding a zoomAbility lock (states[4]
-				// on the `main`/`Players` record carries whether that lock is currently active),
-				// so an unzoomed client can ignore this entirely and keep tracking its own tank the
-				// way it always has. Sent every tick rather than only while zoomed, same reasoning
-				// as baseSize being 0 in a mode with no bases - one shape, no client-side branch on
-				// whether the field is meaningful this tick.
+				// Viewport centre; equals the viewer's x/y when not zoom-locked.
 				'camX': 'float32',
 				'camY': 'float32',
 				// Whether THIS viewer could respawn right now, and how many contenders the room's
@@ -221,9 +202,7 @@
 				'vx': 'float32',
 				'vy': 'float32',
 				'dir': 'int16',
-				// The auto-turret ring's own phase (entities/Player.js's `ringDir`) - a ring
-				// cannon's mount angle is `offdir + ringDir`, not `offdir + dir` like an ordinary
-				// barrel, so the client needs this separately from the hull's own facing.
+				// Auto-turret ring phase. A ring cannon's mount is offdir + ringDir.
 				'ringDir': 'int16',
 				'size': 'float32',
 				'alpha': 'uint8',
@@ -242,9 +221,7 @@
 				'y': 'float32',
 				'size': 'float32',
 				'alpha': 'uint8',
-				// plan.md C5/S4 - a shape's own drawn facing (diep's AbstractShape.ts
-				// `positionData.angle`), server-authoritative now instead of the client's own
-				// approximated cosmetic spin.
+				// Server-authoritative drawn facing.
 				'dir': 'int16',
 			},
 			'Bullets': {
@@ -257,9 +234,7 @@
 				'alpha': 'uint8',
 				'dir': 'int16'
 			},
-			// A wall never moves and never changes after spawn (PENDING #2, wall-only slice) - no
-			// hp/color/states, just the geometry. Rectangular now (plan.md Step 12): w/h replace
-			// the old single radius `size`.
+			// Geometry only; a wall never moves after spawn.
 			'Walls': {
 				'x': 'float32',
 				'y': 'float32',
@@ -268,12 +243,7 @@
 			}
 		},
 		'UiUpdate': {
-			// uint16, not uint8 (PENDING #26): Maze's wall dots (rooms/Room.js's this.wallDots,
-			// appended to every viewer's `map` array by getUi()) can run past 255 once combined
-			// with a room's live player dots, and a truncated length prefix here would desync the
-			// whole rest of the packet - the loop below still writes every real record regardless
-			// of what the header says, so an overflowed uint8 count silently drops the decoder out
-			// of sync with the bytes actually on the wire rather than failing loudly.
+			// uint16: maze wall dots plus player dots can exceed 255.
 			'array': 'uint16',
 			'leader': {
 				'xp': 'uint32',
@@ -281,14 +251,8 @@
 				'nameC': 'uint8',
 				'team': 'uint8'
 			},
-			// A minimap dot. x/y are CODECS.unit fractions of the map (0..1 -> uint8), not world
-			// coordinates - a dot needs nothing sharper than ~256 steps per axis, and it keeps a
-			// record this small regardless of how big the map itself is.
-			// `w`/`h` are the same kind of fraction, and they turn a dot into a RECTANGLE: Maze's
-			// wall dots (rooms/Room.js's this.wallDots) carry the real proportions of the wall
-			// they stand for, so the minimap shows the actual maze layout instead of one blob per
-			// merged chunk. 0/0 - every live player dot - keeps the round dot the client always
-			// drew, so this costs an ordinary dot two bytes and no behaviour.
+			// A minimap dot. x/y are 0..1 fractions of the map. w/h turn a dot into a
+			// rectangle (maze walls); 0/0 keeps the round player dot.
 			'map': {
 				'x': 'uint8',
 				'y': 'uint8',
@@ -428,10 +392,7 @@
 			'Bullets',
 			'Walls',
 		],
-		/* Must stay index-for-index with toBUFFER.gamemode below, and cover every key in
-			 rooms/index.js. It did not: '4team' encoded as 3 but decoded from index 2, so
-			 the server read gamemode 3 as `undefined` and answered ERR_GAMEMODE - the mode could
-			 never be joined. 'boss' was in neither table. */
+		/* Must stay index-for-index with toBUFFER.gamemode below. */
 		'gamemode': [
 			'ffa',
 			'2team',
@@ -441,10 +402,8 @@
 			'tag',
 			'maze',
 			'domination',
-			// plan.md G1 - appended, matching toBUFFER.gamemode's own append below.
 			'mothership',
 			'survival',
-			// The diagnostic room (rooms/Tester.js) - appended, so no existing mode's byte moves.
 			'tester'
 		],
 		'type': [
@@ -485,17 +444,11 @@
 			'black',
 			'lila',
 			'necro',
-			// Real per-boss diep colours (plan.md Part D), appended rather than inserted so no
-			// existing index shifts: 'bull' is already Color.EnemyCrasher's own hex (Guardian),
-			// 'coral'/'square'/'fallen' are new Palette entries for Color.EnemyTriangle (Defender)/
-			// Color.EnemySquare (Summoner)/Color.Fallen (Fallen Overlord/Fallen Booster) -
-			// rooms/Room.js's entityColor() is what actually picks one per boss class.
+			// Appended so existing colour indexes do not shift.
 			'bull',
 			'coral',
 			'square',
 			'fallen',
-			// Color.Neutral - an Arena Closer and an uncaptured Dominator (rooms/Room.js's
-			// rules.neutralTeam). Appended, so no existing index shifts.
 			'neutral'
 		],
 		'reason': [
@@ -526,15 +479,10 @@
 			'arrd',
 			'k',
 			'o',
-			// Sandbox-only cheat keys (PENDING "Sandbox gaps"): '\' previews any real tank
-			// class with none of upClass()'s tree/level gating, ';' toggles the repel-and-
-			// take-no-contact-damage god mode entities/Player.js's collision() already had a
-			// dead branch for. Both gated sandbox-only in net/gameSocket.js, same as 'k'/'o'.
+			// Sandbox-only: '\' cycles class, ';' toggles god mode.
 			'classcycle',
 			'god',
-			// H-key piloting (plan.md E4) - claim/release the nearest same-team claimable AI
-			// (a captured Dominator, or your own team's Mothership). Not sandbox-gated: diep's
-			// own possess() works in any mode with a claimable AI nearby.
+			// Claim/release the nearest same-team claimable AI.
 			'h'
 		],
 		'xpExt': [
@@ -560,7 +508,6 @@
 			'tag': 5,
 			'maze': 6,
 			'domination': 7,
-			// plan.md G1 - appended, not inserted, so no existing mode's wire byte moves.
 			'mothership': 8,
 			'survival': 9,
 			'tester': 10
@@ -637,9 +584,6 @@
 	/*
 		A field whose in-memory value is not the value that goes on the wire declares a codec:
 		`enc` runs on the way out, `dec` on the way back, and `as` renames the field on decode.
-		These are the bodies of what used to be a `switch(n)` repeated four times - twice in the
-		encoder (own tank / other entities) and twice in the decoder - where a case present in
-		one copy and missing from another was a silent desync.
 	*/
 	const CODECS = {
 		/* A bit array. The leading 1 keeps toString(2) from eating leading zeroes. */
@@ -725,10 +669,6 @@
 	};
 	/*
 		Is `value` within [min,max]?
-
-		This used to read `return(min<=data<=max)`, which JavaScript parses as `(min<=data)<=max`:
-		a boolean coerced to 0/1 and compared against max, true for every max >= 1. Every length
-		check in the protocol passed unconditionally, so nothing was ever validated.
 	*/
 	function checkLength(value, min, max) {
 		return (min <= value && value <= max);
@@ -852,9 +792,7 @@
 	///////////////////////////////////////////////////////////////////// outbound messages
 	/*
 		Framing only. Each entry writes its payload after the leading message-type byte, which
-		send() has already written; a `null` entry would be a bare header (nothing is one any more -
-		`ping` carries a probe byte since PENDING #24a). 'Instance' is the
-		one exception and is handled in send() - it is a fragment spliced into a GameUpdate, so
+		send() has already written. 'Instance' is a fragment spliced into a GameUpdate, so
 		it carries no type byte and comes back as an Int8Array.
 	*/
 	const MSG = (platform === 'server') ? {
@@ -1034,10 +972,7 @@
 		const DEC = new Decoder(data);
 		const type = toSTRING.type[DEC.read(TYPE.message)];
 		const result = { type: type, data: {} };
-		if (!(type in PARSE)) {
-			// An unknown or wrong-direction type byte. ERR_PACKET_TYPE has been in the kick enum
-			// since the beginning and was never once produced; the switch simply fell through and
-			// handed the caller an empty result.
+			if (!(type in PARSE)) {
 			if (platform === 'server') { result.error = 'ERR_PACKET_TYPE'; }
 			return result;
 		}

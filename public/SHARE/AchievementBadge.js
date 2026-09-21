@@ -1,14 +1,6 @@
 /*
-	Drawn achievement badge: a semicircle cap fused to a rectangle, built now so both the
-	achievements wheel (public/account.js) and, later, the in-game toast feed
-	(public/client/ui.js's MES) can hand back the same canvas for an entry regardless of
-	whether it's a bitmap icon or a drawn badge. Not wired into either call
-	site's fallback logic yet - AchievementsConfig entries opt in later via an optional
-	`badge: {color, border}` field; today every entry lacks one, so nothing regresses.
-
-	Same dual-mode footer as AchievementsConfig.js / TanksConfig.js so both sides require() /
-	global exactly one copy - kept even though only the browser side calls into this today,
-	for consistency and so a future Node-side test can require() it directly.
+	Drawn achievement badge: a semicircle cap fused to a rectangle. AchievementsConfig
+	entries opt in via an optional `badge: {color, border}` field.
 */
 (function (exports) {
 

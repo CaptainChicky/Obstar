@@ -100,11 +100,8 @@
 	General['ease-in-out'] = function (t, e = 5) { return t <= .5 ? Math.pow(2 * t, e) / 2 : 1 - Math.pow(2 * (1 - t), e) / 2 }
 	/*
 		Rescale a per-frame smoothing factor for the frame we actually got.
-
-		`d += (target-d)*k` once per frame is a time constant only if the frame rate is fixed.
-		Every k in this file was tuned on a 60Hz monitor; on 144Hz the same code smoothed 2.4x
-		faster, and during a hitch it barely moved at all. The equivalent factor for a frame of
-		length dt is 1-(1-k)^(dt/16.667), which is what this returns.
+		`d += (target-d)*k` once per frame is a time constant only if the frame rate is
+		fixed. Equivalent factor for a frame of length dt: 1-(1-k)^(dt/16.667).
 	*/
 	General['lerpK'] = function (k) {
 		return MOTION.lerpK(k, Global.dtFrames);

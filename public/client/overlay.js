@@ -1,19 +1,13 @@
 /*
 	The two things drawn in DOM rather than canvas: the developer console and the chat box.
-	Both attach themselves to General as soon as the page parses them, which is where the
-	monolith ran them too.
+	Both attach themselves to General as soon as the page parses them.
 */
 (function (CLIENT) {
 	'use strict';
 	const General = CLIENT.General;
 	/*
-		Cosmetics console. The console opens for anyone (Ctrl+Shift+L,
-		game.js:320) - always did, since there was never a client-side gate on it, only on
-		whether a typed command did anything server-side. Rather than gate the console itself,
-		a recognised *cosmetic* command (color/uiscale/palette/fps/help/clear) is handled and
-		persisted entirely client-side and never reaches the socket; anything else still goes to
-		the server exactly as before, where lib/Controller.js's command() gates on devlevel. So
-		this adds no new attack surface - a non-admin typing an admin command still gets nothing.
+		Cosmetics console. Opens for anyone (Ctrl+Shift+L). Recognised cosmetic commands
+		stay client-side; anything else still goes to the server.
 	*/
 	const COSMETICS_KEY = 'obstar_cosmetics';
 	const cosmetics = (() => {

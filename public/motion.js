@@ -1,70 +1,17 @@
 /*
-	Client-side motion: how a position that arrives ~33 times a second is drawn ~60-144 times
-	a second.
+	Client-side motion: how a position that arrives ~33 times a second is drawn ~60-144
+	times a second.
 
-	///////////////////////////////////////////////////////////////////////////////////////
-	What this replaces.
+	Keep the last few server positions stamped with when they were simulated, and draw
+	the entity one packet-interval ago, linearly between the two snapshots that straddle
+	that instant. Constant velocity is exact from the second snapshot on. The price is
+	one packet interval of deliberate, constant latency.
 
-	Every moving thing in the client used to be smoothed with one line per axis, run
-	once per animation frame:
-
-			this.dx += (this.x-this.dx)*CONST.SMOOTH;      // CONST.SMOOTH is 0.15
-
-	an exponential filter chasing whatever the server last said. Two things are wrong with
-	that, and players saw both:
-
-		1. THE STARTUP TRANSIENT. `dx` starts at the spawn position and chases a target that is
-			 *already moving*. An exponential filter needs roughly 1/0.15 ~ 7 frames to reach a
-			 useful fraction of the target's speed and ~30 to match it, so a bullet leaves the
-			 barrel almost stationary and accelerates to full speed over about half a second
-			 before it looks right. That is the "bullets lag for a bit when you shoot" - the
-			 bullet is not waiting on the network, it is waiting on this filter to spin up.
-			 Anything spawned in motion had it; bullets are simply the fastest thing in the game,
-			 so they showed it worst.
-
-		2. THE STEADY-STATE OFFSET. Once spun up, the filter still trails the true position by a
-			 fixed fraction of a frame's travel, forever, and the size of that trail is
-			 proportional to speed. Different entities trailed by different amounts, so nothing
-			 lined up - and the player's own tank, camera and aim vector each ran a *different*
-			 filter over the same position, which is what made the view slide off centre while
-			 moving.
-
-	Both are the same mistake: smoothing *towards* a moving target instead of replaying where
-	the target has already been.
-
-	///////////////////////////////////////////////////////////////////////////////////////
-	What it does instead: snapshot interpolation.
-
-	Keep the last few server positions with the time each was actually simulated at (NET.mark()
-	reconstructs that from the room step counter on the wire - see there), and draw the entity
-	where it was one packet-interval ago, linearly between the two that straddle that instant:
-
-			render(t) = lerp(before, after, (t - interval - t_before) / (t_after - t_before))
-
-	Constant velocity comes out exactly right from the first frame after the second snapshot,
-	with no spin-up and no speed-dependent offset. The price is one packet interval (~33ms) of
-	deliberate, *constant* latency, which is precisely what buys the smoothness: there is
-	always a known-good position on both sides of the instant being drawn, so nothing has to
-	be guessed.
-
-	Two things make that "always" true rather than nearly true, and both are load-bearing -
-	together they are the difference between this and visible rubber-banding at speed. One is
-	stamping snapshots with when they were simulated instead of when they landed (NET.mark).
-	The other is keeping more than two of them (HISTORY), so the instant being drawn never
-	falls off the old end of the history and clamps there.
-
-	`interval` is measured, not assumed. net/gameSocket.js aims at 30ms, but that is a timer,
-	not a guarantee, and what matters here is the spacing the packets actually arrive with.
-
-	///////////////////////////////////////////////////////////////////////////////////////
-	Loaded by views/play.ejs before public/client/, and required directly by test/interp.js -
-	same typeof(exports) sniff as public/SHARE/SocketSchema.js.
+	`interval` is measured from arrival spacing, not assumed.
 */
 (function (exp) {
-	// Only the seed for the interval EMA - mark() measures the real spacing within a few
-	// packets, so this value decides how long the first moments after connecting look wrong,
-	// not the steady state. Keep it equal to config.SEND_MS (33) so that transient is nil.
-	const NET_TICK = 33;    // what net/gameSocket.js aims for between GameUpdate packets
+	// Seed for the interval EMA. Keep equal to SEND_MS (33) so the first moments look right.
+	const NET_TICK = 33;
 	const TELEPORT = 400;   // a jump this big is not motion; see push()
 	const MAX_EXTRAP = 2;   // how far past the newest snapshot sample() will coast
 
@@ -84,41 +31,18 @@
 	const STEP_MAX_GAP = 40;   // steps (~1s) in one packet gap: a stall, not motion
 
 	/*
-		How many server positions each entity keeps.
-
-		Two is the textbook answer and it is one short. We draw one packet interval (~33ms)
-		behind the newest snapshot, but a snapshot only reaches back as far as the packet's own
-		world content - one server step, 25ms, at the narrowest - so with a pair the read point
-		falls off the older end for part of every packet cycle and clamps there. A clamp is a
-		freeze, and the catch-up after it is a lurch: at walking speed that is invisible, at
-		sprint speed against the background grid it is exactly the rubber-banding players see.
-		Three gaps is ~100ms of history against a ~33ms delay, so the read point stays strictly
-		inside it with room to spare for a late packet.
+		How many server positions each entity keeps. Two is one short: we draw one packet
+		interval behind the newest snapshot, so with a pair the read point falls off the
+		older end. Four gaps keep it inside with room for a late packet.
 	*/
 	const HISTORY = 4;
 
-	// The reference tick every server-side gameplay constant is denominated against
-	// (config.REF_TICK_MS) - 40ms, diep.io's own loop rate. This is
-	// deliberately not NET_TICK/SEND_MS above (the send interval, 33ms, only coincidentally
-	// close): public/client/game.js's input-prediction frame->tick conversion has to agree with
-	// what public/SHARE/Physics.js's per-tick constants are actually denominated in, or
-	// prediction drifts from what the server does. The browser cannot see lib/config.js, so this
-	// is a constant of the balance, not a deployment knob - if server and reference tick ever
-	// need to diverge at runtime, inject this through POST in views/play.ejs instead.
+	// Reference tick gameplay constants are denominated against (40ms), not the send interval.
 	const REF_TICK = 40;
 
 	/*
-		Round-trip time (PENDING #24a).
-
-		RTT_GAIN is per probe, and probes go out once a second (public/client/game.js), so 0.2 is
-		a ~5s time constant - slow enough that one bad sample cannot move the prediction lead
-		visibly, fast enough to follow a genuine route change within a few seconds. RTT_MAX is the
-		"this was not a round trip" cut: a backgrounded tab parks the echo in a queue and reports
-		seconds, and folding that in would inflate the lead for the next half minute.
-
-		Seeded at 0 rather than at a guess: until the first echo lands the lead falls back to
-		interval alone, which is an under-estimate, and an under-estimated lead is a smaller lie
-		than an over-estimated one.
+		Round-trip time. RTT_GAIN is per probe (~5s time constant). RTT_MAX cuts a stalled
+		echo. Seeded at 0 until the first echo lands.
 	*/
 	const RTT_GAIN = 0.2;
 	const RTT_MAX = 2000;
@@ -229,18 +153,9 @@
 			return ms;
 		},
 		/*
-			How far ahead of the newest snapshot the local tank has to be drawn to sit where the
-			server already has it, in ms of its own travel.
-
-			Two pieces, both measured rather than tuned - which is the whole point of the probe
-			byte. `interval` is the render delay Interp.sample() deliberately holds (it draws one
-			packet interval in the past); `rtt/2` is how stale the newest snapshot already was when
-			it arrived. Multiply by the tank's speed and that is the lead in world units - about 20
-			at a base tank's 362.25 u/s on a 50ms RTT. It was ~16 at the 284 u/s this game ran at
-			before plan.md step 2 adopted diep's tank magnitudes; the lead is proportional to speed,
-			so it tracked the change by itself - which is the whole point of deriving it rather than
-			tuning it. public/client/config.js's CONST.SIZE*2 cap it replaces was a flat 70
-			regardless of speed, latency or packet rate.
+			How far ahead of the newest snapshot the local tank has to be drawn, in ms of
+			its own travel. interval is the render delay; rtt/2 is how stale the newest
+			snapshot already was.
 		*/
 		leadMs: function () {
 			return NET.interval + NET.rtt / 2;
@@ -356,11 +271,7 @@
 
 	/*
 		Rescale a per-frame smoothing factor for the frame we actually got.
-
-		`d += (target-d)*k` once per frame is a time constant only if the frame rate is fixed.
-		Every k in the client was tuned on a 60Hz monitor; on 144Hz the same code smoothed 2.4x
-		faster, and during a hitch it barely moved at all. The equivalent factor for a frame of
-		length dtFrames (measured in 60Hz frames) is 1-(1-k)^dtFrames.
+		Equivalent factor for a frame of length dtFrames (in 60Hz frames): 1-(1-k)^dtFrames.
 	*/
 	function lerpK(k, dtFrames) {
 		return (dtFrames === 1) ? k : 1 - Math.pow(1 - k, dtFrames);

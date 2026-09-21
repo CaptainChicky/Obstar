@@ -32,9 +32,9 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
 7. **Sandbox gaps** — party-link invites; arena/shape scaling with player count; bosses after
    50–60 min.
 8. **Comment-style cleanup pass** — strip cross-file references/change history, keep functional
-   statements. Touches nearly every file; do it as its own commit. Done: `/db`, `/entities`
-   (except `Bullet.js`), `/lib`, `/net`, `/views`, `/web`. Still pending: `/public`, `/rooms`,
-   `/test`, `entities/Bullet.js`.
+  statements. Touches nearly every file; do it as its own commit. Done: `/db`, `/entities`
+  (except `Bullet.js`), `/lib`, `/net`, `/views`, `/web`, `/public`. Still pending: `/rooms`,
+  `/test`, `entities/Bullet.js`.
 9. **Contact quantisation (D6)** — we prorate per 25 ms tick; diep exchanges once per 40 ms
    tick. Accepted approximation; the exact fix is a per-pair reference-tick guard.
 10. **`prize`/coins/respawn XP** — ours (`pow(xp/mlx,1.8)`, `respawnPow 0.9`) vs diep's

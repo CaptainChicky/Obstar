@@ -8,26 +8,11 @@
 	const Palette = CLIENT.Palette;
 	const Global = CLIENT.Global;
 	const roundRect = CLIENT.roundRect;
-	// The uniform base<->tip taper ratio behind every trapezoid shape in this file (plan.md A2):
-	// pixel-measured off the wiki reference renders (Mothership, Trapper Dominator's launcher
-	// flare), the wide end is 5/3 the narrow end's half-width - not our old 0.4x/2x guesses.
+	// Uniform base<->tip taper: the wide end is 5/3 the narrow end's half-width.
 	const TAPER_RATIO = 5 / 3;
-	// Barrel-level addon (plan.md A3): a short arrowhead clipped onto a trap barrel's tip,
-	// diepcustom's `TrapLauncher` BarrelAddon (`BarrelAddons.ts:49-74`) - every `bullet.type:
-	// "trap"` barrel sets `c.trapLauncher` to draw it. The launcher's own width at its base
-	// (attaching to the barrel with no seam) equals the barrel's own width; it flares to
-	// TAPER_RATIO x that at the outward mouth. Its length is the barrel's own width x 20/42
-	// (`TrapLauncher`'s `size = barrel.width x 20/42`).
-	//
-	// It sits ENTIRELY PAST the barrel's tip, not centred on it. `TrapLauncher`'s own
-	// `positionData.x = (barrel.size + this.size) / 2` is measured from the BARREL's centre, and
-	// a barrel's centre is at `size/2` from the hull (its tip is at `size` - the same figure
-	// Bullet.ts:100 spawns from), so the launcher spans `[barrel.size, barrel.size + len]`.
-	// Centring it on the tip instead ate the last half of the launcher's own length out of the
-	// plain-rectangle neck, which on a Trapper left only ~7 units of neck poking out past the
-	// body against a 14-unit flare - the "stub is not visible" report. Past the tip, the visible
-	// neck and the flare are the same length, exactly as in diep (barrel 60 du out of a 50 du
-	// body radius, launcher 10 du). Cosmetic only, no server-side effect.
+	// Trap-barrel arrowhead. Base width matches the barrel; it flares to TAPER_RATIO
+	// at the mouth. Length is barrel width x 20/42. Sits entirely past the barrel tip.
+	// Cosmetic only.
 	function trapLauncherLen(c) {
 		return c.width * 20 / 42;
 	}
@@ -46,36 +31,12 @@
 		ctx.fill();
 		ctx.stroke();
 	}
-	// Reference-tick scaling (plan.md R4/R9): lib/tick.js's REF_TICK_MS=40 is the tick every raw
-	// radians-per-tick constant in this file's own source data (`guards[].rate`,
-	// AI.PASSIVE_ROTATION) is denominated against - unreachable from this plain <script>-tag
-	// file (no require() in the browser), so it's hand-copied here rather than imported. These
-	// spins are cosmetic-only client animation with nothing server-authoritative to sync
-	// against (guardSize collision is a static enlarged circle, entities/Player.js, plan.md T6;
-	// the ring's own mount position is a rendering-only approximation, plan.md R9) - same
-	// Date.now()-based idiom PetsConfig.js's own cosmetic spins already use.
+	// Spins in this file are denominated against a 40ms reference tick.
 	const REF_TICK_MS = 40;
 	const Drawings = {
-		// A spinning outline n-gon (Smasher/Landmine/Spike/the 3 Dominators' `guards`, plan.md
-		// R4) - diepcustom's GuardObject: drawn circumradius is `owner.size x sizeRatio` (its
-		// own `x sqrt(1/2)` scaleFactor and this file's `x sqrt(2)` polygon-circumradius
-		// identity, C3, cancel exactly), drawn under the body so only the points poking out
-		// past it stay visible.
-		//
-		// TWO fixes over the first cut of this, both read off Spike_transparent_facing_up.webp:
-		//
-		// COLOUR. diepcustom's GuardObject sets `styleData.color = Color.Border` (Enums.ts:
-		// 0x555555), and this codebase's own universal stroke rule (fill x0.75, see config.js's
-		// `wall`) puts its outline at exactly 0x404040 - which is what the reference render's
-		// spikes read as, since the stroke covers most of a narrow tip. It was drawn in
-		// `param.tankC[1]`, i.e. the DARK TEAM COLOUR, so a green tank grew dark green spikes.
-		//
-		// SIZE. `sizeRatio` is measured against the tank's OUTLINE (`size + LINEWIDTH/2`), not
-		// the bare body radius: at Smasher's own 1.15 over six sides the hexagon's flat edge
-		// then lands at 0.996x the outline, i.e. exactly on it, and Spike's 1.3 over three puts
-		// its tips at 1.3x the outline - 1.284x measured off the reference. Against the bare
-		// radius every guard came out ~7% small and the hexagon's flat edge sat inside the
-		// outline instead of touching it.
+		// Spinning outline n-gon. Circumradius is owner.size x sizeRatio, measured against
+		// the tank's outline (size + LINEWIDTH/2), drawn under the body so only the
+		// points poking out stay visible.
 		guards: (ctx, config, param) => {
 			if (!config.guards) { return; }
 			const t = Date.now();
@@ -97,18 +58,7 @@
 				ctx.stroke();
 			}
 		},
-		// The thing under Skimmer's barrel (plan.md R4, diepcustom Addons.ts's LauncherAddon
-		// preAddon, positioned at half its own length out along the tank's forward axis) - a
-		// small barrel-coloured trapezoid nub, same shape family as drawTrapLauncher above.
-		// Rocketeer is NOT wired to this (its own client entry is an established stand-in with
-		// its own two-barrel geometry, not diep's real id55 Rocketeer this addon belongs to -
-		// PENDING.md). WIDTH and taper direction are a deliberate departure from
-		// LauncherAddon's own `widthRatio 33.6/50` (half = 0.336 x param.size, tapering DOWN to
-		// 40% at the tip): skimmerandbullet.png (issues.md's own reference) measures the visible
-		// nub at 191 against the barrel's own 233 at the same body - 82% of the barrel's width,
-		// not diepcustom's ~47%, and "wide side out" - the flare is at the OUTER end, not the
-		// base. Taken as ground truth over the addon source (user's own screenshot of the real
-		// game), same footing as every other batch acceptance figure.
+		// Trapezoid nub under Skimmer's barrel. Wide side out; width is 82% of the barrel.
 		launcher: (ctx, config, param) => {
 			if (!config.launcher) { return; }
 			const len = 1.852 * param.size, tipHalf = 0.585296 * param.size, baseHalf = tipHalf * 0.85;
@@ -128,13 +78,8 @@
 			ctx.stroke();
 			ctx.restore();
 		},
-		// The thing above Ranger's barrel (plan.md A4, diepcustom Addons.ts's PronouncedAddon -
-		// postAddon `pronounced`, `sizeRatio 50/50`, `widthRatio 42/50`, `offsetRatio 40/50` of
-		// the tank's OWN body radius, `angle PI`). Centered `offsetRatio x size` out along the
-		// tank's forward axis, spanning its own `+-sizeRatio/2 x size`; angle PI flips which end
-		// of the shared trapezoid template is wide - same effect a barrel's own `trapezoidDirection:
-		// PI` has (A2) - putting the wide end nearest the hull (mostly hidden under the body) and
-		// the narrow end poking out past it.
+		// Trapezoid overlay above Ranger's barrel. Wide end nearest the hull, narrow end
+		// poking out past it.
 		pronounced: (ctx, config, param) => {
 			if (!config.pronounced) { return; }
 			const size = param.size;
@@ -157,17 +102,8 @@
 			ctx.stroke();
 			ctx.restore();
 		},
-		// The cosmetic trapezoid on Destroyer + Gunner Dominator's barrel (plan.md E2, diepcustom
-		// Addons.ts's PronouncedDomAddon - postAddon `dompronounced`, `sizeRatio 22/50`,
-		// `widthRatio 35/50`, `offsetRatio 50/50` of the Dominator's OWN live body radius,
-		// `angle PI`). Same shape family as `pronounced` above (wide end nearest the hull, narrow
-		// end poking out). Z-order (B2): drawn UNDER the circular body, above the barrels - the
-		// dombase -> barrels -> trapezoid -> body order, NOT the "on top of the body" this addon
-		// carried before. Every Dominator reference render (Dominator_tank_4.webp,
-		// Gunner_dominator_tank_2.webp) shows the grey trapezoid clipped by the body's edge with
-		// the circle drawn unbroken over it - only its outer tip past the body radius is visible.
-		// render.js calls it right before Drawings.body, kept a separate hook (not folded into
-		// Drawings.pronounced) because only these two classes carry it.
+		// Cosmetic trapezoid on Destroyer/Gunner Dominator. Drawn under the circular body,
+		// above the barrels — only the tip past the body radius stays visible.
 		dompronounced: (ctx, config, param) => {
 			if (!config.dompronounced) { return; }
 			const size = param.size;
@@ -201,9 +137,8 @@
 				ctx.save();
 				ctx.beginPath();
 				ctx.rotate(c.offdir + param.dir);
-				// `distance` (plan.md T5) pushes the barrel's drawn origin out from the hull
-				// along its own firing axis before offx/height are laid out - 0 for every
-				// ordinary barrel (origin stays the hull center), matches Player.js's shoot().
+				// `distance` pushes the barrel's drawn origin out from the hull along its
+				// firing axis. 0 for every ordinary barrel (origin stays the hull center).
 				if (c.distance) { ctx.translate(c.distance * r, 0); }
 				ctx.moveTo(0, (c.offx - c.width / 2) * r);
 				ctx.lineTo(0, (c.offx + c.width / 2) * r);
@@ -248,14 +183,8 @@
 				ctx.restore();
 			},
 			(ctx, config, param, i) => {
-				// draw-shape index 2: trapezoid (plan.md A2's `isTrapezoid`/`trapezoidDirection`)
-				// - a client-only draw namespace, unrelated to the server's own `cannons[i].type`
-				// bullet-behavior enum (0/1/1.1/2/3/3.1). `c.width` is always the NARROW end's
-				// full width (the same figure Bullet.ts's `bulletRadius = width/2` uses, since a
-				// bullet spawns at whichever end is the muzzle); the wide end is TAPER_RATIO x
-				// that. `trapezoidDirection` falsy = wide end at the muzzle/tip (Machine Gun,
-				// Mothership, drone spawners); truthy = wide end at the base/hull, narrow at the
-				// muzzle (Stalker, Rocketeer, Battleship's rear pair).
+				// Trapezoid. `c.width` is the narrow end; the wide end is TAPER_RATIO x that.
+				// trapezoidDirection falsy = wide at the muzzle; truthy = wide at the hull.
 				const c = config.cannons[i], r = param.size / CONST.SIZE;
 				if (c.hidden) {
 					return;
@@ -284,16 +213,9 @@
 				ctx.restore();
 			},
 		],
-		// A ring turret's own mount phase: the server's real `ringDir` (entities/Player.js), off
-		// the wire, so the base circle and the barrel mounted on it land at the same phase the
-		// server aimed `canDir` from - the whole ring is drawn where the server says it is,
-		// instead of a client-guessed phase drifting away from it over time.
+		// Ring turret mount phase from the server's ringDir, so the base and barrel stay in sync.
 		ringMountDir: (c, param) => c.offdir + (param.ringDir || 0),
-		// A ring turret's own base circle (plan.md R9), drawn separately from its barrel
-		// (Drawings.turrets[0] below) so it can sit UNDER the body in render.js's pre-body
-		// pass - diepcustom XORs `showsAboveParent` OFF for a ring turret specifically (a
-		// centered turret - Auto Hover/Gunner/Trapper/Smasher - keeps it drawn WITH its
-		// barrel, above the body, unchanged below).
+		// Ring turret base circle, drawn separately so it can sit under the body.
 		ringBase: (ctx, config, param, i) => {
 			const c = config.turrets[i], r = param.size / CONST.SIZE;
 			const mountDir = Drawings.ringMountDir(c, param);
@@ -317,13 +239,8 @@
 				const recoil = param.recoils[i] ? 1 - Math.abs(param.recoils[i]) : 1;
 				ctx.save();
 				ctx.beginPath();
-				// `distance` (plan.md T5) mounts the turret at a fixed socket on the hull
-				// (param.dir + c.offdir, body-relative and static) BEFORE the barrel itself
-				// rotates to the live aim angle below - keeps a multi-turret ring (Auto 3/5,
-				// plan.md T6) fixed in place while each barrel independently tracks its target,
-				// instead of the whole mount sliding around the hull's edge to face it. 0 for
-				// Auto Hover's single centered turret (no positional change from today). A ring
-				// turret (plan.md R9) mounts off its own independent spin phase instead.
+				// `distance` mounts the turret at a fixed hull socket before the barrel
+				// rotates to the live aim. A ring turret mounts off its own spin phase.
 				if (c.distance) {
 					const mountDir = c.ring ? Drawings.ringMountDir(c, param) : (param.dir + c.offdir);
 					ctx.translate(Math.cos(mountDir) * c.distance * r, Math.sin(mountDir) * c.distance * r);
@@ -409,18 +326,9 @@
 				ctx.fill(); ctx.stroke();
 				ctx.restore();
 			},
-			// A generic N-gon body (plan.md R6, `body.sides`) - the same apothem-to-circumradius
-			// identity the pentagon above already uses (`1/cos(pi/n)`; n=5 there is exactly this
-			// file's 1.236), generalised. Mothership (16), Guardian/Defender (3) and Summoner (4)
-			// all get their real diep silhouette from this instead of the circle/rounded-rect
-			// stand-in they used to share. Vertex 0 sits on the facing axis by default, which is
-			// what puts a Guardian/Defender triangle's flat rear EDGE (not a corner) behind its
-			// backward-firing spawner - for n=3 a vertex-forward triangle always has an edge
-			// opposite it. It does NOT hold for even n: a vertex-forward square puts CORNERS on
-			// the four cardinal axes, so Summoner's four barrels (offdir 0/pi/2/pi/-pi/2) sprout
-			// from thin air off each corner instead of from the middle of a side ("drawn 45
-			// degrees from where it should be" - issues.md). `body.rot` (optional, radians) lets
-			// a class re-anchor its own vertex 0 without touching every other n-gon body.
+			// Generic N-gon. Vertex 0 sits on the facing axis; `body.rot` re-anchors it.
+			// Even n puts corners on the cardinals, so Summoner uses rot = -PI/4 to put
+			// an edge under each barrel instead of a corner.
 			(ctx, config, param) => {
 				const n = config.body.sides, size = param.size / Math.cos(Math.PI / n);
 				ctx.save();
@@ -440,18 +348,8 @@
 			},
 		],
 		/*
-			A round bullet's outline STRADDLES its radius (`size +- LINEWIDTH/2`), exactly like a
-			tank body (Drawings.body[0]) and like every stroked shape in this file - it used to be
-			drawn INWARD (fill to `size`, relight to `size - LINEWIDTH`), which is the one place
-			this codebase disagreed with itself about what a drawn radius means.
-
-			That single inconsistency is the whole "bullets are undersized" report, and it is
-			measurable: a level-1 Basic draws at `2 x size + LINEWIDTH` = 60.6 px across, and its
-			bullet (`can.size 14.7 x size/35` = 11.88) drew at `2 x 11.88` = 23.8 px. diep's own
-			figures are 61 px and 28 px. Straddling puts the bullet at `2 x 11.88 + 4` = 27.8 px
-			against the same 60.6 px body - diep's ratio, to a pixel, with no stat table touched:
-			`can.size` was already diep's own `(barrel.width/2) x sizeRatio` (Bullet.ts:77) and is
-			right to four figures. It cascades to every class for the same reason.
+			A round bullet's outline straddles its radius (size +- LINEWIDTH/2), same as a
+			tank body. Filling to size and relighting inward would undersize every bullet.
 		*/
 		bullet: [
 			(ctx, param) => {
@@ -516,17 +414,8 @@
 				ctx.stroke();
 			},
 			(ctx, param) => {
-				// type 4 = Skimmer's own projectile (plan.md B3/R7, entities/Bullet.js's `case 4`):
-				// a circular bullet that spins its own body independently of its straight-line
-				// travel - `param.dir` here is the server's `showDir`, not `dir` - while a pair of
-				// opposed sub-barrels auto-fire along that spin (drawn as plain type-0 bullets of
-				// their own, not part of this sprite). Nubs first, body on top, same order as an
-				// ordinary tank's barrels-then-body - which is also what keeps them drawn BELOW
-				// the main bullet (issues.md). Width/reach are fit to skimmerandbullet.png's own
-				// bullet-with-nubs reference: 95 wide against a 236-diameter bullet (0.4025 x D,
-				// half 0.402540 x radius), tip poking 22 past the bullet's own edge (0.186441 x
-				// radius past size, so the tip sits at 1.186441 x size) - the old 0.32/0.7 pair
-				// left the nub thinner and its tip exactly AT the bullet's edge, poking 0.
+				// Skimmer projectile: spinning body with a pair of opposed nubs. Nubs first,
+				// body on top. param.dir is showDir, not travel dir.
 				ctx.rotate(param.dir);
 				const nubLen = param.size * 0.886441, nubHalf = param.size * 0.402540;
 				for (const flip of [0, Math.PI]) {
@@ -556,14 +445,10 @@
 				ctx.closePath();
 			},
 			(ctx, param) => {
-				// type 5 = Factory's Minion: a small controllable tank body with its own barrel,
-				// not one of diep's real Bullets.type values - a draw-only id assigned at the
-				// encode site (rooms/Room.js's bulletWireType()) because the wire's Bullets.type
-				// is a uint8 and can't carry the source cannon's fractional `1.5`.
+				// Factory minion: a small tank body with its own barrel. Draw-only type 5
+				// because the wire's Bullets.type is a uint8 and cannot carry 1.5.
 				ctx.save();
 				ctx.rotate(param.dir);
-				// MinionBarrelDefinition (Minion.ts) is size 85 / width 50.4 against the minion's
-				// own 50-du reference body: 85/50 = 1.7 body radii long, 50.4/100 = 0.504 half-wide.
 				const barrelLen = param.size * 1.7, barrelHalf = param.size * 0.504;
 				ctx.beginPath();
 				ctx.rect(0, -barrelHalf, barrelLen, barrelHalf * 2);
@@ -588,28 +473,11 @@
 				ctx.fill();
 				ctx.closePath();
 			},
-			// type 6 = a Guardian spawner drone (rooms/Room.js's bulletWireType() maps its own
-			// `3.1` here via the cannon's drawType override). diep gives GuardianSpawnerDefinition
-			// no `sides`, so its drones ARE ordinary Crashers - not the forward-pointing arrowhead
-			// Drawings.bullet[1] draws for a normal drone. This reuses Drawings.obj.bull verbatim
-			// (the Crasher/Triangle sprite) so a Guardian drone of `size` s is pixel-identical to a
-			// small Crasher of the same s: same equilateral triangle, same `size -> size x SQRT2`
-			// drawn circumradius, in the same pink (Palette entry from bulletColor()'s Color.
-			// EnemyCrasher). `param.dir` is the drone's showDir (its velocity heading), the same
-			// field a Crasher points along.
+			// Guardian drone: same sprite as a small Crasher, not the ordinary drone arrowhead.
 			(ctx, param) => Drawings.obj.bull(ctx, Palette[param.color], param.size, param.dir)
 		],
-		// plan.md C3: every shape's drawn circumradius in diep is its own physics/hit radius x
-		// Math.SQRT2 - diepcustom's {Square,Triangle,Pentagon,Crasher}.ts all set
-		// `physicsData.values.size = drawnDu x Math.SQRT1_2`, the same identity inverted, and
-		// diepindepth/canvas/shape_sizes.md's raw drawn radii (55 square/triangle/crasher-large,
-		// 75 pentagon, 200 alpha, 35 crasher-small du) confirm it independent of side count. `$1`
-		// below is the entity's own hit radius (plan.md S3's du x 0.56 figures); each shape's
-		// divisor is `(that shape's own hardcoded vertex distance) / Math.SQRT2`, so dividing by
-		// it and multiplying by the vertex coordinates reproduces exactly that ratio. Square's
-		// divisor (20, vertex distance 20*sqrt(2)=28.28) already happened to satisfy this by
-		// construction; tri/pnt/alphaPnt/alphaTri did not - triangles were drawn 26% oversized,
-		// pentagons/alpha pentagons 12.5% undersized (PENDING.md's own "sizes arent right" note).
+		// Drawn circumradius is hit radius x Math.SQRT2. `$1` is the hit radius; each
+		// shape's divisor is its vertex distance / sqrt(2).
 		obj: {
 			tri: (ctx, $0, $1, $2) => {
 				ctx.rotate($2);
@@ -702,8 +570,7 @@
 				ctx.stroke();
 			}
 		},
-		// A Maze wall (plan.md Step 12) - a filled+stroked axis-aligned rectangle, not nested
-		// under obj since it is not a farmable-shape type.
+		// Maze wall: filled+stroked axis-aligned rectangle.
 		wall: (ctx, w, h) => {
 			ctx.beginPath();
 			ctx.rect(-w / 2, -h / 2, w, h);
@@ -716,15 +583,9 @@
 		},
 		pet: PetsConfig.pets
 	};
-	// Crashers ('bull' - PENDING "Sandbox gaps"/#10) draw as a triangle, same geometry as an
-	// ordinary Triangle (Palette.bull's own light pink is what tells them apart, not the shape) -
-	// entities.js used to special-case this type to General['drawBullet']'s circle sprite instead
-	// of dispatching through this table like every other Obj type.
+	// Crashers ('bull') draw as a triangle; Palette.bull is what tells them apart.
 	Drawings.obj.bull = Drawings.obj.tri;
-	// Shared with render.js's setCoord(), which has to know how far past a barrel's own tip the
-	// launcher reaches to size the offscreen sprite cache for it. Exported rather than restated
-	// there: a second copy of the 5/3 taper or the 20/42 length is exactly the kind of drift that
-	// clipped every trapper barrel in the first place.
+	// Shared with the sprite-cache sizer so trapper barrels are not clipped.
 	Drawings.TAPER_RATIO = TAPER_RATIO;
 	Drawings.trapLauncherLen = trapLauncherLen;
 	///

@@ -34,13 +34,10 @@
 			this.dead = 0;
 			///
 			/*
-				The minimap frame, rasterized once and blitted - except that the base overlay on it
-				is sized from Game.baseSize/Game.width, and neither is known
-				when initUi() runs: Run() builds the HUD before any GameUpdate head has been
-				applied, so both are still at their config.js defaults here. So this keeps the
-				"draw once, blit after" idiom but exposes redraw(), which map() calls every frame
-				and which does nothing unless the base fraction it was last drawn with has actually
-				changed - the same shape as User.hpBar.redraw.
+				The minimap frame, rasterized once and blitted. The base overlay is sized from
+				Game.baseSize/Game.width, which are unknown when initUi() runs (HUD is built
+				before any GameUpdate). redraw() is a no-op unless the base fraction last
+				drawn with has actually changed.
 			*/
 			this.MAP = (() => {
 				const can = document.createElement('CANVAS');
@@ -68,20 +65,13 @@
 					ctx.strokeText('Obstar.io', 0, 12);
 					ctx.fillText('Obstar.io', 0, 12);
 					ctx.translate(m, 0);
-					// save/restore because the '2team' arm clips: harmless when this ran exactly
-					// once, permanent on the second call without it.
+					// save/restore because the '2team' arm clips.
 					ctx.save();
 					switch (POST.gm) {
 						/*
-							Fill first, stroke last: a stroke drawn before a clip'd
-							fill has its inner half painted straight over by the fill. That reorder was
-							correct and stays - it is what makes the width agree across all three arms
-							- but it doubled the VISIBLE frame from 6 units to the full 12-unit
-							lineWidth, which nobody measured at the time: 8% of the minimap's width, on
-							a panel blitted at globalAlpha 0.25. Fixed by halving lw itself (12 -> 6)
-							rather than reverting the ordering. Clip only around the fill (a local
-							save/restore around it), then stroke the same path unclipped and full-width
-							on top, so the frame reads at its real (now thin) width in every arm.
+							Fill first, stroke last so the fill does not paint over the inner
+							half of the stroke. Clip only around the fill, then stroke the
+							same path unclipped.
 						*/
 						case '2team': {
 							ctx.beginPath();
@@ -110,8 +100,7 @@
 							ctx.clip();
 							ctx.fillStyle = '#f4f4f4';
 							ctx.fillRect(0, 0, size, size);
-							// Same corner order as render.js and FourTeam.corner(): 0 top-left,
-							// 1 top-right, 2 bottom-left, 3 bottom-right, team id = colour index.
+							// Corner order: 0 top-left, 1 top-right, 2 bottom-left, 3 bottom-right.
 							const s = size * frac;
 							const teamC = [Palette.green, Palette.red, Palette.yellow, Palette.blue];
 							const at = [[0, 0], [size - s, 0], [0, size - s], [size - s, size - s]];
@@ -313,21 +302,10 @@
 					for (let i = 0; i < QUEUE.length; i++) { q += QUEUE[i]; }
 					return Math.max(0, CONST.MAX_UP_POINTS - spent(Ui) - q);
 				}
-				// Per-tank stat caps (plan.md P3/C3): STATES.up[i].max is set per-row in drawAll()
-				// below, from TanksConfig.class[...].statMax when the tank has one (Smasher-line's
-				// 0/10-capped stats) - falls back to the same CONST.MAX_PER_STAT every other tank
-				// already used. STATES.up is only populated after the first drawAll()/init() call,
-				// hence the guard.
-				//
-				// `wireIdx` here is the SERVER's stat index (entities/Player.js's `this.up` order:
-				// MSpeed/Reload/BSpeed/BPene/BDamage/BodyDam/HpUp/HpRegan) - every caller (enqueue/
-				// drain) works in that space, since that is what travels the wire. `STATES.up` is
-				// built in PANEL row order instead (TanksConfig.defaultUps: HealthRegen/Reload/
-				// MaxHealth/BulletSpeed/MovementSpeed/BulletDamage/BodyDamage/BulletPenetration),
-				// the same reordering `CONST.UP_ORDER` exists to bridge for keypresses - indexing
-				// STATES.up directly by wireIdx silently pulled the wrong row's cap for any class
-				// whose per-stat caps actually differ (every class but the uniform ones, where
-				// every row shares one value and the bug had nothing to expose).
+				// Per-tank stat caps. STATES.up[i].max is set per-row in drawAll() from the
+				// class's statMax, or CONST.MAX_PER_STAT. STATES.up exists only after the first
+				// draw. wireIdx is the server's stat index (what travels the wire); STATES.up
+				// is panel-row order. CONST.UP_ORDER bridges the two.
 				function statCap(wireIdx) {
 					if (!STATES || !STATES.up.length) { return CONST.MAX_PER_STAT; }
 					const row = STATES.up[CONST.UP_ORDER.indexOf(wireIdx)];
@@ -372,33 +350,20 @@
 				function poke() { holdUntil = Date.now() + CONST.UP_HOLD_MS; }
 				function holding() { return Date.now() < holdUntil; }
 				///
-				// `max` is the number of segments in each stat's bar - the per-stat cap, 7 since
-				// PENDING #30. It is geometry as well as logic: the widget's width is
-				// max * (W + marge), so the whole upgrade panel grows a segment with it.
-				// `max` may also be a per-stat array (plan.md P3, e.g. Smasher-line's
-				// [10,0,0,0,0,10,10,10]) - the panel's shared width/background comes from the
-				// WIDEST entry (unchanged for every tank that still passes a plain number, since
-				// Math.max of a single value is itself), while each row's own fill/fullness cap
-				// below uses its own entry, so a 0-capped stat never lights up and a 10-capped
-				// one fills the whole widened bar.
+				// `max` is the number of segments in each stat's bar — geometry as well as
+				// logic: the widget's width is max * (W + marge). An array is per-stat caps;
+				// panel width comes from the widest entry, each row fills to its own.
 				function drawAll(tankClass, states, max = CONST.MAX_PER_STAT) {
 					if (tankClass === CLASS) {
 						return;
 					}
-					// `max`, when an array, is TanksConfig's statMax - written in the SERVER's wire
-					// index order (this.up's own order), not panel row order (see statCap()'s own
-					// comment). CONST.UP_ORDER[panelRow] is that row's wire index, so this reads
-					// each row's cap from the position it actually lives at instead of zipping the
-					// two different orders together positionally (plan.md C3).
+					// Array `max` is wire-index order, not panel-row order. UP_ORDER[panelRow]
+					// is that row's wire index.
 					const maxArr = Array.isArray(max) ? states.map((_, i) => max[CONST.UP_ORDER[i]]) : new Array(states.length).fill(max);
 					max = Math.max(...maxArr);
 					CLASS = tankClass
-					// Reuse the SAME array/object every call instead of replacing STATES wholesale:
-					// the object this IIFE returns below captured `up: STATES.up`'s reference once,
-					// at construction, and `this.upgrade()`'s own click hit-testing (Ui.UP.up) reads
-					// that same captured reference - a fresh `{ up: [], ... }` here would silently
-					// orphan it on the very next class change, so a click kept scoring against
-					// whichever class was active the first time the panel ever drew.
+					// Reuse the same array: the returned object captured STATES.up once, and
+					// click hit-testing reads that reference. Replacing STATES would orphan it.
 					if (!STATES) { STATES = { up: [] }; } else { STATES.up.length = 0; }
 					STATES.max = max;
 					const w = max * (W + marge);
@@ -461,9 +426,7 @@
 				function redraw(state, nb, isMouse, colored = 1, queued = 0) {
 					const data = STATES.up[state]
 					if (!data) { return; }
-					// `data.max` (plan.md P3, this row's own cap) drives fill/fullness; the shared
-					// `STATES.max` (widest row on this tank) stays below for the background bar's
-					// width, so every row's drawable area lines up regardless of its own cap.
+					// This row's own cap drives fill; STATES.max (widest row) sizes the background.
 					const rowMax = typeof data.max === 'number' ? data.max : STATES.max;
 					nb = Math.min(nb, rowMax);
 					queued = Math.min(queued, rowMax - nb);
@@ -648,10 +611,8 @@
 					classLvl: 0,
 					choices: [],
 					actualClass: 0,
-					// Per-choice slide-in progress (plan.md C6), keyed by class name - independent
-					// of the panel-level show/dshow above (which still drives the manual hide/
-					// reveal toggle). A name already at 1 here is already in place and does not
-					// re-animate when a level-up adds siblings alongside it.
+					// Per-choice slide-in, keyed by class name — independent of the panel-level
+					// show/dshow toggle. A name already at 1 stays put when siblings are added.
 					rowDshow: {}
 				};
 				const R = CONST.RESOLUTION * CONST.OFFCAN;
@@ -770,15 +731,10 @@
 									canDir: []
 								}
 							);
-							// The tile SPINS (getImage() below rotates this square about its own
-							// centre), so the sprite has to fit the clip box's inscribed CIRCLE,
-							// not just the box - a barrel parked in a corner at bake time sweeps
-							// straight out of frame a moment later. `pR` is the sprite's own
-							// furthest-reaching outline point measured from the visual centre the
-							// offsets below park at the tile centre, so `fit` is the largest scale
-							// that keeps every class whole. tankS stays the default: only a class
-							// that would otherwise clip (the trapper line, the long snipers) is
-							// scaled down at all, and only by as much as it takes.
+							// The tile spins about its centre, so the sprite must fit the clip
+							// box's inscribed circle. `pR` is the furthest outline from the
+							// visual centre; `fit` is the largest scale that keeps the class whole.
+							// tankS stays the default unless a class would otherwise clip.
 							if (img && img.can && img.can.width > 0 && img.can.height > 0) {
 								const fit = Math.min(1 / tankS, (size / 2 - 1) / img.pR);
 								const dw = img.can.width * fit, dh = img.can.height * fit;
@@ -964,10 +920,8 @@
 				};
 			})();
 			/*
-				The pre-match lobby overlay (Room.ArenaState COUNTDOWN, Game.arenaState === -1) -
-				an opaque full-screen backdrop plus a headline, a joined-count line and a row of dots,
-				rasterized once and re-drawn only when the numbers actually change (this file's own
-				set/redraw idiom - see MAP/LB above).
+				Pre-match lobby overlay: opaque backdrop, headline, joined-count, dots.
+				Re-drawn only when the numbers change.
 			*/
 			this.LOBBY = (() => {
 				const can = document.createElement('CANVAS');
@@ -997,10 +951,7 @@
 					const h = (total > 0 ? dotY + dotR : subY + subS / 2) + 8;
 					can.width = Math.ceil(w * R) + 4;
 					can.height = Math.ceil(h * R) + 4;
-					// The translation term of setTransform is in DEVICE pixels (can.width's own
-					// units), not the pre-scale logical ones tm/sm/w are measured in - dividing it by R
-					// a second time put the origin well left of true centre and clipped the leading
-					// letter of every title.
+					// setTransform's translation is in device pixels, not the pre-scale logical units.
 					ctx.setTransform(R, 0, 0, R, can.width / 2, 0);
 					ctx.textBaseline = 'middle';
 					ctx.lineJoin = 'round';
@@ -1112,17 +1063,10 @@
 					ctx.font = '700 ' + nameF + 'px Catamaran';
 					const m = ctx.measureText(tank).width;
 					/*
-						Two separate reasons this canvas has to be sized rather than just inherited
-						from the sprite's own, both of which used to cut the panel off:
-
-						  * the sprite is drawn ROTATED about its visual centre, so what it needs is
-						    a disc of its own reach (`pR`) in every direction. Taking the sprite
-						    canvas's own square and spinning it inside itself loses everything past
-						    the inscribed circle - a flat 29% of the half-diagonal at this angle.
-						  * the class NAME underneath is wider than the tank for any long name
-						    (Necromancer, Auto Smasher), and it used to be written into the sprite
-						    canvas's own width and clipped at both ends. It also sat ON the tank,
-						    in the bottom band of the same square, instead of below it.
+						Sized for a disc of the sprite's reach (`pR`) in every direction — a
+						square spun inside itself loses everything past the inscribed circle —
+						and for the class name underneath, which is wider than the tank for
+						long names and sits below the silhouette rather than on it.
 					*/
 					const rad = img.pR + lw;
 					can.width = Math.ceil(Math.max(rad * 2, m + lw * 2));
@@ -1167,9 +1111,7 @@
 					ctx.fillText(text, -m / 2, nameS / 2);
 					return can;
 				};
-				// Batch G: the "change game mode" button drawn under the respawn prompt. A pill so
-				// it reads as clickable (the enter prompt above it is plain text, keyboard-only); its
-				// local-space rect is recomputed and hit-tested in endScreen() each frame.
+				// "Change game mode" pill under the respawn prompt; hit-tested in endScreen().
 				function setChange() {
 					const can = document.createElement('CANVAS');
 					const ctx = can.getContext('2d');
@@ -1182,8 +1124,7 @@
 					// +lw for the stroke straddling the path, +4 slack for sub-pixel rounding.
 					can.width = Math.ceil((w + lw) * R) + 4;
 					can.height = Math.ceil((h + lw) * R) + 4;
-					// Translate in device pixels like every other set* here - a translate divided
-					// by R shifts the pill right by half its own width and clips its tail.
+					// Translate in device pixels.
 					ctx.setTransform(R, 0, 0, R, lw / 2 * R, lw / 2 * R);
 					ctx.font = '700 ' + nameS + 'px Catamaran';
 					ctx.textBaseline = 'middle';
@@ -1235,13 +1176,9 @@
 								});
 							}
 							newImg.src = './pic/img_mess/' + mes[1];
-							// Guest-side achievement persistence: the icon
-							// filename is unique per entry in AchievementsConfig, so the toast
-							// itself is enough to recover which achievement fired - no separate
-							// wire message needed. A signed-in account's unlocks are already
-							// persisted server-side (Controller.disconnect); this local copy
-							// just rides along so a guest who signs up later can claim them too
-							// (see the ach union in web/app.js's /auth/signup).
+							// Guest persistence: the icon filename identifies the achievement.
+							// A signed-in account already persists server-side; this local copy
+							// lets a guest who later signs up claim them.
 							try {
 								const entry = AchievementsConfig.list.find((a) => a.icon === mes[1]);
 								if (entry) {
@@ -1297,9 +1234,7 @@
 			/////
 			this.map = function () {
 				if (Game.arenaState === -1) { return; }
-				// Base overlay as a fraction of the map, so the minimap tracks a live mapResize
-				// as well as the initial baseSize. No-op on every frame but the ones where it
-				// actually changed - see the note on MAP above.
+				// Base overlay as a fraction of the map, so the minimap tracks a live resize.
 				this.MAP.redraw(Game.baseSize && Game.width ? Game.baseSize / Game.width : 0);
 				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW, 0);
 				ctx.translate(-15, 15);
@@ -1310,24 +1245,17 @@
 				ctx.globalAlpha = 0.5;
 				ctx.scale(CONST.OFFCAN * CONST.RESOLUTION, CONST.OFFCAN * CONST.RESOLUTION);
 				/*
-					Everyone else, from Room.getUi's `map` - drawn first so your own
-					cursor (below) is never hidden under someone else's dot. `dot.x`/`dot.y` are 0..1
-					fractions of the current map size (CODECS.unit, TYPE.UiUpdate.map), so they use
-					the same -0.5 recentring as User.x/Game.width does for your own dot, just spelled
-					out instead of folded into one expression, and `dot.team` already decoded to a
-					Palette colour name (CODECS.color), same as any other coloured entity.
+					Everyone else, from the map packet — drawn first so your own cursor
+					is never hidden under someone else's dot. `dot.x`/`dot.y` are 0..1
+					fractions of the current map size, recentred the same way as User.x/Game.width.
 				*/
 				if (this.mapInfo) {
 					for (const dot of this.mapInfo) {
 						ctx.fillStyle = Palette[dot.team] ? Palette[dot.team][0] : '#222222';
 						const cx = -this.MAP.size / 2 + (dot.x - 0.5) * this.MAP.size;
 						const cy = this.MAP.size / 2 + (dot.y - 0.5) * this.MAP.size;
-						// A record carrying real w/h (SocketSchema TYPE.UiUpdate.map) is a RECTANGLE, not
-						// a dot - Maze walls, sent as fractions of the arena, so each one lands on the
-						// minimap at exactly the proportions it has in the world. Everything else (every
-						// live player) sends 0/0 and keeps the round dot below. A whole merged wall chunk
-						// used to collapse into one circle sized off its longest side, which reads as a
-						// blob rather than as a maze.
+						// A record carrying real w/h is a rectangle (maze walls), not a round
+						// player dot. Players send 0/0 and keep the circle below.
 						if (dot.w > 0 && dot.h > 0) {
 							const w = Math.max(1, dot.w * this.MAP.size);
 							const h = Math.max(1, dot.h * this.MAP.size);
@@ -1365,12 +1293,11 @@
 				//ctx.globalAlpha = 1;
 			};
 			this.upgrade = function () {
-				// The lobby screen owns the whole canvas while gathering players - no stat panel, and
-				// critically no click-to-spend packets, until the match actually starts.
+				// Opaque full-screen overlay while gathering players — no stat panel, no
+				// click-to-spend packets until the match starts.
 				if (Game.arenaState === -1) { return; }
-				// a possessed Dominator has no selectable stat rows/points at all
-				// bail before UP.init()/drawing/hit-testing rather than feeding drawAll() an empty
-				// array (its own Math.max(...maxArr) assumes at least one row).
+				// Possessed Dominator has no selectable stats; bail before drawing an empty panel
+				// (Math.max of an empty cap array is -Infinity).
 				if (CLASS[User.class] && CLASS[User.class].hideStats) {
 					this.UP.isShowing = 0;
 					this.UP.show = 0;
@@ -1378,9 +1305,8 @@
 					return;
 				}
 				this.UP.init(User.class, CLASS[User.class].ups ? CLASS[User.class].ups : TanksConfig.defaultUps, CLASS[User.class].statMax || CONST.MAX_PER_STAT);
-				// avail is still minus points already sent but not yet confirmed by head.still - see
-				// UP.drain()'s own comment for why still alone races. held keeps the panel up while a
-				// key is down or within CONST.UP_HOLD_MS of the last upgrade action.
+				// avail is still minus in-flight packets. held keeps the panel up while a key
+				// is down or within CONST.UP_HOLD_MS of the last upgrade.
 				const avail = this.UP.avail(this);
 				const held = Global.inputs.u || Global.inputs.m || this.UP.holding();
 				if (!avail) {
@@ -1398,16 +1324,8 @@
 				///
 				const SHOW = Math.min(General['ease-in-out'](this.UP.show, 3), 1);
 				const ALPHA = ctx.globalAlpha;
-				// The tank's real canvas position (device pixels), not the screen centre - the
-				// camera trails the tank by CONST.CAM_SMOOTH now, and `predic` is a world-unit
-				// offset that was being added here as if it were a pixel one.
-				// `- zoomOff` (plan.md C9): Draw() renders the world about `camx + zoomOffX`, so
-				// while a Predator's right-click zoom is panned out the tank's screen position is
-				// its distance from THAT point, not from the camera. Without it, the whole
-				// upgrade cluster - the ring of stat buttons and the "x5 points available"
-				// counter - stayed parked at the middle of the zoomed-to area instead of over the
-				// tank. Same quantity General.tankOff() already subtracts for aiming, in this
-				// widget's own pixel space.
+				// Tank's real canvas position, not the screen centre. Subtract zoomOff so a
+				// Predator's right-click zoom keeps the upgrade cluster over the tank.
 				const tankOffX = (User.gx - User.camx - User.zoomOffX) * Global.RATIO;
 				const tankOffY = (User.gy - User.camy - User.zoomOffY) * Global.RATIO;
 				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW / 2 + tankOffX, Global.canH / 2 + tankOffY);
@@ -1504,12 +1422,8 @@
 			};
 			this.tanks = function () {
 				if ((this.classLvl !== this.TNK.classLvl || User.class !== this.TNK.class)) {
-					// plan.md C6: diep keeps existing option cards in place when a level-up adds
-					// siblings alongside them, sliding in only the new ones - it does not empty
-					// and refill the whole tray. `tochoices` only ever grows within one class (the
-					// classLvl loop concats one more CLASS_TREE level in), so a level-up's new set
-					// is a superset of what is already shown; a class change is a genuinely
-					// different tree branch and keeps the old fly-out/fly-back reveal.
+					// Keep existing option cards in place when a level-up adds siblings;
+					// only a class change flys the whole tray out and back.
 					const sameClass = User.class === this.TNK.class;
 					this.TNK.classLvl = this.classLvl;
 					this.TNK.class = User.class;
@@ -1582,23 +1496,16 @@
 				}
 				ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW, Global.canH);
 				ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
-				// Batch G: frame-rate-independent, like every other per-frame ease in the client (see
-			// Loop()'s dtFrames note and General.lerpK). This panel was the one that still used a
-			// raw per-frame 0.05, so on a 144Hz display it slid in 2.4x too fast and - the reported
-			// symptom - during a frame hitch (more common on Chrome) it "barely moved at all" then
-			// snapped once frames resumed. lerpK(0.05) is exactly 0.05 at 60Hz, so this is a no-op
-			// on a steady 60Hz client and only corrects the off-rate/hitch cases.
+				// Frame-rate-independent ease; lerpK(0.05) is 0.05 at 60Hz.
 			this.TNK.dshow += (this.TNK.show - this.TNK.dshow) * General['lerpK'](0.05);
-				// gw holds the last choice's width for the logo placement below the loop; it was a
-				// function-scoped `var` that leaked out of the loop on purpose (undefined if empty).
+				// Last choice's width, for logo placement below the loop (undefined if empty).
 				let gw;
 				for (const i in this.TNK.choices) {
 					const n = this.TNK.choices[i];
 					const c = this.TNK.getImage(n);
 					gw = c.width;
-					// plan.md C6: each row eases in on its OWN progress instead of the shared
-					// panel dshow, so a card already at rest (rowDshow 1) does not move again when
-					// a sibling is added alongside it - only the new row's own value starts at 0.
+					// Each row eases on its own progress so a card already at rest does not move
+					// when a sibling is added. New rows start at 0.
 					if (this.TNK.rowDshow[n] === undefined) { this.TNK.rowDshow[n] = 1; }
 					this.TNK.rowDshow[n] += (1 - this.TNK.rowDshow[n]) * General['lerpK'](0.05);
 					const rowShow = this.TNK.dshow * this.TNK.rowDshow[n];
@@ -1669,27 +1576,18 @@
 					ctx.setTransform(Global.UIRATIO, 0, 0, Global.UIRATIO, Global.canW / 2, Global.canH / 2);
 					ctx.scale(1 / CONST.OFFCAN / CONST.RESOLUTION, 1 / CONST.OFFCAN / CONST.RESOLUTION);
 					ctx.drawImage(this.END.title, -this.END.title.width / 2, -this.END.title.height - this.END.tank.height * .8 - 200 * invert);
-					// Centred like every other panel here (title/enter/change) - was drawn with its
-					// RIGHT edge at screen centre instead of centred on it.
 					ctx.drawImage(this.END.tank, -this.END.tank.width / 2, this.END.tank.height / 2 - 200 * invert);
-					// Everything below stacks off the tank canvas's own drawn bottom edge, not off
-					// tank.height alone - that put the change pill inside the tank artwork whenever
-					// the prompt above it is hidden (Game.canRespawn false, e.g. Survival past open).
+					// Stack off the tank canvas's drawn bottom; tank.height alone would put the
+					// change pill inside the artwork when the prompt above it is hidden.
 					const tankBottom = this.END.tank.height * 1.5 - 200 * invert;
 					const stackGap = 10;
 					let stackY = tankBottom + stackGap;
 					if (Game.canRespawn) {
-						// Also centred - was drawn at x=0 despite its own canvas already centring the
-						// text around its width/2, which offset the prompt a whole half-width right.
 						ctx.drawImage(this.END.enter, -this.END.enter.width / 2, stackY);
 						stackY += this.END.enter.height + stackGap;
 					}
-					// The clickable "change game mode" pill, centred under whatever sits above it.
-					// Drawn in the same centre-origin, Seff-scaled space as the images above, so its
-					// hit-test converts the window-space mouse back into that space with the exact
-					// inverse transform (Seff = UIRATIO / (OFFCAN * RESOLUTION), origin at canvas
-					// centre; window = canvas-pixel / RESOLUTION). No new event wiring - it reads the
-					// same rising-edge click the upgrade panel does.
+					// Clickable "change game mode" pill. Hit-test converts window-space mouse
+					// back into this centre-origin scaled space.
 					const ch = this.END.change;
 					const bx = -ch.width / 2;
 					const by = stackY;
@@ -1703,25 +1601,20 @@
 							Global.mouse_out = CONST.MOUSE_OUT;   // don't leak the click into the game
 							if (Global.inputs.mouseL && !Global.inputs.old.mouseL) {
 								this.END.switching = 1;
-								// Socket first, THEN navigate: drop the game connection so the server
-								// frees the slot immediately rather than waiting out the heartbeat
-								// timeout on a socket the unloading page would abandon anyway.
+								// Close the socket first so the server frees the slot immediately.
 								try {
 									if (General['stopHeartbeat']) { General['stopHeartbeat'](); }
 									if (General['WS']) { General['WS'].onclose = null; General['WS'].close(); }
 								} catch (e) { /* already gone */ }
-								// Back to the menu - the one mode/name/pet picker, which is what POSTs
-								// /play. A full re-pick, not a half-built in-canvas mode list.
+								// Back to the mode/name/pet picker.
 								window.location.href = '/';
 							}
 						}
 					}
 				}
 			};
-			/* The whole-canvas pre-match hold - opaque, so nothing of the arena reads through it,
-			   drawn every frame the room reports COUNTDOWN. Suspends every other panel (map/states/
-			   leaderboard/upgrade already bail on this same check) so a lobby click cannot leak into
-			   the hidden game underneath. */
+			/* Opaque pre-match hold. Other panels already bail on this same check so a
+			   lobby click cannot leak into the hidden game. */
 			this.lobby = function () {
 				if (Game.arenaState !== -1) { return; }
 				ctx.setTransform(1, 0, 0, 1, 0, 0);

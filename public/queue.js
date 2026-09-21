@@ -1,11 +1,7 @@
 
 /*
-	Highlight the picked mode. `deactivated` is the *unselected* style, not a disabled one.
-
-	This used to be a switch with one hand-written arm per mode, each arm naming every button
-	by index - so adding a mode meant editing every other arm, and a mode with no arm silently
-	left the highlight wherever it was. The buttons carry their own `data-gm` now, so this is
-	the same three lines for any number of modes.
+	Highlight the picked mode. `deactivated` is the unselected style, not a disabled one.
+	Buttons carry their own `data-gm`.
 */
 function selectGM(gm) {
 	const elem = document.getElementById('gamemode-box').getElementsByClassName('button');

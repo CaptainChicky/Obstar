@@ -1,9 +1,8 @@
 /*
 	Entity rendering and the world background.
 
-	Both halves are built once per Run() rather than at load, exactly where the monolith built
-	them: General.background closes over Run()'s `ctx`, and the three cache builders allocate
-	off-screen canvases that have to appear in the same order they always did.
+	Both halves are built once per Run() rather than at load: General.background
+	closes over Run()'s `ctx`, and the cache builders allocate off-screen canvases.
 */
 (function (CLIENT) {
 	const CONST = CLIENT.CONST;
@@ -37,19 +36,9 @@
 				Two different radii fall out, and they are NOT the same number:
 
 				  canSize  furthest reach from the HULL CENTRE. The offscreen sprite cache is
-				           centred there, so this is what decides whether the sprite clips at its
-				           own canvas edge - in the world as well as in a UI panel.
-				  mR       furthest reach from the VISUAL centre (mX/mY). The two panels that
-				           spin a sprite in a fixed-size tile (ui.js's class picker and death
-				           screen) pivot about that point, so this is the radius they have to fit.
-
-				The old version computed only canSize, as `sqrt(height^2 + (width/2+offx+open/2)^2)`
-				per barrel: it read `offx` signed (so a barrel offset the other way shrank the
-				bound instead of growing it) and, more visibly, it did not know about
-				`trapLauncher` at all - so every trap barrel's arrowhead, which sits ENTIRELY PAST
-				the barrel tip, was cut off at the canvas edge. That is the "tri-trapper and
-				trappers have the furthest points of their barrels cut off" report, and it was
-				never only a panel problem.
+				           centred there, so this is what decides whether the sprite clips.
+				  mR       furthest reach from the VISUAL centre (mX/mY). Panels that spin a
+				           sprite in a fixed-size tile pivot about that point.
 			*/
 			function setCoord(config) {
 				let middleX = 0, middleY = 0;
@@ -112,17 +101,14 @@
 					middleX /= config.turrets.length * 2;
 					middleY /= config.turrets.length * 2;
 				}
-				// Guards (plan.md R4) spin on their own phase - a disc, at Drawings.guards' own
-				// radius. Smasher/Landmine/Spike have no cannons/turrets at all, so without this
-				// their guard shape clips at the bare body's edge.
+				// Guards spin on their own phase — a disc of their whole reach.
 				if (config.guards) {
 					for (const g of config.guards) {
 						disc = Math.max(disc, g.sizeRatio * (S + LW / 2));
 					}
 				}
-				// launcher/pronounced/dompronounced (plan.md R4/A4/E2) all rotate rigidly with the
-				// hull, so they are point sets like a barrel. Coordinates mirror their own draw
-				// functions in drawings.js with `param.size` at CONST.SIZE.
+				// launcher/pronounced/dompronounced rotate with the hull, so they are point sets
+				// like a barrel.
 				if (config.launcher) {
 					pts.push([0, -0.497502 * S], [0, 0.497502 * S],
 						[1.852 * S, -0.585296 * S], [1.852 * S, 0.585296 * S]);
@@ -149,14 +135,8 @@
 					case 3: disc = Math.max(disc, S / Math.cos(Math.PI / config.body.sides)); break;
 					default: disc = Math.max(disc, S); break;
 				}
-				// mX/mY is the sprite's own visual centre-of-mass OFFSET from the hull centre -
-				// how far the barrels drag the silhouette off-centre - and the two panels that
-				// read it (ui.js's class picker and death screen) subtract it to keep the tank
-				// centred in its slot. A class with no cannons and no turrets (Smasher, Landmine,
-				// Spike) is a bare body, already centred, so that offset is ZERO. It used to be
-				// set to `canSize`, half the offscreen canvas - which the class picker then
-				// subtracted from the tile centre and spun on its own rotation, so a Smasher
-				// visibly ORBITED the slot instead of sitting in it.
+				// mX/mY is the visual centre offset from the hull. A class with no cannons or
+				// turrets is already centred, so the offset is zero.
 				if (!(config.cannons && config.cannons.length) && !(config.turrets && config.turrets.length)) {
 					middleX = 0;
 					middleY = 0;
@@ -207,24 +187,8 @@
 					ctx.setTransform(R, 0, 0, R, can.width / 2, can.height / 2)
 				}
 				///
-				// diep's own scene-graph z-order (plan.md A1), flattened into one pre-body and one
-				// post-body pass:
-				//   1. guards (smasher hexes, spike triangles, dombase)                 - bottom
-				//   2. a ring turret's own barrel (Auto 3/5)                            - under its
-				//      3. base circle, which sits above the barrel but under the body
-				//   4. preAddon `launcher` (Skimmer/Rocketeer nub)                      - under cannons
-				//   5. cannons (main barrels; array order = draw order, first = bottom)
-				//   6. postAddon `pronounced` (Ranger)                                  - above the
-				//      barrel, under the body
-				//   7. postAddon `dompronounced` (Destroyer/Gunner Dominator only, plan.md E2) -
-				//      above the barrels, still UNDER the body (B2): every Dominator reference render
-				//      shows the whole grey assembly - barrels AND this trapezoid - emerging from
-				//      under the circular body and clipped by it, the circle drawn unbroken on top.
-				//   8. body
-				//   9. a centered auto turret (Auto Gunner/Trapper/Smasher/Auto Hover) and any cannon
-				//      flagged `aboveBody` - drawn above the body (`showsAboveParent`). The 3
-				//      Dominators no longer carry `aboveBody` (their attacking barrels are in the
-				//      pre-body pass at 5), so this post-body pass is empty for them now.
+				// Pre-body then post-body: guards, ring turrets, launcher, cannons,
+				// pronounced, dompronounced, body, then centered auto turrets / aboveBody cannons.
 				Drawings.guards(ctx, tank, param);
 				for (const i in tank.turrets) {
 					if (tank.turrets[i].ring) {
@@ -239,8 +203,6 @@
 					}
 				};
 				Drawings.pronounced(ctx, tank, param);
-				// A Destroyer/Gunner Dominator's cosmetic trapezoid, UNDER the circular body (B2) -
-				// see Drawings.dompronounced's own note. A no-op for every other class.
 				Drawings.dompronounced(ctx, tank, param);
 				Drawings.body[tank.body.shape](ctx, tank, param);
 				for (let i = 0; i < tank.cannons.length; i++) {
@@ -256,12 +218,7 @@
 						Drawings.turrets[tank.turrets[i].type](ctx, tank, param, i);
 					}
 				};
-				// `pX/pY/pR` are mX/mY/mR converted into the offscreen canvas's OWN pixels - the
-				// units `can.width` is already in - so a panel that wants to centre or fit the
-				// sprite can do it against `can.width` directly instead of re-deriving the
-				// param.size/CONST.SIZE/OFFCAN chain (which both panels used to get subtly wrong,
-				// mixing reference units and pixels in the same expression). mX/mY stay in
-				// reference units for anything that still wants them raw.
+				// pX/pY/pR are mX/mY/mR in the offscreen canvas's own pixels.
 				const px = param.size / CONST.SIZE * R;
 				return {
 					can: isOpac ? 0 : can,
@@ -282,10 +239,7 @@
 				(Drawings.bullet[param.type] || Drawings.bullet[0])(ctx, param.color, param.size, param.recoil);
 			}
 			function draw(ctx, param) {
-				// Total dispatch (plan.md R7): `Drawings.bullet` is a fixed-length array indexed by
-				// a value that came off the wire - a type this client build doesn't have an entry
-				// for (a newer server, a malformed packet) falls back to the plain bullet instead of
-				// throwing and taking the whole client down the instant one enters view.
+				// Unknown wire types fall back to the plain bullet instead of throwing.
 				const type = Drawings.bullet[param.type] ? param.type : 0;
 				if (param.alpha < 1) {
 					switch (type) {
@@ -421,8 +375,6 @@
 							break;
 						}
 					}
-					// The 2team case used to set globalAlpha and never put it back, so 0.2 leaked
-					// out of background() into whatever drew next.
 					ctx.globalAlpha = 1;
 				}
 			};
