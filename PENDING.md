@@ -12,33 +12,31 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
 
 ## Needs a human decision
 
-2. **Reload quantisation** — we `Math.round()` reload ticks; diep compares a float cycle
-   (`Barrel.ts:60`). Dropping the round changes every class's cadence at non-integer point
-   counts; two sites (`entities/Player.js` `shoot()`, `test/rooms.js`). Deferred so it isn't a
-   second cause in someone's clientDiff golden.
-3. **`A₀` 1.47% high** — `physics.html` (2.58825) vs `TankBody.ts:271` (2.55 at our 0-based
-   level → coefficient 1.428 not 1.449). One literal in `public/SHARE/Physics.js`. Left on
-   physics.html's figure deliberately.
-4. **`rules.arenaLive` for 2team/4team** — `dronePosts` are baked at construction; a live arena
-   would freeze base layouts at the starting floor. Needs `dronePosts` re-derived from the live
-   map before either mode can turn it on.
-5. **Tank-vs-shape overlap** — no positional resolution (tank-vs-tank has it); a tank can stand
-   inside a shape held off only by knockback.
-6. **Base drones** — chase speed is diep's own flat 756 u/s; lethality (12 drones ≈ 0.2 s on a
-   maxed tank) still never judged in a browser. `BASE_DRONE_DETECT` is **back at `gu(60)`**, not
-   diep's own `gu(18)`: the diep figure applies to a drone that flies free near its owner, while
-   ours orbits a fixed ring with one scout per centre, and playtesting showed it leaves a band
-   around every base where an enemy is inside the drones' reach and nothing reacts. Ours, flagged.
-7. **Sandbox gaps** — party-link invites; arena/shape scaling with player count; bosses after
-   50–60 min.
-8. **Contact quantisation (D6)** — we prorate per 25 ms tick; diep exchanges once per 40 ms
-   tick. Accepted approximation; the exact fix is a per-pair reference-tick guard.
-9. **`prize`/coins/respawn XP** — ours (`pow(xp/mlx,1.8)`, `respawnPow 0.9`) vs diep's
-    `scoreReward` + `respawnLevel = min(level−1, floor(√level × 3.2796))`. Decide per mode.
-10. **`rules.crasherDensity`** — a multiplier on `crasherTotal()`'s derived Crasher cap
-    (`rooms/Room.js`'s `tickArena()`), 1 everywhere except Maze (0.75): its corridors funnel a
-    chased player into dead ends, so the same live count reads as far more pressure than in an
-    open arena. 0.75 is a guess, not a measured figure — nobody has played it out.
+- **Reload quantisation** — we `Math.round()` reload ticks; diep compares a float cycle
+  (`Barrel.ts:60`). Dropping the round changes every class's cadence at non-integer point
+  counts; two sites (`entities/Player.js` `shoot()`, `test/rooms.js`). Deferred so it isn't a
+  second cause in someone's clientDiff golden.
+- **`rules.arenaLive` for 2team/4team** — `dronePosts` are baked at construction; a live arena
+  would freeze base layouts at the starting floor. Needs `dronePosts` re-derived from the live
+  map before either mode can turn it on.
+- **Tank-vs-shape overlap** — no positional resolution (tank-vs-tank has it); a tank can stand
+  inside a shape held off only by knockback.
+- **Base drones** — chase speed is diep's own flat 756 u/s; lethality (12 drones ≈ 0.2 s on a
+  maxed tank) still never judged in a browser. `BASE_DRONE_DETECT` is **back at `gu(60)`**, not
+  diep's own `gu(18)`: the diep figure applies to a drone that flies free near its owner, while
+  ours orbits a fixed ring with one scout per centre, and playtesting showed it leaves a band
+  around every base where an enemy is inside the drones' reach and nothing reacts. Ours, flagged.
+- **Sandbox gaps** — party-link invites; arena/shape scaling with player count (`arenaLive` is
+  on but `maxPlayer: 0` keeps the map at the `gu(150)` floor); bosses after 50–60 min (`maxBoss`
+  stays 0, so Room's 45-min timer never fires).
+- **Contact quantisation (D6)** — we prorate per 25 ms tick; diep exchanges once per 40 ms
+  tick. Accepted approximation; the exact fix is a per-pair reference-tick guard.
+- **`prize`/coins/respawn XP** — ours (`pow(xp/mlx,1.8)`, `respawnPow 0.9`) vs diep's
+  `scoreReward` + `respawnLevel = min(level−1, floor(√level × 3.2796))`. Decide per mode.
+- **`rules.crasherDensity`** — a multiplier on `crasherTotal()`'s derived Crasher cap
+  (`rooms/Room.js`'s `tickArena()`), 1 everywhere except Maze (0.75): its corridors funnel a
+  chased player into dead ends, so the same live count reads as far more pressure than in an
+  open arena. 0.75 is a guess, not a measured figure — nobody has played it out.
 
 ## Needs a real browser session (nothing else can settle these)
 
@@ -88,9 +86,9 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
   but this was deliberately left out. `togglePossession()` only covers Dominators and Motherships.
 - **Optional Fallen variants** (`FallenAC.ts`/`FallenMegaTrapper.ts`/`FallenSpike.ts`) —
   explicitly optional; not built.
-- **Survival/Mothership modes**: no waiting-room countdown UI (data is on the wire), no
-  per-mode front-page door art, no `shapeScoreRewardMultiplier` (×3 shapes-only XP has no hook
-  in `awardXp()`), Survival's shape density doesn't rescale with the arena.
+- **Survival / Mothership XP** — diep's `shapeScoreRewardMultiplier` is shapes-only (Survival and
+  Mothership ×3, Domination ×2, Tag ×3). Ours is `rules.xpMul` on every `awardXp()` call, so it
+  multiplies tank kills too. Tag is 3 and Domination is 2; Survival and Mothership are still 1.
 
 ## Still open
 
@@ -99,6 +97,9 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
 
 ## Knowingly wrong / do-not-"fix"
 
+- **`A₀` is physics.html's 1.449** (`MOVE_ACCEL_BASE` in `public/SHARE/Physics.js`), not
+  `TankBody.ts:271`'s 2.55 du/loop² (coefficient 1.428). Left on physics.html's figure on
+  purpose — 10 × 1.449 = 14.49 u/ref-tick = 362.25 u/s.
 - **Semi-implicit Euler drag error**: live 25 ms server runs ~1.8% over the 40 ms-reference
   steady state (362.25 → 368.9 u/s); impulse columns read ~1.8% high with it. The real fix (an
   exponential integrator) redefines every per-reference-tick constant. Recorded so nobody
@@ -134,7 +135,7 @@ behaviour around bases, each mode's win/close flow, the accounts/achievements pa
 - **`test/clientDiff.js` seeds ONE RNG across four rooms in sequence** — a change to how many
   entities exist (or how long one lives) shifts every later mode's positions. Isolate causes by
   overriding the suspect constant at load time and re-running once per candidate. Rebaseline
-  deliberately, with the reason in the file header. Current golden: `322908/55106b69`.
+  deliberately, with the reason in the file header. Current golden: `327739/90ff3e28`.
 - **Grep for the old number, not the constant name** when a value moves. Known near-collisions:
   Gunner `speed 0.511936` vs retired `MOVE_ACCEL_BASE 0.511941`; retired impulse `0.43881` vs
   bullet `speed 0.438816` shared by eight drone/trap cannons.

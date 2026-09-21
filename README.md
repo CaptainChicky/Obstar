@@ -6,9 +6,9 @@ class tree.
 
 The codebase has been through a substantial refactor and cleanup pass (single entry point,
 Postgres instead of the old MySQL wiring, a real test suite, linting). It's still a
-work-in-progress game, not a finished product — see [plan.md](plan.md) for the active
-diep-fidelity work plan, [PENDING.md](PENDING.md) for open decisions and what's untested, and
-[HANDOFF.md](HANDOFF.md) for the full architecture map and gotcha list.
+work-in-progress game, not a finished product — see [issues.md](issues.md) for the living
+punch list, [PENDING.md](PENDING.md) for open decisions and what's untested, and
+[HANDOFF.md](HANDOFF.md) for the architecture map and gotcha list.
 
 ## Departures from diep (deliberate — a fidelity pass must not "fix" these)
 
@@ -94,6 +94,6 @@ local Postgres instance, and how to test admin commands via the in-browser dev c
 
 ## Contributing
 The game still needs a lot of work — new gamemode content, more test coverage on the untested
-paths, general polish. [PENDING.md](PENDING.md) is the up-to-date punch list of what's decided
-but not built and what nobody has verified yet; [HANDOFF.md](HANDOFF.md) is the map to get
-oriented in the code before touching anything...
+paths, general polish. [issues.md](issues.md) is the living punch list; [PENDING.md](PENDING.md)
+is open decisions and what nobody has verified yet; [HANDOFF.md](HANDOFF.md) is the map to get
+oriented in the code before touching anything.
