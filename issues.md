@@ -48,7 +48,7 @@ wiped things.
 | Folder | Status |
 |---|---|
 | `/db` | DONE |
-| `/entities` | DONE except `Bullet.js` |
+| `/entities` | DONE |
 | `/lib` | DONE |
 | `/net` | DONE |
 | `/views` | DONE |

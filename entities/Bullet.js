@@ -1,71 +1,46 @@
 /*
 	Bullet - projectiles, including drone / trap / necro behaviour.
-
-	Extracted from the old Alex.js monolith (now server.js + lib/ + rooms/ + entities/).
-	Bullets never cross rooms - a bullet only ever looks up its own origin's room - so it holds
-	a direct `this.room` reference instead of reaching through a registry.
+	A bullet only ever looks up its own origin's room, so it holds a direct `this.room`
+	reference instead of reaching through a registry.
 */
 const Vec = require('victor');
 const tick = require('../lib/tick.js');
 const config = require('../lib/config.js').config;
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
-// NOT public/SHARE/Physics.js's tank FRICTION - see lib/constants.js. diep models a bullet as
-// V_b = rho/t_b with no drag term at all, so the drag a bullet decays through here is our own
-// hand-tuned number and is deliberately NOT the tank's 10/11. It stays put until MEASUREMENTS.md's
-// M1 says what diep actually does; every number in this file is denominated against it.
+// Bullet drag. Separate from the tank's friction constant.
 const BODY_FRICTION = tick.drag(require('../lib/constants.js').BODY_FRICTION);
-// diepcustom Object.ts:277's own deletion-animation brake: a dying entity halves its speed every
-// reference tick, on top of the friction it already had. tick.drag(), like every other `v *= k`
-// per reference tick in this tree - see update()'s destroy branch.
+// Deletion-animation brake: a dying projectile halves its speed every reference tick, on
+// top of BODY_FRICTION. Applied in update()'s destroy branch, impact deaths only.
 const DEATH_DRAG = tick.drag(0.5);
-// Friction-ORDER compensation for the cruise thrust in update()'s motion tail - see that site and
-// lib/constants.js. Dimensionless, so no tick conversion of its own.
+// Friction-order compensation for the cruise thrust in update()'s motion tail.
+// Dimensionless - no tick conversion of its own. See lib/constants.js.
 const BULLET_CRUISE_ORDER = require('../lib/constants.js').BULLET_CRUISE_ORDER;
-// Same "diep's raw bulletAccel" divisor entities/Player.js's shoot() uses for an ordinary muzzle
-// kick - needed here too now that a Skimmer (type 4)/Minion (type 1.5) fires sub-projectiles of
-// its own mid-flight instead of only at the original shoot() call site (plan.md B3).
+// Divisor that recovers the raw muzzle accel from TanksConfig.js's `speed` column.
+// Same one Player.js's shoot() uses; Skimmer/Minion sub-shots fire it from here too.
 const BULLET_MAINTAIN = require('../lib/constants.js').BULLET_MAINTAIN;
 const KIND = require('../public/SHARE/kinds.js');
 const World = require('../public/SHARE/World.js');
 const Detector = require('./Detector.js');
 const { LETHAL_EPS, projectileCommon } = require('../lib/damage.js');
 
-// diepcustom Skimmer.ts: `static BASE_ROTATION = 0.1` rad, added to the skimmer's own facing
-// once per (diep) tick - tick.perTick(), the same category a shape's BASE_ORBIT spin uses. Drives
-// `showDir` (case 4, below), NOT `dir` - `dir` stays the bullet's straight-line heading, exactly
-// like every other bullet's cruise thrust, so the skimmer flies straight while its drawn body (and
-// its sub-barrels' fire direction) spins independently. Consumed as a rate, not baked into a
-// per-real-tick constant, since case 4 also reads it every tick.
+// Skimmer body spin, per reference tick. Drives `showDir` (case 4), not `dir` - `dir`
+// stays the straight-line heading so the shot flies straight while the drawn body and
+// its sub-barrels spin independently.
 const SKIMMER_SPIN = tick.perTick(0.1);
 
-// diep_wiki/Stats.txt: Body Damage is "decreased by 75% when affecting projectiles (Bullets,
-// Traps, Drones)" - MEASUREMENTS.md's pinned "-75% vs projectiles" entry (PENDING #18). Applies
-// to what a bullet's own `pene` (its spend-down health pool) loses per tick of contact with a
-// body-damage source below - not to what the bullet itself deals, which is untouched. common()
-// for every pairing (tank/bullet, shape/bullet, bullet/bullet) is now the single explicit table
-// in lib/damage.js (plan.md chunk 1 D2/D3/D4) - PROJECTILE_BODY_DAMAGE's old flat 0.25 is retired,
-// since it was only ever the tank/bullet and shape/bullet figure under two different bakings that
-// happened to both equal 1 once un-baked (common(tank,bullet)=1, common(shape,bullet)=1).
-
 /*
-	Factory Minion (type 1.5) steering - Minion.ts. A minion carries two angles: `showDir` (aim -
-	where its own barrel fires) and `dir` (movement) move independently, unlike an ordinary drone
-	where they're the same. The aim tracks the cursor on left-click/autofire and points away from
-	it on right-click; the same three movement zones apply either way, which is what turns a
-	right-click repel into a reversed spiral and, inside the inner seam, a star formation that
-	moves toward the cursor while still facing away from it (diep_wiki/Factory.txt). Minion.ts's
-	FOCUS_RADIUS is 800 du squared; the inner seam is that same 800 du over sqrt(7).
+	Factory minion (type 1.5) steering. `showDir` (aim) and `dir` (movement) move independently.
+	Aim tracks the cursor on left-click/autofire and points away on right-click; the same three
+	movement zones apply either way (outer: toward/away, mid: spiral, inner: star). FOCUS is
+	800 du; the inner seam is that radius over sqrt(7).
 */
 const MINION_FOCUS = World.gu(16);
 const MINION_FOCUS_IN = World.gu(16) / Math.sqrt(7);
 
 /*
-	ONE aggro rule for every drone in the game - see lib/config.js's DRONE_AGGRO_FOV. A
-	controllable drone, an uncontrollable one, a Factory minion, a necro drone and a boss's own
-	spawner all get the same radius off the same quantity (the owner's own FOV radius), and it is
-	measured from the OWNER rather than from the drone: a drone's detector only nominates a
-	candidate, so the swarm's reach is the tank's, not the tank's plus whatever ring the drone
-	happens to be sitting on.
+	One aggro radius for every drone, measured from the owner (lib/config.js DRONE_AGGRO_FOV).
+	A detector only nominates a candidate; the swarm's reach is the tank's FOV, not the tank
+	plus whichever ring the drone is sitting on.
 */
 const DRONE_AGGRO_FOV = config.DRONE_AGGRO_FOV;
 const DRONE_AGGRO_MIN = config.DRONE_AGGRO_MIN;
@@ -84,70 +59,38 @@ function droneInAggro(play, other, committed = false) {
 }
 
 /*
-	SPEED_RESCALE (the old x1.6 TICK_MS-invariance fix for the `speed` column's tick.quadratic()
-	category) is RETIRED as of plan.md Step 9 - not kept alongside the new diep-derived `speed`
-	column, which needs no such rescale: it is a direct physical identity
-	(`20 du/tick x 0.56 x 0.1 = 1.12` units/ref-tick, see TanksConfig.js's header) with nothing to
-	divide back out. The two sites that used to consume `speed / SPEED_RESCALE` - the muzzle kick
-	in the constructor and the 'god' repulsion in collision() - now read `speed` directly.
-*/
+	Base drone orbit AI. Converted once at module load, not per drone per tick.
 
-/*
-	Base drone orbit AI. All converted once at module load, not per drone per tick.
+	Every drone carries `head` (radians) and `spd` (units per real tick), both rate-limited
+	toward a per-state desired direction and target speed; position is their integral. True
+	for ORBIT/CHASE; a cross or a planned level-switch arc bypasses the limiter and reads a
+	precomputed curve instead.
 
-	The steering model: every drone carries `head` (radians) and `spd` (units per real tick), both
-	rate-limited (BASE_DRONE_TURN, BASE_DRONE_ACCEL) toward a per-state desired direction and
-	target speed, and position is their integral - true for ORBIT/CHASE, NOT for a cross or a
-	planned level-switch arc (below). That is what makes every transition outside those two
-	continuous by construction.
+	Radius is quantised into five shared energy levels (rooms/Room.js levelR(1..5)). The only
+	mover between levels is levelSwitch(): a shape hit or drone-proximity switch is the sharp
+	lean; a home/sort switch is the shallow planned arc (planSwitchArc).
 
-	Radius is quantised into five shared "energy levels" rather than a continuous random band: a
-	drone is always at one of rooms/Room.js's levelR(1..5), and the only thing that ever moves it
-	between levels is levelSwitch() below, called from four triggers - a shape hit (this file's
-	KIND.OBJECTS collision arm), drone-vs-drone proximity (rooms/Room.js's pair loop sets
-	`tooClose`, consumed in case 1.4), a post-swoosh climb back to home (case 1.4's `homing` state)
-	and the per-centre binomial sorter (rooms/Room.js's tickDroneCentres() - a restoring force
-	toward BASE_DRONE_LEVEL_WEIGHTS's steady shape, not just a reaction to something touching the
-	drone). A shape hit / drone-proximity switch is the sharp 60-degree lean
-	(BASE_DRONE_LEAN_SCALE/HIT_TURN); a home/sort switch is the shallow planned
-	BASE_DRONE_SWITCH_LEAN arc instead (planSwitchArc(), below).
-
-	The diameter cross is a planned curve, not a steered pursuit of an antipodal aim point - a
-	turn-limited pursuit cannot be made to pass through a specific point. It is arc -> C2 blend ->
-	an exact straight line through the orbit centre -> C2 blend -> arc, precomputed once at trigger
-	into a per-tick {x,y,vx,vy} table by planCross() (below quinticHermite()). The SPEED along that
-	path is a plateau: ramp from cruise up to peak over the first BASE_DRONE_CROSS_RAMP of the
-	path, hold peak across the middle, ramp back down over the last BASE_DRONE_CROSS_RAMP - so the
-	orbit centre sits somewhere inside the held plateau rather than at a special point of its own.
-	`case 1.4`'s per-tick evaluation while `crossing` is just an array read; the turn/accel limiter
-	is bypassed entirely for those ticks, since the curve's own curvature and the baked-in speed
-	profile already bound the motion.
+	A diameter cross is a planned curve (arc -> C2 blend -> straight through the centre ->
+	C2 blend -> arc), not a steered pursuit. planCross() bakes it into a per-tick table;
+	while `crossing`, case 1.4 is just an array read.
 */
 const BASE_DRONE_CROSS = tick.ticks(config.BASE_DRONE_CROSS);
 const BASE_DRONE_ORBIT_SPEED = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
 const BASE_DRONE_CHASE_SPEED = tick.perTick(config.BASE_DRONE_CHASE_SPEED);
 const BASE_DRONE_CROSS_SPEED = tick.perTick(config.BASE_DRONE_CROSS_SPEED);
 const BASE_DRONE_TURN = tick.perTick(config.BASE_DRONE_TURN);
-// Used in place of BASE_DRONE_TURN whenever a drone is chasing - a dash needs
-// its own, much tighter turn radius or a "faster chase" would only make the AI worse (see
-// lib/config.js's comment).
+// Chase turn limiter. A dash needs a tighter turn radius than orbit or it swings wide.
 const BASE_DRONE_CHASE_TURN = tick.perTick(config.BASE_DRONE_CHASE_TURN);
 const BASE_DRONE_ACCEL = tick.perTick(config.BASE_DRONE_ACCEL);
 const BASE_DRONE_SWITCH_COOLDOWN = tick.ticks(config.BASE_DRONE_SWITCH_COOLDOWN);
 const BASE_DRONE_LEVEL_RELAX = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
 
 /*
-	Idle tank-drone orbit (droneIdleOrbit, below) - see lib/config.js for the shape of the table.
-
-	This is the BASE_DRONE_* state machine flown in the OWNER'S OWN FRAME: the drone's authoritative
-	state is its position and velocity RELATIVE to the tank, so the ring, the planned swoosh and the
-	planned level-change arcs are all built once against a stationary centre and the owner's motion
-	simply carries the whole swarm. That is what retires the old velocity-field steer, whose ring was
-	re-derived from a moving owner every tick - the reason its swoosh entry and exit never quite
-	settled (the curve was aimed at a point that had moved by the time the drone got there).
-
-	Speeds are FRACTIONS of the drone's own terminal free-flight speed rather than absolute rates,
-	so one table serves a slow necro drone and a fast boss drone; droneTerminal() below converts.
+	Idle tank-drone orbit (droneIdleOrbit). The BASE_DRONE_* state machine, flown in the
+	owner's frame: the drone's state is position and velocity relative to the tank, so the
+	ring, swoosh and level-change arcs are posed against a stationary centre and the owner
+	carries the swarm. Speeds are fractions of the drone's own terminal free-flight speed
+	(droneTerminal below), so one table serves a slow necro and a fast boss drone.
 */
 const TANK_DRONE_ORBIT_R = config.TANK_DRONE_ORBIT_R;
 const TANK_DRONE_ORBIT_BIAS = config.TANK_DRONE_ORBIT_BIAS;
@@ -173,10 +116,10 @@ const TANK_DRONE_SEP_NUDGE = config.TANK_DRONE_SEP_NUDGE;
 const TANK_DRONE_ORBIT_DIR = -1;
 
 /*
-	The drone's terminal free-flight speed, in units per real tick: what it would settle at under
-	the shared motion tail's own cruise thrust (`vec += quadratic(speed x CRUISE_ORDER); vec *= F`,
-	whose fixed point is `A x F/(1-F)`). Every TANK_DRONE_*_FRAC is a fraction of this, so the orbit
-	never asks a drone for a speed its own barrel could not actually give it.
+	The drone's terminal free-flight speed, in units per real tick: what it would settle at
+	under the shared motion tail's cruise thrust (`vec += quadratic(speed x CRUISE_ORDER);
+	vec *= F`, whose fixed point is `A x F/(1-F)`). Every TANK_DRONE_*_FRAC is a fraction of
+	this, so the orbit never asks a drone for a speed its own barrel could not give it.
 */
 const TERMINAL_OF_THRUST = BODY_FRICTION / (1 - BODY_FRICTION);
 function droneTerminal(bullet) {
@@ -221,12 +164,9 @@ function tankLevelR(play, bullet, level) {
 
 /*
 	One level step, accepted with probability w[next]/w[here] (Metropolis on
-	TANK_DRONE_LEVEL_WEIGHTS). A tank's swarm has no per-centre ledger the way a base's does - it
-	is created and destroyed constantly, and a shared count would have to be rebuilt every time a
-	drone dies - so occupancy is held statistically instead: this walk's stationary distribution
-	over a swarm IS the weight table, which is the property the base's explicit apportionment was
-	buying. `dir` may be given (the post-swoosh climb home, which is always +1); left out, the
-	drone rolls one.
+	TANK_DRONE_LEVEL_WEIGHTS). A tank swarm has no per-centre ledger, so occupancy is
+	statistical: this walk's stationary distribution IS the weight table. `dir` may be
+	given (the post-swoosh climb home, always +1); left out, the drone rolls one.
 */
 function tankLevelStep(bullet, dir) {
 	const here = bullet.orbLevel;
@@ -242,12 +182,10 @@ function tankLevelStep(bullet, dir) {
 }
 
 /*
-	One segment of a quintic Hermite: position, velocity AND acceleration are matched at both
-	endpoints (C2), unlike a cubic Hermite (position/velocity only) or smootherstep (zero
-	derivative at both ends, which is what made the WP4 cross visibly stop dead twice per swoosh).
-	`s` is the local 0..1 parameter, `T` the segment's duration in real ticks (the derivative terms
-	are pre-scaled by T/T^2 so `va`/`aa`/`vb`/`ab` are plain per-tick quantities, not per-s ones).
-	Returns {p, v} for one axis; case 1.4 calls this twice per tick while crossing (x, y).
+	One segment of a quintic Hermite: position, velocity AND acceleration matched at both
+	endpoints (C2). `s` is the local 0..1 parameter, `T` the segment's duration in real ticks
+	(derivative terms are pre-scaled by T/T^2 so va/aa/vb/ab are per-tick, not per-s).
+	Returns {p, v} for one axis; callers evaluate x and y separately.
 */
 function quinticHermite(s, T, pa, va, aa, pb, vb, ab) {
 	const s2 = s * s, s3 = s2 * s, s4 = s3 * s, s5 = s4 * s;
@@ -275,11 +213,10 @@ function quinticHermite(s, T, pa, va, aa, pb, vb, ab) {
 const CROSS_NS = 64;
 
 /*
-	One C2 blend of the swoosh, sampled into an arc-length table. The Hermite's
-	duration parameter T is a SHAPE parameter here, not a duration: it scales the derivative
-	handles, so it is solved by fixed point against the curve's own length rather than guessed with
-	a measured overhead factor. 3-8 iterations at every level; the cap is a safety net, not an
-	expected path.
+	One C2 blend of the swoosh, sampled into an arc-length table. The Hermite's duration
+	parameter T is a shape parameter here, not a duration: it scales the derivative handles,
+	so it is solved by fixed point against the curve's own length. 3-8 iterations at every
+	level; the cap is a safety net, not an expected path.
 */
 function blendShape(P0, V0, A0, P1, V1, A1, vMean) {
 	let T = Math.max(3, Math.hypot(P1.x - P0.x, P1.y - P0.y) / vMean);
@@ -302,11 +239,10 @@ function blendShape(P0, V0, A0, P1, V1, A1, vMean) {
 }
 
 /*
-	Position and analytic velocity at arc length `arc` along a bare polyline (xs/ys/ss). planCross()
-	walks ONE polyline spanning all three pieces of the swoosh, not three separate
-	blend/straight/blend tables. The tangent is a central difference over the sample either side,
-	not the single bracketing segment's chord - a per-segment tangent makes `head` (and so the
-	drawn drone) step a couple of units at a time.
+	Position and analytic velocity at arc length `arc` along a polyline (xs/ys/ss).
+	planCross() walks one polyline spanning all three pieces of the swoosh. The tangent is
+	a central difference over the sample either side, not the bracketing segment's chord -
+	a per-segment tangent makes `head` (and so the drawn drone) step a couple of units at a time.
 */
 function pathAt(xs, ys, ss, arc, spd) {
 	let lo = 0, hi = ss.length - 1;
@@ -324,18 +260,11 @@ function pathAt(xs, ys, ss, arc, spd) {
 }
 
 /*
-	The swoosh's geometry: arc -> C2 blend -> straight through the orbit centre
-	-> C2 blend -> arc, as ONE polyline spanning all three pieces (`CROSS_NS` samples each). Shared
-	between planCross() (a real drone, real entry state) and the standalone
-	Bullet.estimateCrossTicks() (geometry only, no drone needed), so the two can
-	never silently disagree about how long a cross from r0 to R1 takes. Returns the polyline plus
-	`sc`, the arc length at which it crosses the orbit centre - exact rather than searched for,
-	since the centre lies ON the straight by construction (BASE_DRONE_CROSS_BLEND_FRAC < 1 always
-	leaves it strictly between the two blend endpoints - see lib/config.js's comment).
-
-	`vOrbit`/`vCross` default to the base drone's own pair; the idle tank-drone orbit
-	(droneIdleOrbit(), below) passes its own, denominated against the drone's terminal speed
-	instead, so both kinds of swoosh are the same curve solved at a different scale.
+	Swoosh geometry: arc -> C2 blend -> straight through the orbit centre -> C2 blend ->
+	arc, as one polyline. Shared by planCross() (a live drone) and estimateCrossTicks()
+	(geometry only). `sc` is the arc length at the orbit centre, which lies ON the straight
+	by construction. `vOrbit`/`vCross` default to the base drone pair; droneIdleOrbit
+	passes its own, scaled to the drone's terminal speed.
 */
 function crossPolyline(P0, V0, A0, ox, oy, r0, R1, phi, spin,
 	vOrbit = BASE_DRONE_ORBIT_SPEED, vCross = BASE_DRONE_CROSS_SPEED) {
@@ -344,9 +273,8 @@ function crossPolyline(P0, V0, A0, ox, oy, r0, R1, phi, spin,
 	const phiLine = phi + lead;
 	const ux = Math.cos(phiLine), uy = Math.sin(phiLine);
 	const dx = -ux, dy = -uy;
-	// Each end gives up a fraction of ITS OWN radius, not of the chord - that is
-	// what keeps the orbit centre strictly inside the straight, at fraction r0/(r0+R1) along it,
-	// for every f < 1 at every level, so BLEND_FRAC has no geometric cap to assert any more.
+	// Each end gives up a fraction of its own radius, not of the chord, so the orbit
+	// centre sits strictly inside the straight at fraction r0/(r0+R1).
 	const Lin = { x: ox + ux * r0 * (1 - f), y: oy + uy * r0 * (1 - f) };
 	const Lout = { x: ox + dx * R1 * (1 - f), y: oy + dy * R1 * (1 - f) };
 	const phiB = phiLine + Math.PI + lead;
@@ -355,20 +283,15 @@ function crossPolyline(P0, V0, A0, ox, oy, r0, R1, phi, spin,
 	const VB = { x: -nBy * spin * vOrbit, y: nBx * spin * vOrbit };
 	const aB = vOrbit * vOrbit / R1;
 	const AB = { x: -nBx * aB, y: -nBy * aB };
-	// The velocity handed to blendShape at the line knots is a SHAPE handle, not a speed: the walk
-	// below takes its direction from the polyline tangent and its magnitude from the speed profile,
-	// so only the handle's DIRECTION (along the line) and the zero acceleration beside it are
-	// load-bearing - they are what make the join tangent to the line with zero curvature, i.e.
-	// geometrically C2.
+	// Velocity at the line knots is a shape handle, not a speed: direction along the
+	// line and zero acceleration make the join tangent with zero curvature (C2).
 	const Vl = { x: dx * vCross, y: dy * vCross };
 	const Z = { x: 0, y: 0 };
 	const vMean = (vOrbit + vCross) / 2;
 	const she = blendShape(P0, V0, A0, Lin, Vl, Z, vMean);
 	const shx = blendShape(Lout, Vl, Z, B, VB, AB, vMean);
 
-	// ONE polyline over all three pieces - the speed profile spans the whole
-	// swoosh, so there is nothing left to solve per-piece and nothing for two pieces to disagree
-	// about at a seam.
+	// One polyline over all three pieces - the speed profile spans the whole swoosh.
 	const xs = [], ys = [], ss = [];
 	let len = 0;
 	const push = (x, y) => {
@@ -386,12 +309,10 @@ function crossPolyline(P0, V0, A0, ox, oy, r0, R1, phi, spin,
 }
 
 /*
-	The speed profile: ramp from cruise up to `vp` over the first
-	BASE_DRONE_CROSS_RAMP of the path, hold `vp` across the middle, ramp back down to cruise over
-	the last BASE_DRONE_CROSS_RAMP. `dv/ds = 0` at all four of s=0, s=ramp, s=L-ramp and s=L, which
-	is what makes the two seams C2 (the tangential acceleration vanishes there, leaving only the
-	curvature term) and both knees corner-free. `sc` is no longer read - the peak is a plateau that
-	the orbit centre sits inside, not a point the centre defines.
+	Speed profile: ramp from cruise to `vp` over the first BASE_DRONE_CROSS_RAMP of the
+	path, hold across the middle, ramp back down over the last. `dv/ds = 0` at all four
+	knees, which is what makes the two seams C2. `sc` is unused; the peak is a plateau
+	the orbit centre sits inside.
 */
 function crossVAt(L, sc, arc, vp, vOrbit = BASE_DRONE_ORBIT_SPEED) {
 	const ramp = L * config.BASE_DRONE_CROSS_RAMP;
@@ -412,10 +333,8 @@ function crossDurOf(ss, L, sc, vp, vOrbit = BASE_DRONE_ORBIT_SPEED) {
 }
 
 /*
-	Solve the PEAK so the walk lands on a whole tick, instead of rescaling the
-	whole profile by dur/T the way the previous pass did: rescaling leaves both seam speeds at
-	ORBIT_SPEED*k rather than exactly ORBIT_SPEED - a <=0.7% velocity step at each seam. dur() is
-	strictly decreasing in the peak, so 18 bisections land it to well under a part in 10^4.
+	Solve the peak so the walk lands on a whole tick. dur() is strictly decreasing in
+	the peak, so 18 bisections land it to well under a part in 10^4.
 */
 function crossSolvePeak(ss, L, sc, vOrbit = BASE_DRONE_ORBIT_SPEED, vCross = BASE_DRONE_CROSS_SPEED) {
 	const T = Math.max(3, Math.round(crossDurOf(ss, L, sc, vCross, vOrbit)));
@@ -428,10 +347,8 @@ function crossSolvePeak(ss, L, sc, vOrbit = BASE_DRONE_ORBIT_SPEED, vCross = BAS
 }
 
 /*
-	Build a whole swoosh as a per-tick table: arc -> C2 blend -> straight
-	through the orbit centre -> C2 blend -> level 1, traversed by ONE speed profile that ramps up to
-	peak over the path's first BASE_DRONE_CROSS_RAMP, holds it across the middle, and ramps back
-	down over the last BASE_DRONE_CROSS_RAMP. Called once at trigger.
+	Build a whole swoosh as a per-tick table: arc -> C2 blend -> straight through the
+	orbit centre -> C2 blend -> level 1, traversed by one speed profile. Called once at trigger.
 */
 function planCross(drone) {
 	const spin = drone.spin;
@@ -466,30 +383,23 @@ function planCross(drone) {
 	// the hand-off costs the field zero dHead/dSpd on its first tick back.
 	tbl[tbl.length - 1] = { x: B.x, y: B.y, vx: VB.x, vy: VB.y };
 	drone.crossTbl = tbl;
-	// Three ARC LENGTHS now (entry/straight/exit), not tick counts - no piece
-	// owns a whole number of ticks any more, since the speed profile spans the whole swoosh.
-	// Diagnostics and tests only; nothing branches on it.
+	// Entry/straight/exit arc lengths. Diagnostics and tests only; nothing branches on it.
 	drone.crossSegs = [sEnd, xEnd - sEnd, L - xEnd];
-	// The exact geometric straight endpoints - a test wants these directly rather
-	// than approximating them from the nearest flown tick, which can overshoot a fraction of a tick
-	// into the neighbouring blend (the speed profile is one continuous polyline now, so a tick
-	// boundary is no longer guaranteed to land exactly on a knot the way the old per-piece tables did).
+	// Exact geometric straight endpoints, for tests - a flown tick can overshoot a
+	// fraction of a tick into the neighbouring blend.
 	drone.crossLin = { x: Lin.x, y: Lin.y };
 	drone.crossLout = { x: Lout.x, y: Lout.y };
-	// The tick-count boundaries a test wants alongside the arc lengths above -
-	// computed here, once, rather than reconstructed by scanning the flown table after the fact.
+	// Tick-count boundaries alongside the arc lengths above, for tests.
 	drone.crossTicks = [teTick, txTick - teTick, T - txTick];
 	drone.crossT = 0;
 	drone.crossing = true;
 }
 
 /*
-	Standalone geometry-only estimate of how many real ticks a cross from r0 to R1 takes - factored out
-	of planCross()'s own duration solve so rooms/Room.js can size each
-	orbit centre's crossCap (how many drones may be mid-swoosh at once) from measured demand at
-	ledger-build time, without needing a live drone. Generic phi=0/spin=+1 and an entry state at
-	cruise speed, tangential - what a cross launching from steady orbit actually starts from; the
-	duration doesn't depend on phi or spin (rotation/mirror invariant), only on r0 and R1.
+	Geometry-only estimate of how many real ticks a cross from r0 to R1 takes. Factored
+	out of planCross() so rooms/Room.js can size each orbit centre's crossCap from measured
+	demand at ledger-build time, without a live drone. Generic phi=0/spin=+1 and an entry
+	state at cruise speed, tangential; duration depends only on r0 and R1.
 */
 function estimateCrossTicks(r0, R1) {
 	const v0 = BASE_DRONE_ORBIT_SPEED;
@@ -500,11 +410,10 @@ function estimateCrossTicks(r0, R1) {
 }
 
 /*
-	The orbit field's desired direction at a drone's current position:
-	tangential, with a radial lean toward orbRTarget that saturates at BASE_DRONE_LEAN_MAX. Never
-	normalised - only its angle is ever read. Factored out of case 1.4's steering tail because the
-	chase-drop block and clampToMap()'s corner fallback need the SAME vector to snap `head` onto,
-	and three copies of this expression would eventually disagree.
+	The orbit field's desired direction at a drone's current position: tangential, with
+	a radial lean toward orbRTarget that saturates at BASE_DRONE_LEAN_MAX. Never normalised
+	- only its angle is ever read. Shared by case 1.4's steering tail, the chase-drop
+	block, and clampToMap()'s corner fallback.
 */
 function orbitDesired(drone) {
 	const ex = drone.x - drone.ox, ey = drone.y - drone.oy;
@@ -518,34 +427,23 @@ function orbitDesired(drone) {
 }
 
 /*
-	The radial mechanism: move a drone
-	exactly one energy level.
+	Move a drone exactly one energy level.
 
-	  'random' - a REACTION (shape hit or drone-proximity trigger). Can never fail (the user's "this
-	  should always be happening no matter what"): saturation is a
-	  preference for a voluntary move, not a veto on a reaction. It prefers an open neighbour; if
-	  both are full, it takes the one with the most headroom (count - cap, i.e. least over-full),
-	  ties at random. A drone always has at least one neighbour (levels 1 and 5 have exactly one),
-	  so this only returns false if BASE_DRONE_LEVELS were 1. The resulting overflow is transient -
-	  the ledger can now transiently exceed a cap, which was already true of a cross's landing on
-	  level 1 - and it drains through the 'home'/'sort' paths below, which still respect caps
-	  (except while `homing` - see below). Writes orbRTarget immediately and lets the orbit field's
-	  own lean produce the sharp reactive turn (BASE_DRONE_LEAN_SCALE/HIT_TURN).
+	  'random' - a reaction (shape hit or drone-proximity). Always succeeds: prefers an
+	  open neighbour; if both are full, takes the one with the most headroom (count - cap),
+	  ties at random. Writes orbRTarget immediately; the orbit field's lean produces the
+	  sharp reactive turn.
 
-	  'home' - the post-swoosh climb back to BASE_DRONE_LEVEL_HOME (case 1.4's `homing` state). A
-	  voluntary move is normally a preference: it respects the per-centre saturation
-	  cap and does nothing - leaving the cooldown alone, so the caller retries later - if its one
-	  directed neighbour is saturated. While `drone.homing` is set, the cap is bypassed instead: a
-	  scripted return must not be able to stall behind a full level 2.
+	  'home' - post-swoosh climb back to BASE_DRONE_LEVEL_HOME. A voluntary move normally
+	  respects the saturation cap; while `drone.homing` is set the cap is bypassed so a
+	  scripted return cannot stall behind a full level 2.
 
-	  'sort' - the per-centre binomial sorter (rooms/Room.js's tickDroneCentres()).
-	  The caller has already checked there is a deficit in the direction it wants to move, so this
-	  never checks the cap either - only the proximity guard (a planned arc only makes sense from
-	  the drone's own ring) applies. `dir` (-1/+1) says which neighbour.
+	  'sort' - per-centre binomial sorter (rooms/Room.js tickDroneCentres()). The caller
+	  has already checked a deficit in the wanted direction, so this never checks the cap
+	  either - only the proximity guard applies. `dir` (-1/+1) says which neighbour.
 
 	A successful 'home'/'sort' switch plans the whole move as a single quintic Hermite
-	(planSwitchArc, below) instead of just writing orbRTarget - position/velocity/head/spd come
-	from that curve (case 1.4's `this.switching` branch) until it lands.
+	(planSwitchArc) instead of just writing orbRTarget.
 */
 function levelSwitch(drone, mode, dir) {
 	const levels = drone.levels;
@@ -565,8 +463,8 @@ function levelSwitch(drone, mode, dir) {
 			if (toward === lo && (openLo || drone.homing)) { next = lo; }
 			if (toward === hi && (openHi || drone.homing)) { next = hi; }
 		} else {
-			// 'sort': the caller already validated a deficit at this direction - cap-free by design
-			//, not just while homing.
+			// 'sort': the caller already validated a deficit at this direction - cap-free,
+			// not just while homing.
 			if (dir < 0 && canLo) { next = lo; }
 			if (dir > 0 && canHi) { next = hi; }
 		}
@@ -594,21 +492,15 @@ function levelSwitch(drone, mode, dir) {
 	drone.levelTimer = BASE_DRONE_LEVEL_RELAX;
 	if (mode === 'home' || mode === 'sort') { planSwitchArc(drone, drone.orbRTarget); }
 	// Clear the moment level reaches HOME, not when the arc it's still flying
-	// happens to finish - case 1.4's trigger block that would otherwise clear it is gated on
-	// `!switching`, which stays true for ~76 more ticks after this. eligible() already excludes a
-	// mid-switching drone regardless, so clearing here costs the sorter nothing early.
+	// finishes - the trigger block that would otherwise clear it is gated on `!switching`.
 	if (mode === 'home' && next === config.BASE_DRONE_LEVEL_HOME) { drone.homing = 0; }
 	return true;
 }
 
 /*
-	Builds a 'home'/'sort' switch's planned arc: a shallow quintic-Hermite sweep
-	leaning BASE_DRONE_SWITCH_LEAN (10 degrees) off the tangent, landing at the new level's radius
-	exactly tangential and at cruise speed - the same seam trick the cross's exit already uses, so
-	the hand-off back to the orbit field is exact (the field computes zero dHead/dSpd on the first
-	post-arc tick). Naming the LEAN (not a fraction of the circumference, the old
-	BASE_DRONE_SWITCH_ARC) is what makes this the same 76-tick motion at every level - see
-	lib/config.js's comment.
+	A 'home'/'sort' switch's planned arc: a shallow quintic-Hermite sweep leaning
+	BASE_DRONE_SWITCH_LEAN off the tangent, landing at the new radius exactly tangential
+	and at cruise speed so the hand-off back to the orbit field is exact.
 */
 function planSwitchArc(drone, r1) {
 	const cx = drone.x - drone.ox, cy = drone.y - drone.oy;
@@ -689,36 +581,27 @@ function droneSteer1(bullet, play) {
 }
 
 /*
-	The "nothing to attack" half of every drone's steering - an ordinary controllable drone (type
-	1), an uncontrollable one (1.1), a BattleShip/Fortress swarm drone (1.2), a Factory minion
-	(1.5), a necro/square drone (3) and a boss's own drone (3.1) all idle through this one
-	function, so a Mothership's swarm and a Summoner's behave identically.
+	The "nothing to attack" half of every drone's steering - controllable (type 1),
+	uncontrollable (1.1), BattleShip/Fortress swarm (1.2), Factory minion (1.5), necro
+	(3) and a boss's own drone (3.1) all idle through this one function.
 
-	It is the BASE DRONE state machine, flown in the OWNER'S FRAME. The drone's authoritative state
-	is `orbHead`/`orbSpd` - its heading and speed RELATIVE to the tank - and its relative position
-	is their integral; world position is simply the owner's plus that. Three branches, exactly as a
-	base drone has:
+	The BASE_DRONE state machine, flown in the owner's frame. Authoritative state is
+	`orbHead`/`orbSpd` - heading and speed relative to the tank; world position is the
+	owner's plus that. Three branches:
 
-	  ORBIT/RETURN - one velocity field (tangent, leaned toward the level's radius, saturating at
-	  BASE_DRONE_LEAN_MAX), rate-limited in heading and speed, with a smoothstep blend from cruise
-	  up to terminal speed as the radial error grows so a drone left behind by a moving owner
-	  sprints back and eases onto its ring instead of ringing around it.
+	  ORBIT/RETURN - one velocity field (tangent, leaned toward the level's radius),
+	  rate-limited in heading and speed, with a smoothstep blend from cruise up to
+	  terminal as the radial error grows so a drone left behind sprints back onto its ring.
 
-	  CROSS - the swoosh, as a PLANNED quintic curve (planTankCross below, sharing crossPolyline()/
-	  crossSolvePeak() with the base drone verbatim): arc -> C2 blend -> an exact straight through
-	  the owner -> C2 blend -> level 1, walked by a speed profile that ramps up over the path's
-	  first BASE_DRONE_CROSS_RAMP, holds, and ramps back down. Position, velocity, head AND speed
-	  all come from the curve, and the curve's last tick IS the orbit field's own state at the
-	  landing point - so the field resumes with zero heading and speed error. That exactness is the
-	  whole point: the old steer chased a moving antipodal aim point, which is what made the entry
-	  and exit of a swoosh read as a stutter.
+	  CROSS - the swoosh as a planned quintic curve (planTankCross): arc -> C2 blend ->
+	  straight through the owner -> C2 blend -> level 1. Position, velocity, head and
+	  speed all come from the curve; the last tick is the orbit field's own landing state.
 
-	  SWITCH - a level change, as its own shallow planned arc (planTankSwitchArc), landing
-	  tangentially at the new radius at cruise speed. Same seam trick, same exactness.
+	  SWITCH - a level change as its own shallow planned arc (planTankSwitchArc), landing
+	  tangentially at the new radius at cruise speed.
 
-	Building all of it in the owner's frame is what makes a moving tank a non-event: the ring, the
-	swoosh and the arcs are all posed against a stationary centre, so nothing can be stranded
-	chasing a stale point.
+	Building it in the owner's frame makes a moving tank a non-event: the ring, swoosh
+	and arcs are posed against a stationary centre.
 */
 function droneIdleOrbit(bullet, play, replan = false) {
 	const vTerm = droneTerminal(bullet);
@@ -919,9 +802,8 @@ function planTankSwitchArc(bullet, play, r1, vOrbit) {
 	const cx = bullet.x - play.x, cy = bullet.y - play.y;
 	const r0 = Math.hypot(cx, cy) || 1;
 	const theta0 = Math.atan2(cy, cx);
-	// Magnitude of the lane width, not the SIGNED radius change: the sweep always runs the way the
-	// drone is already orbiting, whether the new lane is inside or outside the old one. Signing it
-	// would send an inward switch backwards around the owner.
+	// Magnitude of the lane width, not the signed radius change: the sweep always runs the
+	// way the drone is already orbiting. Signing it would send an inward switch backwards.
 	const dtheta = tankGap(bullet) / (Math.tan(config.BASE_DRONE_SWITCH_LEAN) * r0) * bullet.orbSpin;
 	const theta1 = theta0 + dtheta;
 	const u1x = Math.cos(theta1), u1y = Math.sin(theta1);
@@ -976,9 +858,8 @@ function planTankCross(bullet, play, vOrbit, vCross) {
 		if (t === T) { arc = L; }
 		tbl.push(pathAt(xs, ys, ss, arc, crossVAt(L, sc, arc, vPeak, vOrbit)));
 	}
-	// The last tick IS the orbit field's own state at the landing point, written exactly rather
-	// than sampled, so the hand-off back costs the field zero heading/speed error on its first
-	// tick - the seam the old swoosh never had.
+	// The last tick is the orbit field's own state at the landing point, written exactly
+	// rather than sampled, so the hand-off costs the field zero heading/speed error.
 	tbl[tbl.length - 1] = { x: B.x, y: B.y, vx: VB.x, vy: VB.y };
 	bullet.orbTbl = tbl;
 	bullet.orbT = 0;
@@ -986,9 +867,9 @@ function planTankCross(bullet, play, vOrbit, vCross) {
 }
 
 /*
-	Factory minion steering (Minion.ts). Sets `showDir` (aim - where its own barrel fires, case
-	1.5 below) and `dir` (movement) independently. Returns whether it has a focus at all (cursor
-	or an acquired target) - diep's own condition for the minion's barrel being live.
+	Factory minion steering. Sets `showDir` (aim) and `dir` (movement) independently.
+	Returns whether it has a focus at all (cursor or an acquired target) - the minion's
+	barrel is live only while it does.
 */
 function minionSteer(bullet, play) {
 	bullet.speed = bullet.maxspeed;
@@ -1045,9 +926,8 @@ class Bullet {
 		this.room = room;
 		this.origin = origin;
 		this.class = 0;
-		this.life = tick.ticks(75);   // diep's default lifeLength 1 x 75 (plan.md Step 9); every
-		// real cannon now sets its own `life` explicitly (public/SHARE/TanksConfig.js) - this is
-		// only the fallback for a bullet that never gets one assigned.
+		this.life = tick.ticks(75);   // Fallback lifetime; every real cannon sets its own
+		// `life` explicitly in TanksConfig.js.
 		this.team = 0;
 		this.type = 0;
 		this.pene = 1;
@@ -1057,10 +937,9 @@ class Bullet {
 		// in public/SHARE/TanksConfig.js - see that file's header.
 		this.weight = 0;
 		this.push = 0;
-		// The shooter's Bullet Damage point count at the moment of firing (plan.md D7) - only a
-		// true bullet or trap's pushFactor scales with it (diepcustom's Bullet.ts:86); a drone
-		// overrides pushFactor to a flat 4 regardless, so this is read at exactly one site
-		// (entities/Player.js's KIND.BULLET arm) and only for `type === 0 || type === 2`.
+		// The shooter's Bullet Damage point count at the moment of firing. Only a true
+		// bullet or trap's pushFactor scales with it; a drone uses a flat 4. Read at one
+		// site (Player.js's KIND.BULLET arm) and only for `type === 0 || type === 2`.
 		this.bdPoints = 0;
 		this.damage = 0;
 		this.size = 10;
@@ -1078,34 +957,23 @@ class Bullet {
 		// Set to 1 only on a Skimmer's own sub-shots (case 4 in update()) - drawn under the
 		// spinning parent instead of over it, via rooms/Room.js's states[2] wire bit.
 		this.underlay = 0;
-		// Whether this projectile's death was an IMPACT against something solid - a tank, a boss,
-		// a shape, a Maze wall, a base fence - as opposed to running out of `life` or being shot
-		// down by another projectile. Only an impact death drags (see DEATH_DRAG in update()):
-		// diep's deletion animation halves velocity per tick so a bullet dies where it HIT, and a
-		// bullet that hit nothing has no such place to die at - it should keep coasting through
-		// its fade at the speed it was already travelling.
+		// Whether this projectile's death was an impact against something solid (tank,
+		// boss, shape, wall, base fence) rather than running out of `life` or being shot
+		// down. Only an impact death applies DEATH_DRAG, so the fade plants where it hit;
+		// a shot that hit nothing keeps coasting through its fade.
 		this.impactDeath = 0;
-		// Arming window for a trap (type 2 only, see case 2 in update() and the gate at the top of
-		// collision() below) - diep's Trap.ts collisionEnd, `life >> 3` ticks. 0 for every other
-		// bullet, where it is simply never read. Set for real once `this.type`/`this.life` are both
-		// known (entities/Player.js's shoot(), right after `Bull.life` is assigned) - not
-		// computable here, since the caller sets both AFTER construction.
+		// Arming window for a trap (type 2 only). `life >> 3` ticks; 0 for every other
+		// bullet. Set once `this.type`/`this.life` are both known (Player.js's shoot()),
+		// not here - the caller assigns both after construction.
 		this.armTicks = 0;
-		// The muzzle kick: a single impulse, already fully computed by the caller (diep's
-		// `baseSpeed`, entities/Player.js's shoot() - the ordinary/drone/trap muzzle formulas
-		// differ, plan.md Step 9), decayed by the tail's own BODY_FRICTION from here on. A one-time
-		// impulse against a bare `position += vec` is already TICK_MS-invariant (it integrates only
-		// once over ticks), so it keeps tick.perTick() with nothing to divide back out - SPEED_RESCALE
-		// and `exitSpeed` are both retired.
-		// Held, not applied - the motion tail pays it on the tick after this one, matching diep's
-		// own `spawnTick + 1` launch (see there). `launchDir` is the ORIGINAL firing direction,
-		// kept separately because a drone's `dir` is a live steering output and will already have
-		// moved by the time the kick lands.
+		// The muzzle kick: a single impulse, already fully computed by the caller
+		// (Player.js's shoot()), decayed by BODY_FRICTION from here on. Held, not applied
+		// - the motion tail pays it on the tick after this one. `launchDir` is the original
+		// firing direction, kept separately because a drone's `dir` is a live steering
+		// output and will have moved by the time the kick lands.
 		this.vec = new Vec(0, 0);
-		// `|| 0`, not a bare conversion: a base drone (rooms/Room.js's spawnBaseDrone()) and a pet
-		// are both built through this constructor with no muzzle kick at all, and NaN here used to
-		// be written straight into `vec` - harmless only because neither of those two ever reads
-		// it (both overwrite `vec` outright every tick), which is not a property worth relying on.
+		// `|| 0`, not a bare conversion: a base drone and a pet are built with no muzzle
+		// kick, and a missing argument must not become NaN in `vec`.
 		this.launchKick = muzzleKick ? tick.perTick(muzzleKick) : 0;
 		this.launchDir = direction;
 		this.launched = 0;
@@ -1113,11 +981,9 @@ class Bullet {
 		// Mothership's droneSplit only) - -1 for every ordinary drone, which only ever touches the
 		// single shared droneCount pool. Read by release() below.
 		this.droneGroup = -1;
-		// Whether this bullet occupies a maxDrone slot at all - set true by entities/Player.js's
-		// shoot() only for a cannon whose class has `maxDrone` (permanent OR finite-life; Guardian's
-		// own 24-cap is finite-life). release() below reads THIS, not `life`, so a finite-life
-		// capped drone still refunds its slot when its life runs out, exactly like a permanent one
-		// refunds on death.
+		// Whether this bullet occupies a maxDrone slot - set by Player.js's shoot() for a
+		// cannon whose class has `maxDrone` (permanent or finite-life). release() reads
+		// this, not `life`, so a finite-life capped drone still refunds on expiry.
 		this.counted = 0;
 		// Guards release() against double-firing - a drone can be destroyed and then swept in the
 		// same pass (rooms/Room.js), and droneCount/droneGroup must only ever be refunded once.
@@ -1130,10 +996,8 @@ class Bullet {
 		destroyed and then swept in the same pass.
 	*/
 	release(play) {
-		// `counted`, not `life !== -1`: a maxDrone-capped cannon can be finite-life now (Guardian's
-		// own 24-cap, TanksConfig.js) and still owes its owner a refund on natural expiry, exactly
-		// like a permanent drone owes one on death - see this.counted's own comment in the
-		// constructor for why the flag exists instead of re-deriving this from `life`.
+		// `counted`, not `life !== -1`: a maxDrone-capped cannon can be finite-life
+		// (Guardian) and still owes a refund on natural expiry.
 		if (!this.counted || this.released) { return; }
 		this.released = 1;
 		if (!play) { play = this.room.INSTANCE.players.get(this.origin.oId); }
@@ -1153,9 +1017,8 @@ class Bullet {
 					if (this.origin.oId === other.id.oId) {
 						return;
 					}
-					// One impulse per tick of contact, decayed by the tail's BODY_FRICTION - the same
-					// already-invariant shape as the muzzle kick, so it stays perTick. SPEED_RESCALE
-					// is retired (plan.md Step 9): `speed` is read directly now, nothing to divide out.
+					// One impulse per tick of contact, decayed by BODY_FRICTION - the same
+					// already-invariant shape as the muzzle kick, so it stays perTick.
 					{
 						const push = tick.perTick(this.speed * 2 + 0.91418);
 						this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(push, push)));
@@ -1167,14 +1030,6 @@ class Bullet {
 			this.destroy = tick.DES;
 			this.impactDeath = 1;
 		}
-		// A trap's arming window used to make it inert to EVERYTHING for its first `life >> 3`
-		// ticks. That was a stand-in for diep's Trap.ts flag swap, taken because this engine had no
-		// same-owner filtering for the real rule to hang off - and it was wrong in the one direction
-		// that matters: diep's onlySameOwnerCollision only ever applies WITHIN a team
-		// (Object.ts:155), so a real trap damages an enemy from its spawn tick, and `collisionEnd`
-		// governs nothing but which team mates it interacts with. rooms/Room.js's teamPassThrough()
-		// now implements that filter properly (armTicks > 0 => onlySameOwnerCollision, then
-		// noOwnTeamCollision), so the blanket gate is gone rather than kept alongside it.
 		if (other) {
 			switch (other.kind) {
 				case KIND.PLAYER:
@@ -1182,27 +1037,17 @@ class Bullet {
 					if (this.origin.oId === other.id.oId) {
 						return;
 					}
-					// The wiki's "body damage" half of a polygon boss provoking a base - recorded on the shared
-					// per-centre ledger, so the whole base engages
-					// it, not just the drone that got hit.
+					// A polygon boss hitting a base drone by body - recorded on the shared
+					// per-centre ledger so the whole base engages it, not just the drone that got hit.
 					if (this.type === 1.4 && other.boss) {
 						this.levels.provoked = other.id.oId;
 						this.levels.provokedAt = this.room.timestamp;
 					}
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.push), tick.perTick(this.push))));
-					// A bullet's health is spent against the TARGET's damage output (PENDING #18,
-					// plan.md step 9 - diep's own "3 laws" reciprocal collision rule), not against
-					// itself. Previously only base drones (type 1.4) worked this way, because a
-					// drone's pene IS a 2000-point health pool rather than a spend-down budget and the
-					// old self-referential pene/5 would have killed one in five ticks of contact - that
-					// reasoning turns out to generalize to every bullet, so the ordinary branch is gone
-					// and both read the same rule now. common(tank,bullet) = 1 (lib/damage.js, plan.md
-					// step 5) - `other.damage` (the tank's `this.damage`) carries diep's raw
-					// damagePerTick now, with no vs-shape x4 baked in, so unlike before
-					// `damageReduction()`'s removal this site needs no multiplier at all; PROJECTILE_
-					// BODY_DAMAGE's old 0.25 x the x4-baked base was the same number as 1 x the un-baked
-					// one. `option.dmgScale` is rooms/Room.js's proration factor for this tick (1 unless
-					// either side would otherwise die mid-tick, plan.md step 5 part 4).
+					// pene is spent against the target's damage output, not against this
+					// bullet. common(tank,bullet) = 1 (lib/damage.js). `option.dmgScale` is
+					// Room.js's proration factor for this tick (1 unless either side would
+					// otherwise die mid-tick).
 					this.pene -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 					// LETHAL_EPS, not 0 (lib/damage.js) - pene is the bullet's health pool for
 					// proration purposes, so a prorated spend has the same ulp-short hazard hp does.
@@ -1211,16 +1056,11 @@ class Bullet {
 				case KIND.OBJECTS:
 					this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.push), tick.perTick(this.push))));
 					/*
-						Shape-hit reaction: ALWAYS costs the drone a level, even if it
-						cannot be paid right now - not a knockback; ORBIT ignores this.vec entirely (it
-						writes position directly), so the vec.add() above is a no-op for a drone in
-						ORBIT. If the drone is mid-'home'/'sort'-arc or on cooldown, the reaction is
-						latched into reactPending and paid the moment it is free (case 1.4's trigger
-						block), rather than dropped the way it used to be. Mid-swoosh is the one
-						exception and it is deliberate: the drone ploughs straight through, and its
-						landing on level 1 IS its level change, so the cross's own exit clears the
-						latch. Damage and shove above are outside all of this, unchanged - this still
-						fires on the tick the drone kills the shape.
+						Shape-hit reaction: always costs the drone a level. ORBIT writes
+						position directly, so the vec.add() above is a no-op there; the
+						reaction is latched into reactPending if the drone is mid-arc or on
+						cooldown. Mid-swoosh is the exception: landing on level 1 is its
+						level change, so the cross's own exit clears the latch.
 					*/
 					if (this.type === 1.4 && !this.crossing) { this.reactPending = 1; }
 					if (this.necro && other.type === 'sqr') {
@@ -1241,11 +1081,8 @@ class Bullet {
 							return;
 						}
 					}
-					// Same rule as the KIND.PLAYER arm above: spent against the shape's own damage
-					// output, not self-referentially. common(shape,bullet) = 1 (lib/damage.js,
-					// plan.md chunk 1 D2) - `other.damage` (the shape's) is diep's raw damagePerTick
-					// now, with no vs-tank x4 baked in, so this site needs no multiplier at all,
-					// same as the KIND.PLAYER arm above.
+					// Same rule as the KIND.PLAYER arm: spent against the shape's own
+					// damage output. common(shape,bullet) = 1 (lib/damage.js).
 					this.pene -= tick.perTick(other.damage * (option.dmgScale ?? 1));
 					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES; this.impactDeath = 1; }
 					break;
@@ -1257,15 +1094,12 @@ class Bullet {
 						return;
 					} else {
 					}
-					// Same-team protection is what keeps this off a drone and its own side: rooms/Room.js sets noDam on
-					// both sides of any same-team, non-Objects pair when rules.teamPlay is on
-					// (both team modes), and that check runs before this decrement and before
-					// every vec.add() above - so friendly fire and friendly knockback both stay
-					// off for a drone and its own side.
+					// Same-team protection: Room.js sets noDam on both sides of any
+					// same-team, non-Objects pair when rules.teamPlay is on, before this
+					// decrement and before every vec.add() above.
 					if (option.noDam) { break; }
-					// The wiki's "drone damage" half of a polygon boss provoking a base - one map lookup on the
-					// tick a base drone is actually shot, which is
-					// not a hot path.
+					// A polygon boss shooting a base drone - one lookup on the tick a
+					// base drone is actually shot.
 					if (this.type === 1.4) {
 						const shooter = this.room.INSTANCE.players.get(other.origin.oId);
 						if (shooter && shooter.boss) {
@@ -1273,45 +1107,31 @@ class Bullet {
 							this.levels.provokedAt = this.room.timestamp;
 						}
 					}
-					// common(this,other) via OUR `type` field (lib/damage.js's projectileCommon(),
-					// plan.md chunk 1 D3/D4) - diep's identical min/maxDamageMultiplier rule, just
-					// applied to a pene spend instead of an hp subtraction. Used to be an implicit x1
-					// for every pairing here, which is right whenever either side is a drone
-					// (common is 1 for every drone combination) but wrong for two ordinary bullets,
-					// where diep runs common(bullet,bullet) = 0.25.
-					// `option.dmg` - diep's handleCollision spends the OTHER bullet's fixed
-					// damagePerTick, not its current remaining pene pool (Live.ts:67-84, plan.md
-					// chunk 1's bullet-vs-bullet fix): a low-pene bullet used to hit softer as it
-					// died (spending `option.pene`, rooms/Room.js's old pairing setup) even though
-					// diep's pene only ever decides how many ticks of contact a bullet survives, not
-					// how hard it hits.
+					// common() via this.type (lib/damage.js projectileCommon). Two ordinary
+					// bullets run 0.25; any pairing with a drone is 1. `option.dmg` is the
+					// other bullet's fixed damage, not its remaining pene - pene only
+					// decides how many ticks of contact a bullet survives.
 					this.pene -= tick.perTick(option.dmg * projectileCommon(this.type, other.type));
-					// Same threshold as the two arms above for consistency - diep clamps every damage
-					// application, not only the prorated ones. Bullet-vs-bullet is not prorated (it
-					// resolves through this pene-vs-pene rule, not Room.js's dmgScale table).
+					// Same LETHAL_EPS threshold as the two arms above. Bullet-vs-bullet
+					// is not prorated (pene-vs-pene, not Room.js's dmgScale table).
 					if (this.pene <= LETHAL_EPS) { this.pene = 0; this.destroy = tick.DES; }
 					break;
 				case KIND.WALL:
-					// An Arena Closer's own bullet passes through a wall untouched too (diep_wiki,
-					// PENDING #26/#28) - the same exemption entities/Player.js's collision() gives
-					// the closer tank itself, set on the bullet at the shoot() site since a bullet
-					// has no live reference back to its origin here.
+					// An Arena Closer's own bullet passes through a wall, matching the
+					// exemption Player.js's collision() gives the closer tank itself. Set
+					// on the bullet at the shoot() site - a bullet has no live origin here.
 					if (this.closer) { break; }
 					{
-						// Same circle-vs-AABB closest-point test as entities/Player.js's own
-						// KIND.WALL arm (plan.md Step 12) - the broad-phase gate only bounds the
-						// wall by its half-diagonal, so a false-positive candidate has to be
-						// re-checked here before anything is destroyed.
+						// Same circle-vs-AABB closest-point test as Player.js's KIND.WALL
+						// arm. The broad-phase gate only bounds the wall by its half-diagonal,
+						// so a false-positive candidate is re-checked here.
 						const hw = other.w / 2, hh = other.h / 2;
 						const cx = Math.max(other.x - hw, Math.min(this.x, other.x + hw));
 						const cy = Math.max(other.y - hh, Math.min(this.y, other.y + hh));
 						const dx = this.x - cx, dy = this.y - cy;
 						if (dx * dx + dy * dy > this.size * this.size) { break; }
-						// diepcustom Object.ts:297-300: anything with an owner (bullet, trap, drone -
-						// everything this class models) is destroyed outright on contact with a real
-						// diep Maze wall, not bounced. WALL_BOUNCE/WALL_FRICTION are retired, not
-						// retuned - no physics, no pene drain (a wall deals no body damage either
-						// way, unchanged from before).
+						// Anything with an owner (bullet, trap, drone) is destroyed on
+						// contact with a maze wall, not bounced. A wall deals no body damage.
 						this.destroy = tick.DES;
 						this.impactDeath = 1;
 					}
@@ -1324,18 +1144,10 @@ class Bullet {
 	}
 	update() {
 		if (this.destroy > 1) {
-			// diepcustom Object.ts:277 - `if (this.deletionAnimation) this.velocity.magnitude /= 2`
-			// every tick of the fade, BEFORE the position step. Without it a bullet kept cruising
-			// at full speed for the whole 6-tick animation and died a bullet-length-and-a-half
-			// past whatever it hit; halving it geometrically, the total coast is ~one tick of
-			// travel, i.e. it dies where it hit. DEATH_DRAG is that 0.5 per REFERENCE tick, so
-			// the distance covered is the same at any TICK_MS.
-			//
-			// IMPACT DEATHS ONLY (`impactDeath`, set at the collision arms that destroy this
-			// projectile against something solid). The whole point of the drag is to plant the
-			// fade where the hit happened; a bullet that simply ran out of `life`, or that was
-			// shot down by another projectile, has no impact point to be planted at, and braking
-			// it mid-flight reads as the shot hitting an invisible wall.
+			// Deletion-animation brake, applied before the position step, impact
+			// deaths only. Halving speed each tick plants the fade where the hit
+			// happened; a shot that ran out of `life` or was shot down has no
+			// impact point, and braking it mid-flight reads as hitting an invisible wall.
 			if (this.impactDeath) {
 				this.vec.x *= DEATH_DRAG;
 				this.vec.y *= DEATH_DRAG;
@@ -1344,7 +1156,7 @@ class Bullet {
 			this.y += this.vec.y;
 			this.destroy -= 1;
 			this.alpha = (this.destroy) / tick.DES;
-			this.size *= tick.drag(1.1);   // diep's own DeletionAnimation.scale(1.1), Object.ts (plan.md C1)
+			this.size *= tick.drag(1.1);   // Grow slightly as it fades.
 			return;
 		}
 		///
@@ -1374,10 +1186,8 @@ class Bullet {
 			case 1.5: {
 				const engaged = minionSteer(this, play);
 				if (!engaged) { return; }
-				// Minion.ts's tickMixin: the minion's own barrel is live whenever it isn't idle
-				// (has a focus to aim at) - `engaged` above. Reload read LIVE off the owner's
-				// Reload stat every shot (play.up.Reload), same as Barrel.calculateStatData()
-				// reading tank.reloadTime.
+				// The minion's own barrel is live whenever it isn't idle (`engaged`).
+				// Reload is read live off the owner's Reload stat every shot.
 				if (this.weapon) {
 					this.weaponTimer = (this.weaponTimer || 0) + 1;
 					const reloadMax = tick.ticks(Math.round(this.weapon.reloadRef * play.up.Reload)) || 1;
@@ -1415,8 +1225,6 @@ class Bullet {
 				this.speed = this.maxspeed;
 				///
 				if (!this.DETEC) {
-					// Same radius a CONTROLLABLE drone gets - the old x0.65 penalty for being
-					// AI-only is gone (lib/config.js's DRONE_AGGRO_FOV).
 					this.DETEC = new Detector(play, this.x, this.y, droneAggroR(play), [KIND.PLAYER, KIND.OBJECTS])
 					this.DETEC.team = this.team
 				} else {
@@ -1445,8 +1253,6 @@ class Bullet {
 				this.speed = this.maxspeed;
 				///
 				if (!this.DETEC) {
-					// Was a hardcoded 1400 with no leash of its own at all - a BattleShip swarm
-					// drone now shares every other drone's radius (lib/config.js's DRONE_AGGRO_FOV).
 					this.DETEC = new Detector(play, this.x, this.y, droneAggroR(play), [KIND.PLAYER, KIND.OBJECTS])
 					this.DETEC.team = this.team
 				} else {
@@ -1485,87 +1291,59 @@ class Bullet {
 				break;
 			};
 			/*
-				Base drone. Outside a cross or a 'home'/'sort' switch arc, heading (`head`) and speed
-				(`spd`) are authoritative and rate-limited (BASE_DRONE_TURN or BASE_DRONE_CHASE_TURN
-				while chasing / BASE_DRONE_ACCEL); position is their integral - every state below
-				only has to produce a desired direction and a target speed, and the shared steering
-				tail slews toward both and writes position, so a transition between them is
-				continuous by construction. A cross and a level-switch arc are the two exceptions:
-				position comes from a planned quintic Hermite curve instead, matched to this same
-				steering field at both seams, so the hand-off in and out of either is exact.
+				Base drone. Outside a cross or a 'home'/'sort' switch arc, heading (`head`)
+				and speed (`spd`) are authoritative and rate-limited; position is their
+				integral. A cross and a level-switch arc are the exceptions: position comes
+				from a planned quintic Hermite, matched to this field at both seams.
 
-				`this.chasing`, `this.crossing` and `this.switching` are the three real branches;
-				ORBIT/RETURN are one "orbit field" driven off (x,y) relative to the base centre
-				(ox,oy) - a drone far from its ring leans harder toward it (BASE_DRONE_LEAN_MAX) and
-				curls onto it as the error shrinks, so there is no separate RETURN state, though its
-				cruise-to-dash speed blend (below) does make a long return a real sprint again
-. Radius itself only ever moves in whole BASE_DRONE_LEVEL_GAP steps
-				via levelSwitch() (module scope, above) - the field here just steers toward whichever
-				radius the level table currently names. `this.orbitState` is written purely for
-				tests/admin - nothing branches on it.
+				`chasing`, `crossing` and `switching` are the three real branches; ORBIT/
+				RETURN are one orbit field driven off (x,y) relative to the base centre.
+				Radius only ever moves in whole LEVEL_GAP steps via levelSwitch(); the field
+				steers toward whichever radius the level table currently names.
 
-				Detection is centralised per orbit centre now: only the current
-				SCOUT's own DETEC is enabled (rooms/Room.js's tickDroneCentres() rotates it), so a
-				found target is written to the shared `levels.threat` instead of being read straight
-				off `this.DETEC.select` - every drone at the centre reads `levels.threat` to decide
-				whether to start a chase, and copies it into its own `DETEC.select` at that moment so
-				the chase's own per-tick leash check (below) keeps working exactly as before,
-				whichever drone happens to be scout.
+				Detection is per orbit centre: only the current scout's DETEC is enabled
+				(rooms/Room.js tickDroneCentres). A found target is written to the shared
+				`levels.threat`; every drone at the centre reads that to start a chase.
 			*/
 			case 1.4: {
 				if (this.switchCooldown > 0) { this.switchCooldown--; }
 				///
 				this.DETEC.x = this.x;
 				this.DETEC.y = this.y;
-				// The current scout (rooms/Room.js's tickDroneCentres()) mirrors whatever it finds
-				// into the shared per-centre ledger - every drone at the centre
-				// reads this, not just the scout, to decide whether to start a chase. `threatAt` is the room
-				// timestamp of this sighting - this is the ONLY writer of either
-					// field, so rooms/Room.js's tickDroneCentres() is what expires them again.
+				// The current scout (rooms/Room.js tickDroneCentres) mirrors whatever it
+				// finds into the shared per-centre ledger. `threatAt` is the room timestamp
+				// of this sighting - this is the only writer of either field.
 				if (this.DETEC.enabled) {
 					const t = this.DETEC.select;
-					// Polygon bosses are ignored until they start it (basedrones.txt: base drones
-					// "usually don't target Polygon-based Bosses ... unless those provoke them first
-					// via body damage or drone damage"). Gated HERE, at the one place a target
-					// enters the shared ledger, so the whole centre agrees rather than each drone
-					// re-deciding. `fallen` is the two Fallen bosses, which the wiki says ARE
-					// engaged on sight - set on the instance by rooms/Room.js's createBoss() off
-					// the class table, so this reads real now instead of never firing.
+					// Polygon bosses are ignored until they provoke the base (body or
+					// drone damage). Gated here, at the one place a target enters the
+					// shared ledger. Fallen bosses are engaged on sight (`fallen` is set
+					// by rooms/Room.js createBoss).
 					if (t && !t.destroy && !t.dead && t.alpha &&
 						(!t.boss || t.fallen || this.levels.provoked === t.id.oId)) {
 						this.levels.threat = t;
 						this.levels.threatAt = this.room.timestamp;
 					}
-					// Fresh scan every tick, not a running minimum. Detector.collision() only ever
-					// REPLACES `select` on a strictly closer find and never re-widens its own
-					// `dis`/`construc` - so a scout that saw someone once stayed latched onto them
-					// for the rest of its life, kept re-publishing that stale entity into
-					// `levels.threat` (which refreshed `threatAt`, so rooms/Room.js's expiry could
-					// never fire either), and the chase gate below then refused it forever because
-					// a dead target keeps `destroy` set. Net effect: the base engaged exactly one
-					// enemy, ever, and then stopped attacking anything. Reset here - the collision
-					// pass refills it before the next update(), the same order every other DETEC
-					// consumer already relies on. A CHASING drone is excluded: it deliberately
-					// keeps its own reference alive across ticks with the detector disabled.
+					// Fresh scan every tick. Detector.collision() only replaces `select`
+					// on a strictly closer find and never re-widens `dis`/`construc`, so
+					// without a reset a scout would stay latched on a stale entity. A
+					// chasing drone is excluded: it keeps its own reference with the
+					// detector disabled.
 					if (!this.chasing) { this.DETEC.reset(); }
 				}
-				// A live, in-leash target pulls the drone into CHASE from any state but a cross
-				// (abandoning a planned curve mid-flight is the one thing that can
-				// reintroduce a velocity discontinuity). A 'home'/'sort' switch arc IS interrupted by
-				// a chase - only C1-lossy, not C0, since head/spd come from the
-				// curve every tick right up to the interrupting one. The leash is measured from the
-				// base centre, not the drone, so a drone already out chasing doesn't get an easier
-				// time re-engaging than one starting fresh off the ring.
+				// A live, in-leash target pulls the drone into CHASE from any state but
+				// a cross (abandoning a planned curve mid-flight would snap velocity). A
+				// 'home'/'sort' switch arc IS interrupted. The leash is measured from the
+				// base centre, not the drone.
 				if (!this.chasing && !this.crossing && this.levels.threat) {
 					const other = this.levels.threat;
 					const basedis = Math.sqrt(Math.pow(other.x - this.ox, 2) + Math.pow(other.y - this.oy, 2));
 					if (basedis < config.BASE_DRONE_LEASH && !other.destroy) {
 						this.chasing = true;
 						this.switching = false;
-						// Keep a private reference - only ACQUIRING a target is
-						// centralised through levels.threat; the chase itself still reads its own
-						// detector's own reference every tick below, exactly as before, whether or
-						// not this drone happens to be the current scout.
+						// Keep a private reference - acquiring a target is centralised
+						// through levels.threat; the chase itself still reads this drone's
+						// own detector every tick.
 						this.DETEC.select = other;
 						this.DETEC.enabled = 0;
 					}
@@ -1573,48 +1351,26 @@ class Bullet {
 				if (this.chasing) {
 					const other = this.DETEC.select;
 					const basedis = other ? Math.sqrt(Math.pow(other.x - this.ox, 2) + Math.pow(other.y - this.oy, 2)) : Infinity;
-					// A base drone follows a live target exactly as far into the dark OOB band as a
-					// player may run; only death or the leash ends a chase. Deliberately NOT also gated on
-					// "the target is past my own clamp box": DETEC.type is [KIND.PLAYER] and
-					// entities/Player.js's motion() clamps a Player to EXACTLY that same box, so at
-					// equality such a test can only be dead or wrong. Widening
-					// it to >= would make a player standing on the OOB wall permanently
-					// un-chaseable, which is the opposite of the wiki's "impossible to linger
-					// around a base".
+					// Follow a live target as far into the OOB band as a player may run;
+					// only death or the leash ends a chase. Not also gated on the clamp
+					// box: DETEC.type is [KIND.PLAYER] and Player.js clamps a tank to
+					// exactly that box, so a player on the OOB wall would be un-chaseable.
 					if (!other || other.destroy || basedis >= config.BASE_DRONE_LEASH) {
 						this.chasing = false;
 						this.DETEC.reset();
-						// The return starts on THIS tick (the user's requirement is
-						// that a drone heads home the instant a pursuit ends and lingers nowhere, least
-						// of all at the arena edge). `head` is still pointing at wherever the chase left
-						// it, so without this the drone flies up to a 180-degree turn's worth FURTHER
-						// OUT before it is even moving homeward - measured, r climbing 1384 -> 1439 over
-						// the first 20 ticks after a drop - and against the map clamp it does that turn
-						// pressed on the boundary. A chase ending is already a hard state change, so the
-						// heading changes with it rather than being slewed to over the next half second.
-						// Snapping onto the FIELD's direction rather than "at the orbit centre" is what
-						// makes it correct in both directions: a chase that ended inside the ring turns
-						// outward, one that ended far outside turns near-radially in (the lean saturates
-						// at BASE_DRONE_LEAN_MAX, atan(8) = 83 degrees, i.e. 7 degrees off pure radial).
-						// Deliberately discontinuous in `head`; `spd` is untouched, so the drone leaves
-						// at whatever dash speed it was chasing at.
+						// Snap `head` onto the orbit field this tick so the drone starts
+						// home immediately instead of flying a 180-degree turn further out.
+						// Deliberately discontinuous in `head`; `spd` is untouched.
 						const f = orbitDesired(this);
 						this.head = Math.atan2(f.dy, f.dx);
 					}
 				}
-				// Level-switch triggers: (a) a latched shape-hit reaction
-				// (`reactPending`, set by the KIND.OBJECTS collision arm above), (b) drone-vs-drone
-				// proximity (`tooClose`, set by rooms/Room.js's pair loop, itself folded into
-				// reactPending here), and (c) the post-swoosh climb back to home (`homing`) - all
-				// funnelled through the one levelSwitch(). A reaction can no longer fail, so this
-				// block only ever decides WHEN it is paid, never whether: mid-cross/mid-chase/
-				// mid-switch, it stays latched instead of being dropped, and fires the instant the
-				// drone is free and off cooldown. The general "drift back toward home on a timer"
-				// trigger is GONE - the per-centre binomial sorter
-				// (rooms/Room.js's tickDroneCentres()) is the restoring force for every drone that
-				// isn't actively climbing home post-swoosh; leaving both in place would fight (the
-				// sorter spreading drones onto 1/2/4/5, the drift timer immediately pulling them
-				// back to 3).
+				// Level-switch triggers: (a) a latched shape-hit reaction (`reactPending`),
+				// (b) drone-vs-drone proximity (`tooClose`, folded into reactPending here),
+				// (c) the post-swoosh climb home (`homing`) - all through levelSwitch().
+				// Mid-cross/mid-chase/mid-switch, a reaction stays latched. The per-centre
+				// sorter (rooms/Room.js tickDroneCentres) is the restoring force; there is
+				// no separate "drift home on a timer" that would fight it.
 				if (!this.crossing && !this.chasing && !this.switching) {
 					if (this.tooClose) { this.tooClose = 0; this.reactPending = 1; }
 					if (this.reactPending && this.switchCooldown <= 0) {
@@ -1639,23 +1395,10 @@ class Bullet {
 					// nothing should also fire the instant it lands.
 					if (this.tooClose) { this.tooClose = 0; if (!this.crossing) { this.reactPending = 1; } }
 				}
-				// The diameter cross: triggered here, evaluated below as a
-				// table read. Suppressed while chasing/switching - crossIn only ever counts down in
-				// this branch, so a 'home'/'sort' arc in flight keeps its place in the queue exactly
-				// the way `levels.crossing` already makes a blocked drone keep its place - and gated
-				// by `levels.crossing < levels.crossCap` (each orbit centre allows
-				// up to `crossCap` concurrent crossers, sized from measured demand rather than fixed
-				// at one, so a busy 4team base doesn't serialise every drone's ~10s cadence through a
-				// single lane): a drone whose crossIn has expired only actually starts when its
-				// centre has a free lane.
-				// ... and only from its own ring: planCross() builds the entry seam
-				// from the centripetal acceleration of the circle the drone is currently flying, which
-				// is meaningless for one sprinting radially home off a chase - measured, crosses
-				// launching from r=1300 against a 168-280 level table, which is most of what "some
-				// drones don't return properly" was. Same tolerance levelSwitch() uses for its own
-				// planned arcs. `crossIn` still counts down while off-ring (it goes negative and keeps
-				// its place in the queue exactly the way a blocked `crossCap` lane already does), so
-				// nothing is lost, only deferred.
+				// Diameter cross: triggered here, evaluated below as a table read.
+				// Suppressed while chasing/switching; gated by `levels.crossing < crossCap`
+				// and only from the drone's own ring (planCross builds the entry seam from
+				// the circle it is currently flying). `crossIn` still counts down off-ring.
 				const crossR = Math.sqrt((this.x - this.ox) * (this.x - this.ox) + (this.y - this.oy) * (this.y - this.oy));
 				if (!this.chasing && !this.crossing && !this.switching && --this.crossIn <= 0 &&
 					this.levels.crossing < this.levels.crossCap &&
@@ -1676,10 +1419,9 @@ class Bullet {
 					this.showDir = this.dir = this.head;
 					this.orbitState = 'CROSS';
 					if (this.crossT >= this.crossTbl.length) {
-						// Lands at level 1 by construction, ignoring saturation deliberately - a swoosh always ends
-						// at the lowest level, so count[0] may
-						// transiently exceed caps[0]; only voluntary switches into level 1 respect
-						// the cap, so the excess only ever drains.
+						// Lands at level 1 by construction, ignoring saturation - a swoosh
+						// always ends at the lowest level, so count[0] may transiently exceed
+						// caps[0]; only voluntary switches into level 1 respect the cap.
 						this.crossing = false;
 						this.crossIn = BASE_DRONE_CROSS;
 						this.levels.crossing--;
@@ -1735,14 +1477,9 @@ class Bullet {
 					targetSpeed = BASE_DRONE_CHASE_SPEED;
 					turnLimit = BASE_DRONE_CHASE_TURN;
 				} else {
-					// The orbit field: tangential, with a radial lean toward orbRTarget. Never
-					// normalised - only its angle feeds the turn limiter below, so a saturated lean
-					// just steers straighter at the ring, it never changes target speed. Radius
-					// (orbRTarget) itself only ever moves in discrete LEVEL_GAP steps, via
-					// levelSwitch() above and in collision() - this field just steers toward
-					// whichever target the level table currently says. Lives in orbitDesired() at
-					// module scope because the chase-drop block above and
-					// clampToMap()'s corner fallback snap `head` onto this same vector.
+					// The orbit field: tangential, with a radial lean toward orbRTarget.
+					// Never normalised - only its angle feeds the turn limiter, so a
+					// saturated lean steers straighter at the ring, never changes speed.
 					const f = orbitDesired(this);
 					dx = f.dx; dy = f.dy; r = f.r;
 					const err = f.err;
@@ -1753,11 +1490,8 @@ class Bullet {
 					const e = Math.min(1, Math.abs(err) / config.BASE_DRONE_RETURN_ERR);
 					const k = e * e * (3 - 2 * e);
 					targetSpeed = BASE_DRONE_ORBIT_SPEED + (BASE_DRONE_CHASE_SPEED - BASE_DRONE_ORBIT_SPEED) * k;
-					// Speed and turn rate blend on the SAME k. They used not to: a
-					// returning drone ran at the 400 u/s dash under the 2.5 rad/s ORBIT limiter, i.e. a
-					// 160-unit turn radius against a 224-unit home ring, which is what made a long
-					// return swing wide and overshoot. Blended, the turn radius (v/omega) holds at
-					// 34-60 units in every state.
+					// Speed and turn rate blend on the same k, so a fast return cannot
+					// swing wide of the ring it is returning to.
 					turnLimit = BASE_DRONE_TURN + (BASE_DRONE_CHASE_TURN - BASE_DRONE_TURN) * k;
 				}
 				// Descriptive only (tests/admin dump) - nothing above or below branches on this.
@@ -1765,12 +1499,8 @@ class Bullet {
 				// when chasing the ternary short-circuits before `r` (left at 0) is ever read.
 				this.orbitState = this.chasing ? 'CHASE' : (r > this.orbRTarget * 1.5 ? 'RETURN' : 'ORBIT');
 				// Shared steering tail: slew heading and speed toward the state's desired
-				// direction/target speed, then integrate. Every state above funnels through this,
-				// which is what makes every transition C1 with no state able to stop or snap it.
-				// CHASE gets its own, much tighter turnLimit (BASE_DRONE_CHASE_TURN) - see
-				// lib/config.js's comment for why a faster dash needs a tighter limiter, not a
-				// looser one - and a RETURN blends up toward it on the same k as its speed
-				//, so the two can never come apart.
+				// direction/target speed, then integrate. CHASE gets BASE_DRONE_CHASE_TURN;
+				// a RETURN blends toward it on the same k as its speed.
 				const desired = Math.atan2(dy, dx);
 				let dHead = Math.atan2(Math.sin(desired - this.head), Math.cos(desired - this.head));
 				dHead = Math.max(-turnLimit, Math.min(turnLimit, dHead));
@@ -1789,13 +1519,8 @@ class Bullet {
 			};
 			///////////////trap
 			case 2: {
-				// diep's own trap model (Trap.ts), not a bullet's: baseAccel is 0, so there is no
-				// maintained thrust - the shared motion tail below skips its cruise-thrust add for
-				// type 2 and the trap only coasts on the muzzle kick the constructor already gave
-				// it, decaying through the ordinary BODY_FRICTION tail like everything else. The
-				// old hand-rolled `.17916`/`.7862` (.82) decay is retired, not kept alongside the
-				// shared 0.9 (plan.md Step 9 - nuance 35 flagged this exact hazard, and it no
-				// longer applies now that BODY_FRICTION itself is resolved).
+				// A trap has no maintained thrust: the motion tail skips its cruise add
+				// for type 2, and the trap coasts on the muzzle kick through BODY_FRICTION.
 				if (!this.first) {
 					this.first = 1;
 					this.showDir = Math.random() * Math.PI * 2;
@@ -1813,8 +1538,6 @@ class Bullet {
 				this.speed = this.maxspeed;
 				///
 				if (!this.DETEC) {
-					// Was a hardcoded 300 crossed with a separate `play.screen / 4` owner test -
-					// a necro/square drone now shares every other drone's radius.
 					this.DETEC = new Detector(play, this.x, this.y, droneAggroR(play), [KIND.PLAYER, KIND.OBJECTS])
 					this.DETEC.team = this.team
 				} else {
@@ -1844,9 +1567,6 @@ class Bullet {
 							this.DETEC.enabled = 1;
 						}
 					}
-					// The old bespoke idle (drift at the owner, then a slow hand-rolled circle at
-					// size*3.5 with a random quarter-turn re-aim) is retired for the shared orbit -
-					// the whole point of this pass is that every idle drone reads the same.
 					droneIdleOrbit(this, play);
 					return;
 				}
@@ -1877,21 +1597,14 @@ class Bullet {
 						break;
 					}
 				}
-				// The old bespoke idle (a random-radius wander with a chance of charging off) is
-				// retired: a boss's drones now orbit it on the same energy levels a tank's do.
 				droneIdleOrbit(this, play);
 				return;
 			};
 			//skimmer//
 			case 4: {
-				// diepcustom Skimmer.ts: `positionData.angle += rotationPerTick` (BASE_ROTATION,
-				// SKIMMER_SPIN above) every tick, independent of `dir` - `dir` stays this bullet's
-				// straight-line heading (untouched here, so the shared motion tail below still
-				// flies it dead straight like an ordinary bullet), while `showDir` (the wire's own
-				// `dir` field, rooms/Room.js's `dir: obj.showDir`) spins the drawn body. A pair of
-				// opposed sub-barrels (SkimmerBarrelDefinition x2, offset by PI - `sub`,
-				// TanksConfig.js) auto-fire along that spin at a cadence read LIVE off the owner's
-				// Reload stat every shot, exactly like the Minion weapon above.
+				// `showDir` spins the drawn body; `dir` stays the straight-line heading so
+				// the motion tail still flies it dead straight. Opposed sub-barrels fire
+				// along that spin, reload read live off the owner's Reload stat.
 				this.showDir += SKIMMER_SPIN;
 				if (this.sub && play) {
 					this.subTimer = (this.subTimer || 0) + 1;
@@ -1923,60 +1636,19 @@ class Bullet {
 			};
 		}
 		/*
-			The shared motion tail every non-base-drone bullet falls through to: a constant thrust
-			along `dir`, decayed through BODY_FRICTION, integrated into position.
-
-			tick.quadratic(), NOT tick.perTick(). The thrust is integrated twice over ticks - once
-			into this.vec, again into this.x/this.y - which is exactly the category lib/tick.js's
-			quadratic() exists for (entities/Objects.js's HOME_PULL is the other current example -
-			Player.js's old regen accumulator, hpregan, used to be a third before PENDING #17 replaced
-			it). Under perTick() a bullet's total range came out proportional to 1/TICK_MS
-			(measured: 955 units at TICK_MS 33 against 1695 at 16, for one class with a lifetime
-			that is itself correctly wall-clock-constant); under quadratic() it holds to well
-			inside 1% across the same range - asserted, not just reported, by test/rooms.js's
-			bulletRangeInvarianceTest().
-
-			entities/Player.js reaches the same recurrence through public/SHARE/Physics.js's
-			stepBody(), whose dtTicks scales the velocity add and the position step together.
-			Deliberately not reused here: stepBody keeps its velocity per REFERENCE tick, and a
-			Bullet's this.vec is per REAL tick everywhere else in this file - the type-1.4 steering
-			tail derives it from head/spd, collision() adds knockback impulses to it, and the
-			destroy tail coasts on it. Routing only this one line through stepBody would split
-			this.vec into two units inside one class. The two forms are algebraically the same
-			recurrence (stepBody's vec is this one divided by SCALE), so nothing is lost.
-
-			A trap (type 2) skips the thrust add entirely - diep's baseAccel is 0 for a trap
-			(Trap.ts:41), so it only coasts on its muzzle kick through the same BODY_FRICTION decay
-			below (plan.md Step 9). Every other bullet/drone keeps the maintained-velocity thrust.
-
-			BULLET_CRUISE_ORDER (lib/constants.js, where the derivation is) is the friction-ORDER
-			compensation this tail was missing. diep displaces the PRE-friction velocity and so
-			cruises at `10 x thrust`; this tail displaces the POST-friction one and cruised at
-			`thrust x F/(1-F)` = 9x, a flat 10% shortfall on every projectile in the game - the one
-			the tank never had, because TANK_FRICTION's 10/11 IS that same compensation, made at the
-			constant instead of at the site. Applied here rather than in TanksConfig.js's `speed`
-			column so the column stays readable as diep's own `1.12 x bullet.speed`, and rather than
-			by reordering the two lines below, which would cost real TICK_MS invariance.
+			Shared motion tail: constant thrust along `dir`, decayed through BODY_FRICTION,
+			integrated into position. tick.quadratic(), not perTick() - the thrust is
+			integrated twice over ticks (into vec, then into x/y). A trap (type 2) skips
+			the thrust add and coasts on its muzzle kick. BULLET_CRUISE_ORDER compensates
+			for this tail displacing the post-friction velocity; applied here so
+			TanksConfig.js's `speed` column stays a raw barrel figure.
 		*/
 		/*
-			The MUZZLE KICK lands on the tick AFTER the one that created this bullet, not in the
-			constructor - diep's own `if (tick === this.spawnTick + 1) this.addVelocity(...,
-			baseSpeed)` (Bullet.ts:113). On its spawn tick a diep bullet only gets its ordinary
-			cruise thrust, so it ends that tick still sitting on the muzzle it came out of.
-
-			Ours put the whole kick straight into `vec` at construction, and rooms/Room.js's UPDATE
-			pass walks `players` before `bullets` - so a bullet fired this tick was also STEPPED
-			this tick, landing ~11 units (about a bullet radius) downrange before the first packet
-			carrying it ever left. That is the visible gap between the barrel tip and the shot, and
-			no client-side offset can close it, because the server really did put it there.
-
-			Only the KICK waits. The cruise thrust, the friction and the position step all still
-			run on the spawn tick, which is what keeps this TICK_MS-invariant: a one-shot impulse's
-			total displacement (v0 x F/(1-F)) does not depend on which tick it is applied, so
-			deferring it costs the bullet's range only the sliver that would have fallen past the
-			end of its life. Skipping the whole step instead would drop one real tick of cruise
-			travel, and one real tick is a different fraction of the range at every TICK_MS -
-			measured, it took test/rooms.js's own range-invariance spread from ~1% to 2.2%.
+			The muzzle kick lands on the tick after the one that created this bullet, not
+			in the constructor. Room.js walks players before bullets, so applying the kick
+			at spawn would also step it the same tick and put the shot a radius downrange
+			before the first packet. Only the kick waits; cruise, friction and the position
+			step still run on the spawn tick.
 		*/
 		if (this.launchKick) {
 			if (this.launched) {
@@ -2004,23 +1676,12 @@ class Bullet {
 			this.life -= 1;
 		}
 	}
-	// Hard-stop map clamp for a life===-1 bullet (a base drone). Shared by the ordinary motion
-	// tail above and case 1.4's steering tail, which returns before ever
-	// reaching that tail. Carries the same config.OOB_MARGIN allowance entities/Player.js's
-	// motion() gives a tank - the dark band outside the drawn arena is
-	// neutral ground now (rooms/Room.js's inArena()), so a base drone has to be able to follow a
-	// target out there exactly as far as a player may run. In practice only a chasing drone ever
-	// reaches it: a natural orbit/cross/switch-arc geometry never comes near the map edge (pinned
-	// by test/rooms.js) - a clamp firing mid-curve would desync position from the curve.
-	// `steered` - only case 1.4's plain ORBIT/CHASE/RETURN tail passes true.
-	// Without it, zeroing vec.x/vec.y here had NO EFFECT on a steered drone at all: case 1.4's own
-	// tail derives vec FROM head/spd every tick (vec.x = cos(head)*spd) at the START of its next
-	// pass, so the zeroed component was overwritten before it was ever read - the clamp just
-	// teleported the drone back onto the boundary once a tick, forever, while spd sat at full
-	// chase speed (measured: 15 consecutive identical-position ticks at a corner, and a chasing
-	// drone pinned dead at (-6412,-6412) indefinitely if the thing it's chasing is beyond the
-	// clamp). Steering the HEADING along the wall below is what actually turns that into a slide
-	// along the wall instead of a press into it.
+	// Hard-stop map clamp for a life===-1 bullet (a base drone). Shared by the
+	// ordinary motion tail and case 1.4's steering tail. Same OOB_MARGIN a tank gets,
+	// so a chasing drone can follow a target into the dark band. `steered` is only
+	// true for case 1.4's ORBIT/CHASE/RETURN tail, which rederives vec from head/spd
+	// every tick - zeroing vec would do nothing, so that branch steers heading along
+	// the wall instead.
 	clampToMap(steered = false) {
 		const mx = this.map.width / 2 + config.OOB_MARGIN, my = this.map.height / 2 + config.OOB_MARGIN;
 		// Which wall, not just "some wall" - the steered branch below has to know
@@ -2030,26 +1691,21 @@ class Bullet {
 		if (this.y < -my) { this.y = -my; cy = -1; } else if (this.y > my) { this.y = my; cy = 1; }
 		if (!cx && !cy) { return; }
 		if (!steered) {
-			// Unchanged: an ordinary life=-1 bullet, and case 1.4's cross / switch-arc branches,
-			// take their position from elsewhere next tick, so zeroing vec is all this ever did.
+			// Ordinary life=-1 bullet, and case 1.4's cross / switch-arc: position
+			// comes from elsewhere next tick, so zeroing vec is enough.
 			if (cx) { this.vec.x = 0; }
 			if (cy) { this.vec.y = 0; }
 			return;
 		}
-		// Steered (case 1.4's ORBIT/CHASE/RETURN tail only): `spd` is authoritative and `vec` is
-		// rederived from head/spd at the top of the next pass, so the OLD code's spd = hypot(clamped
-		// vec) set spd to exactly 0 at a corner and the drone froze there for up to 14 ticks while
-		// `head` slewed away at the leisurely orbit turn rate. Project the HEADING
-		// onto the wall instead and leave `spd` alone: the drone slides along the boundary at full
-		// speed and the turn limiter takes it from there. Deliberately discontinuous in `head` - it
-		// IS a collision, and it is strictly better than the freeze it replaces.
+		// Steered (case 1.4 ORBIT/CHASE/RETURN): `spd` is authoritative and `vec` is
+		// rederived from head/spd next tick, so project heading onto the wall and
+		// leave `spd` alone. The drone slides along the boundary at full speed.
 		let hx = Math.cos(this.head), hy = Math.sin(this.head);
 		if (cx && hx * cx > 0) { hx = 0; }
 		if (cy && hy * cy > 0) { hy = 0; }
 		if (!hx && !hy) {
-			// Pressed exactly into a corner - there is no along-the-wall direction left, so take the
-			// one direction that is always valid and always what we want anyway: the orbit field's
-			// own answer to "which way is home" (one expression in the file).
+			// Pressed into a corner - no along-the-wall direction left, so take the
+			// orbit field's answer to which way is home.
 			const f = orbitDesired(this);
 			hx = f.dx; hy = f.dy;
 			if (!hx && !hy) { hx = -cx || 1; hy = -cy || 0; }
@@ -2064,10 +1720,9 @@ Bullet.prototype.kind = KIND.BULLET;
 // Standalone geometry helper for rooms/Room.js's per-centre crossCap sizing -
 // see estimateCrossTicks() above for what it measures and why it needs no live drone.
 Bullet.estimateCrossTicks = estimateCrossTicks;
-// One directed, cap-free level-switch step on the gradual arc, for the per-centre binomial sorter
-// (rooms/Room.js's tickDroneCentres()) - a thin wrapper so Room.js never reaches
-// into this module's own private levelSwitch(). Returns whether the switch actually happened (the
-// proximity guard can still say no if the drone isn't on its own ring right now).
+// One directed, cap-free level-switch step, for the per-centre binomial sorter
+// (rooms/Room.js tickDroneCentres). Thin wrapper so Room.js never reaches into
+// this module's private levelSwitch().
 Bullet.sortSwitch = function (drone, dir) { return levelSwitch(drone, 'sort', dir); };
 
 module.exports = Bullet;
