@@ -3,14 +3,9 @@
 	one throwaway port, and asserts that ONE process serves the menu page, the /play page,
 	the static client files and the game WebSocket.
 
-	This is the thing that used to be broken most often and was covered by nothing: the repo
-	shipped two entry points, and starting one without the other gave you either a menu that
-	hangs on Play or a socket with no page in front of it. Now that server.js merges them,
-	this pins the merge - including the ordering trap in play.ejs, where POST has to be
-	defined before ws_link.js reads POST.ws.
-
-	The web half is also checked in split mode (--web-only + WS_LINK), because that is the
-	only way the deployed topology in README.md still works.
+	One process must serve menu, /play, static client, and the game WebSocket. Split mode
+	(--web-only + WS_LINK) is checked for the two-host deploy. play.ejs must define POST before
+	ws_link.js reads POST.ws.
 
 		node test/web.js        (or: npm test)
 */
@@ -113,9 +108,7 @@ async function combinedTests() {
 	check('play.ejs loads them in dependency order',
 		at.every(function (i, n) { return n === 0 || i > at[n - 1]; }), at.join(','));
 	check('the client loads after motion.js', play.body.indexOf('/client/runtime.js') > play.body.indexOf('./motion.js'));
-	// World.js is the one grid-pitch constant, shared with the server (plan.md WP1/WP5) -
-	// public/client/game.js reads World.GU when it draws the background, so the tag has to be in the
-	// page and it has to come before the client does.
+	// World.js (grid pitch, shared with server) must load before game.js reads World.GU.
 	check('play.ejs loads the shared grid-pitch module',
 		play.body.indexOf("'./SHARE/World.js'") >= 0);
 	check('...before the client that reads World.GU',
@@ -128,14 +121,8 @@ async function combinedTests() {
 	check('/client/ is served', client.status === 200 && client.body.includes('CLIENT'), 'status ' + client.status);
 
 	/*
-		THEPLAN Part 1.4's auth routes and the two security fixes. The full guest -> signup ->
-		/userData reflects the username -> logout -> login -> same coins round trip needs a real
-		Postgres (docker compose up -d, DB.ON/ACC/AUTH true in lib/config.js) - this suite runs
-		with the DB fully off (this file's whole reason for existing is the DB-off local-dev
-		flow), so what is checked here is what that environment can actually prove: every auth
-		route degrades to a clean {error} JSON instead of throwing, and /userData ignores an
-		attacker-supplied body.userKey exactly as it ignores everything else in the body once
-		there is no DB behind it (web/app.js's resolveKey reads only the obstarkey cookie).
+		Auth routes with DB off: each returns clean JSON (no 500), and /userData ignores body.userKey
+		(resolveKey reads only the obstarkey cookie). Full signup/login flow needs Postgres.
 	*/
 	const signup = await request(PORT, 'POST', '/auth/signup', 'username=newuser&password=longenoughpassword');
 	check('POST /auth/signup answers without a 500 when DB.AUTH is off',

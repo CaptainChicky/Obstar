@@ -1,17 +1,12 @@
 /*
 	Loads public/SHARE/TanksConfig.js in its *client* mode from inside Node.
 
-	TanksConfig.js picks its half of the tank table at load time with a `platform === 'client'`
-	ternary (line 9): a plain require() runs with `exports` defined, so it always resolves to
-	the ///SERVER/// half. That half carries `canonLength`/`reload`/`damage`/etc - the numbers
-	bullets spawn from - and is missing `height`/`width`/`open` - the numbers the client draws
-	with. A test that wants to compare the two (test/tanks.js) needs a second load that takes
-	the other branch, which means running the source with no `exports` binding.
+	TanksConfig.js picks client vs server at load time via `platform === 'client'`. A plain
+	require() always gets the server half (spawn stats, no draw dimensions). Load again with
+	no `exports` binding to get the client branch.
 
-	Same trick as test/clientProto.js, with one addition: TanksConfig.js:7 reads
-	`globalThis.KIND` on the client path (the browser has already run kinds.js as a <script>
-	tag by the time TanksConfig.js executes), so the sandbox needs `KIND` seeded before running
-	the source.
+	Same vm trick as test/clientProto.js; seed `KIND` first because TanksConfig.js reads
+	`globalThis.KIND` on the client path before running the source.
 */
 const fs = require('fs');
 const vm = require('vm');

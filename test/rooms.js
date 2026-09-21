@@ -118,8 +118,7 @@ function teamTests() {
 		room.map.width + 'x' + room.map.height);
 
 	// basePosts() is consumed by the constructor, so the drones are there from the start.
-	// 15 orbit centres a side, two drones on each (massplanchunks WP-E) - the wiki's "30 in
-	// total, spread evenly in pairs", which counts one side.
+	// 15 orbit centres a side, two drones each (30 per side in pairs).
 	const drones = [...room.INSTANCE.bullets.live()].filter((b) => b.alone);
 	check('both bases are guarded', drones.length === 60, drones.length + ' drones');
 	check('the guards are split evenly', drones.filter((d) => d.team === 0).length === 30,
@@ -130,7 +129,7 @@ function teamTests() {
 	check('the drones sit in pairs on 15 rings a side',
 		new Set(drones.filter((d) => d.team === 0).map((d) => d.oy)).size === 15,
 		new Set(drones.filter((d) => d.team === 0).map((d) => d.oy)).size + ' distinct centres');
-	// Radius is quantised into five shared energy levels now (plan.md WP4.5.1), not a per-mode
+	// Orbit radius comes from shared energy levels (levelR), not a per-mode random band.
 	// random band - every drone sits exactly on room.levelR(its level), and a pair's two levels
 	// are not both the same (levelPlan(2)'s initial occupancy is one drone each on two levels).
 	{
@@ -149,7 +148,7 @@ function teamTests() {
 	check('joins are balanced across the sides', sides[0] === 2 && sides[1] === 2, sides.join('/'));
 
 	// edge is the base line on either side (matches TwoTeam.inEnemyBase's own calc) - x values
-	// below are 500 past/short of it, map-relative so they follow the grid rescale (plan.md WP1).
+	// Test points are 500 past/short of the base line, map-relative for grid rescale.
 	const edge = room.map.width / 2 - room.baseSize;
 	const zero = { team: 0 }, one = { team: 1 };
 	check('team 0 dies in team 1\'s base', room.inEnemyBase({ team: 0, x: edge + 500 }) === true);
@@ -191,10 +190,10 @@ function teamTests() {
 	check('the boss is on nobody\'s side', boss && boss.team === 9, boss && boss.team);
 	check('the boss keeps its own colour, not the enemy red', room.entityColor(boss) !== 1,
 		room.entityColor(boss));
-	check('...and it is a real per-class diep colour (plan.md Part D), not team-9 gold',
+	check('...and it is a real per-class boss colour, not team-9 gold',
 		room.entityColor(boss) === { Guardian: 10, Defender: 11, Summoner: 12, 'Fallen Overlord': 13, 'Fallen Booster': 13 }[boss.class],
 		boss.class + ' -> ' + room.entityColor(boss));
-	// AbstractBoss.ts's own shared scaffolding (plan.md Part D): HP 3000, damagePerTick 10,
+	// Boss scaffolding: HP 3000, damagePerTick 10,
 	// absorbtionFactor 0.05, reloadTime's 15x0.914^7 multiplier (baked onto up.Reload, the same
 	// site rooms/Mothership.js's own createMothership() already uses), scoreReward 30000.
 	check('a boss is diep\'s own flat 3000 HP, not a legacy 20000/30000 balance figure',
@@ -213,7 +212,7 @@ function teamTests() {
 	})());
 	{
 		// AbstractBoss.ts:204 - flat maxHP/25000 regen every tick, unconditional (no hyper-regen
-		// gate/no-damage delay, unlike an ordinary tank - plan.md Part D). Damage it, then step
+		// gate/no-damage delay, unlike an ordinary tank). Damage it, then step
 		// the room and confirm it heals back up on its own with no player input.
 		boss.hp = 1000;
 		const before = boss.hp;
@@ -256,13 +255,13 @@ function fourTeamTests() {
 	});
 	check('each side guards its own corner', placed);
 	// All twelve share one orbit centre - the square's middle - which is what the diameter
-	// cross needs (massplanchunks WP-E).
+	// cross needs.
 	check('a base\'s twelve drones share one orbit centre, the square\'s middle',
 		[0, 1, 2, 3].every((t) => {
 			const c = room.baseCenter(t);
 			return drones.filter((d) => d.team === t).every((d) => d.ox === c.x && d.oy === c.y);
 		}));
-	// Phases are randomised now (plan.md WP2), not evenly spaced - assert they are not all
+	// Phases are randomised now, not evenly spaced - assert they are not all
 	// stacked on one spot rather than that they are evenly distributed.
 	check('...and are randomly phased around it, not stacked',
 		new Set(drones.filter((d) => d.team === 0).map((d) => Math.round(d.autoDir * 1e6))).size === 12);
@@ -353,17 +352,13 @@ function bossTests() {
 		room.bosses.map((b) => b.id.oId).join(','));
 	check('a boss stays off the leaderboard', room.leader.every((p) => !p.boss));
 
-	// Direct table sweep (plan.md Part D/F2), not dependent on the random 200-pass roll above
-	// having actually filled every class: every real diep boss now states its own diep-derived
-	// bossSize (Summoner used to fall through to a flat, ~24%-undersized 64).
+	// Every boss class must carry the expected bossSize from TanksConfig (table sweep).
 	{
 		const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
 		// Guardian's 37.8 is not 135 du x 0.56 like the rest of this table: GUARDIAN_SIZE is
 		// diep's drawn CIRCUMRADIUS, and Drawings.body[3] draws a triangle at `size / cos(pi/3)`
 		// = 2 x size, so the figure that lands on diep's own 135 du is half of it. See the class
-		// entry's own comment.  Defender/Summoner used to fall through to the CIRCUMRADIUS
-		// itself (84 = *_SIZE x 0.56) instead - the same conflation Guardian had already been
-		// fixed for.
+		// entry comment. Defender/Summoner sizes are circumradius-derived where listed below.
 		const sizes = { Guardian: 37.8, Defender: 42, Summoner: 59.39697, 'Fallen Overlord': 58.46, 'Fallen Booster': 58.46 };
 		for (const name of Object.keys(sizes)) {
 			check(name + ' has its own diep-derived bossSize',
@@ -421,10 +416,7 @@ function bossTests() {
 		through. Two steps, because motion() builds its own scan on the first one.
 	*/
 	{
-		// room.bosses[0] used to always be a Summoner (the only boss CONFIG.BOSS had) - plan.md
-		// X1 added four real ones, one of which (Defender) diep gives ai.viewRange 0: it never
-		// aggros at all, by design, so this picks any OTHER boss the 200-pass roll above happened
-		// to fill the cap with rather than assuming index 0 is aggro-capable.
+		// Defender has viewRange 0 and never aggros; pick any other boss from the room cap.
 		const boss = room.bosses.find((b) => b.class !== 'Defender');
 		if (boss) {
 			const me = player(room, 0);
@@ -469,11 +461,8 @@ function sandboxTests() {
 	// dev.god - the actual sandbox-cheat behaviour lives on the Player instance itself
 	// (entities/Player.js), so it's tested directly here rather than through a socket.
 
-	// 'k' (plan.md C4): hold to climb one level at a time, diep's own hold-to-repeat convention
-	// (+1 level per input packet with the levelup flag - effectively one per simulation tick
-	// while held, Client.ts:313-320) - not the instant jump-to-cap this used to be, and not the
-	// old 5-reference-tick (200ms) throttle either, which read as a crawl against diep's own
-	// ~25/s. Starts from level 1, not 0: XPLVL[0] is 0, so a fresh level-0 spawn already
+	// 'k': one level per reference tick while held (not instant cap, not 5-tick throttle).
+	// Starts from level 1, not 0: XPLVL[0] is 0, so a fresh level-0 spawn already
 	// satisfies the level-up check for free on its very first tick regardless of 'k' - level
 	// 1->2 is the first REAL (nonzero) threshold.
 	{
@@ -498,10 +487,7 @@ function sandboxTests() {
 		me.inputs.k = 0;
 	}
 
-	// '\' (PENDING "Sandbox gaps" / #51): a raw class preview, no tree/level gating, real
-	// playable tanks plus Arena Closer/the 3 Dominators (allowed on purpose for now, so a human
-	// can eyeball them in sandbox - PENDING #51) - never a dev placeholder or Summoner (still a
-	// boss, not part of that ask).
+	// '\': class preview cycle — real tanks plus Arena Closer/Dominators; no dev placeholders or Summoner.
 	{
 		const NEVER = ['pre launch', 'testbed', 'bigView', 'shapes', 'shape1', 'shape2', 'Summoner'];
 		const CLOSER_DOMINATOR = ['Arena Closer', 'Destroyer Dominator', 'Gunner Dominator', 'Trapper Dominator'];
@@ -525,8 +511,7 @@ function sandboxTests() {
 			me.classLvl === 0, me.classLvl);
 	}
 
-	// ';' (PENDING "Sandbox gaps"): repels contact and takes no consequence from it, the same
-	// one-sided guard shape dev.ghost/this.closer already use in collision().
+	// ';' god mode: no damage from contact; shove away (same shape as dev.ghost/closer guards).
 	{
 		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
 		me.dev.god = 1;
@@ -556,14 +541,11 @@ function sandboxTests() {
 /*
 	Dying must never pay. The xp curve returns more than it was given below roughly a
 	thousand xp, so the Math.min in Room.respawnXp is the whole point - TwoTeam was missing it
-	and low-level deaths were a small reward there. See HANDOFF.md 5.8.
+	and low-level deaths must not be profitable.
 */
 /// Tag ///////////////////////////////////////////////////////////////////////
 /*
-	Tag (PENDING #28, plan.md step 7). The mode adds no entity types, so what is actually worth
-	pinning is the three hooks that make it Tag - respawnTeam(), leaderRows() and the shrink timer -
-	plus the two rules that are easy to get subtly wrong: the per-team gate before tagging starts,
-	and the polygon/boss exemption from it.
+	Tag mode: respawnTeam(), leaderRows(), shrink timer, tagging gate, polygon/boss exemptions.
 */
 function tagTests() {
 	console.log('\nrooms (tag):');
@@ -580,7 +562,7 @@ function tagTests() {
 	check('no bases at all - the structural difference from 4team',
 		room.baseSize === 0 && room.dronePosts.length === 0,
 		room.baseSize + ' / ' + room.dronePosts.length + ' drone posts');
-	check('xp is x3 - diep_wiki lists Tag among the triple-xp modes', room.rules.xpMul === 3,
+	check('xp is x3 (Tag triple-xp)', room.rules.xpMul === 3,
 		room.rules.xpMul);
 
 	// awardXp() is the single site the multiplier lives at, so drive the real method rather than
@@ -707,7 +689,7 @@ function tagTests() {
 		check('spawns are random across the whole arena, not inside a base', clear);
 	}
 
-	// The win condition (PENDING #28's remaining half). Driven directly by reassigning team,
+	// Win condition: one team holds all players, then startClosing() spawns Arena Closers.
 	// the same "drive the field, not a full random match" style the rest of this file uses -
 	// letting a real match converge under unseeded RNG is exactly the kind of flakiness this
 	// suite avoids elsewhere.
@@ -738,7 +720,7 @@ function tagTests() {
 		check('a Closer does not read as a still-live human to the self-destruct check',
 			room.closers.every((c) => !c.bot && !c.boss && c.closer === 1));
 
-		// Invincibility and complete knockback resistance (diep_wiki) - drive collision() directly
+		// Invincibility and complete knockback resistance - drive collision() directly
 		// for both a tank ram and a bullet hit, rather than trusting the guard is reached.
 		const closer = room.closers[0];
 		const snap = { hp: closer.hp, vx: closer.vec.x, vy: closer.vec.y };
@@ -748,7 +730,7 @@ function tagTests() {
 			closer.hp === snap.hp && closer.vec.x === snap.vx && closer.vec.y === snap.vy,
 			closer.hp + ' / ' + closer.vec.x + ',' + closer.vec.y);
 
-		// Once closing, nobody respawns - diep_wiki's ending is "all players killed off the
+		// Once closing, nobody respawns - ending is "all players killed off the
 		// arena", not a match that keeps restocking itself.
 		const victim = live[0];
 		const victimSlotBefore = room.INSTANCE.players.get(victim.id.oId);
@@ -764,7 +746,7 @@ function tagTests() {
 		room.closers = [];
 	}
 
-	// The invisibility cap (PENDING #28) - diep_wiki: Tag players "can't become fully invisible".
+	// The invisibility cap (28) - Tag players "can't become fully invisible".
 	// Mirrors entities/Player.js's own decay line directly rather than looping the full update()
 	// (which would fire the stealth class's real cannons into the room's real bullet SlotMap -
 	// unrelated to what this checks), the same reasoning the regen invariance tests above give for
@@ -796,13 +778,13 @@ function mazeTests() {
 	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
 	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
 
-	check('same arena as ffa - diep_wiki: "works similarly to Free For All"',
+	check('same arena as ffa - "works similarly to Free For All"',
 		room.map.width === World.gu(451) && room.map.height === World.gu(451),
 		room.map.width + 'x' + room.map.height);
 	check('one nominal team, friendly fire off, same as ffa',
 		room.rules.teams.join(',') === '1' && room.rules.teamPlay === false);
 
-	// Bosses do not spawn here (diep_wiki: "Unlike other game modes, Bosses do NOT spawn in
+	// Bosses do not spawn here ("Unlike other game modes, Bosses do NOT spawn in
 	// Maze") - this mode states no override, so it rides ffa's own never-roll defaults.
 	check('bosses never spawn - the mode turns neither bossRng nor maxBoss up from the default',
 		room.rules.bossRng === 2 && room.rules.maxBoss === 0,
@@ -822,7 +804,7 @@ function mazeTests() {
 			room.obj.bull.max1 + ' vs ' + Math.round(ffa.obj.bull.max1 * 0.75));
 	}
 
-	// The walls themselves (plan.md Step 12) - build() runs synchronously in the constructor
+	// The walls themselves - build() runs synchronously in the constructor
 	// (see rooms/Room.js's header), so they exist the moment makeRoom() returns, with no
 	// Init()/timer to wait on.
 	{
@@ -980,8 +962,8 @@ function mazeTests() {
 		}
 	}
 
-	// Visible on the minimap (diep_wiki: "The maze walls are also visible on the minimap") -
-	// one dot per merged rectangle now, far fewer than the old one-per-stud count (plan.md Step
+	// Visible on the minimap ("The maze walls are also visible on the minimap") -
+	// one dot per merged rectangle now, far fewer than the old one-per-stud count (Step
 	// 12) - precomputed once in build(), not walked per viewer per tick; see rooms/Room.js's
 	// this.wallDots for why. 'gray' (SocketSchema's color index 4) is never a live team dot, so
 	// reusing the ordinary player-dot record needs no wire-format change of its own.
@@ -997,10 +979,7 @@ function mazeTests() {
 			ui.map.length >= room.wallDots.length, ui.map.length + ' vs ' + room.wallDots.length);
 	}
 
-	// The 5-hour close (diep_wiki: "Five hours after the server opened") and the Arena Closer
-	// swarm it spawns - the same mechanism rooms/Tag.js's win condition already built (PENDING
-	// #28), reused rather than re-derived. Driving 5 hours of real ticks would be slow, so the
-	// countdown is armed directly, the same style Tag's own shrink-timer test uses.
+	// Five-hour close and Arena Closer swarm (same path as Tag); arm countdown directly.
 	{
 		check('the arena has not started closing yet', room.closing === false);
 		const closersBefore = room.closers.length;
@@ -1013,7 +992,7 @@ function mazeTests() {
 			room.closers.every((c) => room.rules.teams.indexOf(c.team) < 0 && c.closer === 1),
 			room.closers.map((c) => c.team + ':' + c.closer).join(','));
 
-		// Once closing, nobody respawns - diep_wiki's "the server will be reset" ending is the
+		// Once closing, nobody respawns - "the server will be reset" ending is the
 		// room going empty (Room.step()'s existing zero-human self-destruct), not a match that
 		// keeps restocking itself.
 		const victim = player(room, 0);
@@ -1045,13 +1024,13 @@ function dominatorTests() {
 		room.rules.teams.join(',') === '0,1' && room.rules.teamPlay === true &&
 		room.rules.baseSizeRatio.num === 67 && room.rules.baseSizeRatio.den === 400,
 		room.rules.teams.join(','));
-	check('xp is doubled (diep_wiki/Polygons.txt)', room.rules.xpMul === 2, room.rules.xpMul);
+	check('xp is doubled (Polygons.txt)', room.rules.xpMul === 2, room.rules.xpMul);
 
 	// build() spawns all four before the first tick, same as Maze's walls. room.dominators holds
 	// the live Player instances directly (SlotMap.add() returns the entity, not an id).
 	const doms = room.dominators;
 	check('build() spawns exactly 4 Dominators', doms.length === 4, doms.length);
-	check('every Dominator is flagged, neutral, and at diepcustom\'s own 6148 HP (6000 + 2x74, plan.md Step 11)',
+	check('every Dominator is flagged, neutral, and at 6148 HP (6000 + 2x74)',
 		doms.every((d) => d.dominator === 1 && d.team === 2 && d.hp === 6148 && d.maxHp === 6148),
 		doms.map((d) => d.team + ':' + d.hp).join(' '));
 	check('every Dominator is one of the three cannon variants',
@@ -1059,7 +1038,7 @@ function dominatorTests() {
 		doms.map((d) => d.class).join(', '));
 	check('every Dominator sits inside the drawn arena',
 		doms.every((d) => Math.abs(d.x) <= room.map.width / 2 && Math.abs(d.y) <= room.map.height / 2));
-	check('a Dominator is an ordinary Player, not a new entity kind (PENDING #27)',
+	check('a Dominator is an ordinary Player, not a new entity kind',
 		doms.every((d) => d.kind === KIND.PLAYER), doms.map((d) => d.kind).join(','));
 	// real diep level 75 (Dominator.ts's camera.setLevel(75)), driving the real level-75 camera width
 	// via screenAtLevel(75) - epsilon-compared, not exact float equality.
@@ -1106,7 +1085,7 @@ function dominatorTests() {
 			d.class === 'Gunner Dominator', d.class);
 	}
 
-	// issues.md: "trapper dominator's traps should not be immortal... like with enough damage
+	// "trapper dominator's traps should not be immortal... like with enough damage
 	// they should disappear like normal traps". There is no dominator-origin carve-out anywhere in
 	// entities/Bullet.js (nothing there ever reads `.dominator`) - a Trapper Dominator's traps are
 	// ordinary type-2 Bullets off an ordinary finite-pene cannon row, so this is a real behaviour to
@@ -1130,10 +1109,9 @@ function dominatorTests() {
 			trap.destroy > 0 && trap.pene === 0, 'destroy=' + trap.destroy + ' pene=' + trap.pene);
 	}
 
-	// "Cannot move" (diep_wiki/Dominator.txt) - motion() is a real no-op, and a tank ram now zeroes
+	// "Cannot move" (Dominator.txt) - motion() is a real no-op, and a tank ram now zeroes
 	// knockback/overlap-push at the source (entities/Player.js's KIND.PLAYER arm, diep's own
-	// absorbtionFactor = 0) instead of update() snapping position back after the fact - plan.md
-	// Step 11 replaced the old per-tick spawnX/spawnY reset with this.
+	// absorbtionFactor = 0) instead of snapping position back after knockback in update().
 	{
 		const d = doms[0];
 		const x0 = d.x, y0 = d.y, hp0 = d.hp;
@@ -1144,7 +1122,7 @@ function dominatorTests() {
 		check('a tank ram gives a Dominator zero knockback and zero overlap-push',
 			d.x === x0 && d.y === y0 && d.vec.x === 0 && d.vec.y === 0,
 			d.x + ',' + d.y + ' vec=' + d.vec.x + ',' + d.vec.y);
-		check('...but it still takes damage like any other Player (PENDING #27)',
+		check('...but it still takes damage like any other Player',
 			d.hp < hp0, d.hp);
 	}
 
@@ -1157,7 +1135,7 @@ function dominatorTests() {
 	const teamB = room.INSTANCE.players.add((id) =>
 		new Player({ GM: room.gm, sId: room.id, oId: id }, 0, 0, 'Basic', 1, room.XPLVL, room));
 
-	// issues.md: "knockback currently seems quite large... everything feels so bouncy". Ordinary
+	// "knockback currently seems quite large... everything feels so bouncy". Ordinary
 	// tank-body-vs-tank-body knockback (entities/Player.js's BODY_KB_GU) was tuned down from diep's
 	// own 1.6 gu/loop to 1.0 - a deliberate departure (README.md), pinned here so a later edit to
 	// it is a conscious choice, not a silent drift. teamA/teamB are on different teams (full
@@ -1179,7 +1157,7 @@ function dominatorTests() {
 	{
 		const dom = doms[1];
 
-		// One knockdown from neutral captures it outright (diep_wiki's own rule).
+		// One knockdown from neutral captures it outright (own rule).
 		dom.hp = 0;
 		dom.destroy = 1;
 		dom.murder = ['players', teamA.id];
@@ -1206,7 +1184,7 @@ function dominatorTests() {
 			dom.team === teamB.team, dom.team);
 	}
 
-	// A capture despawns the Dominator's own live projectiles (diep_wiki/Dominator.txt).
+	// A capture despawns the Dominator's own live projectiles (Dominator.txt).
 	{
 		const dom = doms[2];
 		const bull = new Bullet(dom.id, dom.x, dom.y, 0, 1, 0, room);
@@ -1331,7 +1309,7 @@ function mothershipTests() {
 
 	const ships = room.motherships;
 	check('build() spawns exactly one Mothership per team', ships.length === 2, ships.length);
-	check('every Mothership is flagged, at diepcustom\'s own 7000 HP (Mothership.ts), and diep\'s own bossSize',
+	check('every Mothership is flagged, at 7000 HP (Mothership.ts), and diep\'s own bossSize',
 		ships.every((m) => m.mothership === 1 && m.hp === 7000 && m.maxHp === 7000 && m.size === CLASS['Mothership'].bossSize),
 		ships.map((m) => m.hp + '/' + m.size).join(' '));
 	check('one per rules.teams, each on its own team',
@@ -1339,7 +1317,7 @@ function mothershipTests() {
 		ships.map((m) => m.team).join(','));
 	check('every Mothership is an ordinary Player, not a new entity kind',
 		ships.every((m) => m.kind === require(path.join(ROOT, 'public', 'SHARE', 'kinds.js')).PLAYER));
-	check('a Mothership is nearly immovable (absorbtionFactor 0.01, plan.md E3)',
+	check('a Mothership is nearly immovable (absorbtionFactor 0.01, E3)',
 		ships.every((m) => m.absorb === 0.01), ships.map((m) => m.absorb).join(','));
 	// real diep level 140 (Mothership.ts's camera.setLevel(140)), driving the real level-140 camera width
 	// via screenAtLevel(140) and the level-scaled movement accel Player.prototype.motion() already reads
@@ -1376,7 +1354,7 @@ function mothershipTests() {
 			motherDrone > tank30, motherDrone + ' vs ' + tank30);
 	}
 
-	// plan.md E3 - `canControlDrones` (TankDefinitions.json id27): true on even barrels, false on
+	// E3 - `canControlDrones` (TankDefinitions.json id27): true on even barrels, false on
 	// odd. Type 1 (droneSteer1, entities/Bullet.js) already reads the owner's mouseR/mouseL/e to
 	// override its AI steering - that's this engine's "true"; type 1.1 has its own equivalent
 	// idle/chase/return logic but never reads the owner's inputs - that's "false".
@@ -1391,7 +1369,7 @@ function mothershipTests() {
 			cannons.map((c) => c.type).join(','));
 	}
 
-	// diep's own stats while piloted (Mothership.ts:66, plan.md E3/E4) - all seven non-regen
+	// diep's own stats while piloted (Mothership.ts:66, E3/E4) - all seven non-regen
 	// stats at 7 points, Health Regen at 1, baked directly since a scripted entity never clears
 	// upgrade()'s own pointsAtLevel() gate.
 	{
@@ -1406,7 +1384,7 @@ function mothershipTests() {
 		check('maxHp stays the real 7000, not stat-derived', m.maxHp === 7000, m.maxHp);
 	}
 
-	// plan.md task 1 - Mothership's 16 barrels are 8 controllable (type 1) + 8 not (type 1.1),
+	// task 1 - Mothership's 16 barrels are 8 controllable (type 1) + 8 not (type 1.1),
 	// and diep budgets the two halves SEPARATELY (droneSplit) rather than pooling maxDrone in one
 	// shared counter - a single pool lets whichever barrel's reload phase comes up first spend the
 	// whole cap, so the live swarm's split drifts away from 50/50 the moment it first saturates.
@@ -1513,14 +1491,10 @@ function mothershipTests() {
 }
 
 /*
-	H-key piloting (plan.md E4, diepcustom Client.ts's possess()/TakeTank + Dominator.ts's
-	onDeath()/Mothership.ts's possessionStartTick). rooms/Room.js's togglePossession()/
-	releasePossession() are the claim/release mechanism; lib/gameAI.js's dominatorUpdate()/
-	mothershipUpdate() are what actually redirect aim/fire(/movement) once claimed; entities/
-	Player.js's own update() is what bleeds the vacated pilot's tank.
+	H-key possession: togglePossession/releasePossession, AI redirect while piloting, vacated tank bleed.
 */
 function possessionTests() {
-	console.log('\nH-key piloting (plan.md E4):');
+	console.log('\nH-key piloting:');
 	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
 	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const room = makeRoom('domination');   // build() seats 4 neutral Dominators already
@@ -1569,7 +1543,7 @@ function possessionTests() {
 		pilot.inputs.mouseL = 0;
 	}
 
-	// The vacated pilot tank's own tank bleeds HP while piloting (diepcustom TankBody.ts:324-336).
+	// The vacated pilot tank's own tank bleeds HP while piloting (TankBody.ts:324-336).
 	{
 		const hpBefore = pilot.hp;
 		pilot.update();
@@ -1591,7 +1565,7 @@ function possessionTests() {
 		check('...and the pilot\'s own tank stops bleeding', pilot.hp >= hpBefore, pilot.hp + ' vs ' + hpBefore);
 	}
 
-	// A Dominator flip (onDeath) force-ejects its pilot (plan.md E4).
+	// A Dominator flip (onDeath) force-ejects its pilot (E4).
 	{
 		room.togglePossession(pilot);
 		check('re-claimed for the ejection test', pilot.piloting === dom, pilot.piloting === dom);
@@ -1601,7 +1575,7 @@ function possessionTests() {
 			pilot.piloting === null && dom.pilotedBy === null, pilot.piloting + ',' + dom.pilotedBy);
 	}
 
-	// The level-5-and-under insta-kill floor (diepcustom's own anti-exploit rule).
+	// The level-5-and-under insta-kill floor ( own anti-exploit rule).
 	{
 		room.togglePossession(pilot);
 		pilot.level = 3;
@@ -1736,18 +1710,11 @@ function statSourceTests() {
 }
 
 /*
-	plan.md F1/E2 - the server half of the roster sweep (test/client.js's own "every class in the
-	roster renders without a non-finite transform" is the client half). Every class in
-	TanksConfig.js's own list spawns as a real Player, gets a live target inside its own DETEC
-	range (so an autoDir/DETEC-driven cannon - the exact code path a Dominator's own aim used to
-	run through before C10 moved it out of the class table - actually engages instead of idling),
-	and fires long enough for every one of its barrels to complete at least one reload cycle
-	(90 reference ticks, Overseer's own longest, is the ceiling - run well past it). This is what
-	would have caught the reported Gunner Dominator sandbox-cycle crash permanently, rather than
-	relying on a human happening to cycle to it in a browser with a target nearby.
+	Server roster sweep: every TanksConfig class spawns, acquires a DETEC target, and completes
+	at least one full reload cycle without throwing (pairs with test/client.js render sweep).
 */
 function rosterSweepTests() {
-	console.log('\nroster sweep (plan.md F1 - server half):');
+	console.log('\nroster sweep (server):');
 	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
 	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
 	const CLASS_LIST = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).list;
@@ -1887,7 +1854,7 @@ function respawnCarryoverTests(rooms) {
 	check('kill-count progress survives the respawn', after.killCounts.sqr === 42,
 		JSON.stringify(after.killCounts));
 	check('spawn protection still starts fresh', after.shield > 0, after.shield);
-	// diepcustom TankBody.ts:357 (plan.md C15): a fresh spawn's shield/isFlashing window is
+	// TankBody.ts:357 (C15): a fresh spawn's shield/isFlashing window is
 	// diep's own flat 374 reference ticks, not the old ad-hoc ~198s (6000 ticks at the original
 	// 33ms reference) this engine carried from before the fidelity pass had a real number for it.
 	check('...and it is diep\'s own 374-reference-tick cap, not the old ~198s ad-hoc one',
@@ -1918,14 +1885,14 @@ function respawnCarryoverTests(rooms) {
 }
 
 /*
-	Base drones (massplanchunks WP-E). Three separate things used to make these immortal - the
+	Base drones. Three separate things used to make these immortal - the
 	type-1.4 AI re-set pene every tick, bullet-vs-bullet collision exempted type 1.4 outright, and
 	the pene/5 self-consumption against a player would have killed a 2000-HP drone in five ticks of
 	contact anyway. All three are covered here, plus placement, respawn and the base fence's
 	bullet margin.
 */
 function baseDroneTests() {
-	console.log('\nbase drones (massplanchunks WP-E):');
+	console.log('\nbase drones:');
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
 	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
@@ -1959,7 +1926,7 @@ function baseDroneTests() {
 	const mate = { kind: KIND.BULLET, origin: { oId: 999 }, x: drone.x + 1, y: drone.y, type: 0 };
 	const peneBefore = drone.pene, speedBefore = drone.vec.length();
 	// `dmg`, not `pene` - rooms/Room.js hands a KIND.BULLET arm the OTHER bullet's fixed
-	// damagePerTick now, not its remaining pene pool (plan.md chunk 1's bullet-vs-bullet fix).
+	// damagePerTick now, not its remaining pene pool (chunk 1's bullet-vs-bullet fix).
 	drone.collision(mate, { noDam: 1, dmg: 50 });
 	check('a same-team bullet damages a base drone not at all', drone.pene === peneBefore,
 		drone.pene);
@@ -1970,7 +1937,7 @@ function baseDroneTests() {
 
 	// Against a player the drone must take the PLAYER's body damage, not pene/5 of its own pool:
 	// at pene 2000 the old formula was 400 a tick, i.e. dead in five ticks of contact. 5 is
-	// entities/Player.js's own this.damage base (plan.md chunk 1 D1's diep-raw value) -
+	// entities/Player.js's own this.damage base (chunk 1 D1's diep-raw value) -
 	// common(tank,bullet) = 1 (lib/damage.js), so this is the number a real tank's
 	// collision() would actually hand a drone here.
 	drone.pene = config.BASE_DRONE_HP;
@@ -1978,7 +1945,7 @@ function baseDroneTests() {
 	check('touching a player costs it that player\'s body damage, not a fifth of its own health',
 		drone.pene > config.BASE_DRONE_HP - 20, drone.pene);
 
-	// ...and now the other direction of the same trap - plan.md WP4.5.11. The drone's 2000-point
+	// ...and now the other direction of the same trap - drone orbit levels1. The drone's 2000-point
 	// `pene` is health, not penetration; read as penetration by entities/Player.js it multiplied
 	// contact damage by 400 and killed any tank in one tick.
 	{
@@ -1986,16 +1953,16 @@ function baseDroneTests() {
 		victim.hp = victim.maxHp = 1000; victim.shield = 0; victim.dev.ghost = 0;
 		victim.collision(drone, {});
 		const perTick = 1000 - victim.hp;
-		// damageReduction() is gone (PENDING #18, plan.md step 5): a victim now takes the drone's
-		// full BASE_DRONE_DAMAGE (7, plan.md chunk 1 D1) per tick, tick.perTick()'d - 7 * (25/40) =
+		// damageReduction() is gone (18, step 5): a victim now takes the drone's
+		// full BASE_DRONE_DAMAGE (7, chunk 1 D1) per tick, tick.perTick()'d - 7 * (25/40) =
 		// 4.375 - a loose sanity band around that, not a pin (config.BASE_DRONE_DAMAGE is pinned
 		// exactly above).
 		check('a base drone does one tick of body damage, not 400 of them',
 			perTick > 3.75 && perTick < 5, perTick);
 		// Was "over ten seconds" pre-dr-removal (~33s at the old 0.4x-damage figure); dropping dr
-		// makes every source of damage to a tank 1/dr stronger (plan.md step 5's stated balance
+		// makes every source of damage to a tank 1/dr stronger (step 5's stated balance
 		// consequence), and a lone drone's own share of that is real but not one-shot: ~8.25s at
-		// TICK_MS 25, still "low damage, delivered extremely quickly" (diep_wiki), not lethal alone.
+		// TICK_MS 25, still "low damage, delivered extremely quickly", not lethal alone.
 		check('...so a maxed tank survives a lone drone for at least 5 seconds',
 			1000 / (perTick * (1000 / config.TICK_MS)) > 5);
 	}
@@ -2043,7 +2010,7 @@ function baseDroneTests() {
 }
 
 /*
-	Damage proration (PENDING #18, plan.md step 5 part 4): diep resolves a colliding pair's damage
+	Damage proration (18, step 5 part 4): diep resolves a colliding pair's damage
 	mutually and simultaneously, so if either side would die mid-tick, BOTH sides' damage that tick
 	scales down together rather than each landing an un-shortened full hit. Drives a real room.step()
 	(not a direct collision() call, unlike the base-drone tests above) since the resolver this pins
@@ -2058,7 +2025,7 @@ function baseDroneTests() {
 	survive.
 */
 function prorationTest() {
-	console.log('\ndamage proration (plan.md step 5 part 4):');
+	console.log('\ndamage proration (step 5 part 4):');
 	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
 	const room = makeRoom('ffa');
@@ -2120,15 +2087,15 @@ function prorationTest() {
 }
 
 /*
-	The fastest sustained speed any reachable build can hold (plan.md WP4.5.1), by replaying
+	The fastest sustained speed any reachable build can hold, by replaying
 	entities/Player.js's own motion() + shoot() recurrence rather than trusting a number in a
 	comment: thrust is +x and the facing is swept, so each class rides its own recoil optimally;
 	drone cannons (life -1, capped by maxDrone) contribute no sustained recoil because the drones
 	stay alive; auto turrets do not aim where a rider needs them; a class is only counted from the
 	level its tier unlocks at (upClass's parseInt(level/15) > tier), and never below the first level
 	that can buy a full Movement Speed AND a full Reload bar - both derived from entities/Player.js's
-	own economy (PENDING #30) rather than restated here.
-	Returns u/s. BASE_DRONE_CHASE_SPEED is no longer pinned to this (plan.md Step 10 retired that
+	own economy (30) rather than restated here.
+	Returns u/s. BASE_DRONE_CHASE_SPEED is no longer pinned to this (Step 10 retired that
 	rule in favour of diep's own flat 756 u/s) - still computed and logged in baseDroneAiTests() for
 	context, so a cannon retune that moves the roster's ceiling past 756 u/s is at least visible.
 */
@@ -2173,7 +2140,7 @@ function fastestTankSpeed() {
 				const reload = timer[r];
 				if (reload === Math.floor(can.offTime * reloadMax)) {
 					const rd = dir + (can.offdir || 0) - Math.PI;
-					// tick.impulse(), mirroring entities/Player.js's shoot() (PENDING #43): body.vx/vy
+					// tick.impulse(), mirroring entities/Player.js's shoot() (43): body.vx/vy
 					// here is fed through Physics.stepBody just below, exactly like a real Player's
 					// this.vec, so the recoil impulse must land flat, not perTick()'d.
 					body.vx += tick.impulse(can.back) * Math.cos(rd);
@@ -2194,7 +2161,7 @@ function fastestTankSpeed() {
 		// Only the LOWEST level a class can be reached at is tested: Physics.moveAccel divides by
 		// MOVE_LEVEL_DIV^level and nothing else in this recurrence depends on level, so a class's
 		// speed decreases strictly with level. Sweeping all 45 costs 30x the time and returns the
-		// same answer (checked). Still true after PENDING #14 made the level term a divisor rather
+		// same answer (checked). Still true after 14 made the level term a divisor rather
 		// than a subtraction - strictly decreasing either way, and now without the level-54 zero.
 		const level = Math.max(minLevel[name], ridable);
 		for (let k = 0; k < 36; k++) {
@@ -2206,16 +2173,11 @@ function fastestTankSpeed() {
 }
 
 /*
-	Base drone AI corrections (plan.md WP4/WP4.5/WP4.5.x - not WP4.5-specific any more, hence the
-	name; distinct from baseDroneTests() above, which covers the WP-E core - immortality, placement,
-	respawn, the base fence). Everything WP4's audit found wrong in a browser: same-team
-	transparency, the cross plowing through shapes rather than phasing through them, the
-	steered-motion rewrite (no state can turn or stop the drone instantly), the orbit centre sitting
-	in the middle of the base rather than low and outboard in it, the plateau swoosh, the
-	clamp/stale-target chase bugs, and the broad-phase rewrite.
+	Base drone AI corrections (distinct from baseDroneTests() immortality/placement/respawn/fence):
+	same-team transparency, cross vs shapes, steered motion, orbit centre, plateau swoosh, clamp/stale chase.
 */
 function baseDroneAiTests() {
-	console.log('\nbase drone corrections (plan.md WP4.5):');
+	console.log('\nbase drone corrections:');
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
 	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
@@ -2223,7 +2185,7 @@ function baseDroneAiTests() {
 	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
 
 	// A hand-built per-centre ledger for tests that want to isolate a single drone's mechanics
-	// rather than spawn a real base (plan.md WP4.5.0 added target/targets/threat/crossCap/
+	// rather than spawn a real base (base drone AI added target/targets/threat/crossCap/
 	// scoutIdx/scoutTimer/sortTimer to what rooms/Room.js's levelPlan() hands back - a literal
 	// missing them would make a forced cross silently refuse to start, since
 	// `levels.crossing < levels.crossCap` is `0 < undefined` = false). crossCap defaults to 1 -
@@ -2240,7 +2202,7 @@ function baseDroneAiTests() {
 	}
 
 	// 4.5.2b - tunnelling headroom: the fastest thing a drone ever does (the cross dash, and now
-	// the chase/return dash too - plan.md WP4.5.1) must still be slower than its own size plus the
+	// the chase/return dash too - drone orbit levels) must still be slower than its own size plus the
 	// smallest polygon radius, or a fast enough drone could step clean through a shape between
 	// collision checks.
 	check('no tunnelling: a cross-speed step stays under drone size + smallest polygon radius',
@@ -2255,24 +2217,24 @@ function baseDroneAiTests() {
 		tick.perTick(config.BASE_DRONE_CHASE_SPEED) > tick.perTick(config.BASE_DRONE_CROSS_SPEED),
 		tick.perTick(config.BASE_DRONE_CHASE_SPEED) + ' vs ' + tick.perTick(config.BASE_DRONE_CROSS_SPEED));
 
-	// ---- plan.md Step 10: CHASE_SPEED is diep's own flat number now, not a pin to the fastest
-	//      tank this game can build - PENDING nuance 32's pinning rule is retired, on purpose ------
+	// ---- Step 10: CHASE_SPEED is diep's own flat number now, not a pin to the fastest
+	// CHASE_SPEED is a fixed constant, not pinned to the fastest buildable tank.
 	{
 		const fastest = fastestTankSpeed();
 		const chaseUs = tick.perTick(config.BASE_DRONE_CHASE_SPEED) * (1000 / config.TICK_MS);
 		console.log('  note fastest sustainable build in this game: ' + fastest.speed.toFixed(1) +
 			' u/s (' + fastest.build + '); BASE_DRONE_CHASE_SPEED is ' + chaseUs.toFixed(1) +
-			' u/s - no longer pinned to that number (plan.md Step 10), logged for context only.');
+			' u/s - no longer pinned to that number (Step 10), logged for context only.');
 		// The pin is gone (diep's own base drone runs a flat 54 du/tick = 756 u/s, pinned to
-		// nothing - diepcustom/src/Entity/Misc/BaseDrones.ts) - what's asserted now is diep's own
+		// nothing - src/Entity/Misc/BaseDrones.ts) - what's asserted now is diep's own
 		// number landing exactly, not agreement with whatever the roster's fastest build happens to
 		// be. A drone now comfortably outruns even a maxed-Movement Sniper's own dash (756 vs
-		// ~546 u/s) - flagged as a real balance consequence, not pre-tuned back (plan.md Step 10).
+		// ~546 u/s) - flagged as a real balance consequence, not pre-tuned back (Step 10).
 		check('BASE_DRONE_CHASE_SPEED is diep\'s own flat 756 u/s',
 			Math.abs(chaseUs - 756) < 0.1, chaseUs.toFixed(1) + ' vs 756');
 	}
 
-	// ---- WP4.5.1: a chase and a return actually run at that speed ---------------------------------
+	// ---- drone levels: a chase and a return actually run at that speed ---------------------------------
 	{
 		const room = makeRoom('4team');
 		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
@@ -2286,7 +2248,7 @@ function baseDroneAiTests() {
 		// BASE_DRONE_LEASH of the base centre so the chase is never abandoned mid-measurement, and
 		// far enough that 60 ticks of dashing cannot reach it.
 		const sx = drone.ox > 0 ? -1 : 1, sy = drone.oy > 0 ? -1 : 1;
-		// Acquisition is centralised through levels.threat now (plan.md WP4.5.0) - set both so this
+		// Acquisition is centralised through levels.threat now - set both so this
 		// test doesn't depend on whether `drone` happens to be its centre's current scout.
 		drone.levels.threat = drone.DETEC.select = { x: drone.ox + sx * 1400, y: drone.oy + sy * 1400, destroy: 0 };
 		let lastTwenty = [];
@@ -2340,7 +2302,7 @@ function baseDroneAiTests() {
 	}
 
 	// 4.5.2a - shape damage is sane: a base drone's `pene` is a 2000-point health pool, not a
-	// penetration value, and no longer factors into shape damage at all (PENDING #18 - a
+	// penetration value, and no longer factors into shape damage at all (18 - a
 	// bullet's `pene` decides its own contact-duration survival, not a damage multiplier;
 	// multiplying by it a second time here used to double-count it, the same bug #18 already fixed
 	// on entities/Player.js's identical arm). A drone just deals its own flat per-tick damage.
@@ -2359,7 +2321,7 @@ function baseDroneAiTests() {
 			(hpBefore - sq.hp) + ' of ' + sq.maxHp);
 	}
 
-	// plan.md C14 - diep itself gives shapes no regen at all, but this engine keeps a slow
+	// C14 - diep itself gives shapes no regen at all, but this engine keeps a slow
 	// self-heal as a deliberate departure; the health-bar fade (public/client/entities.js's own
 	// hpAlpha/hpHold) already existed, only the heal itself was missing.
 	{
@@ -2368,7 +2330,7 @@ function baseDroneAiTests() {
 		sq.hp = 1;
 		const before = sq.hp;
 		for (let i = 0; i < 100; i++) { sq.update(); }
-		check('a damaged shape slowly regenerates on its own (plan.md C14)',
+		check('a damaged shape slowly regenerates on its own (C14)',
 			sq.hp > before && sq.hp <= sq.maxHp, before + ' -> ' + sq.hp);
 		sq.hp = sq.maxHp;
 		sq.update();
@@ -2418,7 +2380,7 @@ function baseDroneAiTests() {
 		// in the pair loop, before pairwise collision is ever reached - it would confound this
 		// test rather than exercise it. Midfield (0,0) is safe for every side (see teamTests'/
 		// fourTeamTests' "midfield is safe" checks), so this isolates the one thing being tested:
-		// the WP4.5.0 same-team skip.
+		// the drone AI same-team skip.
 		function isolatedRoom() {
 			const room = makeRoom('2team');
 			player(room, 0).destroy = 1;   // the tester seat - inert, out of everyone's way
@@ -2468,7 +2430,7 @@ function baseDroneAiTests() {
 			const foe = plantPlayer(room, drone.team ? 0 : 1, 0, 0);
 			// One step first, to burn off the fresh-Player auto-level-at-xp-0 hp bump the same-team
 			// case above documents: a drone's contact damage is ~1.9 hp a tick (BASE_DRONE_DAMAGE,
-			// entities/Player.js's KIND.BULLET arm, PENDING #18), and that bump is bigger than it.
+			// entities/Player.js's KIND.BULLET arm, 18), and that bump is bigger than it.
 			// Both are put back on the centre line for the measured step.
 			room.step();
 			drone.x = 0; drone.y = 0; foe.x = 0; foe.y = 0;
@@ -2478,7 +2440,7 @@ function baseDroneAiTests() {
 				foe.hp < foeBefore && drone.pene < droneBefore,
 				foe.hp + '/' + foeBefore + ', ' + drone.pene + '/' + droneBefore);
 			// ...and the drone's share of it is one tick of body damage, not 400 of them - the
-			// entities/Player.js half of the pene-is-health trap (plan.md WP4.5.11), through the real
+			// entities/Player.js half of the pene-is-health trap (drone orbit levels1), through the real
 			// pair loop rather than a direct collision() call.
 			check('...and the tank\'s share is survivable - a base drone is not an instant kill',
 				(foeBefore - foe.hp) < 5, (foeBefore - foe.hp).toFixed(3) + ' hp in one tick');
@@ -2499,8 +2461,8 @@ function baseDroneAiTests() {
 				droneA.pene + '/' + aBefore + ', ' + droneB.pene + '/' + bBefore);
 		}
 		/*
-			plan.md C11 - diep's Drone/Minion/Trap/NecromancerSquare all carry
-			onlySameOwnerCollision (diepcustom's Object.ts:165), the same "transparent to a
+C11 - diep's Drone/Minion/Trap/NecromancerSquare all carry
+			onlySameOwnerCollision ( Object.ts:165), the same "transparent to a
 			different owner on the same team" rule base drones (type 1.4) already got a dedicated
 			whole-pair skip for in Room.js's step(). An ORDINARY class drone/trap/minion has no such
 			dedicated skip - it relies entirely on entities/Bullet.js's/Player.js's own `noDam`
@@ -2525,7 +2487,7 @@ function baseDroneAiTests() {
 		// (the Necromancer's own drone, NecromancerSquare.ts) belong in this same onlySameOwnerCollision
 		// family - both used to be missing from rooms/Room.js's SAME_OWNER_TYPES (1.1 simply absent; 3
 		// was sitting in NO_OWN_TEAM_TYPES under a stale "swarm" label that actually meant BattleShip's
-		// 1.2/1.3, never 3), which is exactly issues.md's "mothership should be able to overlap with
+		// 1.2/1.3, never 3), which is exactly  "mothership should be able to overlap with
 		// its own drones" report - a captured Mothership's even barrels (type 1) passed through fine
 		// while its odd barrels (type 1.1) still jostled it.
 		for (const type of [1, 1.1, 1.5, 3]) {
@@ -2560,7 +2522,7 @@ function baseDroneAiTests() {
 		// BattleShip's real swarm types (1.2 uncontrollable, 1.3 controllable - Fortress's own
 		// standin barrels reuse 1.2) carry noOwnTeamCollision (Swarm.ts:32), not onlySameOwnerCollision:
 		// unlike a type-1 drone, two DIFFERENT owners' swarm drones must ALSO pass through each other,
-		// not just through every teammate's tank - issues.md's "battleship drones should not have
+		// not just through every teammate's tank -  "battleship drones should not have
 		// knockback and interact with anything on its own team" made no owner distinction, and the
 		// diep source backs that (no per-owner carve-out on this flag).
 		for (const type of [1.2, 1.3]) {
@@ -2612,7 +2574,7 @@ function baseDroneAiTests() {
 				mate.hp + '/' + mateBefore + ', ' + trap.pene + '/' + trapBefore);
 		}
 		/*
-			diep's same-team PHYSICS filter (rooms/Room.js's teamPassThrough(), diepcustom
+			diep's same-team PHYSICS filter (rooms/Room.js's teamPassThrough(),
 			Object.ts:154-171). The block above only ever asserted that a same-team pair exchanges
 			no DAMAGE; the pair still collided physically, which is what let a teammate's trap field
 			shove a tank around and a Mothership be jostled by its own swarm. What is pinned here is
@@ -2673,14 +2635,14 @@ function baseDroneAiTests() {
 
 	// 4.5.3/4.5.4 - orbit rate is now uniform (a linear cruise speed), not radius-dependent the
 	// way an angular rate would be: measure at two different energy levels and expect the same
-	// speed (plan.md WP4.5.1 replaces the old continuous radius band with five discrete levels).
+	// speed (drone orbit levels replaces the old continuous radius band with five discrete levels).
 	{
 		const room = makeRoom('4team');
 		const narrow = room.dronePosts.reduce((a, b) => (a.level < b.level ? a : b));
 		const wide = room.dronePosts.reduce((a, b) => (a.level > b.level ? a : b));
 		const nominal = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
-		// The cruise rate itself, in real-world terms (plan.md WP4.5.0/WP5): 85.25 u/s, 1.5x the old
-		// carrot-chase's actual 56.8 - not WP4's 114, which overshot at 2x. Asserted against the
+		// The cruise rate itself, in real-world terms (base drone cruise): 85.25 u/s, 1.5x the old
+		// carrot-chase's actual 56.8 - not the old 114 u/s pin, which overshot at 2x. Asserted against the
 		// number rather than only against "measured == config", so a retune has to be deliberate.
 		check('cruise is 85.25 u/s in real-world terms',
 			Math.abs(nominal * (1000 / config.TICK_MS) - 85.25) < 0.05,
@@ -2701,7 +2663,7 @@ function baseDroneAiTests() {
 		}
 	}
 
-	// ---- WP4.5.1: the shared five-level radius table --------------------------------------------
+	// ---- drone levels: the shared five-level radius table --------------------------------------------
 	{
 		const room = makeRoom('ffa');
 		let steps = true;
@@ -2716,7 +2678,7 @@ function baseDroneAiTests() {
 			Math.abs(config.BASE_DRONE_LEVEL_GAP - drawnSide) / drawnSide < 0.05, drawnSide);
 	}
 
-	// ---- WP4.5.0: LEAN_SCALE really is a 60-degree turn - the REACTIVE ('random') path only -----
+	// ---- drone AI: LEAN_SCALE really is a 60-degree turn - the REACTIVE ('random') path only -----
 	// ('home' switches no longer read LEAN_SCALE at all - they fly BASE_DRONE_SWITCH_ARC's planned
 	// arc instead, tested separately below.)
 	{
@@ -2726,7 +2688,7 @@ function baseDroneAiTests() {
 			'- pins the reactive (shape-hit/proximity) path', degOff < 0.5, degOff.toFixed(3) + ' degrees off');
 	}
 
-	// ---- WP4.5.0: SEPARATION is 5 units of drawn overlap, strictly under one LEVEL_GAP -----------
+	// ---- drone AI: SEPARATION is 5 units of drawn overlap, strictly under one LEVEL_GAP -----------
 	{
 		const touchAt = 2 * 1.7 * config.BASE_DRONE_SIZE;
 		check('SEPARATION is 5 units of drawn triangle-vertex overlap',
@@ -2737,7 +2699,7 @@ function baseDroneAiTests() {
 			config.BASE_DRONE_SEPARATION + ' vs ' + config.BASE_DRONE_LEVEL_GAP);
 	}
 
-	// ---- WP4.5.1: levelPlan() - caps and largest-remainder initial occupancy ---------------------
+	// ---- drone levels: levelPlan() - caps and largest-remainder initial occupancy ---------------------
 	{
 		const room = makeRoom('ffa');
 		function counts(plan) {
@@ -2757,7 +2719,7 @@ function baseDroneAiTests() {
 		check('levelPlan(2) initial occupancy is [0,1,1,0,0]', c2.join(',') === '0,1,1,0,0', c2.join(','));
 	}
 
-	// ---- WP4.5.1: live occupancy matches the ledger, fresh out of the constructor ----------------
+	// ---- drone levels: live occupancy matches the ledger, fresh out of the constructor ----------------
 	{
 		for (const gm of ['4team', '2team']) {
 			const room = makeRoom(gm);
@@ -2775,7 +2737,7 @@ function baseDroneAiTests() {
 		}
 	}
 
-	// ---- WP4.5.1: a dead drone releases its level claim exactly once ------------------------------
+	// ---- drone levels: a dead drone releases its level claim exactly once ------------------------------
 	{
 		const room = makeRoom('2team');
 		const post = room.dronePosts[0];
@@ -2796,10 +2758,10 @@ function baseDroneAiTests() {
 		check('...and the count never went negative (a double-decrement or a missed release)', neverNegative);
 	}
 
-	// ---- WP4.5.0: a level switch moves exactly one level, respecting caps for a VOLUNTARY move ----
+	// ---- drone AI: a level switch moves exactly one level, respecting caps for a VOLUNTARY move ----
 	// but no longer for a REACTION, which now always fires. Driven through the real shape-hit
 	// trigger (entities/Bullet.js's KIND.OBJECTS collision arm) followed by one update() - since
-	// WP4.5.0, collision() only LATCHES reactPending; case 1.4's own trigger block is what actually
+	// drone AI, collision() only LATCHES reactPending; case 1.4's own trigger block is what actually
 	// calls levelSwitch(), on the drone's next free/off-cooldown tick. Together that pair is
 	// levelSwitch()'s one public door - not a private helper this test can call directly.
 	{
@@ -2843,9 +2805,7 @@ function baseDroneAiTests() {
 				d.level === 4, d.level);
 		}
 		{
-			// Level 3 with both level 2 and level 4 saturated - a REACTION still moves it (plan.md
-			// WP4.5.0, "this should always be happening no matter what"): saturation is a preference
-			// for a voluntary move, not a veto on a reaction any more.
+			// Saturation is preference for voluntary moves, not a veto on reactions.
 			const d = freshDrone(3, [5, 1, 5, 1, 5], [0, 1, 1, 1, 0]);
 			const before = d.level;
 			react(d);
@@ -2855,7 +2815,7 @@ function baseDroneAiTests() {
 				d.switchCooldown > 0, d.switchCooldown);
 		}
 		{
-			// Through the VOLUNTARY ('home') door instead of a reaction (plan.md WP4.5.0): 'home'
+			// Through the VOLUNTARY ('home') door instead of a reaction: 'home'
 			// mode is now ONLY ever reached via a post-swoosh `homing` climb, and that climb ignores
 			// the cap entirely on purpose ("a scripted return must not be able to stall behind a
 			// full level 2") - so, unlike the old general drift-home, a saturated neighbour is NOT a
@@ -2871,9 +2831,9 @@ function baseDroneAiTests() {
 		}
 	}
 
-	// ---- WP4.5.0: drift home, re-timed - a 'home' switch now flies a real planned arc, not an ----
+	// ---- drone AI: drift home, re-timed - a 'home' switch now flies a real planned arc, not an ----
 	// instant write, so the climb budget has to cover BASE_DRONE_LEVEL_RELAX's wait AND the arc's
-	// own flight time for every hop (plan.md WP4.5.0's "2*(relax+arc)" figure).
+	// own flight time for every hop (base drone AI's "2*(relax+arc)" figure).
 	{
 		const room = makeRoom('2team');
 		const post = room.dronePosts[0];
@@ -2883,7 +2843,7 @@ function baseDroneAiTests() {
 		// Mirrors planSwitchArc()'s own T formula (entities/Bullet.js) so the budget below is a
 		// real bound, not a guess.
 		function switchTicks(r0, r1) {
-			// Mirrors planSwitchArc()'s own dtheta formula (plan.md WP4.5.0) - a LEAN off the
+			// Mirrors planSwitchArc()'s own dtheta formula - a LEAN off the
 			// tangent now, not a fraction of the circumference, so the sweep is derived from r0
 			// (the ring the arc launches from), not a mean radius.
 			const meanR = (r0 + r1) / 2;
@@ -2902,7 +2862,7 @@ function baseDroneAiTests() {
 			drone.chasing = false;
 			drone.switching = false;
 			drone.crossIn = 1e9;   // never cross during this test
-			// The general drift-home timer is gone (plan.md WP4.5.0) - only a post-swoosh `homing`
+			// The general drift-home timer is gone - only a post-swoosh `homing`
 			// drone climbs on this timer now, so this test simulates that state directly.
 			drone.homing = 1;
 		}
@@ -2913,7 +2873,7 @@ function baseDroneAiTests() {
 		for (let i = 0; i < 50 && !drone.switching; i++) { drone.update(); }
 		check('...and then stops moving levels', drone.level === config.BASE_DRONE_LEVEL_HOME, drone.level);
 
-		// A homing climb ignores the saturation cap entirely now (plan.md WP4.5.0 - "a scripted
+		// A homing climb ignores the saturation cap entirely now (base drone AI - "a scripted
 		// return must not be able to stall behind a full level 2"), the opposite of the old general
 		// drift-home's behaviour: level 2 sitting AT its cap of 1 must not stop this climb.
 		setup(1, [5, 1, 5, 5, 5], [1, 1, 0, 0, 0]);   // level 2 already at its cap
@@ -2922,9 +2882,9 @@ function baseDroneAiTests() {
 			drone.level === config.BASE_DRONE_LEVEL_HOME, drone.level);
 	}
 
-	// ---- WP4.5.0: the reactive ('random') path is an unchanged regression guard -------------------
+	// ---- drone AI: the reactive ('random') path is an unchanged regression guard -------------------
 	// Driven through the real shape-hit trigger (collision() against a KIND.OBJECTS shape) followed
-	// by one update() - collision() only latches reactPending now (WP4.5.0), and case 1.4's own
+	// by one update() - collision() only latches reactPending now (drone AI), and case 1.4's own
 	// trigger block is what pays it out, on the very next tick since switchCooldown is 0. That pair
 	// is the same public door the cap test above uses - not a private call to levelSwitch().
 	{
@@ -2964,7 +2924,7 @@ function baseDroneAiTests() {
 			peakTurn > 20 * Math.PI / 180, (peakTurn * 180 / Math.PI).toFixed(1) + ' degrees');
 	}
 
-	// ---- WP4.5.0: anti-overlap fires through the real pair loop -----------------------------------
+	// ---- drone AI: anti-overlap fires through the real pair loop -----------------------------------
 	// Both drones are placed AT their shared level's radius from their shared centre (ox,oy), only
 	// offset angularly - not at a fixed literal x/y - so orbRTarget matches their actual radius
 	// exactly for both. Placing one of them at a different literal offset (an earlier draft of this
@@ -3020,7 +2980,7 @@ function baseDroneAiTests() {
 				room.step();
 				if (a.level !== 3 || b.level !== 3) { switched = true; }
 			}
-			// EXACTLY one of the pair peels, not both (plan.md WP4.5.0): rooms/Room.js's pair loop
+			// EXACTLY one of the pair peels, not both: rooms/Room.js's pair loop
 			// flags one deterministic side now. Before 4.5.3 this could only be asserted as "at least
 			// one", because the mechanism relied on the other side's switch *failing* - which is the
 			// very bug 4.5.3 fixed, so with a reaction that always fires, both would move (possibly
@@ -3059,7 +3019,7 @@ function baseDroneAiTests() {
 	}
 
 	/*
-		---- WP4.5.0: a reaction ALWAYS moves the drone -----------------------------------------------
+		---- drone AI: a reaction ALWAYS moves the drone -----------------------------------------------
 
 		The regression test, stated as the measurement that found the bug. Before this pass,
 		levelSwitch(drone, 'random') kept a neighbour as a candidate only if it was under its
@@ -3098,7 +3058,7 @@ function baseDroneAiTests() {
 	}
 
 	/*
-		---- WP4.5.0: a reaction that cannot be paid now is LATCHED, not dropped ----------------------
+		---- drone AI: a reaction that cannot be paid now is LATCHED, not dropped ----------------------
 		The three ways a drone can be busy when a shape hits it, plus the deliberate exception.
 	*/
 	{
@@ -3137,7 +3097,7 @@ function baseDroneAiTests() {
 			// (ii) a hit taken mid-'home'-arc - the drone is flying a planned curve and cannot peel
 			// off it, so the reaction waits for the arc to land rather than being thrown away.
 			const d = idleDrone(4);
-			// The general drift-home timer is gone (plan.md WP4.5.0) - only a post-swoosh `homing`
+			// The general drift-home timer is gone - only a post-swoosh `homing`
 			// drone climbs on this timer now, so simulate that state directly to drive the drone
 			// into the same 'home' planned arc this test is actually about.
 			d.homing = 1;
@@ -3171,7 +3131,7 @@ function baseDroneAiTests() {
 			// (iv) a tooClose noticed mid-chase becomes a pending reaction rather than a lost flag -
 			// this is the case that used to be silently cleared by the old `else { tooClose = 0 }`.
 			const d = idleDrone(3);
-			// Acquisition is centralised through levels.threat now (plan.md WP4.5.0) - set both so
+			// Acquisition is centralised through levels.threat now - set both so
 			// this test doesn't depend on whether `d` happens to be its centre's current scout.
 			d.levels.threat = d.DETEC.select = { x: d.ox + (d.ox > 0 ? -1 : 1) * 600, y: d.oy, destroy: 0 };
 			d.update();
@@ -3184,7 +3144,7 @@ function baseDroneAiTests() {
 	}
 
 	/*
-		---- WP4.5.0: the hit still lands on the tick the drone KILLS the shape -----------------------
+		---- drone AI: the hit still lands on the tick the drone KILLS the shape -----------------------
 		The user's "it should do this even if it kills the shape". rooms/Room.js's pair loop runs
 		other.collision(this) BEFORE this arm, so the polygon can die on the same tick - the reaction
 		must not be lost with it. Driven through the real room step, with a nearly-dead polygon
@@ -3227,7 +3187,7 @@ function baseDroneAiTests() {
 	}
 
 	/*
-		---- WP4.5.0: the swoosh - arc -> C2 blend -> exact straight -> C2 blend -> level 1 ----------
+		---- drone AI: the swoosh - arc -> C2 blend -> exact straight -> C2 blend -> level 1 ----------
 
 		Speeds here are measured from POSITION DELTAS, never from `vec`: position is what the curve
 		actually writes and what a player sees, so a curve that wrote a plausible `vec` alongside a
@@ -3235,7 +3195,7 @@ function baseDroneAiTests() {
 
 		Nothing below re-derives planCross()'s own construction and then tests it against itself.
 		The straight's two endpoints come straight out of the flown path: `Te-1`/`Te+Ts-1` are the
-		first ticks whose accumulated arc length reaches the straight's start/end (plan.md WP4.5.1's
+		first ticks whose accumulated arc length reaches the straight's start/end (drone orbit levels's
 		single continuous polyline replaced the old per-piece tables, so a tick boundary no longer
 		lands exactly on a knot the way it used to - it can land up to one tick's arc-step into the
 		neighbouring blend). That is why the straightness/centre-on-line checks below tolerate a
@@ -3304,7 +3264,7 @@ function baseDroneAiTests() {
 				}
 			}
 			const Te = ticks[0], Ts = ticks[1];
-			// The exact geometric endpoints (plan.md WP4.5.7), not the nearest flown tick - a tick
+			// The exact geometric endpoints (swoosh geometry), not the nearest flown tick - a tick
 			// boundary can land up to one tick's arc-step into the neighbouring blend now that the
 			// speed profile is one continuous polyline, which would otherwise leak a fraction of a
 			// unit of blend curvature into "how straight is the straight" and "how long is it".
@@ -3315,7 +3275,7 @@ function baseDroneAiTests() {
 			const along = (p) => (p.x - Lin.x) * d.x + (p.y - Lin.y) * d.y;
 			const C = { x: drone.ox, y: drone.oy };
 			const exitR = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
-			// plan.md WP4.5.1/4.5.7: the speed profile is a PLATEAU now, spanning the whole path
+			// drone orbit levels/4.5.7: the speed profile is a PLATEAU now, spanning the whole path
 			// rather than three independently-timed pieces - so "where is the plateau" and "how close
 			// does the flown path actually get to the centre" are found from the flown data directly,
 			// not assumed to fall on a blend/straight seam.
@@ -3325,7 +3285,7 @@ function baseDroneAiTests() {
 				const dc = Math.hypot(pts[i].x - C.x, pts[i].y - C.y);
 				if (dc < centreDist) { centreDist = dc; centreIdx = i; }
 			}
-			// The plateau (plan.md WP4.5.1): cumulative arc length per tick, and the tick indices
+			// The plateau: cumulative arc length per tick, and the tick indices
 			// bracketing the held peak - first tick whose cumulative arc reaches RAMP of the whole
 			// path (rampIdx), and the LAST tick whose cumulative arc is still within (1-RAMP) of it
 			// (holdIdx). peakSpdIdx already picks the FIRST tick at the max (strict > above), which
@@ -3379,7 +3339,7 @@ function baseDroneAiTests() {
 				R.centrePerp < 1e-6, R.centrePerp.toExponential(2));
 			check('...strictly BETWEEN its two ends - it really crosses the centre',
 				R.centreAlong > 0 && R.centreToEnd > 0, R.centreAlong.toFixed(1) + ' / ' + R.centreToEnd.toFixed(1));
-			// plan.md WP4.5.0: BLEND_FRAC is a fraction of EACH END'S OWN RADIUS now, not of the
+			// base drone AI: BLEND_FRAC is a fraction of EACH END'S OWN RADIUS now, not of the
 			// chord, so the straight's length is (1-FRAC)*(r0+R1) - and there is no ceiling on FRAC
 			// to assert any more (the "strictly BETWEEN its two ends" check just above is what used
 			// to need one).
@@ -3387,7 +3347,7 @@ function baseDroneAiTests() {
 				Math.abs(R.lineLen - (1 - FRAC) * (R.r0 + R1)) / ((1 - FRAC) * (R.r0 + R1)) < 0.01,
 				R.lineLen.toFixed(1) + ' vs ' + ((1 - FRAC) * (R.r0 + R1)).toFixed(1));
 
-			// plan.md WP4.5.1: the speed profile is a PLATEAU now, held from CROSS_RAMP of the path to
+			// drone orbit levels: the speed profile is a PLATEAU now, held from CROSS_RAMP of the path to
 			// (1-CROSS_RAMP) of it - there is no single peak tick any more, so "where is the peak" is
 			// replaced by "is the plateau speed reached by RAMP and still held at 1-RAMP". A VALUE
 			// check at rampIdx/holdIdx, not an index comparison against R.peakSpdIdx: RK2 asymptotically
@@ -3410,7 +3370,7 @@ function baseDroneAiTests() {
 			// would be testing the rounding, not the construction. Already two-sided via Math.abs().
 			check('vPeak lands within 1% of nominal BASE_DRONE_CROSS_SPEED',
 				Math.abs(vPeak - V_CROSS) / V_CROSS < 0.01, vPeak.toFixed(3) + ' vs ' + V_CROSS.toFixed(3));
-			// Speed rises to the plateau and falls from it - non-strict now (plan.md WP4.5.1: the held
+			// Speed rises to the plateau and falls from it - non-strict now (drone orbit levels: the held
 			// middle is flat by construction, not strictly monotone), in three pieces: non-decreasing
 			// up to rampIdx, flat within 0.5% across the hold, non-increasing from holdIdx down to
 			// cruise. The strict-monotonicity intent from the old single-ramp build is preserved
@@ -3436,7 +3396,7 @@ function baseDroneAiTests() {
 				Math.hypot(R.exitVec.x, R.exitVec.y).toFixed(6));
 			// No corner in ACCEL VALUE at either knee (dv/ds = 0 at both, by construction - see
 			// crossVAt's own comment): consecutive per-tick speed deltas never jump by more than the
-			// pinned ratio anywhere in the table. Re-pinned from a measured run (plan.md WP4.5.7 - do
+			// pinned ratio anywhere in the table. Re-pinned from a measured run (swoosh geometry - do
 			// not guess): unlike the old single-ramp build, a chunk of this table now sits on the FLAT
 			// plateau, where consecutive deltas are both near zero and their ratio is dominated by
 			// floating-point/RK2 noise rather than any real corner - measured up to ~26 there, so the
@@ -3451,7 +3411,7 @@ function baseDroneAiTests() {
 			check('acceleration has no corner at either knee - no consecutive-delta jump over 40x',
 				worstJumpRatio <= 40 + 1e-6, worstJumpRatio.toFixed(2));
 
-			// Nothing has a corner in ACCEL VALUE. plan.md WP4.5.1 re-pins both bounds from a measured
+			// Nothing has a corner in ACCEL VALUE. drone orbit levels re-pins both bounds from a measured
 			// run: the plateau's knees sit deep inside the still-tight entry/exit blends
 			// (BASE_DRONE_CROSS_BLEND_FRAC puts ~80% of the path in the two C2 joins), so turn rises
 			// from the old single-ramp build's 5.63 rad/s to a measured 8.46, and accel from 0.79 to
@@ -3462,7 +3422,7 @@ function baseDroneAiTests() {
 				(R.peakTurn * 1000 / config.TICK_MS).toFixed(2) + ' rad/s');
 			check('...and the peak in-cross acceleration under 2.5 ref-units/tick^2', R.peakAccel < ACCEL_BOUND,
 				R.peakAccel.toFixed(4) + ' vs ' + ACCEL_BOUND.toFixed(4));
-			// The measured duration at every level (plan.md WP4.5.1's own sweep table, RAMP=0.25):
+			// The measured duration at every level (drone orbit levels's own sweep table, RAMP=0.25):
 			// 80/86/93/100/106 ticks at levels 1-5, about 25% quicker than the old single-ramp build's
 			// 107/116/125/134/143 - pinned here for the home level (3); the every-level loop below
 			// pins all five.
@@ -3486,7 +3446,7 @@ function baseDroneAiTests() {
 			check('...lands 2*CROSS_LEAD past the antipode of where it started, within 10%',
 				Math.abs(angleErr) < 0.1 * Math.abs(2 * lead), (angleErr * 180 / Math.PI).toFixed(2) + ' degrees off');
 			check('level === 1 on exit', R.drone.level === 1, R.drone.level);
-			// The climb back to HOME after this (WP4.5.0's drift-home retry loop, congestion and all) is
+			// The climb back to HOME after this (drone AI's drift-home retry loop, congestion and all) is
 			// already covered in isolation by the "drift home, re-timed" tests above, with a controlled
 			// ledger instead of this real room's live occupancy.
 		}
@@ -3494,7 +3454,7 @@ function baseDroneAiTests() {
 		// --- the same invariants over every level and both spins ----------------------------------
 		{
 			const CROSS_BUDGET = tick.ticks(config.BASE_DRONE_CROSS);
-			// plan.md WP4.5.1's own sweep at RAMP=0.25 (lib/config.js's BASE_DRONE_CROSS_RAMP
+			// drone orbit levels's own sweep at RAMP=0.25 (lib/config.js's BASE_DRONE_CROSS_RAMP
 			// comment carries the full table) - ~25% quicker than the previous single-ramp build's
 			// 107/116/125/134/143.
 			const EXPECT_TICKS = [80, 86, 93, 100, 106];
@@ -3507,7 +3467,7 @@ function baseDroneAiTests() {
 					let worst = 0;
 					for (let i = R.Te; i < R.Te + R.Ts; i++) { worst = Math.max(worst, R.perp(R.pts[i])); }
 					if (!(worst < 0.1)) { straight = false; }
-					// plan.md WP4.5.1: a PLATEAU now, not a single peak tick - a VALUE check at
+					// drone orbit levels: a PLATEAU now, not a single peak tick - a VALUE check at
 					// rampIdx/holdIdx (see the detailed pass above for why not an index comparison
 					// against R.peakSpdIdx - RK2 converges to the exact max asymptotically across the
 					// whole plateau).
@@ -3520,10 +3480,10 @@ function baseDroneAiTests() {
 					if (!(Math.abs(R.exitR - R1) < 0.5 && R.drone.level === 1)) { landed = false; }
 					if (!(R.tbl.length === R.ticks[0] + R.ticks[1] + R.ticks[2] && R.pts.length === R.tbl.length)) { lengths = false; }
 					// The entry curls INWARD from the first tick, so the whole cross stays inside the
-					// ring it started on - plan.md WP4.5.0's "the radial bulge is gone".
+					// ring it started on - base drone AI's "the radial bulge is gone".
 					if (!(R.maxR <= R.r0 + 1)) { noBulge = false; }
 					if (!(R.maxDx <= room.baseSize / 2 && R.maxDy <= room.baseSize / 2)) { inSquare = false; }
-					// plan.md WP4.5.1 re-pins both from the measured sweep (turn 8.46, accel 1.95 at
+					// drone orbit levels re-pins both from the measured sweep (turn 8.46, accel 1.95 at
 					// RAMP=0.25, up from the old single-ramp build's 5.63/0.79).
 					if (!(R.peakTurn < 10 * config.TICK_MS / 1000 && R.peakAccel < 2.5)) { sane = false; }
 					if (!(R.tbl.length < CROSS_BUDGET)) { underBudget = false; }
@@ -3550,14 +3510,14 @@ function baseDroneAiTests() {
 		}
 	}
 
-	// ---- WP4.5.0: nothing has a corner in it - bounded acceleration and jerk everywhere ------------
+	// ---- drone AI: nothing has a corner in it - bounded acceleration and jerk everywhere ------------
 	{
 		const room = makeRoom('4team');
 		const drone = room.INSTANCE.bullets.get(room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME).slot);
 		const TURN = tick.perTick(config.BASE_DRONE_TURN);
 		const CHASE_TURN = tick.perTick(config.BASE_DRONE_CHASE_TURN);
 		const MINSPD = 0.5 * tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
-		// The fastest non-curve state is CHASE now (plan.md WP4.5.1), not cruise - its own tighter
+		// The fastest non-curve state is CHASE now, not cruise - its own tighter
 		// CHASE_TURN paired with its own much higher speed is the bound that actually has to hold.
 		const OUT_ACCEL = tick.perTick(config.BASE_DRONE_ACCEL) +
 			tick.perTick(config.BASE_DRONE_CHASE_SPEED) * CHASE_TURN + 1e-9;
@@ -3565,19 +3525,19 @@ function baseDroneAiTests() {
 		let prevHead = drone.head, prevVx = drone.vec.x, prevVy = drone.vec.y, prevAx = 0, prevAy = 0, first = true, firstA = true;
 		let sharpOut = false, sharpIn = false, slow = false, hardAccelOut = false, hardAccelIn = false, hardJerkOut = false;
 		let peakAccelIn = 0, peakJerkIn = 0, peakTurnIn = 0;
-		// A 'home' switch arc is a third exempt state alongside crossing (plan.md WP4.5.0), but
+		// A 'home' switch arc is a third exempt state alongside crossing, but
 		// measured against real geometry across the whole level table it never actually approaches
 		// either outside-curve bound - its own sweep is a shallow ~10 degrees over ~70 ticks, well
 		// under TURN's per-tick allowance - so it is sampled and its own peaks are printed for the
 		// record, without a separate generous multiplier the way the cross needs one.
 		let peakAccelSwitch = 0, peakJerkSwitch = 0, peakTurnSwitch = 0;
-		// The in-cross bounds are the swoosh's own measured geometry (plan.md WP4.5.1: <= 8.46 rad/s
+		// The in-cross bounds are the swoosh's own measured geometry (drone orbit levels: <= 8.46 rad/s
 		// and <= 1.95 ref-units/tick^2 across levels 1-5 at BASE_DRONE_CROSS_RAMP=0.25, up from the
 		// previous single-ramp build's 5.63/0.79 - the plateau's two knees sit deep inside the still-
 		// tight entry/exit C2 blends, which is what costs the extra turn/accel), not a generous
 		// multiple of the outside-cross figure. The curve is exempt from the turn/accel limiter, but
 		// still bounded well inside BASE_DRONE_ACCEL's own scale. The swoosh's speed is a plateau now
-		// (plan.md WP4.5.1) - ramp up over the first RAMP of the path, hold peak across the middle,
+		// - ramp up over the first RAMP of the path, hold peak across the middle,
 		// ramp down over the last RAMP - not one continuous ramp to a single peak at the centre.
 		const IN_TURN = 10 * config.TICK_MS / 1000;      // 10 rad/s, in radians per real tick
 		// Measured (drone.vec-delta based, real-tick units): up to ~1.95 across a natural cross
@@ -3588,7 +3548,7 @@ function baseDroneAiTests() {
 		const sample = () => {
 			const dHead = Math.atan2(Math.sin(drone.head - prevHead), Math.cos(drone.head - prevHead));
 			// A RETURN blends its turn limit up toward CHASE_TURN on the same smoothstep k as its
-			// speed (plan.md WP4.5.13), so the bound outside a chase is that blend, not a flat
+			// speed (drone orbit levels3), so the bound outside a chase is that blend, not a flat
 			// BASE_DRONE_TURN. Measured from the POST-update position with a one-tick slack: |err|
 			// moves at most CHASE_SPEED per tick, i.e. at most ~0.007 rad/tick of blend, comfortably
 			// inside the 0.01 allowance (BASE_DRONE_TURN itself is 0.0625 rad/tick).
@@ -3600,7 +3560,7 @@ function baseDroneAiTests() {
 				if (Math.abs(dHead) > peakTurnIn) { peakTurnIn = Math.abs(dHead); }
 				if (Math.abs(dHead) > IN_TURN) { sharpIn = true; }
 			} else if (prevChasing && !drone.chasing) {
-				// The one deliberate discontinuity in `head` outside a curve (plan.md WP4.5.16): on
+				// The one deliberate discontinuity in `head` outside a curve (drone orbit levels6): on
 				// the tick a pursuit ends the drone snaps onto the orbit field's direction rather
 				// than slewing to it over the next half second, which is what stops it flying
 				// further out - and, against the map clamp, hanging at the arena edge - first.
@@ -3649,7 +3609,7 @@ function baseDroneAiTests() {
 		for (let i = 0; i < 150; i++) { drone.update(); sample(); }
 		// A forced 'home' switch, isolated - the natural window above depends on a staggered spawn
 		// crossIn eventually clearing this drone off HOME, which is not reliable inside any fixed
-		// sample budget (WP4.5.0's climb is deliberately not guaranteed-fast under congestion), so
+		// sample budget (drone AI's climb is deliberately not guaranteed-fast under congestion), so
 		// this drives one directly the way the drift-home tests above do.
 		drone.chasing = false; drone.crossing = false; drone.switching = false; drone.crossIn = 1e9;
 		drone.levels = makeLevels([5, 5, 5, 5, 5], [0, 0, 4, 1, 0]);
@@ -3658,8 +3618,7 @@ function baseDroneAiTests() {
 		drone.switchCooldown = 0;
 		placeOnRing(drone, room.levelR(4), 0);
 		drone.levelTimer = 1;
-		drone.homing = 1;   // 'home' mode is only ever reached via a homing climb now (plan.md WP4.5.0)
-		// placeOnRing() teleports head/vec directly - reset the sampler's own state to match, or its
+		drone.homing = 1;   // 'home' mode is only ever reached via a homing climb now		// placeOnRing() teleports head/vec directly - reset the sampler's own state to match, or its
 		// first sample compares against the previous segment's stale heading/velocity, which is a
 		// test-harness discontinuity, not a real one.
 		prevHead = drone.head; prevVx = drone.vec.x; prevVy = drone.vec.y; first = true; firstA = true;
@@ -3686,10 +3645,10 @@ function baseDroneAiTests() {
 	}
 
 	// (The BASE_DRONE_CROSS_BLEND_ARC fixpoint test that used to sit here is deleted with the
-	// constant itself - plan.md WP4.5.0 solves a blend's shape parameter by fixed point at plan
+	// constant itself - base drone AI solves a blend's shape parameter by fixed point at plan
 	// time, so there is no measured overhead factor left to re-measure and paste back.)
 
-	// ---- WP4.5.2(A): clampToMap() actually stops/redirects a drone, not just teleports it ---------
+	// ---- drone map clamp(A): clampToMap() actually stops/redirects a drone, not just teleports it ---------
 	// Before this fix, clampToMap() zeroed this.vec.x/y on the clamped axis, but case 1.4's own
 	// steering tail derives vec FROM head/spd at the top of every tick, so the zeroed component was
 	// overwritten before it was ever read - the clamp just moved the drone back onto the boundary
@@ -3737,13 +3696,13 @@ function baseDroneAiTests() {
 		}
 
 		// (2) Chasing a target parked ON the clamp box - the furthest out a player can actually get.
-		// The chase is now DELIBERATELY held (plan.md WP4.5.15): a base drone follows a live target
+		// The chase is now DELIBERATELY held (drone orbit levels5): a base drone follows a live target
 		// exactly as far into the dark OOB band as a player may run, slides along the wall beside it
 		// and keeps dealing damage, because the wiki's base is "impossible to linger around". The
 		// "target past my own clamp box" drop that used to be asserted here was a guard that could
 		// never fire in the first place - DETEC.type is [KIND.PLAYER] and entities/Player.js's
 		// motion() clamps a Player to EXACTLY this same box, so the strict > never held at equality -
-		// and the corner pin it was blamed for was clampToMap()'s doing (plan.md WP4.5.12).
+		// and the corner pin it was blamed for was clampToMap()'s doing (drone orbit levels2).
 		{
 			const drone = room.INSTANCE.bullets.get(post.slot);
 			const sx = Math.sign(drone.ox) || 1, sy = Math.sign(drone.oy) || 1;
@@ -3773,7 +3732,7 @@ function baseDroneAiTests() {
 			check('...and the drone works the wall beside it instead of freezing against it',
 				frozen === 0, frozen + ' frozen ticks');
 			// And the moment that target dies the drone is already on its way home, on that same
-			// tick - not after a half-second of slewing (plan.md WP4.5.16).
+			// tick - not after a half-second of slewing (drone orbit levels6).
 			drone.DETEC.select.destroy = 1;
 			const before = Math.hypot(drone.x - drone.ox, drone.y - drone.oy);
 			drone.crossIn = 1e9;
@@ -3803,7 +3762,7 @@ function baseDroneAiTests() {
 		}
 	}
 
-	// ---- WP4.5.2(B)/(C): a stale detected target no longer latches a base out of ever chasing again
+	// ---- drone map clamp(B)/(C): a stale detected target no longer latches a base out of ever chasing again
 	{
 		const Detector = require(path.join(ROOT, 'entities', 'Detector.js'));
 		const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
@@ -3858,11 +3817,11 @@ function baseDroneAiTests() {
 		me.shield = 0;
 		me.alpha = 1;
 		// A point this close to the post is also inside the OWNING team's own base square now
-		// (room.baseSize is 1876, well past BASE_DRONE_DETECT's new 504 - plan.md Step 10) - ghost
+		// (room.baseSize is 1876, well past BASE_DRONE_DETECT's new 504 - Step 10) - ghost
 		// so the base's own fence (rooms/FourTeam.js's inEnemyBase()) does not kill `me` before the
 		// drone ever gets a chance to see it, which would confound "not detected" with "not alive".
 		me.dev.ghost = 1;
-		// Comfortably inside BASE_DRONE_DETECT (plan.md Step 10 shrank it to gu(18) = 504 - was
+		// Comfortably inside BASE_DRONE_DETECT (Step 10 shrank it to gu(18) = 504 - was
 		// gu(60) = 1680, when this 1478 literal was chosen).
 		const meDist = config.BASE_DRONE_DETECT * 0.8;
 		me.x = anchor.ox + meDist * Math.cos(0.4);
@@ -3897,8 +3856,8 @@ function baseDroneAiTests() {
 			drone.DETEC.select === target);
 	}
 
-	// ---- WP4.5.0: cross concurrency is sized from measured demand, not fixed at one --------------
-	// A 4team centre's twelve drones now share up to `crossCap` lanes (plan.md WP4.5.0 - sized from
+	// ---- drone AI: cross concurrency is sized from measured demand, not fixed at one --------------
+	// A 4team centre's twelve drones now share up to `crossCap` lanes (base drone AI - sized from
 	// estimateCrossTicks() so each drone still crosses roughly every BASE_DRONE_CROSS regardless of
 	// how many share its centre), not a single mutex serialising every drone through one lane the
 	// way the previous pass did.
@@ -3936,9 +3895,9 @@ function baseDroneAiTests() {
 			crossedOnce.every((c) => c), crossedOnce.filter((c) => !c).length + ' never crossed');
 	}
 
-	// ---- WP4.5.0: the binomial sorter converges from any perturbed state -------------------------
+	// ---- drone AI: the binomial sorter converges from any perturbed state -------------------------
 	// "Moving one unit of surplus one step toward the nearest deficit strictly decreases
-	// sum(|count-target|) by 2 and no move increases it" (plan.md WP4.5.0) - a path-graph
+	// sum(|count-target|) by 2 and no move increases it" - a path-graph
 	// transportation argument, checked directly here rather than trusted, since it is exactly the
 	// property that keeps the "nearest deficit" rule from quietly being "simplified" into "toward
 	// home" (which does not converge to the binomial).
@@ -4060,7 +4019,7 @@ function baseDroneAiTests() {
 		check('...and moves at least one and at most the surplus per pass', boundedMove);
 	}
 
-	// ---- WP4.5.0: a post-swoosh drone climbs to HOME and only then releases to the sorter --------
+	// ---- drone AI: a post-swoosh drone climbs to HOME and only then releases to the sorter --------
 	{
 		const room = makeRoom('4team');
 		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
@@ -4101,7 +4060,7 @@ function baseDroneAiTests() {
 		check('homing ignores a saturated intermediate level - the climb still completes', reached2 >= 0, reached2);
 	}
 
-	// ---- WP4.5.0: the detection scout - a scan-period invariant, not a timing test -----------------
+	// ---- drone AI: the detection scout - a scan-period invariant, not a timing test -----------------
 	{
 		const room = makeRoom('4team');
 		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
@@ -4129,7 +4088,7 @@ function baseDroneAiTests() {
 
 		// Detection still works: a player standing inside BASE_DRONE_DETECT is chased within a few
 		// scout rotations, not silently missed because it isn't the enabled drone's turn. Offset
-		// purely along X, comfortably inside BASE_DRONE_DETECT (plan.md Step 10 shrank it to
+		// purely along X, comfortably inside BASE_DRONE_DETECT (Step 10 shrank it to
 		// gu(18) = 504, well under room.baseSize's own half-width now, so "past the square" and
 		// "inside detect range" are no longer both satisfiable at once - detect range wins, since
 		// that is what this test is actually about). That also means this point is inside the base's
@@ -4152,7 +4111,7 @@ function baseDroneAiTests() {
 			chasedAt >= 0 && chasedAt <= budget, chasedAt + ' vs budget ' + budget);
 	}
 
-	// ---- WP4.5.1: peak speed and tunnelling, empirical -----------------------------------------
+	// ---- drone levels: peak speed and tunnelling, empirical -----------------------------------------
 	{
 		const room = makeRoom('4team');
 		const post = room.dronePosts.find((p) => p.level === config.BASE_DRONE_LEVEL_HOME);
@@ -4172,7 +4131,7 @@ function baseDroneAiTests() {
 			maxSpeed < bound, maxSpeed.toFixed(2) + ' vs ' + bound);
 	}
 
-	// ---- WP4.5.1: 2team ring spacing - the invariant nominalR used to enforce implicitly ----------
+	// ---- drone levels: 2team ring spacing - the invariant nominalR used to enforce implicitly ----------
 	{
 		const room = makeRoom('2team');
 		const widest2 = 2 * room.levelR(config.BASE_DRONE_LEVELS);
@@ -4196,7 +4155,7 @@ function baseDroneAiTests() {
 			drones.every((d) => Math.abs(Math.abs(d.ox) - (two.map.width / 2 - two.baseSize / 2)) < 1e-9));
 	}
 
-	// ---- WP4.5.12: the map clamp slides, it does not stop -----------------------------------------
+	// ---- drone levels2: the map clamp slides, it does not stop -----------------------------------------
 	// The old clamp rebuilt `spd` from the CLAMPED vec, so a corner (both components zeroed) set it
 	// to exactly 0 while `head` was deliberately left alone - the drone sat byte-identical for up to
 	// 14 ticks, driving back into the same corner every tick, while head slewed away at the leisurely
@@ -4231,11 +4190,11 @@ function baseDroneAiTests() {
 			(d.head * 180 / Math.PI).toFixed(1) + ' deg at ' + d.spd.toFixed(2));
 	}
 
-	// ---- WP4.5.12/13/14/16: a pursuit ends, the drone goes home NOW and keeps going home ---------
+	// ---- drone levels2/13/14/16: a pursuit ends, the drone goes home NOW and keeps going home ---------
 	// The user's requirement stated directly, and the assertion this whole group is judged on: the
 	// moment a chase drops the drone turns for its orbit on that very tick and flies straight back,
 	// lingering nowhere and specifically not at the arena edge. Bait a whole 4team base out (as far
-	// as BASE_DRONE_DETECT still reaches - plan.md Step 10 shrank it to gu(18) = 504, so the literal
+	// as BASE_DRONE_DETECT still reaches - Step 10 shrank it to gu(18) = 504, so the literal
 	// OOB corner this used to reach at gu(60) = 1680 is no longer detectable at all), take the bait
 	// away, and hold every drone to (a) strictly closing on its ring from the FIRST tick after the
 	// drop and every tick after, (b) never holding a byte-identical position for two consecutive
@@ -4255,7 +4214,7 @@ function baseDroneAiTests() {
 		// Diagonally outward from the post, toward the same corner as before, at 85% of
 		// BASE_DRONE_DETECT so every drone at the centre - not just the current scout - is well
 		// within range to acquire it. This point is well inside the drawn arena now (unlike the old
-		// literal OOB corner, which BASE_DRONE_DETECT can no longer reach at all - plan.md Step 10),
+		// literal OOB corner, which BASE_DRONE_DETECT can no longer reach at all - Step 10),
 		// so it is also inside the enemy base's own fence (room.baseSize 1876 from the map corner) -
 		// ghost the bait so the fence does not kill it before any drone gets a chance to chase it.
 		bait.dev.ghost = 1;
@@ -4305,7 +4264,7 @@ function baseDroneAiTests() {
 		check('...and every one is back on its ring within 250 ticks', worstSettle < 250, worstSettle);
 	}
 
-	// ---- WP4.5.14: a diameter cross only ever launches from the drone's own ring -----------------
+	// ---- drone levels4: a diameter cross only ever launches from the drone's own ring -----------------
 	// planCross() takes the entry seam from the centripetal acceleration of the circle the drone is
 	// ACTUALLY flying, which is meaningless for one sprinting radially home off a chase - measured,
 	// crosses launching from r=1300 against a 168-280 level table.
@@ -4332,7 +4291,7 @@ function baseDroneAiTests() {
 			firedAt >= 0, firedAt);
 	}
 
-	// ---- WP4.5.17: polygon bosses are ignored until they start it --------------------------------
+	// ---- drone levels7: polygon bosses are ignored until they start it --------------------------------
 	// basedrones.txt: base drones defend against the Fallen bosses on sight but "usually don't
 	// target Polygon-based Bosses, such as the Guardian, the Summoner, and the Defender, unless
 	// those provoke them first via body damage or drone damage".
@@ -4346,7 +4305,7 @@ function baseDroneAiTests() {
 		const boss = room.createBoss(0) || room.bosses[0];
 		const centre = room.droneCentres.find((c) => c.posts[0].team === 0);
 		const post = centre.posts[0];
-		// Parked inside BASE_DRONE_DETECT (plan.md Step 10 shrank it to gu(18) = 504, well under
+		// Parked inside BASE_DRONE_DETECT (Step 10 shrank it to gu(18) = 504, well under
 		// room.baseSize's own half-width now - see the scout test's own comment) but past the
 		// widest orbit ring (BASE_DRONE_ORBIT_R + 2*LEVEL_GAP, ~280 units) with room to spare, so
 		// the boss's own body never brushes a drone's and trips the body-damage provoke path by
@@ -4397,7 +4356,7 @@ function baseDroneAiTests() {
 }
 
 /*
-	Tick-scale invariance (massplanchunks WP3): TICK_MS is the server's actual step rate,
+	Tick-scale invariance : TICK_MS is the server's actual step rate,
 	REF_TICK_MS is what public/SHARE/Physics.js's accel/friction are denominated against, and
 	lib/tick.js's SCALE = TICK_MS/REF_TICK_MS converts between them. If that conversion (and the
 	one-time rescale baked into Physics.js's own constants) is right, the real-world top speed
@@ -4408,7 +4367,7 @@ function baseDroneAiTests() {
 	THE AGREEMENT BAND IS 3%, NOT THE 2% IT WAS, AND THAT IS ARITHMETIC RATHER THAN SLACK. The
 	steady state of `v <- (v + A*d)*F^d; x += v*d` is 25*A*d*F^d/(1-F^d) u/s, which is exact only
 	at d = 1 and drifts toward the continuum limit -25*A/ln(F) as d -> 0. The size of that drift is
-	set by how much drag one step applies, so it necessarily widened when plan.md step 2 took
+	set by how much drag one step applies, so it necessarily widened when step 2 took
 	FRICTION from 0.956532 to 10/11:
 
 	                        16ms     25ms     33ms     40ms(=ref)   d->0     16 vs 33
@@ -4417,10 +4376,10 @@ function baseDroneAiTests() {
 
 	This is ordinary Euler discretization of the drag term, not a defect and not something the
 	tank/body friction split can reach - nothing below reads lib/constants.js at all. 3% still
-	fails a regression of the magnitude this test was built to catch (PENDING #24's ~3x runaway).
+	fails a regression of the magnitude this test was built to catch (24's ~3x runaway).
 */
 function tickScaleTests() {
-	console.log('\ntick-scale invariance (massplanchunks WP3):');
+	console.log('\ntick-scale invariance :');
 	const Physics = require(path.join(ROOT, 'public', 'SHARE', 'Physics.js'));
 	const REF_TICK_MS = require(path.join(ROOT, 'lib', 'config.js')).config.REF_TICK_MS;
 
@@ -4477,7 +4436,7 @@ function tickScaleTests() {
 	patched config.TICK_MS, so every module-scope tick.*() constant they compute at require()
 	time - AUTOTURRET_LEAD, the BASE_DRONE_* orbit rates, tick.DES, the drag-precomputed FRICTION,
 	all of it - is
-	rebuilt for the rate under test, the way massplanchunks.md asks for. No runtime setter: the
+	rebuilt for the rate under test, the way config asks for. No runtime setter: the
 	module cache is cleared and restored around the call, same idea as how the movement case
 	above hands Physics.stepBody a freshly computed dtTicks rather than mutating a shared one.
 */
@@ -4502,7 +4461,7 @@ function withTickMs(assumedTickMs, fn) {
 }
 
 /* A room stand-in with just enough surface for a standalone Player/Bullet: a map to clamp
-	 against, a createBullet() that does nothing (or counts), and rules.invisFloor (PENDING #28) -
+	 against, a createBullet() that does nothing (or counts), and rules.invisFloor (28) -
 	 Room.js's own DEFAULT_RULES value, since entities/Player.js's update() reads it unconditionally
 	 whenever a class has stealth alpha, and every test through here uses a class that doesn't. Never
 	 a real SlotMap. */
@@ -4514,7 +4473,7 @@ function fakeRoom() {
 }
 
 /*
-	Reload (massplanchunks WP-D pass 4, item 1): hold the trigger on a fresh Basic for 2
+	Reload (WP-D pass 4, item 1): hold the trigger on a fresh Basic for 2
 	wall-clock seconds at each rate and count bullets actually created - should agree within one
 	shot, same tolerance the plan calls for, since a reload boundary can land on either side of
 	the window at any tick rate.
@@ -4539,7 +4498,7 @@ function reloadInvarianceTest() {
 }
 
 /*
-	Bullet range (massplanchunks WP-D pass 4, item 2): spawn a lone (alone=1, so it never looks
+	Bullet range (WP-D pass 4, item 2): spawn a lone (alone=1, so it never looks
 	for an owning Player) Basic-speed bullet and step it until life runs out, at each rate.
 
 	This is the one the audit actually found broken rather than just extended to check, and it is
@@ -4560,10 +4519,10 @@ function reloadInvarianceTest() {
 
 	2% (was 1% pre-Step-9): a bullet's `life` is quantised to whole ticks (tick.ticks()), so the
 	three rates round to wall-clock lifetimes 0.35% apart and the ranges inherit that on their own -
-	but BODY_FRICTION 0.9 (plan.md Step 9) now applies enough per-tick drag to a bullet that the
+	but BODY_FRICTION 0.9 (Step 9) now applies enough per-tick drag to a bullet that the
 	same Euler-discretization drift nuance 33 measured for TANK_FRICTION (0.956532 -> 10/11, 1% ->
 	3%) shows up here too, measured at ~1.8% between TICK_MS 16 and 33 for a representative muzzle
-	kick. 2% still catches the bug this test was built for (PENDING #24's ~3x runaway) with room to
+	kick. 2% still catches the bug this test was built for (24's ~3x runaway) with room to
 	spare, and is tighter than the tank-movement band since a bullet's own life-quantisation still
 	helps it converge faster.
 */
@@ -4620,7 +4579,7 @@ function autoTurretLeadInvarianceTest(near) {
 }
 
 /*
-	Regen (PENDING #17, plan.md step 4): two direct tick.perTick() rates now, no accumulator, so
+	Regen (17, step 4): two direct tick.perTick() rates now, no accumulator, so
 	there is no quadratic-vs-perTick miscategorisation left to catch (that was the old hpregan's
 	failure mode). What is still worth pinning at tick-scale is that repeated tick.perTick() adds
 	over a fixed wall-clock window sum to the same total regardless of how finely the window is
@@ -4629,7 +4588,7 @@ function autoTurretLeadInvarianceTest(near) {
 
 	Mirrors entities/Player.js's own two formulas rather than calling the full update() (which would
 	couple this to motion()/shoot()/xp - unrelated systems this test has no reason to depend on).
-	"Hyper" below means the ADDITIVE regime (linear + maxHp/250, diepcustom's Live.ts:130-135) now,
+	"Hyper" below means the ADDITIVE regime (linear + maxHp/250,  Live.ts:130-135) now,
 	not the old flat replacement rate - healedHyper() includes the linear term on purpose so its
 	total is directly comparable to healedLinear()'s (it should always heal more, never less).
 */
@@ -4683,12 +4642,12 @@ function regenInvarianceTest() {
 }
 
 /*
-	FOV (massplanchunks WP4): entities/Player.js's screen formula reads config.FOV_MUL and
+	FOV : entities/Player.js's screen formula reads config.FOV_MUL and
 	config.FOV_PER_LEVEL directly, so this pins the formula's shape (multiplicative per level, not
-	the old flat +22/level) rather than duplicating PENDING.md item 19's derivation.
+	the old flat +22/level) rather than duplicating  item 19's derivation.
 */
 function fovTests(rooms) {
-	console.log('\nfield of view (massplanchunks WP4):');
+	console.log('\nfield of view:');
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
 	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
 	const room = rooms[0];
@@ -4718,18 +4677,16 @@ function fovTests(rooms) {
 }
 
 /*
-	Out-of-bounds (massplanchunks WP5): the real wall sits config.OOB_MARGIN past the drawn map
+	Out-of-bounds: hard stop at config.OOB_MARGIN past the drawn map edge.
 	edge, a hard stop with no spring - measured against real diep.io, not a placeholder.
 */
 /*
-	The unit anchor (plan.md WP1/WP5). 1 grid square = 1 diep grid unit (gu) = 28 world units, and
-	the whole point of public/SHARE/World.js is that the server and the client read that ONE number
-	- a client drawing a 20-unit grid over a 28-unit world is exactly the mismatch PENDING #13 was.
+	Grid anchor: 1 square = 1 gu = World.GU (28) world units; server and client share World.js.
 	Every Category-A distance below is asserted as an exact gu() multiple rather than as the literal
 	it happens to evaluate to today, so a future re-pitch moves them all together or fails here.
 */
 function gridAnchorTests() {
-	console.log('\nthe grid anchor (plan.md WP1):');
+	console.log('\nthe grid anchor:');
 	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
 
@@ -4748,9 +4705,9 @@ function gridAnchorTests() {
 	// half is a client-side stroke, see public/client/drawings.js.
 	check('a level-0 tank is 2 grid squares across', Math.abs(2 * 28 - World.gu(2)) < 1e-9);
 
-	// Category-A map/base sizes, exact (plan.md WP1.3/WP2): every arena keeps the square count it
+	// Category-A map/base sizes, exact : every arena keeps the square count it
 	// had before the rescale, so these are square counts, not unit counts.
-	// The WP1.3 table, in squares: every arena kept the square count it had at the old 20-unit pitch
+	// The arena grid table, in squares: every arena kept the square count it had at the old 20-unit pitch
 	// and grew x1.4 in world units with it, which is what D1 decided. Sandbox and boss ride the same
 	// gu() helper; only the four modes with their own tuned figure are pinned here.
 	const squares = { ffa: 451, '4team': 450, '2team': 400, boss: 350, maze: 451 };
@@ -4768,7 +4725,7 @@ function gridAnchorTests() {
 	check('ffa has no base to size', !ffa.baseSize || ffa.dronePosts.length === 0,
 		ffa.dronePosts.length + ' drone posts');
 
-	// The two follow-on constants PENDING #13 named, both re-derived against the 28-unit pitch
+	// The two follow-on constants 13 named, both re-derived against the 28-unit pitch
 	// rather than left at their 20-unit-era literals.
 	check('BASE_BULLET_MARGIN is gu(1.5)', config.BASE_BULLET_MARGIN === World.gu(1.5),
 		config.BASE_BULLET_MARGIN + ' vs ' + World.gu(1.5));
@@ -4784,17 +4741,17 @@ function gridAnchorTests() {
 }
 
 function oobTests(rooms) {
-	console.log('\nout-of-bounds (massplanchunks WP5):');
+	console.log('\nout-of-bounds:');
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
 	const gu = require(path.join(ROOT, 'public', 'SHARE', 'World.js')).gu;
 	const room = rooms[0];
 	const me = player(room, 0);
 
-	// The user's actual requirement (plan.md WP1): a level-0 tank's outer edge stops <= 5 grid
+	// Level-0 tank outer edge stops within 5 grid squares past the drawn map edge.
 	// squares past the drawn map edge. Nothing else pins this identity directly. fovTests (just
 	// above) leaves this same player at level 30, so force it back to level 0 for its base size.
 	// xp must go under XPLVL[0] (0) too: update() levels up before it sizes the tank, and size is
-	// exponential in level now (PENDING #22), so a stray level costs this identity 1%.
+	// exponential in level now (22), so a stray level costs this identity 1%.
 	me.level = 0;
 	const savedXp = me.xp;
 	me.xp = -1;
@@ -4821,14 +4778,14 @@ function oobTests(rooms) {
 }
 
 /*
-	Tank growth (PENDING #22). diep fixes a tank at Z = 2 x 1.01^(lvl-1) gu DIAMETER on 1-based
+	Tank growth (22). diep fixes a tank at Z = 2 x 1.01^(lvl-1) gu DIAMETER on 1-based
 	levels; ours are 0-based and `size` is a radius, so at 1 gu = 28 units the same curve is
 	28 x 1.01^level. The linear stand-in this replaced agreed at both endpoints - which is why it
 	survived this long - but stepped in whole units every 2.8 levels in between, so the assertion
 	that matters is monotonicity per level, not the endpoints.
 */
 function growthTests(rooms) {
-	console.log('\ntank growth (PENDING #22):');
+	console.log('\ntank growth (22):');
 	const gu = require(path.join(ROOT, 'public', 'SHARE', 'World.js')).gu;
 	const room = rooms[0];
 	const me = player(room, 0);
@@ -4876,7 +4833,7 @@ function autoSpinTests(rooms) {
 	const saved = { dir: me.dir, c: me.inputs.c, spinning: me.spinning, autoDir: me.autoDir };
 
 	// Measured off the player's own idle auto-turret spin rather than a copy of SPIN_RATE pasted
-	// in here - PENDING #21 retunes that constant, and a duplicated literal would silently go
+	// in here - 21 retunes that constant, and a duplicated literal would silently go
 	// stale (as it already had) instead of catching the one thing this file actually needs to
 	// guarantee: both spins share one rate, whatever it is.
 	me.inputs.c = 0; me.spinning = 0;
@@ -4945,20 +4902,20 @@ function autoSpinTests(rooms) {
 }
 
 /*
-	Max Health's own heal (PENDING #17, plan.md step 4). A point adds its step to maxHp and heals
+	Max Health's own heal (17, step 4). A point adds its step to maxHp and heals
 	current hp by the same proportion, so the health FRACTION survives the upgrade - the same
-	ratio-based heal PENDING #30's 6/7 rescale used, carried forward rather than reinvented. The
-	step itself is diep's own flat +20/point now (diep_wiki/Stats.txt), not a rescale of the old
+	ratio-based heal 30's 6/7 rescale used, carried forward rather than reinvented. The
+	step itself is diep's own flat +20/point now (Stats.txt), not a rescale of the old
 	110 - MH0 is 50 (not 150), so a full bar is +140, not +660.
 */
 function healthUpgradeTests(rooms) {
-	console.log('\nMax Health upgrade (PENDING #17):');
+	console.log('\nMax Health upgrade (17):');
 	const room = rooms[0];
 	const me = player(room, 0);
 	const P = require(path.join(ROOT, 'entities', 'Player.js'));
 	const saved = { hp: me.hp, maxHp: me.maxHp, level: me.level, stillLvl: me.stillLvl, upNb: me.upNb.slice() };
 	const HP_UP = 6;   // entities/Player.js's `up` key order
-	// A level with at least a full bar's worth of points granted (PENDING #30's schedule).
+	// A level with at least a full bar's worth of points granted (30's schedule).
 	let lvl = P.LEVEL_CAP;
 	for (let l = 1; l <= P.LEVEL_CAP; l++) { if (P.pointsAtLevel(l) >= P.MAX_PER_STAT) { lvl = l; break; } }
 
@@ -4993,7 +4950,7 @@ function healthUpgradeTests(rooms) {
 }
 
 /*
-	Class-switch stat refund (plan.md T2): applyClassSwitchStats() clamps upNb/up down to the
+	Class-switch stat refund (T2): applyClassSwitchStats() clamps upNb/up down to the
 	new class's statMax, but used to leave `stillLvl` (points SPENT) untouched, so points parked
 	in a stat the new class caps at 0 (Smasher/Landmine/Spike's Reload/BSpeed/BPene/BDamage) just
 	evaporated - no point to respend, no room left on the bar either. The fix decrements
@@ -5003,7 +4960,7 @@ function healthUpgradeTests(rooms) {
 	two apart.
 */
 function classSwitchRefundTests(rooms) {
-	console.log('\nclass-switch stat refund (plan.md T2):');
+	console.log('\nclass-switch stat refund (T2):');
 	const room = rooms[0];
 	const me = player(room, 0);
 	const P = require(path.join(ROOT, 'entities', 'Player.js'));
@@ -5068,7 +5025,7 @@ function classSwitchRefundTests(rooms) {
 }
 
 /*
-	The upgrade economy (PENDING #30 / plan.md step 1): 45 levels, 7 points per stat, 33 points over
+	The upgrade economy (30 / step 1): 45 levels, 7 points per stat, 33 points over
 	a life, one class tier every 15 levels.
 
 	Pinned because it is a DOMAIN, not a tunable. Every diep formula this tree adopts is denominated
@@ -5076,11 +5033,11 @@ function classSwitchRefundTests(rooms) {
 	drift back to 6/30 would not fail as a wrong number anywhere, it would quietly make every one of
 	those formulas mean something neither game intends. The grant schedule is checked at its
 	boundaries (the 28/30 rate change and the cap) rather than level by level, and the client's
-	hand-mirrored copy is checked against the server's, since PENDING #23 lists that pair as the
+	hand-mirrored copy is checked against the server's, since 23 lists that pair as the
 	thing most able to desynchronise.
 */
 function upgradeEconomyTests(rooms) {
-	console.log('\nupgrade economy - 45/7/33 (PENDING #30):');
+	console.log('\nupgrade economy - 45/7/33 (30):');
 	const P = require(path.join(ROOT, 'entities', 'Player.js'));
 	const room = rooms[0];
 
@@ -5089,7 +5046,7 @@ function upgradeEconomyTests(rooms) {
 		room.XPLVL[room.XPLVL.length - 1] === room.rules.maxXp, room.XPLVL[room.XPLVL.length - 1]);
 	check('the per-stat cap is 7', P.MAX_PER_STAT === 7, P.MAX_PER_STAT);
 
-	// diep's own XP curve shape (Const/Enums.ts:301-304, plan.md P1), not a power curve merely
+	// diep's own XP curve shape (Const/Enums.ts:301-304, P1), not a power curve merely
 	// agreeing at the endpoints - ffa's own maxXp (25000) IS diep's raw 23537 (this mode's scale
 	// factor is 1.0622), so these land on diep's own published table exactly once rounded.
 	{
@@ -5130,7 +5087,7 @@ function upgradeEconomyTests(rooms) {
 	check('33 points is four maxed stats plus five spare',
 		P.pointsAtLevel(P.LEVEL_CAP) === 4 * P.MAX_PER_STAT + 5);
 
-	// The client mirrors both constants by hand (public/client/config.js) - PENDING #23's
+	// The client mirrors both constants by hand (public/client/config.js) - 23's
 	// desynchronisation risk. Read the file rather than the module: it is a browser script.
 	const cfg = fs.readFileSync(path.join(ROOT, 'public', 'client', 'config.js'), 'utf8');
 	const mirrored = (k) => {
@@ -5158,14 +5115,14 @@ function upgradeEconomyTests(rooms) {
 }
 
 /*
-	rejectSample() (plan.md WP-SPAWN, PENDING #25): the old spawnPoint()/Objects placement loops
+	rejectSample() (WP-SPAWN, 25): the old spawnPoint()/Objects placement loops
 	were `while (1)`, unsatisfiable and thus a sim-thread hang on a small enough map. "Does it
 	terminate" can't be asserted directly - a regression would hang the suite instead of failing
 	it - so this pins the cap and the fallback with an explicit small `tries`, which can never hang
 	regardless of the implementation.
 */
 /*
-	Arena size and shape density (PENDING #19, plan.md step 6).
+	Arena size and shape density (19, step 6).
 
 	The load-bearing claim of that step is that diep's two published formulas -
 	AL = floor(sqrt(N_P) * 50) gu and 12.5 * N_P shapes - compose to a CONSTANT density of one
@@ -5176,7 +5133,7 @@ function upgradeEconomyTests(rooms) {
 	itself shows up as a density that is no longer 200.
 */
 function arenaDensityTests(rooms) {
-	console.log('\narena size and shape density (PENDING #19):');
+	console.log('\narena size and shape density (19):');
 	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
 
 	// 1. The composition argument itself, stated as arithmetic rather than trusted from the
@@ -5191,7 +5148,7 @@ function arenaDensityTests(rooms) {
 	}
 
 	// 2. Every shipped mode actually sits at that density now. This is the step's whole point:
-	// PENDING #19 measured ours at 1 per 261 gu^2 against diep's 200.
+	// 19 measured ours at 1 per 261 gu^2 against diep's 200.
 	for (const room of rooms) {
 		const o = room.obj;
 		const total = o.sqr.max0 + o.sqr.max1 + o.tri.max0 + o.tri.max1 + o.pnt.max0 + o.pnt.max1;
@@ -5278,7 +5235,7 @@ function arenaDensityTests(rooms) {
 }
 
 function spawnSamplerTests() {
-	console.log('\nspawn sampler (plan.md WP-SPAWN):');
+	console.log('\nspawn sampler (WP-SPAWN):');
 	const room = rooms[0];   // ffa
 
 	// 1. The cap exists and the fallback returns a real, on-map point even when nothing qualifies.
@@ -5300,7 +5257,7 @@ function spawnSamplerTests() {
 	}
 
 	// 3. A map far below what used to be the ~2744-unit unsatisfiability floor neither hangs nor
-	// places you off it. Kept as-is after plan.md step 6 removed that floor (the radii scale with
+	// places you off it. Kept as-is after step 6 removed that floor (the radii scale with
 	// the arena now, checks 8/9 below): this drives spawnPoint() with the map moved but nestScale
 	// left where it was, i.e. deliberately the OLD absolute-radii shape, so the cap-and-fallback
 	// guarantee is still tested against an unsatisfiable configuration rather than only against
@@ -5345,7 +5302,7 @@ function spawnSamplerTests() {
 	}
 
 	// 6. 'bull' placement (direct polar sampling, not rejection) lands in diep's own Crasher Zone
-	// annulus now (630..1249 units x nestScale, plan.md S2 - was a fixed 650..700 ring, under half
+	// annulus now (630..1249 units x nestScale, S2 - was a fixed 650..700 ring, under half
 	// diep's own zone width).
 	{
 		const before = room.INSTANCE.objs.size;
@@ -5360,10 +5317,10 @@ function spawnSamplerTests() {
 			}));
 	}
 
-	// 7. entities/Objects.js's own carve-outs (PENDING #28) rode the same x1.4 grid rescale as
+	// 7. entities/Objects.js's own carve-outs (28) rode the same x1.4 grid rescale as
 	// spawnKeepOut()'s. Captured off a stub room rather than inferred from where shapes land, so a
 	// regression names the wrong number instead of showing up as a density drift nobody can see.
-	// The stub carries a nestScale now (PENDING #19, plan.md step 6) because the real contract has
+	// The stub carries a nestScale now (19, step 6) because the real contract has
 	// one - at ffa's own scale of 1 every figure below is exactly what it was before that step.
 	const carveProbe = (nestScale, map) => {
 		const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
@@ -5391,8 +5348,8 @@ function spawnSamplerTests() {
 			!!seen && seen.inset === 280, seen && seen.inset);
 	}
 
-	// 8. The carve-outs are a fixed FRACTION of the arena now, not an absolute (PENDING #19,
-	// plan.md step 6) - which is what retires this file's own "unsatisfiable below ~2744 units"
+	// 8. The carve-outs are a fixed FRACTION of the arena now, not an absolute (19,
+	// step 6) - which is what retires this file's own "unsatisfiable below ~2744 units"
 	// failure mode at the source rather than by clamping. Probed at half ffa's scale: every radius
 	// and the edge inset all halve together, so the placement picture is geometrically similar.
 	{
@@ -5427,13 +5384,13 @@ function spawnSamplerTests() {
 }
 
 /*
-	Crasher chase (plan.md S1): before this pass a Crasher saw under half of diep's own range and,
+	Crasher chase (S1): before this pass a Crasher saw under half of diep's own range and,
 	once it found something, pulled toward it at ~26x too slow to ever threaten a moving tank -
-	PENDING.md's own untested checklist flagged this as "confirmed unexercised" since the seeded
+'s own untested checklist flagged this as "confirmed unexercised" since the seeded
 	corpus never spawns one. Covered directly here instead.
 */
 function crasherChaseTests() {
-	console.log('\ncrasher chase (plan.md S1):');
+	console.log('\ncrasher chase (S1):');
 	const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
 	const config = require(path.join(ROOT, 'lib', 'config.js')).config;
 	const room = makeRoom('ffa');
@@ -5500,8 +5457,8 @@ function crasherChaseTests() {
 			crasher.DETEC.select === foe, crasher.DETEC.select && 'found' || 'not found');
 	}
 
-	// plan.md C12 - a Crasher's own population is the Crasher Zone annulus's share of the SAME
-	// SHAPE_DENSITY_GU2 every other shape draws from (diepcustom's ShapeManager.spawnShape():
+	// C12 - a Crasher's own population is the Crasher Zone annulus's share of the SAME
+	// SHAPE_DENSITY_GU2 every other shape draws from ( ShapeManager.spawnShape():
 	// one shared pool, classified by where the random point landed), not an independent knob -
 	// ffa's old hand-picked literal (39) never scaled with the arena and had no diep citation.
 	{
@@ -5509,8 +5466,8 @@ function crasherChaseTests() {
 			room.obj.bull.max1 !== 39 && room.obj.bull.max1 > 0, room.obj.bull.max1);
 	}
 
-	// plan.md C12 - OOB chase: a chasing Crasher gets the same config.OOB_MARGIN allowance a
-	// tank's own motion()/a chasing base drone already get (diepcustom Crasher.ts:44
+	// C12 - OOB chase: a chasing Crasher gets the same config.OOB_MARGIN allowance a
+	// tank's own motion()/a chasing base drone already get (Crasher.ts:44
 	// `canMoveThroughWalls`), so it can follow a target out past the drawn edge - and re-clamps
 	// the instant it goes idle again (no live DETEC target), so a stray drifts back inside.
 	{
@@ -5556,7 +5513,7 @@ function crasherChaseTests() {
 }
 
 /*
-	Predator zoom (plan.md C9, diepcustom TankBody.ts:338-345) - right-click locks the camera to
+	Predator zoom (C9, TankBody.ts:338-345) - right-click locks the camera to
 	a point 1500 du out along the mouse direction, latched once at press and released on mouse-up.
 	Server-side this is entities/Player.js's `zooming`/`zoomX`/`zoomY` (gated on the class's own
 	`flags.zoomAbility`, so it never fires for an ordinary class holding right-click for some other
@@ -5565,7 +5522,7 @@ function crasherChaseTests() {
 	near the locked point, not an empty view.
 */
 function predatorZoomTests() {
-	console.log('\npredator zoom (plan.md C9):');
+	console.log('\npredator zoom (C9):');
 	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
 	const room = makeRoom('ffa');
 	player(room, 0).destroy = 1;
@@ -5642,12 +5599,11 @@ function predatorZoomTests() {
 }
 
 /*
-	The broad phase (plan.md WP4.5.4): the insert()/queryCircle() rewrite is what the rest of the
-	pass's speed-up depends on, so it is verified directly here rather than trusted - "queryCircle
-	agrees with a brute-force scan" is the one test that makes every other 4.5.4 change safe.
+	The broad phase : the insert()/queryCircle() rewrite is what the rest of the
+	quadtree rewrite: queryCircle must match brute-force scan (guards the rest of collision perf work).
 */
 function broadPhaseTests() {
-	console.log('\nquadtree broad phase (plan.md WP4.5.4):');
+	console.log('\nquadtree broad phase:');
 	const quadTree = require(path.join(ROOT, 'lib', 'quadTree.js'));
 	const SlotMap = require(path.join(ROOT, 'lib', 'SlotMap.js'));
 
@@ -5704,7 +5660,7 @@ function broadPhaseTests() {
 	}
 
 	// SlotMap's ascending-order guarantee survives the sorted-key cache across an add/delete/add
-	// churn cycle (plan.md WP4.5.4).
+	// churn cycle.
 	{
 		const sm = new SlotMap();
 		for (let i = 0; i < 10; i++) { sm.add((id) => ({ id })); }
@@ -5732,13 +5688,13 @@ function broadPhaseTests() {
 }
 
 /*
-	KIND.WALL (plan.md Step 12) - rectangular walls, circle-vs-AABB collision, bullet-kill on
+	KIND.WALL - rectangular walls, circle-vs-AABB collision, bullet-kill on
 	contact. No Maze room exists in this suite (mazeTests() below drives the real generator), so
 	these are direct-collision tests against a hand-built rectangle - the same pattern Tag's own
 	Arena Closer tests (#28) use above for the same reason (arenaTests's closer.collision() calls).
 */
 function wallTests() {
-	console.log('\nwalls (plan.md Step 12):');
+	console.log('\nwalls:');
 	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const constants = require(path.join(ROOT, 'lib', 'constants.js'));
 	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
@@ -5815,7 +5771,7 @@ function wallTests() {
 	}
 
 	// ---- an ordinary bullet/trap/drone is destroyed outright on contact, no bounce, no pene
-	//      drain (diepcustom Object.ts:297-300: anything with an owner dies) -----------------
+	//      drain (Object.ts:297-300: anything with an owner dies) -----------------
 	// A Bullet's own constructor default size is 10 (not the tank's 25 above), so the contact
 	// point is planned against that: closest point (50,0), centre (57,0) -> dist 7 < size(10).
 	{
@@ -5865,7 +5821,7 @@ function wallTests() {
 	}
 
 	// ---- an Arena Closer's own bullet passes through a wall the same way the closer tank does,
-	//      even in real contact (diep_wiki, PENDING #26/#28) --------------------------------
+	//      even in real contact ---------------------------------------------------
 	{
 		const b = new Bullet({ GM: room.gm, sId: room.id, oId: -1 }, 57, 0, Math.PI, 0.5, 40, room);
 		b.closer = 1;
@@ -5888,7 +5844,7 @@ function wallTests() {
 
 /// Necromancer //////////////////////////////////////////////////////////////
 function necromancerTests() {
-	console.log('\nnecromancer (issues.md):');
+	console.log('\nnecromancer:');
 	const Player = require(path.join(ROOT, 'entities', 'Player.js'));
 	const Objects = require(path.join(ROOT, 'entities', 'Objects.js'));
 	const KIND = require(path.join(ROOT, 'public', 'SHARE', 'kinds.js'));
@@ -5913,7 +5869,7 @@ function necromancerTests() {
 
 	// A live square, touched by an ordinary (non-god) Necromancer: spawns a type-3 drone and
 	// consumes one square, through the real pair loop (rooms/Room.js's step()), not a hand-driven
-	// collision() call - this is the path issues.md called "completely broken", so it has to be
+	// collision() path for necromancer squares must apply damage through the real pair loop.
 	// proven at the same level a real game tick would exercise it.
 	{
 		const room = makeRoom('ffa');
@@ -5928,7 +5884,7 @@ function necromancerTests() {
 		check('...and the drone counter actually moved', p.droneCount === 1, p.droneCount);
 	}
 
-	// issues.md: "necromancer in god mode is unable to convert squares into drones. they should
+	// "necromancer in god mode is unable to convert squares into drones. they should
 	// be able to." The square's own collision() (entities/Objects.js) claims itself against ANY
 	// necromancer contact regardless of the attacker's god flag, so without claimSquare() being
 	// called from the god-mode branch the square would vanish with nothing to show for it.
@@ -5946,7 +5902,7 @@ function necromancerTests() {
 			sq.destroy > 0, sq.destroy);
 	}
 
-	// issues.md: beige ("necro" colour 9) outside a team mode, the player's OWN team colour inside
+	// beige ("necro" colour 9) outside a team mode, the player's OWN team colour inside
 	// one - not the flat 9 every mode used to get.
 	{
 		const ffaRoom = makeRoom('ffa');
@@ -5966,7 +5922,7 @@ function necromancerTests() {
 }
 
 /// Overseer/Overlord drone batching /////////////////////////////////////////
-// issues.md: "overseer and overlord should try to spawn drones symmetrically at a time until
+// "overseer and overlord should try to spawn drones symmetrically at a time until
 // impossible, like overlord should spawn 4 at a time until the very last batch, overseer is 2 at
 // a time, etc." Every barrel of either class shares one reload/offTime, so they become ready on
 // the exact same real tick and shoot()'s per-barrel drone-cap check (evaluated barrel-by-barrel
@@ -5975,7 +5931,7 @@ function necromancerTests() {
 // nothing pinned it either, so a future edit to shoot()'s cap/offTime handling has something to
 // break against.
 function droneBatchTests() {
-	console.log('\ndrone batching (issues.md - Overseer 2 at a time, Overlord 4):');
+	console.log('\ndrone batching (Overseer 2 at a time, Overlord 4):');
 	const room = makeRoom('ffa');
 	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
 	for (const [clsName, want] of [['Overseer', [2, 2, 2, 1]], ['Overlord', [4, 4]]]) {
@@ -6205,7 +6161,7 @@ function factoryTests() {
 	const deg = (b) => Math.round(b.dir * 180 / Math.PI + 360) % 360;
 	const degShow = (b) => Math.round(b.showDir * 180 / Math.PI + 360) % 360;
 
-	// diep_wiki Attract: beyond the 16-square focus, close in; inside it, orbit (not ram); too
+	// Attract (mouseL): beyond focus radius, close in; inside band, orbit; too close, back off.
 	// close, back toward the ring. `showDir` (aim/fire direction) stays fixed at the cursor
 	// through all three zones - only `dir` (movement) changes.
 	p.inputs.mouseL = 1; p.inputs.mouseR = 0;
@@ -6218,7 +6174,7 @@ function factoryTests() {
 	check('an ordinary (non-Minion) drone type still just rams the cursor at any distance',
 		(() => { const b = new Bullet(p.id, World.gu(10), 0, 0, 0, 0, room); b.type = 1; b.team = p.team; b.class = 'Factory'; b.maxspeed = 1; b.update(); return deg(b); })() === 180);
 
-	// diep_wiki Repel: the same three movement zones as Attract, but the aim is flipped to face
+	// Repel (mouseR): same three zones as Attract; showDir faces away (reversed spiral in band).
 	// away from the cursor - which turns the mid-band orbit into the OPPOSITE rotational sense
 	// (a reversed spiral) and the inner zone into a star formation that moves in while aiming out.
 	p.inputs.mouseL = 0; p.inputs.mouseR = 1;
@@ -6561,11 +6517,11 @@ function autoTurretMultiTargetTest() {
 
 /*
 	Defender geometry re-derivation (this session). Both halves of the Defender are pinned here
-	against diepcustom's OWN raw numbers, not against each other - the failure this catches is a
+	against  OWN raw numbers, not against each other - the failure this catches is a
 	drift back onto the 0.7 barrel axis (the "stub wayyy too long" + "oversized" report) or the
 	loss of the turret base circle / above-body draw.
 
-	The anchoring facts, straight from diepcustom (external to this tree):
+	The anchoring facts, straight from (external to this tree):
 	  - Defender.ts:            physicsData.size = DEFENDER_SIZE(150) * sqrt(1/2); scaleFactor
 	                            never touched -> stays 1, so every barrel dim is raw du.
 	  - Defender.ts:            turret mount `size * offset`, offset = 60/(150*sqrt(1/2)) -> 60 du.
@@ -6652,7 +6608,7 @@ function defenderGeometryTests() {
 }
 
 /*
-	Summoner boss geometry, same axis as defenderGeometryTests above. Anchored to diepcustom
+	Summoner boss geometry, same axis as defenderGeometryTests above. Anchored to reference
 	Summoner.ts / SummonerSpawnerDefinition (scaleFactor 1, SUMMONER_SIZE 150 du).
 */
 function summonerGeometryTests() {

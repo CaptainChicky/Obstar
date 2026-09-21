@@ -1,13 +1,9 @@
 /*
-	Fixed-timestep clock tests (HANDOFF 8.8).
+	Fixed-timestep clock tests for lib/clock.js.
 
-	lib/clock.js replaced the `setTimeout(update, 20)` chain each room re-armed for itself. The
-	properties that matter are the ones the chain did not have, and none of them are visible to
-	the other suites: rooms tick at an average of exactly the step regardless of how long a
-	step takes, a long stall is discarded rather than repaid as a burst, and a room that
-	removes itself mid-step does not corrupt the iteration.
-
-	Everything here drives an isolated Clock instance rather than the shared one the rooms use.
+	Asserts: steps track wall time under jitter, long stalls are capped not replayed as bursts,
+	self-removal mid-step does not skip other targets, and a removed room does not corrupt iteration.
+	Uses isolated Clock instances, not the shared production clock.
 
 		node test/clock.js
 */
@@ -78,9 +74,7 @@ console.log('\nself-removal mid-step:');
 
 console.log('\ncatch-up and drift:');
 {
-	// THE BUG. The old chain re-armed with a flat setTimeout(20) after doing the work, so a
-	// step that cost real time pushed the next one out by that much, every time, and the
-	// simulation quietly ran slow. The accumulator repays the overrun instead.
+	// Flat setTimeout(stepMs) after work drifts slow under load; the accumulator repays overrun.
 	const s = scripted(20, 5);
 	const target = counter();
 	s.clock.add(target);

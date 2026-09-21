@@ -1,22 +1,8 @@
 /*
-	The client, actually running.
+	Boots public/client/ under test/clientDom.js with real GameUpdate bytes from rooms or synthetics.
 
-	Every other suite here stops at the socket. This one boots public/client/ against the
-	stub DOM in test/clientDom.js, hands it real GameUpdate packets encoded from a real room,
-	and runs its render loop - so for the first time in this repo the drawing code is executed
-	by something other than a person with a browser open.
-
-	It exists because the two bugs a player reported - bullets that crawl for half a second
-	after you fire, and a camera that slides off the tank while you move - are both purely
-	client-side, and both were invisible to a suite that only ever looked at bytes. What is
-	asserted here is what those bugs looked like:
-
-		- a bullet is drawn moving at its real speed as soon as it can be, not accelerating up
-			to it (public/motion.js, and test/interp.js for the arithmetic in isolation)
-		- the camera is exactly on the player's tank on every frame, at every speed
-
-	plus the things that must simply not happen at all: nothing non-finite reaching a canvas
-	transform, and no throw from any entity's update() or draw().
+	Covers render-loop behaviour smoke cannot see: bullet/camera motion, muzzle sync, dead reckoning,
+	stat panel, sprite bounds, heartbeat on plain close. Also guards non-finite transforms and throws.
 
 		node test/client.js
 */
@@ -33,22 +19,14 @@ function check(name, ok, detail) {
 }
 function near(a, b, tol) { return Math.abs(a - b) <= tol; }
 
-// Read from config rather than restated, so retuning the send rate cannot leave this
-// harness quietly measuring a rate nobody runs - which it did, at 30ms against a 33ms
-// server. public/motion.js seeds its interval estimate at the same number, so a harness
-// that disagrees also puts the render delay a couple of ms out for the first few seconds.
+// Packet/frame timing from config.SEND_MS (must match motion.js interval seed).
 const TICK = require('../lib/config.js').config.SEND_MS;   // ms between packets
 const FPP = 2;         // render frames per packet...
 const FRAME = TICK / FPP;  // ...so the frame clock and the packet clock advance together.
 // The stub advances its clock inside frame(); delivering a packet
 // does not advance it, so packet spacing is FPP*FRAME exactly.
 
-/*
-	A GameUpdate carrying one player and, optionally, one bullet at positions we choose, so the
-	test can say exactly where things should be drawn. Assembled the same way rooms/Room.js
-	assembles one: entity records are encoded individually into `instances` (that is the
-	per-tick cache the room keeps on each entity) and the message encoder splices them in.
-*/
+/* Synthetic GameUpdate: main player plus optional bullet/other instance records. */
 function packet(t, user, bullet, other) {
 	const buff = {
 		head: {
@@ -65,14 +43,9 @@ function packet(t, user, bullet, other) {
 	};
 	if (bullet) {
 		buff.instances.push(new Int8Array(PROTO.encode('Instance', {
-			// states[1] is the `mine` bit - the server saying this bullet is the receiving
-			// player's own, which is what puts it in the local tank's reference frame on the
-			// client (public/client/entities.js, Bullet.update()).
+			// states[1] = mine (own bullet, local tank frame).
 			construc: 'Bullets', id: 7,
-			// states[0] is the `pet` bit and `type` distinguishes an ordinary bullet (0) from a
-			// drone/trap (>= 1) - both decide whether the bullet is dead-reckoned or interpolated
-			// (public/client/entities.js, Bullet.reckonMs()). Default 0/absent = ordinary bullet,
-			// which is what every test written before dead reckoning existed wants.
+			// states[0] = pet; type 0 = ordinary bullet (dead-reckoned), >=1 drone/trap (interpolated).
 			states: [bullet.pet ? 1 : 0, bullet.mine ? 1 : 0, 0, 0, 0, 0, 0],
 			type: bullet.type || 0, color: 0,
 			x: bullet.x, y: bullet.y, size: 10, alpha: 1, dir: 0
@@ -133,18 +106,9 @@ console.log('\nreal packets from a real room:');
 		app.record.badTransform + ' transforms, ' + app.record.badTranslate + ' translates');
 }
 
-console.log('\nthe camera trails the tank (WP2), and aim corrects for it:');
+console.log('\nthe camera trails the tank, and aim corrects for it:');
 {
-	/*
-		The camera used to be pinned exactly on the tank (worst === 0). It now trails by
-		CONST.CAM_SMOOTH on purpose - a dead-centre camera reads as sterile, and diep.io has the
-		same small chase - which is only safe because General.tankOff() lets aim (and the
-		upgrade-panel UI in public/client/ui.js) correct for however far off centre the tank
-		actually is. This retargets the old "camera sits exactly on the tank" assertion at the
-		real camera (camx/camy): the trail must be bounded and speed-proportional, converge to
-		zero once the tank stops, and the aim vector must still land on zero from dead centre
-		regardless of how far the camera has trailed.
-	*/
+	// Camera lags by CAM_SMOOTH; aim uses tankOff() from the drawn tank, not window centre.
 	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
 	const hook = a.start(packet(1, { x: 0, y: 0 }));
 	check('the client hands over from the connecting screen to the game loop', !!hook);
@@ -214,12 +178,7 @@ console.log('\nthe camera trails the tank (WP2), and aim corrects for it:');
 
 console.log('\na bullet moves at its real speed from the start:');
 {
-	/*
-		THE BUG a player reported. With the old smoother a bullet was drawn accelerating from a
-		standstill over roughly half a second before it reached the speed the server had already
-		given it. Here the bullet's drawn position is read frame by frame and compared against
-		the speed the packets describe.
-	*/
+	// Drawn bullet speed must match packet velocity from the second interval on (no long ramp-up).
 	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
 	const Instances = a.start(packet(1, { x: 0, y: 0 })).Instances;
 
@@ -261,23 +220,8 @@ console.log('\na bullet moves at its real speed from the start:');
 
 console.log('\nyour own bullet leaves the muzzle, even strafing across your own aim:');
 {
-	/*
-		THE OTHER BUG a player reported, and the one this file could not see before: firing while
-		moving hard sideways, the bullet appeared to come out of empty space beside the tank
-		rather than out of the barrel.
-
-		The server spawns a bullet at the *server's* tank position plus the barrel offset. The
-		client draws the tank somewhere else - that same server position plus `predic`, the local
-		input lead - so a bullet is born `predic` away from the muzzle it is supposed to have come
-		out of. It used to be papered over by drawing own bullets one packet interval further into
-		the future, which can only ever slide a bullet along its own velocity; strafing puts the
-		entire error perpendicular to that, so none of it was cancelled.
-
-		Set up exactly that: the tank strafing along +x under real held input, firing along +y.
-		The bullet is placed where the server would put it - the tank's server position plus a
-		barrel length in +y - and what is asserted is that it is *drawn* on the drawn tank's
-		muzzle, which is the only place a player can see.
-	*/
+	// Server spawn uses authoritative tank pos; client draws tank at pos+predic. Own bullet must
+	// weld to the drawn muzzle while strafing, then hand off to interpolation without a jump.
 	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
 	const hook = a.start(packet(1, { x: 0, y: 0 }));
 	const User = hook.User, Global = hook.Global, Insts = hook.Instances;
@@ -294,18 +238,7 @@ console.log('\nyour own bullet leaves the muzzle, even strafing across your own 
 		for (let f = 0; f < FPP; f++) { a.frame(FRAME); }
 	}
 	const lead = Math.hypot(User.predic.x, User.predic.y);
-	/*
-		The lead is DERIVED now (PENDING #24a): (render delay + RTT/2) x the tank's own predicted
-		speed, where it used to be whatever the integrator settled on under a flat CONST.SIZE*2
-		ceiling that never bound. Two things make the honest number here ~4.5 units rather than the
-		~12 that ceiling used to allow: the stub socket never echoes a probe, so NET.rtt is 0 and
-		the delay is the render interval alone; and 20 packets is under one time constant of the
-		velocity integrator, so this tank is still accelerating and is genuinely owed less lead
-		than a tank at top speed.
-
-		So this asserts the derivation is what is in force, rather than a magic number that only
-		described the old uncapped behaviour - a strictly tighter check than `lead > 10` was.
-	*/
+	// predic lead = NET.leadMs() * speed; stub has rtt 0 and tank still accelerating here (~4.5u).
 	const M = a.sandbox.MOTION;
 	const derived = M.NET.leadMs() * Math.hypot(User.predic.vx, User.predic.vy) / M.REF_TICK;
 	check('the tank has a real input lead to be wrong about',
@@ -340,11 +273,7 @@ console.log('\nyour own bullet leaves the muzzle, even strafing across your own 
 	check('...which is a visibly different place from the raw server spawn point',
 		apart > 10, apart.toFixed(1) + ' units apart - the size of the bug');
 
-	// Now the shot proper. The bullet flies +y only: it does not inherit the tank's sideways
-	// velocity (neither does diep's, nor arras.io's - see the extraBoost in its gun.js, which
-	// projects onto the firing direction and clamps at zero), so the tank strafes out from
-	// under it and the two separate. What must not happen is a jump when the bullet's own
-	// interpolation takes over from the muzzle ride on the second snapshot.
+	// Bullet velocity is along aim only; tank strafes away. No jump when muzzle weld ends.
 	// The offset it is holding as it leaves - the whole of the error being corrected. Read it
 	// here, before the decay has had any frames to work on it.
 	const held = Math.hypot(b.lead.x, b.lead.y);
@@ -383,10 +312,7 @@ console.log('\nyour own bullet leaves the muzzle, even strafing across your own 
 	check('the offset decays instead of riding along forever',
 		held > 3 && now < held * 0.2, held.toFixed(1) + ' -> ' + now.toFixed(1) + ' units');
 
-	// The other half of PENDING #24(b): once the weld offset is mostly gone, an own bullet's
-	// dead-reckon lead (ramped in on the same clock, in the opposite direction - see
-	// reckonMs()/reckonRamp) should have closed most of the way to what any other bullet gets.
-	// This is what "closing the gap" actually means, not just "no jump getting there".
+	// After weld decays, own bullet reckonMs() should ramp toward full dead-reckon lead.
 	const full = Math.min(M.NET.leadMs(), M.NET.interval * hook.CONST.DEAD_RECKON_MAX_INTERVALS);
 	check('...and by then its own dead-reckon lead has ramped up to about what any other bullet gets',
 		near(b.reckonMs(), full, full * 0.05),
@@ -397,25 +323,8 @@ console.log('\nyour own bullet leaves the muzzle, even strafing across your own 
 
 console.log('\ninput prediction reaches the same steady-state lead at any frame rate:');
 {
-	/*
-		THE BUG PENDING #24 measured: game.js used to scale its per-tick accel by tickLen once
-		instead of tickLen^2, so the steady-state `predic` lead grew with the frame rate instead
-		of staying put - 24 units at 30fps, 54 at 60, 70 (capped) at 144, all chasing the same
-		server truth (284 u/s when this was measured; 362.25 since plan.md step 2 took the tank
-		magnitudes to diep's - the bug and this test are both about the frame-rate dependence, not
-		about the speed). That is a ~3x runaway that saturates at CONST.SIZE*2.
-
-		public/SHARE/Physics.js's stepBody fixes the dimension, but a large per-frame `dtTicks`
-		(30fps takes one whole reference tick in a single Euler step) vs a small one (144fps takes
-		~0.2 of a tick, four times finer) still do not integrate to bit-identical answers - that is
-		ordinary step-size discretization error, bounded and independent of frame rate once you're
-		past a couple of time constants (the tank FRICTION's time constant is ~17 real ticks at
-		10/11, where it was ~36 at 0.956532 - heavier drag settles the transient FASTER, so this
-		assertion got more headroom, not less), not the old
-		unbounded, cap-hitting divergence. Measured empirically at ~15% end to end across 30-144fps
-		once settled; the assertion below is deliberately looser than that measurement so it fails
-		on a regression of the old bug's magnitude (~3x), not on this residual.
-	*/
+	// Steady-state input predic must not scale ~3x between 30 and 144 fps (Physics stepBody dt^2).
+	// Residual discretization across frame rates is bounded; tolerance is loose vs ~15% measured spread.
 	function steadyLead(frameMs) {
 		const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
 		const hook = a.start(packet(1, { x: 0, y: 0 }));
@@ -443,16 +352,7 @@ console.log('\ninput prediction reaches the same steady-state lead at any frame 
 
 console.log('\na new entity is complete on the packet that introduces it:');
 {
-	/*
-		Creating an entity used to be an `else` against the block that applies a packet's fields,
-		so on its first packet an entity got only its four constructor arguments. That was
-		survivable only because SetPacket had a second bug - it iterated the whole instance list
-		three times per packet, and passes two and three found the entity already there and
-		filled it in. Fixing the wasteful loop made the incomplete-entity bug reachable: a tank
-		spent a packet interval holding the constructor's placeholder class, which is not a class
-		TanksConfig knows, so drawTank returned undefined and Tank.draw threw on it - taking the
-		whole render loop down, from one entity appearing.
-	*/
+	// First packet for a new entity must apply full instance fields (class etc.), not ctor placeholders only.
 	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
 	const hook = a.start(packet(1, { x: 0, y: 0 }));
 	const TC = a.sandbox.TanksConfig;
@@ -478,19 +378,9 @@ console.log('\na new entity is complete on the packet that introduces it:');
 		a.record.badTranslate);
 }
 
-console.log('\nthe upgrade panel draws diep\'s real per-stat caps (plan.md C2/C3):');
+console.log('\nthe upgrade panel draws correct per-stat caps:');
 {
-	// ui.js:1124 used to pass `CLASS[User.class].statMax || 6` - every class without its own
-	// statMax array (i.e. every non-smasher-line class) fell through to a hardcoded 6-segment
-	// panel instead of CONST.MAX_PER_STAT (7). Basic has no statMax override, so it is exactly
-	// the class this bug hit.
-	//
-	// Separately (C3), TanksConfig's client table never carried `statMax` at all for Smasher/
-	// Landmine/Spike/Auto Smasher, so their panels always fell back to a uniform 7 regardless of
-	// diep's real 0/10 split; and where it WAS read, `STATES.up[wireIdx]` indexed a panel-row-
-	// ordered array with a wire-ordered index (statCap()'s own fix), silently pulling the wrong
-	// row's cap for any class whose caps actually differ - invisible on a uniform-cap class,
-	// which is every class but these four.
+	// Basic uses CONST.MAX_PER_STAT (7); smasher-line uses per-stat statMax (0/10 split).
 	function classPacket(t, cls, still) {
 		return PROTO.encode('GameUpdate', {
 			head: { timestamp: t, width: 8000, height: 8000, screen: 1920, xp: 500, level: 5, still: still || 0, cLvl: 0 },
@@ -567,18 +457,9 @@ console.log('\na possessed Dominator hides its stat panel entirely:');
 	CLIENT.Global.inputs.m = 0;
 }
 
-console.log('\nsmasher-line bodies never rotate - only their guards do (plan.md C7):');
+console.log('\nsmasher-line bodies never rotate - only their guards do:');
 {
-	// Smasher/Landmine/Spike have no cannons/turrets at all (Drawings.guards spins on its own
-	// Date.now() clock, never reading param.dir; Drawings.body[0], the plain circle, never calls
-	// ctx.rotate). Auto Smasher's one embedded turret rotates through its own live `canDir`
-	// (Drawings' auto-turret branch), not `param.dir` either - diep's auto-turrets aim
-	// independently of hull facing. So for all four, the canvas-op sequence a render produces
-	// must be identical regardless of what `dir` is passed - a regression (dir baked into the
-	// body, or the whole cached sprite rotated as a unit) would change it.
-	// deterministic: true freezes Date.now() to the sandbox's own frame clock - guards() reads it
-	// for their independent spin phase, and without this two renders a real clock-tick apart
-	// would legitimately differ on THAT, not on dir, and falsely fail this check.
+	// Hull draw must not depend on param.dir; deterministic clock freezes guard spin phase.
 	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' }, { recordOps: true, deterministic: true });
 	a.start(packet(1, { x: 0, y: 0 }));
 	a.frame(FRAME);
@@ -603,25 +484,10 @@ console.log('\nsmasher-line bodies never rotate - only their guards do (plan.md 
 	}
 }
 
-console.log('\nan incoming bullet is dead-reckoned, a drone is not (PENDING #24b):');
+console.log('\nan incoming bullet is dead-reckoned, a drone is not:');
 {
-	/*
-		THE REMAINING HALF of PENDING #24. Every entity is drawn one packet interval in the past,
-		which for an incoming bullet means it damages you before it visually arrives - an enemy
-		Destroyer shot lands ~12 units before its picture does. A non-drone bullet is the one
-		entity where that delay buys nothing, because its motion is deterministic between
-		collisions, so the client can integrate it forward instead of waiting for the next packet.
-
-		The measurement below is deliberately a COMPARISON rather than an absolute: the same flight,
-		flown twice, once as an ordinary bullet (type 0, dead-reckoned) and once as a drone (type 1,
-		which steers and must stay interpolated). The gap between the two IS the delay being
-		cancelled, so this cannot pass by both numbers happening to be equal, and it does not depend
-		on the harness's fake clock landing on any particular phase.
-
-		The stub socket never echoes a ping probe, so NET.rtt is 0 here and leadMs is the render
-		interval alone. That is the conservative half of the lead; a real connection also cancels
-		rtt/2 on top.
-	*/
+	// Compare type 0 vs type 1: ordinary bullets lead by leadMs of travel; drones stay interpolated behind.
+	// Stub socket: rtt 0, so lead is render interval only.
 	const SPEED = 36;   // bullet travel per packet
 
 	// Fly one bullet of the given wire `type` and report, at a fixed phase of the packet cycle,
@@ -730,7 +596,7 @@ console.log('\nan incoming bullet is dead-reckoned, a drone is not (PENDING #24b
 	}
 }
 
-console.log('\na Walls instance creates a client Wall entity and draws without throwing (plan.md Step 12):');
+console.log('\na Walls instance creates a client Wall entity and draws without throwing:');
 {
 	// No shipped room spawns a wall yet (no Maze room exists), so this is a hand-built packet,
 	// same as `packet()` above builds a synthetic Bullets/Players instance for its own tests.
@@ -780,13 +646,9 @@ console.log('\na Walls instance creates a client Wall entity and draws without t
 		a.record.badTransform + ' transforms, ' + a.record.badTranslate + ' translates');
 }
 
-console.log('\nevery class in the roster renders without a non-finite transform (plan.md R10 - render.js\'s setCoord, R5\'s bug, as an assertion):');
+console.log('\nevery class in the roster renders without a non-finite transform:');
 {
-	// R5's own bug (`if (config.cannons)` true for an empty array -> `middleX /=
-	// config.cannons.length` -> 0/0 -> NaN reaching ctx.translate) only showed up for classes
-	// with an empty `cannons` array and no `turrets` either (Smasher/Landmine/Spike) - a random
-	// bot roll in the "real packets from a real room" test above could easily never spawn one.
-	// This walks every class in the roster explicitly instead of hoping one comes up.
+	// Walk every class explicitly (empty cannons[] smasher-line can NaN translate).
 	const clientTanks = require('./clientTanks.js')();
 	const classNames = Object.keys(clientTanks.class);
 	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
@@ -818,27 +680,7 @@ console.log('\nevery class in the roster renders without a non-finite transform 
 
 console.log('\nno class draws outside its own sprite cache (render.js\'s setCoord vs what drawings.js actually draws):');
 {
-	/*
-		setCoord() states how far a class's silhouette reaches; drawings.js decides where the
-		silhouette actually goes. Nothing checked that those two agree, and they did not: setCoord
-		had no idea `trapLauncher` existed, so every trap barrel's arrowhead - which sits entirely
-		PAST the barrel tip - was drawn outside the offscreen canvas and cut off, in the world as
-		well as in the class picker and the death screen.
-
-		This drives drawTank down its `isOpac` branch (draw straight into a context we own, no
-		offscreen canvas) through a context that tracks the affine transform, and collects every
-		path coordinate in the tank's own body frame. Then it asserts the two radii setCoord
-		promises really do contain them:
-
-		  canSize  half the sprite canvas, measured from the hull centre - what decides clipping.
-		  mR       reach from the visual centre (mX/mY) - the radius ui.js's class picker and
-		           death screen spin the sprite about, and so the radius they size their tiles to.
-
-		Deliberately independent of setCoord's own arithmetic: it reads coordinates back out of the
-		draw calls rather than recomputing the bound a second way. Curve control points count as
-		path points, which only ever over-states the extent (a quadratic stays inside its hull), so
-		this can be too strict but never too lenient.
-	*/
+	// Every draw path point must fit setCoord's sprite half-size and UI spin radius (tracked ctx).
 	const clientTanks = require('./clientTanks.js')();
 	const a = boot({ key: '0'.repeat(25), gm: 'ffa', name: 'tester', pet: -1, ws: '' });
 	const CLIENT = a.sandbox.window.CLIENT;
@@ -924,10 +766,7 @@ console.log('\nno class draws outside its own sprite cache (render.js\'s setCoor
 
 console.log('\nheartbeat survives a plain socket close with no prior kick:');
 {
-	// reported crash: General.WS.send is not a function. Happens only when the socket
-	// closes WITHOUT  a 'kick' packet first - a kick's own cleanup path is trivial to see
-	// manually (it always shows an error screen); this race is not, so it's the one worth
-	// pinning here rather than trusting manual play to hit the exact timing.
+	// Plain socket close (no kick) must clear heartbeat and not throw on stale General.WS.send.
 	function gu(t) {
 		return PROTO.encode('GameUpdate', {
 			head: { timestamp: t, width: 8000, height: 8000, screen: 1920, xp: 500, level: 1, still: 0, cLvl: 0 },

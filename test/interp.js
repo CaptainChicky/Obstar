@@ -1,22 +1,9 @@
 /*
-	Client motion tests.
+	Unit tests for public/motion.js interpolation and NET timing.
 
-	public/motion.js is the fix for the two things a player actually reported: bullets that
-	crawl for half a second after you fire them, and a camera that slides off the tank while
-	you move. Both were the same root cause - an exponential filter chasing a moving target -
-	and both are invisible to every other suite here, because they are rendering behaviour and
-	test/smoke.js only ever looks at the bytes on the wire.
-
-	So this file drives the interpolator the way a frame loop would and asserts the properties
-	the old smoother failed: an entity moving at a constant speed is drawn moving at that same
-	constant speed, from the first frame it can be, with a bounded and *constant* lag.
-
-	Half of these are written as a direct comparison against the code that was replaced -
-	`oldSmooth()` below is the exact line that used to be in the client - because "is this
-	better" is the actual question and a bare threshold would not answer it.
-
-	motion.js is loaded with a plain require(): it ends with the same typeof(exports) sniff as
-	public/SHARE/SocketSchema.js, so Node gets the same object the browser puts on `window`.
+	Drives Interp/NET like a frame loop: constant-speed entities draw at full speed with bounded
+	lag, teleports cut, packet loss coasts, step-stamped snapshots remove send/tick sawtooth.
+	oldSmooth() reproduces the replaced exponential smoother for comparison.
 */
 const MOTION = require('../public/motion.js');
 const NET = MOTION.NET;
@@ -156,8 +143,7 @@ console.log('\nteleports and id reuse:');
 	const e = new Interp(0, 0);
 	NET.mark(1000); e.push(0, 0, 1000);
 	NET.mark(1030); e.push(12, 0, 1030);
-	// A respawn, or the entity slot being handed to a different entity - see HANDOFF "Entity
-	// storage". Interpolating across it would draw a streak over the whole map.
+	// Respawn or id reuse: interpolating across a teleport would draw a streak over the map.
 	NET.mark(1060); e.push(3000, 2000, 1060);
 	e.sample(1060);
 	check('a jump past the teleport threshold cuts instead of lerping',

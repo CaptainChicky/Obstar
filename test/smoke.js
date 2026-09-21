@@ -62,12 +62,8 @@ function protocolTests() {
 }
 
 /*
-	Decode a GameUpdate the way the browser does and sanity check the numbers in it.
-
-	The NaN guard is the point: HANDOFF.md section 5.2 describes `i.size += c.SIZE_GET_POS`
-	resolving to undefined inside a loop that shadowed the config, which poisons an entity's
-	size to NaN permanently and corrupts its collision and quadtree insertion. A NaN reaching
-	the wire is the observable symptom, so assert it never does.
+	Decode GameUpdates like the browser and sanity-check numeric fields.
+	NaN on x/y/size must never reach the wire (poisons collision/quadtree downstream).
 */
 function checkGameUpdates(buffers) {
 	let decoded = [], failure = null;
@@ -234,16 +230,8 @@ function serverTests(gamemode, port, done) {
 }
 
 /*
-	Regression: a same-IP connection past config.MAX_IP (2) used to crash the whole process, not
-	just get kicked. loop()'s constructor calls this.gameloop() before the caller's
-	`socket.main = new loop(socket)` assignment runs, so a kick fired reentrantly from that first
-	call (clients[id] already 'ERR_DOUBLE_IP', set synchronously since the DB is off by default)
-	found `socket.main` still undefined and never zeroed `run` - the kicked socket's loops stayed
-	armed after controller.disconnect() deleted its clients[] entry, and the next fire's
-	getBuffer() returned the string 'Waiting', which reached talk()'s encode() call and crashed
-	reading '.head.timestamp' off it. A real third connection from the same machine reproduces the
-	whole chain directly, so this drives it against a real forked server rather than unit-testing
-	the fix in isolation.
+	Third connection from the same IP (past MAX_IP) must kick without crashing the server.
+	Reentrant kick before socket.main is assigned left zombie timers that could encode 'Waiting'.
 */
 function doubleIpTest(port, done) {
 	console.log('\ndouble-IP kick does not crash the server:');

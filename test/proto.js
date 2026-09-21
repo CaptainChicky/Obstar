@@ -1,19 +1,9 @@
 /*
-	Wire protocol tests.
+	Wire protocol tests for public/SHARE/SocketSchema.js.
 
-	Three things need pinning after the §8.6 rewrite of public/SHARE/SocketSchema.js:
-
-	1. The bytes did not move. The hex vectors below were captured from the pre-refactor,
-		 hand-rolled encoder (commit cadf192) and are compared literally. If a schema edit ever
-		 changes the wire, these fail first and loudly - which matters because the client is a
-		 3241-line file nobody wants to re-verify by hand.
-	2. The encoder sizes itself. Callers used to pass a byte count they computed themselves
-		 (`ENC.init(37+name.length*2+canDir.length*2)`); too small truncated the packet silently,
-		 too large appended zeroes the client decoded as phantom entities. The sizes are now
-		 derived here, independently of the encoder, and compared.
-	3. checkLength actually checks. It used to be `min<=data<=max`, which JavaScript parses as
-		 `(min<=data)<=max` - true for everything, so nothing was ever validated. These tests are
-		 the first thing in the repo's history to assert that a malformed packet is refused.
+	1. Golden hex vectors — wire format must not drift silently.
+	2. Encoder output length matches schema-derived sizes (no phantom trailing entities).
+	3. Malformed packets are refused (checkLength bounds).
 
 		node test/proto.js        (npm test runs this first)
 */
@@ -49,15 +39,10 @@ const KEY = '0'.repeat(25);
 
 /// 1. the wire has not moved ///////////////////////////////////////////////////
 /*
-	Captured from the hand-rolled implementation this replaced. Read them as
-	[type byte][payload]: 'keydown w' is 0x02 0x01, and so on.
-
-	'ping' is the one vector that has deliberately moved off the pre-refactor capture: it used to
-	be a bare 0x06 and now carries a probe byte (PENDING #24a), so 0x06 0x00 is the heartbeat and
-	0x06 0x01 the RTT probe the server echoes verbatim.
+	Golden bytes as [type][payload]. ping carries a probe byte: 0x06 0x00 heartbeat, 0x06 0x01 RTT probe.
 */
 function golden() {
-	console.log('wire format (vectors from the pre-refactor encoder):');
+	console.log('wire format (golden vectors):');
 	const cases = [
 		['init', client.encode('init', { key: KEY, gm: 'ffa', name: 'ab', pet: -1 }),
 			'001930303030303030303030303030303030303030303030303030000200610062ff'],
@@ -77,21 +62,16 @@ function golden() {
 		['UpdateUp', server.encode('UpdateUp', [1, 2, 3]), '0803010203'],
 		['comResponse', server.encode('comResponse', ['ab']), '0c01026162'],
 		['chatUpdate', server.encode('chatUpdate', [['bo', 'hi']]), '0e02020062006f0200680069'],
-		// plan.md C5/S4 - `dir` appended (a shape's own server-authoritative facing), +2 bytes.
+		// Objects Instance includes server `dir` (int16).
 		['Instance (Objects)', server.encode('Instance', {
 			construc: 'Objects', id: 17, states: [0, 1, 0, 0, 0, 0, 0], shape: 'sqr',
 			hp: 0.75, x: -100.5, y: 250.125, size: 40, alpha: 1, dir: 0.5
 		}), '010011a000bfc2c90000437a200042200000ff145f'],
-		// Rectangular now (plan.md Step 12): no hp/color/states, just the geometry - construc 3,
-		// id 5, then x/y/w/h as raw float32 (x/y match the Objects vector above, so the head
-		// matches it byte for byte; w/h are the two new trailing float32s).
+		// Walls Instance: construc 3, id, x/y/w/h float32 only.
 		['Instance (Walls)', server.encode('Instance', {
 			construc: 'Walls', id: 5, x: -100.5, y: 250.125, w: 40, h: 25
 		}), '030005c2c90000437a20004220000041c80000'],
-		// UiUpdate's three array-count fields (leader/map/mess) moved uint8 -> uint16 (PENDING #26):
-		// Maze's wall dots can push a room's live UiUpdate.map array past 255 once combined with
-		// player dots, and a truncated uint8 count desyncs the rest of the packet instead of
-		// failing loudly - see the comment at TYPE.UiUpdate.array. +1 byte per count, three counts.
+		// UiUpdate array counts are uint16 (large minimap dot lists).
 		['UiUpdate', server.encode('UiUpdate', {
 			leader: [{ xp: 100, name: 'bo', nameC: 0, team: 1 }], map: [], mess: ['hi']
 		}), '0a000100000064020062006f0001000000010200680069'],
@@ -136,25 +116,20 @@ const aBullet = {
 	construc: 'Bullets', id: 900, states: [1, 0, 0, 0, 0, 0, 0], type: 3, x: 5.5, y: 6.5,
 	size: 12, color: 9, alpha: 0.9, dir: -3
 };
-// Rectangular now (plan.md Step 12): just the geometry, no hp/color/states.
 const aWall = {
 	construc: 'Walls', id: 42, x: -250.5, y: 999.25, w: 120, h: 60
 };
 
 function sizes() {
 	console.log('\nself-sizing encoder:');
-	// The three constants rooms/Room.js used to carry by hand, now nobody's job.
-	// +2 bytes for `ringDir` (int16), added alongside `dir`.
+	// Instance record sizes (+2 for ringDir on Players).
 	check('a Players record is 39 + name*2 + canDir*2 bytes',
 		server.encode('Instance', aPlayer).length === 39 + aPlayer.name.length * 2 + aPlayer.canDir.length * 2,
 		server.encode('Instance', aPlayer).length);
-	// plan.md C5/S4 - +2 bytes for the new `dir` field (int16).
 	check('an Objects record is 21 bytes', server.encode('Instance', anObject).length === 21,
 		server.encode('Instance', anObject).length);
 	check('a Bullets record is 21 bytes', server.encode('Instance', aBullet).length === 21,
 		server.encode('Instance', aBullet).length);
-	// Rectangular now (plan.md Step 12): 3 (CONSTRUCTOR + id) + 4 float32 fields, no
-	// hp/color/states.
 	check('a Walls record is 19 bytes', server.encode('Instance', aWall).length === 19,
 		server.encode('Instance', aWall).length);
 
@@ -178,8 +153,7 @@ function sizes() {
 	check('a GameUpdate is exactly its head + own tank + entities', packet.byteLength === want,
 		packet.byteLength + ' vs ' + want);
 
-	// An oversized buffer used to leave trailing zeroes that the client's read-until-the-end
-	// loop turned into phantom Players at id 0. Nothing trails now, so decoding is exact.
+	// Packet length must match payload exactly (no phantom entities from trailing zeroes).
 	const back = client.decode(packet);
 	check('the client decodes it back to exactly 3 entities and no more',
 		Object.keys(back.data.Instances.Players).length === 1 &&
@@ -227,8 +201,7 @@ function roundTrips() {
 	const uc = server.decode(buf(client.encode('upClass', cls)));
 	check('upClass survives as a class name', uc.data.up === cls, uc.data.up);
 
-	// Server -> client. The transforms these exercise (bit arrays, angles, 0..1 ratios, the
-	// packed xp magnitude) are the ones that used to be written out four separate times.
+	// Server -> client round trip: bits, angles, ratios, packed xp.
 	const packet = server.encode('GameUpdate', {
 		head: { timestamp: 1, width: 8000, height: 6000, screen: 1600, xp: 5, level: 2, still: 0, cLvl: 0, baseSize: 600 },
 		main: Object.assign({}, aPlayer),
@@ -238,8 +211,7 @@ function roundTrips() {
 	check('GameUpdate head comes back intact',
 		g.data.head.timestamp === 1 && g.data.head.width === 8000 && g.data.head.screen === 1600,
 		JSON.stringify(g.data.head));
-	// massplanchunks WP-E: the client used to re-derive 2team's base strip from a hardcoded 600
-	// and could not draw 4team's at all, so the room's own baseSize now rides the head.
+	// Room base strip size rides GameUpdate head.baseSize for multi-team modes.
 	check('the head carries the room\'s baseSize', g.data.head.baseSize === 600,
 		g.data.head.baseSize);
 	check('the own-tank record carries no xp field (the head already has it)',
@@ -262,8 +234,7 @@ function roundTrips() {
 		inst && inst.x);
 	check('entity xp comes back as a scoreboard string', inst.xp === '123 k', inst.xp);
 
-	// A Walls record's own fields (raw floats, no codec) survive a full round trip under its own
-	// id - w/h now, not a single radius (plan.md Step 12).
+	// Walls record: raw float x/y/w/h under its own id.
 	const wallInst = client.decode(server.encode('GameUpdate', {
 		head: { timestamp: 0, width: 0, height: 0, screen: 0, xp: 0, level: 0, still: 0, cLvl: 0, baseSize: 0 },
 		main: aPlayer,
@@ -281,9 +252,7 @@ function roundTrips() {
 			instances: [new Int8Array(server.encode('Instance', anObject))]
 		})).data.Instances.Objects[17].type === 'sqr');
 
-	// THEPLAN 4.2: an Objects record's rarity tier (0-7) rides slots 1-3 of the existing
-	// `states` bitfield - no new field, so the whole point is that this is an ordinary bits
-	// round trip. tier 5 = binary 101, i.e. states[1..3] = [1,0,1].
+	// Objects rarity tier (0-7) encodes in states[1..3]; tier 5 => [1,0,1].
 	const tieredObject = Object.assign({}, anObject, { states: [1, 1, 0, 1, 0, 0, 0] });
 	const tieredStates = client.decode(server.encode('GameUpdate', {
 		head: { timestamp: 0, width: 0, height: 0, screen: 0, xp: 0, level: 0, still: 0, cLvl: 0, baseSize: 0 },
@@ -297,8 +266,7 @@ function roundTrips() {
 
 	const ui = client.decode(server.encode('UiUpdate', {
 		leader: [{ xp: 100, name: 'bob', nameC: 0, team: 1 }],
-		// THEPLAN 4.3: x/y are 0..1 map fractions (CODECS.unit -> uint8), so this is the
-		// minimap - a dot per live player, not the leaderboard's top 10.
+		// Minimap dots: x/y as 0..1 fractions (uint8).
 		map: [{ x: 0.25, y: 0.75, team: 3, size: 40 }, { x: 0, y: 1, team: 1, size: 200 }],
 		mess: ['hello']
 	}));
@@ -347,17 +315,13 @@ function validation() {
 		server.decode(Buffer.concat([init, Buffer.alloc(40)])).error === 'ERR_PACKET_LENGTH');
 	check('an undersized init is refused',
 		server.decode(init.slice(0, 20)).error === 'ERR_PACKET_LENGTH');
-	// A 3-character key, padded out with a long name so the packet size itself is legal. This
-	// is the case HANDOFF §4 reported as getting through: it is the check the whole userKey
-	// scheme rests on, and it has never fired.
+	// Short key inside a legal-sized init must be ERR_BROKEN_KEY.
 	const shortKey = buf(client.encode('init', { key: 'abc', gm: 'ffa', name: 'sixteencharacte', pet: -1 }));
 	check('a short key inside a legal-sized init is ERR_BROKEN_KEY',
 		server.decode(shortKey).error === 'ERR_BROKEN_KEY',
 		shortKey.length + ' bytes -> ' + server.decode(shortKey).error);
 
-	// A packet whose length prefix claims more than the packet holds. Before the bounds check
-	// this threw a RangeError out of Buffer.readUInt8, and with lib/crash.js failing fast that
-	// is a one-packet denial of service.
+	// Length prefix past end of buffer must ERR_PACKET_LENGTH, not throw.
 	const liar = Buffer.concat([Buffer.from([server.toBUFFER.type.com, 50]), Buffer.alloc(20, 0x61)]);
 	check('a string length prefix that overruns the packet is refused, not thrown',
 		server.decode(liar).error === 'ERR_PACKET_LENGTH', JSON.stringify(server.decode(liar)));

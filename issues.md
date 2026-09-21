@@ -54,7 +54,7 @@ wiped things.
 | `/web` | DONE |
 | `/public` | DONE |
 | `/rooms` | DONE |
-| `/test` | pending |
+| `/test` | DONE |
 | root (`eslint.config.js`, `server.js`) | pending |
 
 ## Testing policy

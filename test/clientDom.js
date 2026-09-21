@@ -1,19 +1,9 @@
 /*
-	The smallest DOM public/client/ will boot against.
+	Minimal DOM stub so public/client/ can boot under Node.
 
-	The client is 3200 lines of canvas 2D and had never been executed by anything but a
-	browser, which is why "the game has never been opened since the refactor" sat at the top of
-	HANDOFF's not-verified list for so long: no test could reach it. It does not actually need
-	a DOM, though - it needs about sixty methods that return plausible nothings. This is them.
-
-	What the stub deliberately does NOT do is pretend to render. Nothing here checks a pixel;
-	the 2D context is a Proxy that answers every unknown property with a no-op function. The
-	point is to run the code paths - the render loop, the packet handler, every entity's
-	update() and draw() - so that a ReferenceError, a call on undefined, or a NaN reaching the
-	transform is caught here instead of by a player.
-
-	Used by test/client.js. Kept separate because the stub is uninteresting and the assertions
-	are not.
+	Provides canvas/document/window/socket shims (~sixty no-op or stub methods). The 2D context
+	is a Proxy: unknown calls are no-ops; transforms and draws can be recorded for assertions.
+	Used by test/client.js and test/clientDiff.js.
 */
 const fs = require('fs');
 const vm = require('vm');
@@ -36,10 +26,7 @@ function fmtArg(v) {
 	return String(v);
 }
 
-/* Every 2D context call is a no-op; the few with return values are named. Recorded
-	 transforms are exposed so a test can assert that nothing non-finite reached the canvas.
-	 When `record.ops` is present, every call and property write is appended to it in order -
-	 that ordered stream is the canvas-call differential rebuilt (HANDOFF §6 / §12.2). */
+/* 2D context stub: optional `record.ops` logs every call/set for test/clientDiff.js. */
 function makeCtx(record) {
 	function logCall(name, args) {
 		if (record.ops) { record.ops.push('c:' + name + '(' + Array.prototype.map.call(args, fmtArg).join(',') + ')'); }
