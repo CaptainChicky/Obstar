@@ -1,45 +1,21 @@
 ﻿/*
-	Room - the shared simulation behind every gamemode.
+	Room - shared simulation for every gamemode.
 
-	Ffa and TwoTeam used to be two ~750-line files that were roughly 90% the same code and
-	had already drifted apart in a dozen places. Everything genuinely shared
-	- the tick, the quadtree, collision, spawning, the leaderboard, the per-player view
-	builder - now lives here exactly once. A gamemode is a subclass that hands super() a block
-	of tunables and overrides a handful of small hooks:
+	Subclasses merge rules over DEFAULT_RULES. The controller is passed at construction so the
+	room can encode snapshots without a global registry.
 
-		HOOK BASE DEFAULT WHY IT EXISTS
-		build() nothing anything a mode needs pre-tick
-		basePosts() no posts team modes orbit drones on their base
-		botRoster() rules.botCount bots, one team team modes split bots across sides
-		botBudget(humans) rules.botCount - humans team modes restock every side
-		spawnPoint(tank) anywhere, clear of the nests team modes spawn you in your base
-		inEnemyBase(obj,margin) false team modes kill you in a foreign base
-		entityColor(p) 1 - everyone else is red team modes colour by team
-		mainColor(p) 0 - you are blue team modes colour by team
-		bulletColor(b) traps 9, else the bullet team team modes colour traps by team
-		ownBulletColor(b,you) your own colour only used when rules.viewerBullets
-		leaderColor(p,id) you 0, everyone else 1
-
-	The defaults are free-for-all's behaviour, so Ffa overrides almost nothing.
-
-	`assignTeam` (join the thinnest side), `assignBulletTeam` and `createBoss` used to be on
-	that list too. All three were written in TwoTeam in a form that already generalised - the
-	balance loop counts N teams, the boss only varied by team id and hit points - and produced
-	identical results to the base version when a mode has one team and no bosses. They moved
-	up, so a new mode inherits them; rules.teams, rules.maxBoss, rules.bossHp and
-	rules.bossTeam are what a mode states instead. rooms/FourTeam.js and rooms/BossMode.js are
-	short mostly because of that.
-
-	Adding a mode means writing one of these subclasses - see rooms/TwoTeam.js for the biggest
-	one there is - and naming it in the ROOMS table in rooms/index.js. Nothing else outside
-	rooms/ needs to know it exists: Controller.askConnection whitelists whatever is in ROOMS, and
-	the only other edit is the gamemode enum in public/SHARE/SocketSchema.js, because the mode has
-	to fit in the byte the client sends.
-
-	A room takes its controller as a constructor parameter rather than reaching through a
-	registry - Room -> Controller is the only edge that isn't already a plain tree (Controller
-	constructs rooms, rooms construct entities), so passing it down is enough to make the whole
-	graph acyclic.
+	Mode hooks (override only what differs from FFA defaults):
+		build() — after map sizing, before the first generate tick
+		basePosts() / spawnBaseDrone / tickBaseDrones / tickDroneCentres — team-base drones
+		spawnPoint / factorySpawnPoint / respawnTeam — placement and team on respawn
+		clearOfWalls — reject spawn samples inside geometry (maze)
+		tickArena — shape/boss pacing after map lerp
+		allowsRespawn / inputsFrozen — match freeze while closing or between waves
+		assignTeam — join and rebalance policy
+		entityColor / mainColor / bulletColor / leaderColor / mapDotColor — wire tints
+		leaderRows / getUi — scoreboard and HUD payload
+		botRoster / botBudget — filler bots when rules.botCount is set
+		step — call super.step() after local timers (shrink, win detection, etc.)
 */
 const config = require('../lib/config.js').config;
 const tick = require('../lib/tick.js');
@@ -59,87 +35,25 @@ const CONFIG = require('../lib/gameAI.js');
 const { TANK_TANK_MULT, TANK_SHAPE_MULT } = require('../lib/damage.js');
 
 /*
-	ARENA SIZE AND SHAPE DENSITY - diep has two published formulas and they are a MATCHED PAIR, which is the fact the whole design
-	below turns on: arena length AL = floor(sqrt(N_P) * 50) gu (physics.html) and shape count
-	12.5 * N_P (). Compose them and the player count cancels -
-	area = (sqrt(N)*50)^2 = 2500*N gu^2 against 12.5*N shapes, i.e. exactly
-
-	 ONE SHAPE PER 200 gu^2, at every player count.
-
-	So diep's real invariant is a DENSITY, and "12.5 per player" is what that density happens to
-	look like when the arena is also being sized by N. That matters because adopting one formula
-	without the other is actively wrong: 12.5*N shapes spread over OUR (bigger, fixed) arenas would
-	be far emptier than today, the opposite of what #19 is complaining about. The density is the
-	part that transfers.
-
-	Which half a mode gets is the split itself draws, and it is per-mode rather than
-	global:
-	 - ARENA SIZE is stated as population-varying for SANDBOX only ("The arena's size along with
-	 the number of shapes that spawn in it varies depending on the number of players connected
-	 to it", Modes.txt) and for TAG as a timed shrink (). FFA,
-	 2 Teams and 4 Teams describe nothing of the kind, so they keep the arena each already has -
-	 see the deliberate-departure note below.
-	 - SHAPE DENSITY is the general rule ("The number of Polygons available in an arena is directly
-	 related to how many players are currently connected to it") and applies to every mode, off
-	 whatever area that mode's arena currently has.
-	A mode opts into the first by setting `arenaLive`; every mode gets the second for free.
-
-	DELIBERATE DEPARTURE, so it is not "fixed" later by mistake: #19 notes our ffa arena is 451 gu
-	against diep's 244 gu at maxPlayer 24, and that resizing toward diep "is still open". It stays
-	open. Shrinking ffa to AL(24) would cut its area to 29% - a balance change of a completely
-	different magnitude to this step, affecting every distance the mode was tuned around, and
-	nothing asked for it. What this step fixes is the density complaint (#19's actual subject: ours
-	was 1 per 261 gu^2 against diep's 1 per 200), which is fixed at OUR arena sizes.
+	Shape count targets one polygon per SHAPE_DENSITY_GU2 (200) gu² of arena area. Modes supply a
+	six-weight shapeMix; apportionShapes() splits the total. arenaLive modes resize via arenaGu();
+	fixed-map modes keep mapSize. Ffa uses a larger fixed arena than live scaling would give at
+	max players — density is tuned at that size.
 */
 const SHAPE_DENSITY_GU2 = 200;
 function shapeTotal(widthGu, heightGu) { return Math.floor(widthGu * heightGu / SHAPE_DENSITY_GU2); }
-/*
-	diep's Crasher Zone (ShapeManager.ts:56-71) is not a separately-tuned population -
-	`spawnShape()` draws ONE shared pool uniformly by area over the whole arena and classifies
-	whatever lands in this annulus as a Crasher, so its count is just that annulus's share of the
-	very same SHAPE_DENSITY_GU2 every other shape draws from, not an independent knob. Radii mirror
-	entities/Objects.js's own crasher-zone constants (630/1249 x nestScale, contiguous with the
-	Pentagon Nest circle) - kept in sync by comment cross-reference, the same convention Room.js's
-	own Pentagon-nest radius (630, in createObj() below) already uses to stay aligned with
-	Objects.js's carve-out of that same circle.
-*/
+/* Crasher annulus area / 200 gu² — radii match Objects crasher-zone constants × nestScale. */
 const CRASHER_ZONE_R_IN = 630, CRASHER_ZONE_R_OUT = 1249;
 function crasherTotal(nestScale) {
 	const areaWorld2 = Math.PI * (Math.pow(CRASHER_ZONE_R_OUT * nestScale, 2) - Math.pow(CRASHER_ZONE_R_IN * nestScale, 2));
 	return Math.max(0, Math.floor(areaWorld2 / (World.GU * World.GU) / SHAPE_DENSITY_GU2));
 }
-/*
-	AL() for the modes that do scale with population. The floor is a PLAYABILITY minimum, not a
-	satisfiability one: 150 gu is Sandbox's own long-standing tuned size, and also the smallest
-	arena this tree has ever shipped, so an empty live-scaled room lands exactly where Sandbox
-	already sat rather than somewhere new. Satisfiability is handled structurally instead - see
-	nestScale below.
-*/
+/* Live arena side length from player count; floored at MIN_ARENA_GU. */
 const MIN_ARENA_GU = 150;
 function arenaGu(n) { return Math.max(MIN_ARENA_GU, Math.floor(Math.sqrt(Math.max(1, n)) * 50)); }
-/*
-	Every nest radius in the tree - spawnKeepOut()'s three keep-out circles, entities/Objects.js's
-	three (slightly tighter) shape carve-outs, and createObj()'s three cluster radii - was tuned
-	against ffa's map and hardcoded absolute. They are all read through this one scale factor now,
-	so they stay a fixed PROPORTION of whatever arena they are in.
-
-	This is what actually retires rejectSample()'s "unsatisfiable below ~2744 units wide" warning,
-	and it retires it structurally rather than by clamping: if the carve-outs scale with the map,
-	the whole placement picture is similar at every size, so a configuration satisfiable at one
-	arena size is satisfiable at ALL of them. There is no longer a width at which no point on the
-	map is outside the nests. ffa is the reference, so its own scale is exactly 1 and its placement
-	behaviour is unchanged by construction.
-*/
+/* Nest keep-outs and cluster radii scale with map width / NEST_REF_GU (ffa => 1). */
 const NEST_REF_GU = 451;
-/*
-	Splits `total` shapes across sqr/tri/pnt - each further into max0 (scattered anywhere clear of
-	every nest) and max1 (clustered at one of the three nest points; see createObj()) - preserving
-	the mode's own proportions. `mix` is six raw weights keyed sqr0/sqr1/tri0/tri1/pnt0/pnt1, stated
-	by each mode as literally its pre-#19 objCaps numbers, and normalised here - so a mode states
-	the mix it was tuned with and this file decides only the total. Largest-remainder apportionment,
-	the same method levelTargets() below already uses for base drone levels, so the parts sum to
-	exactly `total` instead of drifting under six independent roundings.
-*/
+/* Largest-remainder split of `total` across six shapeMix weights (nest scatter vs cluster slots). */
 function apportionShapes(total, mix) {
 	const keys = ['sqr0', 'sqr1', 'tri0', 'tri1', 'pnt0', 'pnt1'];
 	const sum = keys.reduce((a, k) => a + mix[k], 0);
@@ -156,85 +70,34 @@ function apportionShapes(total, mix) {
 	};
 }
 
-/*
-	diep refills a dead shape slot the very next tick, holding a flat population target
-	(ShapeManager.ts:112-118) - effectively instant. generate()'s own per-type gates
-	below (RNG < 0.7/0.5/0.1 deciding whether a type is even checked this pass, plus a second
-	0.26/0.2 roll on top of THAT for a nest-cluster slot specifically) make ours trickle back in
-	over several passes instead. Decision: close 85% of the gap to diep's instant refill rather
-	than going all the way - PENDING logs why. `towardInstant(p) = p + 0.85 x (1-p)` scales every
-	gate below toward 1 by that fraction; the untouched gates (betaPentRng, the Bsqr/Btri 0.992
-	checks, bossRng) are rarity/special-spawn knobs, not the ordinary-shape cadence this is about.
-*/
+/* Bias ordinary shape respawn gates toward instant refill (RESPAWN_CATCHUP). */
 const RESPAWN_CATCHUP = 0.85;
 const towardInstant = (p) => p + RESPAWN_CATCHUP * (1 - p);
 
-// the wire's Bullets.type is a uint8, so Factory's Minion (cannon
-// `type: 1.5`, TanksConfig.js) can't survive parseInt(obj.type) as anything but
-// 1 (an ordinary drone triangle). Give it its own integer draw-id here, at the
-// encode site, rather than widening the codec for one fractional value.
+// Wire bullet type is uint8; minion (1.5) and drawType overrides are encoded here.
 const MINION_WIRE_TYPE = 5;
 function bulletWireType(bullet) {
-	// A per-cannon draw-shape override (entities/Player.js's shoot(), diep's own per-barrel
-	// bullet shape) wins outright: a Guardian's `type: 3.1` drone sets drawType 6 so it draws as
-	// a small Crasher (Drawings.bullet[6]) rather than the square parseInt(3.1) would give - a
-	// Summoner's own 3.1 drone has no override and stays a square (3), the sprite a Necromancer
-	// drone uses. Everything else is the ordinary type->shape map: 1.5 (Minion) can't survive
-	// parseInt (it collides with type 1), so it takes its own reserved wire id.
 	if (bullet.drawType !== undefined) { return bullet.drawType; }
 	return bullet.type === 1.5 ? MINION_WIRE_TYPE : parseInt(bullet.type);
 }
 
-// generate() is a simulation event, so it rides the simulation clock: one pass every this many fixed steps. These divide by the
-// actual wall-clock step (clock.STEP_MS, 25ms/40Hz), not a reference tick,
-// so they stay wall-clock-correct with no rescale of their own.
-const GENERATE_EVERY = Math.round(400 / clock.STEP_MS); // 16 steps = 400ms at 40Hz
-const FIRST_GENERATE = Math.round(300 / clock.STEP_MS); // 12 steps = 300ms at 40Hz
+const GENERATE_EVERY = Math.round(400 / clock.STEP_MS);
+const FIRST_GENERATE = Math.round(300 / clock.STEP_MS);
 
-// How long a base drone post stays empty after its drone dies. A count of
-// reference ticks in config, converted to real ticks once here rather than per post per tick.
 const BASE_DRONE_RESPAWN = tick.ticks(config.BASE_DRONE_RESPAWN);
-// How often each orbit centre's binomial sorter and detection scout run.
-// The sorter's period is denominated in reference ticks like every other gameplay-feel constant;
-// the scout's is a raw real-tick count (a cost knob, the same category as GENERATE_EVERY above),
-// so it is read straight off config with no tick.ticks() conversion.
 const BASE_DRONE_SORT_PERIOD = tick.ticks(config.BASE_DRONE_SORT_PERIOD);
 const BASE_DRONE_SCAN = config.BASE_DRONE_SCAN;
 const BASE_DRONE_CROSS_TICKS = tick.ticks(config.BASE_DRONE_CROSS);
-// How long an orbit centre stays angry at a polygon boss that hurt one of its drones, in reference
-// ticks like its neighbours above.
 const BASE_DRONE_PROVOKE_MEMORY = tick.ticks(config.BASE_DRONE_PROVOKE_MEMORY);
 
-// diep's own 45-minute global boss timer (Misc/BossManager.ts: `45 * 60 * tps` of ITS ticks,
-// - a deterministic floor under the ///BOSSES/// RNG roll in generate() below: any
-// mode that allows bosses at all (rules.maxBoss > 0) is guaranteed one within 45 real minutes of
-// the last one dying, rather than left to the RNG's own (much longer, ~95 min mean at
-// bossRng 0.9999) expected wait. 45 min = 2700s / 0.04s (diep's own 40ms tick) = 67500 of ITS
-// ticks; tick.ticks() converts that reference-tick count the same way every other timer in this
-// file does. BossMode's own much faster bossRng (~10%/generate() pass) almost always wins the
-// race well before this ever fires, so its multi-boss cadence is unaffected.
+// Guaranteed boss spawn if none alive after this many reference ticks (67500 ≈ 45 min at 40ms ref).
 const BOSS_TIMER_TICKS = tick.ticks(67500);
 
-// A base drone is one of its own side's bullets, for the team-transparency skip below - type 1.4
-// with life -1 is otherwise indistinguishable from any other homing bullet.
 const isBaseDrone = (e) => e.kind === KIND.BULLET && e.type === 1.4;
 
 /*
-	Diep resolves a colliding pair's damage mutually and simultaneously (Live.ts:67-84) - both sides can only ever spend the SAME shared tick, so if either would
-	die mid-tick, BOTH sides' damage this tick prorates down together, rather than (as calling
-	collision() on each side independently and unconditionally would do) letting the survivor land
-	its own full, un-shortened hit past the moment its target actually died. That needs both raw
-	per-tick amounts AND both current healths before either side mutates anything, so it has to run
-	here, once, ahead of both collision() calls below - by the time the first of those two calls ran
-	under the pre-step-5 code, it had already spent the pair's shared health budget for the second.
-
-	damageOutput() mirrors, read-only, the same per-tick magnitude (pre proration, pre tick.perTick())
-	each collision() arm below is about to subtract - entities/Player.js's KIND.PLAYER/OBJECTS/BULLET
-	arms, entities/Bullet.js's KIND.PLAYER/OBJECTS arms, entities/Objects.js's KIND.PLAYER/BULLET arms
-	- using the same lib/damage.js constants those arms do, so the two can never drift on the numbers.
-	Bullet-vs-bullet is deliberately not one of the pairings here: that resolves through
-	entities/Bullet.js's own separate pene-vs-pene KIND.BULLET arm, not this table, so it returns 0
-	(inert) rather than being taught the wrong formula.
+	Mutual damage proration before collision(): both sides share one tick of health spend.
+	damageOutput() matches entity collision arms (bullet-vs-bullet excluded).
 */
 function damageOutput(e, eKind, otherKind) {
 	switch (eKind) {
@@ -244,11 +107,6 @@ function damageOutput(e, eKind, otherKind) {
 			if (otherKind === KIND.BULLET) return e.damage;
 			return 0;
 		case KIND.OBJECTS:
-			// A shape's own `damage` is diep's raw damagePerTick now, no vs-tank x4 baked in
-			// - so a shape hitting a tank needs TANK_SHAPE_MULT spelled out
-			// here same as the KIND.PLAYER case above, and a shape hitting a bullet needs no
-			// multiplier at all (common(shape,bullet) = 1, the retired PROJECTILE_BODY_DAMAGE's
-			// old 0.25 was the same number applied to the old x4-baked field).
 			if (otherKind === KIND.PLAYER) return e.damage * TANK_SHAPE_MULT;
 			if (otherKind === KIND.BULLET) return e.damage;
 			return 0;
@@ -259,62 +117,16 @@ function damageOutput(e, eKind, otherKind) {
 			return 0;
 	}
 }
-// Whether `e`'s own collision() is guaranteed to skip its hp -= line entirely regardless of what
-// hits it - mirrors entities/Player.js's dev.ghost/closer/dev.god early-returns and its shield
-// check, since Room.js has to know BEFORE calling collision() whether either side's damage this
-// tick will really land. Only ever true for a KIND.PLAYER entity: nothing else in this tree
-// carries `.dev`/`.shield`, and a BULLET's own `.closer` flag (a Closer's own bullet) guards wall
-// passthrough only (entities/Bullet.js's KIND.WALL arm), not this.
+// True when this entity's collision() will not apply damage (god, shield, closer, etc.).
 function damageGuarded(e, eKind) {
 	return eKind === KIND.PLAYER && (e.dev.ghost || e.dev.god || e.closer || e.shield);
 }
 
 /*
-	diep's own same-team collision filter (), which this tree
-	previously only had half of: a same-team pair was given `noDam` (no damage exchanged) but still
-	collided PHYSICALLY, so a teammate's traps and drones shoved tanks around, a tank could not
-	stand in its own trap field, and a Mothership was permanently jostled by its own drone swarm.
-
-	diep expresses it as two physics flags, and each projectile class picks one:
-
-	 * noOwnTeamCollision (Bullet.ts:75 - ordinary bullets, and Swarm.ts:32) - passes through
-	 EVERYTHING on its own team, whoever fired it.
-	 * onlySameOwnerCollision (Drone.ts:57, Minion.ts:87, NecromancerSquare.ts:46, Trap.ts:44) -
-	 on its own team it collides only with entities that share its OWNER, and passes through
-	 the rest. Since a tank never sets an owner at all (RelationsGroup defaults it to null,
-	 and only a projectile ever assigns one - `relationsData.values.owner = tank`), a drone
-	 NEVER shares an owner with any tank, including the one that fired it. That single fact is
-	 what makes drones pass through their own tank while still jostling their sibling drones.
-	 * a trap holds onlySameOwnerCollision for its arming window and then SWAPS to
-	 noOwnTeamCollision (Trap.ts:59-62) - so a fresh trap is shoved around by its own siblings
-	 while the cluster spreads, and once settled it stops interacting with the team entirely.
-
-	TEAM IDENTITY AND OWNER IDENTITY ARE TWO DIFFERENT QUESTIONS and conflating them is the one
-	way to get this wrong, so they are two functions:
-
-	 * teamRoot() answers "same team". Deliberately not gated on rules.teamPlay: diep has no
-	 team-less mode - a free-for-all player is their own one-man team - so this is `team` where
-	 the mode has teams and the tank's own lineage where it does not, and the flags then read
-	 identically in both. That is what lets a Sandbox/ffa player sit inside their own trap field
-	 the way a 2team player can.
-	 * ownerOf() answers diep's `relationsData.owner`, which is NULL for a tank and the firing
-	 tank for a projectile. Feeding a tank its own id here instead would make a drone share an
-	 owner with the tank that fired it - the exact opposite of the rule - and the drone would
-	 bounce off its owner while passing through every other team mate.
+	Same-team projectile physics: noOwnTeamCollision vs onlySameOwnerCollision (trap swaps at arm).
+	teamRoot() = same side; ownerOf() = bullet origin for owner-only contact.
 */
-// bullet, BattleShip/Fortress swarm drone (uncontrollable + controllable), skimmer - all
-// `noOwnTeamCollision` (Bullet.ts:75 default; Swarm.ts:32 re-asserts it on top of
-// Drone.ts, which otherwise clears it - see the SAME_OWNER_TYPES note on type 3 below for the bug
-// that shipped from conflating the two).
 const NO_OWN_TEAM_TYPES = new Set([0, 1.2, 1.3, 4]);
-// drone, Mothership AI-only drone, minion, Necromancer square-drone, trap (trap: while arming) -
-// all `onlySameOwnerCollision` (Drone.ts:57, NecromancerSquare.ts:46, Minion.ts:87, Trap.ts:44).
-// Type 3 (the Necromancer's own drone) used to sit in NO_OWN_TEAM_TYPES under a stale "swarm"
-// label - BattleShip's actual swarm barrels are types 1.2/1.3, never 3, so that entry was
-// protecting the wrong drone from its own team while leaving BattleShip's real swarm (and
-// Mothership's type-1.1 half) uncovered - the exact bug reported ("battleship drones
-// should not have knockback and interact with anything on its own team", "mothership should be
-// able to overlap with its own drones").
 const SAME_OWNER_TYPES = new Set([1, 1.1, 1.5, 2, 3, 3.1]);
 function teamRoot(e, kind) {
 	return kind === KIND.BULLET ? e.origin.oId : (kind === KIND.PLAYER ? e.id.oId : null);
@@ -322,8 +134,6 @@ function teamRoot(e, kind) {
 function ownerOf(e, kind) {
 	return kind === KIND.BULLET ? e.origin.oId : null;
 }
-// Which of the two flags this side carries, or 0 for none (a tank, a shape, a wall, a base drone -
-// base drones run the separate whole-pair skip in the collision loop, which is strictly stronger).
 function teamCollisionFlag(e, kind) {
 	if (kind !== KIND.BULLET) { return 0; }
 	if (e.type === 2) { return e.armTicks > 0 ? 2 : 1; }
@@ -331,9 +141,7 @@ function teamCollisionFlag(e, kind) {
 	if (SAME_OWNER_TYPES.has(e.type)) { return 2; }
 	return 0;
 }
-// True when diep would not resolve this pair at all - no damage, no knockback, no separation.
 function teamPassThrough(room, a, aKind, b, bKind) {
-	// Shapes and walls are the arena's, never anybody's team mate.
 	if (aKind === KIND.OBJECTS || bKind === KIND.OBJECTS ||
 		aKind === KIND.WALL || bKind === KIND.WALL) { return false; }
 	const sameTeam = room.rules.teamPlay
@@ -346,15 +154,7 @@ function teamPassThrough(room, a, aKind, b, bKind) {
 	return false;
 }
 
-// Caller-owned scratch array for the collision pass's quadTree.queryCircle() calls - reused and
-// cleared (length = 0) before every query rather than allocated fresh, since
-// this runs once per live entity per tick. Module-scope, not per-Room: every room's step() runs on
-// the same single-threaded event loop tick, never concurrently, so there is nothing to race.
 const COLLIDE_SCRATCH = [];
-
-// rejectSample()'s hard cap. ffa's acceptance rate is ~0.9, so 128
-// consecutive rejections is ~10^-133 - the cap exists to bound the unsatisfiable case, not the
-// unlucky one.
 const SPAWN_TRIES = 128;
 
 /*
@@ -363,94 +163,41 @@ const SPAWN_TRIES = 128;
 */
 const DEFAULT_RULES = {
 	gm: 'ffa',
-	// The xp at the level cap (45 levels); drives the whole XPLVL curve. Deliberately
-	// NOT rescaled when the cap moved 30 -> 45: the same total xp now buys 45 finer levels instead
-	// of 30 coarse ones, so each mode's farming economy is untouched by the conversion. Re-pricing
-	// xp itself belongs with #19's shape density, not here.
 	maxXp: 25000,
-	// The arena, as a square count. A mode states the size it is
-	// tuned for; an `arenaLive` mode has this overwritten every tick from AL(live human count) and
-	// only uses it as its pre-first-tick starting value.
 	mapSize: { width: 9020, height: 9020 },
-	// Opt in to diep's population-varying arena - Sandbox and (step 7) Tag. Off means the arena is
-	// whatever `mapSize` says, forever; SHAPE DENSITY still applies either way. See the header.
 	arenaLive: false,
-	// A team mode's baseSize as {num, den} of the map's width in squares, so it stays the same
-	// PROPORTION of the arena as that arena resizes. Written as a fraction rather than a pre-divided
-	// float on purpose: (width * num / den) reproduces 4team's gu(67) exactly where
-	// (width * (num/den)) lands on 1875.9999999999998 instead of 1876. 0/1 - ffa/boss/sandbox have
-	// no base, which is also what makes `baseSize` 0 for them, as before.
 	baseSizeRatio: { num: 0, den: 1 },
-	// Six raw weights - literally this mode's pre-#19 objCaps - normalised by apportionShapes()
-	// above. The mode states the MIX it was tuned with; the header's density formula states the
-	// TOTAL. Null here is deliberate: DEFAULT_RULES is never used unmerged, and a mode that forgets
-	// its mix should fail loudly rather than silently inherit ffa's.
-	shapeMix: null,
+	shapeMix: null, // required on every merged rules object — no silent default mix
 	maxPlayer: 24,
 	preGenerate: 500, // generate() passes run before the room opens
 	bootDelay: 100, // ms between construction and the first tick
 	betaPentRng: 0.98, // RNG above this may spawn a beta pentagon
 	bossRng: 2, // ... and above this calls createBoss(). 2 = never.
 	maxBoss: 0, // how many bosses may be alive at once. 0 = the mode has none.
-	// `health = maxHealth = 3000` ( D's shared boss
-	// scaffolding) - flat, not level-derived (unlike a Dominator's 6148, which does scale off a
-	// hypothetical level 75). Was 20000/30000 (rooms/BossMode.js's own override), an unreconciled
-	// legacy balance figure from before this fidelity pass had a real number to check it against.
 	bossHp: 3000,
-	bossTeam: 9, // bosses are on nobody's side; 9 is the 'necro' colour
-	/*
-		THE ARENA'S OWN TEAM - what diep calls `game.arena`, and what an Arena Closer and an
-		UNCAPTURED Dominator are both on (ArenaCloser.ts:47 and Dominator.ts:69 set the identical
-		`relationsData.values.team = arena`, and both take `Color.Neutral`). Sharing one team is
-		the whole mechanism behind "a Closer ignores a neutral Dominator but hunts a captured one":
-		capture rewrites the Dominator's team to the capturing side (lib/gameAI.js's
-		dominatorUpdate()), which is the moment it stops being a team mate and becomes a target.
-		Distinct from bossTeam above, which stays 9 - a boss is not on the arena's team in diep
-		either, and a Closer skips bosses by its own `.boss` check rather than by team.
-	*/
-	neutralTeam: 2, // == lib/gameAI.js's DOMINATOR_NEUTRAL_TEAM
+	bossTeam: 9,
+	neutralTeam: 2, // arena team: closers and uncaptured dominators
 	botCount: 10,
 	botIdStart: 10, // bots occupy a fixed slot range so respawn can find them
 	teams: [1], // the team ids this mode assigns. One entry = free-for-all.
 	teamPlay: false, // friendly fire off, and detectors ignore team mates
 	respawnPow: 0.9, // exponent of the xp you keep through a death
-	// Per-mode xp multiplier, applied once in awardXp(). Tag x3,
-	// Breakout x3, Domination x2, everything else x1.
 	xpMul: 1,
-	// Multiplier on the Crasher Zone population tickArena() derives (crasherTotal()). 1 everywhere
-	// but Maze, which turns it down - the same crasher count reads as far more pressure in a maze
-	// of dead ends than in open ffa-shaped arenas.
 	crasherDensity: 1,
-	viewerBullets: true, // re-encode your own bullets per viewer so they read as yours
-	// The alpha a stealth class's decay-toward-invisible (entities/Player.js's update()) stops at.
-	// 0 everywhere except Tag: - "Players can't become fully
-	// invisible... to prevent tanks like Landmine and Stalker from hiding in the corner of the map
-	// and preventing the game from ending." No number is given, only that zero is disallowed.
+	viewerBullets: true,
 	invisFloor: 0
 };
 
 class Room {
 	constructor(id, rules, controller) {
 		this.rules = Object.assign({}, DEFAULT_RULES, rules);
-		// rules.neutralTeam's default (2) is DOMINATOR_NEUTRAL_TEAM, which is the right answer for
-		// every mode that HAS Dominators - but 4team and Tag both hand team 2 to real players, and
-		// an Arena Closer sharing a side with a quarter of the lobby would be worse than the beige
-		// it replaced. Neither of those modes has a Dominator for it to agree with, so falling back
-		// to the boss team (9, which no mode claims) keeps the one invariant that matters: the
-		// arena's own team is nobody's. Derived rather than restated per mode so a new mode that
-		// adds a team 2 cannot silently re-open this.
+		// If a real player team collides with neutralTeam, use bossTeam for arena entities.
 		if (this.rules.teams.indexOf(this.rules.neutralTeam) >= 0) {
 			this.rules.neutralTeam = this.rules.bossTeam;
 		}
 		this.controller = controller;
 		const MXLVL = this.rules.maxXp;
-		// diep's own XP curve (Const/Enums.ts:301-304), not a power curve normalised to
-		// land on maxXp: levelToScore[i] = levelToScore[i-1] + 40/9 x 1.06^(i-1) x min(31,i), summed
-		// as a running float and rounded once per level (rounding each step's increment first drifts
-		// off diep's own published table by a few xp past level ~10). diep's own ceiling at level 45
-		// is 23537 - every mode scales the whole curve by its own maxXp/23537 so a different per-mode
-		// ceiling keeps diep's SHAPE (early levels cheap, late levels steep) instead of overwriting it
-		// with a differently-shaped curve of our own that merely agrees at the endpoints.
+		// XP thresholds: reference curve scaled by maxXp / 23537.
 		const DIEP_MAX_XP = 23537;
 		let acc = 0;
 		this.XPLVL = new Array(Player.LEVEL_CAP).fill(0).map((x, i) => {
@@ -472,24 +219,13 @@ class Room {
 			"walls": new SlotMap()
 		};
 		this.leader = [];
-		// An `arenaLive` mode starts at AL(0) - the MIN_ARENA_GU floor - rather than at its stated
-		// mapSize, because it has no players yet at construction and step() will size it from the
-		// real count on the first tick regardless. Everything else opens at the size it states.
 		if (this.rules.arenaLive) {
 			const al = World.gu(arenaGu(0));
 			this.map = { width: al, height: al };
 		} else {
 			this.map = { width: this.rules.mapSize.width, height: this.rules.mapSize.height };
 		}
-		// newMap is what the map lerps towards each tick - the admin 'mapResize' command writes it,
-		// and so does tickArena() for an `arenaLive` mode. Starting them equal makes the lerp a
-		// no-op until one of those two asks for something different.
 		this.newMap = { width: this.map.width, height: this.map.height };
-		// sqr/tri/pnt's caps are derived (tickArena() below, called once here so the room is fully
-		// sized before build()/Init() run), and so now is bull's ( - a Crasher is a real
-		// diep shape with a real density formula, not a stand-in). Bpnt/Bsqr/Btri are still
-		// deliberately NOT: giant nest constructs have no diep counterpart and #19's density
-		// formula says nothing about them, so their caps stay the literals they have always been.
 		this.obj = {
 			"sqr": { "0": 0, "1": 0, "max0": 0, "max1": 0 },
 			"tri": { "0": 0, "1": 0, "max0": 0, "max1": 0 },
@@ -504,35 +240,13 @@ class Room {
 		this.tickArena(0);
 		this.timestamp = 0;
 		this.bots = [];
-		// Every boss currently alive. A list rather than a single slot because 'boss' mode runs
-		// several at once; modes with rules.maxBoss 0 never put anything in it.
 		this.bosses = [];
-		// Every Dominator currently alive - empty everywhere but Domination and
-		// whatever spawns one via the Sandbox admin command. A Dominator never dies (its own
-		// update(), lib/gameAI.js, intercepts `destroy` and turns it into a capture instead), so
-		// unlike this.bosses nothing ever needs to be removed from this list.
 		this.dominators = [];
-		// diep's own arena state machine (Native/Arena.ts's ArenaState) -
-		// COUNTDOWN/OPEN/CLOSING/CLOSED/OVER, diep's own numbering (module.exports.ArenaState
-		// below) so the wire value means the same thing a real diep client would read. Every
-		// EXISTING mode opens straight into OPEN, unaffected - Tag/Maze's own hand-rolled
-		// "closing" (this.closing, an Arena Closer swarm) is untouched machinery, just now also
-		// mirrored into this field for the wire rather than replaced by it (see Tag.js's
-		// startClosing()). Only Survival (rooms/Survival.js) actually GATES anything on
-		// COUNTDOWN - every other mode's `ticksUntilStart`/`playersNeeded` stay at their
-		// do-nothing defaults (0), which is what makes this purely additive.
 		this.state = Room.ArenaState.OPEN;
 		this.ticksUntilStart = 0;
 		this.playersNeeded = 0;
-		// Every Mothership currently alive - parallel to
-		// this.bosses/this.dominators above, same reasoning.
 		this.motherships = [];
-		// Precomputed minimap dots for a mode's own static geometry ('s Maze walls, the
-		// one consumer so far) - empty for every other mode. A wall never moves and this codebase
-		// never resizes a `walls`-bearing arena live, so build() computes these once instead of
-		// getUi() re-walking INSTANCE.walls for every viewer on every UI tick.
 		this.wallDots = [];
-		// Counts down to the next generate() pass. Init() sets it; step() decrements it.
 		this.generateIn = FIRST_GENERATE;
 		this.build();
 		/*
@@ -565,48 +279,13 @@ class Room {
 			post.respawnIn = BASE_DRONE_RESPAWN;
 			post.slot = this.spawnBaseDrone(post);
 		}
-		// A one-shot delay, not a self-re-arming chain: at the end of it the room joins the
-		// shared fixed-step clock (lib/clock.js) and every tick after this one comes from there.
 		setTimeout((it) => { it.Init(); clock.add(it); }, this.rules.bootDelay, this);
 	}
-	/*
-		Anything a mode needs standing in the world before the first tick - 2team's base
-		drones. Runs before Init(), which is what fills the map with polygons.
-	*/
 	build() { }
-	/*
-		The shared five-level radius table. levelR(n) = ORBIT_R + (n - HOME) *
-		LEVEL_GAP, so level 3 (home) sits at the nominal ORBIT_R and levels 1/2/4/5 sit one/two
-		drone-sides in or out of it. Both team modes read this one table - there is no per-mode
-		radius derivation any more.
-	*/
 	levelR(level) {
 		return config.BASE_DRONE_ORBIT_R + (level - config.BASE_DRONE_LEVEL_HOME) * config.BASE_DRONE_LEVEL_GAP;
 	}
-	/*
-		Plans how `count` drones at one orbit centre are distributed across the five levels
-, off BASE_DRONE_LEVEL_WEIGHTS ([1,4,6,4,1], a Binomial(4,1/2) centred on
-		level 3):
-
-		 caps - the saturation limit per level, checked before every voluntary move into a
-		 level: cap[i] = max(1, ceil(count * w[i] / sum(w))). ceil guarantees
-		 sum(caps) >= count, so a level plan can never be unsatisfiable.
-		 initial - where the drones start, as a flat list of `count` level numbers (ready to zip
-		 against a post loop index-by-index): largest-remainder apportionment of `count`
-		 over the same weights, ties broken by smaller |level - HOME| then by the lower
-		 level. levelPlan(12).initial is [1,2,2,2,3,3,3,3,4,4,4,5] - four 1s/5s/2s/4s'
-		 worth collapse into the same per-level counts a caller can re-derive by
-		 counting occurrences.
-	*/
-	/*
-		Largest-remainder apportionment of `count` drones over BASE_DRONE_LEVEL_WEIGHTS
-		([1,4,6,4,1], a Binomial(4,1/2) centred on level 3), ties broken by smaller |level - HOME|
-		then by the lower level - the same binomial shape levelPlan() below uses for a POST count,
-		but callable standalone for a LIVE count. The per-centre sorter
-		(tickDroneCentres()/sortDroneCentre() below) needs this for whatever the live drone count
-		happens to be right now, which is not always the post count - a dead drone is off the
-		ledger for BASE_DRONE_RESPAWN before its post refills.
-	*/
+	/* Largest-remainder level counts for `count` drones (live or planned). */
 	levelTargets(count) {
 		const W = config.BASE_DRONE_LEVEL_WEIGHTS;
 		const total = W.reduce((a, b) => a + b, 0);
@@ -625,22 +304,7 @@ class Room {
 		for (let k = 0; k < remainder; k++) { counts[order[k]]++; }
 		return counts;
 	}
-	/*
-		Builds a whole per-centre ledger for `count` drones ( extended by
-		WP4.5.0): caps (the saturation limit per level, cap[i] = max(1, ceil(count*w[i]/
-		sum(w))) - ceil guarantees sum(caps) >= count, so a level plan can never be unsatisfiable),
-		initial (a flat list of `count` level numbers, ready to zip against a post loop
-		index-by-index - levelPlan(12).initial is [1,2,2,2,3,3,3,3,4,4,4,5]), target (the same
-		largest-remainder counts levelTargets() returns - levelPlan(12).target is [1,3,4,3,1] -
-		seeded here for the post count, re-derived by the sorter for the live count as it moves),
-		and crossCap (how many of this centre's drones may be mid-swoosh at once,
-		sized from measured demand: meanCrossTicks is BASE_DRONE_CROSS_TICKS-durations averaged
-		over the five levels weighted by BASE_DRONE_LEVEL_WEIGHTS, since that is the steady-state
-		distribution a cross actually launches from, so a centre with more drones or a longer
-		swoosh gets more concurrent lanes rather than serialising every drone's ~10s cadence
-		through one). TwoTeam.js/FourTeam.js's basePosts() use this object directly as the shared
-		`levels` ledger rather than rebuilding a subset of it - see rooms/TwoTeam.js.
-	*/
+	/* Per-centre drone ledger: caps, initial levels, targets, crossCap, runtime fields. */
 	levelPlan(count) {
 		const W = config.BASE_DRONE_LEVEL_WEIGHTS;
 		const total = W.reduce((a, b) => a + b, 0);
@@ -661,29 +325,13 @@ class Room {
 			caps, initial, target, crossCap,
 			count: [0, 0, 0, 0, 0], crossing: 0,
 			targets: {}, threat: null, threatAt: 0,
-			// Polygon-boss provocation: the oId of the boss that has most
-			// recently hurt one of this centre's drones, and when. Per CENTRE, not per drone, for
-			// the same reason `threat` is - the whole base agrees on who it is angry at.
 			provoked: 0, provokedAt: 0,
 			scoutIdx: 0, scoutTimer: 0, sortTimer: 0
 		};
 	}
 	/*
-		Per-centre maintenance run once a tick from step() - the binomial
-		sorter and the detection scout. Both are per-ORBIT-CENTRE, not per-drone: putting either in
-		entities/Bullet.js's per-drone update() would make them N times more work (N drones sharing
-		a centre) for the same answer.
-
-		Also expires the shared threat: `levels.threat` used to be written
-		(case 1.4's first block, alongside `threatAt` now) and never cleared, so acquisition quietly
-		became "has ever been seen" instead of "is currently visible", and a target that died while
-		being tracked (respawn() swaps in a brand-new Player, so the old one's `destroy` stays 1
-		forever) permanently latched the whole centre out of ever chasing again - measured, 15s of a
-		live enemy sitting inside both DETECT and LEASH with nothing reacting. Cleared here, per
-		CENTRE rather than per drone (the same reason the sorter/scout live here), either the instant
-		the threat is confirmed dead or after two full scout rotations with no re-sighting
-		(BASE_DRONE_SCAN * posts.length * 2 ticks) - a bigger base scans any one drone less often, so
-		it earns a proportionally longer memory before "not re-seen" means "gone".
+		Per-centre sorter and scout (not per-drone). Clears stale threat when the target is gone or
+		unseen for two full scout cycles (scale with post count).
 	*/
 	tickDroneCentres() {
 		for (const centre of this.droneCentres) {
@@ -692,8 +340,6 @@ class Room {
 				this.timestamp - levels.threatAt > BASE_DRONE_SCAN * centre.posts.length * 2)) {
 				levels.threat = null;
 			}
-			// A polygon boss that wandered off and stopped hitting anything goes back to being
-			// ignored - the anger is a memory, not a permanent grudge.
 			if (levels.provoked && this.timestamp - levels.provokedAt > BASE_DRONE_PROVOKE_MEMORY) {
 				levels.provoked = 0;
 			}
@@ -708,35 +354,13 @@ class Room {
 		}
 	}
 	/*
-		The drone standing at `post`, or undefined.
-
-		`post.slot` is a bare integer id, and INSTANCE.bullets HANDS THAT ID OUT AGAIN once the
-		dead drone's tombstone expires (lib/SlotMap.js: KEEP_PLACE ticks, then freeIndex() is free
-		to reuse it) - so between a drone dying and its post's respawn countdown elapsing, that slot
-		can already belong to somebody else's bullet entirely. Reading it blind gave two failures,
-		both of which need a bullet-dense room to show up at any rate (which is why rooms/Tester.js
-		found them and 2team/4team never did): a live stranger in the slot looked like a healthy
-		drone, so the post kept resetting its countdown and never refilled; and a DEAD stranger in
-		the slot reached tickBaseDrones()'s ledger-release with no `levels` on it and threw.
-
-		So identity is checked, not assumed - spawnBaseDrone() stamps the drone with a
-		back-reference to its own post, and only that exact object counts as this post's drone.
+		Drone for this post, or undefined. Bullet slots are reused after tombstones — check
+		bull.post === post, not slot id alone.
 	*/
 	postDrone(post) {
 		const bull = this.INSTANCE.bullets.get(post.slot);
 		return (bull && bull.post === post) ? bull : undefined;
 	}
-	/*
-		The binomial sorter: compare live occupancy against the live-count
-		target and walk a random number of surplus drones one level each toward the NEAREST deficit,
-		on the gradual arc (Bullet.sortSwitch(), cap-free). Moving one unit of surplus one step
-		toward the nearest deficit strictly decreases sum(|count-target|) by 2 and no move increases
-		it (transportation on a path graph), so this provably converges from any perturbed state in
-		at most half that sum's worth of moves - test/rooms.js checks the convergence directly
-		rather than trusting the argument. `target` is memoised per live count on the ledger
-		(`levels.targets[n]`) so a steady base doesn't re-run the largest-remainder apportionment
-		every second.
-	*/
 	sortDroneCentre(centre) {
 		const levels = centre.levels;
 		const n = levels.count.reduce((a, b) => a + b, 0);
@@ -780,14 +404,7 @@ class Room {
 			}
 		}
 	}
-	/*
-		The detection scout: rotate which single drone at this centre has its
-		DETEC enabled, round-robin, skipping any drone currently chasing (its own detector state is
-		managed independently - see entities/Bullet.js's case 1.4) or dead/respawning. Measured: base
-		drones were 46% of a 4team tick and 93% of that was the wide quadtree query each drone's own
-		Detector forced every tick regardless of whether anything was there to find - at most one
-		enabled detector per centre at a time is what actually pays for that.
-	*/
+	/* Enable one drone's detector per centre at a time (round-robin). */
 	rotateScout(centre) {
 		const posts = centre.posts;
 		if (!posts.length) { return; }
@@ -805,30 +422,7 @@ class Room {
 			return;
 		}
 	}
-	/*
-		Where this mode's base drones live, as a flat list of one post per drone:
-		{team, x, y, level, phase, levels}, where x,y is the ORBIT CENTRE (not the drone's start
-		point), level its starting energy level (1..BASE_DRONE_LEVELS) and phase
-		its starting angle around it. `levels` is the per-centre saturation ledger
-		({caps, count:[0,0,0,0,0], crossing:0}) from levelPlan() - the SAME object reference on
-		every post sharing a centre, so a level switch or a cross on one drone is visible to its
-		orbit-mates immediately. Optionally `crossIn`, the drone's first diameter-cross countdown,
-		which a mode staggers so a base's drones do not all cross at once, and optionally `spin`
-		(+-1, default 1) - which way round the centre the drone circles, read by
-		entities/Bullet.js's orbit field.
-
-		Called exactly once, from the constructor. Free-for-all has no bases, so this is the empty
-		list and every base-drone code path below costs one length check per tick.
-	*/
 	basePosts() { return []; }
-	/*
-		Builds one base drone at `post` and files it in INSTANCE.bullets, returning its slot id
-		(or -1 if the store had no room). Base drones are Bullets of type 1.4 with life -1 - see
-		entities/Bullet.js's type-1.4 branch for the orbit/chase/cross AI, which reads the level
-		and phase seeded here rather than any hardcoded radius.
-
-		`pene` IS a bullet's health pool (collision() decrements it), so BASE_DRONE_HP goes there.
-	*/
 	spawnBaseDrone(post) {
 		const r = this.levelR(post.level);
 		const bull = new Bullet(
@@ -843,15 +437,7 @@ class Room {
 		bull.team = post.team;
 		bull.ox = post.x;
 		bull.oy = post.y;
-		// The post this drone belongs to, by reference. postDrone() reads it to tell this drone
-		// apart from whatever unrelated bullet inherits its slot id later - see that method.
 		bull.post = post;
-		// Radius is quantised into five shared energy levels - orbRTarget is
-		// the live target radius the type-1.4 orbit field steers toward each tick, and it only
-		// ever moves in whole BASE_DRONE_LEVEL_GAP steps via entities/Bullet.js's levelSwitch(),
-		// never continuously. `levels` is the per-centre saturation ledger, shared by reference
-		// with every other post at this centre; claiming this slot's level here is what
-		// tickBaseDrones()'s release-on-death code below has to undo exactly once.
 		bull.level = post.level;
 		bull.levels = post.levels;
 		bull.levels.count[bull.level - 1]++;
@@ -863,34 +449,15 @@ class Room {
 		bull.switchCooldown = 0;
 		bull.levelTimer = tick.ticks(config.BASE_DRONE_LEVEL_RELAX);
 		bull.tooClose = 0;
-		// Post-swoosh climb back to home - set on a cross's exit, cleared when
-		// the drone reaches BASE_DRONE_LEVEL_HOME. Never true at spawn.
 		bull.homing = 0;
-		// Detection is centralised per orbit centre: every drone owns its own
-		// Detector (created here, not lazily in entities/Bullet.js's case 1.4, so
-		// tickDroneCentres()'s scout rotation always has one to enable/disable), but only the
-		// current scout's is enabled at a time - rotateScout() above turns this on.
 		bull.DETEC = new Detector(bull, bull.x, bull.y, config.BASE_DRONE_DETECT, [KIND.PLAYER]);
 		bull.DETEC.team = post.team;
 		bull.DETEC.enabled = 0;
-		// Latches a shape hit / proximity reaction that arrives while the drone is busy, so it is paid
-		// the moment the drone is free instead of being dropped.
 		bull.reactPending = 0;
 		bull.spin = post.spin || 1;
-		// head/spd are the steered-motion state: seeded tangential at spawn (not
-		// radial, or the first second would look like a launch straight out of the centre), and at
-		// cruise so the drone doesn't ramp up from a standing start.
 		bull.head = post.phase + bull.spin * Math.PI / 2;
 		bull.spd = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
-		// Last tick's vec - the swoosh's entry acceleration seam reads this, so
-		// it has to exist before the first tick ever runs. Seeded to match vec's own pre-steering
-		// value (0,0) rather than assumed, so a drone that somehow crossed on its very first tick
-		// would still get an honest (zero) entry acceleration rather than a guessed one.
 		bull.pvec = { x: bull.vec.x, y: bull.vec.y };
-		// Seeded, not zeroed: autoDir is kept only for the phase-distribution test in
-		// test/rooms.js now that head is the AI's own steered angle - starting every drone at 0
-		// would stack a whole base's worth on one point of the circle regardless of which field
-		// reads it.
 		bull.autoDir = post.phase;
 		bull.crossIn = post.crossIn || tick.ticks(config.BASE_DRONE_CROSS);
 		bull.alone = 1;
@@ -899,10 +466,6 @@ class Room {
 		bull.maxspeed = .75;
 		bull.pene = config.BASE_DRONE_HP;
 		bull.damage = config.BASE_DRONE_DAMAGE;
-		// Knockback dealt to a tank: diep's own drone row, 0.8 gu, the same the whole drone family
-		// carries in public/SHARE/TanksConfig.js. `push` is the separate self-bounce column, and it
-		// keeps the 2 that the single pre-split field held - base drones hold a ring, so their own
-		// separation impulse is load-bearing in a way an ordinary bullet's is not.
 		bull.weight = 4.2;
 		bull.push = 2;
 		bull.size = config.BASE_DRONE_SIZE;
@@ -914,16 +477,8 @@ class Room {
 		return made ? made.id.oId : -1;
 	}
 	/*
-		Refills empty posts. A post whose drone is alive resets its own countdown, so the timer
-		only ever runs while the post is actually empty - i.e. a drone that dies is replaced
-		BASE_DRONE_RESPAWN ticks later, not on a free-running clock.
-
-		A drone that dies mid-life also has to release its claim on the level ledger exactly once
- - `levelReleased` guards that, and is sound rather than lucky: SlotMap's
-		KEEP_PLACE is 20 ticks, so a destroyed drone is still reachable through postDrone() for 20
-		ticks after destroy is set, and this runs on every one of them, so the release can never be
-		missed by the slot being recycled first. It has to be postDrone() and not a bare
-		INSTANCE.bullets.get() for the reason that method's own comment gives.
+		Respawn countdown runs only while the post is empty; a live drone resets it. On death,
+		decrement the shared level ledger once (levelReleased) before the slot is recycled.
 	*/
 	tickBaseDrones() {
 		if (!this.dronePosts.length) { return; }
@@ -995,8 +550,6 @@ class Room {
 		if (RNG > this.rules.bossRng) {
 			if (Math.random() > 0.3) { this.createBoss() }
 		}
-		// diep's real 45-minute guarantee - lazily
-		// initialised so a mode with maxBoss 0 never allocates the field at all.
 		if (this.rules.maxBoss > 0) {
 			if (this.bossTimerAt === undefined) { this.bossTimerAt = this.timestamp + BOSS_TIMER_TICKS; }
 			if (!this.bosses.length && this.timestamp >= this.bossTimerAt) {
@@ -1008,9 +561,6 @@ class Room {
 	createObj(type, pos) {
 		let ppp = -1;
 		if (pos) {
-			// Cluster radii, x this.nestScale so a nest stays the same fraction of the arena at any
-			// size - the same scaling spawnKeepOut()'s keep-out circles
-			// and entities/Objects.js's carve-outs get, and for the same reason. ffa's scale is 1.
 			const s = this.nestScale;
 			switch (type) {
 				case 'sqr':
@@ -1079,21 +629,7 @@ class Room {
 	inputsFrozen() {
 		return false;
 	}
-	/*
-		Spawn one boss into a free player slot, if the mode has bosses and is not already at its
-		limit. rules.maxBoss 0 makes this a no-op, which is what keeps the 'summonRandBoss' admin
-		command harmless in ffa and 2team.
-
-		This used to be a 30-line override in rooms/TwoTeam.js and a no-op here. There is nothing
-		2-team about it - the only mode-specific parts were the team (now rules.bossTeam) and the
-		hit points (rules.bossHp) - so it moved up, which is what let rooms/BossMode.js be 30
-		lines instead of a third copy.
-	*/
-	/*
-		`which`/`pos` are both optional and default to what this always did (a random boss at a
-		random point on the quarter-radius circle) - rooms/Tester.js is the one caller that names
-		them, since a diagnostic room wants one of each boss at a known place rather than a roll.
-	*/
+	/* Optional which/pos for tester; otherwise random boss on the quarter-radius ring. */
 	createBoss(which, pos) {
 		if (this.bosses.length >= this.rules.maxBoss) { return; }
 		const spec = CONFIG.BOSS[(which === undefined) ? Math.floor(Math.random() * CONFIG.BOSS.length) : which];
@@ -1115,39 +651,17 @@ class Room {
 			b.hp = this.rules.bossHp;
 			b.maxHp = this.rules.bossHp;
 			b.boss = 1;
-			// Per-boss body size, set in TanksConfig.js per class (bossSize). The `|| 64`
-			// is a defensive floor - every CONFIG.BOSS entry sets bossSize explicitly.
 			b.size = CLASS[spec[2]].bossSize || 64;
-			// A boss never runs Player.prototype.update(), so the hitRatio-scaled contact radius
-			// that update() would otherwise derive has to be stated here explicitly.
 			b.guardSize = b.size * (CLASS[spec[2]].hitRatio || 1);
-			// A Fallen boss (Fallen Overlord/Fallen Booster) is engaged by base drones ON SIGHT,
-			// unlike the polygon bosses, which they ignore until provoked (
-			// - entities/Bullet.js's type-1.4 acquire gate is the one reader). Flagged on the class
-			// table so this stays one boolean rather than a name test at the read site.
 			b.fallen = !!CLASS[spec[2]].fallen;
 			b.class = spec[2];
 			b.screen = Player.scriptedScreen(b.class);
-			// /139:
-			// scoreReward 30000 (was 100000, an unreconciled legacy balance figure), damagePerTick
-			// 10 (entities/Player.js's own `this.damage` constructor default is 5, the ordinary
-			// tank figure - upClass() is what would normally raise it per class, but createBoss()
-			// spawns a boss directly without ever routing through upClass()), and reloadTime's own
-			// `15 * 0.914^7` multiplier - every boss cannon's `reload` field in TanksConfig.js was
-			// converted assuming the OWNER'S `up.Reload` carries this maxed figure (the same reason
-			// rooms/Mothership.js's createMothership() sets it), which createBoss() never did, so
-			// every boss fired ~1.877x slower than its own TanksConfig.js comments were computed
-			// against until now.
 			b.prize = 30000;
 			b.xp = 30000;
 			b.damage = 10;
 			b.up.Reload = Math.pow(0.914, 7);
-			// `absorbtionFactor = 0.05` - nearly immovable, not
-			// literally 0 like a Dominator (entities/Player.js's collision() arms read this back).
 			b.absorb = 0.05;
 			b.shield = 0;
-			// The sub-15 target-selection gate (lib/gameAI.js's bossDetect()) - which player last
-			// provoked this boss, and when.
 			b.provoked = 0;
 			b.provokedAt = 0;
 			b.motion = spec[0].bind(b);
@@ -1164,22 +678,6 @@ class Room {
 		}
 		return boss;
 	}
-	/*
-		Spawn one Dominator - a stationary Player bound to one of
-		CONFIG.DOMINATOR's three cannon variants, the same way createBoss() above binds
-		CONFIG.BOSS. `variant` picks an index into CONFIG.DOMINATOR (Destroyer/Gunner/Trapper,
-		0/1/2); omitted, one is picked at random - convenient for the Sandbox admin command,
-		which has no reason to care which variant it gets.
-
-		Spawns neutral (team 2, SocketSchema's 'yellow' - diep's own neutral-Dominator colour)
-		regardless of what rules.teams this room states, since capture is what assigns it a real
-		side; lib/gameAI.js's dominatorCapture() is what moves it off team 2 later. Stats are set
-		on the instance rather than in TanksConfig.js, the same call createBoss() already makes
-		for a boss: Dominator.ts (SIZE 160 du x 0.56 = 89.6; maxHealth 6000 at
-		camera.setLevel(75), so live max HP is 6000 + 2x74 = 6148) - not a
-		formula this class table's usual level-driven growth could express, since this engine's
-		level cap never reaches diep's hypothetical level 75.
-	*/
 	createDominator(x, y, variant) {
 		const spec = CONFIG.DOMINATOR[(variant !== undefined) ? variant : Math.floor(Math.random() * CONFIG.DOMINATOR.length)];
 		const dom = this.INSTANCE.players.add((id) => {
@@ -1187,27 +685,16 @@ class Room {
 				{ "GM": this.gm, "sId": this.id, "oId": id },
 				x, y,
 				spec[2],
-				2, // neutral - lib/gameAI.js's DOMINATOR_NEUTRAL_TEAM
+				2,
 				this.XPLVL,
 				this
 			);
 			d.hp = 6148;
 			d.maxHp = 6148;
 			d.dominator = 1;
-			// Real diep level 75 (Dominator.ts's camera.setLevel(75)) - drives its real camera
-			// scale (screenAtLevel(75) above) and the HUD's reported level; never clamped to
-			// Player.LEVEL_CAP, Room#getBuffer()'s scripted-entity branch sends it flat.
 			d.level = 75;
-			// diep's own `absorbtionFactor = 0` for a Dominator (Object.ts:280
-			// shared boss table cites the same field for a real boss at 0.05) - immovable. The
-			// KIND.PLAYER/KIND.BULLET collision arms in entities/Player.js also keep their own
-			// separate `!this.dominator` gate (predates `absorb`, redundant with 0 here but left
-			// alone rather than removed); the KIND.OBJECTS arm has no such gate, so this is what
-			// actually stops a shape from shoving a Dominator.
 			d.absorb = 0;
 			d.size = 89.6;
-			// Circle body: drawn radius equals size, so the contact radius is size itself - the
-			// dombase hexagon is decoration, not part of the hitbox.
 			d.guardSize = d.size;
 			d.class = spec[2];
 			d.screen = Player.scriptedScreen(d.class);
@@ -1219,17 +706,6 @@ class Room {
 		if (dom) { this.dominators.push(dom); }
 		return dom;
 	}
-	/*
-		H-key piloting/TakeTank): claim the
-		nearest same-team claimable AI (a captured Dominator, or your own team's Mothership),
-		sorted by distance the same way diep's own AIs.sort() is - no fixed claim radius, just
-		whichever is closest. Toggling while already piloting one releases it instead - net/
-		gameSocket.js's 'h' keydown calls this unconditionally either way.
-
-		`pilot`'s own tank keeps existing (entities/Player.js's own update() bleeds its HP while
-		`piloting` is set) rather than being replaced - releasing (here or the vacated tank
-		dying, see that same update()) hands it back exactly where it was left.
-	*/
 	togglePossession(pilot) {
 		if (pilot.destroy || pilot.dead) { return; }
 		if (pilot.piloting) {
@@ -1247,9 +723,6 @@ class Room {
 			return;
 		}
 		best.pilotedBy = pilot;
-		// Mothership's own 5-minute possession clock ( Mothership.ts's
-		// possessionStartTick) - Dominator possession has no timer, so these two just never get
-		// read for one (lib/gameAI.js's dominatorUpdate() doesn't check them at all).
 		if (best.mothership) {
 			best.possessionStartTick = this.timestamp;
 			best.possessionWarned = false;
@@ -1257,9 +730,6 @@ class Room {
 		pilot.piloting = best;
 		pilot.mess.push('Press H to surrender control of the tank');
 	}
-	/* The other half of togglePossession() above - also the auto-release path when the
-	 vacated pilot's own tank finally bleeds out, and Mothership's own timer-expiry kick
-	 (lib/gameAI.js's mothershipUpdate()). Safe to call on an already-released pilot. */
 	releasePossession(pilot) {
 		const target = pilot.piloting;
 		if (!target) { return; }
@@ -1267,23 +737,7 @@ class Room {
 		target.possessionStartTick = -1;
 		pilot.piloting = null;
 	}
-	/*
-		Everything that is derived from the arena's current size, recomputed together. Called once from the constructor and once per tick from step(), with the
-		live human count - which is why it takes that count rather than reading it: step() has
-		already walked the player list to decide whether the room should self-destruct, so this
-		reuses that pass instead of adding a second one.
-
-		Three things are derived, and the ordering matters - `nestScale` and `baseSize` come off
-		this.map (what the arena IS right now, mid-lerp), not this.newMap (what it is heading for),
-		so the carve-outs and the base track the arena continuously as it resizes rather than
-		snapping to the target while the map is still moving.
-
-		`arenaLive` modes additionally write this.newMap, i.e. they ask for a resize the same way the
-		admin 'mapResize' command does, and get the same smoothing for free. A non-live mode never
-		touches newMap here, so the admin command still works in every mode - a live mode will simply
-		overwrite the request on the next tick, which is correct: its size is a function of its
-		population, not a setting.
-	*/
+	/* nestScale, baseSize, shape caps, optional arenaLive newMap — from current this.map. */
 	tickArena(humanCount) {
 		if (this.rules.arenaLive) {
 			const al = World.gu(arenaGu(humanCount));
@@ -1300,10 +754,6 @@ class Room {
 			this.obj[type].max0 = caps[type].max0;
 			this.obj[type].max1 = caps[type].max1;
 		}
-		// Crashers scale with the arena the same way sqr/tri/pnt do - unlike Bpnt/Bsqr/Btri just
-		// below, a Crasher IS a real diep shape with a real density to be faithful to, not a
-		// stand-in this file gets to leave at a hand-picked literal. crasherDensity is a per-mode
-		// multiplier on top of that density (1 = unmodified).
 		this.obj.bull.max1 = Math.round(crasherTotal(this.nestScale) * this.rules.crasherDensity);
 	}
 	createBullet(bullet, origin) {
@@ -1314,17 +764,7 @@ class Room {
 			return bullet;
 		});
 	}
-	/*
-		The one place a kill turns into xp. Every "killer gains the victim's prize" site routes
-		through this - rooms/Room.js's two bullet arms below, entities/Player.js's tank-vs-tank arm
-		and entities/Objects.js's shape-vs-tank arm - so a mode's xp multiplier is stated once
-		(`rules.xpMul`) instead of being applied at four call sites that would drift apart.
-		gives Tag/Breakout x3 and Domination x2; every other mode is x1, so this is an
-		identity multiply for four of the five modes and costs them nothing.
-
-		Coins deliberately do NOT go through here: they are our own currency, not diep's xp economy,
-		and no reference multiplies them per mode.
-	*/
+	/* Single place kill XP is scaled — coins are not multiplied here. */
 	awardXp(tank, amount) {
 		tank.xp += amount * this.rules.xpMul;
 	}
@@ -1335,38 +775,14 @@ class Room {
 		if (origin.dev.color) {
 			bullet.color = origin.dev.color;
 		} else if (origin.boss) {
-			// A boss's projectiles carry ITS colour, not team 9's flat gold - diep gives a boss's
-			// drones/traps the boss's own styleData.color (Guardian's swarm is Color.EnemyCrasher
-			// pink, Fallen Overlord's is Color.Fallen grey). `color` is the dev-tint field's own
-			// 1-based encoding, which every mode's bulletColor() already decodes, so this needs no
-			// per-mode override - Room.bossColor() is the same lookup entityColor() uses for the
-			// boss's own body.
 			bullet.color = Room.bossColor(origin) + 1;
 		}
 	}
-	/*
-		One fixed simulation step. lib/clock.js calls this; it does not schedule itself.
-
-		It used to end with setTimeout(update,20), which made the tick rate "20ms plus however
-		long the last tick took" and let it drift arbitrarily far under load - see the note at
-		the top of lib/clock.js for why that showed up as stutter on the client.
-	*/
 	step() {
 		let stop = 1;
 		let playerCount = 0;
 		for (const i of this.INSTANCE.players.live()) {
-			// A boss is not a bot - it has its own AI, not CONFIG.BOTS - so it has to be excluded
-			// explicitly, or an empty 'boss' room (three bosses, always alive) ticks forever. A
-			// Closer) needs the same exclusion for the
-			// same reason: it is invincible and never dies, so counting it here would mean a Tag
-			// match that has finished closing - every real player dead - never actually self-
-			// destructs, and just sits open with its Closers idling forever. A Dominator
-			// needs it for the identical reason: it never dies either, only gets
-			// captured, so an empty Domination room would otherwise never self-destruct.
-			// A Mothership is destroyable, unlike a Closer/Dominator, but it is
-			// still not a "player" for this count's purpose - an empty Mothership room (every
-			// human gone, both team flagships still standing) must self-destruct exactly like
-			// an empty boss room does.
+			// Humans only — scripted entities must not keep an empty room alive.
 			if (!i.bot && !i.boss && !i.closer && !i.dominator && !i.mothership) {
 				playerCount++;
 				stop = 0;
@@ -1379,7 +795,7 @@ class Room {
 			clock.remove(this);
 			return;
 		}
-		///SPAWNING/// (was a separate setTimeout(400) chain)
+		///SPAWNING///
 		if (--this.generateIn <= 0) {
 			this.generateIn = GENERATE_EVERY;
 			this.generate();
@@ -1389,9 +805,6 @@ class Room {
 		this.tickDroneCentres();
 		///MAP///
 		if (Math.abs(this.map.width - this.newMap.width) > 0.1) {
-			// A pure exponential convergence toward newMap.width (no separate accel term), so this
-			// is a "smoothing" constant, not a plain perTick one - .11989 is .1 one-time-rescaled
-			// via smoothingOneTime(k)=1-(1-k)^(40/33), same shape as public/motion.js's lerpK.
 			this.map.width += (this.newMap.width - this.map.width) * tick.smoothing(0.11989);
 		} else {
 			this.map.width = this.newMap.width;
@@ -1401,10 +814,7 @@ class Room {
 		} else {
 			this.map.height = this.newMap.height;
 		}
-		// AFTER the lerp, not before: nestScale/baseSize/shape caps are functions of the size the
-		// arena actually has this tick, so they have to read this.map once it has moved. (It also
-		// sets next tick's lerp target for an arenaLive mode, which is why order is only visible
-		// here as a one-tick lag on the target, not on anything derived.)
+		// nestScale, baseSize, shape caps read this.map after the lerp, not newMap.
 		this.tickArena(playerCount);
 		///BOTS///
 		let botNeeded = this.botBudget(playerCount);
@@ -1489,31 +899,14 @@ class Room {
 					continue;
 				}
 				if (obj.destroy >= 1) { continue; }
-				// A player dies exactly on the base line; a bullet is allowed to penetrate
-				// config.BASE_BULLET_MARGIN past it first, which is what real diep does and what
-				// stops enemy fire visibly evaporating on an invisible wall.
-				// The base only kills inside the drawn arena - inEnemyBase()
-				// alone is unbounded outward, so something sitting in the dark OOB band past a
-				// corner would otherwise still count as "in" the base; inArena() is the one place
-				// that bound is written.
+				// Enemy base: inEnemyBase() may extend past the map; only kill inside inArena().
 				if ((kind === 'players' || kind === 'bullets') && this.inArena(obj) &&
 					this.inEnemyBase(obj, kind === 'bullets' ? config.BASE_BULLET_MARGIN : 0)) {
-					// Same refund as the tombstone site above, paid up front - harmless if
-					// collision()'s own tail below also runs it (idempotent via `released`).
 					obj.release && obj.release();
 					obj.collision(0, { base: 1 });
 					continue;
 				}
-				// Allocation-free circle query - was qt.query(closure, {x,y,r}),
-				// which allocated a {x,y,w,h} object per node visited and a {x,y,w:0,h:0} object per
-				// point tested, and called a closure defined fresh inside this very loop on every
-				// visit. queryCircle() is the same AABB/circle test written inline against
-				// primitives, filtering points by squared distance (no Math.sqrt) straight into the
-				// caller-owned COLLIDE_SCRATCH array, so this whole pass allocates nothing.
 				COLLIDE_SCRATCH.length = 0;
-				// `guardSize`, not bare `size` - the narrow phase below decides contact on
-				// `guardSize`, so a class whose contact radius exceeds `size` (a guard, a
-				// hitRatio boss) must not have real contacts filtered out here first.
 				qt.queryCircle(obj.x, obj.y, (obj.DETEC && obj.DETEC.enabled ? obj.DETEC.size : (obj.guardSize || obj.size)) * 2, COLLIDE_SCRATCH);
 				for (let ci = 0; ci < COLLIDE_SCRATCH.length; ci++) {
 					const other = COLLIDE_SCRATCH[ci].data;
@@ -1526,27 +919,11 @@ class Room {
 					if (other.destroy >= 1) { continue; }
 					if (objKind === KIND.DETECTOR && otherKind === KIND.DETECTOR) { continue; }
 					if (obj.id.oId === other.id.oId && objKind === otherKind) { continue; }
-					// Math.sqrt(a*a + b*b), not Math.pow(a,2) - Math.pow is the
-					// slower path in V8 for an integer exponent, and this runs once per candidate
-					// pair on the hottest loop in the room. Math.hypot is in turn slower than this,
-					// measured - not "improved" to it; see other copies of this expression elsewhere
-					// in the tree, none of which are on a hot path, so none of them are touched.
 					const ddx = other.x - obj.x, ddy = other.y - obj.y;
 					const dis = Math.sqrt(ddx * ddx + ddy * ddy);
-					// Base drones make an effort not to overlap: flagged here, acted on next tick
-					// by entities/Bullet.js's type-1.4 branch, which takes the same 60-degree level switch a shape
-					// hit does. This is deliberately NOT a collision - the same-team skip below still runs, so the
-					// pair exchanges no damage, no knockback and no jitter. Exactly ONE side of the pair yields, not
-					// both: now that a reactive switch cannot fail (WP4.5.0), flagging both would move both -
-					// possibly onto the same level, still overlapping. Which one yields is arbitrary (lower slot
-					// id); that it is exactly one is not.
 					if (isBaseDrone(obj) && isBaseDrone(other) && dis < config.BASE_DRONE_SEPARATION) {
 						if (obj.id.oId < other.id.oId) { obj.tooClose = 1; } else { other.tooClose = 1; }
 					}
-					// A base drone is transparent to its own side: the pair is skipped whole,
-					// so there is no damage, no knockback, no separation jitter and no detector hit - rather than
-					// relying on three separate noDam early-breaks in entities/ to each stay in the right place.
-					// Polygons are deliberately not covered: a drone collides with shapes regardless of team.
 					if (this.rules.teamPlay && obj.team === other.team &&
 						(isBaseDrone(obj) || isBaseDrone(other)) &&
 						(objKind === KIND.PLAYER || objKind === KIND.BULLET) &&
@@ -1562,25 +939,10 @@ class Room {
 							}
 						}
 					}
-					// diep's same-team physics-flag filter - see teamPassThrough() above. Placed
-					// AFTER the detector block deliberately: detection is a separate question from
-					// physical contact (a detector already does its own team check), and moving this
-					// earlier would change who base drones and Dominators can see.
+					// After detector hits — team pass-through is separate from detection range.
 					if (teamPassThrough(this, obj, objKind, other, otherKind)) { continue; }
-					// `guardSize` is a Player-only field, always >= `.size`, that
-					// widens contact for a Smasher/Landmine/Spike-line tank's spinning guard;
-					// undefined (falls back to `.size`) for every non-Player entity.
 					if (dis <= (obj.guardSize || obj.size) + (other.guardSize || other.size)) {
-						// Antisymmetric tie-break, so each unordered pair resolves through exactly one
-						// of its two (obj,other)/(other,obj) visits below - the position-sum clause is
-						// only a TIE-break (gated on size equality) now, not an independent OR: at an
-						// exact position tie (obj.x+obj.y === other.x+other.y) between entities of
-						// DIFFERENT sizes, the un-gated `||` used to let BOTH visits satisfy this guard
-						// (`>=` holds in both directions when the sums are equal), double-processing the
-						// pair - harmless before proration existed (each collision() call was
-						// independent), but proration's own dmgScale computation above assumes the pair
-						// it is prorating is resolved once, per 5's own "must be resolved
-						// once" requirement, so a double resolution would double-apply it too.
+						// One visit per pair (size, then x+y tie) so mutual proration is not doubled.
 						if (obj.size > other.size || (obj.size === other.size && obj.x + obj.y >= other.x + other.y)) {
 							///
 							if (other.getPlace || obj.getPlace) {
@@ -1603,8 +965,6 @@ class Room {
 								objOption.noDam = 1;
 								otherOption.noDam = 1;
 							}
-							// Proration - see damageOutput()/
-							// damageGuarded() above for why this has to run before either collision() call.
 							if (!objOption.noDam && !damageGuarded(obj, objKind) && !damageGuarded(other, otherKind)) {
 								const dObjToOther = tick.perTick(damageOutput(obj, objKind, otherKind));
 								const dOtherToObj = tick.perTick(damageOutput(other, otherKind, objKind));
@@ -1619,11 +979,6 @@ class Room {
 									}
 								}
 							}
-							// `.dmg`, not `.pene` - diep's handleCollision spends a bullet's own fixed
-							// damagePerTick against the OTHER side's health pool, not the other side's own
-							// remaining pool (Live.ts:67-84; entities/Bullet.js's KIND.BULLET arm is the
-							// one consumer). Only ever read when
-							// both sides are bullets, but harmless to set whenever either is.
 							if (objKind === KIND.BULLET) {
 								otherOption.dmg = obj.damage;
 							}
@@ -1679,49 +1034,16 @@ class Room {
 			}
 		}
 		this.BUFFER = [];
-		/*
-			Maze walls do NOT go through the quadtree for the per-viewer buffer (they still do for
-			collision) - they are appended below by a straight rectangle-overlap test against every
-			wall in the room.
-
-			Two separate things made a wall vanish while part of it was still on screen, and both
-			are properties of indexing a rectangle by its centre point:
-			 - `qt.query()` prunes whole NODES by their own bounds, and a wall lives in the single
-			 leaf its CENTRE falls in. A wall long enough to cross the screen has its centre in
-			 a leaf the viewer's rectangle may not touch at all, so the entire subtree - wall
-			 included - was pruned before the per-point footprint test ever ran.
-			 - the footprint test itself only ever widened the point by w/h; it could not resurrect
-			 a wall the node prune had already dropped.
-			A wall never moves and a room has at most a few dozen of them, so an O(walls) exact test
-			per viewer is both cheaper than the tree walk and unconditionally right: ANY wall
-			touching the buffer rect is sent, however far its centre is and however large it is.
-		*/
-		// Materialised, not the generator: `live()` is a generator (lib/SlotMap.js), so it has no
-		// `.length` and is consumed by the first viewer that walks it. Built once per tick, and
-		// only in a mode that actually has walls - `size` is a plain Map lookup, so ffa and every
-		// other wall-less mode pays one integer compare and allocates nothing.
+		// Walls: exact AABB overlap per viewer (quadtree centre indexing misses long rects).
 		const wallList = this.INSTANCE.walls.size ? [...this.INSTANCE.walls.live()] : null;
 		for (const [id, player] of this.INSTANCE.players.entries()) {
 			if (player.bot || player.boss || player.dominator) {
 				continue;
 			}
 
-			/*
-				Dominator/Mothership takeover ('s possess():
-				`camera.cameraData.player = ai.owner`). While this human is piloting a boss, the
-				socket's whole view - camera centre, the `main` entity its HUD/hp/death-flag read,
-				and the self-dedup below (getBuffer's `RAW.main.id.oId === obj.id.oId` skip) - is the
-				BOSS, not this human's own (now dying) body. Keying the dedup off the boss is what
-				makes the old body appear in `rest` as an ordinary dying tank while the boss is drawn
-				as `User`. Input still routes to the human (net/gameSocket.js's getPlayer), which
-				drives the boss through lib/gameAI.js's mirror - only the camera/identity moves here.
-			*/
+			// While piloting, HUD/buffer main entity is the possessed tank, not the vacated body.
 			const cam = player.piloting || player;
-
-			// Predator zoom: the per-viewer buffer is centred on the locked zoom
-			// point while one is active, not the tank's own position, or the client would pan its
-			// camera out to an area the server never sent any entities for. The FoV SIZE (screen)
-			// is unchanged - diep's zoom moves where you're looking, not how far you can see.
+			// Predator zoom: buffer centre follows zoom point, not tank position (screen size unchanged).
 			const camX = cam.zooming ? cam.zoomX : cam.x;
 			const camY = cam.zooming ? cam.zoomY : cam.y;
 			const x = camX - cam.screen / 2 - 200, y = camY - cam.screen / 2 * 0.5625 - 200;
@@ -1788,54 +1110,20 @@ class Room {
 			}
 		}
 	}
-	/*
-		Team modes fence each side out of the other's base. Anything in there dies.
-
-		`margin` shrinks the fenced region inward from the base line, so a caller can let
-		something cross the line before it counts as inside - see the bullet case in step().
-		Only the line itself moves, never the map-edge side of the base: a base drone orbiting
-		near its own base's inner edge must still never be "in" a base it owns.
-
-		Both team modes' own inEnemyBase() are deliberately unbounded OUTWARD (4team measures
-		depth inward from the map edge, so a point past a corner has negative depth and still
-		counts as inside; 2team is a bare half-plane in x with no y bound at all) - step() is what
-		bounds that to the drawn arena now, via inArena() below, so the
-		signature/semantics here don't change.
-	*/
+	/* Team modes override; margin lets bullets penetrate slightly before the base line. */
 	inEnemyBase(obj, margin = 0) {
 		return false;
 	}
-	/*
-		The drawn arena - what the coloured base square is clipped to. The OOB
-		band outside it (config.OOB_MARGIN, ~5 squares once a tank's own radius is counted - see
-		entities/Player.js's motion()) is neutral ground for everything: "in an enemy base" means
-		"in an enemy base AND inside the drawn arena" now, so a fast tank (or a base drone chasing
-		one - entities/Bullet.js's clampToMap() carries the same OOB_MARGIN allowance) can
-		circumnavigate a base by going around the dark grey border without dying to it.
-	*/
+	/* Drawn arena bounds — paired with inEnemyBase() in step() so OOB is not a base kill. */
 	inArena(obj) {
 		return Math.abs(obj.x) <= this.map.width / 2 && Math.abs(obj.y) <= this.map.height / 2;
 	}
 	respawn(id, force = 0, bot = 0) {
 		const tank = this.INSTANCE.players.get(id);
-		// `!tank.dead`, not `!tank.destroy || tank.dead > 1`. The old pair made a player wait out
-		// the whole death animation (`destroy` counting down from tick.DES) AND then
-		// config.DEAD_DELAY on top of it - and because the Enter that asks for a respawn is a
-		// one-shot keyup, an early press was simply dropped rather than queued, so it read as
-		// "Enter does nothing, press it again". `dead` and `destroy` are written at exactly the
-		// same moments (every site in entities/Player.js sets both), so testing `dead` alone is
-		// the same liveness question with none of the waiting: Enter now respawns you the instant
-		// you are dead. DEAD_DELAY still runs - it is what paces the death camera drifting toward
-		// your killer in step() - it just no longer gates this.
+		// Gate on dead, not destroy — respawn is allowed during the death animation.
 		if (!tank || (!force && !tank.dead)) return;
-		///
-		// respawnTeam(), not tank.team, so Tag can put you on your killer's side. Every other mode
-		// returns tank.team and is unaffected. Read BEFORE the new Player exists, because it has to
-		// look at who killed the OLD one (tank.murder), which the new one knows nothing about.
+		// respawnTeam reads murder on the old tank; must run before replacing the Player.
 		const team = this.respawnTeam(tank);
-		// Arena.ts's attemptFactorySpawn: team modes only (rules.teamPlay), and only once the roll
-		// and a living Factory on the new team both hit - otherwise fall through to the mode's own
-		// spawnPoint() exactly as before.
 		const pos = (this.rules.teamPlay && this.factorySpawnPoint(team)) || this.spawnPoint(tank);
 		const newTank = new Player(tank.id, pos.x, pos.y, tank.name, team, this.XPLVL, this);
 		if (bot) {
@@ -1848,14 +1136,7 @@ class Room {
 		///
 		newTank.xp = force ? tank.xp : this.respawnXp(tank.xp);
 		newTank.coins = tank.coins || 0;
-		// A respawn swaps in a brand new Player, so anything the constructor defaults to zero or
-		// empty has to be carried across by hand:
-		// - inputs: the client only sends 'keydown' on an actual state change, so a key held
-		// through the moment of death would never be re-announced. It also gates `shield`
-		// (spawn protection), which only clears once motion()/shoot() see real input.
-		// - userKey/unlocked/killCounts: Controller.disconnect()'s achievement write-back is
-		// gated on userKey plus a non-empty `unlocked`, and kill-count achievements count
-		// across a whole session, not one life.
+		// New Player each life — carry held keys, achievements, and session kill counts.
 		newTank.inputs = Object.assign({}, tank.inputs);
 		newTank.userKey = tank.userKey;
 		newTank.unlocked = Object.assign({}, tank.unlocked);
@@ -1874,22 +1155,9 @@ class Room {
 		///
 		return tank.xp;
 	}
-	/*
-		Which side you come back on. Everywhere but Tag that is the side you were already on, which
-		is why this is a hook rather than a rule flag: Tag's answer needs `tank.murder` (who killed
-		the old tank), not a per-mode constant. See rooms/Tag.js.
-	*/
 	respawnTeam(tank) {
 		return tank.team;
 	}
-	/*
-		Arena.ts's attemptFactorySpawn: a small chance (config.FACTORY_SPAWN_CHANCE) for a team-mode
-		respawn to come out of a living teammate's Factory instead of the mode's own base placement,
-		at that Factory's own cannon muzzle - the same barrel-tip math entities/Player.js's shoot()
-		uses to spawn a bullet, evaluated at the Factory's current facing/size rather than fired.
-		Returns null on a missed roll or with no eligible Factory, so the caller falls through to its
-		own spawnPoint(tank).
-	*/
 	factorySpawnPoint(team) {
 		if (Math.random() > config.FACTORY_SPAWN_CHANCE) { return null; }
 		const factories = [];
@@ -1910,12 +1178,6 @@ class Room {
 			y: factory.y + Math.sin(mountDir + offdir) * offlen
 		};
 	}
-	/*
-		How much xp survives a death: a fractional power of what you had, floored at nothing and
-		capped at 60% of the level-30 requirement. The Math.min matters - below roughly a
-		thousand xp the curve returns *more* than it was given, so without it dying early is a
-		reward.
-	*/
 	respawnXp(xp) {
 		const mXp = this.XPLVL[this.XPLVL.length - 1];
 		const pow = this.rules.respawnPow;
@@ -1924,29 +1186,7 @@ class Room {
 		}
 		return Math.min(xp, parseInt(Math.pow(xp / (mXp / Math.pow(mXp * .6, 1 / pow)), pow)));
 	}
-	/*
-		Rejection sampling with a hard iteration cap, shared with entities/Objects.js's polygon
-		placement (this.room.rejectSample). The cap is the whole point: neither caller may loop
-		until it succeeds.
-
-		The carve-out radii callers pass in USED to be absolute, which made this loop unsatisfiable
-		on a small enough map - below roughly 2744 units wide, no point on the map was 1540 from the
-		origin at all - and since this runs on the simulation thread, an unsatisfiable loop took the
-		whole room down. / 6 removed that failure mode at the source: every
-		caller now scales its radii by room.nestScale (rooms/Room.js's spawnKeepOut()/createObj(),
-		entities/Objects.js's carve-outs), so the carve-outs are a fixed FRACTION of the arena and
-		the placement picture is geometrically similar at every size. There is no width at which the
-		loop becomes unsatisfiable any more.
-
-		The cap below stays anyway, and is not vestigial: it bounds the loop against a caller that
-		passes its own circles (and against any future mode whose keep-outs are not derived this
-		way), so "neither caller may loop until it succeeds" remains true by construction rather
-		than by the current radii happening to be well-behaved.
-
-		`circles` is [[x, y, r], ...]. Returns the first point outside all of them, or - if the
-		cap runs out - the best candidate seen, scored by normalised distance to its own tightest
-		circle. Normalised, so "just outside a 1120 nest" doesn't beat "just outside a 1540 one".
-	*/
+	/* Sample a point outside all keep-out circles; bounded tries, best-effort fallback. */
 	rejectSample(inset, circles, tries = SPAWN_TRIES) {
 		// A map narrower than 2*inset would invert the range below and place points off the map.
 		const ix = Math.min(inset, this.map.width / 8);
@@ -1966,11 +1206,7 @@ class Room {
 		}
 		return best;
 	}
-	/* The three polygon nests, as [x, y, radius] keep-out circles. The radii are ffa's own tuned
-		 1540/1120 scaled by this.nestScale, so they stay the same
-		 fraction of the arena at any size - ffa's scale is exactly 1, so ffa is unchanged. See
-		 NEST_REF_GU's comment at the top of this file for why that, not a clamp, is what makes
-		 rejectSample() below satisfiable at every arena size. */
+	/* Three nest keep-outs; radii are reference values × nestScale. */
 	spawnKeepOut() {
 		const s = this.nestScale;
 		return [
@@ -1979,21 +1215,10 @@ class Room {
 			[-this.map.width / 4, -this.map.height / 4, 1120 * s]
 		];
 	}
-	/* Free-for-all drops you anywhere clear of the three polygon nests. The 280 inset is scaled by
-		 nestScale for the same reason the nest radii are - it is the
-		 same inset entities/Objects.js's `marge` uses, and the two have to stay in step. */
 	spawnPoint(tank) {
 		return this.rejectSample(280 * this.nestScale, this.spawnKeepOut());
 	}
-	/* Whether a point is clear of permanent geometry, at least `pad` units from it. Shapes are
-		 placed directly by entities/Objects.js rather than through spawnPoint(), so they need their
-		 own way to ask this. Only Maze has any permanent geometry (rooms/Maze.js overrides this) -
-		 every other mode has nothing to be embedded in, so the base answer is always yes. */
 	clearOfWalls(x, y, pad) { return true; }
-	/* Whether a point is clear of every live shape already in the room, for a body of radius `r`.
-		 A shape places itself in entities/Objects.js's constructor before it is added to
-		 INSTANCE.objs, so a shape being placed never sees itself here. Only called from a bounded
-		 placement retry loop (entities/Objects.js), never per tick. */
 	clearOfShapes(x, y, r) {
 		for (const o of this.INSTANCE.objs.live()) {
 			if (o.destroy) { continue; }
@@ -2020,32 +1245,16 @@ class Room {
 			height: this.map.height,
 			screen: RAW.main.screen,
 			xp: RAW.main.xp,
-			// Both of these are the server's own rules, read straight off entities/Player.js rather
-			// than re-expressed here: points available is granted-minus-spent, not
-			// level-minus-spent, and a class tier opens every 15 levels. A possessed Dominator/
-			// Mothership has no upgrade path at all - diep's own
-			// possess() zeroes statsAvailable - so both read 0 rather than a boss's own level.
 			still: (RAW.main.dead || RAW.main.boss || RAW.main.dominator || RAW.main.mothership)
 				? 0 : Player.pointsAtLevel(RAW.main.level) - RAW.main.stillLvl,
 			cLvl: (RAW.main.dead || RAW.main.boss || RAW.main.dominator || RAW.main.mothership)
 				? 0 : parseInt(RAW.main.level / 15),
-			// 0 in ffa/boss/sandbox, which have no bases - the client reads that as "draw none"
-			// rather than needing to know which gamemodes have them.
 			baseSize: this.baseSize || 0,
-			// - the arena state machine's own fields, real since A4 landed but not on
-			// the wire until now. Every existing mode sits fixed at OPEN/0/0 (A4's own
-			// note: opens straight into OPEN and never touches these again), so this is a no-op for
-			// them; Survival's real COUNTDOWN is the first consumer.
 			arenaState: this.state,
 			ticksUntilStart: Math.max(0, this.ticksUntilStart),
 			playersNeeded: this.playersNeeded,
-			// Predator zoom - the world point the client's own camera should track
-			// this tick; equal to the viewer's own x/y whenever `main.states[4]` (zooming) is off.
 			camX: RAW.main.zooming ? RAW.main.zoomX : RAW.main.x,
 			camY: RAW.main.zooming ? RAW.main.zoomY : RAW.main.y,
-			// Whether this viewer could actually respawn right now, and how many contenders the
-			// lobby has gathered so far - the death/lobby screens read both rather than
-			// hard-coding a gamemode's own rule.
 			canRespawn: this.allowsRespawn() ? 1 : 0,
 			playersJoined: this.contenderCount()
 		};
@@ -2070,19 +1279,7 @@ class Room {
 			y: RAW.main.y,
 			vx: RAW.main.vec.x,
 			vy: RAW.main.vec.y,
-			// While the `c` spin is on, send its own phase rather than this.dir: a mousemove can
-			// land between the tick that spun the tank and this encode, and the client draws this
-			// field verbatim (User.realDir/followDir) - so reading it here would splice one frame
-			// of mouse aim into the spin.
-			//
-			// Gated on `spinning`, NOT on `inputs.c`, and so is states[1] above. The keydown
-			// handler in net/gameSocket.js toggles inputs.c the instant the packet lands, but
-			// `spinning`/`spinDir` are only established on the next room tick - and the send loop
-			// is not tied to the room simulation (see net/gameSocket.js's header). Encoding in
-			// that window with inputs.c already 1 read a `spinDir` still holding the PREVIOUS
-			// spin's end angle, so the client drew one frame pointing there before the next tick
-			// re-seeded it from the live aim: a visible snap-away-and-back on every re-press.
-			// `spinning` is set in the same tick that assigns spinDir, so it can never be stale.
+			// Use spinDir only while spinning is latched on the sim tick — inputs.c can lead encode.
 			dir: RAW.main.spinning ? RAW.main.spinDir : RAW.main.dir,
 			ringDir: RAW.main.ringDir || 0,
 			size: RAW.main.size,
@@ -2183,10 +1380,6 @@ class Room {
 						break;
 					};
 					case KIND.WALL: {
-						// A wall never moves and never changes after spawn - no hp/color/states,
-						// just the geometry. Rectangular now: w/h, not obj.size
-						// (which is only the entity's own broad-phase bounding radius, see
-						// entities/Wall.js - never what goes over the wire).
 						raw = {
 							construc: 'Walls',
 							id: obj.id.oId,
@@ -2241,16 +1434,6 @@ class Room {
 		};
 		return buff;
 	}
-	/*
-		Colour of another tank, as everyone sees it. Cached, so it cannot depend on the viewer.
-		A boss draws in its own real diep colour now ( D, SocketSchema.js's own
-		comment on the 4 appended enum entries) rather than the flat team-9 gold every boss used
-		to share - Guardian pink, Defender coral, Summoner square-yellow, both Fallen bosses grey.
-		The lookup itself is Room.bossColor() (a static, below the class) so every team mode's own
-		entityColor() override (TwoTeam/FourTeam/Tag - each colours an ordinary tank by
-		player.team, which a boss's team 9 would otherwise just fall through to unchanged) can
-		special-case a boss the same way without repeating this switch four times.
-	*/
 	entityColor(player) {
 		return player.boss ? Room.bossColor(player) : (Room.neutralColor(player) ?? 1);
 	}
@@ -2259,20 +1442,7 @@ class Room {
 		return 0;
 	}
 	bulletColor(bullet) {
-		// `bullet.color` (1-based, assignBulletTeam()) is the dev tint AND a boss's own colour -
-		// the team modes' overrides already read it; the ffa/boss default did not, so a Guardian
-		// in a boss room fired team-9 gold drones instead of its own pink.
-		//
-		// A necromancer's own drone (type 3) is "peach"/beige tone ONLY outside a team
-		// mode - "though it otherwise duplicates the one of the player's team (in all non-FFA
-		// modes)". This used to read `9` (the necro colour) unconditionally, so a TDM necromancer's
-		// drones never picked up their team's colour at all.
-		//
-		// A per-cannon draw-colour override (entities/Player.js's shoot()) wins outright: a Summoner
-		// spawner drone sets drawColor 9 so it reads Necromancer beige (diep's SummonerSpawnerDefinition
-		// hardcodes `color: Color.NecromancerSquare`), unlike the Summoner's own EnemySquare-yellow BODY.
-		// It is unconditional the way a boss body's own colour is (Guardian pink/Fallen grey in every
-		// mode) - a neutral boss is on nobody's team, so its drones never take a team tint.
+		// drawColor from cannon config; type 3 is necro-beige in ffa only; boss tint via bullet.color.
 		if (bullet.drawColor !== undefined) { return bullet.drawColor; }
 		if (bullet.type === 3 && !this.rules.teamPlay) { return 9; }
 		return bullet.color ? bullet.color - 1 : bullet.team;
@@ -2285,28 +1455,9 @@ class Room {
 	leaderColor(player, viewerId) {
 		return (player.id.oId === viewerId) ? 0 : player.team;
 	}
-	/*
-		Colour of one minimap dot. The default is leaderColor()'s answer - you in your own colour,
-		everyone else by team - with one exception it has to make itself: a BOSS has no meaningful
-		team (they all sit on team 9), so it takes its own diep body colour from entityColor(),
-		which is what makes a Guardian read as pink and a Defender as coral on the minimap instead
-		of both being an indistinguishable gold dot.
-
-		A hook rather than an inline branch because rooms/Tester.js wants the whole thing to be
-		absolute - see its own override.
-	*/
 	mapDotColor(player, viewerId) {
 		return player.boss ? this.entityColor(player) : this.leaderColor(player, viewerId);
 	}
-	/*
-		The leaderboard's rows, as the wire's {xp, name, nameC, team} records. Ordinarily one row
-		per top-10 player, which is what `this.leader` is already sorted into by step().
-
-		A hook rather than inline code because Tag's board is a different KIND of thing - one row per
-		team showing how many players it has () - and the client needs no change to
-		draw that: public/client/ui.js renders every row as "name - xp" with a bar scaled against
-		row 0's xp, so a row count reads correctly as-is. See rooms/Tag.js.
-	*/
 	leaderRows(id) {
 		const rows = [];
 		for (const i of this.leader) {
@@ -2326,32 +1477,17 @@ class Room {
 			mess: []
 		};
 		buff.leader = this.leaderRows(id);
-		// Every live player as a minimap dot - same exclusion (dead/destroyed, bosses) and the
-		// same viewer-relative colouring (you're always "your" colour, everyone else by team)
-		// that this.leader already uses, just not limited to the top 10. x/y go out as 0..1
-		// fractions of the current map size (TYPE.UiUpdate.map, CODECS.unit), so they still land
-		// in the right place after this.map.width/height finish lerping toward a resize.
 		for (const i of this.INSTANCE.players.live()) {
 			if (i.destroy) { continue; }
 			buff.map.push({
 				x: (i.x + this.map.width / 2) / this.map.width,
 				y: (i.y + this.map.height / 2) / this.map.height,
-				// A BOSS is on the minimap now (it used to be filtered out alongside destroyed
-				// tanks) and carries its own diep colour rather than a viewer-relative one, so an
-				// observer can see where the Guardian/Defender/Summoner/Fallen pair actually are.
-				// entityColor(), not leaderColor(): leaderColor answers "is this you", which is a
-				// question about a player, and it collapses every boss onto team 9's gold.
-				// `mapDotColor()` is the per-mode hook around the whole choice - see there.
 				team: i.dev.color ? i.dev.color - 1 : this.mapDotColor(i, id),
 				size: Math.min(255, Math.round(i.size)),
-				// A player is a round dot, not a rectangle - see TYPE.UiUpdate.map.
 				w: 0,
 				h: 0
 			});
 		}
-		// A mode's own static geometry (Maze's walls) - precomputed once in build(),
-		// see this.wallDots' own comment in the constructor for why this is a plain concat rather
-		// than a live walk of INSTANCE.walls.
 		for (const d of this.wallDots) { buff.map.push(d); }
 		for (const i of this.INSTANCE.players.get(id).mess) {
 			buff.mess.push(i);
@@ -2407,38 +1543,21 @@ class Room {
 	}
 };
 
-// diep's own Native/Arena.ts ArenaState numbering - kept as literal values, not a
-// re-numbered enum, so the wire byte means the same thing a real diep client would read.
 Room.ArenaState = { COUNTDOWN: -1, OPEN: 0, OVER: 1, CLOSING: 2, CLOSED: 3 };
 
-/*
-	A boss's real per-diep-class colour - shared by every mode's own
-	entityColor() override (this file's own default above, plus TwoTeam/FourTeam/Tag's, which
-	each colour an ordinary tank by player.team and need this to special-case a boss rather than
-	just falling through to team 9's flat gold). Falls back to player.team for a boss class not
-	in the table (there is none today) rather than crashing.
-*/
-/*
-	Color.Neutral (index 14, 'neutral' - 0xFFE869) for the two entities diep puts on the arena's
-	own team: an Arena Closer, always, and a Dominator ONLY while it is uncaptured. Returns null
-	for everything else so a caller can fall through to its own team colouring - which is what
-	makes a captured Dominator go on rendering in its captors' colour without a second check.
-
-	Both used to render in team 9's `necro` beige, which is also why a Closer read as "the same
-	sort of thing as a boss" rather than as arena furniture.
-*/
+/* Uncaptured dominator and closer use neutral (14); captured dominator uses team colour. */
 Room.neutralColor = function (player) {
 	if (player.closer) { return 14; }
-	if (player.dominator && player.team === 2) { return 14; } // 2 = rules.neutralTeam
+	if (player.dominator && player.team === 2) { return 14; }
 	return null;
 };
 Room.bossColor = function (player) {
 	switch (player.class) {
-		case 'Guardian': return 10; // 'bull' - Color.EnemyCrasher
-		case 'Defender': return 11; // 'coral' - Color.EnemyTriangle
-		case 'Summoner': return 12; // 'square' - Color.EnemySquare
+		case 'Guardian': return 10;
+		case 'Defender': return 11;
+		case 'Summoner': return 12;
 		case 'Fallen Overlord':
-		case 'Fallen Booster': return 13; // 'fallen' - Color.Fallen
+		case 'Fallen Booster': return 13;
 		default: return player.team;
 	}
 };

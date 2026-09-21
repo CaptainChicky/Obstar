@@ -6,13 +6,8 @@
 	public/SHARE/SocketSchema.js's `color` table), so every colour hook is just `player.team`,
 	exactly as in TwoTeam.
 
-	The one shape difference: a 2-team base is a strip down one side of the map, which lets
-	inEnemyBase() be a single comparison on x. Four bases have to be corners, so a base here is
-	the rules.baseSizeRatio square in the map corner (diep's own shape - it used to be a quarter-disc,
-	which made a single orbit centre awkward to place). The guard drones orbit that one centre,
-	inset from the two borders the corner touches, not the square's own centre.
-	Everything else - joining the thinnest side, friendly fire, base fencing, boss summoning -
-	comes from rooms/Room.js unchanged.
+	Corner bases use baseSizeRatio squares; inEnemyBase() tests depth from each map corner.
+	Team hooks otherwise match TwoTeam via Room.
 */
 const config = require('../lib/config.js').config;
 const tick = require('../lib/tick.js');
@@ -28,9 +23,6 @@ class FourTeam extends Room {
 			mapSize: { width: gu(450), height: gu(450) },
 			preGenerate: 2000,
 			bootDelay: 1,
-			// The shape MIX only - the TOTAL is diep's 1-per-200-gu^2 density now (PENDING #19,
-			// plan.md step 6), which takes this mode 669 -> 1012 shapes at its unchanged gu(450)
-			// arena. These are verbatim the objCaps this mode used to state.
 			shapeMix: { sqr0: 392, sqr1: 39, tri0: 137, tri1: 27, pnt0: 43, pnt1: 31 },
 			betaPentRng: 0.99,
 			bossRng: 0.9999,
@@ -40,10 +32,7 @@ class FourTeam extends Room {
 			teams: [0, 1, 2, 3],
 			teamPlay: true,
 			respawnPow: 0.8,
-			// gu(67) of this mode's gu(450) map, as the fraction it is rather than the absolute it
-			// was (PENDING #19, plan.md step 6). Written {num, den} rather than pre-divided because
-			// (width * 67 / 450) is exactly gu(67) where (width * (67/450)) is 1875.9999999999998 -
-			// and baseCenter()/inEnemyBase() below compare against it, so it has to be exact.
+			// Fraction avoids float drift in baseSize (67/450 of map width).
 			baseSizeRatio: { num: 67, den: 450 },
 			viewerBullets: false
 		}, controller);
@@ -70,15 +59,7 @@ class FourTeam extends Room {
 			y: c.y - Math.sign(c.y) * this.baseSize / 2
 		};
 	}
-	/*
-		Twelve drones per base around one shared orbit centre, on five discrete energy levels now
- rather than a continuous random band - levelPlan(12) gives caps
-		[1,3,5,3,1] and starts the base at [1,3,4,3,1] drones on levels 1..5, all sharing one
-		saturation ledger (`levels`) since they orbit the same centre. Phases are still random
-		rather than evenly spaced, so the group reads clumpy the way basedrones.png does instead of
-		as a formation. crossIn keeps the existing per-drone stagger (so the base doesn't empty out
-		all at once every cross period) plus +-20% jitter so the crossings never re-sync.
-	*/
+	/* Twelve drones per corner base, one shared levelPlan ledger per base. */
 	basePosts() {
 		const PER_BASE = 12;
 		const posts = [];
@@ -130,11 +111,7 @@ class FourTeam extends Room {
 		Depth is measured inward from the map edge on each axis, so it is 0 at the corner itself
 		and grows toward the middle. Deliberately unbounded on the outward side: a point in the
 		out-of-bounds margin past the corner has a negative depth and still tests as inside the
-		base here, where a literal four-sided box test would let it through. That outward-
-		unbounded depth used to reach into and past the dark OOB band, which is what let the base
-		kill a tank driving around the outside of a corner - rooms/Room.js's step() now bounds it
-		to the drawn arena (inArena() && inEnemyBase()), so the dark band is
-		neutral ground and this method's own unbounded-outward shape stays exactly as it is here.
+		base here; step() only applies the kill inside inArena().
 	*/
 	inEnemyBase(obj, margin = 0) {
 		// Anything not on a side - a boss, team 9 - belongs to no base and is fenced out of
@@ -154,8 +131,7 @@ class FourTeam extends Room {
 	/* You always come back inside your own square, a tank diameter clear of the map walls. */
 	spawnPoint(tank) {
 		const c = this.corner(tank.team);
-		// entities/Player.js's size is a radius, so a level-0 tank is 56 units across.
-		const inset = 56;
+		const inset = 56; // tank body diameter at spawn
 		const depth = () => inset + Math.random() * (this.baseSize - inset * 2);
 		return {
 			x: c.x - Math.sign(c.x) * depth(),

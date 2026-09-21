@@ -15,10 +15,7 @@
 		* one Arena Closer on a 5s-chasing / 15s-idle cycle, so both of its states are observable
 		  without needing a match to end
 
-	Everything here is composed out of hooks rooms/Room.js already has - basePosts(), build(),
-	step(), respawn(), respawnTeam(), inEnemyBase(), spawnPoint(). No new entity kind, no new
-	behaviour: if something looks wrong in this room it is wrong in the mode it came from, which is
-	the entire point of the room.
+	Composes existing Room hooks only; wrong behaviour here reflects the source mode.
 */
 const config = require('../lib/config.js').config;
 const tick = require('../lib/tick.js');
@@ -30,9 +27,7 @@ const Player = require('../entities/Player.js');
 const CLASS = require('../public/SHARE/TanksConfig.js').class;
 const CONFIG = require('../lib/gameAI.js');
 
-// The 4team-style corner base's own square, in the SAME absolute size 4team gives it (gu(67)) -
-// this room's `baseSize` is the 2team strip's width (gu(40)), and the wire only carries one
-// figure, so the client's own `tester` background case hardcodes this second one to match.
+// Corner base size (gu(67)); strip width comes from baseSizeRatio on the wire.
 const CORNER_BASE = gu(67);
 // 2team's own base-drone layout, verbatim: fifteen orbit centres down the strip, two drones each.
 const STRIP_CENTRES = 15, STRIP_PER_CENTRE = 2;
@@ -180,7 +175,7 @@ class Tester extends Room {
 			);
 			m.hp = m.maxHp = 7000;
 			m.mothership = 1;
-			m.level = 140; // real diep level, same as rooms/Mothership.js
+			m.level = 140;
 			m.absorb = 0.01;
 			m.size = CLASS['Mothership'].bossSize;
 			m.class = 'Mothership';
@@ -207,9 +202,7 @@ class Tester extends Room {
 		The Arena Closer, on the same "a Closer is a Player bound to CONFIG.CLOSER" pattern
 		rooms/Tag.js and rooms/Maze.js both use - except that this one's chase is GATED on
 		`this.closerOn`, flipped by step() below. CONFIG.CLOSER's own motion() is called only while
-		the switch is on; while it is off the Closer idles exactly the way diep_wiki says a Closer
-		with nothing left to chase does ("spinning and slowly drifting"), without moving off its
-		spot, so both halves of its behaviour can be watched from one place.
+		the switch is on; 		while off it autospins in place so chase and idle are both observable.
 	*/
 	createTestCloser() {
 		const spec = CONFIG.CLOSER[0];
@@ -278,18 +271,14 @@ class Tester extends Room {
 	/*
 		God mode, re-applied on every spawn. respawn() builds a BRAND NEW Player and carries over
 		only what it names explicitly (inputs/userKey/unlocked/killCounts), so `dev` - which is
-		where entities/Player.js's own invulnerability/repulsion guard lives - starts empty on each
-		life and has to be re-set here. Bots/bosses/Dominators never route through this path.
+		starts empty on each new Player and must be re-set here.
 	*/
 	respawn(id, force = 0, bot = 0) {
 		const xp = super.respawn(id, force, bot);
 		const tank = this.INSTANCE.players.get(id);
 		if (tank && !tank.bot && !tank.boss && !tank.dominator && !tank.mothership && !tank.closer) {
 			tank.dev.god = 1;
-			// Insane bullet damage, for quickly testing things that need a Dominator (or anything
-			// else) to actually die/flip in a hit or two - see entities/Player.js's own
-			// Bull.damage = this.up.BDamage * can.damage. Uncapped, way past the normal 7-point
-			// max of 4, purely a testing convenience for this room.
+			// High bullet damage for quick scripted-entity kills in testing.
 			tank.up.BDamage = 1000;
 		}
 		return xp;
@@ -306,9 +295,7 @@ class Tester extends Room {
 	/*
 		A diagnostic room is watched, not played, so its minimap says what each dot IS rather than
 		how it relates to the viewer: entityColor() for everything, which gives every boss its own
-		diep colour, an uncaptured Dominator and the Arena Closer Color.Neutral, and every ordinary
-		tank its real team - including the godmode observer, who is otherwise the one dot on the
-		map that lies about which side it is on.
+		entity colours (bosses, neutral scripted entities, teams) instead of viewer-relative dots.
 	*/
 	mapDotColor(player) {
 		return this.entityColor(player);

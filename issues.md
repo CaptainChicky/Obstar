@@ -35,8 +35,7 @@ Delete or rewrite any comment that:
 - runs longer than about four lines without being load-bearing
 
 Suggested order (worst offenders first, by volume):
-`public/SHARE/TanksConfig.js`, `entities/Player.js`, `rooms/Room.js`,
-`public/client/ui.js`, `public/client/config.js`, `lib/gameAI.js`,
+`entities/Player.js`, `rooms/Room.js`, `lib/gameAI.js`,
 `entities/Bullet.js`, `lib/config.js`.
 
 Run the full test suite after each file. A comment pass must not change behaviour; if a test
@@ -54,7 +53,7 @@ wiped things.
 | `/views` | DONE |
 | `/web` | DONE |
 | `/public` | DONE |
-| `/rooms` | pending |
+| `/rooms` | DONE |
 | `/test` | pending |
 | root (`eslint.config.js`, `server.js`) | pending |
 

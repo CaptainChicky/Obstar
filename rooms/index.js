@@ -1,11 +1,6 @@
 /*
-	The one list of gamemodes, keyed by the string the client's `init` packet sends.
-
-	This table used to live on the late-bound registry, filled by lib/boot.js. Room subclasses
-	construct nothing at load time and have no cycle to break, so the table itself is a plain
-	module - lib/Controller.js requires it directly, and adding a mode is still the one edit here
-	(plus the gamemode enum in public/SHARE/SocketSchema.js, since the mode has to fit in the byte
-	the client sends - see the note there).
+	Gamemode registry: string key from the client init packet to Room subclass.
+	Controller loads this table directly; each mode must also fit the wire gamemode enum.
 */
 module.exports = {
 	'ffa': require('./Ffa.js'),
@@ -18,6 +13,5 @@ module.exports = {
 	'domination': require('./Domination.js'),
 	'mothership': require('./Mothership.js'),
 	'survival': require('./Survival.js'),
-	// A diagnostic room, not a game mode - see rooms/Tester.js's own header.
 	'tester': require('./Tester.js')
 };

@@ -15,10 +15,7 @@ const gu = World.gu;
 const Room = require('./Room.js');
 
 class TwoTeam extends Room {
-	// `extraRules` (PENDING #27, rooms/Domination.js) merges over this mode's own tuning below -
-	// e.g. { gm: 'domination', xpMul: 2 } - rather than Domination duplicating this whole rules
-	// block and every base/drone/colour method beneath it just to change two fields. Omitted, this
-	// is exactly 2team's own constructor, unchanged.
+	// Optional rules overlay (Domination passes { gm, xpMul, baseSizeRatio }).
 	constructor(id, controller, extraRules = {}) {
 		super(id, Object.assign({
 			gm: '2team',
@@ -26,9 +23,6 @@ class TwoTeam extends Room {
 			mapSize: { width: gu(400), height: gu(400) },
 			preGenerate: 2000,
 			bootDelay: 1,
-			// The shape MIX only - the TOTAL is diep's 1-per-200-gu^2 density now (PENDING #19,
-			// plan.md step 6), which takes this mode 555 -> 800 shapes at its unchanged gu(400)
-			// arena. These are verbatim the objCaps this mode used to state.
 			shapeMix: { sqr0: 314, sqr1: 35, tri0: 118, tri1: 24, pnt0: 35, pnt1: 29 },
 			betaPentRng: 0.99,
 			bossRng: 0.9999,
@@ -38,32 +32,11 @@ class TwoTeam extends Room {
 			teams: [0, 1],
 			teamPlay: true,
 			respawnPow: 0.8,
-			// gu(40) of this mode's gu(400) map, stated as the fraction it is rather than the
-			// absolute it was (PENDING #19, plan.md step 6), so the strip stays a tenth of the
-			// arena's width if the arena is ever resized. At today's fixed gu(400) this is exactly
-			// gu(40), unchanged - test/rooms.js pins that.
 			baseSizeRatio: { num: 40, den: 400 },
 			viewerBullets: false
 		}, extraRules), controller);
 	}
-	/*
-		Fifteen orbit centres down each side's base strip, each hosting a PAIR of drones - the
-		wiki's "30 Base Drones in total ... spread evenly in pairs", which counts one side, so
-		60 in the room. Each pair sits on its own share of the same five discrete energy levels
-		4team uses (levelPlan(2) gives caps [1,1,1,1,1] and starts the pair on
-		levels 2 and 3) rather than a per-mode nominalR band - a level is an absolute size in the
-		user's spec, not something that scales per mode, so the old `spacing * 0.3` nominal radius
-		is gone. Random phases, same clumpy-not-rigid treatment as 4team's single ring.
-
-		The centre spacing comes off the map height, not a literal, so resizing the map cannot
-		make adjacent centres overlap: at the current 11200-tall map the spacing is 746.7 units =
-		26.7gu, comfortably clear of 2*levelR(5) = 560 (checked in test/rooms.js). The across-strip
-		position is derived from baseSize (the same derivation as 4team's baseCenter())
-		rather than a literal gu(24) inset, so the drones sit centred across the strip's width
-		instead of at whatever inset a past base resize happened to leave behind. Everything else
-		about the drones (speed, cross period, leash, detector range) is shared, and lives in
-		entities/Bullet.js's one type-1.4 AI.
-	*/
+	/* Fifteen orbit centres per base strip, two drones each (60 total). Spacing follows map height. */
 	basePosts() {
 		const CENTRES = 15, PER_CENTRE = 2;
 		const spacing = this.map.height / CENTRES;
@@ -111,9 +84,7 @@ class TwoTeam extends Room {
 		Cross the strip in front of the other side's base and you die on the spot - `margin` past
 		it, for anything allowed to penetrate first (bullets). Only this line moves; the far side
 		of the strip is the map wall. A bare half-plane in x with no y bound at all, so it is
-		still unbounded past the map's y edges too - rooms/Room.js's step() bounds it to the drawn
-		arena (inArena() && inEnemyBase()), so the dark OOB band is neutral
-		ground and this method's own shape stays exactly as it is here.
+		still unbounded past the map's y edges; step() only applies the kill inside inArena().
 	*/
 	inEnemyBase(obj, margin = 0) {
 		const edge = this.map.width / 2 - this.baseSize;
