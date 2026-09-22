@@ -5973,6 +5973,44 @@ function droneBatchTests() {
 	}
 }
 
+/// Diep-style drone reload priming at shared maxDrone cap ///////////////////
+// While the swarm is full, auto permanent-drone barrels hold shootTimer at reloadMax; the first
+// slot opened by a death fires on the next shoot() without waiting a full cycle from zero.
+function dronePrimingTests() {
+	console.log('\ndrone spawner priming (shared cap):');
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
+	const room = makeRoom('ffa');
+	const p = player(room, 0);
+	p.class = 'Overlord';
+	p.droneCount = 0;
+	p.shield = 0;
+	p.inputs.e = 0;
+	p.inputs.mouseL = 0;
+	const cans = CLASS['Overlord'].cannons;
+	p.shootTimer = new Array(cans.length).fill(0);
+	for (let i = 0; i < 800 && p.droneCount < CLASS['Overlord'].maxDrone; i++) { p.shoot(); }
+	check('Overlord swarm reaches maxDrone', p.droneCount === CLASS['Overlord'].maxDrone, p.droneCount);
+	const reloadMax = tick.ticks(Math.round(cans[0].reload * p.up.Reload));
+	for (let i = 0; i < reloadMax + 50; i++) { p.shoot(); }
+	const primed = cans.every((can, r) =>
+		!(can.auto && can.life === -1) || p.shootTimer[r] === reloadMax);
+	check('at cap, every auto life=-1 barrel holds reloadMax (not reset to 0)',
+		primed, p.shootTimer.join(','));
+	const before = p.droneCount;
+	const victim = [...room.INSTANCE.bullets.live()].find((b) => b.origin && b.origin.oId === p.id.oId);
+	check('there is a live drone to release', !!victim);
+	victim.release(p);
+	victim.destroy = 1;
+	check('release opens one shared-cap slot', p.droneCount === before - 1, p.droneCount);
+	const liveBefore = [...room.INSTANCE.bullets.live()].length;
+	p.shoot();
+	const liveAfter = [...room.INSTANCE.bullets.live()].length;
+	check('one shoot() with a primed barrel immediately respawns that drone',
+		liveAfter === liveBefore + 1 && p.droneCount === before, (liveAfter - liveBefore) + ' new, count ' + p.droneCount);
+	for (const b of [...room.INSTANCE.bullets.live()]) { b.destroy = 1; }
+}
+
 /// Overtrapper drone group split /////////////////////////////////////////////
 function overtrapperDroneSplitTests() {
 	console.log('\novertrapper drone split (2 controllable + 2 uncontrollable):');
@@ -6838,6 +6876,7 @@ statSourceTests();
 rosterSweepTests();
 necromancerTests();
 droneBatchTests();
+dronePrimingTests();
 overtrapperDroneSplitTests();
 tankDroneOrbitTests();
 factoryTests();

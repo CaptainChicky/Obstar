@@ -117,6 +117,33 @@ function autoTargetDir(pool, mx, my, mountAngle, arc, maxDis) {
 function droneGroupOf(can) { return (can.type === 1.1) ? 1 : 0; }
 
 /*
+	Diep-style drone spawner priming (shared maxDrone cap, not per-barrel caps). While the swarm
+	is full, each auto permanent-drone barrel keeps its reload cycle at the end instead of
+	zeroing it, so the first replacement after a loss fires on the next ready tick.
+
+	Same family as diep forceFire drone/minion spawners: Overseer/Overlord/Manager, Hybrid/
+	Overtrapper drones, Factory minions, Mothership's drone barrels. Excludes finite-life
+	swarm (Battleship), necro claim, and Guardian-style droneCap finite spawners.
+*/
+function droneCapGated(can, maxD) {
+	return maxD && can.life === -1;
+}
+function dronePrimingBarrel(can, maxD) {
+	return can.auto && droneCapGated(can, maxD);
+}
+function droneFirePhase(can, reloadMax) {
+	return Math.floor(can.offTime * reloadMax);
+}
+function droneBarrelReady(reload, can, reloadMax) {
+	const phase = droneFirePhase(can, reloadMax);
+	return reload === phase || reload >= reloadMax;
+}
+function droneCapFull(play, can, maxD, split, grp, groupCap) {
+	if (!droneCapGated(can, maxD)) { return false; }
+	return split ? play.droneGroup[grp] >= groupCap : play.droneCount >= maxD;
+}
+
+/*
 	Regen, two regimes: a linear rate always applied, and hyper regen ADDED on top once
 	noDamageTicks clears HYPER_REGEN_DELAY (750 reference ticks = 30s) - not a replacement rate.
 	Both are genuine per-reference-tick rates, tick.perTick()'d like any other.
@@ -448,6 +475,8 @@ class Player {
 					this.canDir[r] = can.ring ? mountAngle : this.autoDir;
 				}
 			};
+			const priming = dronePrimingBarrel(can, maxD);
+			const capFull = priming && droneCapFull(this, can, maxD, split, grp, groupCap);
 			if ((this.inputs.e || this.inputs.mouseL || can.auto)
 				&& ((maxD && (can.life === -1 || can.droneCap))
 					// `can.droneCap` opts a FINITE-life cannon into the same maxDrone accounting a
@@ -461,7 +490,7 @@ class Player {
 				if (this.shield) {
 					this.shield = 0;
 				}
-				if (reload === Math.floor(can.offTime * reloadMax)) {
+				if (priming ? droneBarrelReady(reload, can, reloadMax) : reload === droneFirePhase(can, reloadMax)) {
 					
 					const dir = can.autoDir ? autoDir : this.dir + can.offdir;
 					const offx = can.offx * ra;
@@ -563,18 +592,31 @@ class Player {
 					this.recoil[parseInt(r)] = 1;
 					setTimeout((x, r) => { x.recoil[r] = 0 }, config.TICK_MS, this, parseInt(r))
 				}
+				if (priming && reload >= reloadMax) {
+					const phase = droneFirePhase(can, reloadMax);
+					this.shootTimer[r] = phase === 0 ? 1 : phase + 1;
+					continue;
+				}
 				if (this.shootTimer[r] === 0) {
 					this.shootTimer[r] += 1;
 					continue;
 				}
 			} else {
-				if (reload < Math.floor(can.offTime * reloadMax)) {
+				if (!priming && reload < droneFirePhase(can, reloadMax)) {
 					this.shootTimer[r] = 0;
 				}
 			}
-			if (reload > 0 && reload < reloadMax) {
+			if (capFull) {
+				if (reload < reloadMax) {
+					this.shootTimer[r] += 1;
+				} else {
+					this.shootTimer[r] = reloadMax;
+				}
+			} else if (reload < reloadMax) {
 				this.shootTimer[r] += 1;
-			} else if (reload >= reloadMax) {
+			} else if (priming) {
+				this.shootTimer[r] = reloadMax;
+			} else {
 				this.shootTimer[r] = 0;
 			}
 		}

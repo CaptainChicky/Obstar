@@ -2,9 +2,6 @@
 
 ## Open
 
-- **Overlord/controlalboe drone class is kinda meh rn** - the idling orbits, and the chasing 
-  is still kinda meh. finish this later ig
-
 - **Finish gamemodes one by one** — sandbox gaps (party links, arena/shape scaling, bosses
   after 50–60 min), survival arena management, mothership/survival polish.
 
