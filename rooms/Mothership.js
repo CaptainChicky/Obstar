@@ -28,7 +28,7 @@ class Mothership extends Room {
 			teams: [0, 1],
 			teamPlay: true,
 			respawnPow: 0.8,
-			xpMul: 1,
+			xpMul: 3,
 			viewerBullets: false
 		}, controller);
 	}

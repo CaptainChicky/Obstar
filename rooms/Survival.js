@@ -36,7 +36,7 @@ class Survival extends Room {
 			teams: [1],
 			teamPlay: false,
 			respawnPow: 0.9,
-			xpMul: 1,
+			xpMul: 3,
 			viewerBullets: true
 		}, controller);
 	}

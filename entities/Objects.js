@@ -236,7 +236,7 @@ class Objects {
 				this.hp -= tick.perTick(other.damage * TANK_SHAPE_MULT * (option.dmgScale ?? 1));
 				this.hit = tick.ticks(1.65);
 				// LETHAL_EPS, not 0 - a prorated killing blow can land an ulp short of exactly this.hp.
-				if (this.hp <= LETHAL_EPS) { this.hp = 0; this.destroy = tick.DES; this.room.awardXp(other, this.prize); other.coins += this.coinReward }
+				if (this.hp <= LETHAL_EPS) { this.hp = 0; this.destroy = tick.DES; this.room.awardXp(other, this.prize, 'shape'); other.coins += this.coinReward }
 				break;
 			case KIND.OBJECTS:
 				if (other.type === 'bull') {

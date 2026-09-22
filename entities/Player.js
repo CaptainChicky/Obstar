@@ -834,7 +834,7 @@ class Player {
 					this.dead = tick.DEAD_DELAY;
 					this.murder = ["players", other.id];
 					this.destroy = tick.DES;
-					this.room.awardXp(other, this.prize);
+					this.room.awardXp(other, this.prize, 'player');
 					if (this.coinReward) other.coins += this.coinReward;
 					if (!other.bot) {
 						other.mess.push('You killed ' + this.name);

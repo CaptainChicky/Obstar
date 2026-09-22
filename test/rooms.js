@@ -565,16 +565,18 @@ function tagTests() {
 	check('xp is x3 (Tag triple-xp)', room.rules.xpMul === 3,
 		room.rules.xpMul);
 
-	// awardXp() is the single site the multiplier lives at, so drive the real method rather than
-	// asserting the rule flag twice.
+	// awardXp() is the single site the multiplier lives at — shapes and bosses only, not tank kills.
 	{
 		const tank = { xp: 0 };
-		room.awardXp(tank, 100);
-		check('...and awardXp() actually applies it', tank.xp === 300, tank.xp);
+		room.awardXp(tank, 100, 'shape');
+		check('...and awardXp() triples polygon XP', tank.xp === 300, tank.xp);
+		const tankKill = { xp: 0 };
+		room.awardXp(tankKill, 100, 'player');
+		check('...but leaves tank-kill XP unscaled', tankKill.xp === 100, tankKill.xp);
 		const ffa = makeRoom('ffa');
 		const t2 = { xp: 0 };
-		ffa.awardXp(t2, 100);
-		check('...while an ordinary mode is an identity multiply', t2.xp === 100, t2.xp);
+		ffa.awardXp(t2, 100, 'shape');
+		check('...while an ordinary mode is an identity multiply on shapes too', t2.xp === 100, t2.xp);
 	}
 
 	// The tagging gate: every team needs MIN_PER_TEAM before a kill converts anyone. The room is
@@ -1025,6 +1027,11 @@ function dominatorTests() {
 		room.rules.baseSizeRatio.num === 67 && room.rules.baseSizeRatio.den === 400,
 		room.rules.teams.join(','));
 	check('xp is doubled (Polygons.txt)', room.rules.xpMul === 2, room.rules.xpMul);
+	{
+		const tank = { xp: 0 };
+		room.awardXp(tank, 50, 'shape');
+		check('awardXp() doubles polygon XP only', tank.xp === 100, tank.xp);
+	}
 
 	// build() spawns all four before the first tick, same as Maze's walls. room.dominators holds
 	// the live Player instances directly (SlotMap.add() returns the entity, not an id).
@@ -1306,6 +1313,15 @@ function mothershipTests() {
 	check('two teams, friendly fire on, no bases',
 		room.rules.teams.join(',') === '0,1' && room.rules.teamPlay === true,
 		room.rules.teams.join(','));
+	check('polygon XP is x3 (Mothership triple-xp)', room.rules.xpMul === 3, room.rules.xpMul);
+	{
+		const tank = { xp: 0 };
+		room.awardXp(tank, 10, 'shape');
+		check('awardXp() triples polygon XP', tank.xp === 30, tank.xp);
+		const bossKiller = { xp: 0 };
+		room.awardXp(bossKiller, 10000, 'boss');
+		check('awardXp() triples boss kill XP too', bossKiller.xp === 30000, bossKiller.xp);
+	}
 
 	const ships = room.motherships;
 	check('build() spawns exactly one Mothership per team', ships.length === 2, ships.length);
@@ -6713,6 +6729,17 @@ function survivalTests() {
 	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
 	const Room = require(path.join(ROOT, 'rooms', 'Room.js'));
 	const MIN_PLAYERS = 10;
+
+	{
+		const room = makeRoom('survival');
+		check('polygon XP is x3 (Survival triple-xp)', room.rules.xpMul === 3, room.rules.xpMul);
+		const tank = { xp: 0 };
+		room.awardXp(tank, 10, 'shape');
+		check('awardXp() triples polygon XP', tank.xp === 30, tank.xp);
+		const tankKill = { xp: 0 };
+		room.awardXp(tankKill, 5000, 'player');
+		check('tank kills stay unscaled in Survival', tankKill.xp === 5000, tankKill.xp);
+	}
 	const COUNTDOWN_TICKS = Math.round(10000 / clock.STEP_MS);
 	const BOT_GRACE = Math.round(20000 / clock.STEP_MS);
 	const BOT_INTERVAL = Math.round(1200 / clock.STEP_MS);

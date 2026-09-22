@@ -182,7 +182,7 @@ const DEFAULT_RULES = {
 	teams: [1], // the team ids this mode assigns. One entry = free-for-all.
 	teamPlay: false, // friendly fire off, and detectors ignore team mates
 	respawnPow: 0.9, // exponent of the xp you keep through a death
-	xpMul: 1,
+	xpMul: 1, // polygon and boss kill rewards only (diep shapeScoreRewardMultiplier)
 	crasherDensity: 1,
 	viewerBullets: true,
 	invisFloor: 0
@@ -764,9 +764,16 @@ class Room {
 			return bullet;
 		});
 	}
-	/* Single place kill XP is scaled — coins are not multiplied here. */
-	awardXp(tank, amount) {
-		tank.xp += amount * this.rules.xpMul;
+	/* Which kills rules.xpMul applies to — tank kills and survival passive XP are unscaled. */
+	static xpSource(entity, kind) {
+		if (kind === KIND.OBJECTS) { return 'shape'; }
+		if (entity.boss) { return 'boss'; }
+		return 'player';
+	}
+	/* Single place polygon/boss kill XP is scaled — coins are not multiplied here. */
+	awardXp(tank, amount, source) {
+		const scaled = source === 'shape' || source === 'boss';
+		tank.xp += amount * (scaled ? this.rules.xpMul : 1);
 	}
 	/* A bullet belongs to whoever fired it. The dev 'color' command tints it without moving
 		 it to another side - bulletColor() is what reads that. */
@@ -991,7 +998,7 @@ class Room {
 								if (other.destroy && other.prize) {
 									const killer = this.INSTANCE.players.get(obj.origin.oId);
 									if (killer) {
-										this.awardXp(killer, other.prize);
+										this.awardXp(killer, other.prize, Room.xpSource(other, otherKind));
 										killer.coins += other.coinReward || 0;
 										if (otherKind === KIND.PLAYER && !killer.bot) {
 											killer.mess.push('You killed ' + other.name);
@@ -1006,7 +1013,7 @@ class Room {
 								if (obj.destroy) {
 									const killer = this.INSTANCE.players.get(other.origin.oId);
 									if (killer) {
-										this.awardXp(killer, obj.prize);
+										this.awardXp(killer, obj.prize, Room.xpSource(obj, objKind));
 										killer.coins += obj.coinReward || 0;
 										if (objKind === KIND.PLAYER && !killer.bot) {
 											killer.mess.push('You killed ' + obj.name);

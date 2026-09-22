@@ -86,9 +86,6 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
   but this was deliberately left out. `togglePossession()` only covers Dominators and Motherships.
 - **Optional Fallen variants** (`FallenAC.ts`/`FallenMegaTrapper.ts`/`FallenSpike.ts`) —
   explicitly optional; not built.
-- **Survival / Mothership XP** — diep's `shapeScoreRewardMultiplier` is shapes-only (Survival and
-  Mothership ×3, Domination ×2, Tag ×3). Ours is `rules.xpMul` on every `awardXp()` call, so it
-  multiplies tank kills too. Tag is 3 and Domination is 2; Survival and Mothership are still 1.
 
 ## Still open
 

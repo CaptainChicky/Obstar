@@ -285,9 +285,10 @@ The things in this codebase that are *not* obvious from reading the code around 
   KIND.OBJECTS]}` auto-turret filters name the constants directly.
 - **A room self-destructs when it has zero human players** (bots and bosses excluded from the
   count) — see `Room.js`. This is why an empty `boss`-mode room doesn't tick forever.
-- **Kill XP is scaled in one place:** `Room.awardXp()` multiplies by `rules.xpMul`. Coins are
-  not. Tag is 3, Domination is 2, everyone else is 1. This is a global multiplier, not diep's
-  shapes-only `shapeScoreRewardMultiplier` — see PENDING.
+- **Kill XP is scaled in one place:** `Room.awardXp(tank, amount, source)` multiplies polygon and
+  boss kills by `rules.xpMul` (`source` is `'shape'`, `'boss'`, or `'player'`). Tank kills and
+  survival passive tick XP are unscaled. Coins are not multiplied. Tag and Survival/Mothership use
+  3, Domination uses 2, everyone else uses 1 on shapes/bosses only (diep `shapeScoreRewardMultiplier`).
 - **No HTML is ever escaped, anywhere.** Rendering is canvas-only, so there is currently no DOM
   sink to escape *for*. If a name/chat string is ever routed into a DOM node or an EJS template,
   it needs escaping at that point — nothing upstream does it for you.
