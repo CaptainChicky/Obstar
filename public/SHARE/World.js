@@ -17,6 +17,11 @@
 
 	exports.GU = 28;
 	exports.gu = function (n) { return n * 28; };
+	// Drone-class triangles (Drawings.bullet[1]) are painted at `size` times this.
+	// Diep's hit circle passes through those vertices, so the server sets guardSize
+	// to size * DRONE_CLASS_DRAW. `size` stays the barrel radius: the value the
+	// client multiplies, and the radius orbit spacing uses. Base drones do not.
+	exports.DRONE_CLASS_DRAW = 1.59;
 
 })(typeof (exports) === 'undefined' ? function () { this['World'] = {}; return this['World'] }() : exports,
 	typeof (exports) === 'undefined' ? 'client' : 'server')

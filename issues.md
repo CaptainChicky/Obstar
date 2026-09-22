@@ -11,8 +11,14 @@
 
 - **FFA area size changing** - the arena should be scaling live ig we will see what basesize should be and how it scales etc. also arena closing when etc
 
+- mothership barrels are gone, and mothership drones are like extrmeely small for some reason? the old thing had the scale correct look for that.
+
 drones in overlord class after swooshing recover basically isnide the takn it shoud eb further (extend the i nner energy level outwards?)
 drones also are pretty much position fixed relative to the tnak it shoudl be more dynamci like a tank moving drones should be lagging and then chase after? check against diep code
+
+Overlord's radius is barrel.width / 2 * sizeRatio = 42 / 2 * 1 = 21 diep units at scale 1, then scaled with the tank. Your cannon size: 14.7 is that same number on the 0.7 axis.
+
+shoudl we also do this instead of hardcoding the size? import the diep drone logic ig like the idea was at level 45 the drone size is this but idk if i scaled it properly 
 
 base drone sizes: this ratio we have will be base drone equilateral (is it equilateral?) triangle side length vs basic level1 0 score tank diameter
 28.8/57.3 this is diep

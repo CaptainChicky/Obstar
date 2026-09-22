@@ -18,6 +18,22 @@ const BULLET_CRUISE_ORDER = require('../lib/constants.js').BULLET_CRUISE_ORDER;
 // Divisor that recovers the raw muzzle accel from TanksConfig.js's `speed` column.
 // Same one Player.js's shoot() uses; Skimmer/Minion sub-shots fire it from here too.
 const BULLET_MAINTAIN = require('../lib/constants.js').BULLET_MAINTAIN;
+/*
+	Diep drone-vs-drone knockback is a flat pushFactor of 4 du per reference tick
+	(Drone.ts replaces the bullet formula). Thrust at 0 Bullet Speed adds
+	2 × diep bullet.speed du (bulletAccel 20 × speed, maintainVelocity × 0.1),
+	so the kick is 4/1.6 = 2.5× an Overlord's 0-stat thrust and does not grow
+	when Bullet Speed does.
+
+	Obstar cruise is 1.12 × diep bullet.speed (TanksConfig.js), and the motion
+	tail applies it with quadratic() while this kick uses perTick(). One SCALE
+	on the reference-tick magnitude keeps that 2.5 at the live tick rate; the
+	diep speed cancels, so every drone-class triangle gets the same flat kick.
+	Consumed only for guardSize drones. `push` stays the bounce off tanks and
+	shapes, and base drones (no guardSize) still separate with `push`.
+*/
+const DIEP_SPEED_IDENTITY = 1.12;
+const DRONE_SEPARATION = (4 / 2) * DIEP_SPEED_IDENTITY * BULLET_CRUISE_ORDER * tick.SCALE;
 const KIND = require('../public/SHARE/kinds.js');
 const World = require('../public/SHARE/World.js');
 const Detector = require('./Detector.js');
@@ -1153,7 +1169,9 @@ class Bullet {
 				case KIND.BULLET:
 					if (other.origin.oId === this.origin.oId) {
 						if ((parseInt(this.type) === 1 || parseInt(this.type) === 3) && this.type === other.type) {
-							this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(this.push), tick.perTick(this.push))));
+							// guardSize: diep's flat 4 du. Otherwise `push` (base drones).
+							const kick = this.guardSize ? DRONE_SEPARATION : this.push;
+							this.vec.add(new Vec(this.x - other.x, this.y - other.y).norm().multiply(new Vec(tick.perTick(kick), tick.perTick(kick))));
 						}
 						return;
 					} else {
@@ -1193,7 +1211,10 @@ class Bullet {
 						const cx = Math.max(other.x - hw, Math.min(this.x, other.x + hw));
 						const cy = Math.max(other.y - hh, Math.min(this.y, other.y + hh));
 						const dx = this.x - cx, dy = this.y - cy;
-						if (dx * dx + dy * dy > this.size * this.size) { break; }
+						// guardSize when the drawn circumradius is the hit circle
+						// (drone-class triangles). Every other projectile collides at size.
+						const hit = this.guardSize || this.size;
+						if (dx * dx + dy * dy > hit * hit) { break; }
 						// Anything with an owner (bullet, trap, drone) is destroyed on
 						// contact with a maze wall, not bounced. A wall deals no body damage.
 						this.destroy = tick.DES;
@@ -1788,5 +1809,20 @@ Bullet.estimateCrossTicks = estimateCrossTicks;
 // (rooms/Room.js tickDroneCentres). Thin wrapper so Room.js never reaches into
 // this module's private levelSwitch().
 Bullet.sortSwitch = function (drone, dir) { return levelSwitch(drone, 'sort', dir); };
+
+/*
+	Diep draws a drone's vertices on its hit circle. Drawings.bullet[1] paints those
+	vertices at size * DRONE_CLASS_DRAW, so the contact radius has to be that too.
+	`size` is left alone: it is the barrel radius on the wire, and orbit spacing
+	reads it. Base drones (drawType 7) and minions (wire type 5) already put their
+	vertices on `size` and do not come through here.
+	Called from Room.createBullet once type, drawType and size are all set.
+*/
+Bullet.applyDroneClassHit = function (bullet) {
+	if (bullet.drawType !== undefined) { return; }
+	if (bullet.type === 1.5) { return; }
+	if ((bullet.type | 0) !== 1) { return; }
+	bullet.guardSize = bullet.size * World.DRONE_CLASS_DRAW;
+};
 
 module.exports = Bullet;

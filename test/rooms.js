@@ -1920,6 +1920,8 @@ function baseDroneTests() {
 		drone.size === config.BASE_DRONE_SIZE, drone.size);
 	check('...drawType 7: equilateral at size, not the drone-class scale on bullet[1]',
 		drone.drawType === 7, drone.drawType);
+	check('...hit circle stays on size (the tips already sit on it)',
+		!drone.guardSize, drone.guardSize);
 	{
 		const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
 		const drawnSide = config.BASE_DRONE_SIZE * Math.sqrt(3);
@@ -6865,6 +6867,113 @@ function survivalTests() {
 	}
 }
 
+/*
+	Drone-class triangles (wire type 1: Overlord, Overseer, Hybrid, Battleship swarms)
+	are drawn at size * DRONE_CLASS_DRAW. Diep's hit circle passes through those
+	vertices, so guardSize is that circumradius. `size` stays the barrel radius.
+	Base drones and minions are not this sprite.
+*/
+function droneClassHitTests() {
+	console.log('\ndrone-class hit circle:');
+	const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
+	const Bullet = require(path.join(ROOT, 'entities', 'Bullet.js'));
+	const Wall = require(path.join(ROOT, 'entities', 'Wall.js'));
+	const tick = require(path.join(ROOT, 'lib', 'tick.js'));
+	const room = makeRoom('ffa');
+	const owner = player(room, 0);
+	const SCALE = World.DRONE_CLASS_DRAW;
+
+	function spawn(type, size, drawType) {
+		const b = new Bullet(owner.id, 0, 0, 0, 0, 0, room);
+		b.type = type;
+		b.size = size;
+		b.life = 30;
+		b.class = owner.class;
+		if (drawType !== undefined) { b.drawType = drawType; }
+		room.createBullet(b, owner);
+		return b;
+	}
+
+	const overlord = spawn(1, 14.7);
+	check('an Overlord drone keeps its barrel size', overlord.size === 14.7, overlord.size);
+	check('...and its hit circle is the drawn circumradius (size * DRONE_CLASS_DRAW)',
+		Math.abs(overlord.guardSize - 14.7 * SCALE) < 1e-9, overlord.guardSize);
+
+	for (const t of [1.1, 1.2, 1.3]) {
+		const b = spawn(t, 10);
+		check('type ' + t + ' uses the same drawn-circumradius hit circle',
+			Math.abs(b.guardSize - 10 * SCALE) < 1e-9 && b.size === 10, b.guardSize);
+	}
+	for (const spec of [[0, undefined], [1.5, undefined], [3, undefined], [1.4, 7]]) {
+		const b = spawn(spec[0], 10, spec[1]);
+		check('type ' + spec[0] + (spec[1] !== undefined ? ' drawType ' + spec[1] : '') +
+			' still collides at size', !b.guardSize, b.guardSize);
+	}
+
+	// Tips past the old circle, inside the new one. Wall face is at x=50.
+	const wall = new Wall(0, 0, 100, 40, { GM: room.gm, sId: room.id, oId: -1 }, room);
+	const tip = spawn(1, 10);
+	tip.x = 62; tip.y = 0; tip.pene = 50;
+	tip.collision(wall, {});
+	check('a drone whose tip overlaps a wall is hit (12 > size 10, 12 < guardSize 15.9)',
+		tip.destroy === tick.DES, tip.destroy);
+
+	// Broad phase: the size-leader records the pair. A fresh tank is still at its
+	// constructor radius (25) during collision; update() grows it afterwards.
+	// Distance 54 sits between the old query (2*25 = 50) and contact
+	// (25 + size*DRONE_CLASS_DRAW = 56.8).
+	const other = room.ask({ name: 'target', key: '1'.repeat(25), pet: -1, gm: 'ffa' });
+	const tank = player(room, other.oId);
+	tank.x = 4000; tank.y = 4000;
+	tank.vec.x = 0; tank.vec.y = 0;
+	tank.inputs.mouseL = 0; tank.inputs.mouseR = 0;
+	const drone = spawn(1, 20);
+	drone.type = 0;
+	drone.speed = 0; drone.maxspeed = 0;
+	drone.vec.x = 0; drone.vec.y = 0;
+	drone.x = 4054; drone.y = 4000;
+	drone.pene = 100; drone.life = 30;
+	for (const b of room.INSTANCE.bullets.live()) {
+		if (b !== drone) { b.destroy = 2; }
+	}
+	room.generateIn = 1000;
+	room.step();
+	check('the broad phase reaches a drone hit circle that is larger than size',
+		drone.pene < 100, drone.pene);
+
+	// Same-owner separation. Diep's pushFactor is a flat 4 du: 2.5× Overlord's
+	// 0-stat thrust, and it does not grow with Bullet Speed. `push` (0.45709)
+	// stays the bounce off tanks and shapes. Base drones have no guardSize and
+	// still separate with `push`.
+	const CRUISE = require(path.join(ROOT, 'lib', 'constants.js')).BULLET_CRUISE_ORDER;
+	const overlordSpeed = 0.896;
+	const thrust0 = tick.quadratic(overlordSpeed * CRUISE);
+	const thrust7 = tick.quadratic(overlordSpeed * (1 + 0.15 * 7) * CRUISE);
+	const pair = spawn(1, 14.7);
+	const mate = spawn(1, 14.7);
+	pair.push = 0.45709;
+	mate.push = 0.45709;
+	pair.x = 0; pair.y = 0;
+	mate.x = 5; mate.y = 0;
+	pair.collision(mate, {});
+	const kick = Math.hypot(pair.vec.x, pair.vec.y);
+	check('a drone-class pair separates at 2.5× 0-stat Overlord thrust, not push',
+		Math.abs(kick / thrust0 - 2.5) < 1e-9 && Math.abs(kick - tick.perTick(0.45709)) > 1e-6,
+		kick);
+	check('...and that kick stays flat at 7 Bullet Speed (diep 4 / 3.28)',
+		Math.abs(kick / thrust7 - 4 / 3.28) < 1e-9, kick / thrust7);
+
+	const base = spawn(1.4, 10, 7);
+	const baseMate = spawn(1.4, 10, 7);
+	base.push = 2; baseMate.push = 2;
+	base.x = 0; base.y = 0;
+	baseMate.x = 5; baseMate.y = 0;
+	base.collision(baseMate, {});
+	check('a base drone still separates with its own push',
+		Math.abs(Math.hypot(base.vec.x, base.vec.y) - tick.perTick(2)) < 1e-9,
+		Math.hypot(base.vec.x, base.vec.y));
+}
+
 console.log('obstar room tests\n');
 const rooms = [];
 rooms.push(ffaTests()); console.log('');
@@ -6897,6 +7006,7 @@ respawnCarryoverTests(rooms);
 modeTableTests(rooms);
 gridAnchorTests();
 baseDroneTests();
+droneClassHitTests();
 baseDroneAiTests();
 prorationTest();
 tickScaleTests();

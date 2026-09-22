@@ -761,6 +761,9 @@ class Room {
 	}
 	createBullet(bullet, origin) {
 		this.assignBulletTeam(bullet, origin);
+		// After type, drawType and size are set. Drone-class triangles take a hit
+		// circle at the drawn circumradius; everything else keeps colliding at size.
+		Bullet.applyDroneClassHit(bullet);
 		bullet.map = this.map;
 		this.INSTANCE.bullets.add((id) => {
 			bullet.id = { 'GM': this.gm, 'sId': this.id, 'oId': id };
@@ -917,7 +920,15 @@ class Room {
 					continue;
 				}
 				COLLIDE_SCRATCH.length = 0;
-				qt.queryCircle(obj.x, obj.y, (obj.DETEC && obj.DETEC.enabled ? obj.DETEC.size : (obj.guardSize || obj.size)) * 2, COLLIDE_SCRATCH);
+				// Detectors keep *2 (the other body is assumed no bigger than the
+				// detector). A body searches ownHit * (1 + DRONE_CLASS_DRAW). The
+				// size-leader is who records the pair, and a drone-class hit circle
+				// is the drawn circumradius, larger than `size`. *2 misses a drone
+				// whose guardSize is bigger than that leader's radius.
+				const reach = (obj.DETEC && obj.DETEC.enabled)
+					? obj.DETEC.size * 2
+					: (obj.guardSize || obj.size) * (1 + World.DRONE_CLASS_DRAW);
+				qt.queryCircle(obj.x, obj.y, reach, COLLIDE_SCRATCH);
 				for (let ci = 0; ci < COLLIDE_SCRATCH.length; ci++) {
 					const other = COLLIDE_SCRATCH[ci].data;
 					if (other.getPlace === 0 || obj.getPlace === 0) {

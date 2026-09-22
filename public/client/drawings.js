@@ -33,12 +33,11 @@
 	}
 	// Spins in this file are denominated against a 40ms reference tick.
 	const REF_TICK_MS = 40;
-	// Drone-class triangles (type 1) are drawn larger than their collision radius.
-	// 6f59578 put vertices at `size` and Overlord/Hybrid/the rest of the drone class
-	// shrank to base-drone size. 1.59 is the old size*1.7 tip, scaled so a level-45
-	// drone's side is ~95% of a red triangle's side (obj.tri, hit radius 21.78).
-	// Base drones are drawType 7 and stay at `size` (a 1-gu side).
-	const DRONE_CLASS_DRAW = 1.59;
+	// Drone-class triangles (wire type 1) are drawn at size * World.DRONE_CLASS_DRAW.
+	// That scale is the old size*1.7 tip, kept so Overlord/Hybrid stay the size they
+	// were before vertices moved onto `size`. The server hit circle is this same
+	// circumradius (diep: the three tips sit on the circle) via guardSize. `size`
+	// stays the barrel radius. Base drones are drawType 7 and stay at `size`.
 	function fillDroneTriangle(ctx, param, r) {
 		ctx.rotate(param.dir);
 		ctx.beginPath();
@@ -385,9 +384,10 @@
 				ctx.fill();
 				ctx.closePath();
 			},
-			// Tank / swarm drones. Equilateral; drawn circumradius is size * DRONE_CLASS_DRAW
-			// so the class stays near the old 1.7-sprite size. Base drones use bullet[7].
-			(ctx, param) => fillDroneTriangle(ctx, param, param.size * DRONE_CLASS_DRAW),
+			// Tank / swarm drones. Equilateral; drawn circumradius is size * World.DRONE_CLASS_DRAW
+			// so the class stays near the old 1.7-sprite size. The hit circle is that same
+			// radius (guardSize). Base drones use bullet[7].
+			(ctx, param) => fillDroneTriangle(ctx, param, param.size * World.DRONE_CLASS_DRAW),
 			(ctx, param) => {
 				const $1 = param.size * 1.8;
 				const mini = $1 * .38;
