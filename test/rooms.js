@@ -5950,7 +5950,7 @@ function droneBatchTests() {
 	console.log('\ndrone batching (Overseer 2 at a time, Overlord 4):');
 	const room = makeRoom('ffa');
 	const CLASS = require(path.join(ROOT, 'public', 'SHARE', 'TanksConfig.js')).class;
-	for (const [clsName, want] of [['Overseer', [2, 2, 2, 1]], ['Overlord', [4, 4]]]) {
+	for (const [clsName, want] of [['Overseer', [2, 2, 2, 2]], ['Overlord', [4, 4]]]) {
 		const p = player(room, 0);
 		p.class = clsName;
 		p.droneCount = 0;

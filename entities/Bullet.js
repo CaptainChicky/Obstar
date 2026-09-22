@@ -58,6 +58,16 @@ function droneInAggro(play, other, committed = false) {
 	return dx * dx + dy * dy < r * r;
 }
 
+// One-pass constant-speed lead for auto drone chase (not manual mouse aim).
+function droneChaseDir(bullet, other) {
+	const ox = other.x - bullet.x, oy = other.y - bullet.y;
+	const dist = Math.hypot(ox, oy);
+	if (dist < 1) { return Math.atan2(oy, ox); }
+	const t = dist / droneTerminal(bullet);
+	const vx = other.vec ? other.vec.x : 0, vy = other.vec ? other.vec.y : 0;
+	return Math.atan2(oy + vy * t, ox + vx * t);
+}
+
 /*
 	Base drone orbit AI. Converted once at module load, not per drone per tick.
 
@@ -567,7 +577,7 @@ function droneSteer1(bullet, play) {
 			// Committed (detector off), so the widened HYST radius applies - measured from the
 			// OWNER, not from this drone.
 			if (!other.destroy && other.alpha && droneInAggro(play, other, true)) {
-				bullet.dir = Math.atan2(other.y - bullet.y, other.x - bullet.x);
+				bullet.dir = droneChaseDir(bullet, other);
 				bullet.orbLevel = undefined;
 				return true;
 			} else {
@@ -1237,7 +1247,7 @@ class Bullet {
 					this.DETEC.enabled = 0;
 					const other = this.DETEC.select;
 					if (!other.destroy && other.alpha && droneInAggro(play, other, true)) {
-						this.dir = Math.atan2(other.y - this.y, other.x - this.x);
+						this.dir = droneChaseDir(this, other);
 						this.orbLevel = undefined;
 						break;
 					} else {
@@ -1266,7 +1276,7 @@ class Bullet {
 					const other = this.DETEC.select;
 					if (!other.destroy && other.alpha && droneInAggro(play, other, true)) {
 						this.showDir = this.vec.angle();
-						this.dir = Math.atan2(other.y - this.y, other.x - this.x);
+						this.dir = droneChaseDir(this, other);
 						this.orbLevel = undefined;
 						break;
 					} else {
@@ -1559,7 +1569,7 @@ class Bullet {
 						this.DETEC.enabled = 0;
 						const other = this.DETEC.select;
 						if (!other.destroy && other.alpha && droneInAggro(play, other, true)) {
-							this.dir = Math.atan2(other.y - this.y, other.x - this.x);
+							this.dir = droneChaseDir(this, other);
 							this.orbLevel = undefined;
 							break;
 						} else {

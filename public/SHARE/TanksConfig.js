@@ -1976,7 +1976,7 @@
 			},
 			"Overseer": new function () {
 				this.screen = BASE_SCREEN / 0.9;
-				this.maxDrone = 7;
+				this.maxDrone = 8;
 				this.cannons = [];
 				const c = new Array(2).fill(null).map(() => ({
 					reload: 90,
