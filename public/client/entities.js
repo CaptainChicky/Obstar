@@ -468,11 +468,18 @@
 				this.dy = tw.y;
 			}
 			if (this.ddir !== this.dir) {
-				const k = General['lerpK'](0.2);
-				this.ddir = Math.atan2(
-					Math.sin(this.ddir) + (Math.sin(this.dir) - Math.sin(this.ddir)) * k,
-					Math.cos(this.ddir) + (Math.cos(this.dir) - Math.cos(this.ddir)) * k
-				)
+				const d = Math.atan2(Math.sin(this.dir - this.ddir), Math.cos(this.dir - this.ddir));
+				// A swoosh start (and a click-to-aim drone) snaps ~90°. lerpK(0.2) would
+				// spend ~200ms banking that. The landing slew stays under this and eases.
+				if (Math.abs(d) > 0.7) {
+					this.ddir = this.dir;
+				} else {
+					const k = General['lerpK'](0.2);
+					this.ddir = Math.atan2(
+						Math.sin(this.ddir) + (Math.sin(this.dir) - Math.sin(this.ddir)) * k,
+						Math.cos(this.ddir) + (Math.cos(this.dir) - Math.cos(this.ddir)) * k
+					);
+				}
 			}
 			///
 		}

@@ -463,6 +463,9 @@ class Room {
 		bull.alone = 1;
 		bull.life = -1;
 		bull.type = 1.4;
+		// Wire draw 7: equilateral at `size`. Type 1 is the drone class, drawn larger
+		// (drawings.js DRONE_CLASS_DRAW) so a base drone does not follow that scale.
+		bull.drawType = 7;
 		bull.maxspeed = .75;
 		bull.pene = config.BASE_DRONE_HP;
 		bull.damage = config.BASE_DRONE_DAMAGE;

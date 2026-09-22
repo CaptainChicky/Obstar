@@ -11,6 +11,9 @@
 
 - **FFA area size changing** - the arena should be scaling live ig we will see what basesize should be and how it scales etc. also arena closing when etc
 
+drones in overlord class after swooshing recover basically isnide the takn it shoud eb further (extend the i nner energy level outwards?)
+drones also are pretty much position fixed relative to the tnak it shoudl be more dynamci like a tank moving drones should be lagging and then chase after? check against diep code
+
 base drone sizes: this ratio we have will be base drone equilateral (is it equilateral?) triangle side length vs basic level1 0 score tank diameter
 28.8/57.3 this is diep
 29.5/57.3 this is obstar

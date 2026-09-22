@@ -1918,8 +1918,8 @@ function baseDroneTests() {
 	const drone = room.INSTANCE.bullets.get(post.slot);
 	check('a base drone collision radius is the circumradius of a 1-gu equilateral',
 		drone.size === config.BASE_DRONE_SIZE, drone.size);
-	check('...no drawType override: type 1.4 wires as parseInt 1, the shared drone triangle',
-		drone.drawType === undefined, drone.drawType);
+	check('...drawType 7: equilateral at size, not the drone-class scale on bullet[1]',
+		drone.drawType === 7, drone.drawType);
 	{
 		const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
 		const drawnSide = config.BASE_DRONE_SIZE * Math.sqrt(3);
@@ -6139,7 +6139,7 @@ function tankDroneOrbitTests() {
 
 	let maxRingErr = 0, maxTurn = 0, prevHead = null, totalAng = 0, prevAng = null;
 	const seen = {};
-	let seamErr = 0, wasCurve = 0;
+	let seamErr = 0, wasCurve = 0, startSnap = 0, recoverMax = 0, sawSwoosh = 0;
 	for (let t = 0; t < 6000; t++) {
 		drone.update();
 		if (drone.orbLevel === undefined) { continue; }
@@ -6152,6 +6152,13 @@ function tankDroneOrbitTests() {
 				Math.cos(drone.orbHead - prevHead)));
 			if (t > 50 && !onCurve && !wasCurve) { maxTurn = Math.max(maxTurn, dh); }
 			if (wasCurve && !onCurve) { seamErr = Math.max(seamErr, dh); }
+			// Start of a swoosh is a heading snap onto the diameter. The landing
+			// (orbCRec) is a slew capped at TANK_DRONE_RECOVER_TURN, not that snap.
+			if (!wasCurve && drone.orbCrossing && drone.orbCAge <= 1) {
+				startSnap = Math.max(startSnap, dh);
+				sawSwoosh = 1;
+			}
+			if (drone.orbCrossing && drone.orbCRec) { recoverMax = Math.max(recoverMax, dh); }
 		}
 		wasCurve = onCurve;
 		prevHead = drone.orbHead;
@@ -6179,6 +6186,10 @@ function tankDroneOrbitTests() {
 	// A curve that actually had a corner in it would step by radians, not hundredths.
 	check('...handing back off a planned curve with no corner in it (the swoosh seam)',
 		seamErr < 0.1, seamErr.toFixed(4) + ' rad');
+	check('...a swoosh snaps heading at the start',
+		sawSwoosh && startSnap > 0.7, startSnap.toFixed(3));
+	check('...and the landing slew stays under the snap threshold',
+		sawSwoosh && recoverMax <= 0.15 + 1e-9, recoverMax.toFixed(3));
 	check('...and never turning faster on the field than the drone could physically bank',
 		maxTurn < 0.5, maxTurn.toFixed(4) + ' rad/tick');
 	// A level change sweeps the way the drone is already orbiting whether the new lane is inside

@@ -33,6 +33,26 @@
 	}
 	// Spins in this file are denominated against a 40ms reference tick.
 	const REF_TICK_MS = 40;
+	// Drone-class triangles (type 1) are drawn larger than their collision radius.
+	// 6f59578 put vertices at `size` and Overlord/Hybrid/the rest of the drone class
+	// shrank to base-drone size. 1.59 is the old size*1.7 tip, scaled so a level-45
+	// drone's side is ~95% of a red triangle's side (obj.tri, hit radius 21.78).
+	// Base drones are drawType 7 and stay at `size` (a 1-gu side).
+	const DRONE_CLASS_DRAW = 1.59;
+	function fillDroneTriangle(ctx, param, r) {
+		ctx.rotate(param.dir);
+		ctx.beginPath();
+		ctx.moveTo(r, 0);
+		ctx.lineTo(-0.5 * r, 0.8660254037844387 * r);
+		ctx.lineTo(-0.5 * r, -0.8660254037844387 * r);
+		ctx.closePath();
+		ctx.fillStyle = Palette[param.color][0];
+		ctx.fill();
+		ctx.lineWidth = CONST.LINEWIDTH;
+		ctx.lineJoin = 'round';
+		ctx.strokeStyle = Palette[param.color][1];
+		ctx.stroke();
+	}
 	const Drawings = {
 		// Spinning outline n-gon. Circumradius is owner.size x sizeRatio, measured against
 		// the tank's outline (size + LINEWIDTH/2), drawn under the body so only the
@@ -365,24 +385,9 @@
 				ctx.fill();
 				ctx.closePath();
 			},
-			// Tank / swarm / base drones. Diep draws n-gons by circumradius (= physics size):
-			// vertices at `size`, regular equilateral (cos 120 = -0.5). Base drones share this
-			// sprite; their size is the circumradius of a 1-gu side (lib/config.js BASE_DRONE_SIZE).
-			(ctx, param) => {
-				const r = param.size;
-				ctx.rotate(param.dir);
-				ctx.beginPath();
-				ctx.moveTo(r, 0);
-				ctx.lineTo(-0.5 * r, 0.8660254037844387 * r);
-				ctx.lineTo(-0.5 * r, -0.8660254037844387 * r);
-				ctx.closePath();
-				ctx.fillStyle = Palette[param.color][0];
-				ctx.fill();
-				ctx.lineWidth = CONST.LINEWIDTH;
-				ctx.lineJoin = 'round';
-				ctx.strokeStyle = Palette[param.color][1];
-				ctx.stroke();
-			},
+			// Tank / swarm drones. Equilateral; drawn circumradius is size * DRONE_CLASS_DRAW
+			// so the class stays near the old 1.7-sprite size. Base drones use bullet[7].
+			(ctx, param) => fillDroneTriangle(ctx, param, param.size * DRONE_CLASS_DRAW),
 			(ctx, param) => {
 				const $1 = param.size * 1.8;
 				const mini = $1 * .38;
@@ -477,7 +482,10 @@
 				ctx.closePath();
 			},
 			// Guardian drone: same sprite as a small Crasher, not the ordinary drone triangle.
-			(ctx, param) => Drawings.obj.bull(ctx, Palette[param.color], param.size, param.dir)
+			(ctx, param) => Drawings.obj.bull(ctx, Palette[param.color], param.size, param.dir),
+			// Base drones. Same equilateral as bullet[1], vertices at `size` (the circumradius
+			// of a 1-gu side). Not DRONE_CLASS_DRAW; that scale is the drone class only.
+			(ctx, param) => fillDroneTriangle(ctx, param, param.size)
 		],
 		// Drawn circumradius is hit radius x Math.SQRT2. `$1` is the hit radius; each
 		// shape's divisor is its vertex distance / sqrt(2).

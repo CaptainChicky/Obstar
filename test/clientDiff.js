@@ -89,7 +89,7 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-// Shared equilateral (type 1): tank drones at can.size*ra, base drones at BASE_DRONE_SIZE = gu(1)/√3.
+// Type 1 drones draw at size*1.59. Base drones are drawType 7, equilateral at BASE_DRONE_SIZE.
 const GOLDEN = { count: 287925, hash: '702cdb1a' };
 
 console.log('canvas-call differential');

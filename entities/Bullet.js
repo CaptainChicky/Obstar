@@ -124,6 +124,9 @@ const TANK_DRONE_SEP_NUDGE = config.TANK_DRONE_SEP_NUDGE;
 // Every idle drone circles its owner the same way - counterclockwise, on screen - rather than
 // each drone rolling its own direction.
 const TANK_DRONE_ORBIT_DIR = -1;
+// End of a tank-drone swoosh, rad per real tick. The start snaps (~90°). This cap
+// is the landing slew: under the client's 0.7 ddir snap, so the end eases.
+const TANK_DRONE_RECOVER_TURN = 0.15;
 
 /*
 	The drone's terminal free-flight speed, in units per real tick: what it would settle at
@@ -603,9 +606,11 @@ function droneSteer1(bullet, play) {
 	  rate-limited in heading and speed, with a smoothstep blend from cruise up to
 	  terminal as the radial error grows so a drone left behind sprints back onto its ring.
 
-	  CROSS - the swoosh as a planned quintic curve (planTankCross): arc -> C2 blend ->
-	  straight through the owner -> C2 blend -> level 1. Position, velocity, head and
-	  speed all come from the curve; the last tick is the orbit field's own landing state.
+	  CROSS - a physics swoosh (planTankCross): heading and velocity snap onto the
+	  diameter through the owner, thrust+friction flies that line through the centre,
+	  then thrust drops to 1/6 and the orbit field slews onto the level-1 ring.
+	  The snap is the start. The landing is that slew, not an exit Hermite and not
+	  a one-tick turn onto the tangent.
 
 	  SWITCH - a level change as its own shallow planned arc (planTankSwitchArc), landing
 	  tangentially at the new radius at cruise speed.
@@ -665,22 +670,7 @@ function droneIdleOrbit(bullet, play, replan = false) {
 	// `crossing`/`switching` have, and for the same reason (nothing may perturb a curve that was
 	// posed against the state it started from).
 	if (bullet.orbCrossing) {
-		const p = bullet.orbTbl[bullet.orbT++];
-		rx = p.x; ry = p.y;
-		bullet.orbHead = Math.atan2(p.vy, p.vx);
-		bullet.orbSpd = Math.hypot(p.vx, p.vy);
-		if (bullet.orbT >= bullet.orbTbl.length) {
-			// Lands on level 1 by construction, then climbs back to home on its own planned arcs -
-			// a swoosh is a dive through the middle and a slow recovery, not a lane change.
-			bullet.orbCrossing = 0;
-			bullet.orbTbl = null;
-			bullet.orbLevel = 1;
-			bullet.orbHoming = 1;
-			bullet.orbReact = 0;
-			bullet.orbCrossIn = TANK_DRONE_CROSS;
-			bullet.orbLevelTimer = TANK_DRONE_LEVEL_RELAX;
-		}
-		return tankOrbitCommit(bullet, play, rx, ry);
+		return tankCrossStep(bullet, play, vOrbit);
 	}
 
 	if (bullet.orbSwitching) {
@@ -839,41 +829,105 @@ function planTankSwitchArc(bullet, play, r1, vOrbit) {
 }
 
 /*
-	The swoosh, in the owner's frame - built by the SAME crossPolyline()/crossSolvePeak() a base
-	drone's planCross() uses, at this drone's own two speeds. Centre (0,0) is the owner, so a tank
-	that drives off during the swoosh carries the curve with it instead of stranding the drone
-	behind a point that has moved.
+	The swoosh, in the owner's frame. The start snaps: heading and leftover speed onto the
+	diameter through the owner, so the sprite and the path turn together instead of skidding
+	through an entry blend. Thrust and friction fly that line through the centre. Once past
+	it, thrust is the orbit's 1/6 and the orbit field slews onto the level-1 ring. The
+	landing is that slew. A tank that drives off carries the dive the same way the field does.
 */
 function planTankCross(bullet, play, vOrbit, vCross) {
 	const rx = bullet.x - play.x, ry = bullet.y - play.y;
 	const r0 = Math.hypot(rx, ry) || 1;
-	const nx = rx / r0, ny = ry / r0;
 	const R1 = tankLevelR(play, bullet, 1);
-	const v0 = bullet.orbSpd || vOrbit;
-	const P0 = { x: rx, y: ry };
-	const V0 = { x: Math.cos(bullet.orbHead) * bullet.orbSpd, y: Math.sin(bullet.orbHead) * bullet.orbSpd };
-	const A0 = { x: -nx * v0 * v0 / r0, y: -ny * v0 * v0 / r0 };
-
-	const { xs, ys, ss, L, sc, B, VB } =
-		crossPolyline(P0, V0, A0, 0, 0, r0, R1, Math.atan2(ny, nx), bullet.orbSpin, vOrbit, vCross);
-	const { T, vPeak } = crossSolvePeak(ss, L, sc, vOrbit, vCross);
-
-	const tbl = [];
-	let arc = 0;
-	for (let t = 1; t <= T; t++) {
-		for (let n = 0; n < 8; n++) {          // RK2 substeps: explicit Euler drifts at this dt
-			const h = 1 / 8, a1 = crossVAt(L, sc, arc, vPeak, vOrbit);
-			arc += (a1 + crossVAt(L, sc, arc + a1 * h, vPeak, vOrbit)) / 2 * h;
-		}
-		if (t === T) { arc = L; }
-		tbl.push(pathAt(xs, ys, ss, arc, crossVAt(L, sc, arc, vPeak, vOrbit)));
-	}
-	// The last tick is the orbit field's own state at the landing point, written exactly
-	// rather than sampled, so the hand-off costs the field zero heading/speed error.
-	tbl[tbl.length - 1] = { x: B.x, y: B.y, vx: VB.x, vy: VB.y };
-	bullet.orbTbl = tbl;
-	bullet.orbT = 0;
+	const vTerm = vOrbit / TANK_DRONE_ORBIT_SPEED_FRAC;
+	const diveHead = Math.atan2(-ry, -rx);
+	const spd = bullet.orbSpd || vOrbit;
+	bullet.orbCSx = rx;
+	bullet.orbCSy = ry;
+	bullet.orbCHead = diveHead;
+	bullet.orbHead = diveHead;
+	bullet.orbCVx = Math.cos(diveHead) * spd;
+	bullet.orbCVy = Math.sin(diveHead) * spd;
+	bullet.orbCThrust = tick.quadratic(bullet.maxspeed * BULLET_CRUISE_ORDER);
+	bullet.orbCWhoosh = vTerm > 0 ? vCross / vTerm : TANK_DRONE_CROSS_SPEED_FRAC;
+	bullet.orbCRec = 0;
+	bullet.orbCAge = 0;
+	bullet.orbCMinR = r0;
+	bullet.orbCMax = Math.max(tick.ticks(80),
+		Math.round((r0 + R1) / Math.max(vOrbit, 1e-6)) * 4);
 	bullet.orbCrossing = 1;
+	bullet.orbTbl = null;
+}
+
+function tankCrossFinish(bullet) {
+	bullet.orbCrossing = 0;
+	bullet.orbCRec = 0;
+	bullet.orbLevel = 1;
+	bullet.orbHoming = 1;
+	bullet.orbReact = 0;
+	bullet.orbCrossIn = TANK_DRONE_CROSS;
+	bullet.orbLevelTimer = TANK_DRONE_LEVEL_RELAX;
+}
+
+function tankCrossStep(bullet, play, vOrbit) {
+	let rx = bullet.x - play.x, ry = bullet.y - play.y;
+	const R1 = tankLevelR(play, bullet, 1);
+	const gap = tankGap(bullet);
+	const r = Math.hypot(rx, ry) || 1e-9;
+	bullet.orbCMinR = Math.min(bullet.orbCMinR, r);
+	bullet.orbCAge++;
+
+	const pastCenter = rx * bullet.orbCSx + ry * bullet.orbCSy < 0;
+	const threaded = bullet.orbCMinR < R1 * 0.5;
+	if (!bullet.orbCRec && pastCenter && threaded) {
+		bullet.orbCRec = 1;
+		bullet.orbSpd = Math.hypot(bullet.orbCVx, bullet.orbCVy);
+	}
+
+	if (!bullet.orbCRec) {
+		bullet.orbHead = bullet.orbCHead;
+		const thrust = bullet.orbCThrust * bullet.orbCWhoosh;
+		bullet.orbCVx += Math.cos(bullet.orbHead) * thrust;
+		bullet.orbCVy += Math.sin(bullet.orbHead) * thrust;
+		bullet.orbCVx *= BODY_FRICTION;
+		bullet.orbCVy *= BODY_FRICTION;
+		rx += bullet.orbCVx;
+		ry += bullet.orbCVy;
+		bullet.orbSpd = Math.hypot(bullet.orbCVx, bullet.orbCVy);
+	} else {
+		bullet.orbPhase += TANK_DRONE_PHASE_SPIN * bullet.orbSpin;
+		const ux = rx / r, uy = ry / r;
+		const tx = -uy * bullet.orbSpin, ty = ux * bullet.orbSpin;
+		const err = R1 - r;
+		const lean = Math.max(-config.BASE_DRONE_LEAN_MAX,
+			Math.min(config.BASE_DRONE_LEAN_MAX, err / gap));
+		let desired = Math.atan2(ty + uy * lean, tx + ux * lean);
+		desired = tankDroneSepNudge(bullet, desired);
+		const turnLimit = Math.min(TANK_DRONE_RECOVER_TURN,
+			TANK_DRONE_TURN_HEADROOM * Math.max(bullet.orbSpd, vOrbit) /
+			Math.max(r, R1 * 0.25));
+		let dHead = Math.atan2(Math.sin(desired - bullet.orbHead),
+			Math.cos(desired - bullet.orbHead));
+		dHead = Math.max(-turnLimit, Math.min(turnLimit, dHead));
+		bullet.orbHead += dHead;
+		const accel = (vOrbit / TANK_DRONE_ORBIT_SPEED_FRAC) * TANK_DRONE_ACCEL_FRAC;
+		bullet.orbSpd += Math.max(-accel, Math.min(accel, vOrbit - bullet.orbSpd));
+		rx += Math.cos(bullet.orbHead) * bullet.orbSpd;
+		ry += Math.sin(bullet.orbHead) * bullet.orbSpd;
+
+		const r1 = Math.hypot(rx, ry) || 1;
+		const u1x = rx / r1, u1y = ry / r1;
+		const tangent = Math.atan2(-u1y * bullet.orbSpin, u1x * bullet.orbSpin);
+		const dTan = Math.abs(Math.atan2(Math.sin(bullet.orbHead - tangent),
+			Math.cos(bullet.orbHead - tangent)));
+		const onRing = Math.abs(r1 - R1) <= gap / 8;
+		if ((onRing && dTan < 0.1 && bullet.orbSpd < vOrbit * 1.25) ||
+			bullet.orbCAge >= bullet.orbCMax) {
+			tankCrossFinish(bullet);
+		}
+	}
+	if (bullet.orbCrossing && bullet.orbCAge >= bullet.orbCMax) { tankCrossFinish(bullet); }
+	return tankOrbitCommit(bullet, play, rx, ry);
 }
 
 /*
