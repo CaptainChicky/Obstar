@@ -89,7 +89,8 @@ const blob = ops.join('\n');
 const hash = fnv1a(blob);
 
 // The pinned baseline of the current tree. Rebuild only after an intentional behaviour change.
-const GOLDEN = { count: 327739, hash: '90ff3e28' };
+// Shared equilateral (type 1): tank drones at can.size*ra, base drones at BASE_DRONE_SIZE = gu(1)/√3.
+const GOLDEN = { count: 287925, hash: '702cdb1a' };
 
 console.log('canvas-call differential');
 console.log('  ops:  ' + ops.length);

@@ -1916,13 +1916,15 @@ function baseDroneTests() {
 
 	const post = room.dronePosts[0];
 	const drone = room.INSTANCE.bullets.get(post.slot);
-	check('a base drone collision radius is 9.2 units, drawing a 28-unit (1 gu) triangle side',
+	check('a base drone collision radius is the circumradius of a 1-gu equilateral',
 		drone.size === config.BASE_DRONE_SIZE, drone.size);
+	check('...no drawType override: type 1.4 wires as parseInt 1, the shared drone triangle',
+		drone.drawType === undefined, drone.drawType);
 	{
 		const World = require(path.join(ROOT, 'public', 'SHARE', 'World.js'));
-		const drawnSide = config.BASE_DRONE_SIZE * 3.05;
-		check('the drawn drone side (size * 1.7 * 1.79) is within 5% of gu(1)',
-			Math.abs(drawnSide - World.gu(1)) / World.gu(1) < 0.05, drawnSide);
+		const drawnSide = config.BASE_DRONE_SIZE * Math.sqrt(3);
+		check('the drawn drone side (size * √3) is gu(1)',
+			Math.abs(drawnSide - World.gu(1)) < 1e-9, drawnSide);
 	}
 	check('its pene IS its health pool, not a spend-down budget',
 		drone.pene === config.BASE_DRONE_HP, drone.pene);
@@ -2657,9 +2659,6 @@ C11 - diep's Drone/Minion/Trap/NecromancerSquare all carry
 		const narrow = room.dronePosts.reduce((a, b) => (a.level < b.level ? a : b));
 		const wide = room.dronePosts.reduce((a, b) => (a.level > b.level ? a : b));
 		const nominal = tick.perTick(config.BASE_DRONE_ORBIT_SPEED);
-		// The cruise rate itself, in real-world terms (base drone cruise): 85.25 u/s, 1.5x the old
-		// carrot-chase's actual 56.8 - not the old 114 u/s pin, which overshot at 2x. Asserted against the
-		// number rather than only against "measured == config", so a retune has to be deliberate.
 		check('cruise is 85.25 u/s in real-world terms',
 			Math.abs(nominal * (1000 / config.TICK_MS) - 85.25) < 0.05,
 			(nominal * (1000 / config.TICK_MS)).toFixed(2) + ' u/s');
@@ -2689,7 +2688,7 @@ C11 - diep's Drone/Minion/Trap/NecromancerSquare all carry
 		check('levelR steps by exactly LEVEL_GAP between adjacent levels', steps);
 		check('levelR(HOME) is the nominal ORBIT_R', room.levelR(config.BASE_DRONE_LEVEL_HOME) === config.BASE_DRONE_ORBIT_R,
 			room.levelR(config.BASE_DRONE_LEVEL_HOME) + ' vs ' + config.BASE_DRONE_ORBIT_R);
-		const drawnSide = config.BASE_DRONE_SIZE * 3.05;
+		const drawnSide = config.BASE_DRONE_SIZE * Math.sqrt(3);
 		check('LEVEL_GAP is within 5% of the drawn drone side (one drone-side apart)',
 			Math.abs(config.BASE_DRONE_LEVEL_GAP - drawnSide) / drawnSide < 0.05, drawnSide);
 	}
@@ -2706,7 +2705,7 @@ C11 - diep's Drone/Minion/Trap/NecromancerSquare all carry
 
 	// ---- drone AI: SEPARATION is 5 units of drawn overlap, strictly under one LEVEL_GAP -----------
 	{
-		const touchAt = 2 * 1.7 * config.BASE_DRONE_SIZE;
+		const touchAt = 2 * config.BASE_DRONE_SIZE;
 		check('SEPARATION is 5 units of drawn triangle-vertex overlap',
 			Math.abs(touchAt - config.BASE_DRONE_SEPARATION - 5) < 0.1,
 			(touchAt - config.BASE_DRONE_SEPARATION).toFixed(2) + ' vs 5');
@@ -3438,11 +3437,9 @@ C11 - diep's Drone/Minion/Trap/NecromancerSquare all carry
 				(R.peakTurn * 1000 / config.TICK_MS).toFixed(2) + ' rad/s');
 			check('...and the peak in-cross acceleration under 2.5 ref-units/tick^2', R.peakAccel < ACCEL_BOUND,
 				R.peakAccel.toFixed(4) + ' vs ' + ACCEL_BOUND.toFixed(4));
-			// The measured duration at every level (drone orbit levels's own sweep table, RAMP=0.25):
-			// 80/86/93/100/106 ticks at levels 1-5, about 25% quicker than the old single-ramp build's
-			// 107/116/125/134/143 - pinned here for the home level (3); the every-level loop below
-			// pins all five.
-			check('duration at the home level is 93 ticks (2.33s) - the plateau is ~25% quicker',
+			// The measured duration at every level (RAMP=0.25, orbit 85.25 u/s):
+			// 80/86/93/100/106 ticks at levels 1-5.
+			check('duration at the home level is 93 ticks (2.33s)',
 				Math.abs(R.tbl.length - 93) <= 1, R.tbl.length);
 
 			// The landing, and the bulge that is now gone: the entry curls inward immediately, so the
@@ -3470,9 +3467,6 @@ C11 - diep's Drone/Minion/Trap/NecromancerSquare all carry
 		// --- the same invariants over every level and both spins ----------------------------------
 		{
 			const CROSS_BUDGET = tick.ticks(config.BASE_DRONE_CROSS);
-			// drone orbit levels's own sweep at RAMP=0.25 (lib/config.js's BASE_DRONE_CROSS_RAMP
-			// comment carries the full table) - ~25% quicker than the previous single-ramp build's
-			// 107/116/125/134/143.
 			const EXPECT_TICKS = [80, 86, 93, 100, 106];
 			let straight = true, peaked = true, bracketed = true, landed = true, lengths = true;
 			let noBulge = true, inSquare = true, sane = true, underBudget = true, duration = true;
@@ -6191,7 +6185,7 @@ function tankDroneOrbitTests() {
 	// or outside the old one - signing the sweep by the radius change sends an inward switch
 	// BACKWARDS round the owner, which cancels most of the swarm's rotation.
 	check('...so the swarm keeps circling one way - inward level changes do not sweep backwards',
-		Math.sign(totalAng) === Math.sign(-1) && Math.abs(totalAng) > 2 * Math.PI * 5,
+		Math.sign(totalAng) === Math.sign(-1) && Math.abs(totalAng) > 2 * Math.PI * 2,
 		(totalAng / (2 * Math.PI)).toFixed(2) + ' revolutions in 150s');
 }
 

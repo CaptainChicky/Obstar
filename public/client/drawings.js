@@ -365,13 +365,16 @@
 				ctx.fill();
 				ctx.closePath();
 			},
+			// Tank / swarm / base drones. Diep draws n-gons by circumradius (= physics size):
+			// vertices at `size`, regular equilateral (cos 120 = -0.5). Base drones share this
+			// sprite; their size is the circumradius of a 1-gu side (lib/config.js BASE_DRONE_SIZE).
 			(ctx, param) => {
-				const $1 = param.size * 1.7;
+				const r = param.size;
 				ctx.rotate(param.dir);
 				ctx.beginPath();
-				ctx.moveTo($1, 0);
-				ctx.lineTo(-0.6 * $1, 0.8660254037844387 * $1)
-				ctx.lineTo(-0.6 * $1, -0.8660254037844387 * $1)
+				ctx.moveTo(r, 0);
+				ctx.lineTo(-0.5 * r, 0.8660254037844387 * r);
+				ctx.lineTo(-0.5 * r, -0.8660254037844387 * r);
 				ctx.closePath();
 				ctx.fillStyle = Palette[param.color][0];
 				ctx.fill();
@@ -473,7 +476,7 @@
 				ctx.fill();
 				ctx.closePath();
 			},
-			// Guardian drone: same sprite as a small Crasher, not the ordinary drone arrowhead.
+			// Guardian drone: same sprite as a small Crasher, not the ordinary drone triangle.
 			(ctx, param) => Drawings.obj.bull(ctx, Palette[param.color], param.size, param.dir)
 		],
 		// Drawn circumradius is hit radius x Math.SQRT2. `$1` is the hit radius; each
