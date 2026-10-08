@@ -127,7 +127,7 @@ Do not treat sizes in this table as load-bearing — they drift. Roles do not.
 | `public/SHARE/kinds.js` | Entity type tags (`KIND`), used for `obj.kind` dispatch. Dual-mode: server `require()` + client global. Loaded **before** `TanksConfig.js`. |
 | `public/SHARE/World.js` | The one grid-pitch constant (`GU`/`gu()`) — 1 grid square = 1 diep grid unit = 28 world units. |
 | `public/SHARE/SocketSchema.js` | Binary wire protocol, declarative (§5). Dual-mode. |
-| `public/SHARE/TanksConfig.js` | Tank classes, stats, barrels, upgrade tree. Shared client/server. Two hand-synced halves in one file. Boss geometry (Defender, Summoner, Mothership) is cross-checked by `test/rooms.js`. |
+| `public/SHARE/TanksConfig.js` | Tank classes, stats, barrels, upgrade tree. Shared client/server. Two hand-synced halves in one file. Boss geometry (Defender, Summoner) is cross-checked by `test/rooms.js`; Mothership is not (see PENDING.md "Still open"). |
 | `public/SHARE/Physics.js` | **The one movement integrator** (`moveAccel`/`stepBody`/`FRICTION`) — `entities/Player.js`, `lib/gameAI.js`'s bots and `public/client/game.js` all call into it. Loaded on the client too (`play.ejs`). Its `FRICTION` is the **tank's**; bullets/shapes/the boss decay through `lib/constants.js`'s `BODY_FRICTION`. |
 | `public/SHARE/ObjectsConfig.js` | Rarity tiers for farmable polygons (Shiny, packed into 3 bits of the existing `states` field). |
 | `public/SHARE/PetsConfig.js` | Cosmetic pet definitions. |
@@ -228,10 +228,12 @@ The things in this codebase that are *not* obvious from reading the code around 
   tables — not one derived table. `test/tanks.js` guards baked `client.height ===
   server.canonLength` (and `offx`/`offdir`) for every class, with pairing for `autoDir`
   turrets, stacked drone barrels, necro decorative stubs, and hidden testbed cannons; it does
-  not convert from diep du. Boss-scale entities (Defender, Summoner, Mothership) are still
+  not convert from diep du. Boss-scale entities (Defender, Summoner) are still
   cross-checked by dedicated geometry tests in `test/rooms.js` (`defenderGeometryTests()`,
-  `summonerGeometryTests()`, `mothershipGeometryTests()`). `test/clientTanks.js` is the
-  `vm`-based client-mode loader; used by `test/tanks.js` and those boss tests.
+  `summonerGeometryTests()`). Mothership keeps its hand-tuned numbers and has no geometry
+  test — a du re-derivation was tried and reverted (PENDING.md "Still open").
+  `test/clientTanks.js` is the `vm`-based client-mode loader; used by `test/tanks.js` and
+  those boss tests.
 - **Health, regen and the damage model are diep's own shape.**
   `entities/Player.js`'s `maxHp` starts at diep's `MH₀ = 50`, gains `+2` per level-up and `+20`
   per Max Health point. Regen reads two direct `tick.perTick()` rates in `update()`: diep's linear
@@ -672,7 +674,7 @@ pattern, gated behind `config.DB.AUTH`:
 | `test/interp.js` | Client motion arithmetic. |
 | `test/clock.js` | Fixed-timestep clock: drift, catch-up, stalls, self-removal. |
 | `test/tanks.js` | Baked client/server tank geometry for `TanksConfig.js` (`height === canonLength`, `offx`, `offdir`; turret/collapse/skip pairing). Uses `test/clientTanks.js`. No room boot. |
-| `test/rooms.js` | All eleven gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner detecting a nearby player, `respawn()` carrying a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, killability, respawn delay, the base fence's bullet margin), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A), the FOV formula, the 45/7/33 upgrade economy and its client-mirrored constants, `Room.rejectSample()`'s hard cap and fallback on an unsatisfiable/too-small map. Tag's win condition (team reassignment not a random match, to stay unseeded-RNG-free; a spawned Closer takes no damage/knockback; `respawn()` no-ops once `closing`; a stealth class settles at `rules.invisFloor`). `KIND.WALL` direct-collision tests. Boss geometry re-derivation for Defender, Summoner, and Mothership (`defenderGeometryTests()`, `summonerGeometryTests()`, `mothershipGeometryTests()`) — anchored against diepcustom's own du figures, not just client-vs-server consistency. Survival's countdown gate, bot grace period, and no-respawn-once-open rule. Mothership's spawn, HP, level, win condition, drone saturation, possession, and regen. No socket, built via `boot()`. |
+| `test/rooms.js` | All eleven gamemodes — teams, bases, bot rosters, colours, respawn xp, a Summoner detecting a nearby player, `respawn()` carrying a player's live `inputs`/`userKey`/`unlocked`/`killCounts` across a death. Also: base drones (placement, killability, respawn delay, the base fence's bullet margin), tick-scale invariance (real-world top speed agrees within 3% whether `Physics.stepBody` is driven as if `TICK_MS` were 16, 25, or 33, and matches diep's derived 10×A), the FOV formula, the 45/7/33 upgrade economy and its client-mirrored constants, `Room.rejectSample()`'s hard cap and fallback on an unsatisfiable/too-small map. Tag's win condition (team reassignment not a random match, to stay unseeded-RNG-free; a spawned Closer takes no damage/knockback; `respawn()` no-ops once `closing`; a stealth class settles at `rules.invisFloor`). `KIND.WALL` direct-collision tests. Boss geometry re-derivation for Defender and Summoner (`defenderGeometryTests()`, `summonerGeometryTests()`) — anchored against diepcustom's own du figures, not just client-vs-server consistency. Survival's countdown gate, bot grace period, and no-respawn-once-open rule. Mothership's spawn, HP, level, win condition, drone saturation, possession, and regen. No socket, built via `boot()`. |
 | `test/client.js` | Runs the actual client under a stub DOM (`test/clientDom.js`): camera, bullet speed, entity completeness, no NaN to canvas, that the input-prediction lead reaches the same steady state at 30/60/144fps, dead-reckoning behaviour, own-bullet ramp; a `Walls` instance draws/updates without throwing. |
 | `test/clientDiff.js` | Canvas-call differential guard — pins the client's current behaviour (op count/hash in the `GOLDEN` const at the top of the file, with a comment trail of why each rebaseline happened) so a future edit that silently changes rendering fails loud. Re-baseline deliberately if you change client rendering/iteration order on purpose. Current golden is in that file (and mirrored in PENDING). |
 | `test/smoke.js` | End-to-end: real socket, real protocol, real server. Covers ffa, 2team, 4team, boss, sandbox, tag — not maze / domination / mothership / survival / tester. |

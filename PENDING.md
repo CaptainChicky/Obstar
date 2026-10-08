@@ -89,6 +89,16 @@ two frictions, `weight` vs `push`, `LETHAL_EPS`, tick categories) are in
 
 ## Still open
 
+- **Mothership boss geometry re-derivation.** Guardian, Defender, and Summoner are done
+  (`defenderGeometryTests()`, `summonerGeometryTests()` in `test/rooms.js`). Mothership still
+  carries its hand-tuned numbers (client `height 42 / width 7.35`, `bossSize 112.8`, server
+  `canonLength 42`, drone `size 3.675`). One re-derivation was attempted and reverted: applying
+  the Defender/Summoner axis (`du × 0.56 × 35 / bossSize`) to TankDefinitions.json id27's
+  barrel 60 × 10.5 du gave `height 10.74 / width 1.88`, `canonLength 10.74`, drone `size 0.94`,
+  `bossSize 109.497` — it satisfied its own test but drew near-invisible barrels and tiny
+  drones in-game. The old numbers are visually right; whatever replaces them has to be
+  checked against a live screenshot, not only against the id27 algebra. Details in
+  `issues.md` under "Reverted attempts".
 - **Maze**: minor wall-on-wall visual overlap remains. (Spawn-inside-wall is fixed —
   `rooms/Maze.js`'s `spawnPoint()` rejects candidates via `clearOfWalls()`.)
 
