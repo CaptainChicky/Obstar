@@ -1646,7 +1646,7 @@
 			"Mothership": {
 				// Trapezoid spawners, half-step off the 16-gon vertices so barrels sit between corners.
 				cannons: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
-					type: 2, height: 10.740003, width: 1.879500, offx: 0, offdir: Math.PI / 16 + i * Math.PI * 2 / 16, open: 0, trapezoidDirection: false
+					type: 2, height: 42, width: 7.35, offx: 0, offdir: Math.PI / 16 + i * Math.PI * 2 / 16, open: 0, trapezoidDirection: false
 				})),
 				body: { shape: 3, sides: 16 }
 			}
@@ -3313,8 +3313,9 @@
 				this.maxDrone = 32;
 				// Split drone budget: 16 controllable + 16 not, rather than pooling all 32.
 				this.droneSplit = true;
-				// bossSize is the drawn apothem of a 16-gon at level-140 circumradius.
-				this.bossSize = 109.497178;
+				// Body radius from the ordinary tank growth formula (28 x 1.01^level) at level 140.
+				// Already in world units - not a diep du figure, so no 0.56 conversion applies.
+				this.bossSize = 112.8;
 				this.absorbtionFactor = 0.01;
 				this.DETEC = { type: [KIND.PLAYER, KIND.OBJECTS], size: this.screen, all: 0, maxDis: this.screen };
 				this.cannons = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => ({
@@ -3322,11 +3323,9 @@
 					// Even barrels are mouse-controllable (type 1); odd barrels stay AI (type 1.1).
 					type: (i % 2 === 0) ? 1 : 1.1, life: -1,
 					// Half-step so barrels sit between 16-gon vertices rather than on them.
-					offdir: Math.PI / 16 + i * Math.PI * 2 / 16, offx: 0,
-					canonLength: 10.740003, rand: 0.174533,
+					offdir: Math.PI / 16 + i * Math.PI * 2 / 16, offx: 0, canonLength: 42, rand: 0.174533,
 					// Shared drone speed; this class's own figure lets a maxed tank outrun the swarm.
-					speed: 0.896, pene: 4, damage: 4.9,
-					size: 0.939750, weight: 4.2, push: 0.36567, back: 0
+					speed: 0.896, pene: 4, damage: 4.9, size: 3.675, weight: 4.2, push: 0.36567, back: 0
 				}));
 				this.ups = ['Health Regen', 'Max Health', 'Body Damage', 'Drone Speed', 'Drone Health', 'Drone Damage', 'Reload', 'Movement Speed'];
 			}
